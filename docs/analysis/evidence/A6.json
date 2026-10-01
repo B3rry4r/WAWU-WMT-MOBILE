@@ -1,0 +1,3338 @@
+{
+ "agent": "A6",
+ "flows": [
+  "events",
+  "professionals",
+  "services"
+ ],
+ "artboards": [
+  {
+   "id": "E1",
+   "flow": "events",
+   "title": "Events",
+   "kind": "screen",
+   "journey": "Buy a ticket",
+   "what_it_shows": "Events home with Discover / My events / Host event tabs, a FEATURED hero (WAWU Creators Summit, from ₦7,500), a 'This week' list with per-row Going/Going? state and 'from' prices, and a 'Host your event' banner (verified accounts only).",
+   "user_actions": [
+    "switch tab Discover/My events/Host event",
+    "open filter sheet (E8)",
+    "tap an event (E2)",
+    "toggle Going on a row",
+    "tap Host your event → Start (E13 or E21)"
+   ],
+   "data_needed": [
+    "published events, upcoming, with startsAt/location/bannerUrl",
+    "featured event",
+    "priceFromNaira per event (cheapest tier) and free flag",
+    "userGoing per event",
+    "'this week' window (starting_soon sort)"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/events (EventView has featured, userGoing, ticketed, priceFromNaira; ListEventsQueryDto view=upcoming|past, sort=starting_soon|trending, featured, category, format, type)",
+     "POST/DELETE /api/hub/events/{id}/going"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events",
+     "src/components/events/EventsBrowser.tsx"
+    ],
+    "delta": "Web has the same three tabs and a 'Host Your Event' banner but lays out filter chips + a row of ten category chips inline; board hides filters behind an icon (E8) and shows a 'This week' section with See all. Web fetches 'from' price via a separate lowestTicketPrices() helper (lib/api/event-tickets.ts) although the backend EventView now carries priceFromNaira."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "WAWU Creators Summit from ₦7,500",
+    "Gospel Night Live from ₦5,000",
+    "Monetise Your Content Online: Free",
+    "Aba Fashion Market from ₦3,500",
+    "Host your event: 'Sell tickets. Verified accounts only.'"
+   ],
+   "conflicts": [
+    "Event card 'Monetise Your Content Online · Free' vs current rule 'every listing carries a price (brief B2: no free content)' (see top-level conflicts)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "E2",
+   "flow": "events",
+   "title": "Event",
+   "kind": "screen",
+   "journey": "Buy a ticket",
+   "what_it_shows": "Event detail: date/time WAT, venue, host (WAWU Africa), Going toggle, ticket tiers with per-tier quantity steppers (Regular ₦7,500 ×1, VIP ₦12,000 ×0, Early bird 'Ended 30 Sep · Sold out'), running total and Get tickets.",
+   "user_actions": [
+    "toggle Going",
+    "set quantity per tier",
+    "tap Get tickets (E3)"
+   ],
+   "data_needed": [
+    "event detail",
+    "ticket types with priceNaira, remaining, soldOut, salesEndAt",
+    "basket across MULTIPLE tiers in one order"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/events/{id}",
+     "GET /api/hub/events/{id}/tickets (remaining, soldOut, salesStartAt, salesEndAt)",
+     "POST /api/hub/events/{id}/orders (BuyTicketsDto: ONE ticketTypeId + quantity)"
+    ],
+    "gap": "Board draws a stepper on every tier (a basket). BuyTicketsDto takes a single ticketTypeId; EventOrder has a single ticketTypeId column. Buying Regular + VIP in one payment needs order lines (EventOrderLine or ticketTypeId per EventTicket only) and one wallet debit for the total."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/[id]",
+     "src/components/events/TicketPurchasePanel.tsx"
+    ],
+    "delta": "Web lets the buyer pick ONE tier (radio) and a quantity; board allows quantities across several tiers. Web pays via openFlutterwaveCheckout."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Regular · General admission ₦7,500",
+    "VIP · Front rows, lunch ₦12,000",
+    "Early bird · Ended 30 Sep · Sold out",
+    "1 ticket ₦7,500",
+    "Sun 12 Oct · 10:00 WAT, Eko Convention Centre, Victoria Island"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E3",
+   "flow": "events",
+   "title": "Pay",
+   "kind": "state",
+   "journey": "Buy a ticket",
+   "what_it_shows": "Order review sheet over E2: 1 × Regular, Tickets ₦7,500, Fee 'No fee', Total ₦7,500, funding source 'Pay from wallet · Naira wallet · ₦485,250.75 available', button Pay ₦7,500.",
+   "user_actions": [
+    "review order",
+    "tap Pay ₦7,500 (E4)"
+   ],
+   "data_needed": [
+    "server-computed order total",
+    "buyer's Naira wallet available balance (provider-authoritative)",
+    "buyer fee (board: none)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/events/{id}/orders exists but returns flutterwaveConfig {txRef, amount, currency, publicKey} for Flutterwave inline checkout",
+     "GET /api/hub/wallet returns the CREATOR's Flutterwave payout-subaccount balance only (searched backend-routes 'wallet': 6 routes, none debit)"
+    ],
+    "gap": "No buyer wallet debit exists. EventTicketingService.buy() calls flutterwave.initCharge and returns flutterwaveConfig for a hosted/inline Flutterwave checkout; there is no Fintava client anywhere in wawu-backend/src (grep 'fintava' = 0 hits) and the only wallet is CreatorWallet (a Flutterwave payout subaccount, creators only) whose WalletEntryKind is earning|withdrawal|reversal, with no spend/debit kind. Change: buy() must create a pending EventOrder and either (a) return an order to be confirmed with a PIN, then debit the buyer's Fintava wallet, or (b) debit immediately; the flutterwaveConfig response field disappears."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/[id] TicketPurchasePanel"
+    ],
+    "delta": "Web opens Flutterwave's own checkout modal; there is no in-app review sheet showing a wallet balance."
+   },
+   "third_party": [
+    "Fintava: wallet balance enquiry",
+    "Fintava: wallet-to-wallet / wallet-to-collection debit"
+   ],
+   "facts_on_canvas": [
+    "Fee: No fee (on ticket purchase)",
+    "Naira wallet · ₦485,250.75 available",
+    "Total ₦7,500"
+   ],
+   "conflicts": [
+    "Payment rail: 'Pay from wallet' (Fintava) vs current Flutterwave checkout for tickets (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "E4",
+   "flow": "events",
+   "title": "PIN",
+   "kind": "state",
+   "journey": "Buy a ticket",
+   "what_it_shows": "PIN keypad over the order sheet: 'Enter your PIN · Approve ₦7,500 to WAWU Creators Summit', then 'PIN accepted'. (Not in MANIFEST; regex missed it, present in events.txt between E3 and E5.)",
+   "user_actions": [
+    "enter 4-6 digit PIN"
+   ],
+   "data_needed": [
+    "wallet transaction PIN set/verify, attempt lockout",
+    "payee label (event name)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-routes for 'pin': only admin event feature pin; No transaction PIN exists anywhere (grep 'pinHash|transactionPin|walletPin|setPin|verifyPin' over src + schema = 0 hits)."
+    ],
+    "gap": "Needs a wallet PIN: set/change/reset endpoints, hashed storage, attempt counter + lockout, and the ticket debit authorised only after PIN verify. If Fintava issues/validates the PIN, needs that integration instead."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no PIN step; Flutterwave's modal handles card/OTP."
+   },
+   "third_party": [
+    "Fintava: transaction authorisation (PIN) if provider-side"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E5",
+   "flow": "events",
+   "title": "Ticket",
+   "kind": "screen",
+   "journey": "Buy a ticket",
+   "what_it_shows": "Success: 'Your ticket · You're in. Show this at the door.' QR, code K7QX-4M2P-9WLA-3RTE, tier + holder name, Add to calendar, My tickets.",
+   "user_actions": [
+    "show QR",
+    "Add to calendar",
+    "go to My tickets (E6)"
+   ],
+   "data_needed": [
+    "issued tickets with code, tier name, event name/startsAt/location",
+    "holder display name"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/events/orders/{orderId}/verify returns tickets (code, status, ticketType.name, event)",
+     "ticketCode() in event-ticketing.service.ts makes the XXXX-XXXX-XXXX-XXXX code shown"
+    ],
+    "gap": "With wallet payment the issue step is no longer behind verifyOrder(transaction_id, tx_ref); tickets are issued on confirmed wallet debit (same issueOrder transaction)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/tickets",
+     "src/components/events/MyTicketsList.tsx"
+    ],
+    "delta": "Web shows tickets in a list after checkout; no 'Add to calendar' action (grep 'calendar|ics' in MyTicketsList = 0)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "ticket code format K7QX-4M2P-9WLA-3RTE"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E6",
+   "flow": "events",
+   "title": "My tickets",
+   "kind": "screen",
+   "journey": "Your tickets",
+   "what_it_shows": "My tickets with Upcoming / Past tabs; rows grouped per order ('1 × Regular', '2 × VIP').",
+   "user_actions": [
+    "switch Upcoming/Past",
+    "tap a ticket (E7)"
+   ],
+   "data_needed": [
+    "buyer's tickets with event startsAt for upcoming/past split",
+    "grouping by order and tier"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/events/tickets/mine (tickets with event.startsAt, cancelledAt, status)"
+    ],
+    "gap": "Grouping into '2 × VIP' is client-side from orderId-less ticket rows: the response does not return orderId; group by event+tier works."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/tickets"
+    ],
+    "delta": "Web splits 'live' vs 'Used and cancelled', not Upcoming vs Past, and lists each ticket separately."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E7",
+   "flow": "events",
+   "title": "Ticket QR",
+   "kind": "screen",
+   "journey": "Your tickets",
+   "what_it_shows": "Single ticket with large QR and code; note 'Brightness goes up when this opens.'",
+   "user_actions": [
+    "show QR at door"
+   ],
+   "data_needed": [
+    "ticket code, tier, holder, event"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/events/tickets/mine"
+    ],
+    "gap": "Screen-brightness boost is a native-app capability, no backend."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/tickets MyTicketsList"
+    ],
+    "delta": "Web renders QR inline in the list; no full-screen ticket view; browser cannot raise brightness."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E8",
+   "flow": "events",
+   "title": "Filters",
+   "kind": "state",
+   "journey": "Buy a ticket",
+   "what_it_shows": "Filter sheet over E1: 'Browse the calendar' When (Upcoming/Past), Kind (All/Conference/Workshop/Concert/Meetup), Category (Every category), 'Show 24 events'.",
+   "user_actions": [
+    "pick when",
+    "pick kind",
+    "pick category",
+    "apply"
+   ],
+   "data_needed": [
+    "filter by view, kind, category",
+    "total count for the button label"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/events ?view=upcoming|past &type= &category= (paginated total)",
+     "schema enum EventType = workshop|summit|webinar|meetup|competition; EventCategory = music|business|training|conference|church|entertainment|fashion|community|lifestyle|other"
+    ],
+    "gap": "Board 'Kind' values Conference and Concert are not EventType values (Conference exists only as an EventCategory; Concert exists nowhere). Either remap Kind to EventCategory or extend EventType."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events EventsBrowser + EventFilterChips"
+    ],
+    "delta": "Web shows format/type chips and category chips inline rather than in a sheet; kinds differ from board."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Show 24 events"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E9",
+   "flow": "events",
+   "title": "Sold out",
+   "kind": "state",
+   "journey": "Buy a ticket",
+   "what_it_shows": "Event detail with every tier marked Sold out and 'Every ticket for this event has sold.'",
+   "user_actions": [],
+   "data_needed": [
+    "soldOut per tier"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/events/{id}/tickets (soldOut, remaining)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "TicketPurchasePanel shows 'Sold out' per tier"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E10",
+   "flow": "events",
+   "title": "Still confirming",
+   "kind": "state",
+   "journey": "Buy a ticket",
+   "what_it_shows": "After PIN: 'Paid, still confirming. Don't pay again. Your ticket shows up in a minute.' with Refresh.",
+   "user_actions": [
+    "Refresh"
+   ],
+   "data_needed": [
+    "order status pending vs paid",
+    "idempotent confirm"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events/orders/{orderId}/verify (idempotent on paid)",
+     "payment-webhook.service.ts settles event-ticket-order by flutterwaveTxRef"
+    ],
+    "gap": "Today 'still confirming' is a Flutterwave charge awaiting verify/webhook. With wallet payment it becomes a Fintava debit whose status is pending: needs a GET order-status route (none exists; only verify) and a Fintava webhook/requery path replacing the Flutterwave webhook lookup on EventOrder.flutterwaveTxRef."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "TicketPurchasePanel phase 'unconfirmed'"
+    ],
+    "delta": "Web shows 'Your payment went through. We are still confirming it' with a retry-verify button; same intent, Flutterwave-based."
+   },
+   "third_party": [
+    "Fintava: transaction status requery / webhook"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E11",
+   "flow": "events",
+   "title": "Called off",
+   "kind": "state",
+   "journey": "Your tickets",
+   "what_it_shows": "Ticket view for a cancelled event: 'This event was called off · ₦7,500 is back in your Naira wallet.'",
+   "user_actions": [],
+   "data_needed": [
+    "ticket void status, event cancelledAt, refund amount and destination"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events/{id}/cancel voids tickets and calls flutterwave.refundCharge per EventOrder (refund to the original card/account)",
+     "GET /api/hub/events/tickets/mine returns event.cancelledAt"
+    ],
+    "gap": "Refund destination changes: board says money returns to the buyer's Naira wallet. Needs a wallet credit (Fintava transfer from wherever ticket money is held back to the buyer wallet) replacing flutterwave.refundCharge; myTickets response has no refund amount/status (EventOrder.refundedAt/refundReference not exposed)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "MyTicketsList: 'This event was called off · Your money has been refunded.'"
+    ],
+    "delta": "Web says refunded, not 'back in your Naira wallet', and shows no amount."
+   },
+   "third_party": [
+    "Fintava: credit/reversal to buyer wallet"
+   ],
+   "facts_on_canvas": [
+    "₦7,500 is back in your Naira wallet"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E12",
+   "flow": "events",
+   "title": "Checked in",
+   "kind": "state",
+   "journey": "Your tickets",
+   "what_it_shows": "Ticket view: 'Already checked in Sun 12 Oct at 09:52.'",
+   "user_actions": [],
+   "data_needed": [
+    "ticket status checked_in + checkedInAt"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/events/tickets/mine (status, checkedInAt)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "MyTicketsList 'Already checked in' callout"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E13",
+   "flow": "events",
+   "title": "Basics",
+   "kind": "screen",
+   "journey": "Host an event",
+   "what_it_shows": "Host wizard step 1 of 3 (Basics / When and where / Tickets): event name, what happens at it, who is running it (Adeyemi & Co), Format In person / Online / Hybrid.",
+   "user_actions": [
+    "enter name, description, organiser",
+    "pick format",
+    "Continue (E14)"
+   ],
+   "data_needed": [
+    "host eligibility (verified tick)",
+    "name, description, hostOrg, format"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events (CreateEventDto name, description, hostOrg, format, type, startsAt, location required)",
+     "EventService.assertMayHost (verified creator or professional tick)"
+    ],
+    "gap": "Format 'Hybrid' does not exist: enum EventFormat = in_person|online. CreateEventDto also REQUIRES `type` (EventType) and `location`, which no board step collects (board has Category, and Street address only)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/new",
+     "src/components/events/EventForm.tsx"
+    ],
+    "delta": "Web is one long form (format in_person/online only, type select, category select, speakers, contact email/phone, external URL) rather than a 3-step wizard; tickets are set on a separate page /events/[id]/tickets."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E14",
+   "flow": "events",
+   "title": "When and where",
+   "kind": "screen",
+   "journey": "Host an event",
+   "what_it_shows": "Step 2: starts/ends, street address with hint 'Missing addresses are the top reason events get sent back.', banner image upload, Category 'Business & Finance'.",
+   "user_actions": [
+    "set start/end",
+    "enter street address",
+    "upload banner",
+    "pick category",
+    "Continue (E15)"
+   ],
+   "data_needed": [
+    "startsAt/endsAt",
+    "address",
+    "banner upload → bannerUrl",
+    "category list with display labels"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events (startsAt, endsAt, address, bannerUrl, category)",
+     "POST /api/hub/uploads/presign for the banner file"
+    ],
+    "gap": "Category label 'Business & Finance' has no matching enum (EventCategory.business); labels need a mapping table. `location` (required) has no field on the board."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/new EventForm"
+    ],
+    "delta": "Web takes banner as a URL text field (bannerUrl must be https://), not an image upload."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Missing addresses are the top reason events get sent back.'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E15",
+   "flow": "events",
+   "title": "Tickets",
+   "kind": "screen",
+   "journey": "Host an event",
+   "what_it_shows": "Step 3: ticket types (name, price, quantity): Regular ₦5,000 × 100, VIP ₦12,000 × 20, Add a ticket type; note 'You keep 85% of every ticket. Set price to ₦0 for a free event.'; Send for review.",
+   "user_actions": [
+    "edit tier name/price/quantity",
+    "add a tier",
+    "Send for review (E16)"
+   ],
+   "data_needed": [
+    "ticket types at submit time",
+    "commission rate for the note"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "PUT /api/hub/events/{id}/tickets (SetTicketTypesDto: tier enum, name, priceNaira, quantity, salesStartAt/EndAt)",
+     "event-ticketing.constants.ts STANDARD_COMMISSION_RATE = 0.15"
+    ],
+    "gap": "Two calls today (POST /events then PUT /events/{id}/tickets) where the board submits once; backend needs a `tier` enum per type (regular|vip|vvip|early_bird|group|free) the board never asks for, and rejects ₦0 unless tier='free' (client must map). Ticket tiers are not part of admin review (AdminEventReview covers the event only)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/[id]/tickets TicketTypeEditor"
+    ],
+    "delta": "Web sets tiers on a separate page after creation."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "You keep 85% of every ticket",
+    "Regular ₦5,000 × 100",
+    "VIP ₦12,000 × 20",
+    "Set price to ₦0 for a free event"
+   ],
+   "conflicts": [
+    "'Set price to ₦0 for a free event' vs current 'no free content' rule (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "E16",
+   "flow": "events",
+   "title": "Sent for review",
+   "kind": "screen",
+   "journey": "Host an event",
+   "what_it_shows": "Confirmation: 'A person checks it. It goes live on its own once approved.' My events / Done.",
+   "user_actions": [
+    "go to My events (E17)",
+    "Done"
+   ],
+   "data_needed": [
+    "event status pending"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/events (lands pending)",
+     "POST /api/hub/admin/events/{id}/approve (pending → published)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/new → /events/mine"
+    ],
+    "delta": "Web returns to My events with a status line rather than a dedicated confirmation screen."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E17",
+   "flow": "events",
+   "title": "My events",
+   "kind": "screen",
+   "journey": "Host an event",
+   "what_it_shows": "Host's events with status pills: Live (64 sold), In review, Sent back (with reviewer's note 'Add the street address.'), Removed (Taken down 20 Sep).",
+   "user_actions": [
+    "open a live event (E18)",
+    "open a sent-back event (E22)"
+   ],
+   "data_needed": [
+    "host's events at every status",
+    "lastDecisionReason",
+    "tickets sold per event"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/events/mine (every status, lastDecisionReason for host)"
+    ],
+    "gap": "EventView carries no sold count; '64 sold' needs a soldCount on /events/mine or one GET /events/{id}/dashboard per row."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/mine",
+     "src/components/events/MyEventsList.tsx"
+    ],
+    "delta": "Web shows status copy (pending/published/rejected/removed) but no sold count."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Creators Summit 64 sold"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E18",
+   "flow": "events",
+   "title": "Organiser dashboard",
+   "kind": "screen",
+   "journey": "Run the event",
+   "what_it_shows": "Live event dashboard: Sold 64, Checked in 0, Left 56, 'Yours after WAWU's cut ₦408,000 · 85%', At the door (scan), Ticket types, Shared links '3 links · 22 sales', Edit event, Call the event off.",
+   "user_actions": [
+    "At the door (E19)",
+    "edit ticket types",
+    "manage shared links",
+    "Edit event",
+    "Call the event off (E25)"
+   ],
+   "data_needed": [
+    "sold/checkedIn/remaining",
+    "net after 15% commission",
+    "referral links with sales count"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/events/{id}/dashboard (ticketsSold, checkedIn, remaining, grossNaira, netNaira, referrals[{code,label,revenueNaira}])",
+     "POST /api/hub/events/{id}/referrals"
+    ],
+    "gap": "Referral rows return revenue only: dashboard() builds byCode.tickets but never increments or returns it, so '22 sales' has no source. netNaira is a computed figure only: no money ever reaches the host (WalletFundingService.run funds Purchase and answered DMs only; grep EventOrder outside event-ticketing finds only admin finance, webhook, payment-link). No GET /events/{id}/referrals list route either (create only)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/[id]/manage EventOrganiserDashboard ('Yours after WAWU's cut')"
+    ],
+    "delta": "Web dashboard exists with the same figures and cancel; copy references Flutterwave refunds."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Yours after WAWU's cut ₦408,000 · 85% (64 × ₦7,500 = ₦480,000 gross; 85% = ₦408,000)",
+    "Left 56 (implies capacity 120)",
+    "3 links · 22 sales"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E19",
+   "flow": "events",
+   "title": "At the door",
+   "kind": "screen",
+   "journey": "Run the event",
+   "what_it_shows": "Camera scanner: 'Point at the ticket QR', 'Type the code instead'.",
+   "user_actions": [
+    "scan QR",
+    "type code"
+   ],
+   "data_needed": [
+    "scan endpoint"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/events/{id}/check-in (ScanTicketDto.code) → valid|already_used|invalid + totals"
+    ],
+    "gap": "Only the host's own account may scan (scan() throws 'Only the organiser can check tickets in.'); no door-staff delegation."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/events/[id]/scan TicketScanner (BarcodeDetector + manual entry)"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E20",
+   "flow": "events",
+   "title": "Let them in",
+   "kind": "state",
+   "journey": "Run the event",
+   "what_it_shows": "Green result: 'LET THEM IN · Regular · Lennox Emmanuel · In the room 23 · Still to arrive 41'.",
+   "user_actions": [],
+   "data_needed": [
+    "tier name, holder display name",
+    "checkedIn and sold totals"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events/{id}/check-in returns ticket.tierName, ticket.buyerWawuId, totals"
+    ],
+    "gap": "Returns buyerWawuId, not the holder's display name the board prints; needs a profile join."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "TicketScanner 'LET THEM IN'"
+    ],
+    "delta": "Web shows the outcome and totals; no holder name."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E21",
+   "flow": "events",
+   "title": "Needs a tick",
+   "kind": "state",
+   "journey": "Host an event",
+   "what_it_shows": "Gate: 'Hosting needs a verified tick · A creator or professional tick, ₦2,000 a year.' Get verified.",
+   "user_actions": [
+    "Get verified"
+   ],
+   "data_needed": [
+    "host eligibility reason + purchasable tick prices"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/events 403 with reason {code: verification_required|account_type_required, purchasable[{kind, priceNgn, termMonths:12}]}",
+     "GET /api/hub/verification/pricing (DEFAULT_VERIFICATION_PRICE_NGN creator 2000, professional 2000)"
+    ],
+    "gap": "Gate fires only on submit; a pre-check (GET /api/hub/verification/me) is needed to show this before the wizard starts."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/events/new HostEventGate"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Verified tick ₦2,000 a year (creator or professional)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E22",
+   "flow": "events",
+   "title": "Sent back",
+   "kind": "state",
+   "journey": "Host an event",
+   "what_it_shows": "Rejected event: 'Sent back · Add the street address, then send it again.' with the address field flagged 'Needed before it can go live' and Send again.",
+   "user_actions": [
+    "fix field",
+    "Send again"
+   ],
+   "data_needed": [
+    "lastDecisionReason",
+    "edit + resubmit"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "PATCH /api/hub/events/{id} (any edit returns status to pending)",
+     "GET /api/hub/events/mine lastDecisionReason"
+    ],
+    "gap": "No per-field flag: the reason is free text, so 'Needed before it can go live' on a specific field cannot be driven by data."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/events/[id]/edit"
+    ],
+    "delta": "Web shows the reason and the full edit form; no field-level highlight."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E23",
+   "flow": "events",
+   "title": "Already used",
+   "kind": "state",
+   "journey": "Run the event",
+   "what_it_shows": "Amber result: 'ALREADY USED · Checked in at 09:52 by Door 1'.",
+   "user_actions": [],
+   "data_needed": [
+    "checkedInAt",
+    "which door/scanner checked it in"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events/{id}/check-in → already_used with checkedInAt; EventTicket.checkedInBy stores the scanner's WAWU id"
+    ],
+    "gap": "'by Door 1' needs named scanners/doors: no door-staff model, scan restricted to host, checkedInBy not returned."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "TicketScanner 'ALREADY USED' with time"
+    ],
+    "delta": "Web shows the time, not the door."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E24",
+   "flow": "events",
+   "title": "Not valid",
+   "kind": "state",
+   "journey": "Run the event",
+   "what_it_shows": "Red result: 'NOT A VALID TICKET · This code isn't for this event'.",
+   "user_actions": [],
+   "data_needed": [
+    "invalid outcome"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/events/{id}/check-in → invalid (wrong event, unknown or void code)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "TicketScanner 'NOT A VALID TICKET'"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "E25",
+   "flow": "events",
+   "title": "Call it off",
+   "kind": "state",
+   "journey": "Run the event",
+   "what_it_shows": "Cancel sheet over E18: 'Cancel this event · This refunds real money · All 64 buyers get their money back. Why: The venue withdrew.' Cancel and refund everyone / Keep the event.",
+   "user_actions": [
+    "enter reason",
+    "Cancel and refund everyone",
+    "Keep the event"
+   ],
+   "data_needed": [
+    "count of buyers (distinct), reason ≥10 chars",
+    "refund outcome per order"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/events/{id}/cancel (CancelEventDto.reason 10-500 chars) → {ordersRefunded, refundsNeedingAttention}"
+    ],
+    "gap": "Refund is flutterwave.refundCharge per EventOrder keyed on flutterwaveTxId; with wallet payment it must be a Fintava credit to each buyer wallet from the account holding ticket money. '64 buyers' on the board is the ticket count; the backend refunds per order (buyers ≠ tickets), no distinct-buyer count is returned by the dashboard."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "EventOrganiserDashboard cancel dialog"
+    ],
+    "delta": "Web reports refunds needing attention (Flutterwave failures)."
+   },
+   "third_party": [
+    "Fintava: bulk credit/reversal to buyer wallets"
+   ],
+   "facts_on_canvas": [
+    "All 64 buyers get their money back"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P1",
+   "flow": "professionals",
+   "title": "Professionals",
+   "kind": "screen",
+   "journey": "Find a professional",
+   "what_it_shows": "Directory: 'Vetted practitioners. Pay to send the first message.' Field chips (All, Accounting & Tax, Legal & Compliance, Design & Creative), rows with name, headline incl. years, field, price per message.",
+   "user_actions": [
+    "filter by field",
+    "tap a professional (P2)"
+   ],
+   "data_needed": [
+    "approved+listed professionals by category",
+    "headline",
+    "dmPrice, dmEnabled"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/professionals?category= (ProfessionalController_list; listing carries dmEnabled, dmPrice, dmResponseHours)"
+    ],
+    "gap": "Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug. Years of experience is free text inside headline (no field)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/professionals",
+     "src/components/professionals/ProfessionalCard.tsx"
+    ],
+    "delta": "Web directory exists with category filter; web card notes ratings that backend now returns (ratingAvg/reviewCount) but board draws none."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Funmi Adeyemi ₦5,000 a message",
+    "Tunde Bakare ₦7,500 a message",
+    "Ngozi Umeh ₦2,500 a message",
+    "Emeka Obi ₦3,000 a message",
+    "'Pay to send the first message'"
+   ],
+   "conflicts": [
+    "Pricing unit: board says both '₦5,000 a message' and 'Pay to send the first message' (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "P2",
+   "flow": "professionals",
+   "title": "Profile",
+   "kind": "screen",
+   "journey": "Find a professional",
+   "what_it_shows": "Professional profile: name, headline, field, 'Ask a question · ₦5,000', 'Funmi replies within 24 hours, or you're refunded automatically.', About, What they take on (Tax filing, CAC annual returns, Bookkeeping, Payroll), Credentials 'Practising licence · Issued by ICAN · checked by WAWU'. Then Ask a question opens the paid DM (I3, Inbox flow).",
+   "user_actions": [
+    "Ask a question (→ I3 paid DM)"
+   ],
+   "data_needed": [
+    "profile detail: headline, about, services[], credentialKind, issuingBody",
+    "dmPrice, dmResponseHours",
+    "auto-refund promise"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/professionals/{id} (ProfessionalProfile.headline, about, services, credentialKind, issuingBody; CreatorState dmPrice/dmResponseHours)",
+     "POST /api/hub/dm/{creatorWawuId}/send + /dm/{messageId}/send/verify (paid DM)",
+     "GET /api/hub/admin/payments/dm-refunds (refund executor exists)"
+    ],
+    "gap": "Data served. The paid DM it opens is still a Flutterwave charge (direct-message.service.ts initCharge) and its refund is a Flutterwave refund; moving to the wallet is the Inbox flow's change (I3)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/professionals/[id]",
+     "src/components/professionals/ProfessionalContact.tsx"
+    ],
+    "delta": "Web pays the DM via Flutterwave."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Ask a question · ₦5,000",
+    "Replies within 24 hours, or you're refunded automatically",
+    "Practising licence · Issued by ICAN · checked by WAWU"
+   ],
+   "conflicts": [
+    "24-hour refund guarantee paid from wallet implies WAWU holds the ₦5,000 until a reply: possible 'escrow' under the bundle rule 'Professionals: paid DMs only. No booking or escrow.' (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "P3",
+   "flow": "professionals",
+   "title": "Not taking messages",
+   "kind": "state",
+   "journey": "Find a professional",
+   "what_it_shows": "Profile with button replaced: 'Not taking messages · Check back later, or find someone else in this field.'",
+   "user_actions": [],
+   "data_needed": [
+    "dmEnabled=false or no price"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/professionals/{id} (dmEnabled = CreatorState.dmEnabled && dmPrice > 0)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/professionals/[id] ProfessionalContact"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P4",
+   "flow": "professionals",
+   "title": "Empty field",
+   "kind": "state",
+   "journey": "Find a professional",
+   "what_it_shows": "Empty category: 'Nobody listed in Engineering yet · If you do this work, apply to be listed here.' Offer your services.",
+   "user_actions": [
+    "Offer your services (P5)"
+   ],
+   "data_needed": [
+    "empty list for a category"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/professionals?category="
+    ],
+    "gap": "'Engineering' is not in PROFESSIONAL_CATEGORIES, so this exact field cannot exist without adding a slug."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/professionals empty state 'No professionals listed yet'"
+    ],
+    "delta": "Web empty state copy differs."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P5",
+   "flow": "professionals",
+   "title": "Offer your services",
+   "kind": "screen",
+   "journey": "Get listed",
+   "what_it_shows": "Application step 1: 'People find you here and pay to send the first message.' Which fields? (Accounting & Tax, Add), one-line headline, about, what you take on (chips).",
+   "user_actions": [
+    "pick one or more fields",
+    "enter headline/about/services",
+    "Continue (P6)"
+   ],
+   "data_needed": [
+    "category list",
+    "creator account check"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/professionals/applications (ApplyProfessionalDto: ONE category, headline, about, services[], credentialKind, licenceNumber, issuingBody, documents[])"
+    ],
+    "gap": "Board lets the user Add several fields in one pass; backend takes one category per application (unique wawuUserId+category), so the client must post once per field. Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/professionals/apply"
+    ],
+    "delta": "Web apply form exists, one category per submission."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'pay to send the first message'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P6",
+   "flow": "professionals",
+   "title": "Credentials",
+   "kind": "screen",
+   "journey": "Get listed",
+   "what_it_shows": "Step 2 for a regulated field: 'This field is regulated · We check your licence with the body that issued it.' Kind (Practising licence / Qualification / Work samples), Licence number ICAN/2016/40921, Who issued it ICAN, uploaded ican-licence.pdf, Send for review.",
+   "user_actions": [
+    "pick credential kind",
+    "enter licence number + issuer",
+    "upload document",
+    "Send for review (P7)"
+   ],
+   "data_needed": [
+    "regulated-category rule",
+    "document upload"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/professionals/applications (credentialKind licence|qualification|portfolio; isRegulatedCategory: legal_services, healthcare, finance, insurance_pensions)",
+     "POST /api/hub/uploads/presign",
+     "POST /api/hub/admin/professionals/{id}/document-url"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/professionals/apply"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'We check your licence with the body that issued it' (verification claim)",
+    "Licence number ICAN/2016/40921, issuer ICAN"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P7",
+   "flow": "professionals",
+   "title": "Under review",
+   "kind": "screen",
+   "journey": "Get listed",
+   "what_it_shows": "'Under review · Accounting & Tax · A person checks it. You'll see the outcome in your listings.' My listings / Done.",
+   "user_actions": [
+    "My listings (P8)",
+    "Done"
+   ],
+   "data_needed": [
+    "application status pending"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/professionals/applications → status pending",
+     "GET /api/hub/admin/professionals/queue"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/professionals/apply → /professionals/mine"
+    ],
+    "delta": "Web confirmation is inline rather than a separate screen."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P8",
+   "flow": "professionals",
+   "title": "Your listings",
+   "kind": "screen",
+   "journey": "Get listed",
+   "what_it_shows": "Listings per field: Listed (Hide), Under review, Turned down with reason 'This field needs a practising licence.' + Apply again; Apply in another field; note 'People reach you through paid messages · Set your price and reply time in Inbox settings (I21).'",
+   "user_actions": [
+    "Hide a listing (P9)",
+    "Apply again",
+    "Apply in another field",
+    "go to Inbox settings (I21)"
+   ],
+   "data_needed": [
+    "my applications with status, listed, rejectionReason"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/professionals/applications/mine",
+     "PATCH /api/hub/professionals/applications/{id}/listing",
+     "POST /api/hub/professionals/applications (upsert re-applies a rejected category)",
+     "PATCH /api/hub/creator/dm-settings (price + reply time, for I21)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/professionals/mine",
+     "/messages/settings"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P9",
+   "flow": "professionals",
+   "title": "Hidden",
+   "kind": "state",
+   "journey": "Get listed",
+   "what_it_shows": "Listing hidden: 'Hidden. Nobody can find you' with Show.",
+   "user_actions": [
+    "Show"
+   ],
+   "data_needed": [
+    "listed=false"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "PATCH /api/hub/professionals/applications/{id}/listing {listed}"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/professionals/mine"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "P10",
+   "flow": "professionals",
+   "title": "Needs a creator account",
+   "kind": "state",
+   "journey": "Get listed",
+   "what_it_shows": "Gate: 'This needs a creator account · Setting one up is free.' Become a creator.",
+   "user_actions": [
+    "Become a creator"
+   ],
+   "data_needed": [
+    "accountType"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/professionals/applications 403 'Only a creator account can apply to be listed as a professional.' (professional.service.ts apply)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/professionals/apply gate",
+     "/creator/setup"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Creator account setup is free"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S2",
+   "flow": "services",
+   "title": "Pay a bill",
+   "kind": "screen",
+   "journey": "Pay electricity",
+   "what_it_shows": "Pay a bill home: Bill reminders banner '3 due in October · ₦38,200', categories Airtime / Data / Electricity / Cable TV, Recent (Ikeja Electric meter ₦10,500, MTN airtime ₦2,000, DStv Compact ₦15,700). Reached from S1 (Start-here: Home Pay bills, balance-card Bills, Wallet bills row).",
+   "user_actions": [
+    "pick a category (S3/S8/S9)",
+    "open Bill reminders (S27)",
+    "repeat a recent bill"
+   ],
+   "data_needed": [
+    "bill categories",
+    "recent bills of this user",
+    "reminders summary for the month"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/bills/categories",
+     "GET /api/hub/bills/mine (recent)"
+    ],
+    "gap": "Categories and recents served (Flutterwave top-bill-categories). The reminders banner has no source: no reminder model or route (searched backend-models, backend-routes, grep -i 'reminder' finds only verification-reminder.service.ts and NotificationSettings.dmReminders)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/pay"
+    ],
+    "delta": "Web bill pay exists (categories, biller, package, validate, Recent) but has no reminders and pays via Flutterwave checkout."
+   },
+   "third_party": [
+    "Flutterwave Bills (current) or Fintava VAS: categories"
+   ],
+   "facts_on_canvas": [
+    "3 due in October · ₦38,200",
+    "Ikeja Electric ₦10,500",
+    "MTN airtime ₦2,000",
+    "DStv Compact ₦15,700"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S3",
+   "flow": "services",
+   "title": "Biller",
+   "kind": "screen",
+   "journey": "Pay electricity",
+   "what_it_shows": "Electricity billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric with prepaid/postpaid notes.",
+   "user_actions": [
+    "pick a biller (S4)"
+   ],
+   "data_needed": [
+    "billers in category"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/bills/categories/{category}/billers",
+     "GET /api/hub/bills/billers/{billerCode}/items (prepaid/postpaid items)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/services/pay"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Flutterwave Bills: billers"
+   ],
+   "facts_on_canvas": [
+    "Billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S4",
+   "flow": "services",
+   "title": "Meter and amount",
+   "kind": "screen",
+   "journey": "Pay electricity",
+   "what_it_shows": "Meter number with validated name AND address ('Chidinma Okoro · 14 Admiralty Way'), amount ₦10,000 with presets ₦2,000/₦5,000/₦10,000/₦20,000.",
+   "user_actions": [
+    "enter meter",
+    "pick amount",
+    "Continue (S5)"
+   ],
+   "data_needed": [
+    "meter validation returning name and address",
+    "min/max amount"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/bills/validate (returns name, fee, minimum, maximum)"
+    ],
+    "gap": "Validation returns name only; the address on the board is not passed through from the provider response."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/pay validateBillCustomer"
+    ],
+    "delta": "Web validates and shows the name; no address; presets may differ."
+   },
+   "third_party": [
+    "Flutterwave Bills: validate customer"
+   ],
+   "facts_on_canvas": [
+    "Amount presets ₦2,000 / ₦5,000 / ₦10,000 / ₦20,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S5",
+   "flow": "services",
+   "title": "Review",
+   "kind": "screen",
+   "journey": "Pay electricity",
+   "what_it_shows": "Review: Ikeja Electric · Prepaid ₦10,000.00, meter, name, Fee 'No fee', Total, 'Pay from wallet · Naira wallet · ₦485,250.75 available', Pay ₦10,000.",
+   "user_actions": [
+    "Pay ₦10,000 (S6)"
+   ],
+   "data_needed": [
+    "buyer wallet balance",
+    "fee"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/bills/init (Flutterwave checkout)",
+     "BillPaymentController init returns a Flutterwave checkout config (bill-payment.service.ts init: 'record the intent, hand back a Flutterwave checkout config'); the bill is then paid from WAWU's own Flutterwave float via FlutterwaveBillsClient.payBill."
+    ],
+    "gap": "No wallet debit for bills. Needs bills init that debits the buyer's Fintava wallet (after PIN) and then pays the biller, either through a Fintava VAS API or by funding WAWU's Flutterwave float from the wallet. BillPayment.flutterwaveTxRef is @unique non-null and must become a provider-neutral reference."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/pay openFlutterwaveCheckout"
+    ],
+    "delta": "Web hands off to Flutterwave checkout."
+   },
+   "third_party": [
+    "Fintava: wallet debit",
+    "Fintava: bill payment / VAS (if offered)"
+   ],
+   "facts_on_canvas": [
+    "Fee: No fee (bills)",
+    "Naira wallet · ₦485,250.75 available"
+   ],
+   "conflicts": [
+    "Payment rail: wallet vs Flutterwave checkout for bills (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "S6",
+   "flow": "services",
+   "title": "PIN",
+   "kind": "state",
+   "journey": "Pay electricity",
+   "what_it_shows": "PIN keypad over S5: 'Approve ₦10,000 to Ikeja Electric', then 'PIN accepted'. (Not in MANIFEST; present in services.txt between S5 and S7.)",
+   "user_actions": [
+    "enter PIN"
+   ],
+   "data_needed": [
+    "wallet PIN verify"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-routes 'pin': none for wallet; No transaction PIN exists anywhere (grep 'pinHash|transactionPin|walletPin|setPin|verifyPin' over src + schema = 0 hits)."
+    ],
+    "gap": "Same wallet PIN build as E4."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "No PIN step on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S7",
+   "flow": "services",
+   "title": "Token",
+   "kind": "screen",
+   "journey": "Pay electricity",
+   "what_it_shows": "Receipt: ₦10,000 paid, prepaid token '4821 0937 5510 2286 7734' with Copy, 45.2 kWh, meter, reference WAW-BIL-8Q2M, date, Share receipt, Done.",
+   "user_actions": [
+    "Copy token",
+    "Share receipt",
+    "Done"
+   ],
+   "data_needed": [
+    "electricity token and units from the provider",
+    "WAWU reference",
+    "delivered status"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/bills/{id}/verify",
+     "GET /api/hub/bills/mine (status, providerReference, deliveredAt)"
+    ],
+    "gap": "No token or units are stored or returned: BillPayment has providerReference/providerStatus only; grep 'token|units|extra' in bill-payment finds nothing. Reference format on board (WAW-BIL-xxxx) differs from backend txRef 'wawu-bill-<uuid>'."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/pay"
+    ],
+    "delta": "Web shows a status/receipt without a token."
+   },
+   "third_party": [
+    "Flutterwave Bills: bill status (token in response extras)"
+   ],
+   "facts_on_canvas": [
+    "45.2 kWh for ₦10,000",
+    "Reference format WAW-BIL-8Q2M"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S8",
+   "flow": "services",
+   "title": "Airtime",
+   "kind": "screen",
+   "journey": "Airtime",
+   "what_it_shows": "Airtime: network MTN/Airtel/Glo/9mobile, phone number with 'Mine', amount presets ₦500/₦1,000/₦2,000/₦5,000, Buy ₦2,000 airtime; then PIN and receipt like S7.",
+   "user_actions": [
+    "pick network",
+    "enter/choose number",
+    "pick amount",
+    "Buy"
+   ],
+   "data_needed": [
+    "airtime billers",
+    "own phone number"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/bills/categories/{category}/billers",
+     "POST /api/hub/bills/init"
+    ],
+    "gap": "Catalogue served; payment is Flutterwave checkout, not wallet (see S5)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/pay"
+    ],
+    "delta": "Web airtime via Flutterwave checkout."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Airtime presets ₦500 / ₦1,000 / ₦2,000 / ₦5,000",
+    "Networks MTN, Airtel, Glo, 9mobile"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S9",
+   "flow": "services",
+   "title": "Cable package",
+   "kind": "screen",
+   "journey": "Cable TV",
+   "what_it_shows": "DStv packages with monthly prices; then smartcard, review, PIN, receipt.",
+   "user_actions": [
+    "pick package",
+    "Continue"
+   ],
+   "data_needed": [
+    "biller items with prices"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/bills/billers/{billerCode}/items"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/services/pay package step"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "DStv Padi ₦4,400/month",
+    "DStv Yanga ₦6,000/month",
+    "DStv Confam ₦11,000/month",
+    "DStv Compact ₦15,700/month",
+    "DStv Compact Plus ₦25,000/month"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S10",
+   "flow": "services",
+   "title": "Meter not found",
+   "kind": "state",
+   "journey": "Pay electricity",
+   "what_it_shows": "'We couldn't find this meter. Check the number.'",
+   "user_actions": [],
+   "data_needed": [
+    "validation failure"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/bills/validate"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/services/pay"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S11",
+   "flow": "services",
+   "title": "Not enough in wallet",
+   "kind": "state",
+   "journey": "Pay electricity",
+   "what_it_shows": "'Not enough in your Naira wallet · You have ₦6,200.00. Add ₦3,800 to pay this.' Add ₦3,800.",
+   "user_actions": [
+    "Add ₦3,800 (wallet top-up)"
+   ],
+   "data_needed": [
+    "buyer wallet balance",
+    "shortfall",
+    "top-up entry"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "GET /api/hub/wallet (creator payout subaccount only)"
+    ],
+    "gap": "No buyer wallet, no balance check before a bill, no top-up/fund route (wallet funding is the Wallet flow)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no wallet-balance gate on bills."
+   },
+   "third_party": [
+    "Fintava: balance, funding via virtual account"
+   ],
+   "facts_on_canvas": [
+    "Balance ₦6,200.00, shortfall ₦3,800"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S12",
+   "flow": "services",
+   "title": "Failed",
+   "kind": "state",
+   "journey": "Pay electricity",
+   "what_it_shows": "'Payment didn't go through · Ikeja Electric didn't confirm it · Reversed to your wallet', amount, reference, Done / Try again.",
+   "user_actions": [
+    "Done",
+    "Try again"
+   ],
+   "data_needed": [
+    "failed status",
+    "automatic reversal to wallet"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/bills/{id}/verify (marks failed)",
+     "GET /api/hub/bills/ops/stuck",
+     "POST /api/hub/bills/ops/{id}/reconcile",
+     "POST /api/hub/bills/ops/{id}/record-refund ('Records a refund a human has already sent')"
+    ],
+    "gap": "Failure is detected, but refunds are manual (no Flutterwave refund adapter for bills). Board promises automatic reversal to the wallet: needs an automatic wallet credit on biller failure."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/pay"
+    ],
+    "delta": "Web tells the payer a refund is coming; not 'reversed to your wallet'."
+   },
+   "third_party": [
+    "Fintava: reversal/credit to wallet"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S13",
+   "flow": "services",
+   "title": "Not live yet",
+   "kind": "state",
+   "journey": "Pay electricity",
+   "what_it_shows": "'Bill payments aren't switched on yet · You'll be able to pay airtime, data, electricity and cable from your wallet here soon.'",
+   "user_actions": [],
+   "data_needed": [
+    "bills live flag"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/services (PartnerService.status for slug 'pay')"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/services/pay ServiceComingSoon / 'Bill payments are not switched on yet' callout"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S27",
+   "flow": "services",
+   "title": "This month",
+   "kind": "screen",
+   "journey": "Plan the month",
+   "what_it_shows": "Bill reminders for October 2026: 'Still to pay this month ₦38,200', 'In your wallet ₦485,250', list: DStv Compact on WAWU ₦15,700 Paid (Oct 05), Ikeja Electric on WAWU ₦10,500 in 3 days (Oct 28), House rent reminder-only ₦25,000, Gym subscription reminder-only ₦2,700; Plus to add.",
+   "user_actions": [
+    "add a reminder (S28)",
+    "tap a due WAWU bill (S30)",
+    "mark a reminder-only item paid"
+   ],
+   "data_needed": [
+    "reminders per user with due day, amount, kind (on WAWU / reminder only)",
+    "paid state for this month (auto from BillPayment for WAWU bills)",
+    "wallet balance"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-models, backend-routes, grep src"
+    ],
+    "gap": "No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "No reminders on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Still to pay ₦38,200",
+    "In your wallet ₦485,250",
+    "DStv Compact ₦15,700",
+    "Ikeja Electric ₦10,500",
+    "House rent ₦25,000",
+    "Gym membership ₦2,700"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S28",
+   "flow": "services",
+   "title": "New reminder",
+   "kind": "screen",
+   "journey": "Plan the month",
+   "what_it_shows": "New reminder, 'Bill on WAWU' tab: what (Ikeja Electric · meter), usual amount ₦10,500, due every month on the 28th, Remind me (on the day / 1 / 3 days / a week before), Save.",
+   "user_actions": [
+    "choose saved biller",
+    "set amount, due day, lead time",
+    "Save reminder"
+   ],
+   "data_needed": [
+    "saved biller+customerRef from past BillPayment",
+    "reminder CRUD"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-models, backend-routes"
+    ],
+    "gap": "No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders. Needs BillReminder {userId, kind on_wawu|external, billerCode, itemCode, customerRef, name, amount, dueDay, leadDays, lastPaidPeriod} + CRUD routes."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Ikeja Electric usual amount ₦10,500, due the 28th"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S29",
+   "flow": "services",
+   "title": "Reminder",
+   "kind": "state",
+   "journey": "Plan the month",
+   "what_it_shows": "Lock-screen push notification 3 days before: 'Ikeja Electric is due in 3 days · ₦10,500 on the 28th. Tap to pay from your wallet.'",
+   "user_actions": [
+    "tap notification (S30)"
+   ],
+   "data_needed": [
+    "scheduled job",
+    "device push token",
+    "deep link"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "scheduler/scheduler.service.ts exists for cron work; grep 'firebase|fcm|expo-server|apns|webpush|pushToken|deviceToken' over src + schema = 0 hits"
+    ],
+    "gap": "No push-notification infrastructure (only in-app Notification rows) and no reminder scheduler job."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has in-app notifications only."
+   },
+   "third_party": [
+    "Push provider (FCM/APNs or Expo) for mobile"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S30",
+   "flow": "services",
+   "title": "Pay from the reminder",
+   "kind": "screen",
+   "journey": "Plan the month",
+   "what_it_shows": "Prefilled pay sheet over S27: Ikeja Electric, meter, due 28 Oct, amount ₦10,500, Pay from wallet; then PIN (S6) and receipt like S7.",
+   "user_actions": [
+    "Pay ₦10,500"
+   ],
+   "data_needed": [
+    "reminder → bill init prefill",
+    "wallet debit"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/bills/init exists (Flutterwave)"
+    ],
+    "gap": "Depends on reminders (missing) and on wallet-funded bill payment (missing)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S31",
+   "flow": "services",
+   "title": "Not on WAWU",
+   "kind": "state",
+   "journey": "Plan the month",
+   "what_it_shows": "'Anything else' tab: name Gym membership, amount ₦2,700, due the 30th, 'We remind you. You pay it yourself, then tap Mark as paid.'",
+   "user_actions": [
+    "Save reminder",
+    "Mark as paid later"
+   ],
+   "data_needed": [
+    "external reminder with manual paid flag"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-models, backend-routes"
+    ],
+    "gap": "No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S32",
+   "flow": "services",
+   "title": "No reminders yet",
+   "kind": "state",
+   "journey": "Plan the month",
+   "what_it_shows": "Empty state: 'Plan your month · Add your bills and subscriptions once. We remind you before each one is due.' Add a reminder.",
+   "user_actions": [
+    "Add a reminder"
+   ],
+   "data_needed": [
+    "empty reminders list"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-models, backend-routes"
+    ],
+    "gap": "No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S14",
+   "flow": "services",
+   "title": "Legal chat",
+   "kind": "screen",
+   "journey": "Get legal help",
+   "what_it_shows": "WAWU Legal Assistant opening chat: 'Tell me what's going on… then a consultant picks it up. Nothing is charged, and no price is quoted until a consultant has read it.' Quick replies: A tenancy problem / Register a business / Check a contract / Something else.",
+   "user_actions": [
+    "type the problem",
+    "pick a quick reply"
+   ],
+   "data_needed": [
+    "AI chat available before any payment",
+    "matter list for quick replies"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/legal/intake/matters (fourteen matters)",
+     "POST /api/hub/legal/intake",
+     "GET/POST /api/hub/legal/intake/chat/{requestId}"
+    ],
+    "gap": "The backend's assistant chat (legal-chat.service.ts, Gemini) opens ONLY after a consultation is paid (OPEN_FROM = consultation_scheduled…; send() throws 'This conversation opens once your consultation is paid for.'). Free pre-payment profiling is the structured questionnaire legal-intake (matters → answers → complete → brief), not a chat. Board makes chat the intake; needs the assistant reachable on an intake (not a paid LegalRequest) and AI-driven profiling that fills LegalIntake answers."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal",
+     "/services/legal/intake"
+    ],
+    "delta": "Web intake is a step form (matter, questions, brief). No chat UI on web (intake/chat exists only in src/types/api.generated.ts)."
+   },
+   "third_party": [
+    "Google Gemini (GEMINI_CLIENT in legal-chat.service.ts)"
+   ],
+   "facts_on_canvas": [
+    "'Nothing is charged, and no price is quoted until a consultant has read it.'"
+   ],
+   "conflicts": [],
+   "designer_questions": [
+    "From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠."
+   ]
+  },
+  {
+   "id": "S15",
+   "flow": "services",
+   "title": "Profiling",
+   "kind": "screen",
+   "journey": "Get legal help",
+   "what_it_shows": "Assistant asks follow-ups about a 60% mid-lease rent rise (lease signed? time left? review clause?) with quick replies.",
+   "user_actions": [
+    "answer in free text",
+    "tap quick replies"
+   ],
+   "data_needed": [
+    "AI-generated questions mapped to intake answers"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "PATCH /api/hub/legal/intake/{id}/answers (merge)",
+     "legal-intake-questions.ts (fixed question set incl. landlord_tenant)"
+    ],
+    "gap": "Questions exist as a fixed set; no AI that asks them conversationally before payment (see S14)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal/intake"
+    ],
+    "delta": "Web asks the same kind of questions as form fields."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S16",
+   "flow": "services",
+   "title": "Brief",
+   "kind": "screen",
+   "journey": "Get legal help",
+   "what_it_shows": "Brief card for confirmation: Matter Tenancy · rent increase, Lease signed 14 months left, Rent review clause Not sure, Location Lekki, Lagos; 'Send to a consultant · Nothing is charged yet.' Add anything else.",
+   "user_actions": [
+    "Send to a consultant",
+    "Add anything else"
+   ],
+   "data_needed": [
+    "generated brief from answers"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/legal/intake/{id}/complete (generates the brief, legal-brief.ts)",
+     "GET /api/hub/legal/ops/intakes/queue (consultant side)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal/intake"
+    ],
+    "delta": "Web shows a brief at the end of the form."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Nothing is charged yet.'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S17",
+   "flow": "services",
+   "title": "Consultant joins",
+   "kind": "screen",
+   "journey": "Get legal help",
+   "what_it_shows": "Handover: 'Adaora joined. The assistant has stopped replying.' Consultant message, 'Book a consultation · Video, phone or in person', Book / Message Adaora.",
+   "user_actions": [
+    "Book (S18)",
+    "Message Adaora"
+   ],
+   "data_needed": [
+    "consultant identity",
+    "consultant replies in thread pre-payment",
+    "one-way AI stop"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/legal/ops/intakes/chat/{requestId} (consultant reply ends AI turn)",
+     "GET /api/hub/legal/intake/chat/{requestId}"
+    ],
+    "gap": "Handover-stops-AI is implemented, but the thread is keyed by a LegalRequest and opens only after consultation payment; on the board the consultant joins BEFORE any payment. Consultant name/avatar not modelled (replies are authorRole 'consultant', no consultant id)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "No chat thread on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S18",
+   "flow": "services",
+   "title": "Book",
+   "kind": "screen",
+   "journey": "Get legal help",
+   "what_it_shows": "Booking: Video call 30 min ₦15,000, Phone call 20 min ₦10,000, In person 'Arranged by email, fee per matter · On request'; day strip (Tue 30–Mon 6) and times 09:00/10:30/12:00/14:00/15:30/17:00; 'Thu 2 Oct, 12:00 (Lagos time)', Pay ₦15,000.",
+   "user_actions": [
+    "pick medium",
+    "pick day/time",
+    "Pay (S19)"
+   ],
+   "data_needed": [
+    "consultation options and fees",
+    "availability slots"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/legal/catalogue (consultationOptions)",
+     "GET /api/hub/legal/availability",
+     "POST /api/hub/legal/requests/{id}/consultation"
+    ],
+    "gap": "Media differ: backend ConsultationMedium = chat|zoom|physical, no phone. Fees differ: CONSULTATION_FEES chat ₦25,000/60 min, zoom ₦45,000/60 min, physical null. Slots differ: CONSULTATION_HOURS 09:00-16:00 hourly (slotMinutes 60), weekdays, 21-day horizon; board shows 90-minute spacing to 17:00."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal (availability, Book)"
+    ],
+    "delta": "Web books chat/zoom/physical with backend fees."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Video call 30 minutes ₦15,000",
+    "Phone call 20 minutes ₦10,000",
+    "In person: arranged by email, fee per matter, on request",
+    "Slots 09:00, 10:30, 12:00, 14:00, 15:30, 17:00 Lagos time"
+   ],
+   "conflicts": [
+    "Consultation fees/media on board vs backend catalogue (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "S19",
+   "flow": "services",
+   "title": "Pay",
+   "kind": "state",
+   "journey": "Get legal help",
+   "what_it_shows": "Pay sheet over S18: Video consultation Thu 2 Oct 12:00 · 30 min ₦15,000, Pay from wallet; then PIN accepted.",
+   "user_actions": [
+    "Pay ₦15,000",
+    "enter PIN"
+   ],
+   "data_needed": [
+    "wallet debit for consultation fee"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/legal/requests/{id}/consultation returns flutterwaveConfig",
+     "POST /api/hub/legal/requests/{id}/consultation/verify (FlutterwaveCheckoutVerifier)"
+    ],
+    "gap": "Consultation payment is Flutterwave checkout; needs wallet debit + PIN (LegalRequest.consultationTxRef is Flutterwave-shaped)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal openFlutterwaveCheckout"
+    ],
+    "delta": "Web uses Flutterwave."
+   },
+   "third_party": [
+    "Fintava: wallet debit"
+   ],
+   "facts_on_canvas": [
+    "₦15,000 video consultation"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S20",
+   "flow": "services",
+   "title": "Booked",
+   "kind": "screen",
+   "journey": "Get legal help",
+   "what_it_shows": "Matter tracker 'Tenancy agreement review': steps Request sent → Answers read → Consultation Thu 2 Oct 12:00 video → Quote and agreement → Pay and start → Documents delivered; 'Details are in your email.' Add to calendar.",
+   "user_actions": [
+    "Add to calendar"
+   ],
+   "data_needed": [
+    "LegalRequest status ladder",
+    "scheduledFor, medium",
+    "email confirmation"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/legal/requests/{id} (status ladder awaiting_consultation_payment → consultation_scheduled → consultation_done → quoted → contract_signed → awaiting_service_payment → in_progress → delivered)"
+    ],
+    "gap": "Email of booking details not verified in this pass."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal"
+    ],
+    "delta": "Web tracks the same ladder."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S21",
+   "flow": "services",
+   "title": "Quote and sign",
+   "kind": "screen",
+   "journey": "After the consultation",
+   "what_it_shows": "Quote ₦45,000 with 'Read letter', 'Type your full name to sign', Sign this agreement.",
+   "user_actions": [
+    "Read letter",
+    "type name",
+    "Sign"
+   ],
+   "data_needed": [
+    "quote amount",
+    "contract text",
+    "signature capture"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/legal/ops/requests/{id}/quote",
+     "GET /api/hub/legal/requests/{id}/contract",
+     "POST /api/hub/legal/requests/{id}/contract/sign (contractSignedAs, contractSignedAt, contractSignedIp)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/services/legal (quote, sign)"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Quote ₦45,000 (tenancy agreement review)",
+    "Typed-name e-signature"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S22",
+   "flow": "services",
+   "title": "Pay to start",
+   "kind": "screen",
+   "journey": "After the consultation",
+   "what_it_shows": "'Signed as Lennox Emmanuel', Fee ₦45,000, Pay from wallet, 'Pay ₦45,000 to start', then PIN.",
+   "user_actions": [
+    "Pay ₦45,000",
+    "enter PIN"
+   ],
+   "data_needed": [
+    "wallet debit for service fee"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/legal/requests/{id}/payment/init (Flutterwave)",
+     "POST /api/hub/legal/requests/{id}/payment/verify"
+    ],
+    "gap": "Service fee is Flutterwave checkout; needs wallet debit + PIN."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal"
+    ],
+    "delta": "Web uses Flutterwave."
+   },
+   "third_party": [
+    "Fintava: wallet debit"
+   ],
+   "facts_on_canvas": [
+    "Fee ₦45,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S23",
+   "flow": "services",
+   "title": "Delivered",
+   "kind": "screen",
+   "journey": "After the consultation",
+   "what_it_shows": "Documents delivered: 'Reviewed tenancy agreement.pdf · 12 pages', 'Consultant notes.pdf · 3 pages'; documents also land in chat and Notifications.",
+   "user_actions": [
+    "open a document"
+   ],
+   "data_needed": [
+    "multiple deliverable files with page counts",
+    "notification"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/legal/ops/requests/{id}/deliver",
+     "LegalRequest.deliverableUrl (single String)"
+    ],
+    "gap": "Only ONE deliverable URL per request; board shows several files with page counts. Posting documents into the chat thread is not implemented."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal deliverable"
+    ],
+    "delta": "Web shows one deliverable link."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S24",
+   "flow": "services",
+   "title": "Fixed price, in chat",
+   "kind": "screen",
+   "journey": "A fixed-price service",
+   "what_it_shows": "In chat: 'I want to register my business name.' Assistant: fixed price, card 'Business name registration · CAC · 5–7 working days · ₦35,000', Start this request.",
+   "user_actions": [
+    "Start this request (S26)"
+   ],
+   "data_needed": [
+    "fixed-price legal services catalogue surfaced by the assistant"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/legal/catalogue (cac-registration path 'simple', priceNaira null, applyHref /services/cac/apply)",
+     "POST /api/hub/services/cac/apply (CAC_FEE_NAIRA = 25_000 in service-application.service.ts)"
+    ],
+    "gap": "Assistant-in-chat surfacing (pre-payment) missing (see S14). Two CAC routes exist (legal catalogue entry with no price, and service-application CAC at ₦25,000); the board's ₦35,000 matches neither."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/cac",
+     "/services/cac/apply"
+    ],
+    "delta": "Web CAC is a separate partner-service application, not a chat card."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Business name registration · CAC · 5–7 working days · ₦35,000"
+   ],
+   "conflicts": [
+    "CAC price ₦35,000 on board vs CAC_FEE_NAIRA ₦25,000 in backend (see top-level)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "S26",
+   "flow": "services",
+   "title": "Fixed-price request",
+   "kind": "screen",
+   "journey": "A fixed-price service",
+   "what_it_shows": "'Register your business name · With CAC. No lawyer needed. Takes 5–7 working days · You'll need ID, 2 name options, address · Fee ₦35,000', First name choice 'Lennox Films', Continue · ₦35,000; then Pay · PIN and tracked like S20.",
+   "user_actions": [
+    "enter name choices",
+    "Continue · ₦35,000"
+   ],
+   "data_needed": [
+    "CAC application fields",
+    "fee",
+    "wallet debit",
+    "tracking timeline"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/services/cac/apply + /services/cac/apply/verify (Flutterwave)",
+     "GET /api/hub/services/applications/{id} (timeline)",
+     "POST /api/hub/services/ops/applications/{id}/progress"
+    ],
+    "gap": "CAC application and timeline exist under service-application, paid by Flutterwave at ₦25,000; needs wallet debit + PIN and a decision on which price/route (legal 'simple' vs service-application) is canonical."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/cac/apply",
+     "/services/applications/[id]"
+    ],
+    "delta": "Web CAC flow exists with Flutterwave and a different fee."
+   },
+   "third_party": [
+    "Fintava: wallet debit",
+    "CAC (Corporate Affairs Commission) filing is done by WAWU ops, no API integration found"
+   ],
+   "facts_on_canvas": [
+    "Fee ₦35,000",
+    "Takes 5–7 working days",
+    "Needs ID, 2 name options, address",
+    "'No lawyer needed'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "S25",
+   "flow": "services",
+   "title": "No slots",
+   "kind": "state",
+   "journey": "Get legal help",
+   "what_it_shows": "'No slots in the next three weeks · Choose in person and we'll arrange a time by email.' Request in person.",
+   "user_actions": [
+    "Request in person"
+   ],
+   "data_needed": [
+    "availability empty over horizon",
+    "physical booking without slot"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/legal/availability (horizonDays 21)",
+     "POST /api/hub/legal/requests/{id}/consultation with medium physical (no slot, no fee)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/services/legal"
+    ],
+    "delta": "Web handles physical booking; empty-horizon copy not verified."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Booking horizon: three weeks"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  }
+ ],
+ "designer_questions": [
+  {
+   "artboard": "S14–S26 (Legal section header; applies to S18, S19, S21, S22, S24, S26 fees)",
+   "quote": "From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠."
+  }
+ ],
+ "conflicts": [
+  {
+   "topic": "payments provider / rail for tickets, bills, legal fees, CAC",
+   "canvas": "Events board: 'Tickets are paid from the wallet.' E3/S5/S19/S22/S30: '₦ Pay from wallet · Naira wallet · ₦485,250.75 available'. Bundle rule: 'Payments: Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout.'",
+   "current": "Backend: event-ticketing buy() returns flutterwaveConfig and cancel() is 'a real Flutterwave refund per order'; bills, legal consultation/service fees and CAC all init Flutterwave checkout (ref/backend-payment-providers.txt: '1220 flutterwave'). Product rule: 'Each wallet is a Flutterwave *payout subaccount*… Flutterwave custodies it, WAWU only instructs.'",
+   "artboards": [
+    "E3",
+    "E4",
+    "E10",
+    "E11",
+    "E25",
+    "S5",
+    "S6",
+    "S11",
+    "S12",
+    "S19",
+    "S22",
+    "S26",
+    "S30"
+   ]
+  },
+  {
+   "topic": "who has a wallet (buyers vs creators)",
+   "canvas": "Every buyer (ticket buyer, bill payer, legal client) pays 'from wallet' with a Naira balance; refunds go 'back in your Naira wallet' (E11) and failed bills are 'Reversed to your wallet' (S12).",
+   "current": "'**Creators have a wallet; WAWU does not hold the money.** Each wallet is a Flutterwave payout subaccount … in the creator's own name.' Backend CreatorWallet is creator-only and supports earning|withdrawal|reversal, no spend.",
+   "artboards": [
+    "E3",
+    "E11",
+    "S5",
+    "S11",
+    "S12",
+    "S27"
+   ]
+  },
+  {
+   "topic": "custody of ticket money between sale and event (and of paid-DM money until reply)",
+   "canvas": "E25: 'This refunds real money · All 64 buyers get their money back.' E18: 'Yours after WAWU's cut ₦408,000'. P2: 'replies within 24 hours, or you're refunded automatically.'",
+   "current": "'The one line to raise before building is the wallet note: who custodies creator money decides whether a CBN licence is needed… WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.' Today Flutterwave holds the charge and refunds from it; host earnings are never paid out at all (WalletFundingService does not fund EventOrder). With wallet-to-wallet payment, someone must hold ticket money until the event (so cancellation can refund) and DM money until reply.",
+   "artboards": [
+    "E3",
+    "E11",
+    "E18",
+    "E25",
+    "P2"
+   ]
+  },
+  {
+   "topic": "free events vs no free content",
+   "canvas": "E1: 'Monetise Your Content Online · Free'. E15: 'Set price to ₦0 for a free event.'",
+   "current": "'Maximum 5 items per account… every listing carries a price (brief B2: no free content).' and B2 lists 'events & tickets' as a listing type. (Backend already supports TicketTier 'free'; bundle rule also says 'Content can be marked Free.')",
+   "artboards": [
+    "E1",
+    "E15"
+   ]
+  },
+  {
+   "topic": "paid DM pricing unit (professionals)",
+   "canvas": "P1: 'Pay to send the first message.' and '₦5,000 a message'; P5: 'People find you here and pay to send the first message.'",
+   "current": "Backend direct-message.service.ts: 'Paid creator DMs with a 24h response deadline'; every DirectMessage is its own Flutterwave charge with one response (no free follow-up thread).",
+   "artboards": [
+    "P1",
+    "P5"
+   ]
+  },
+  {
+   "topic": "paid-DM refund hold vs 'no escrow'",
+   "canvas": "Bundle rule: 'Professionals: paid DMs only. No booking or escrow.' P2: 'Funmi replies within 24 hours, or you're refunded automatically.'",
+   "current": "Backend holds the DM earning back until answered ('an unanswered one is refundable until it expires', wallet-funding.service.ts) and refunds via DmRefundService. professional.service.ts: 'there is no booking, no scheduling, no escrow'. Whether a wallet-paid conditional hold counts as escrow needs a ruling. Boards P1-P10 otherwise show NO booking, calendar or escrow.",
+   "artboards": [
+    "P2"
+   ]
+  },
+  {
+   "topic": "legal consultation fees and media",
+   "canvas": "S18: 'Video call 30 minutes ₦15,000', 'Phone call 20 minutes ₦10,000', 'In person · Arranged by email, fee per matter · On request'.",
+   "current": "Backend CONSULTATION_FEES: chat 60 min ₦25,000, zoom 60 min ₦45,000, physical no fee; ConsultationMedium enum has no phone. (Designer marks these fees as placeholders.)",
+   "artboards": [
+    "S18",
+    "S19",
+    "S25"
+   ]
+  },
+  {
+   "topic": "CAC business name registration price",
+   "canvas": "S24/S26: 'Business name registration · CAC · 5–7 working days · ₦35,000'.",
+   "current": "service-application.service.ts CAC_FEE_NAIRA = 25_000; legal catalogue 'cac-registration' priceNaira null.",
+   "artboards": [
+    "S24",
+    "S26"
+   ]
+  },
+  {
+   "topic": "legal assistant before payment",
+   "canvas": "Legal section: 'it starts with a chat. The assistant profiles the problem and writes a brief.' S14: 'Nothing is charged'.",
+   "current": "legal-chat.service.ts: 'The thread opens once the consultation is PAID FOR — not at intake.' Pre-payment profiling is a structured form (legal-intake).",
+   "artboards": [
+    "S14",
+    "S15",
+    "S17",
+    "S24"
+   ]
+  },
+  {
+   "topic": "bottom navigation on the Start-here entry maps",
+   "canvas": "Events, Services and Professionals Start-here phones: 'Home Explore Inbox Wallet Me'.",
+   "current": "'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings'.",
+   "artboards": [
+    "E1",
+    "S2",
+    "P1"
+   ]
+  },
+  {
+   "topic": "stale 90/10 credits comment in ticketing code",
+   "canvas": "E15: 'You keep 85% of every ticket.' E18: '85%'.",
+   "current": "Rule: 'Revenue split is a flat 85/15, on every stream… WAWU Credits… moved to 85/15 on 21 Sep 2026.' But event-ticketing.constants.ts comment still says 'WAWU Credits are the deliberate exception at 90/10 for everyone… do not collapse the two.' Ticket rate itself (0.15) matches the canvas.",
+   "artboards": [
+    "E15",
+    "E18"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "E1",
+   "fact": "WAWU Creators Summit from ₦7,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "E1",
+   "fact": "Gospel Night Live from ₦5,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "E1",
+   "fact": "Monetise Your Content Online: Free",
+   "kind": "price"
+  },
+  {
+   "artboard": "E1",
+   "fact": "Aba Fashion Market from ₦3,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "E1",
+   "fact": "Host your event: 'Sell tickets. Verified accounts only.'",
+   "kind": "verification price"
+  },
+  {
+   "artboard": "E2",
+   "fact": "Regular · General admission ₦7,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "E2",
+   "fact": "VIP · Front rows, lunch ₦12,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "E2",
+   "fact": "Early bird · Ended 30 Sep · Sold out",
+   "kind": "price"
+  },
+  {
+   "artboard": "E2",
+   "fact": "1 ticket ₦7,500",
+   "kind": "verification price"
+  },
+  {
+   "artboard": "E2",
+   "fact": "Sun 12 Oct · 10:00 WAT, Eko Convention Centre, Victoria Island",
+   "kind": "price"
+  },
+  {
+   "artboard": "E3",
+   "fact": "Fee: No fee (on ticket purchase)",
+   "kind": "fee"
+  },
+  {
+   "artboard": "E3",
+   "fact": "Naira wallet · ₦485,250.75 available",
+   "kind": "balance (sample)"
+  },
+  {
+   "artboard": "E3",
+   "fact": "Total ₦7,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "E5",
+   "fact": "ticket code format K7QX-4M2P-9WLA-3RTE",
+   "kind": "verification price"
+  },
+  {
+   "artboard": "E8",
+   "fact": "Show 24 events",
+   "kind": "price"
+  },
+  {
+   "artboard": "E11",
+   "fact": "₦7,500 is back in your Naira wallet",
+   "kind": "balance (sample)"
+  },
+  {
+   "artboard": "E14",
+   "fact": "'Missing addresses are the top reason events get sent back.'",
+   "kind": "price"
+  },
+  {
+   "artboard": "E15",
+   "fact": "You keep 85% of every ticket",
+   "kind": "commission/split"
+  },
+  {
+   "artboard": "E15",
+   "fact": "Regular ₦5,000 × 100",
+   "kind": "price"
+  },
+  {
+   "artboard": "E15",
+   "fact": "VIP ₦12,000 × 20",
+   "kind": "price"
+  },
+  {
+   "artboard": "E15",
+   "fact": "Set price to ₦0 for a free event",
+   "kind": "price"
+  },
+  {
+   "artboard": "E17",
+   "fact": "Creators Summit 64 sold",
+   "kind": "price"
+  },
+  {
+   "artboard": "E18",
+   "fact": "Yours after WAWU's cut ₦408,000 · 85% (64 × ₦7,500 = ₦480,000 gross; 85% = ₦408,000)",
+   "kind": "commission/split"
+  },
+  {
+   "artboard": "E18",
+   "fact": "Left 56 (implies capacity 120)",
+   "kind": "price"
+  },
+  {
+   "artboard": "E18",
+   "fact": "3 links · 22 sales",
+   "kind": "price"
+  },
+  {
+   "artboard": "E21",
+   "fact": "Verified tick ₦2,000 a year (creator or professional)",
+   "kind": "verification price"
+  },
+  {
+   "artboard": "E25",
+   "fact": "All 64 buyers get their money back",
+   "kind": "price"
+  },
+  {
+   "artboard": "P1",
+   "fact": "Funmi Adeyemi ₦5,000 a message",
+   "kind": "price"
+  },
+  {
+   "artboard": "P1",
+   "fact": "Tunde Bakare ₦7,500 a message",
+   "kind": "price"
+  },
+  {
+   "artboard": "P1",
+   "fact": "Ngozi Umeh ₦2,500 a message",
+   "kind": "price"
+  },
+  {
+   "artboard": "P1",
+   "fact": "Emeka Obi ₦3,000 a message",
+   "kind": "price"
+  },
+  {
+   "artboard": "P1",
+   "fact": "'Pay to send the first message'",
+   "kind": "price"
+  },
+  {
+   "artboard": "P2",
+   "fact": "Ask a question · ₦5,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "P2",
+   "fact": "Replies within 24 hours, or you're refunded automatically",
+   "kind": "timing/limit"
+  },
+  {
+   "artboard": "P2",
+   "fact": "Practising licence · Issued by ICAN · checked by WAWU",
+   "kind": "provider/body name"
+  },
+  {
+   "artboard": "P5",
+   "fact": "'pay to send the first message'",
+   "kind": "price"
+  },
+  {
+   "artboard": "P6",
+   "fact": "'We check your licence with the body that issued it' (verification claim)",
+   "kind": "legal/verification claim"
+  },
+  {
+   "artboard": "P6",
+   "fact": "Licence number ICAN/2016/40921, issuer ICAN",
+   "kind": "provider/body name"
+  },
+  {
+   "artboard": "P10",
+   "fact": "Creator account setup is free",
+   "kind": "price"
+  },
+  {
+   "artboard": "S2",
+   "fact": "3 due in October · ₦38,200",
+   "kind": "price"
+  },
+  {
+   "artboard": "S2",
+   "fact": "Ikeja Electric ₦10,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "S2",
+   "fact": "MTN airtime ₦2,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S2",
+   "fact": "DStv Compact ₦15,700",
+   "kind": "price"
+  },
+  {
+   "artboard": "S3",
+   "fact": "Billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric",
+   "kind": "provider/body name"
+  },
+  {
+   "artboard": "S4",
+   "fact": "Amount presets ₦2,000 / ₦5,000 / ₦10,000 / ₦20,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S5",
+   "fact": "Fee: No fee (bills)",
+   "kind": "fee"
+  },
+  {
+   "artboard": "S5",
+   "fact": "Naira wallet · ₦485,250.75 available",
+   "kind": "balance (sample)"
+  },
+  {
+   "artboard": "S7",
+   "fact": "45.2 kWh for ₦10,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S7",
+   "fact": "Reference format WAW-BIL-8Q2M",
+   "kind": "price"
+  },
+  {
+   "artboard": "S8",
+   "fact": "Airtime presets ₦500 / ₦1,000 / ₦2,000 / ₦5,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S8",
+   "fact": "Networks MTN, Airtel, Glo, 9mobile",
+   "kind": "provider/body name"
+  },
+  {
+   "artboard": "S9",
+   "fact": "DStv Padi ₦4,400/month",
+   "kind": "price"
+  },
+  {
+   "artboard": "S9",
+   "fact": "DStv Yanga ₦6,000/month",
+   "kind": "price"
+  },
+  {
+   "artboard": "S9",
+   "fact": "DStv Confam ₦11,000/month",
+   "kind": "price"
+  },
+  {
+   "artboard": "S9",
+   "fact": "DStv Compact ₦15,700/month",
+   "kind": "price"
+  },
+  {
+   "artboard": "S9",
+   "fact": "DStv Compact Plus ₦25,000/month",
+   "kind": "price"
+  },
+  {
+   "artboard": "S11",
+   "fact": "Balance ₦6,200.00, shortfall ₦3,800",
+   "kind": "balance (sample)"
+  },
+  {
+   "artboard": "S27",
+   "fact": "Still to pay ₦38,200",
+   "kind": "price"
+  },
+  {
+   "artboard": "S27",
+   "fact": "In your wallet ₦485,250",
+   "kind": "balance (sample)"
+  },
+  {
+   "artboard": "S27",
+   "fact": "DStv Compact ₦15,700",
+   "kind": "price"
+  },
+  {
+   "artboard": "S27",
+   "fact": "Ikeja Electric ₦10,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "S27",
+   "fact": "House rent ₦25,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S27",
+   "fact": "Gym membership ₦2,700",
+   "kind": "price"
+  },
+  {
+   "artboard": "S28",
+   "fact": "Ikeja Electric usual amount ₦10,500, due the 28th",
+   "kind": "price"
+  },
+  {
+   "artboard": "S14",
+   "fact": "'Nothing is charged, and no price is quoted until a consultant has read it.'",
+   "kind": "price"
+  },
+  {
+   "artboard": "S16",
+   "fact": "'Nothing is charged yet.'",
+   "kind": "price"
+  },
+  {
+   "artboard": "S18",
+   "fact": "Video call 30 minutes ₦15,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S18",
+   "fact": "Phone call 20 minutes ₦10,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "S18",
+   "fact": "In person: arranged by email, fee per matter, on request",
+   "kind": "fee"
+  },
+  {
+   "artboard": "S18",
+   "fact": "Slots 09:00, 10:30, 12:00, 14:00, 15:30, 17:00 Lagos time",
+   "kind": "timing/limit"
+  },
+  {
+   "artboard": "S19",
+   "fact": "₦15,000 video consultation",
+   "kind": "price"
+  },
+  {
+   "artboard": "S21",
+   "fact": "Quote ₦45,000 (tenancy agreement review)",
+   "kind": "price"
+  },
+  {
+   "artboard": "S21",
+   "fact": "Typed-name e-signature",
+   "kind": "legal/verification claim"
+  },
+  {
+   "artboard": "S22",
+   "fact": "Fee ₦45,000",
+   "kind": "fee"
+  },
+  {
+   "artboard": "S24",
+   "fact": "Business name registration · CAC · 5–7 working days · ₦35,000",
+   "kind": "timing/limit"
+  },
+  {
+   "artboard": "S26",
+   "fact": "Fee ₦35,000",
+   "kind": "fee"
+  },
+  {
+   "artboard": "S26",
+   "fact": "Takes 5–7 working days",
+   "kind": "timing/limit"
+  },
+  {
+   "artboard": "S26",
+   "fact": "Needs ID, 2 name options, address",
+   "kind": "price"
+  },
+  {
+   "artboard": "S26",
+   "fact": "'No lawyer needed'",
+   "kind": "legal/verification claim"
+  },
+  {
+   "artboard": "S25",
+   "fact": "Booking horizon: three weeks",
+   "kind": "timing/limit"
+  },
+  {
+   "artboard": "Events board header (E13–E25)",
+   "fact": "'From the code: verified accounts only, reviewed before it goes live, 85% to the host. Cancelling refunds every buyer.'",
+   "kind": "commission/split"
+  },
+  {
+   "artboard": "Events board header (E1–E12)",
+   "fact": "'Going is a free interest signal. Tickets are paid from the wallet.'",
+   "kind": "payment rail"
+  },
+  {
+   "artboard": "Services Start-here / S2",
+   "fact": "Sample Naira wallet balance ₦485,250.75 on Home balance card",
+   "kind": "balance (sample)"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "Buyer wallet debit for event tickets: replace flutterwave.initCharge/verifyCharge in EventTicketingService.buy/verifyOrder with a Fintava wallet debit; drop flutterwaveConfig from the buy response; VerifyOrderDto(transaction_id, tx_ref) replaced by PIN-authorised confirm",
+   "why": "E3/E4 pay from wallet; E10 pending state",
+   "artboards": [
+    "E3",
+    "E4",
+    "E10"
+   ],
+   "size": "L",
+   "depends_on": [
+    "Fintava API docs and contract",
+    "buyer wallet provisioning (Wallet flow)",
+    "wallet PIN"
+   ]
+  },
+  {
+   "item": "EventOrder schema migration: flutterwaveTxRef (@unique, required) / flutterwaveTxId → provider-neutral paymentProvider + paymentReference + providerTxId; update payment-webhook.service.ts (event-ticket-order lookup), payment-link.service.ts:100, admin-finance.service.ts and admin-finance-wallets.service.ts raw SQL that select flutterwaveTxRef/TxId",
+   "why": "every EventOrder is keyed on a Flutterwave reference today",
+   "artboards": [
+    "E3",
+    "E10",
+    "E25"
+   ],
+   "size": "M",
+   "depends_on": [
+    "Fintava reference format"
+   ]
+  },
+  {
+   "item": "Event cancel refunds to buyer wallets: replace flutterwave.refundCharge loop in EventTicketingService.cancel with Fintava credits from the account holding ticket money; expose refund status/amount on GET /events/tickets/mine",
+   "why": "E11 '₦7,500 is back in your Naira wallet'; E25 refunds everyone",
+   "artboards": [
+    "E11",
+    "E25"
+   ],
+   "size": "M",
+   "depends_on": [
+    "custody ruling",
+    "Fintava transfer API"
+   ]
+  },
+  {
+   "item": "Host settlement: pay the host 85% of paid EventOrders into their wallet (none today: WalletFundingService funds Purchase and answered DMs only), with a hold rule (e.g. after the event ends) so cancellations stay refundable",
+   "why": "E18 'Yours after WAWU's cut ₦408,000' is computed but never paid",
+   "artboards": [
+    "E18",
+    "E25"
+   ],
+   "size": "M",
+   "depends_on": [
+    "custody ruling (who holds ticket money pre-event)",
+    "Fintava"
+   ]
+  },
+  {
+   "item": "Multi-tier ticket order: allow one order/one debit across several ticket types (order lines), keeping the conditional per-tier capacity claim",
+   "why": "E2 shows quantity steppers on every tier",
+   "artboards": [
+    "E2",
+    "E3"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Wallet transaction PIN: set/change/reset, hashed storage, attempt lockout, verify-before-debit (shared by tickets, bills, legal)",
+   "why": "E4, S6, S19, S22 PIN step",
+   "artboards": [
+    "E4",
+    "S6",
+    "S19",
+    "S22",
+    "S30"
+   ],
+   "size": "M",
+   "depends_on": [
+    "whether Fintava owns PIN/transaction auth"
+   ]
+  },
+  {
+   "item": "Event model additions: EventFormat 'hybrid'; Kind values Conference/Concert (EventType or remap to EventCategory); category display labels ('Business & Finance'); make `type` and `location` optional or derivable since the wizard never asks",
+   "why": "E8, E13, E14",
+   "artboards": [
+    "E8",
+    "E13",
+    "E14"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Single-submit host wizard: accept ticket types in POST /events (or a combined submit) and ₦0 → tier 'free' mapping server-side",
+   "why": "E15 sends event + tickets for review in one step",
+   "artboards": [
+    "E15",
+    "E16"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Organiser data: soldCount on GET /events/mine; per-referral ticket count (dashboard byCode.tickets is never incremented) and a referrals list route; distinct buyer count for cancel copy",
+   "why": "E17 '64 sold', E18 '3 links · 22 sales', E25 'All 64 buyers'",
+   "artboards": [
+    "E17",
+    "E18",
+    "E25"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Door staff: let a host delegate scanners with door labels; return holder display name and checkedInBy label from check-in",
+   "why": "E20 holder name, E23 'by Door 1'",
+   "artboards": [
+    "E19",
+    "E20",
+    "E23"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Professional category taxonomy: map board field labels to PROFESSIONAL_CATEGORIES or rename; add 'engineering' if kept",
+   "why": "P1/P4/P5 field names do not exist as slugs",
+   "artboards": [
+    "P1",
+    "P4",
+    "P5"
+   ],
+   "size": "S",
+   "depends_on": [
+    "product ruling on field list"
+   ]
+  },
+  {
+   "item": "Wallet-funded bill payment: debit buyer wallet after PIN, then pay biller (Fintava VAS if available, else Flutterwave Bills from a float funded by the debit); provider-neutral BillPayment reference; automatic wallet reversal on biller failure (today refunds are manual record-refund)",
+   "why": "S5, S11, S12",
+   "artboards": [
+    "S5",
+    "S6",
+    "S11",
+    "S12",
+    "S30"
+   ],
+   "size": "L",
+   "depends_on": [
+    "Fintava API docs (VAS coverage)",
+    "buyer wallet",
+    "PIN"
+   ]
+  },
+  {
+   "item": "Bill receipt data: store/return prepaid electricity token and units, customer address from validate; WAWU-style receipt reference",
+   "why": "S4 address, S7 token + kWh",
+   "artboards": [
+    "S4",
+    "S7"
+   ],
+   "size": "S",
+   "depends_on": [
+    "provider bill-status payload"
+   ]
+  },
+  {
+   "item": "Bill reminders: BillReminder model + CRUD (on-WAWU and external), month view with paid state derived from BillPayment, mark-as-paid for external, daily scheduler job",
+   "why": "S2 banner, S27-S32",
+   "artboards": [
+    "S2",
+    "S27",
+    "S28",
+    "S30",
+    "S31",
+    "S32"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Mobile push notifications: device token registration and a push provider, used by bill reminders",
+   "why": "S29 lock-screen reminder",
+   "artboards": [
+    "S29"
+   ],
+   "size": "M",
+   "depends_on": [
+    "FCM/APNs or Expo account"
+   ]
+  },
+  {
+   "item": "Legal chat-first intake: make the Gemini assistant available on an unpaid LegalIntake, have it fill intake answers and complete the brief, and let a consultant join that thread before payment (today chat requires a paid LegalRequest)",
+   "why": "S14-S17, S24",
+   "artboards": [
+    "S14",
+    "S15",
+    "S16",
+    "S17",
+    "S24"
+   ],
+   "size": "L",
+   "depends_on": [
+    "Gemini prompt/safety review",
+    "product ruling on free pre-payment consultant contact"
+   ]
+  },
+  {
+   "item": "Legal consultation options: add 'phone' medium, per-medium duration, slot grid matching the board; fees stay configuration pending ruling (board fees are placeholders)",
+   "why": "S18",
+   "artboards": [
+    "S18",
+    "S25"
+   ],
+   "size": "S",
+   "depends_on": [
+    "fee ruling"
+   ]
+  },
+  {
+   "item": "Legal payments from wallet: consultation fee and service fee via wallet debit + PIN instead of Flutterwave init/verify",
+   "why": "S19, S22",
+   "artboards": [
+    "S19",
+    "S22"
+   ],
+   "size": "M",
+   "depends_on": [
+    "buyer wallet",
+    "PIN"
+   ]
+  },
+  {
+   "item": "Multiple legal deliverables (files with page counts) and posting them into the chat + notifications",
+   "why": "S23 shows two PDFs",
+   "artboards": [
+    "S23"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Unify CAC registration: one route and one configured price for business-name registration reachable from the legal chat, paid from wallet",
+   "why": "S24/S26 vs legal catalogue cac-registration (no price) and service-application CAC (₦25,000)",
+   "artboards": [
+    "S24",
+    "S26"
+   ],
+   "size": "S",
+   "depends_on": [
+    "price ruling"
+   ]
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "Fintava",
+   "capability": "buyer wallet balance enquiry",
+   "artboards": [
+    "E3",
+    "S5",
+    "S11",
+    "S27"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "wallet debit / transfer to a collection account for tickets, bills, legal fees, CAC",
+   "artboards": [
+    "E3",
+    "S5",
+    "S19",
+    "S22",
+    "S26",
+    "S30"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "transaction status requery + webhook",
+   "artboards": [
+    "E10",
+    "S12"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "credit/reversal to a buyer wallet (event cancellation refunds, failed bills)",
+   "artboards": [
+    "E11",
+    "E25",
+    "S12"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "transfer to host wallet for ticket settlement",
+   "artboards": [
+    "E18"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "transaction PIN / authorisation (if provider-side)",
+   "artboards": [
+    "E4",
+    "S6"
+   ]
+  },
+  {
+   "provider": "Fintava (or keep Flutterwave Bills)",
+   "capability": "bill payment / VAS: airtime, data, electricity token, cable; customer validation with address",
+   "artboards": [
+    "S3",
+    "S4",
+    "S7",
+    "S8",
+    "S9"
+   ]
+  },
+  {
+   "provider": "Google Gemini",
+   "capability": "legal assistant chat (already integrated via GEMINI_CLIENT), extended to pre-payment profiling",
+   "artboards": [
+    "S14",
+    "S15",
+    "S16"
+   ]
+  },
+  {
+   "provider": "FCM/APNs (or Expo push)",
+   "capability": "lock-screen push for bill reminders",
+   "artboards": [
+    "S29"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "Events: speakers (EventSpeaker), save/bookmark (POST/DELETE /events/{id}/save), event recap (recapUrl/recapText), external URL, contact email/phone, admin featuring is fine but the web 'starting soon/trending' sorts are not drawn; per-tier sales start/end editing (salesStartAt/salesEndAt) is not drawn on E15.",
+  "Events: creating a referral link is on web (/events/[id]/manage) but the board only shows the count 'Shared links 3 links · 22 sales'.",
+  "Professionals: ratings and reviews (ProfessionalReview, POST /api/hub/professionals/{id}/reviews, ratingAvg/reviewCount in the listing) appear nowhere on the boards.",
+  "Services hub /services (partner-service catalogue, 'Top Professionals', Business playbook): board says 'There's no Services screen.'",
+  "Health plans / Telemedicine (/services/care, /api/hub/care/*, WellaHealth, HealthSubscription): absent from canvas.",
+  "NEPC export licence (/services/nepc, POST /api/hub/services/nepc/apply): absent.",
+  "Partner services Pension, Banking, Grants (POST /api/hub/services/partner/apply) and web catalogue Loans/EasyBuy, Pensions: absent.",
+  "Mentors (/api/hub/services/mentors, MentorRequest): absent.",
+  "Service applications list/timeline page (/services/applications/[id]) other than CAC tracking: absent.",
+  "Legal service catalogue browse by category (LEGAL_CATEGORIES, 15+ services e.g. trademark, contract drafting, debt recovery) on /services/legal: the board replaces it with chat quick replies.",
+  "Legal in-person and chat consultation media as listed on web (chat/zoom/physical): board has video/phone/in person."
+ ],
+ "summary": "Events, professionals and services are all substantially built on backend and web, and every gap here is about money movement and a few model mismatches, not missing domains. Events ticketing (event + event-ticketing modules; EventOrder/EventTicket/EventTicketType/EventReferral models, there is no separate event-order module) already does verified-only hosting, admin review, tiered capacity-safe sales, QR check-in and cancel-with-refund, but every paid path is Flutterwave: buy() returns flutterwaveConfig, verifyOrder() verifies a Flutterwave charge, cancel() calls flutterwave.refundCharge, EventOrder is keyed on flutterwaveTxRef, and the host's 85% is computed on the dashboard but never paid into any wallet. Moving to the Fintava wallet means a buyer wallet and PIN that do not exist, a provider-neutral EventOrder reference, wallet credits for refunds, host settlement, and above all a ruling on who holds ticket money between sale and event (the CBN custody line in the product rules). Professionals match the bundle rule: P1-P10 show paid DMs only, with no booking, calendar or escrow, and the backend says the same. Two open points: the 24-hour auto-refund is a conditional hold that may count as escrow once it is paid from a wallet, and the board's field names do not match the backend category slugs. Services on the board are bills, bill reminders and legal. Bills exist on Flutterwave Bills with checkout, minus wallet debit, the electricity token and auto-reversal. Bill reminders and push notifications have no backend at all. Legal exists end to end, but its assistant chat only opens after payment while the board puts it first and free, and the board's consultation media and fees and its CAC price (₦35,000 vs ₦25,000) differ from code; the designer flags those fees as placeholders. Health plans, NEPC, partner services, mentors, the /services hub and professional reviews are on the web and backend but absent from these boards. The biggest risk is custody: wallet-paid tickets, refunds and DM refund holds put money in WAWU's hands unless the Fintava structure is ruled on first."
+}

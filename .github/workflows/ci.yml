@@ -1,0 +1,58 @@
+# Every push and pull request. A task's evidence pack quotes this run; a red
+# run means the task is not done, whatever the session reported.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependencies
+        run: npm ci
+
+      - name: Expo SDK health
+        run: npx expo-doctor
+
+      - name: Design tokens are generated, not hand-edited
+        run: python3 scripts/design/gen_tokens.py --check
+
+      - name: API types match the contract and its exclusion list
+        run: |
+          python3 scripts/api/sync_contract.py
+          git diff --exit-code contract/openapi.mobile.json src/api/schema.generated.ts
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx expo lint
+
+      - name: Tests
+        run: npx jest --ci
+
+      - name: Bundles for web (the screenshot target)
+        run: npx expo export --platform web
+
+      - name: Gates
+        run: python3 scripts/gates/run.py
+
+      - name: Gate baseline has owners and reasons
+        run: python3 scripts/gates/check_baseline.py
+
+      - name: Task files are complete and the index is current
+        run: python3 scripts/tasks/check_tasks.py

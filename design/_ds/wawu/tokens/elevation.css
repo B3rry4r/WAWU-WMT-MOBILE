@@ -1,0 +1,17 @@
+:root {
+  /* Cards are flat: a surface step + hairline. Shadows only on things that float. */
+  --shadow-card: none;
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-fab: 0 10px 24px -6px rgba(148, 17, 201, 0.65);
+  --shadow-money: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-debit-card: 0 24px 40px -18px rgba(41, 13, 67, 0.7);
+  --shadow-cover: 0 30px 50px -10px rgba(0, 0, 0, 0.7);  /* book / audio art in the feed */
+  --blur-veil: blur(22px) /* @kind other */;     /* locked content */
+  --blur-chrome: blur(20px) /* @kind other */;   /* tab bar, sticky headers, glass */
+  --scrim-feed: linear-gradient(180deg, rgba(0,0,0,.5), transparent 22%, transparent 50%, rgba(0,0,0,.86) 88%) /* @kind other */;
+  --scrim-card: linear-gradient(180deg, transparent 40%, rgba(11,10,13,.88)) /* @kind other */;
+}
+[data-theme="light"] {
+  --shadow-money: 0 24px 40px -22px rgba(22, 21, 27, 0.6);
+}

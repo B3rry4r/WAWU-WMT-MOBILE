@@ -1,0 +1,26 @@
+{
+  "_why": "Operations removed from the backend contract before the mobile client is generated. Every entry names why and which task removes it. Nothing is excluded silently: scripts/api/sync_contract.py prints this list on every run.",
+  "tags": [
+    {
+      "pattern": "^Admin",
+      "why": "The mobile app never calls admin endpoints.",
+      "task": "permanent"
+    },
+    {
+      "pattern": "Ops$",
+      "why": "Ops endpoints are for staff tooling, not the app.",
+      "task": "permanent"
+    },
+    {
+      "pattern": "^PaymentWebhook$",
+      "why": "Provider callbacks, never called by a client.",
+      "task": "permanent"
+    },
+    {
+      "pattern": "^Shop$",
+      "why": "Shop is retired (DECISIONS.md R-2).",
+      "task": "permanent"
+    }
+  ],
+  "operations": []
+}

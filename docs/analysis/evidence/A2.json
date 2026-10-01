@@ -1,0 +1,2183 @@
+{
+ "agent": "A2",
+ "flows": [
+  "auth",
+  "settings"
+ ],
+ "artboards": [
+  {
+   "id": "A1",
+   "flow": "auth",
+   "title": "Welcome",
+   "kind": "screen",
+   "journey": "Open an account / Sign in (entry)",
+   "what_it_shows": "Signed-out welcome: headline 'Get paid for what you know', subline 'Sell your work, answer paid questions, and bank it all in one app', buttons Create an account and Sign in. Also drawn as the auth 'Start here' map phone (hotspots 1 Create an account -> A2, 2 Sign in -> A22); the map also lists Wallet settings > Tier -> A17 and Me > Verification > Identity check -> A21. Design note: the map phone equals the flow's own first screen, which the bundle rule normally forbids; here the app opens on A1.",
+   "user_actions": [
+    "tap Create an account (-> A2)",
+    "tap Sign in (-> A22)"
+   ],
+   "data_needed": [
+    "none (static); session check to decide signed-out state"
+   ],
+   "backend": {
+    "status": "n/a",
+    "evidence": [
+     "static screen; session state comes from WAWU ID tokens (POST /auth/refresh, wawu-id/src/auth/auth.controller.ts:36)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/ (app/page.tsx LandingContent)",
+     "/sign-up",
+     "/sign-in"
+    ],
+    "delta": "Web entry is a marketing landing page with App Store/Play badges marked coming soon, not a one-screen welcome; copy differs and web never claims banking ('bank it all in one app')."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'bank it all in one app' (implies a bank account per user)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A2",
+   "flow": "auth",
+   "title": "Why you're here",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Account-type choice: 'I'm here to discover' (follow creators, buy their work, use the wallet) vs 'I want to earn' (sell content, take paid questions, host events. Free.). Continue.",
+   "user_actions": [
+    "pick discover or earn",
+    "tap Continue (-> A3)"
+   ],
+   "data_needed": [
+    "accountType enum user|creator persisted after registration"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "PATCH /api/hub/users/me {accountType} (wawu-backend/src/user-profile/dto/update-user-profile.dto.ts: accountType IsEnum(AccountType user|creator)); UserProfile.accountType in backend-models",
+     "WAWU ID register does NOT take an account type (RegisterDto) - type lives only in the Hub"
+    ],
+    "gap": "Account type is not part of WAWU ID registration; mobile must call WAWU ID register then Hub PATCH /users/me. Creator choice provisions a Flutterwave wallet (user-profile.service.ts:283); 'discover' accounts get no wallet today although the card says 'use the wallet'."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/sign-up step 'type' (app/(auth)/sign-up/components/SignUpFlow.tsx:217)"
+    ],
+    "delta": "Same two-card choice. Web copy: discover = browse/unlock/message/join/shop, 'No charge'; earn = upload, paid DMs, host communities, list services, 'keep 85%'. Web does not promise a wallet to discover accounts and does not say 'host events'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'I want to earn ... Free.' (earning account costs nothing)"
+   ],
+   "conflicts": [
+    "'I want to earn: ... host events' offered at sign-up vs current rule that hosting an event is VERIFIED-ONLY (B3).",
+    "'I'm here to discover: ... use the wallet' vs current wallet = creator-only Flutterwave payout subaccount."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A3",
+   "flow": "auth",
+   "title": "Email, phone, BVN",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Create account form: Email, Phone number ('Must be the number on your BVN'), BVN ('Dial *565*0# to get it'), Password ('At least 8 characters'); footer 'Checked with NIBSS. We never see your balances.' Continue.",
+   "user_actions": [
+    "enter email",
+    "enter phone",
+    "enter BVN",
+    "enter password",
+    "tap Continue (BVN lookup + phone match, then -> A4)"
+   ],
+   "data_needed": [
+    "BVN lookup returning registered phone, name, DOB, gender, photo",
+    "email/phone uniqueness check",
+    "password policy min 8"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "WAWU ID POST /auth/register (wawu-id/src/auth/auth.controller.ts:24; RegisterDto wawu-id/src/auth/dto/register.dto.ts accepts fullName|firstName/middleName/lastName, email, phone, dialCode, country, state, gender, occupation, password; NO bvn, NO dateOfBirth, NO accountType)",
+     "WAWU ID register enforces email/phone uniqueness (auth.service.ts:122-129 ConflictException) and password MinLength(8)",
+     "searched: grep -rniE 'bvn|nin|dateOfBirth|selfie|liveness|nibss|nimc' in wawu-id/src + prisma/schema.prisma -> no hits; backend-routes 'bvn','kyc' -> only GET/POST /api/hub/kyc (manual submission); grep 'fintava|dojah|smile|youverify|prembly' in wawu-backend/src -> none"
+    ],
+    "gap": "No BVN field, no BVN lookup, no phone-vs-BVN match anywhere. Register requires `country` (not on board) and has no place to store BVN or a BVN-verified flag. Names are required for wallet opening (wallet.service.ts openForAccount) but the board collects none; they must come from the BVN response."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/sign-up step 'identity' (SignUpFlow.tsx:299-395)"
+    ],
+    "delta": "Web collects First/Middle/Last name, Email, Password, Phone with dial code; no BVN. Country, state, occupation, gender and terms are a second 'details' step. Web supports non-Nigerian sign-up; board is BVN-only."
+   },
+   "third_party": [
+    "BVN verification (canvas names NIBSS; access route unconfirmed - via Fintava or a KYC aggregator)"
+   ],
+   "facts_on_canvas": [
+    "'Must be the number on your BVN'",
+    "'Dial *565*0# to get it' (USSD code)",
+    "'Checked with NIBSS. We never see your balances.'",
+    "password 'At least 8 characters' (matches WAWU ID MinLength(8))"
+   ],
+   "conflicts": [
+    "BVN required for EVERY account at sign-up vs current 'manual KYC unlocks EARNING' and 'Registration ... free' with KYC independent of sign-up.",
+    "Automated NIBSS check vs current 'KYC is manual review. Nigeria: BVN + NIN.'",
+    "Nigeria-only (BVN) sign-up vs current 'Elsewhere: national-ID equivalent'."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A4",
+   "flow": "auth",
+   "title": "Phone code",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Verify your phone: 6-digit code 'Sent by SMS to 0803 ••• 4412, the number on your BVN', resend countdown 0:42, numeric keypad.",
+   "user_actions": [
+    "enter 6-digit code",
+    "resend after countdown"
+   ],
+   "data_needed": [
+    "send OTP to phone",
+    "verify OTP against the in-flight registration",
+    "resend throttle"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "WAWU ID POST /auth/otp/start {phone} (auth.controller.ts:42; otp.service.ts generateAndSend: 6-digit, 5-min TTL, delivered via Meta WhatsApp Cloud API, email fallback)",
+     "WAWU ID POST /auth/otp/verify {phone, code} (auth.controller.ts:48)"
+    ],
+    "gap": "otp/verify is a phone-LOGIN: it find-or-creates a phone-only WawuUser and issues tokens (auth.service.ts:713-748); it does not mark a registering account's phone as verified - WawuUser has no phoneVerified column. Delivery is WhatsApp, not SMS. No resend throttle beyond replacing the previous code. Separately: WAWU ID login refuses accounts with an unverified email (auth.service.ts:206-213 EMAIL_NOT_VERIFIED), and this board path never verifies the email, so a user created this way cannot sign in on A22 later."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/sign-up step 'otp' (SignUpFlow.tsx:155-185, lib/api/auth.ts:275 verifyOtp -> WAWU ID /auth/email/verify/confirm)"
+    ],
+    "delta": "Web OTP verifies the EMAIL (6-digit code emailed, POST /auth/email/verify/start|confirm), not the phone."
+   },
+   "third_party": [
+    "SMS OTP delivery (canvas says SMS; WAWU ID currently uses Meta WhatsApp Cloud API)"
+   ],
+   "facts_on_canvas": [
+    "'Enter the 6-digit code'",
+    "'Sent by SMS'",
+    "'Resend in 0:42'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A5",
+   "flow": "auth",
+   "title": "Confirm your details",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Read-only 'From your BVN' card: Name, Date of birth, Gender, State you live in, Occupation; checkbox 'I agree to the terms and privacy policy'; Continue.",
+   "user_actions": [
+    "review prefilled details",
+    "tick terms/privacy consent",
+    "tap Continue (-> A6)"
+   ],
+   "data_needed": [
+    "BVN record: full name (3 parts), DOB, gender, state of residence",
+    "occupation (source unclear)",
+    "policy versions + consent record"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "WAWU ID POST /auth/register (wawu-id/src/auth/auth.controller.ts:24; RegisterDto wawu-id/src/auth/dto/register.dto.ts accepts fullName|firstName/middleName/lastName, email, phone, dialCode, country, state, gender, occupation, password; NO bvn, NO dateOfBirth, NO accountType) - stores first/middle/last name, gender, state",
+     "WAWU ID GET /policies/:slug and POST /policies/:slug/accept (wawu-id/src/policies/policies.controller.ts:34,53; Consent ledger model)",
+     "searched: grep -rniE 'bvn|nin|dateOfBirth|selfie|liveness|nibss|nimc' in wawu-id/src + prisma/schema.prisma -> no hits; backend-routes 'bvn','kyc' -> only GET/POST /api/hub/kyc (manual submission); grep 'fintava|dojah|smile|youverify|prembly' in wawu-backend/src -> none",
+     "occupation: accepted by RegisterDto but only echoed in the response (auth.service.ts:162); no column in WawuUser or Hub UserProfile (grep 'occupation' wawu-backend/src -> none)"
+    ],
+    "gap": "No dateOfBirth column in WAWU ID or Hub. Occupation is silently dropped today. No BVN source to prefill from. Consent route exists but is not called by any client (grep '/policies' wawuafrica/src -> none)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/sign-up step 'details' (SignUpFlow.tsx:395+)"
+    ],
+    "delta": "Web asks the user to TYPE country, state/region, occupation, gender and tick terms; no DOB; nothing is prefilled from BVN; consent tick is not recorded in WAWU ID's Consent ledger."
+   },
+   "third_party": [
+    "BVN verification (NIBSS route via provider, unconfirmed)"
+   ],
+   "facts_on_canvas": [
+    "'From your BVN' includes 'State you live in' and 'Occupation' (claim that a BVN record carries these is unverified)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A6",
+   "flow": "auth",
+   "title": "Selfie",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Camera oval: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly' (liveness).",
+   "user_actions": [
+    "position face",
+    "blink (liveness)",
+    "auto-capture"
+   ],
+   "data_needed": [
+    "liveness check",
+    "face match against BVN photo"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: grep -rniE 'bvn|nin|dateOfBirth|selfie|liveness|nibss|nimc' in wawu-id/src + prisma/schema.prisma -> no hits; backend-routes 'bvn','kyc' -> only GET/POST /api/hub/kyc (manual submission); grep 'fintava|dojah|smile|youverify|prembly' in wawu-backend/src -> none",
+     "grep -rniE 'selfie|liveness|face' wawu-backend/src wawu-id/src -> no capability"
+    ],
+    "gap": "No liveness or face-match capability or provider anywhere; no place to store the result."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no selfie/liveness screen in wawuafrica/src"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Liveness + face match against BVN photo (provider unnamed on canvas)"
+   ],
+   "facts_on_canvas": [
+    "'It must match your BVN photo'"
+   ],
+   "conflicts": [
+    "Liveness selfie vs current 'No DRM, no screenshot-blocking, no liveness/Face-ID. These do not exist in this product.'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A7",
+   "flow": "auth",
+   "title": "Matched",
+   "kind": "state",
+   "journey": "Open an account",
+   "what_it_shows": "Success state: 'Matched to your BVN. Opening your account' (spinner while the wallet is provisioned).",
+   "user_actions": [
+    "wait"
+   ],
+   "data_needed": [
+    "face-match result",
+    "wallet/account provisioning status"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: grep -rniE 'bvn|nin|dateOfBirth|selfie|liveness|nibss|nimc' in wawu-id/src + prisma/schema.prisma -> no hits; backend-routes 'bvn','kyc' -> only GET/POST /api/hub/kyc (manual submission); grep 'fintava|dojah|smile|youverify|prembly' in wawu-backend/src -> none",
+     "Wallet provisioning exists only as Flutterwave payout subaccount for creators (wawu-backend/src/wallet/wallet.service.ts:185 provisionOnRegistration, called from user-profile.service.ts:283)"
+    ],
+    "gap": "No face-match result; account opening at Fintava does not exist (see A8)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no equivalent"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Face match provider",
+    "Fintava account opening"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "Liveness/Face match vs 'no liveness/Face-ID' rule (see A6)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A8",
+   "flow": "auth",
+   "title": "Wallet open",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "'Your wallet is open' card: Tier 1 · Fintava MFB, account name, account number 812 345 6789 (Copy), Bank Fintava MFB, Limit ₦300,000 balance; links Raise your limits (-> A17) and Create your transaction PIN (-> A9).",
+   "user_actions": [
+    "copy account number",
+    "tap Raise your limits",
+    "tap Create your transaction PIN"
+   ],
+   "data_needed": [
+    "NUBAN, account name, bank name, tier, balance limit per user"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts:21) returns account number/status for a creator's Flutterwave payout subaccount; CreatorWallet model has nuban, bankName, bankCode, status",
+     "searched backend-models for 'tier'/'limit' -> none on CreatorWallet; grep 'fintava' wawu-backend/src -> none"
+    ],
+    "gap": "Wallet is Flutterwave (payout subaccount at Flutterwave MFB), opened only for accountType=creator; no tier, no limits, no Fintava integration; a 'discover' user gets no wallet."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet"
+    ],
+    "delta": "Web wallet is creator-only Flutterwave; no tier/limit display; no PIN prompt after opening."
+   },
+   "third_party": [
+    "Fintava: virtual account / NUBAN provisioning at Tier 1"
+   ],
+   "facts_on_canvas": [
+    "'Tier 1 · Fintava MFB'",
+    "'Bank Fintava MFB'",
+    "'Limit ₦300,000 balance'",
+    "sample NUBAN 812 345 6789"
+   ],
+   "conflicts": [
+    "Fintava MFB wallet for every account vs current 'Each wallet is a Flutterwave payout subaccount ... Flutterwave custodies it' (creators only)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A9",
+   "flow": "auth",
+   "title": "Create PIN",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Step 1 of 2: 'Create your transaction PIN. Four digits. It approves every payment and transfer.' Keypad.",
+   "user_actions": [
+    "enter 4 digits"
+   ],
+   "data_needed": [
+    "PIN set endpoint storing a hash"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: grep -rniE 'transaction ?pin|pinHash|\\bpin\\b|biometric|deviceId|device_id' in wawu-id/src, wawu-backend/src (only event 'pin to featured rail' hits), wawuafrica/src; backend-models.txt has no Pin/Device model; WAWU ID schema has no pin/device column"
+    ],
+    "gap": "No transaction PIN anywhere: no column, no route, no hashing, no lockout. Wallet withdraw (POST /api/hub/wallet/withdraw) approves on bearer token alone. HIGH PRIORITY: every Wallet flow money movement (W11 etc.) depends on this."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "grep 'pin' wawuafrica/src/components/wallet -> no PIN entry"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "PIN is 'Four digits'",
+    "'It approves every payment and transfer.'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A10",
+   "flow": "auth",
+   "title": "Confirm PIN",
+   "kind": "screen",
+   "journey": "Open an account",
+   "what_it_shows": "Step 2 of 2: 'Enter it again'. Then PIN set: earn -> A11, discover -> A12.",
+   "user_actions": [
+    "re-enter 4 digits",
+    "mismatch handling (no state drawn)"
+   ],
+   "data_needed": [
+    "PIN confirm + persist",
+    "routing by accountType"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: grep -rniE 'transaction ?pin|pinHash|\\bpin\\b|biometric|deviceId|device_id' in wawu-id/src, wawu-backend/src (only event 'pin to featured rail' hits), wawuafrica/src; backend-models.txt has no Pin/Device model; WAWU ID schema has no pin/device column"
+    ],
+    "gap": "Same as A9. No mismatch state is drawn."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Four digits'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A11",
+   "flow": "auth",
+   "title": "Creator setup",
+   "kind": "screen",
+   "journey": "Chose 'I want to earn'",
+   "what_it_shows": "'Set up your account' checklist, 1 of 5: Price your paid messages; Finish your profile; Publish your first piece (Free to list); Start your first community (Optional, Free to host); Verify your identity (Needed to get paid). 'Uploading is open. Getting paid needs your ID checked.' Later -> Home.",
+   "user_actions": [
+    "open each row",
+    "tap Later (-> Home)",
+    "Verify your identity (-> A21 per Start-here map)"
+   ],
+   "data_needed": [
+    "creator state: dm price set, profile completeness, content count, community count, kyc status"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/creator/state",
+     "PATCH /api/hub/creator/dm-settings",
+     "PATCH /api/hub/users/me",
+     "POST /api/hub/content",
+     "POST /api/hub/communities",
+     "GET|POST /api/hub/kyc"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/creator/setup (components/onboarding/CreatorSetupChecklist.tsx; lib/auth/use-creator-setup.ts:186-258 rows dm, profile, community, upload, kyc)",
+     "/onboarding"
+    ],
+    "delta": "Same five rows and same 'uploading open / getting paid separate' framing; web orders community before publish."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Free to list'",
+    "'Free to host'",
+    "'Getting paid needs your ID checked'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A12",
+   "flow": "auth",
+   "title": "Interests",
+   "kind": "screen",
+   "journey": "Chose 'I'm here to discover'",
+   "what_it_shows": "'What are you into? 3 of 3. Pick three or more.' 12 chips: Music & Audio, Film & Video, Photography, Fashion & Beauty, Business & Finance, Technology, Food & Lifestyle, Faith & Spirituality, Art & Design, Writing & Publishing, Sports & Fitness, Gaming & Esports.",
+   "user_actions": [
+    "pick >=3 interests",
+    "tap Continue"
+   ],
+   "data_needed": [
+    "interest vocabulary",
+    "save interests"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "PATCH /api/hub/users/me {interests: string[] max 50} (update-user-profile.dto.ts); UserProfile.interests String[]"
+    ],
+    "gap": "Interests are free strings; no canonical vocabulary server-side, so the 12 canvas labels will not match the 25 explore category ids or web's 11 sign-up labels unless one list is adopted."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/sign-up step 'interests' (SignUpFlow.tsx:19-21 INTERESTS, INTERESTS_MIN = 5)"
+    ],
+    "delta": "Web requires 5 (canvas 3) from 11 different labels (Business, Agriculture, Finance, Trade, Entertainment, Career, Education, Health, Technology, Creative Arts, Culture); explore uses 25 other categories (lib/categories.ts)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Pick three or more'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A13",
+   "flow": "auth",
+   "title": "People to follow",
+   "kind": "screen",
+   "journey": "Chose 'I'm here to discover'",
+   "what_it_shows": "Suggested creators 'Based on what you picked' with Follow/Following toggles (name + role line). Go to Home.",
+   "user_actions": [
+    "follow / unfollow suggested creators",
+    "tap Go to Home"
+   ],
+   "data_needed": [
+    "creator suggestions matching several interests (name, headline, avatar, follow state)",
+    "follow toggle"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/creators?category= (creator-discovery controller; ListCreatorsQueryDto.category matched against UserProfile.interests, single value)",
+     "POST|DELETE /api/hub/creators/{wawuId}/follow"
+    ],
+    "gap": "Discovery filters by ONE category; a multi-interest 'based on what you picked' ranking needs either repeated calls merged client-side or an interests[] param."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "SignUpFlow.tsx:191 routes straight to /home (users) or /onboarding (creators) after interests"
+    ],
+    "delta": "No suggested-follows step."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A14",
+   "flow": "auth",
+   "title": "Phone doesn't match BVN",
+   "kind": "state",
+   "journey": "Open an account (other state, from A3)",
+   "what_it_shows": "A3 with inline error under phone: 'This isn't the number on your BVN. Use that one.'",
+   "user_actions": [
+    "correct phone"
+   ],
+   "data_needed": [
+    "BVN lookup phone compare"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: grep -rniE 'bvn|nin|dateOfBirth|selfie|liveness|nibss|nimc' in wawu-id/src + prisma/schema.prisma -> no hits; backend-routes 'bvn','kyc' -> only GET/POST /api/hub/kyc (manual submission); grep 'fintava|dojah|smile|youverify|prembly' in wawu-backend/src -> none"
+    ],
+    "gap": "No BVN lookup, so no phone match."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no BVN in web sign-up"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "BVN verification"
+   ],
+   "facts_on_canvas": [
+    "phone must equal the BVN-registered phone"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A15",
+   "flow": "auth",
+   "title": "Wrong code",
+   "kind": "state",
+   "journey": "Open an account (other state, from A4)",
+   "what_it_shows": "A4 with 6 digits entered and 'That code isn't right'.",
+   "user_actions": [
+    "re-enter",
+    "resend"
+   ],
+   "data_needed": [
+    "OTP verify error"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "WAWU ID POST /auth/otp/verify throws 401 'Invalid or expired OTP' (auth.service.ts:719)"
+    ],
+    "gap": "Error exists, but see A4: the route is a phone login, not registration phone verification; no attempt counter/lockout."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "SignUpFlow.tsx:164 'That code did not work.' on the email OTP"
+    ],
+    "delta": "Error is for the email code, not the phone code; copy differs."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A16",
+   "flow": "auth",
+   "title": "Face doesn't match",
+   "kind": "state",
+   "journey": "Open an account (other state, from A6)",
+   "what_it_shows": "Selfie failure: 'We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.' Try again.",
+   "user_actions": [
+    "retry"
+   ],
+   "data_needed": [
+    "face-match failure reason, retry count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: grep -rniE 'bvn|nin|dateOfBirth|selfie|liveness|nibss|nimc' in wawu-id/src + prisma/schema.prisma -> no hits; backend-routes 'bvn','kyc' -> only GET/POST /api/hub/kyc (manual submission); grep 'fintava|dojah|smile|youverify|prembly' in wawu-backend/src -> none"
+    ],
+    "gap": "No face match; no retry/lockout policy; no fallback to manual review is drawn."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Liveness/face match provider"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "Liveness/Face match vs 'no liveness/Face-ID' rule (see A6)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A17",
+   "flow": "auth",
+   "title": "Account limits",
+   "kind": "screen",
+   "journey": "Raise your limits",
+   "what_it_shows": "Tier ladder: Tier 1 BVN and a selfie (₦50,000 per deposit · ₦300,000 balance) Done; Tier 2 Your NIN (₦100,000 per deposit · ₦500,000 balance) Upgrade; Tier 3 Proof of address (₦5,000,000 per deposit · no balance cap). 'Limits set by the CBN.'",
+   "user_actions": [
+    "tap Tier 2 Upgrade (-> A18)"
+   ],
+   "data_needed": [
+    "current tier per user",
+    "per-tier limits (from Fintava)",
+    "requirements per tier"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-models.txt for Tier/Limit -> none; CreatorWallet has no tier; WAWU ID VerificationTier enum is the LEGACY creator-badge ladder (basic..official), not CBN KYC tiers (wawu-id/prisma/schema.prisma)",
+     "grep 'tier' wawu-backend/src/wallet -> none"
+    ],
+    "gap": "No KYC tier state, no limits source, no upgrade endpoints."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none; web verification (/profile/verification) is the paid creator/professional tick, a different system"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava: account tier/limits and tier upgrade"
+   ],
+   "facts_on_canvas": [
+    "Tier 1: BVN and a selfie, ₦50,000 per deposit, ₦300,000 balance",
+    "Tier 2: NIN, ₦100,000 per deposit, ₦500,000 balance",
+    "Tier 3: Proof of address, ₦5,000,000 per deposit, no balance cap",
+    "'Limits set by the CBN.'"
+   ],
+   "conflicts": [],
+   "designer_questions": [
+    "⚠ Final numbers from Fintava."
+   ]
+  },
+  {
+   "id": "A18",
+   "flow": "auth",
+   "title": "Tier 2 · NIN",
+   "kind": "screen",
+   "journey": "Raise your limits",
+   "what_it_shows": "'Upgrade to Tier 2. Verify your NIN. Dial *346# from the phone on your NIN to get it.' NIN field. 'Checked with NIMC against your BVN details.' Verify NIN.",
+   "user_actions": [
+    "enter NIN",
+    "tap Verify NIN"
+   ],
+   "data_needed": [
+    "NIN verification against BVN identity",
+    "tier upgrade at the wallet provider"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/kyc accepts nin (11 digits) but only as part of a MANUAL KYC submission with ID document + payout bank (kyc-submission/dto CreateKycSubmissionDto)"
+    ],
+    "gap": "No standalone NIN check, no NIMC lookup, no cross-check with BVN, no tier change."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/kyc (components/kyc/KycFlow.tsx:398 NIN field)"
+    ],
+    "delta": "Web takes NIN inside the manual KYC form for earning, not as a wallet tier upgrade."
+   },
+   "third_party": [
+    "NIN verification (canvas names NIMC; provider unconfirmed)",
+    "Fintava tier upgrade"
+   ],
+   "facts_on_canvas": [
+    "'Dial *346#' (USSD code)",
+    "'Checked with NIMC against your BVN details.'"
+   ],
+   "conflicts": [
+    "Automated NIMC check vs current 'KYC is manual review'."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "A19",
+   "flow": "auth",
+   "title": "Tier 2 done",
+   "kind": "state",
+   "journey": "Raise your limits",
+   "what_it_shows": "A17 with Tier 1 and Tier 2 Done, Tier 3 Upgrade.",
+   "user_actions": [
+    "tap Tier 3 Upgrade (-> A20)"
+   ],
+   "data_needed": [
+    "updated tier"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "see A17"
+    ],
+    "gap": "No tier state."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava tier/limits"
+   ],
+   "facts_on_canvas": [
+    "same tier table as A17"
+   ],
+   "conflicts": [],
+   "designer_questions": [
+    "⚠ Final numbers from Fintava."
+   ]
+  },
+  {
+   "id": "A20",
+   "flow": "auth",
+   "title": "Tier 3 · address",
+   "kind": "screen",
+   "journey": "Raise your limits",
+   "what_it_shows": "'Upgrade to Tier 3': Home address, City, State, Proof of address upload (ikeja-electric-aug.pdf, 'Utility bill · last 3 months'). Submit. Then reviewed, Tier 3 shows Done.",
+   "user_actions": [
+    "enter address",
+    "upload PDF",
+    "submit"
+   ],
+   "data_needed": [
+    "address fields",
+    "document upload",
+    "review queue + decision",
+    "tier upgrade"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/uploads/presign (generic upload) exists",
+     "admin KYC review exists for KycSubmission (POST /api/hub/admin/kyc/{id}/approve|reject)"
+    ],
+    "gap": "No address model/fields, no Tier 3 submission type, no review queue for proof of address, no tier change at provider."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava tier 3 upgrade (or manual review then provider call)"
+   ],
+   "facts_on_canvas": [
+    "'Utility bill · last 3 months'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A21",
+   "flow": "auth",
+   "title": "Payout bank",
+   "kind": "screen",
+   "journey": "Creator payouts",
+   "what_it_shows": "'Where you get paid. Creators only. The account must be in your own name.' Bank Access Bank, Account number, resolved 'Lennox Emmanuel · matches your BVN'. Save payout account.",
+   "user_actions": [
+    "choose bank",
+    "enter account number",
+    "see resolved name + BVN match",
+    "save"
+   ],
+   "data_needed": [
+    "bank list",
+    "name enquiry",
+    "compare resolved name with BVN name",
+    "persist payout account"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet/banks",
+     "POST /api/hub/wallet/resolve-account (Flutterwave name enquiry, wallet.controller.ts:45)",
+     "POST /api/hub/kyc stores payoutBankName + payoutAccountNumber as free strings inside the manual KYC submission",
+     "POST /api/hub/wallet/withdraw takes bankCode+accountNumber per call (no saved payout account)"
+    ],
+    "gap": "No standalone saved payout account (no model; withdraw takes the account every time); no automated name-vs-BVN match (no BVN name on file); KYC stores bank NAME not bank code."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/kyc (components/kyc/KycFlow.tsx:520-560)"
+    ],
+    "delta": "Web asks for bank + account number inside the KYC form and shows no resolved name; its comment says no resolution endpoint exists, which is stale since POST /api/hub/wallet/resolve-account now exists."
+   },
+   "third_party": [
+    "Bank name enquiry (canvas implies Fintava; current is Flutterwave resolve)"
+   ],
+   "facts_on_canvas": [
+    "'Creators only. The account must be in your own name.'",
+    "'matches your BVN'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A22",
+   "flow": "auth",
+   "title": "Sign in",
+   "kind": "screen",
+   "journey": "Sign in",
+   "what_it_shows": "'Welcome back. Sign in with your email.' Email, Password, Forgot password?, Sign in, 'New here? Create an account'.",
+   "user_actions": [
+    "enter email + password",
+    "sign in",
+    "forgot password (-> A23)",
+    "create account (-> A2)"
+   ],
+   "data_needed": [
+    "login returning tokens + user",
+    "hub profile + creator state after login"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "WAWU ID POST /auth/login {identifier (email OR phone), password} (auth.controller.ts:30; LoginDto)",
+     "GET /api/hub/users/me, GET /api/hub/creator/state after login"
+    ],
+    "gap": "Note: login refuses EMAIL_NOT_VERIFIED accounts (auth.service.ts:206) - see A4."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/sign-in (app/(auth)/sign-in/components/SignInForm.tsx; lib/api/auth.ts:317 signIn)"
+    ],
+    "delta": "Same fields; web layout sits over video on desktop."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A23",
+   "flow": "auth",
+   "title": "Forgot password",
+   "kind": "screen",
+   "journey": "Sign in",
+   "what_it_shows": "'Forgot your password? We'll email you a link to set a new one.' Email. Send reset link.",
+   "user_actions": [
+    "enter email",
+    "send reset link"
+   ],
+   "data_needed": [
+    "forgot-password by email link"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "WAWU ID POST /auth/forgot-password {identifier, method:'email'} (auth.controller.ts:74; auth.service.ts:828-866, Resend email with link to FRONTEND_URL/reset-password)"
+    ],
+    "gap": "Default method is 'sms' (WhatsApp code) for mobile; mobile must pass method:'email' to get the link this board draws."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/forgot-password (ForgotPasswordForm.tsx; lib/api/auth.ts:429 method 'email')"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A24",
+   "flow": "auth",
+   "title": "Check your email",
+   "kind": "state",
+   "journey": "Sign in",
+   "what_it_shows": "'Check your email. We sent a link to lennox@wawu.africa. It expires in 30 minutes.' Back to sign in. Then the emailed link opens New password.",
+   "user_actions": [
+    "back to sign in",
+    "open emailed link -> New password (not drawn)"
+   ],
+   "data_needed": [
+    "reset token TTL",
+    "deep link from email into the app's New password screen",
+    "POST reset-password"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "WAWU ID POST /auth/reset-password {token,email,password} (auth.controller.ts:82)",
+     "RESET_TOKEN_TTL_MS = 60 min (wawu-id/src/auth/auth.service.ts:49)"
+    ],
+    "gap": "TTL is 1 hour, board says 30 minutes. Reset link points at the WEB /reset-password (FRONTEND_URL); no mobile deep link/universal link. 'New password' screen is not drawn."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/forgot-password sent state (ForgotPasswordForm.tsx:53-55)",
+     "/reset-password"
+    ],
+    "delta": "Web copy also says 30 minutes, already disagreeing with WAWU ID's 1-hour TTL."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'It expires in 30 minutes.' (WAWU ID: 1 hour)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "A25",
+   "flow": "auth",
+   "title": "Wrong password",
+   "kind": "state",
+   "journey": "Sign in (other state, from A22)",
+   "what_it_shows": "A22 with banner 'That email and password don't match. Check them, or reset your password.'",
+   "user_actions": [
+    "retry",
+    "reset password"
+   ],
+   "data_needed": [
+    "login error"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "WAWU ID login: 401 'Invalid credentials' for wrong password; 404-coded USER_NOT_IN_WAWUID for unknown identifier (auth.service.ts:175-192)"
+    ],
+    "gap": "Board collapses unknown-email and wrong-password into one message; fine, client maps both. No lockout/rate limit visible in WAWU ID login."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/sign-in error <p> (SignInForm.tsx:218)"
+    ],
+    "delta": "Web shows a generic inline error string, copy differs."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "Z1",
+   "flow": "settings",
+   "title": "Me menu",
+   "kind": "cross-reference",
+   "journey": "Settings (entry)",
+   "what_it_shows": "Me tab 'Creator dashboard': ₦128,400 this month; rows My content (4 of 7 slots), My purchases 12, My courses 1 enrolled, Saved 31, Notifications 3 new, Verification (Creator tick), Settings. Bottom bar Home · Explore · Inbox (3) · Wallet · Me. Also used as the Settings 'Start here' phone (hotspot 1 Settings -> Z2; menu icon -> Z1). Owned by the Me flow.",
+   "user_actions": [
+    "tap Settings (-> Z2)"
+   ],
+   "data_needed": [
+    "monthly earnings",
+    "content count vs slot cap",
+    "purchase count",
+    "course enrolment count",
+    "saved count",
+    "unread notifications",
+    "verification state"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/content/mine/earnings",
+     "GET /api/hub/content/mine",
+     "GET /api/hub/content/purchases",
+     "GET /api/hub/learn/courses (enrolment)",
+     "GET /api/hub/users/me/saved",
+     "GET /api/hub/notifications",
+     "GET /api/hub/verification/me"
+    ],
+    "gap": "Data is the Me flow's; '7 slots' has no server basis (cap is 5)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/creator (CreatorDashboard)",
+     "/settings"
+    ],
+    "delta": "Web bottom bar is Home · Communities · Explore · Messages · Settings; Settings is a nav slot, not a row under Me."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'₦128,400 this month'",
+    "'My content 4 of 7 slots'"
+   ],
+   "conflicts": [
+    "Nav Home · Explore · Inbox · Wallet · Me with Settings under Me vs current 'Home · Communities · Explore · Messages · Settings' (slot 5 Settings).",
+    "'4 of 7 slots' vs current 'Maximum 5 items per account ... Hard cap'."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "Z2",
+   "flow": "settings",
+   "title": "Settings",
+   "kind": "screen",
+   "journey": "Settings",
+   "what_it_shows": "Header card (initials LE, name, lennox@wawu.africa · 0803 ••• 4412). Rows: Notifications; Privacy; Password; Wallet and PIN (Tier 2 · W35); TGIF on Home (Daily verse and prayer, toggle); Sound (Taps and alerts); Theme (System); About WAWU; Terms; Privacy policy; Sign out; Delete account.",
+   "user_actions": [
+    "open each row",
+    "toggle TGIF",
+    "toggle sound",
+    "pick theme",
+    "sign out",
+    "delete account"
+   ],
+   "data_needed": [
+    "name, email, masked phone",
+    "wallet tier",
+    "TGIF preference",
+    "sound preference",
+    "theme preference"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "Notifications -> GET|PATCH /api/hub/settings/notifications (served)",
+     "Privacy -> GET|PATCH /api/hub/settings/privacy (served)",
+     "Password -> MISSING: no change-password route in WAWU ID (routes: register, login, refresh, otp/*, email/verify/*, activate, forgot-password, reset-password; grep 'change-?password|currentPassword' in wawu-id, wawu-backend, wawuafrica -> none)",
+     "Wallet and PIN (Tier 2) -> MISSING: no PIN, no tier (see A9, A17; owned by wallet flow W35)",
+     "TGIF on Home -> client-only localStorage (wawuafrica/src/lib/tgif-preference via components/tgif/TgifSetting.tsx); no server field (n/a unless sync across devices is wanted)",
+     "Sound (Taps and alerts) -> no backend (n/a)",
+     "Theme -> no backend (n/a)",
+     "About/Terms/Privacy policy -> WAWU ID GET /policies, /policies/:slug (served)",
+     "Sign out -> PARTIAL: no WAWU ID logout/revoke route; refresh tokens survive client sign-out (grep 'logout|revoke' wawu-id/src -> none)",
+     "Delete account -> DELETE /api/hub/account (partial, see Z6)",
+     "Header -> GET /api/hub/users/me + WAWU ID user claims (name, email, phone)"
+    ],
+    "gap": "Missing: change-password (signed-in, current+new), transaction PIN and tier, server-side session revoke on sign-out."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/settings (app/(app)/settings/page.tsx, SettingsDesktopShared.tsx)"
+    ],
+    "delta": "Web rows: Profile, Edit profile, Verification, [Creator: Identity verification /kyc, Paid messages, Earnings], Notifications, Privacy, Saved, My tickets, Shop orders, About WAWU, Sound (= the WAWU theme MUSIC track, not taps/alerts), Home feed TGIF toggle, Sign out, Delete account. Web has NO Password, NO Wallet and PIN, NO Theme picker (no code sets data-theme; dark default), NO separate Terms/Privacy policy rows; header shows email but not phone."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Tier 2' on Wallet and PIN row"
+   ],
+   "conflicts": [
+    "Settings reached from Me menu vs current 'Slot 5 is Settings'."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "Z3",
+   "flow": "settings",
+   "title": "Notifications",
+   "kind": "screen",
+   "journey": "Settings",
+   "what_it_shows": "Toggle groups: Money (Money in: tips, sales, transfers; Refunds), Messages (Paid questions incl. reply deadlines; Community messages), Content (Reviews: approved or sent back; New followers), From WAWU (News and offers).",
+   "user_actions": [
+    "toggle each category"
+   ],
+   "data_needed": [
+    "per-category notification preferences"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET|PATCH /api/hub/settings/notifications; NotificationSettings model keys: newReplies, newFollowers, dmReminders, refunds, promotions, communityDigest"
+    ],
+    "gap": "Keys exist for Refunds (refunds), New followers (newFollowers), News and offers (promotions), Paid questions (≈ dmReminders + newReplies). MISSING keys: moneyIn (tips, sales, transfers), communityMessages (current key is a weekly digest, not per-message), contentReviews (approved/sent back). Dispatch code must also honour the new keys."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/settings/notifications (NotificationsSettingsBody.tsx GROUPS)"
+    ],
+    "delta": "Web groups: Money (24-hour message reminders, Refunds), Activity (Replies to my messages, New followers, Offers and news, Community digest). No Money in, no Content reviews, digest instead of community messages."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "Z4",
+   "flow": "settings",
+   "title": "Privacy",
+   "kind": "screen",
+   "journey": "Privacy",
+   "what_it_shows": "Your profile: Show what I have bought (Off, nobody sees your purchases), Show my saved items, Show who I follow; Communities: Show me in member lists (Your messages are visible either way); Blocked accounts (2); Download my data (Sent to your email); Privacy policy.",
+   "user_actions": [
+    "toggle each",
+    "open Blocked accounts",
+    "request data download",
+    "open privacy policy"
+   ],
+   "data_needed": [
+    "privacy flags",
+    "blocked count",
+    "data export request + fulfilment"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET|PATCH /api/hub/settings/privacy (PrivacySettings: showPurchases, showSavedItems, showFollowing, showInMemberLists)",
+     "GET /api/hub/settings/privacy/blocked",
+     "POST /api/hub/settings/privacy/export (DataExportRequest)"
+    ],
+    "gap": "Toggles and blocked list served. Data export only records a 'pending' row (data-export-request.service.ts:13 'only ever writes status: pending'); nothing compiles or emails the export, so 'Sent to your email' is not fulfilled."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/privacy (app/(app)/privacy/page.tsx PROFILE_ROWS, COMMUNITY_ROWS, Blocked accounts, Download my data)"
+    ],
+    "delta": "Same four toggles with the same captions, blocked count, download-my-data confirm sheet."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "Z5",
+   "flow": "settings",
+   "title": "Blocked",
+   "kind": "screen",
+   "journey": "Privacy",
+   "what_it_shows": "Blocked accounts list (Spam Account, Tunde K.) each with Unblock; caption 'They can't message you, see your profile or find you in search.'",
+   "user_actions": [
+    "unblock"
+   ],
+   "data_needed": [
+    "blocked list with name/initials/avatar",
+    "unblock",
+    "block enforcement in DM, profile, search"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/settings/privacy/blocked (returns name, handle, avatarUrl; blocked-account.service.ts:61-83)",
+     "DELETE /api/hub/settings/privacy/blocked/{id}",
+     "POST /api/hub/settings/privacy/blocked",
+     "block enforced in direct-message, community, follow-relationship, comment, purchase services (grep 'blockedAccount' wawu-backend/src)"
+    ],
+    "gap": "Not enforced in search (search-response module) or public profile (user-profile module) - grep shows no blockedAccount reference there, so the caption's 'see your profile or find you in search' is not true today."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/privacy/blocked"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "Z6",
+   "flow": "settings",
+   "title": "Delete account",
+   "kind": "screen",
+   "journey": "Delete account",
+   "what_it_shows": "'Delete your account? This can't be undone after 30 days.' Warning card 'Empty your wallet first. You have ₦485,250.75. Withdraw it to your bank before deleting.' Withdraw. Lists what goes: profile, content and communities; purchases and tickets; wallet and cards. Continue (enabled when wallet empty).",
+   "user_actions": [
+    "tap Withdraw (-> wallet)",
+    "tap Continue (-> Z7)"
+   ],
+   "data_needed": [
+    "wallet balance (provider-authoritative)",
+    "grace period length"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "DELETE /api/hub/account (account.service.ts: 48h GRACE_PERIOD_MS, marks content removed immediately, calls WAWU ID POST /internal/users/:id/mark-deletion)",
+     "GET /api/hub/wallet (balance from Flutterwave, creators only)"
+    ],
+    "gap": "No wallet-empty precheck on delete; grace is 48h not 30 days; content is removed immediately (not restorable); cards do not exist."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/settings/delete-account (DeleteAccountBody.tsx)"
+    ],
+    "delta": "Web is one screen: warning 'This can't be undone' (uploads, paid DMs, unused credits removed), type 'delete', button. No wallet-balance gate, no grace-period date, no Withdraw link."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'This can't be undone after 30 days.'",
+    "'You have ₦485,250.75.'",
+    "'Empty your wallet first'"
+   ],
+   "conflicts": [
+    "30-day grace with cancel-by-sign-in vs current implementation: 48h grace, content removed at once, 'There is no cancel-deletion endpoint anywhere in this backend' (wawu-backend/src/account/account.service.ts:40)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "Z7",
+   "flow": "settings",
+   "title": "Confirm",
+   "kind": "screen",
+   "journey": "Delete account",
+   "what_it_shows": "'Why are you leaving? (optional)' select (I don't use it enough); 'Type DELETE to confirm'; Delete my account.",
+   "user_actions": [
+    "pick reason (optional)",
+    "type DELETE",
+    "confirm"
+   ],
+   "data_needed": [
+    "deletion reason capture",
+    "delete call"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "DELETE /api/hub/account takes NO body (account/dto DeleteAccountDto is empty and forbidNonWhitelisted rejects extra fields)"
+    ],
+    "gap": "No place to send or store the leaving reason."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "DeleteAccountBody.tsx confirm input"
+    ],
+    "delta": "Web types lowercase 'delete' (case-insensitive check); no reason field."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "Z8",
+   "flow": "settings",
+   "title": "Scheduled",
+   "kind": "state",
+   "journey": "Delete account",
+   "what_it_shows": "'Scheduled for deletion. On 26 October. Sign in before then to cancel.' Done.",
+   "user_actions": [
+    "Done (signs out)"
+   ],
+   "data_needed": [
+    "deletion date",
+    "cancel-on-sign-in"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "DELETE /api/hub/account returns {deletionScheduledAt} (account.service.ts)",
+     "WAWU ID mark-deletion sets status pending_deletion and revokes sessions (auth.service.ts:677)"
+    ],
+    "gap": "No cancel path: WAWU ID login does not check or clear pending_deletion, and the hub has no cancel endpoint; content already marked removed would not come back."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "DeleteAccountBody.tsx done state 'Account deleted. Thanks for being part of WAWU.'"
+    ],
+    "delta": "Web says deleted outright, shows no date and no cancel option."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'On 26 October' (≈25 days after board date; implies 30-day window)",
+    "'Sign in before then to cancel.'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "Z9",
+   "flow": "settings",
+   "title": "About",
+   "kind": "screen",
+   "journey": "About and legal",
+   "what_it_shows": "About WAWU: Version 2.4.0; description '...get paid for what they know, with a real bank account built in.'; 'Banking by Fintava MFB · Licensed by the CBN'; Contact support support@wawuafrica.com; Rate the app.",
+   "user_actions": [
+    "contact support",
+    "rate the app",
+    "open Terms (-> Z10)"
+   ],
+   "data_needed": [
+    "app version",
+    "support email"
+   ],
+   "backend": {
+    "status": "n/a",
+    "evidence": [
+     "static; app version from the mobile build"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/about (app/(app)/about/page.tsx)"
+    ],
+    "delta": "Web About is long mission copy + 'What creators earn' 85/15, 'Credits, never cash', 'Nigeria-first', contact support@wawuafrica.com, link to master terms. No version, no banking/licence line, no Rate the app."
+   },
+   "third_party": [
+    "App Store / Google Play in-app review"
+   ],
+   "facts_on_canvas": [
+    "'Version 2.4.0'",
+    "'Banking by Fintava MFB'",
+    "'Licensed by the CBN'",
+    "'a real bank account built in'",
+    "support@wawuafrica.com (bundle rule says emails stay @wawu.africa)"
+   ],
+   "conflicts": [
+    "'Banking by Fintava MFB' vs current Flutterwave payout subaccount custody."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "Z10",
+   "flow": "settings",
+   "title": "Terms",
+   "kind": "screen",
+   "journey": "About and legal",
+   "what_it_shows": "Terms, Updated 1 September 2026: Using WAWU (18 or over, true details, one account per person); Money (payments move through your WAWU wallet, held at Fintava MFB; fees shown before you pay); What you sell (you own your work; WAWU may show it to buyers).",
+   "user_actions": [
+    "read",
+    "go to Privacy policy"
+   ],
+   "data_needed": [
+    "current terms version/date/content"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "WAWU ID GET /policies/:slug (policies.controller.ts:34; Policy model slug/version/effectiveDate/url)"
+    ],
+    "gap": "Content itself is a legal matter; the board text is a placeholder summary."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/terms (LegalDocument from lib/legal/master-agreement.ts, LEGAL_EFFECTIVE_DATE '2 February 2026')"
+    ],
+    "delta": "Web renders the full Master Terms, Privacy and Platform Policy (one document), effective 2 Feb 2026, from a static TS file, not from WAWU ID /policies."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Updated 1 September 2026'",
+    "'You need to be 18 or over'",
+    "'One account per person'",
+    "'held at Fintava MFB'",
+    "'Fees are shown before you pay'"
+   ],
+   "conflicts": [
+    "Wallet 'held at Fintava MFB' vs current Flutterwave custody.",
+    "Separate Terms and Privacy policy screens vs product owner's single Master Terms, Privacy and Platform Policy (4 Sep 2026, wawuafrica/src/app/(app)/privacy/policy/page.tsx comment)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "Z11",
+   "flow": "settings",
+   "title": "Privacy policy",
+   "kind": "screen",
+   "journey": "About and legal",
+   "what_it_shows": "Privacy policy, Updated 1 September 2026: What we collect (details, BVN check result, in-app activity); What we never do (sell data, show BVN/NIN/balance); Your choices (download or delete from Privacy).",
+   "user_actions": [
+    "read"
+   ],
+   "data_needed": [
+    "current privacy policy"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "WAWU ID GET /policies/privacy (policies.controller.ts:34)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/privacy/policy redirects to /terms#privacy anchor"
+    ],
+    "delta": "No standalone page; one combined document."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Updated 1 September 2026'",
+    "'your BVN check result' is collected",
+    "never show 'your BVN, NIN or balance'"
+   ],
+   "conflicts": [
+    "Standalone privacy policy vs single combined Master document (see Z10)."
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "Z12",
+   "flow": "settings",
+   "title": "Nobody blocked",
+   "kind": "state",
+   "journey": "Privacy (other state, from Z5)",
+   "what_it_shows": "Empty state: 'Nobody blocked. Block someone from their profile menu.'",
+   "user_actions": [
+    "none"
+   ],
+   "data_needed": [
+    "empty blocked list"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/settings/privacy/blocked returns empty page"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/privacy/blocked empty state"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  }
+ ],
+ "designer_questions": [
+  {
+   "artboard": "A17",
+   "quote": "⚠ Final numbers from Fintava."
+  },
+  {
+   "artboard": "A19",
+   "quote": "⚠ Final numbers from Fintava."
+  }
+ ],
+ "conflicts": [
+  {
+   "topic": "payments provider / wallet custody",
+   "canvas": "A8: 'Your wallet is open · Tier 1 · Fintava MFB ... Bank Fintava MFB'; Z9: 'Banking by Fintava MFB · Licensed by the CBN'; Z10: 'Payments move through your WAWU wallet, held at Fintava MFB.'",
+   "current": "'Each wallet is a Flutterwave payout subaccount: an account at Flutterwave MFB in the creator's own name, under Flutterwave's CBN banking licence. Flutterwave custodies it, WAWU only instructs.'",
+   "artboards": [
+    "A8",
+    "Z9",
+    "Z10"
+   ]
+  },
+  {
+   "topic": "who gets a wallet",
+   "canvas": "A2: 'I'm here to discover: Follow creators, buy their work, use the wallet.'; A8 opens a wallet for every sign-up before the earn/discover branch.",
+   "current": "'Creators have a wallet' (opened for accountType=creator only, wawu-backend/src/user-profile/user-profile.service.ts:283).",
+   "artboards": [
+    "A2",
+    "A8"
+   ]
+  },
+  {
+   "topic": "liveness / Face-ID",
+   "canvas": "A6: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly'; A17: 'Tier 1 BVN and a selfie'.",
+   "current": "'No DRM, no screenshot-blocking, no liveness/Face-ID. These do not exist in this product.'",
+   "artboards": [
+    "A6",
+    "A7",
+    "A16",
+    "A17"
+   ]
+  },
+  {
+   "topic": "KYC timing and method",
+   "canvas": "A3: BVN mandatory at account creation, 'Checked with NIBSS'; A18: 'Checked with NIMC against your BVN details.'",
+   "current": "'ONE gate now, not two: manual KYC unlocks EARNING.' 'KYC is manual review. Nigeria: BVN + NIN. Elsewhere: national-ID equivalent.' 'Uploading + KYC pending is a normal state.'",
+   "artboards": [
+    "A3",
+    "A5",
+    "A14",
+    "A18"
+   ]
+  },
+  {
+   "topic": "non-Nigerian sign-up",
+   "canvas": "A3 requires a BVN and a BVN-matched phone for every account.",
+   "current": "'Elsewhere: national-ID equivalent.' (web sign-up offers a country picker and KYC takes nationalIdEquivalent)",
+   "artboards": [
+    "A3"
+   ]
+  },
+  {
+   "topic": "event hosting at sign-up",
+   "canvas": "A2: 'I want to earn: Sell content, take paid questions, host events. Free.'",
+   "current": "'B3 makes hosting an event a VERIFIED-ONLY capability ... an unverified creator or professional cannot either.'",
+   "artboards": [
+    "A2"
+   ]
+  },
+  {
+   "topic": "sign-up free / upload limits / free content (bundle rule vs current)",
+   "canvas": "Bundle rule: 'Sign-up is free for everyone. Free accounts: 5 uploads. More uploads, library space and wider reach come with a paid verification tick (creator or professional, ₦2,000/yr). Content can be marked Free.' Z1: 'My content 4 of 7 slots'. A11: 'Publish your first piece · Free to list'.",
+   "current": "'Registration, profile creation and listing are free' (agrees on free sign-up) BUT 'Maximum 5 items per account ... Hard cap ... No free/paid slot split, because every listing carries a price (brief B2: no free content).'",
+   "artboards": [
+    "A2",
+    "A11",
+    "Z1"
+   ]
+  },
+  {
+   "topic": "navigation",
+   "canvas": "Z1 bottom bar: 'Home · Explore · Inbox · Wallet · Me'; 'Settings opens from the menu on Me.'",
+   "current": "'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings' and 'Slot 5 is Settings, not Profile.'",
+   "artboards": [
+    "Z1",
+    "Z2"
+   ]
+  },
+  {
+   "topic": "account deletion grace period",
+   "canvas": "Z6: 'This can't be undone after 30 days.'; Z8: 'Scheduled for deletion. On 26 October. Sign in before then to cancel.'",
+   "current": "Implementation (not a product-notes line): 48h grace, content removed immediately, 'There is no cancel-deletion endpoint anywhere in this backend' (wawu-backend/src/account/account.service.ts:9,40).",
+   "artboards": [
+    "Z6",
+    "Z8"
+   ]
+  },
+  {
+   "topic": "terms and privacy as one document",
+   "canvas": "Z10 Terms and Z11 Privacy policy as separate screens, each 'Updated 1 September 2026'.",
+   "current": "'The terms and the privacy policy are a single Master Terms, Privacy and Platform Policy (product owner, 4 Sep 2026)' (wawuafrica/src/app/(app)/privacy/policy/page.tsx); web effective date '2 February 2026'.",
+   "artboards": [
+    "Z10",
+    "Z11"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "A1",
+   "fact": "'bank it all in one app' (implies a bank account per user)",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "A2",
+   "fact": "'I want to earn ... Free.' (earning account costs nothing)",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A3",
+   "fact": "'Must be the number on your BVN'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A3",
+   "fact": "'Dial *565*0# to get it' (USSD code)",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A3",
+   "fact": "'Checked with NIBSS. We never see your balances.'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "A3",
+   "fact": "password 'At least 8 characters' (matches WAWU ID MinLength(8))",
+   "kind": "other"
+  },
+  {
+   "artboard": "A4",
+   "fact": "'Enter the 6-digit code'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A4",
+   "fact": "'Sent by SMS'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A4",
+   "fact": "'Resend in 0:42'",
+   "kind": "time/limit"
+  },
+  {
+   "artboard": "A5",
+   "fact": "'From your BVN' includes 'State you live in' and 'Occupation' (claim that a BVN record carries these is unverified)",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A6",
+   "fact": "'It must match your BVN photo'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A8",
+   "fact": "'Tier 1 · Fintava MFB'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "A8",
+   "fact": "'Bank Fintava MFB'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "A8",
+   "fact": "'Limit ₦300,000 balance'",
+   "kind": "amount/limit"
+  },
+  {
+   "artboard": "A8",
+   "fact": "sample NUBAN 812 345 6789",
+   "kind": "other"
+  },
+  {
+   "artboard": "A9",
+   "fact": "PIN is 'Four digits'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A9",
+   "fact": "'It approves every payment and transfer.'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A10",
+   "fact": "'Four digits'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A11",
+   "fact": "'Free to list'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A11",
+   "fact": "'Free to host'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A11",
+   "fact": "'Getting paid needs your ID checked'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A12",
+   "fact": "'Pick three or more'",
+   "kind": "other"
+  },
+  {
+   "artboard": "A14",
+   "fact": "phone must equal the BVN-registered phone",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A17",
+   "fact": "Tier 1: BVN and a selfie, ₦50,000 per deposit, ₦300,000 balance",
+   "kind": "limit"
+  },
+  {
+   "artboard": "A17",
+   "fact": "Tier 2: NIN, ₦100,000 per deposit, ₦500,000 balance",
+   "kind": "limit"
+  },
+  {
+   "artboard": "A17",
+   "fact": "Tier 3: Proof of address, ₦5,000,000 per deposit, no balance cap",
+   "kind": "limit"
+  },
+  {
+   "artboard": "A17",
+   "fact": "'Limits set by the CBN.'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "A18",
+   "fact": "'Dial *346#' (USSD code)",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A18",
+   "fact": "'Checked with NIMC against your BVN details.'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "A19",
+   "fact": "same tier table as A17",
+   "kind": "other"
+  },
+  {
+   "artboard": "A20",
+   "fact": "'Utility bill · last 3 months'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A21",
+   "fact": "'Creators only. The account must be in your own name.'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A21",
+   "fact": "'matches your BVN'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "A24",
+   "fact": "'It expires in 30 minutes.' (WAWU ID: 1 hour)",
+   "kind": "time/limit"
+  },
+  {
+   "artboard": "Z1",
+   "fact": "'₦128,400 this month'",
+   "kind": "amount/limit"
+  },
+  {
+   "artboard": "Z1",
+   "fact": "'My content 4 of 7 slots'",
+   "kind": "amount/limit"
+  },
+  {
+   "artboard": "Z2",
+   "fact": "'Tier 2' on Wallet and PIN row",
+   "kind": "other"
+  },
+  {
+   "artboard": "Z6",
+   "fact": "'This can't be undone after 30 days.'",
+   "kind": "time/limit"
+  },
+  {
+   "artboard": "Z6",
+   "fact": "'You have ₦485,250.75.'",
+   "kind": "amount/limit"
+  },
+  {
+   "artboard": "Z6",
+   "fact": "'Empty your wallet first'",
+   "kind": "other"
+  },
+  {
+   "artboard": "Z8",
+   "fact": "'On 26 October' (≈25 days after board date; implies 30-day window)",
+   "kind": "time/limit"
+  },
+  {
+   "artboard": "Z8",
+   "fact": "'Sign in before then to cancel.'",
+   "kind": "other"
+  },
+  {
+   "artboard": "Z9",
+   "fact": "'Version 2.4.0'",
+   "kind": "version/date"
+  },
+  {
+   "artboard": "Z9",
+   "fact": "'Banking by Fintava MFB'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "Z9",
+   "fact": "'Licensed by the CBN'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "Z9",
+   "fact": "'a real bank account built in'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "Z9",
+   "fact": "support@wawuafrica.com (bundle rule says emails stay @wawu.africa)",
+   "kind": "other"
+  },
+  {
+   "artboard": "Z10",
+   "fact": "'Updated 1 September 2026'",
+   "kind": "version/date"
+  },
+  {
+   "artboard": "Z10",
+   "fact": "'You need to be 18 or over'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "Z10",
+   "fact": "'One account per person'",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "Z10",
+   "fact": "'held at Fintava MFB'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "Z10",
+   "fact": "'Fees are shown before you pay'",
+   "kind": "other"
+  },
+  {
+   "artboard": "Z11",
+   "fact": "'Updated 1 September 2026'",
+   "kind": "version/date"
+  },
+  {
+   "artboard": "Z11",
+   "fact": "'your BVN check result' is collected",
+   "kind": "legal/KYC"
+  },
+  {
+   "artboard": "Z11",
+   "fact": "never show 'your BVN, NIN or balance'",
+   "kind": "legal/KYC"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "Transaction PIN: set/confirm, verify on every money movement, change, reset via OTP, attempt lockout, stored as argon2 hash (WAWU ID or Hub, ownership undecided)",
+   "why": "A9/A10 create a 4-digit PIN at sign-up; Z2 'Wallet and PIN'; Wallet W11/W36/W37 require it. Nothing exists: no column, no route; POST /api/hub/wallet/withdraw approves on bearer token alone.",
+   "artboards": [
+    "A8",
+    "A9",
+    "A10",
+    "Z2"
+   ],
+   "size": "M",
+   "depends_on": [
+    "decision: PIN lives in WAWU ID (shared across apps) or Hub",
+    "SMS/WhatsApp OTP for reset"
+   ]
+  },
+  {
+   "item": "Device binding + biometric unlock for payments (device registry, public-key enrolment, signed challenge as PIN substitute)",
+   "why": "Wallet W11 says 'Face ID can stand in' and W35 'Face ID for payments'; Settings Z2 routes Wallet and PIN to W35. No device or biometric concept exists in WAWU ID, Hub, or web.",
+   "artboards": [
+    "Z2",
+    "A9"
+   ],
+   "size": "L",
+   "depends_on": [
+    "Transaction PIN",
+    "ruling on 'no liveness/Face-ID' rule (device biometric is not liveness, but the rule wording covers Face-ID)"
+   ]
+  },
+  {
+   "item": "BVN verification at registration: lookup, phone-match, prefill name/DOB/gender/state, store bvnVerifiedAt + BVN hash/last4 on WAWU ID user; extend RegisterDto with bvn (or a verification token) and dateOfBirth",
+   "why": "A3/A5/A14 make BVN the identity source; WAWU ID register has no bvn/dob and WawuUser has no such columns.",
+   "artboards": [
+    "A3",
+    "A5",
+    "A14"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "BVN provider contract (NIBSS via Fintava or aggregator)",
+    "ruling on KYC-at-sign-up vs 'manual KYC unlocks earning'",
+    "NDPA handling of BVN storage"
+   ]
+  },
+  {
+   "item": "Liveness + face match against BVN photo, with result stored and retry policy",
+   "why": "A6/A7/A16; Tier 1 requires 'BVN and a selfie'.",
+   "artboards": [
+    "A6",
+    "A7",
+    "A16",
+    "A17"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "provider",
+    "ruling on 'no liveness/Face-ID' rule"
+   ]
+  },
+  {
+   "item": "Registration phone verification: endpoint to verify the phone of an in-flight/just-registered account (not otp/verify's find-or-create login), WawuUser.phoneVerified column, SMS channel",
+   "why": "A4/A15 verify the phone by SMS; WAWU ID otp/verify signs in or creates a phone-only user and delivers via WhatsApp.",
+   "artboards": [
+    "A4",
+    "A15"
+   ],
+   "size": "M",
+   "depends_on": [
+    "SMS provider (or ruling that WhatsApp is acceptable)"
+   ]
+  },
+  {
+   "item": "Reconcile email verification with the board's sign-up path (either add an email-code step to mobile, or verify email by link post-signup, or relax the login gate when phone+BVN verified)",
+   "why": "WAWU ID login rejects EMAIL_NOT_VERIFIED (auth.service.ts:206); the board never verifies email, so a board-path user is locked out of A22.",
+   "artboards": [
+    "A3",
+    "A4",
+    "A22"
+   ],
+   "size": "S",
+   "depends_on": [
+    "product ruling"
+   ]
+  },
+  {
+   "item": "Persist occupation (and DOB) somewhere; RegisterDto accepts occupation but neither WAWU ID nor Hub stores it",
+   "why": "A5 shows Occupation and Date of birth.",
+   "artboards": [
+    "A5"
+   ],
+   "size": "S",
+   "depends_on": [
+    "decision WAWU ID vs Hub UserProfile"
+   ]
+  },
+  {
+   "item": "Fintava account provisioning per user at Tier 1 (NUBAN, account name, bank) at sign-up for every account type",
+   "why": "A8 opens a Fintava MFB account for every sign-up; today only creators get a Flutterwave payout subaccount.",
+   "artboards": [
+    "A7",
+    "A8"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "Fintava API docs + contract",
+    "custody/licence ruling",
+    "BVN verification"
+   ]
+  },
+  {
+   "item": "KYC tier model + limits (Tier 1/2/3 state per user, limits read from provider), Tier 2 NIN verification endpoint, Tier 3 address + proof-of-address submission and review queue",
+   "why": "A17-A20; nothing exists (WAWU ID VerificationTier is the legacy badge ladder).",
+   "artboards": [
+    "A17",
+    "A18",
+    "A19",
+    "A20",
+    "Z2"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "Fintava tier APIs",
+    "NIN provider (NIMC)",
+    "admin review surface"
+   ]
+  },
+  {
+   "item": "Saved payout account: model + POST/GET endpoint storing bankCode, accountNumber, resolved name; auto name-match against verified BVN name; withdraw defaults to it",
+   "why": "A21 'Save payout account' with 'matches your BVN'; today payout bank is free text inside KycSubmission and withdraw takes the account each call.",
+   "artboards": [
+    "A21"
+   ],
+   "size": "M",
+   "depends_on": [
+    "BVN name on file",
+    "provider name enquiry (Flutterwave resolve exists; Fintava if switched)"
+   ]
+  },
+  {
+   "item": "Change password while signed in: WAWU ID POST /auth/change-password {currentPassword, newPassword}, revoke other refresh tokens",
+   "why": "Z2 'Password' row; WAWU ID only has forgot/reset.",
+   "artboards": [
+    "Z2"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Server-side sign-out: WAWU ID POST /auth/logout revoking the refresh token (and optionally all sessions)",
+   "why": "Z2 'Sign out'; today sign-out only clears client storage (wawuafrica/src/lib/auth/session-provider.tsx:83) and refresh tokens stay valid.",
+   "artboards": [
+    "Z2"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Notification preference keys: moneyIn, communityMessages (per message, not digest), contentReviews; honour them in notification dispatch",
+   "why": "Z3 categories not in NotificationSettings.",
+   "artboards": [
+    "Z3"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Data export fulfilment job: compile user data, email a download link, move DataExportRequest status pending -> sent",
+   "why": "Z4 'Download my data · Sent to your email'; service only ever writes 'pending'.",
+   "artboards": [
+    "Z4"
+   ],
+   "size": "M",
+   "depends_on": [
+    "storage signed URLs",
+    "mail"
+   ]
+  },
+  {
+   "item": "Enforce blocks in search results and public profile",
+   "why": "Z5 caption 'can't ... see your profile or find you in search'; search-response and user-profile modules never read BlockedAccount.",
+   "artboards": [
+    "Z5"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Account deletion: 30-day grace, cancel by signing in (WAWU ID login clears pending_deletion; hub restores), defer content removal to finalisation, wallet-must-be-empty precheck from provider balance, optional reason field",
+   "why": "Z6/Z7/Z8; today 48h, content removed immediately, no cancel, no balance check, DTO rejects a body.",
+   "artboards": [
+    "Z6",
+    "Z7",
+    "Z8"
+   ],
+   "size": "M",
+   "depends_on": [
+    "ruling on grace length",
+    "wallet provider balance read"
+   ]
+  },
+  {
+   "item": "Suggested follows by multiple interests (GET /api/hub/creators?interests=a,b,c ranked) and a canonical interest vocabulary shared by sign-up, explore and suggestions",
+   "why": "A12/A13; discovery filters by a single category and three different interest lists exist.",
+   "artboards": [
+    "A12",
+    "A13"
+   ],
+   "size": "S",
+   "depends_on": [
+    "ruling on which vocabulary"
+   ]
+  },
+  {
+   "item": "Mobile deep link for password-reset email (universal/app link) and align reset TTL with copy",
+   "why": "A24 says the emailed link opens New password in-app and expires in 30 minutes; WAWU ID links to web /reset-password with a 1-hour TTL.",
+   "artboards": [
+    "A23",
+    "A24"
+   ],
+   "size": "S",
+   "depends_on": [
+    "fact ruling on TTL",
+    "mobile app link domain"
+   ]
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "BVN verification (canvas: NIBSS; via Fintava or KYC aggregator, unconfirmed)",
+   "capability": "BVN lookup returning phone, name, DOB, gender, photo",
+   "artboards": [
+    "A3",
+    "A5",
+    "A14"
+   ]
+  },
+  {
+   "provider": "Liveness/face-match vendor (unnamed on canvas)",
+   "capability": "liveness check + face match to BVN photo",
+   "artboards": [
+    "A6",
+    "A7",
+    "A16"
+   ]
+  },
+  {
+   "provider": "NIN verification (canvas: NIMC)",
+   "capability": "NIN lookup and match to BVN identity",
+   "artboards": [
+    "A18",
+    "A19"
+   ]
+  },
+  {
+   "provider": "SMS gateway (canvas says SMS; WAWU ID uses Meta WhatsApp Cloud API with email fallback)",
+   "capability": "6-digit OTP delivery",
+   "artboards": [
+    "A4",
+    "A15"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "Tier 1 account (NUBAN) provisioning",
+   "artboards": [
+    "A8"
+   ]
+  },
+  {
+   "provider": "Fintava",
+   "capability": "account tier upgrade + per-tier limits",
+   "artboards": [
+    "A17",
+    "A18",
+    "A19",
+    "A20"
+   ]
+  },
+  {
+   "provider": "Fintava (or current Flutterwave resolve-account)",
+   "capability": "bank name enquiry for payout account",
+   "artboards": [
+    "A21"
+   ]
+  },
+  {
+   "provider": "Fintava (or current Flutterwave)",
+   "capability": "authoritative wallet balance for delete-account precheck",
+   "artboards": [
+    "Z6"
+   ]
+  },
+  {
+   "provider": "Resend (existing in WAWU ID mail)",
+   "capability": "password reset link email; data-export email",
+   "artboards": [
+    "A23",
+    "A24",
+    "Z4"
+   ]
+  },
+  {
+   "provider": "Apple App Store / Google Play",
+   "capability": "in-app review prompt (Rate the app)",
+   "artboards": [
+    "Z9"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "Web sign-up captures first/middle/last name, gender, country, state/region and occupation by hand (SignUpFlow details step); board derives them from BVN and has no country picker.",
+  "Non-Nigerian sign-up and KYC (country picker; KYC nationalIdEquivalent + passport/national ID/driver's licence document upload in /kyc).",
+  "Email verification code step at sign-up (WAWU ID /auth/email/verify/start|confirm).",
+  "Manual KYC form at /kyc (BVN + NIN + ID document upload + payout bank) as the earning gate; board splits this into wallet tiers (A17-A20) and payout bank (A21) with no ID document upload.",
+  "Switching a discover account to creator later (/onboarding 'Become a creator', becomeCreator() PATCH /users/me).",
+  "Settings rows: Profile, Edit profile, Verification ticks (/profile/verification), Identity verification (/kyc), Paid messages (/messages/settings), Earnings (/earnings), Saved, My tickets, Shop orders, 'About and partners'.",
+  "Settings header account-type label ('Creator' / 'Member' account).",
+  "Sound setting that plays 'The WAWU theme' music track (board's Sound row is 'Taps and alerts').",
+  "Notification toggles '24-hour message reminders', 'Replies to my messages' and weekly 'Community digest'.",
+  "About page sections: mission statement, 'What creators earn' (85/15), 'Credits, never cash', 'Nigeria-first'.",
+  "Single Master Terms, Privacy and Platform Policy document with privacy anchor (/privacy/policy redirects to /terms).",
+  "Delete-account warning that unused credits are removed and there is no refund for time already spent.",
+  "Phone-number sign-in and WhatsApp-code password reset supported by WAWU ID (identifier accepts phone; forgot-password method 'sms') - not on web either, but available in WAWU ID."
+ ],
+ "summary": "Auth and Settings cover sign-up, sign-in, password reset, CBN-style account tiers, payout bank, and the Settings/Privacy/Delete/About/legal screens. Authentication lives in WAWU ID (/home/user/wawu-id/src), which today serves email+password register/login, refresh, email-code verification, phone OTP login, forgot/reset password and versioned policies; the Hub only mirrors profile data (accountType, interests) and owns settings, privacy, blocking and account deletion. Sign-in, forgot password and the settings/privacy/blocked screens are largely served and already built on web. The board's sign-up is a different product: BVN mandatory for everyone, NIBSS phone match, BVN-prefilled details incl. DOB, liveness selfie, an automatic Fintava MFB Tier 1 wallet for every account, and a 4-digit transaction PIN; none of BVN lookup, face match, DOB, tiers, Fintava, or PIN exists in WAWU ID, the Hub or web, and several conflict directly with current product rules (no liveness/Face-ID, manual KYC only for earning, Flutterwave custody, creator-only wallet). WAWU ID register accepts names, email, phone, country, state, gender, occupation (dropped) and password but no BVN, NIN, DOB or account type. A concrete trap: the board never verifies email, yet WAWU ID login refuses unverified-email accounts, so a board-path user could not sign back in. Highest-priority dependency for Wallet is the transaction PIN plus device/biometric binding, which have zero existing footprint. Settings gaps are smaller: change-password, server-side sign-out, three notification keys, data-export fulfilment, block enforcement in search/profile, and a 30-day cancellable deletion versus today's 48h non-cancellable one."
+}

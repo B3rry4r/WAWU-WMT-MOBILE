@@ -1,0 +1,123 @@
+{
+  "repo": "wawu-wmt-mobile",
+  "stack": "node",
+  "files": {
+    "source": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "test": [
+      "src/**/__tests__/**",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx"
+    ],
+    "exclude": [
+      "src/api/schema.generated.ts",
+      "src/theme/tokens.generated.ts",
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".expo/**"
+    ]
+  },
+  "gates": {
+    "deferrals": {
+      "enabled": true,
+      "include_tests": false
+    },
+    "fake_data": {
+      "enabled": true,
+      "allow_paths": []
+    },
+    "wire_types": {
+      "enabled": true,
+      "data_layer": [
+        "src/api/**",
+        "src/features/*/api/**"
+      ]
+    },
+    "forks": {
+      "enabled": true,
+      "min_name_length": 4,
+      "ignore_names": [
+        "State",
+        "Result",
+        "Data",
+        "Item",
+        "Model",
+        "Args",
+        "Params"
+      ]
+    },
+    "hardcoded_signals": {
+      "enabled": true,
+      "token_layer": [
+        "src/theme/**"
+      ],
+      "check_colors": true,
+      "allow_paths": [],
+      "color_severity": "fail"
+    },
+    "dead_controls": {
+      "enabled": true
+    },
+    "product_invariants": {
+      "enabled": true,
+      "banned": [
+        {
+          "pattern": "—",
+          "ruling": "PO-2026-09-01",
+          "why": "No em-dashes in anything a user reads. Use a comma, a colon, brackets or two sentences."
+        },
+        {
+          "pattern": "wawu\\.africa/",
+          "ruling": "DESIGN-LINKS",
+          "why": "Links are written wawu/... (never wawu.africa/...). Emails stay @wawu.africa."
+        },
+        {
+          "pattern": "flutterwave",
+          "ruling": "R-1",
+          "why": "Fintava is the money rail in the app (DECISIONS.md R-1). Flutterwave is never named to users."
+        },
+        {
+          "pattern": "community chat tokens?",
+          "ruling": "PO-2026-09-21",
+          "why": "The name is WAWU Credits."
+        },
+        {
+          "pattern": "free trial|7.day trial",
+          "ruling": "PO-2026-09-21",
+          "why": "There is no free trial."
+        },
+        {
+          "pattern": "trust score",
+          "ruling": "D13",
+          "why": "No Trust Score exists. Open decision D13; do not ship it until ruled."
+        },
+        {
+          "pattern": "wawu shop|marketplace",
+          "ruling": "R-2",
+          "why": "WAWU Shop is retired and replaced by Schools (DECISIONS.md R-2)."
+        },
+        {
+          "pattern": "\\blorem ipsum\\b",
+          "ruling": "GATE",
+          "why": "Placeholder copy never ships."
+        }
+      ]
+    },
+    "pipeline_open_items": {
+      "enabled": false,
+      "require_pipeline": false,
+      "pipeline_dirs": [
+        ".pipeline"
+      ]
+    },
+    "provisional": {
+      "enabled": true
+    },
+    "unbacked_promises": {
+      "enabled": true
+    }
+  }
+}

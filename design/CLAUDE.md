@@ -1,0 +1,11 @@
+# WAWU mobile screen design — standing rules
+- The "Start here" map's phone is the ENTRY SCREEN the user taps from to open the flow (e.g. Explore scrolled to the doors for Professionals), with the tap targets visible on it — never the flow's own first screen.
+- Every flow board must have: a "Start here" entry map (root screen with numbered hotspot markers + legend linking to each journey), journeys laid out left→right with the tap written on each arrow, "Starts from" / "Then" chips on each row, and an "Other states" row with "From Wxx" tags. All screens dark on top, light underneath.
+- Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.
+- Sign-up is free for everyone. Free accounts: 5 uploads. More uploads, library space and wider reach come with a paid verification tick (creator or professional, ₦2,000/yr). Content can be marked Free.
+- Links are wawu/… (never wawu.africa/…). Emails stay @wawu.africa.
+- Schools: Explore door "Find a school" (Flow SC). Enroll + pay from wallet, or apply via the school's tracked WAWU link.
+- Ads run on TGIF (sponsored card) and take TGIF's slot on Today when TGIF is off.
+- After any board change, rebuild WAWU Dark/Light with _gen/buildAll.js.
+- Professionals: paid DMs only. No booking or escrow.
+- Build boards with _gen/build.js (static HTML sections in <Flow>.sections.json, painted by the DC). No x-imports in boards (too slow).

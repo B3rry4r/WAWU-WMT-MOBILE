@@ -1,0 +1,11 @@
+:root {
+  --radius-chip: 999px;
+  --radius-button: 999px;   /* every button is a pill */
+  --radius-input: 16px;
+  --radius-tile: 18px;      /* service tiles, category tiles */
+  --radius-media: 20px;     /* creator / event / content media */
+  --radius-card: 22px;      /* grouped list cards */
+  --radius-money: 26px;     /* balance card */
+  --radius-feed-card: 30px; /* creator / professional cards in the full-bleed feed */
+  --radius-sheet: 44px;     /* bottom sheets (inset 8px from the device edge) */
+}

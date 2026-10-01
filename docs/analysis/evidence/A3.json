@@ -1,0 +1,2107 @@
+{
+ "agent": "A3",
+ "flows": [
+  "me"
+ ],
+ "artboards": [
+  {
+   "id": "M1",
+   "flow": "me",
+   "title": "Me · Content",
+   "kind": "screen",
+   "journey": "Your profile tabs (also the 'Start here' entry map)",
+   "what_it_shows": "Me tab root: own profile exactly as visitors see it (avatar, name, bio, social handles above counts, 12.5K followers / 486 following / 48 pieces), a no-dismiss 'Get your professional tick' prompt, and Content/Services/Shop/About tabs with a content grid. Header carries QR, Share, Menu and Edit profile; Create button for creator accounts. The Start-here map numbers 11 hotspots: QR (W25), Share, Menu (M7), Edit (M8), your tick (M11), social handles (external), verification prompt (M11), Services (M2), Shop (M3), About (M4), Create (M19); plus any name/avatar -> M5, Home bell -> M31, Dashboard or Wallet -> KYC (Flow A).",
+   "user_actions": [
+    "tap QR code (opens W25 'Your code')",
+    "tap Share (OS share sheet)",
+    "tap Menu (M7)",
+    "tap Edit profile (M8)",
+    "tap own tick or verification prompt (M11)",
+    "tap a social handle (opens platform externally)",
+    "switch tab Content/Services/Shop/About",
+    "tap Create (+) (M19, creator accounts only)"
+   ],
+   "data_needed": [
+    "name, @handle, avatar",
+    "bio",
+    "social handles in creator-chosen order (Instagram, TikTok, YouTube, X shown)",
+    "followerCount, followingCount, live piece count",
+    "own ticks (creator / professional) + which ticks are still offered (for the no-dismiss prompt)",
+    "content grid: thumbnail, view count or price per tile",
+    "profile share URL in wawu/<handle> form",
+    "QR payload for the profile (W25)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/users/me + GET /api/hub/users/me/profile-stats (followerCount, followingCount, postCount)",
+     "GET /api/hub/verification/me (ticks + eligibility for the prompt)",
+     "GET /api/hub/users/{wawuId}/content (live pieces with views, price)",
+     "/home/user/wawu-backend/src/user-profile/social-handles.ts + schema.prisma UserProfile: instagramHandle, xHandle, tiktokHandle, youtubeUrl, facebookUrl, linkedinUrl, whatsappHandle (no threads, no order column)",
+     "searched backend-routes for 'qr', 'share': none; QR is owned by wallet flow W25"
+    ],
+    "gap": "Data for header, counts, ticks and content grid is served. Missing: social-link ORDER (M9 'Drag to reorder' has no column), Threads handle, a profile QR payload endpoint (W25 belongs to the wallet flow), and a 'Shop' list for a creator (see M3)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile",
+     "/home/user/wawuafrica/src/app/(app)/profile/page.tsx",
+     "/home/user/wawuafrica/src/components/profile/ProfileScreen.tsx"
+    ],
+    "delta": "Web /profile is the same owner+visitor screen (good match on intent) but: tabs are Overview/Content/Services/Events (conditional) not Content/Services/Shop/About; stat row is four-up Posts/Followers/Following/Monthly Views vs canvas three counts (followers/following/pieces) with no monthly views; web adds owner stat cards (Total earnings, Profile views, Products sold this month) and a rail (Creator tools + Profile Strength completeness) that the canvas does not draw; no Menu icon/hub (web deliberately removed the menu-style profile; tools live in Settings and the rail); no QR on profile; web profile is reached from the header avatar / Settings, not a 'Me' tab slot. VerificationPrompt (no dismiss, benefits = tick + host events) matches the canvas prompt."
+   },
+   "third_party": [
+    "OS share sheet (Web Share API / native)",
+    "simpleicons.org platform logos (design only)"
+   ],
+   "facts_on_canvas": [
+    "Professional tick ₦2,000 a year",
+    "tick 'shows everywhere, lets you host events'"
+   ],
+   "conflicts": [
+    "nav: canvas tab bar 'Home Explore Inbox Wallet Me' vs current 'Home · Communities · Explore · Messages · Settings'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M2",
+   "flow": "me",
+   "title": "Me · Services tab",
+   "kind": "screen",
+   "journey": "Your profile tabs",
+   "what_it_shows": "Services tab on own profile: 'Paid messages ₦300 a message · replies within 24 hours' and 'Brand strategy sessions · Listed as a professional · via paid messages'.",
+   "user_actions": [
+    "tap paid-messages row",
+    "tap professional listing"
+   ],
+   "data_needed": [
+    "creator dmEnabled, dmPrice, dmResponseHours",
+    "approved ProfessionalProfile listings (headline, category)"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/creator/state (dmEnabled, dmPrice, dmResponseHours)",
+     "PATCH /api/hub/creator/dm-settings",
+     "GET /api/hub/professionals (ProfessionalProfile.headline, services[])",
+     "GET /api/hub/users/{wawuId}/public-profile returns dmEnabled/dmPrice/dmResponseHours"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile?tab=services",
+     "/home/user/wawuafrica/src/components/profile/ProfileScreen.tsx ServicesTab (line ~755)"
+    ],
+    "delta": "Web Services tab lists professional listings only and appears only when a listing exists; the paid-message price row lives in the action row (ProfileActions 'Message ₦N'), not as a Services row."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦300 a message",
+    "replies within 24 hours"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M3",
+   "flow": "me",
+   "title": "Me · Shop tab",
+   "kind": "screen",
+   "journey": "Your profile tabs",
+   "what_it_shows": "Shop tab on own profile listing the creator's products: 'Brand deck template ₦4,500', 'Colour grading LUTs ₦3,500'.",
+   "user_actions": [
+    "tap a product"
+   ],
+   "data_needed": [
+    "the creator's own sellable products (title, price, image)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "searched backend-models: Product has no seller/creator column (schema.prisma ~2722: name, brand, priceNaira, stock, images, wawuVerified) - it is the WAWU-run store catalogue",
+     "GET /api/hub/users/{wawuId}/content can be filtered to contentType 'template'/'image' (CreateContentDto CONTENT_TYPES)",
+     "grep 'sellerWawuId|creatorWawuId' in Product: none"
+    ],
+    "gap": "No creator-owned product entity. If 'Shop' means digital templates/images, it is a filter over ContentPiece (no new model, S). If it means physical goods sold by a creator, there is no seller model, no creator stock/fulfilment, and it collides with the Basket/Beauty handoff rule: needs a ruling first."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/shop is the WAWU store, not a creator storefront",
+     "no profile Shop tab in profileTabsFor()"
+    ],
+    "delta": "Web has no creator Shop tab; /shop is the WAWU equipment store."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Brand deck template ₦4,500",
+    "Colour grading LUTs ₦3,500"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M4",
+   "flow": "me",
+   "title": "Me · About",
+   "kind": "screen",
+   "journey": "Your profile tabs",
+   "what_it_shows": "About tab on own profile: Featured works with 'Add', bio, location 'Lagos, Nigeria', 'On WAWU since March 2025', website, Experience list (role, company, years), Skills and expertise chips. Note: 'From the code (AboutCard, Experience, Skills)... No Trust Score.'",
+   "user_actions": [
+    "tap Add on Featured works (M36)",
+    "tap a featured work (M35)",
+    "tap website"
+   ],
+   "data_needed": [
+    "featured works list",
+    "bio",
+    "profile location",
+    "member-since date",
+    "websiteUrl",
+    "experience rows",
+    "skills list"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/users/me (bio, websiteUrl, company, headline, experience[])",
+     "POST/PATCH/DELETE /api/hub/users/me/experience",
+     "schema.prisma UserProfile: no `location` column (location exists only on ProfileExperience:309); no skills column (only `interests String[]`); no featured-works/portfolio model (grep 'portfolio|FeaturedWork' -> only ProfessionalCredentialKind.portfolio enum)",
+     "public-profile response (user-profile.service.ts:353-383) has no createdAt/memberSince"
+    ],
+    "gap": "Missing: UserProfile.location; memberSince on the profile responses (createdAt exists but is not returned on public-profile); a skills field distinct from interests (or a ruling that interests ARE skills); the whole featured-works entity (see M34-M36)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile?tab=overview",
+     "/home/user/wawuafrica/src/components/profile/ProfileScreen.tsx AboutCard/SkillsCard/ExperienceSection",
+     "/home/user/wawuafrica/src/lib/api/profile.ts:174 '`location` / `memberSince` / `replyTime`: no such columns exist; left undefined'"
+    ],
+    "delta": "Web shows About/Skills/Experience inside an Overview tab (no About tab). Location and member-since are wired in the UI but always empty because the backend has no data. Skills are the interests/specialization chips. 'Featured' on web means featured CONTENT, not portfolio works; no Add-a-work."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "On WAWU since March 2025 (sample)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M5",
+   "flow": "me",
+   "title": "Public profile",
+   "kind": "screen",
+   "journey": "Someone else's profile",
+   "what_it_shows": "A visitor's view of a creator: same header, Follow, 'Message · ₦300', ₦ (Tip), and Content/Services/Shop/About tabs. 'From the code (/profile/[wawuId])'.",
+   "user_actions": [
+    "Follow",
+    "Message · ₦300 (opens paid DM I3)",
+    "₦ Tip (opens H26)",
+    "switch tabs"
+   ],
+   "data_needed": [
+    "public profile aggregate",
+    "follow status",
+    "dmEnabled/dmPrice",
+    "live content"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/users/{wawuId}/public-profile",
+     "GET /api/hub/creators/{wawuId}/follow",
+     "GET /api/hub/users/{wawuId}/content",
+     "POST /api/hub/dm/{creatorWawuId}/send",
+     "POST /api/hub/tips"
+    ],
+    "gap": "Served for header, follow, DM price, tip. Shop and About-tab gaps are as in M3/M4."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/[wawuId]",
+     "/home/user/wawuafrica/src/app/(app)/profile/[wawuId]/page.tsx",
+     "/home/user/wawuafrica/src/components/profile/ProfileActions.tsx (Message ₦N + Tip)"
+    ],
+    "delta": "Web has Follow + Share in identity and Message ₦N + Tip in the action row (matches). Tabs differ (Overview/Content/Services/Events vs Content/Services/Shop/About). Visitor stat row is three-up on web too, but labelled Posts/Followers/Following."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Message · ₦300"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M6",
+   "flow": "me",
+   "title": "Following",
+   "kind": "state",
+   "journey": "Someone else's profile",
+   "what_it_shows": "M5 after tapping Follow: button reads 'Following'. Then: Message opens a paid DM (I3), ₦ opens Tip (H26).",
+   "user_actions": [
+    "Unfollow (tap Following)"
+   ],
+   "data_needed": [
+    "follow state, updated follower count"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/creators/{wawuId}/follow",
+     "DELETE /api/hub/creators/{wawuId}/follow"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/profile/[wawuId] follow toggle"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M7",
+   "flow": "me",
+   "title": "Menu",
+   "kind": "screen",
+   "journey": "Menu",
+   "what_it_shows": "Private hub behind the M1 menu icon: 'Everything that isn't public lives here.' Rows: Creator dashboard (₦128,400 this month), My content (4 of 5 uploads), My purchases (12), My courses (1 enrolled), Saved (31), Notifications (3 new), Verification (Creator tick · ID check in review), Settings.",
+   "user_actions": [
+    "open Creator dashboard (M18)",
+    "open My content (M28)",
+    "open My purchases (M29)",
+    "open My courses",
+    "open Saved (M30)",
+    "open Notifications (M31)",
+    "open Verification (M11)",
+    "open Settings (Settings flow)"
+   ],
+   "data_needed": [
+    "earnings this calendar month",
+    "slotsUsed/slotsTotal",
+    "purchase count",
+    "enrolled course count",
+    "saved count",
+    "unread notification count",
+    "tick + KYC status summary"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/mine/earnings (total/payable/held; NO month-scoped figure in CreatorEarningsResponse, creator-earnings.type.ts:56-70)",
+     "GET /api/hub/creator/state (slotsUsed, slotsTotal, kycStatus)",
+     "GET /api/hub/content/purchases (paginated; count via total)",
+     "GET /api/hub/learn/entitlement (enrolledCourseIds)",
+     "GET /api/hub/users/me/saved (content only)",
+     "GET /api/hub/notifications (unread via list)",
+     "GET /api/hub/verification/me + GET /api/hub/kyc"
+    ],
+    "gap": "No earnings-this-month figure (only all-time total/payable/held); no single counts endpoint for the badges (each needs a full list call); 'Saved 31' would undercount because events/creators are not in /users/me/saved."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/home/user/wawuafrica/src/app/(app)/profile/page.tsx doc comment: menu-style /profile deliberately replaced (build brief C2)",
+     "/home/user/wawuafrica/src/app/(app)/settings/page.tsx rows: Profile, Edit profile, Verification, KYC, Earnings, Saved, My tickets, Shop orders"
+    ],
+    "delta": "Web has no Menu screen; the same destinations are spread across Settings rows, the profile rail (CreatorToolsCard) and header. Web shows earnings.total (all-time) labelled 'this month' (lib/api/verification.ts:403) which is a live mislabel."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦128,400 this month (sample)",
+    "4 of 5 uploads"
+   ],
+   "conflicts": [
+    "private tools inside Me vs current nav 'Slot 5 is Settings, not Profile. Profile is a row inside Settings'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M8",
+   "flow": "me",
+   "title": "Edit profile",
+   "kind": "screen",
+   "journey": "Edit profile",
+   "what_it_shows": "Edit form: avatar, Name (single field), Handle '@lennox' with 'wawu/lennox' link preview, Bio with '86 / 160' counter, Location, Social links (each with platform logo) and 'Add handle'. Save.",
+   "user_actions": [
+    "change avatar",
+    "edit name",
+    "edit handle",
+    "edit bio",
+    "edit location",
+    "open Social links (M9)",
+    "Save (M10)"
+   ],
+   "data_needed": [
+    "name",
+    "handle + availability",
+    "bio (160 max)",
+    "location",
+    "social handles"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "PATCH /api/hub/users/me (UpdateUserProfileDto: bio MaxLength 500 at dto line 69, handle MaxLength 30 letters/numbers/_/.)",
+     "POST /api/hub/uploads/presign (avatar)",
+     "schema.prisma UserProfile has no location column",
+     "name lives in WAWU ID (first/middle/last), not in this backend"
+    ],
+    "gap": "Missing: location field. Bio limit differs (backend 500 vs canvas 160). No handle-availability check route found (searched backend-routes 'handle': only admin creator search ?q=). Name is single field on canvas but split first/middle/last at identity."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/edit",
+     "/home/user/wawuafrica/src/app/(app)/profile/edit/page.tsx"
+    ],
+    "delta": "Web edit has first/middle/last name, handle, headline, company, bio (no 160 counter), interests, all socials INLINE (Instagram, WhatsApp, X, TikTok, YouTube, Facebook, LinkedIn, Website), avatar and cover, experience editor. No Location. Bug found: LinkedIn input is rendered twice (edit/page.tsx ~361-373, both bound to socials.linkedin). Canvas has no headline, company, cover, interests or WhatsApp fields here."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Bio limit 160 characters ('86 / 160')",
+    "profile link format 'wawu/lennox'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M9",
+   "flow": "me",
+   "title": "Social links",
+   "kind": "screen",
+   "journey": "Edit profile",
+   "what_it_shows": "Social links editor: 'They show above your follower count, in this order. Drag to reorder.' Filled: Instagram lennox.films, TikTok lennox, YouTube LennoxFilms, X lennoxe; Add: Threads, LinkedIn, Facebook. Done.",
+   "user_actions": [
+    "drag to reorder",
+    "edit a handle",
+    "Add Threads / LinkedIn / Facebook",
+    "Done"
+   ],
+   "data_needed": [
+    "per-platform handle",
+    "display order"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "PATCH /api/hub/users/me (instagramHandle, xHandle, tiktokHandle, youtubeUrl, facebookUrl, linkedinUrl, whatsappHandle)",
+     "/home/user/wawu-backend/src/user-profile/social-handles.ts normalises handles/URLs",
+     "grep 'threads' in schema.prisma and user-profile DTO: none",
+     "no order/position column for socials"
+    ],
+    "gap": "Missing: Threads handle column; an ordered socials representation (e.g. socialOrder String[] or a ProfileSocialLink table with position)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/edit (inline socials section)"
+    ],
+    "delta": "Web has no separate social-links screen, no reorder, no Threads; it adds WhatsApp and Website which the canvas list does not include."
+   },
+   "third_party": [
+    "simpleicons.org logos (design asset source)"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M10",
+   "flow": "me",
+   "title": "Saved",
+   "kind": "state",
+   "journey": "Edit profile",
+   "what_it_shows": "Back on M1 with a 'Profile saved' toast after Save.",
+   "user_actions": [
+    "dismiss toast"
+   ],
+   "data_needed": [
+    "updated profile"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "PATCH /api/hub/users/me"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/edit -> /profile"
+    ],
+    "delta": "Web saves and returns; confirmation styling differs from a toast on M1 (minor)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M11",
+   "flow": "me",
+   "title": "Verification",
+   "kind": "screen",
+   "journey": "Buy a tick",
+   "what_it_shows": "Verification hub. 'Getting paid' block: Identity check, 'Usually 1–3 days', In review. 'Your ticks': Creator tick 'Active until 12 Oct 2026', Professional tick '₦2,000 a year' Get it. 'Every tick gives you': Up to 25 uploads (Free accounts get 5), 10 GB library space (Free accounts get 1 GB), Reach more people (content pushed further), Tick beside your name and host events. Section note: 'Two paid yearly ticks. Each one unlocks more uploads, more library space and wider reach. ⚠ Limits are placeholders.'",
+   "user_actions": [
+    "tap Get it on an unheld tick (M12)",
+    "tap Identity check row (KYC, Flow A)"
+   ],
+   "data_needed": [
+    "KYC status (not started / pending / approved / rejected)",
+    "per-tick verified + expiresAt",
+    "per-tick price and eligibility",
+    "per-tier upload and storage limits"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/verification/me (verification state, pricing, eligibility with reasons)",
+     "GET /api/hub/verification/pricing (PlatformSettings creatorVerificationPriceNgn / professionalVerificationPriceNgn default 2000, schema.prisma:2949-2950)",
+     "GET /api/hub/kyc + GET /api/hub/creator/state (kycStatus, 'never started' distinguished)",
+     "/home/user/wawu-backend/src/common/creator-allowance.ts:25 `export const MAX_ITEMS_PER_ACCOUNT = 5;` (flat, no tick input; uploadAllowanceFor() takes no args)",
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:506-516 conditional `slotsUsed: { lt: allowance.total }` claim, ForbiddenException 'You have used all ${allowance.total} of your upload slots'",
+     "/home/user/wawu-backend/src/creator-state/creator-state.service.ts:48 `slotsTotal: uploadAllowanceFor().total` (GET /api/hub/creator/state)",
+     "/home/user/wawuafrica/src/lib/auth/gates.ts:12 web hardcodes its own `MAX_ITEMS_PER_ACCOUNT = 5` and ignores the server's slotsTotal",
+     "/home/user/wawu-backend/src/common/creator-allowance.ts:48 STORAGE_BYTES_PER_ACCOUNT = 2 GiB flat",
+     "/home/user/wawu-backend/src/content-piece/ranking.ts: no verification factor (grep 'verif|tick' -> none)"
+    ],
+    "gap": "Ticks, prices, expiry, eligibility and KYC status are served. NOT served: any benefit beyond the tick and hosting events. Upload cap is flat 5 for everyone, storage is flat 2 GB for everyone, ranking has no verified boost. The '25 uploads / 10 GB / reach' promises have no mechanism."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/verification",
+     "/home/user/wawuafrica/src/app/(app)/profile/verification/page.tsx",
+     "/home/user/wawuafrica/src/components/ui/VerificationPrompt.tsx (benefits limited to 'the tick everywhere, and hosting events')"
+    ],
+    "delta": "Web page has KYC block on top and the two ticks with server prices (matches structure). Web deliberately lists only two benefits (tick + host events); canvas lists four including uploads, storage, reach."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Professional tick ₦2,000 a year",
+    "Up to 25 uploads with a tick; free accounts get 5",
+    "10 GB library space with a tick; free accounts get 1 GB",
+    "Identity check usually 1–3 days",
+    "Tick term: yearly ('Active until 12 Oct 2026')",
+    "Reach more people: 'Your content is pushed further'",
+    "Tick lets you host events"
+   ],
+   "conflicts": [
+    "upload cap 5 flat vs 5 free / 25 ticked",
+    "storage 2 GB flat vs 1 GB / 10 GB",
+    "tick benefits (reach boost, uploads) vs current two benefits"
+   ],
+   "designer_questions": [
+    "⚠ Limits are placeholders."
+   ]
+  },
+  {
+   "id": "M12",
+   "flow": "me",
+   "title": "Pay",
+   "kind": "screen",
+   "journey": "Buy a tick",
+   "what_it_shows": "Bottom sheet over M11: 'Professional tick 1 year · until 26 Sep 2027 ₦2,000', the benefit list, '₦ Pay from wallet · Naira wallet · ₦485,250.75 available', 'Pay ₦2,000'.",
+   "user_actions": [
+    "Pay ₦2,000 from wallet"
+   ],
+   "data_needed": [
+    "tick price and term end date",
+    "wallet available balance",
+    "a debit-wallet-for-platform-fee capability"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/verification/purchase 'Open a checkout for one tick' (returns Flutterwave inline-checkout config)",
+     "POST /api/hub/verification/purchase/verify 'Confirm the payment with Flutterwave and grant the tick'",
+     "GET /api/hub/wallet (balance from Flutterwave payout subaccount)",
+     "searched src for payFromWallet|debitWallet|fromWallet: none; wallet routes are balance/history/banks/resolve-account/withdraw only"
+    ],
+    "gap": "No pay-from-wallet path: the tick is bought through a Flutterwave hosted/inline checkout, and there is no endpoint that debits the user's wallet to pay WAWU. Also, the wallet exists only for creator accounts (CreatorWallet) so a professional-only or user account has no wallet to pay from."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/verification buy() -> purchaseVerification(kind) via Flutterwave inline checkout"
+    ],
+    "delta": "Web pays by Flutterwave checkout, not from wallet; no sheet with balance."
+   },
+   "third_party": [
+    "Fintava (canvas bundle rule: 'Fintava wallet only (\"Pay from wallet\")')",
+    "Flutterwave (current backend checkout)"
+   ],
+   "facts_on_canvas": [
+    "₦2,000 for 1 year",
+    "Naira wallet balance shown as ₦485,250.75 (sample)",
+    "provider implied: wallet payment, no hosted checkout"
+   ],
+   "conflicts": [
+    "payments provider / pay-from-wallet"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M13",
+   "flow": "me",
+   "title": "PIN",
+   "kind": "screen",
+   "journey": "Buy a tick",
+   "what_it_shows": "PIN keypad over M11: 'Enter your PIN · ₦2,000 for the professional tick', digits 0-9. Not listed in MANIFEST (regex miss); present in flow text as 'M13 PIN'.",
+   "user_actions": [
+    "enter 4-6 digit PIN"
+   ],
+   "data_needed": [
+    "transaction PIN set/verify for the account"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched src for '\\bpin\\b|pinHash|transactionPin': only event 'pin to featured rail' hits",
+     "backend-routes: no /pin route",
+     "backend-models: no PIN column on UserProfile/CreatorWallet"
+    ],
+    "gap": "No transaction PIN anywhere: needs set-PIN, verify-PIN (hashed, attempt-limited, lockout), reset-PIN, and the wallet-debit it authorises. Likely shared with the Wallet flow (A1)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no PIN UI on web"
+    ],
+    "delta": "Web has no PIN step."
+   },
+   "third_party": [
+    "Fintava (if PIN is provider-side) or in-house hashed PIN"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "payments provider / pay-from-wallet"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M14",
+   "flow": "me",
+   "title": "Tick live",
+   "kind": "state",
+   "journey": "Buy a tick",
+   "what_it_shows": "After PIN accepted: banner 'Professional tick is live'; Professional tick 'Active until 26 Sep 2027'; Identity check 'Payouts go to your bank · Approved'. Then the blue tick shows beside the name on M1.",
+   "user_actions": [
+    "return to profile"
+   ],
+   "data_needed": [
+    "updated verification state with expiresAt",
+    "KYC approved state"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/verification/purchase/verify returns the granted verification (VerificationPurchase.grantedUntil)",
+     "UserProfile.professionalVerifiedUntil (schema.prisma:276)"
+    ],
+    "gap": "Grant + expiry served (for the Flutterwave path only; wallet path absent, see M12)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/verification success notice 'is live for a year'"
+    ],
+    "delta": "Web shows a notice rather than a banner state; reached via Flutterwave, not PIN."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Payouts go to your bank (after KYC approved)",
+    "tick term 1 year ('until 26 Sep 2027')"
+   ],
+   "conflicts": [
+    "payout destination: 'Payouts go to your bank' vs wallet custody rule"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M15",
+   "flow": "me",
+   "title": "Paid, still confirming",
+   "kind": "state",
+   "journey": "Buy a tick",
+   "what_it_shows": "From M13 when payment is not yet confirmed: 'Paid, still confirming. Don't pay again. Check back in a minute.'",
+   "user_actions": [
+    "wait / revisit"
+   ],
+   "data_needed": [
+    "a pending tick-purchase status readable by the client"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "VerificationPurchase.status pending (schema.prisma ~397-404)",
+     "POST /api/hub/webhooks/flutterwave",
+     "POST /api/hub/admin/payments/receipts/{id}/reverify",
+     "GET /api/hub/verification/me returns verification/pricing/eligibility only (verification.service.ts:157-163), no pending purchase"
+    ],
+    "gap": "The pending row exists but is not exposed: GET /verification/me should return any pending purchase per kind so the screen can show 'still confirming' after reload instead of offering 'Get it' again."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home/user/wawuafrica/src/app/(app)/profile/verification/page.tsx verify_failed notice"
+    ],
+    "delta": "Web shows a transient notice ('Do not pay again: reload this page in a minute') that is lost on reload."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M16",
+   "flow": "me",
+   "title": "KYC not started",
+   "kind": "state",
+   "journey": "Buy a tick",
+   "what_it_shows": "M11 with Identity check 'Needed to get paid · Not started'. Not listed in MANIFEST (regex miss).",
+   "user_actions": [
+    "tap Identity check (KYC, Flow A)"
+   ],
+   "data_needed": [
+    "KYC never-submitted state"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/creator/state distinguishes never-submitted from pending (creator-state.service.ts:26-47, kycSubmission count)",
+     "GET /api/hub/kyc"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/profile/verification KYC block",
+     "/kyc"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Identity check is 'Needed to get paid'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M17",
+   "flow": "me",
+   "title": "KYC not approved",
+   "kind": "state",
+   "journey": "Buy a tick",
+   "what_it_shows": "M11 with Identity check 'Send your ID again · Not approved'.",
+   "user_actions": [
+    "resubmit ID (Flow A)"
+   ],
+   "data_needed": [
+    "KYC rejected state + reason"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/kyc (KycSubmission.status rejected, rejectionReason)",
+     "POST /api/hub/kyc (resubmit)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/kyc",
+     "/home/user/wawuafrica/src/components/profile/KycStatusPanel.tsx"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M18",
+   "flow": "me",
+   "title": "Creator dashboard",
+   "kind": "screen",
+   "journey": "Creator dashboard",
+   "what_it_shows": "'From the code (/creator)'. Earned in September ₦128,400.00 with '+18%'; Uploads 4 of 5 used with 'Get verified for up to 25 uploads and more reach'; Set up checklist: Creator account Free · done, Paid messages On · ₦300 a message, Identity check (KYC) In review · unlocks payouts, Host a community 'You keep 85% of credits'; Earnings 'Move to your wallet (W39)'; My content '4 live · 1 in review · 1 rejected'.",
+   "user_actions": [
+    "Get verified (M11)",
+    "open paid-message settings",
+    "open KYC",
+    "host a community",
+    "Move earnings to wallet (W39)",
+    "open My content (M28)"
+   ],
+   "data_needed": [
+    "earnings for current month and previous month (for % change)",
+    "slotsUsed/slotsTotal and tick-dependent total",
+    "dmEnabled/dmPrice",
+    "kycStatus",
+    "content counts by status"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/mine/earnings (all-time total/payable/held, recentSales, streamBreakdown; no month window)",
+     "GET /api/hub/creator/state",
+     "GET /api/hub/content/mine (statuses)",
+     "/home/user/wawu-backend/src/credit-spend/credit-spend.service.ts:43-44 credits host share 17/20 = 85%",
+     "/home/user/wawu-backend/src/common/creator-allowance.ts:25 `export const MAX_ITEMS_PER_ACCOUNT = 5;` (flat, no tick input; uploadAllowanceFor() takes no args)",
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:506-516 conditional `slotsUsed: { lt: allowance.total }` claim, ForbiddenException 'You have used all ${allowance.total} of your upload slots'"
+    ],
+    "gap": "Missing: month-scoped earnings and month-over-month change; tick-dependent upload total (flat 5). 'Move to your wallet' depends on the wallet flow (A1), not this flow."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/creator",
+     "/home/user/wawuafrica/src/components/dashboard/CreatorDashboard.tsx"
+    ],
+    "delta": "Web dashboard shows 'Listings used n / 5', EVG score, 'Earned this month' (actually payable+held, all-time), Unlocks 'Soon', questions answered, content list, statement CSV download. No setup checklist, no %-change, no 'Get verified for 25 uploads' upsell, no Move-to-wallet."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "You keep 85% of credits",
+    "Uploads 4 of 5 used; verified gets up to 25",
+    "Creator account set-up is Free",
+    "₦300 a message",
+    "+18% month change (sample)"
+   ],
+   "conflicts": [
+    "upload cap 5 flat vs 5 free / 25 ticked"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M19",
+   "flow": "me",
+   "title": "Create",
+   "kind": "screen",
+   "journey": "Publish content",
+   "what_it_shows": "Create sheet from the + button: Content (Video, course, audio, PDF, image or template), Event ('Needs a verified tick'), Community ('A room your people talk in'), Service ('Get listed as a professional'), plus 'Uploads 4 of 5 used · Get verified for up to 25 uploads and more reach'.",
+   "user_actions": [
+    "pick Content (M20)",
+    "pick Event (Events flow; gated)",
+    "pick Community",
+    "pick Service (Professionals flow)",
+    "Get verified (M11)"
+   ],
+   "data_needed": [
+    "account type = creator",
+    "verification state (event gate)",
+    "slotsUsed/slotsTotal"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/creator/state",
+     "GET /api/hub/verification/me",
+     "POST /api/hub/events (verified-only, event.service.ts:130-141)",
+     "POST /api/hub/communities",
+     "POST /api/hub/professionals/applications",
+     "/home/user/wawu-backend/src/common/creator-allowance.ts:25 `export const MAX_ITEMS_PER_ACCOUNT = 5;` (flat, no tick input; uploadAllowanceFor() takes no args)"
+    ],
+    "gap": "Served except the tick-dependent upload total (flat 5)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/create",
+     "/home/user/wawuafrica/src/components/create/CreateHub.tsx"
+    ],
+    "delta": "Web CreateHub has the same four tiles and the same 'Needs a verified tick' event subtitle (strong match). Web SlotMeter shows n of 5 with no 'Get verified for 25' upsell."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "upload cap 5 flat vs 5 free / 25 ticked"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M20",
+   "flow": "me",
+   "title": "Pick a format",
+   "kind": "screen",
+   "journey": "Publish content",
+   "what_it_shows": "'What are you making? Step 1 of 5': Video (MP4 or MOV · buyers see a clip), Course (Lessons · the first is the preview), Audio (MP3 or WAV · 30–60 second clip), PDF (give away an extract), Image (Art, photo sets, presets), Template (Decks, patterns, files to reuse).",
+   "user_actions": [
+    "choose a format",
+    "Continue"
+   ],
+   "data_needed": [
+    "allowed content types"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "/home/user/wawu-backend/src/content-piece/dto/create-content.dto.ts:16-23 CONTENT_TYPES video, course, audio, pdf, image, template"
+    ],
+    "gap": "Format list served. Per-format file-type and preview-length rules (MP4/MOV, MP3/WAV, 30-60 s) are not validated server-side (presign checks content-type and size only)."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/create/content",
+     "/home/user/wawuafrica/src/components/create/ContentTypePicker.tsx"
+    ],
+    "delta": "Web picker matches; step numbering differs (web wizard says 'Step n of 4' after the picker)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Audio preview clip 30–60 seconds",
+    "Video formats MP4 or MOV",
+    "Audio formats MP3 or WAV"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M21",
+   "flow": "me",
+   "title": "Upload",
+   "kind": "screen",
+   "journey": "Publish content",
+   "what_it_shows": "'New PDF · Step 2 of 5': 'Upload the full PDF. Up to 100 MB. It stays locked until someone buys.' Progress 64% on pricing-playbook-v3.pdf.",
+   "user_actions": [
+    "pick file",
+    "watch progress",
+    "Continue"
+   ],
+   "data_needed": [
+    "presigned upload URL",
+    "per-type max size"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/uploads/presign",
+     "/home/user/wawu-backend/src/storage/dto/presign-upload.dto.ts:50 MAX_UPLOAD_BYTES = 512 MiB (one global cap)",
+     "GET /api/hub/uploads/usage"
+    ],
+    "gap": "Upload served; per-type size cap (100 MB for PDF) is not modelled (one 512 MiB cap for all)."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/create/new?type=pdf",
+     "/home/user/wawuafrica/src/components/create/PublishingWizard.tsx UploadStep"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "PDF upload limit up to 100 MB"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M22",
+   "flow": "me",
+   "title": "Preview",
+   "kind": "screen",
+   "journey": "Publish content",
+   "what_it_shows": "'Step 3 of 5 · Add a preview': 'From the code: a separate public file, never pages of the full one.' chapter-1-free.pdf · 12 pages · public.",
+   "user_actions": [
+    "upload preview file",
+    "see how it will look",
+    "Continue"
+   ],
+   "data_needed": [
+    "separate preview asset",
+    "page count"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:446-450 rejects previewAsset === fullAsset for paid",
+     "ContentPiece.previewAssetUrl, pageCount"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "PublishingWizard PreviewStep"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M23",
+   "flow": "me",
+   "title": "Details",
+   "kind": "screen",
+   "journey": "Publish content",
+   "what_it_shows": "'Step 4 of 5': Title, Description, 'What is this? Business · Pricing'.",
+   "user_actions": [
+    "enter title",
+    "enter description",
+    "pick category/specialization"
+   ],
+   "data_needed": [
+    "category + specialization taxonomy"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "CreateContentDto title (200), description (5000), category (CATEGORY_IDS), specializations (max 3)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "PublishingWizard DetailsStep"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M24",
+   "flow": "me",
+   "title": "Price",
+   "kind": "screen",
+   "journey": "Publish content",
+   "what_it_shows": "'Step 5 of 5' with a Paid | Free toggle. Paid: price per sale ₦3,000 with presets ₦1,000 / ₦2,500 / ₦3,000 / ₦5,000; 'You earn per sale ₦2,550', 'Your share 85%', 'Listing fee Free'; 'WAWU checks every piece before it goes live'; Send for review. Note: '85% to the creator. No listing fee.'",
+   "user_actions": [
+    "toggle Paid/Free",
+    "pick or type a price",
+    "Send for review (M25)"
+   ],
+   "data_needed": [
+    "accessType free|paid",
+    "price",
+    "creator share rate"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "/home/user/wawu-backend/src/content-piece/dto/create-content.dto.ts:24 ACCESS_TYPES ['free','paid'], :83-86 price @Min(0)",
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:451-457 free must be ₦0, paid must be > ₦0",
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:486-490 'A creator's first upload must be free (creatorFirstUploadFree)' - forces FREE for the first piece",
+     "POST /api/hub/content creates status 'pending'"
+    ],
+    "gap": "The backend already accepts accessType 'free' (it is the current rules that forbid it), but it also enforces an old 'first upload must be free' rule that neither the canvas nor the current rules have. Needs the first-upload rule removed whichever way free content is ruled."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "PublishingWizard PriceStep",
+     "/home/user/wawuafrica/src/components/create/PublishingWizard.tsx:82-86,138-139 (no ₦0 path)",
+     "/home/user/wawuafrica/src/lib/api/creator-content.ts:191-193 rejects price <= 0"
+    ],
+    "delta": "Web has no Paid/Free toggle and refuses ₦0. Because the backend forces a creator's FIRST upload to be free, a brand-new creator publishing from the web (always 'paid') is rejected by POST /content with 'A creator's first upload must be free': a live break, independent of this redesign."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Creator share 85%",
+    "You earn per sale ₦2,550 on ₦3,000",
+    "Listing fee: Free",
+    "Price presets ₦1,000 / ₦2,500 / ₦3,000 / ₦5,000",
+    "Every piece is reviewed before going live"
+   ],
+   "conflicts": [
+    "free content"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M25",
+   "flow": "me",
+   "title": "In review",
+   "kind": "state",
+   "journey": "Publish content",
+   "what_it_shows": "'Sent for review': title, 'Usually takes A few hours', 'Uploads 5 of 5 free used', 'We'll tell you When it goes live', 'You can edit it while it waits. It goes live on its own once approved.' View in library / Done.",
+   "user_actions": [
+    "View in library (M28)",
+    "Done",
+    "edit while pending"
+   ],
+   "data_needed": [
+    "pending content",
+    "slots usage labelled 'free'",
+    "content_published notification"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/content -> status pending",
+     "POST /api/hub/admin/content/{id}/approve (auto-live)",
+     "notification kind 'content_published' (notification-event.ts:32)",
+     "searched backend-routes for PATCH /api/hub/content/{id}: none (only GET, DELETE, save, unlock, rate)"
+    ],
+    "gap": "No edit endpoint for a piece (pending or otherwise): 'You can edit it while it waits' is unsupported. 'free used' wording presumes the tick tier."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/create/library after publish"
+    ],
+    "delta": "Web returns to library; no edit-while-pending (resubmit creates a new piece via wizard)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Review usually takes a few hours",
+    "Uploads 5 of 5 free used"
+   ],
+   "conflicts": [
+    "upload cap 5 flat vs 5 free / 25 ticked"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M26",
+   "flow": "me",
+   "title": "Rejected",
+   "kind": "state",
+   "journey": "Library",
+   "what_it_shows": "From M25 when not approved: 'Pricing playbook · Not approved', reviewer reason 'Charts on pages 22–24 were taken from another publisher. Replace them or credit the source, then send it again.' Actions: Replace the file, Edit details, Delete and free the slot, Send again.",
+   "user_actions": [
+    "Replace the file",
+    "Edit details",
+    "Delete and free the slot",
+    "Send again"
+   ],
+   "data_needed": [
+    "rejection reason",
+    "replace-asset + edit + resubmit on the same piece"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/admin/content/{id}/reject (reason required; AdminContentReview.reason, schema.prisma ~1712; slot returned)",
+     "DELETE /api/hub/content/{id}",
+     "notification kind content_rejected",
+     "ContentPieceResponse has no reason field (common/types/content-piece.type.ts)",
+     "no PATCH/resubmit route for content"
+    ],
+    "gap": "Reason is stored on AdminContentReview but not returned to the creator on /content/mine or /content/{id}; no replace-file, edit-details or resubmit-same-piece route."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/create/library",
+     "/home/user/wawuafrica/src/components/create/ContentLibrary.tsx resubmit -> /create/new?resubmit=",
+     "/home/user/wawuafrica/src/lib/api/creator-content.ts:98 'no rejection-reason column'"
+    ],
+    "delta": "Web resubmits by reopening the wizard (new piece); shows no reviewer reason."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Rejected piece frees its slot ('Delete and free the slot')"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M27",
+   "flow": "me",
+   "title": "5 free uploads used",
+   "kind": "state",
+   "journey": "Publish content",
+   "what_it_shows": "From M20 when slots are full: 'Your 5 free uploads are used. Get verified for up to 25 uploads, or take something down.' Get verified / Open library, format list disabled. Not listed in MANIFEST (regex miss).",
+   "user_actions": [
+    "Get verified (M11)",
+    "Open library (M28)"
+   ],
+   "data_needed": [
+    "slots full state",
+    "tick-dependent cap"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "/home/user/wawu-backend/src/common/creator-allowance.ts:25 `export const MAX_ITEMS_PER_ACCOUNT = 5;` (flat, no tick input; uploadAllowanceFor() takes no args)",
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:506-516 conditional `slotsUsed: { lt: allowance.total }` claim, ForbiddenException 'You have used all ${allowance.total} of your upload slots'",
+     "/home/user/wawu-backend/src/creator-state/creator-state.service.ts:48 `slotsTotal: uploadAllowanceFor().total` (GET /api/hub/creator/state)",
+     "/home/user/wawuafrica/src/lib/auth/gates.ts:12 web hardcodes its own `MAX_ITEMS_PER_ACCOUNT = 5` and ignores the server's slotsTotal"
+    ],
+    "gap": "Full-state detection served (ForbiddenException at cap); the 'get verified for 25' exit has no mechanism."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home/user/wawuafrica/src/components/create/ContentTypePicker.tsx slotsFull sheet",
+     "/home/user/wawuafrica/src/lib/api/creator-content.ts:197 'All 5 slots are in use. Take a piece down'"
+    ],
+    "delta": "Web full state offers only take-something-down; no verify route out."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Free accounts: 5 uploads",
+    "Verified: up to 25 uploads"
+   ],
+   "conflicts": [
+    "upload cap 5 flat vs 5 free / 25 ticked"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M28",
+   "flow": "me",
+   "title": "My content",
+   "kind": "screen",
+   "journey": "Library",
+   "what_it_shows": "'From the code (/create/library): live, in review and rejected.' Uploads 4 of 5 used + Get verified upsell; filters All · 6 / Live / In review / Rejected; rows with type, price, sales count ('Video · ₦2,500 · 18 sales'), status, and 'see why' on rejected.",
+   "user_actions": [
+    "filter",
+    "open a piece",
+    "see why (M26)",
+    "Get verified (M11)"
+   ],
+   "data_needed": [
+    "own content any status",
+    "per-piece sales count",
+    "rejection reason"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/mine (any status)",
+     "ContentRow fields (content-piece.service.ts:50-72): views, ratingPct, likes; no salesCount",
+     "GET /api/hub/content/mine/earnings recentSales (last 10 only, not per piece)"
+    ],
+    "gap": "Missing per-piece sales count and rejection reason on /content/mine; tick-dependent cap."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/create/library",
+     "/home/user/wawuafrica/src/components/create/ContentLibrary.tsx (All / Live / In review / Rejected)"
+    ],
+    "delta": "Web filters match; no sales count per row, no reason, no Get-verified upsell."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Uploads 4 of 5 used",
+    "Get verified for up to 25 uploads"
+   ],
+   "conflicts": [
+    "upload cap 5 flat vs 5 free / 25 ticked"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M29",
+   "flow": "me",
+   "title": "My purchases",
+   "kind": "screen",
+   "journey": "Purchases and saved",
+   "what_it_shows": "Search box 'Search what you've bought'; rows with creator, type, date and a type-specific action: Watch (video), Read (PDF), Resume with '3 of 12 done' (course), Download (template).",
+   "user_actions": [
+    "search",
+    "Watch / Read / Resume / Download"
+   ],
+   "data_needed": [
+    "purchased content with creator name, type, purchase date",
+    "course lesson progress",
+    "unlocked asset URL"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/purchases",
+     "GET /api/hub/content/{id} (unlocked fullAssetUrl)",
+     "CourseLesson model has no per-user completion (schema.prisma:508-517); CourseEnrollment.progressPct is for LearnCourse only"
+    ],
+    "gap": "Missing per-buyer lesson completion for course content ('3 of 12 done'); no server-side search param on /content/purchases."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/purchases",
+     "/home/user/wawuafrica/src/app/(app)/purchases/page.tsx"
+    ],
+    "delta": "Web lists purchases with type verbs (Read etc.); no search, no course progress."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M30",
+   "flow": "me",
+   "title": "Saved",
+   "kind": "screen",
+   "journey": "Purchases and saved",
+   "what_it_shows": "Saved with tabs All / Content / Events / Creators: content with price, an event 'Lagos Creators Meetup Sat 4 Oct', a free item, a bought item.",
+   "user_actions": [
+    "filter tabs",
+    "open item"
+   ],
+   "data_needed": [
+    "saved content",
+    "saved events",
+    "saved creators",
+    "bought flag"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/users/me/saved (SavedItem: content only; kind guide/product short-circuit to empty)",
+     "EventSave model + POST/DELETE /api/hub/events/{id}/save, but no GET list of saved events",
+     "no SavedCreator model (follow is the nearest, /creators/{id}/follow)"
+    ],
+    "gap": "Missing: GET saved events; a saved-creators concept (or ruling that it means Following); one merged saved feed for 'All'."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/saved",
+     "/home/user/wawuafrica/src/app/(app)/saved/page.tsx filters All/Content/Guides/Products"
+    ],
+    "delta": "Web tabs are All/Content/Guides/Products; canvas All/Content/Events/Creators."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Quiet mornings ep. 4 Free' shows free content in saved"
+   ],
+   "conflicts": [
+    "free content"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "M31",
+   "flow": "me",
+   "title": "Notifications",
+   "kind": "screen",
+   "journey": "Notifications",
+   "what_it_shows": "'From the code: paid-DM deadlines, sales, tips, refunds, credits, reviews and follows.' Filters All / Money / Messages / Content. Rows: 'Bisi's question: 1h 12m left. Miss it and her ₦1,500 is refunded. You earn nothing.' Reply; Tip from Amaka +₦2,000 on a piece; New sale +₦2,550 to a buyer; Pricing playbook wasn't approved (See why); 3 credits left (Top up); Zainab Bello followed you.",
+   "user_actions": [
+    "filter",
+    "Reply",
+    "See why",
+    "Top up",
+    "open item"
+   ],
+   "data_needed": [
+    "notifications with kind, amount, target object, counterpart name",
+    "category grouping"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/notifications, POST /api/hub/notifications/{id}/read, POST /api/hub/notifications/mark-all-read",
+     "/home/user/wawu-backend/src/notification/notification-event.ts:29-43 kinds dm_deadline, sale, dm_received, content_published, kyc_verified, dm_refunded, credits_low, content_rejected, new_follower, tip_received, campaign, verify_reminder",
+     "Notification model (schema.prisma:990-1018) has no target-id column; no 'review' kind"
+    ],
+    "gap": "Missing: a review-received kind; target ids (contentId, threadId, counterpart) for deep links like 'See why'/'Reply'; server-side category filter (can be client-side from kind)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/notifications",
+     "/home/user/wawuafrica/src/app/(app)/notifications/page.tsx groups Needs now / Money / Later"
+    ],
+    "delta": "Web groups by urgency and money rather than All/Money/Messages/Content filter chips."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Missed paid question is refunded to the asker; creator earns nothing",
+    "New sale +₦2,550 (net of 85%)",
+    "credits shown as a count ('3 credits left')"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M32",
+   "flow": "me",
+   "title": "Nothing new",
+   "kind": "state",
+   "journey": "Notifications",
+   "what_it_shows": "Empty state: 'You're all caught up. Sales, tips, paid questions and reviews show up here.'",
+   "user_actions": [],
+   "data_needed": [
+    "empty notifications list"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/notifications (empty page)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/notifications empty state"
+    ],
+    "delta": "Copy differs; web empty state exists."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M33",
+   "flow": "me",
+   "title": "About, as a visitor",
+   "kind": "screen",
+   "journey": "See a profile like a CV",
+   "what_it_shows": "Visitor's About tab reading like a CV: 'Filmmaker and brand strategist · Founder, Lennox Films' (headline · company), 'Lagos, Nigeria · On WAWU since 2025', 'Open to' chips (brand films, Workshops), Featured works (See all 12) with role and year, Experience, Skills, Education (University of Lagos, Mass Communication 2014 to 2018), sticky Follow / Message · ₦300.",
+   "user_actions": [
+    "See all works (M34)",
+    "open a work (M35)",
+    "Follow",
+    "Message · ₦300"
+   ],
+   "data_needed": [
+    "headline",
+    "company",
+    "profile location",
+    "memberSince",
+    "open-to list",
+    "featured works with role/year",
+    "experience",
+    "skills",
+    "education entries"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/users/{wawuId}/public-profile (headline, company, experience[], websiteUrl, interests; user-profile.service.ts:353-383)",
+     "no location, createdAt, openTo, skills, education, works on any model (searched schema.prisma 'education|openTo|skills|portfolio')"
+    ],
+    "gap": "Served: headline, company, experience. Missing: location, memberSince on public response, open-to list, skills (distinct from interests), education model (school, field, start/end years), featured works."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/profile/[wawuId]?tab=overview",
+     "/home/user/wawuafrica/src/components/profile/ProfileScreen.tsx (identity: headline, company, MetaItem location/memberSince; ExperienceSection; SkillsCard)"
+    ],
+    "delta": "Web is the LinkedIn-style rebuild: headline + company in identity, experience list, skills chips, member-since/location slots (empty: no data). Missing vs canvas: Education, Open-to chips, Featured WORKS (web 'Featured' = content), sticky Follow/Message bar. Web adds four-up stats and (owner) completeness ring and creator-tools rail that the CV board does not show."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M34",
+   "flow": "me",
+   "title": "All works",
+   "kind": "screen",
+   "journey": "See a profile like a CV",
+   "what_it_shows": "'Works · Lennox Emmanuel · 12' with filters All / Brand films / Photography / Workshops; cards with title, role, year.",
+   "user_actions": [
+    "filter by work category",
+    "open a work (M35)"
+   ],
+   "data_needed": [
+    "works list with category, role, year, cover media"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-models and schema.prisma for portfolio/work/featured works: only ProfessionalCredentialKind.portfolio (an enum on professional applications)"
+    ],
+    "gap": "No works entity or route: needs ProfileWork {id, wawuUserId, title, role, client, year, link, media[], category, position} + GET /users/{wawuId}/works?category=."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": "No equivalent on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M35",
+   "flow": "me",
+   "title": "A work",
+   "kind": "screen",
+   "journey": "See a profile like a CV",
+   "what_it_shows": "Work detail: 'Brand film · Kora Foods', Role Director, Client Kora Foods, Year 2025, description, creator row with 'Message · ₦300'. Not listed in MANIFEST (regex miss; text shows 'Tap a work M35 A work').",
+   "user_actions": [
+    "Message · ₦300",
+    "open creator"
+   ],
+   "data_needed": [
+    "one work with media, role, client, year, description"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "as M34: no works model or route"
+    ],
+    "gap": "Needs GET /users/{wawuId}/works/{id} (or /works/{id})."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": "No equivalent on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M36",
+   "flow": "me",
+   "title": "Add a work",
+   "kind": "screen",
+   "journey": "Add your work",
+   "what_it_shows": "'Add a work' form: photos or a video, Title, Your role, Year, Client, Link 'wawu/lennox/kora' (Optional). Save. Then it shows on your About tab.",
+   "user_actions": [
+    "add media",
+    "fill title/role/year/client/link",
+    "Save"
+   ],
+   "data_needed": [
+    "create work",
+    "media upload"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/uploads/presign exists for media",
+     "no works create/edit/delete route"
+    ],
+    "gap": "Needs POST/PATCH/DELETE /users/me/works with media via presign; decide whether works count toward the upload cap and storage (canvas silent) and whether they are moderated like content."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "none"
+    ],
+    "delta": "No equivalent on web (ExperienceEditor covers roles, not works)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "link format wawu/lennox/kora"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "M37",
+   "flow": "me",
+   "title": "Free piece",
+   "kind": "state",
+   "journey": "Publish content",
+   "what_it_shows": "From M24 with Free selected: 'Free for everyone. Anyone can open it. Fans can still tip. Free pieces count toward your uploads.' Send for review.",
+   "user_actions": [
+    "Send for review"
+   ],
+   "data_needed": [
+    "accessType free, price 0",
+    "tip on free content"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "/home/user/wawu-backend/src/content-piece/dto/create-content.dto.ts:24 ACCESS_TYPES includes 'free'",
+     "/home/user/wawu-backend/src/content-piece/content-piece.service.ts:451-452 'Free content must be priced at ₦0.' and :126 free content is never locked",
+     "POST /api/hub/tips (tip is independent of content price)",
+     "slot claim at content-piece.service.ts:506-516 counts free pieces too"
+    ],
+    "gap": "Backend can already create, unlock-skip and count free pieces. Gap is policy, not code: the current rule forbids free content, and the first-upload-must-be-free rule must go."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/home/user/wawuafrica/src/components/create/PublishingWizard.tsx:82-86 'There is no ₦0 path here'"
+    ],
+    "delta": "Web has no Free option."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Free pieces count toward your uploads",
+    "Fans can still tip free pieces"
+   ],
+   "conflicts": [
+    "free content"
+   ],
+   "designer_questions": []
+  }
+ ],
+ "designer_questions": [
+  {
+   "artboard": "M11",
+   "applies_to": [
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+    "M17"
+   ],
+   "quote": "⚠ Limits are placeholders.",
+   "context": "Section header 'Verification · M11–M17 Verification Two paid yearly ticks. Each one unlocks more uploads, more library space and wider reach. ⚠ Limits are placeholders.' The same limits (5 free / 25 ticked) also appear on M18, M19, M25, M27, M28."
+  }
+ ],
+ "conflicts": [
+  {
+   "topic": "upload cap: flat 5 vs 5 free / 25 with a tick",
+   "canvas": "'Every tick gives you Up to 25 uploads Free accounts get 5' (M11); 'Uploads 4 of 5 used Get verified for up to 25 uploads and more reach.' (M18, M19, M28); 'Your 5 free uploads are used Get verified for up to 25 uploads, or take something down.' (M27). Bundle rule: 'Free accounts: 5 uploads. More uploads, library space and wider reach come with a paid verification tick (creator or professional, ₦2,000/yr).'",
+   "current": "'Maximum 5 items per account, counted across products, content and services together. Hard cap, enforced server-side. No free/paid slot split, because every listing carries a price (brief B2: no free content).' Also: 'Creator is an ACCOUNT TYPE, not a trust-tier badge or an earned level.' and 'There is no subscription and no creator tier'.",
+   "artboards": [
+    "M11",
+    "M18",
+    "M19",
+    "M25",
+    "M27",
+    "M28"
+   ],
+   "code_size": "Backend enforcement: /home/user/wawu-backend/src/common/creator-allowance.ts:25 MAX_ITEMS_PER_ACCOUNT = 5 and uploadAllowanceFor() (no arguments), consumed at content-piece.service.ts:439/506-516 (conditional slotsUsed claim), creator-state.service.ts:48 (slotsTotal), admin-creators.service.ts, admin-kyc-review.service.ts, admin-content-review.service.ts (slot returns at 210-211, 287-288); CreatorState.slotsUsed (schema.prisma:340). 28 backend .ts files reference slotsTotal/MAX_ITEMS_PER_ACCOUNT/uploadAllowanceFor/creatorFirstUploadFree/accessType; specs content-piece/tests/upload-allowance.spec.ts, creator-state/tests/creator-state-gate.spec.ts pin the flat 5. Web duplicates the constant at /home/user/wawuafrica/src/lib/auth/gates.ts:12. Note: only ContentPiece increments slotsUsed; professional listings and Product rows never consume a slot, so the 'across products and services' half of the current rule is not enforced today either. A tick-based cap must also decide what happens when a tick lapses with 6-25 pieces live.",
+   "note": "Ticks become an upload/storage entitlement, which reads like the creator tier the current rules removed."
+  },
+  {
+   "topic": "free content",
+   "canvas": "M24 'Paid Free' toggle; M37 'Free for everyone Anyone can open it. Fans can still tip. Free pieces count toward your uploads.'; M30 'Quiet mornings ep. 4 Free'. Bundle rule: 'Content can be marked Free.'",
+   "current": "'No free/paid slot split, because every listing carries a price (brief B2: no free content).'",
+   "artboards": [
+    "M24",
+    "M37",
+    "M30"
+   ],
+   "code_size": "Backend still ACCEPTS free: /home/user/wawu-backend/src/content-piece/dto/create-content.dto.ts:24 ACCESS_TYPES = ['free','paid'], :83-86 price @Min(0); content-piece.service.ts:451-457 (free must be ₦0, paid > ₦0), :126 free is never locked, :579-582 unlock refuses free. It also ENFORCES the opposite of the current rule for a creator's first piece: content-piece.service.ts:486-490 'A creator's first upload must be free (creatorFirstUploadFree)' (also referenced in admin-content-review.service.ts and specs). The no-free rule is enforced only on the web: lib/api/creator-content.ts:191-193 and PublishingWizard.tsx:82-86,138-139.",
+   "note": "Backend vs current-rules mismatch independent of the canvas: web always sends accessType 'paid', backend rejects a paid FIRST upload, so a brand-new creator cannot publish their first piece from the web today."
+  },
+  {
+   "topic": "storage allowance",
+   "canvas": "'10 GB library space Free accounts get 1 GB' (M11, M12, M14, M15, M16, M17)",
+   "current": "Not stated in current-product-rules.md. Code: /home/user/wawu-backend/src/common/creator-allowance.ts:48 'STORAGE_BYTES_PER_ACCOUNT = 2 * 1024 * 1024 * 1024' (flat 2 GB, 'Pro Max's 5GB went with the plan that sold it') and :57 DEFAULT_STORAGE_BYTES 2 GB.",
+   "artboards": [
+    "M11"
+   ],
+   "note": "Canvas would cut free accounts from 2 GB to 1 GB; accounts already above 1 GB need a ruling."
+  },
+  {
+   "topic": "tick benefits (reach boost)",
+   "canvas": "'Reach more people Your content is pushed further' (M11); 'Get verified for up to 25 uploads and more reach.' (M18, M19, M28)",
+   "current": "Current rules list verification only as a paid action and 'B3 makes hosting an event a VERIFIED-ONLY capability'. Web /home/user/wawuafrica/src/components/ui/VerificationPrompt.tsx: 'It states benefits, and only the two that B3 actually grants: the tick everywhere, and hosting events. Nothing else may be added here without the mechanism behind it'.",
+   "artboards": [
+    "M11",
+    "M18",
+    "M19",
+    "M28"
+   ]
+  },
+  {
+   "topic": "payments provider / pay-from-wallet with PIN",
+   "canvas": "M12 '₦ Pay from wallet Naira wallet · ₦485,250.75 available Pay ₦2,000'; M13 'Enter your PIN ₦2,000 for the professional tick'. Bundle rule: 'Payments: Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout.'",
+   "current": "'Creators have a wallet; WAWU does not hold the money. Each wallet is a Flutterwave payout subaccount ... Flutterwave custodies it, WAWU only instructs.' Backend route 'POST /api/hub/verification/purchase/verify  Confirm the payment with Flutterwave and grant the tick.'",
+   "artboards": [
+    "M12",
+    "M13",
+    "M14",
+    "M15"
+   ],
+   "note": "Who custodies the wallet is the CBN-licence question the product notes say to raise before building."
+  },
+  {
+   "topic": "navigation: Me tab and Menu",
+   "canvas": "Tab bar 'Home Explore Inbox Wallet Me' on every Me board; Me (M1) is the user's own profile and M7 Menu ('Everything that isn't public lives here') holds dashboard, content, purchases, courses, saved, notifications, verification, settings.",
+   "current": "'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings' and 'Slot 5 is Settings, not Profile. Profile is a row inside Settings and is also reachable from the header avatar (21 Aug 2026).'",
+   "artboards": [
+    "M1",
+    "M7"
+   ]
+  },
+  {
+   "topic": "payout destination",
+   "canvas": "M14 Identity check 'Payouts go to your bank Approved'",
+   "current": "'Creators have a wallet ... Each wallet is a Flutterwave payout subaccount' (earnings land in the wallet; the canvas itself says 'Earnings Move to your wallet (W39)' on M18).",
+   "artboards": [
+    "M14",
+    "M18"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "M1",
+   "fact": "Professional tick ₦2,000 a year",
+   "kind": "price"
+  },
+  {
+   "artboard": "M1",
+   "fact": "tick 'shows everywhere, lets you host events'",
+   "kind": "entitlement"
+  },
+  {
+   "artboard": "M2",
+   "fact": "Paid messages ₦300 a message",
+   "kind": "price"
+  },
+  {
+   "artboard": "M2",
+   "fact": "replies within 24 hours",
+   "kind": "SLA/limit"
+  },
+  {
+   "artboard": "M8",
+   "fact": "Bio limit 160 characters ('86 / 160'); backend allows 500",
+   "kind": "limit"
+  },
+  {
+   "artboard": "M8",
+   "fact": "profile link format wawu/lennox",
+   "kind": "link format"
+  },
+  {
+   "artboard": "M11",
+   "fact": "Up to 25 uploads with a tick; free accounts get 5",
+   "kind": "limit"
+  },
+  {
+   "artboard": "M11",
+   "fact": "10 GB library space with a tick; free accounts get 1 GB",
+   "kind": "limit"
+  },
+  {
+   "artboard": "M11",
+   "fact": "Identity check usually 1–3 days",
+   "kind": "SLA"
+  },
+  {
+   "artboard": "M11",
+   "fact": "Ticks are yearly (Active until 12 Oct 2026 / until 26 Sep 2027)",
+   "kind": "term"
+  },
+  {
+   "artboard": "M11",
+   "fact": "Every tick: 'Reach more people. Your content is pushed further'",
+   "kind": "entitlement"
+  },
+  {
+   "artboard": "M12",
+   "fact": "Professional tick ₦2,000 for 1 year, paid from 'Naira wallet'",
+   "kind": "price/provider"
+  },
+  {
+   "artboard": "M12",
+   "fact": "Wallet balance ₦485,250.75 available (sample)",
+   "kind": "money amount"
+  },
+  {
+   "artboard": "M13",
+   "fact": "Transaction PIN required to pay",
+   "kind": "security requirement"
+  },
+  {
+   "artboard": "M14",
+   "fact": "'Payouts go to your bank' once identity check approved",
+   "kind": "payout/custody"
+  },
+  {
+   "artboard": "M16",
+   "fact": "Identity check is 'Needed to get paid'",
+   "kind": "KYC requirement"
+  },
+  {
+   "artboard": "M18",
+   "fact": "You keep 85% of credits",
+   "kind": "rate"
+  },
+  {
+   "artboard": "M18",
+   "fact": "Earned in September ₦128,400.00, +18% (sample)",
+   "kind": "money amount"
+  },
+  {
+   "artboard": "M18",
+   "fact": "Creator account set-up is Free",
+   "kind": "price"
+  },
+  {
+   "artboard": "M20",
+   "fact": "Audio preview clip 30–60 seconds; Video MP4 or MOV; Audio MP3 or WAV",
+   "kind": "limit"
+  },
+  {
+   "artboard": "M21",
+   "fact": "PDF upload up to 100 MB (backend global cap 512 MiB)",
+   "kind": "limit"
+  },
+  {
+   "artboard": "M24",
+   "fact": "85% to the creator; You earn per sale ₦2,550 on ₦3,000",
+   "kind": "rate"
+  },
+  {
+   "artboard": "M24",
+   "fact": "Listing fee: Free / No listing fee",
+   "kind": "fee"
+  },
+  {
+   "artboard": "M24",
+   "fact": "Price presets ₦1,000 / ₦2,500 / ₦3,000 / ₦5,000",
+   "kind": "money amount"
+  },
+  {
+   "artboard": "M24",
+   "fact": "WAWU checks every piece before it goes live",
+   "kind": "policy"
+  },
+  {
+   "artboard": "M25",
+   "fact": "Review usually takes a few hours",
+   "kind": "SLA"
+  },
+  {
+   "artboard": "M26",
+   "fact": "Deleting a rejected piece frees the slot",
+   "kind": "policy"
+  },
+  {
+   "artboard": "M31",
+   "fact": "Missed paid question: ₦1,500 refunded to the asker, creator earns nothing",
+   "kind": "refund rule"
+  },
+  {
+   "artboard": "M31",
+   "fact": "Tip +₦2,000; New sale +₦2,550 (net)",
+   "kind": "money amount"
+  },
+  {
+   "artboard": "M36",
+   "fact": "work link format wawu/lennox/kora",
+   "kind": "link format"
+  },
+  {
+   "artboard": "M37",
+   "fact": "Free pieces count toward your uploads; fans can still tip",
+   "kind": "policy"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "Tick-dependent upload allowance: uploadAllowanceFor(verificationState) returning 5 untick / 25 ticked (placeholder numbers), surfaced as slotsTotal on GET /creator/state and admin views; lapse policy for accounts over the lower cap",
+   "why": "M11/M18/M19/M27/M28 promise up to 25 uploads with a tick",
+   "artboards": [
+    "M11",
+    "M18",
+    "M19",
+    "M25",
+    "M27",
+    "M28"
+   ],
+   "size": "M",
+   "depends_on": [
+    "product ruling on cap conflict",
+    "final limits ('⚠ Limits are placeholders.')",
+    "deriveVerificationState in src/common/verification/verification-state.ts",
+    "update specs upload-allowance.spec.ts, creator-state-gate.spec.ts",
+    "web gates.ts:12 to read server slotsTotal"
+   ]
+  },
+  {
+   "item": "Tick-dependent storage allowance: storageAllowanceFor() keyed on ticks (1 GB / 10 GB) instead of hasCreatorState, reported by GET /uploads/usage",
+   "why": "M11 '10 GB library space Free accounts get 1 GB'",
+   "artboards": [
+    "M11"
+   ],
+   "size": "S",
+   "depends_on": [
+    "ruling on storage conflict",
+    "policy for accounts already over 1 GB"
+   ]
+  },
+  {
+   "item": "Remove the 'first upload must be free' rule (content-piece.service.ts:486-490, creatorFirstUploadFree) and set the free-content policy per ruling",
+   "why": "Blocks every new creator's first publish from the web today; canvas M24/M37 want an explicit Free option instead",
+   "artboards": [
+    "M24",
+    "M37"
+   ],
+   "size": "S",
+   "depends_on": [
+    "ruling on free-content conflict"
+   ]
+  },
+  {
+   "item": "Verified reach boost in ranking (content-piece/ranking.ts, creator-discovery) for active ticks",
+   "why": "M11 'Reach more people Your content is pushed further'",
+   "artboards": [
+    "M11"
+   ],
+   "size": "M",
+   "depends_on": [
+    "ruling on tick-benefits conflict",
+    "ranking weights from product"
+   ]
+  },
+  {
+   "item": "Pay a platform fee (tick) from the user's wallet: wallet-debit endpoint + VerificationPurchase settled from wallet, idempotency, pending state",
+   "why": "M12 'Pay from wallet'",
+   "artboards": [
+    "M12",
+    "M14",
+    "M15"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "payments provider ruling (Fintava vs Flutterwave)",
+    "wallet for non-creator accounts (CreatorWallet is creator-only)",
+    "Wallet flow (A1)"
+   ]
+  },
+  {
+   "item": "Transaction PIN: set, verify (hashed, attempt-limited, lockout), reset",
+   "why": "M13 'Enter your PIN'",
+   "artboards": [
+    "M13"
+   ],
+   "size": "M",
+   "depends_on": [
+    "Wallet flow (A1) PIN design",
+    "provider: PIN may be provider-side"
+   ]
+  },
+  {
+   "item": "Expose pending tick purchase on GET /verification/me (per kind: pending since, txRef)",
+   "why": "M15 'Paid, still confirming. Don't pay again.' must survive reload",
+   "artboards": [
+    "M15"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Profile fields: UserProfile.location, skills[] (or ruling that interests = skills), openTo[], threadsHandle, socials order; return memberSince (createdAt) and location on GET /users/me and public-profile",
+   "why": "M4/M8/M9/M33 show location, member since, open-to, skills, Threads and reorderable socials",
+   "artboards": [
+    "M4",
+    "M8",
+    "M9",
+    "M33"
+   ],
+   "size": "M",
+   "depends_on": [
+    "migration on UserProfile",
+    "WAWU ID name field (single name on M8)"
+   ]
+  },
+  {
+   "item": "Education entries: ProfileEducation {school, field, startYear, endYear} + CRUD on /users/me/education, included in public-profile",
+   "why": "M33 Education section",
+   "artboards": [
+    "M33"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Featured works (portfolio): ProfileWork model {title, role, client, year, link, media[], category, position}; POST/PATCH/DELETE /users/me/works; GET /users/{wawuId}/works?category=; GET work by id",
+   "why": "M4 Featured works + Add, M33, M34 All works with filters, M35 work detail, M36 Add a work",
+   "artboards": [
+    "M4",
+    "M33",
+    "M34",
+    "M35",
+    "M36"
+   ],
+   "size": "L",
+   "depends_on": [
+    "ruling: do works count toward the upload cap/storage and are they moderated",
+    "presign upload (exists)"
+   ]
+  },
+  {
+   "item": "Content edit/resubmit: PATCH /content/{id} (details), replace full/preview asset, POST /content/{id}/resubmit (back to pending), allowed while pending",
+   "why": "M25 'You can edit it while it waits'; M26 Replace the file / Edit details / Send again",
+   "artboards": [
+    "M25",
+    "M26"
+   ],
+   "size": "M",
+   "depends_on": [
+    "admin content-review flow re-queue"
+   ]
+  },
+  {
+   "item": "Return latest rejection reason and per-piece sales count on GET /content/mine and /content/{id} (owner)",
+   "why": "M26 reviewer reason; M28 '18 sales' and 'see why'",
+   "artboards": [
+    "M26",
+    "M28"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Month-scoped earnings with previous-month comparison on GET /content/mine/earnings",
+   "why": "M18 'Earned in September +18%'; M7 '₦128,400 this month' (web currently mislabels all-time as this month)",
+   "artboards": [
+    "M7",
+    "M18"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Me menu counts endpoint (purchases, enrolled courses, saved, unread notifications, slots, tick/KYC summary)",
+   "why": "M7 badges without five list calls",
+   "artboards": [
+    "M7"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Unified saved feed: GET saved events (EventSave exists, no list route), saved creators (new model or ruling it means Following), merged 'All'",
+   "why": "M30 tabs All/Content/Events/Creators",
+   "artboards": [
+    "M30"
+   ],
+   "size": "M",
+   "depends_on": [
+    "ruling on 'saved creators' vs follow"
+   ]
+  },
+  {
+   "item": "Per-buyer course lesson progress for content-type courses (CourseLessonProgress) + search param on GET /content/purchases",
+   "why": "M29 'VFX for Beginners 3 of 12 done · Resume' and 'Search what you've bought'",
+   "artboards": [
+    "M29"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Notifications: add a review-received kind and target ids (contentId/threadId/actorWawuId) for deep links",
+   "why": "M31 lists reviews; 'Reply' and 'See why' need targets",
+   "artboards": [
+    "M31"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Creator Shop tab source: filter of template/image ContentPiece (S) or a creator product model (L+, collides with Basket/Beauty handoff)",
+   "why": "M3 'Shop · Your products'",
+   "artboards": [
+    "M3"
+   ],
+   "size": "S",
+   "depends_on": [
+    "ruling on what a creator's Shop is"
+   ]
+  },
+  {
+   "item": "Per-format upload rules (PDF 100 MB, video MP4/MOV, audio MP3/WAV, 30-60 s audio preview) in presign/create validation",
+   "why": "M20/M21 copy",
+   "artboards": [
+    "M20",
+    "M21"
+   ],
+   "size": "S",
+   "depends_on": [
+    "confirm limits (facts on canvas)"
+   ]
+  },
+  {
+   "item": "Profile QR payload/share link in wawu/<handle> form",
+   "why": "M1 QR (W25) and Share",
+   "artboards": [
+    "M1"
+   ],
+   "size": "S",
+   "depends_on": [
+    "Wallet flow W25 owner (A1)",
+    "link-format rule 'wawu/…'"
+   ]
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "Fintava",
+   "capability": "pay a platform fee from the user's wallet (per bundle rule 'Fintava wallet only'); possibly provider-side PIN",
+   "artboards": [
+    "M12",
+    "M13"
+   ]
+  },
+  {
+   "provider": "Flutterwave",
+   "capability": "current tick checkout + verify (POST /verification/purchase, /purchase/verify) and payout subaccount wallet; would need a subaccount-debit or transfer-to-merchant call to support pay-from-wallet if kept",
+   "artboards": [
+    "M12",
+    "M14",
+    "M15"
+   ]
+  },
+  {
+   "provider": "Object storage (existing presign target)",
+   "capability": "media for featured works",
+   "artboards": [
+    "M36"
+   ]
+  },
+  {
+   "provider": "OS share sheet (Web Share API / native)",
+   "capability": "share profile",
+   "artboards": [
+    "M1"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "EVG score on the creator dashboard and GET /creators/{wawuId}/evg (no EVG anywhere on Me boards)",
+  "Owner stat cards on profile: Total earnings, Profile views, Products sold this month (GET /users/me/profile-stats)",
+  "Four-up stat row with Monthly Views",
+  "Profile Strength / completeness ring with missing steps (avatar, cover, handle, bio, links)",
+  "Creator tools rail on the owner's profile (Upload content, Create event, Start a community, Offer a service)",
+  "Cover image upload on profile and edit",
+  "Headline and Company inputs in Edit profile (canvas M8 has neither, though M33 displays both)",
+  "Experience editor (add/edit/delete roles) - canvas displays experience but draws no editor",
+  "Interests/specialization chips editor",
+  "WhatsApp handle and Website as social fields in edit (canvas M9 list has neither)",
+  "First/middle/last name split",
+  "Events tab on profile and Communities block on profile overview",
+  "Professional standing block on profile",
+  "Profile cross-sell block",
+  "Earnings statement CSV download on the dashboard",
+  "Questions answered / DM response stats on the dashboard",
+  "Saved tabs for Guides and Products",
+  "My tickets and Shop orders rows (web Settings)",
+  "KYC status panel component on profile",
+  "Paid-DM settings screen (/messages/settings) - canvas M18 only shows 'Paid messages On · ₦300' as a row",
+  "Public share page /wawu/[handle]"
+ ],
+ "summary": "Me is the new tab-bar slot that IS the user's public profile (Content/Services/Shop/About) plus a private Menu (M7) fanning out to creator dashboard, library, purchases, courses, saved, notifications, verification and settings, and it also carries the whole Create/publish wizard and the two-tick verification purchase. Backend coverage is good for the core: profile, experience, follow, paid-DM price, tips, ticks with prices/expiry/eligibility, KYC states, content create/list/delete, moderation and notifications are all live routes. The big gaps are product-rule changes, not missing plumbing: the canvas turns ticks into an upload/storage/reach tier (5 free vs 25, 1 GB vs 10 GB, '⚠ Limits are placeholders.') against a hard flat cap of 5 (src/common/creator-allowance.ts:25) and flat 2 GB storage; it reintroduces Free content against 'no free content'; and it pays for ticks from a wallet with a PIN, against Flutterwave checkout today (no wallet-debit, no PIN anywhere). New entities are needed for featured works (M34-M36), education, profile location/open-to/skills/Threads/social order, content edit-resubmit with reviewer reason, per-piece sales, month-scoped earnings, saved events/creators and course progress. The web profile (LinkedIn-style rebuild) already matches the CV direction (headline, company, experience, skills) but differs on tabs (Overview/Content/Services/Events vs Content/Services/Shop/About), adds a four-up stat row, completeness ring and creator-tools rail the canvas omits, and has no Menu, Education, Open-to or Works; location/member-since render empty because the backend has no data. Independent live defect found: the backend still forces a creator's FIRST upload to be free (content-piece.service.ts:486-490) while the web only ever sends paid, so a new creator cannot publish their first piece from the web; the web also labels all-time earnings as 'this month' and renders the LinkedIn input twice in Edit profile. Biggest risk: the tick-as-tier and pay-from-wallet decisions touch the cap, storage, ranking and the custody/CBN question at once and need rulings before any build. Note: MANIFEST missed M13, M16, M27 and M35 (included here); the board header says 'Codes run M1–M32' and '⚠ marks anything assumed', but ids run to M37."
+}

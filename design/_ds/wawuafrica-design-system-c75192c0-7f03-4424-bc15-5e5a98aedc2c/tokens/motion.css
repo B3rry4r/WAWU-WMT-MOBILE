@@ -1,0 +1,14 @@
+:root {
+  --ease-soft: cubic-bezier(0.32, 0.72, 0, 1) /* @kind other */;
+  --dur-fast: 120ms /* @kind other */;
+  --dur-base: 220ms /* @kind other */;
+  --dur-slow: 360ms /* @kind other */;
+  --press-scale: 0.98 /* @kind other */;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms /* @kind other */; --dur-base: 0ms /* @kind other */;
+    --dur-slow: 0ms /* @kind other */; --press-scale: 1 /* @kind other */;
+  }
+}

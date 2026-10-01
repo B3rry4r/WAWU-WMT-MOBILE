@@ -1,0 +1,29 @@
+{
+  "coverage_ok": true,
+  "rows": 299,
+  "real": 295,
+  "kind": {
+    "screen": 210,
+    "state": 85,
+    "cross-reference": 2,
+    "entry-map": 2
+  },
+  "backend": {
+    "partial": 136,
+    "missing": 84,
+    "n/a": 8,
+    "served": 67
+  },
+  "web": {
+    "exists-differs": 162,
+    "missing": 86,
+    "exists-matches": 47
+  },
+  "questions": 17,
+  "conflicts": 68,
+  "facts": 357,
+  "apis": 67,
+  "build_items": 136,
+  "est_days": 421.0,
+  "bad_files": []
+}

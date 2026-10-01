@@ -1,0 +1,2973 @@
+{
+ "agent": "A4",
+ "flows": [
+  "home",
+  "explore"
+ ],
+ "artboards": [
+  {
+   "id": "H1",
+   "flow": "home",
+   "title": "Today",
+   "kind": "screen",
+   "journey": "Today and the feed (also the 'Start here' entry map, section 0)",
+   "what_it_shows": "Home's Today tab: Today/Following/For you tabs, a Naira balance card (₦485,250.75) with Send, Add, Bills, Scan, the TGIF card for the day, a four-service row (Pay bills, Events, Legal, Shop), and a 'Creators to discover' rail with Follow. 'Approved E1 (b)'. Create button for creator accounts only. Entry map numbers 9 hotspots.",
+   "user_actions": [
+    "switch to Following (H12) or For you (H2)",
+    "tap search icon (X5)",
+    "tap bell (M31 notifications)",
+    "Send/Add/Bills/Scan on balance card (Flow W; Bills -> S2)",
+    "open TGIF card (H29)",
+    "tap Pay bills (S2) / Events (E1) / Legal (S14) / Shop (Flow SH)",
+    "Follow a creator in place or open a profile (M5)",
+    "See all creators",
+    "Create button (creators only, Flow M M19)"
+   ],
+   "data_needed": [
+    "wallet balance + account state for the signed-in user (any account type)",
+    "today's TGIF entry: date, series title, card count, read-time, '12.4K reading today' readers count",
+    "creator suggestions: avatar, short name, field, follow state",
+    "unread inbox count for tab badge",
+    "account type (to show Create)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet exists but CreatorWallet is a Flutterwave payout subaccount for creator accounts only (wallet.service.ts:292 'That creator has no wallet yet'); no buyer wallet, no debit-to-pay route",
+     "GET /api/hub/creators (CreatorDiscoveryController_list: category, page, perPage)",
+     "POST/DELETE /api/hub/creators/{wawuId}/follow",
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt",
+     "GET /api/hub/dm/inbox for badge"
+    ],
+    "gap": "No wallet/balance for non-creator accounts (balance card is drawn for every user); no TGIF readers-today counter or any TGIF backend; no Scan (QR pay) route; creator suggestions exist."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home",
+     "src/components/home/HomeScreen.tsx",
+     "src/components/home/HomeOverview.tsx"
+    ],
+    "delta": "Web tabs are Home · TGIF · For you · Following (TGIF is its own tab plus a hero card with a 'Reflect' button); canvas tabs are Today · Following · For you with TGIF as a card only. Web has no balance card on Home. Web service row is the full orderedServices() icon grid (many services, Shop dimmed) not four tiles. Web shows a persistent VerificationPrompt on Home; canvas does not. Web bottom bar is Home · Communities · Explore · Messages · Settings."
+   },
+   "third_party": [
+    "Fintava (wallet balance, per design-bundle rule) or Flutterwave subaccount (current)"
+   ],
+   "facts_on_canvas": [
+    "Naira balance ₦485,250.75",
+    "TGIF '5 cards · 2 min · 12.4K reading today'",
+    "TGIF date FRIDAY 26 SEP, series 'Sons, not slaves'"
+   ],
+   "conflicts": [
+    "navigation",
+    "wallet for every user",
+    "Home tab structure",
+    "Shop live on Home"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "X5 (search icon)",
+    "M31 (bell)",
+    "Flow W (balance card: Send, Add, Bills, Scan)",
+    "S2 (Bills / Pay bills)",
+    "E1 (Events)",
+    "S14 (Legal)",
+    "Flow SH (Shop)",
+    "M5 (creator profile)",
+    "M19 (Create button, creators only)",
+    "H2, H12, H29, H19, H26"
+   ]
+  },
+  {
+   "id": "H2",
+   "flow": "home",
+   "title": "For you · video",
+   "kind": "screen",
+   "journey": "Swipe up through the feed",
+   "what_it_shows": "Full-bleed dark video post in the For you feed with a right rail (avatar, 12.4K, 340, 1.1K, ₦ Tip), tap-to-pause and a scrubber above the caption.",
+   "user_actions": [
+    "tap to pause/play",
+    "scrub",
+    "swipe up to next post",
+    "tap ₦ Tip (H26)",
+    "tap caption (H19)",
+    "tap avatar (profile)"
+   ],
+   "data_needed": [
+    "ranked feed items with media type, stream URL, duration",
+    "creator id/name/avatar",
+    "like count + liked-by-me, comment count, share count",
+    "follow state"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "No content like route (backend-routes: only POST/DELETE /api/hub/content/{id}/comments/{commentId}/like); ContentPiece.likes is read-only (grep 'increment' src/content-piece: only slotsUsed); ContentPiece.views never incremented; no share counter column"
+    ],
+    "gap": "Feed list exists (trending sort). Missing: content like/unlike route and liked-by-me state, share counter, view counting, mixed card kinds; no streaming/transcoding metadata beyond durationLabel."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "rail counts 12.4K / 340 / 1.1K",
+    "Video · 1:50"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H26 (Tip)",
+    "H19 (caption -> content detail)"
+   ]
+  },
+  {
+   "id": "H3",
+   "flow": "home",
+   "title": "Photo set",
+   "kind": "screen",
+   "journey": "Swipe up through the feed",
+   "what_it_shows": "Photo-set post ('Approved F1'): sideways frames with the next frame peeking, 1/6 counter, and a paid offer bar 'Golden Hour presets · Template · 12 presets ₦2,500'.",
+   "user_actions": [
+    "swipe sideways through frames",
+    "tap offer bar (H19 / unlock)",
+    "tip",
+    "swipe up"
+   ],
+   "data_needed": [
+    "multi-image post assets (frame list)",
+    "linked paid offer (another content piece) with title, type, price"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "ContentPiece has a single previewAssetUrl/fullAssetUrl; ContentType 'image' (prisma enum ContentType)"
+    ],
+    "gap": "No multi-asset (photo set) storage on ContentPiece; no link from a free post to a separate paid offer piece (offer bar)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber. No offer bar."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Golden Hour presets ₦2,500",
+    "Photo set · 6"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H19"
+   ]
+  },
+  {
+   "id": "H4",
+   "flow": "home",
+   "title": "PDF / book",
+   "kind": "screen",
+   "journey": "Swipe up through the feed",
+   "what_it_shows": "PDF post ('Approved F2'): cover, '12 pages free', read in place, offer bar 'Read the full playbook · Yours forever · Pay from wallet ₦3,000'. NOT in MANIFEST.json (regex missed it) but is a real artboard on the board.",
+   "user_actions": [
+    "read free pages in place",
+    "tap offer bar to unlock (H14)"
+   ],
+   "data_needed": [
+    "page count",
+    "free page range",
+    "paged preview asset",
+    "price"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "ContentPiece.pageCount, previewAssetUrl (prisma schema.prisma:480-481)"
+    ],
+    "gap": "No free-page-range field (e.g. freePages) and no paged in-place reader asset; unlock is Flutterwave not wallet."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home",
+     "/content/[id]"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦3,000",
+    "84 pages · 12 pages free",
+    "'Yours forever'"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H14"
+   ],
+   "note": "Not listed in MANIFEST.json; included so the board's H-sequence is complete."
+  },
+  {
+   "id": "H5",
+   "flow": "home",
+   "title": "Locked",
+   "kind": "screen",
+   "journey": "Swipe up through the feed",
+   "what_it_shows": "Locked video ('Approved F3, with Subscribe removed'): frame frosts when the preview ends, 'Preview ended' message, offer bar 'Unlock the full video · 18 min · Pay from wallet ₦2,500'.",
+   "user_actions": [
+    "tap Unlock (H14)",
+    "swipe on"
+   ],
+   "data_needed": [
+    "preview duration / preview asset",
+    "locked flag per viewer",
+    "price"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "POST /api/hub/content/{id}/unlock + POST /api/hub/content/{id}/unlock/verify: opens a Flutterwave charge (content-piece.service.ts unlock() -> this.flutterwave.initCharge, returns FlutterwaveConfigResponse); no wallet debit path, no PIN (grep -rniE '\\bpin\\b|transactionPin|pinHash' src: no transaction PIN anywhere)",
+     "content-piece.service.ts:126-127 computes locked = !isFree && !unlocked"
+    ],
+    "gap": "Locked state and preview asset exist; preview end time not modelled; unlock path is Flutterwave hosted/inline charge not wallet+PIN."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home",
+     "/content/[id]"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber. Unlock on web goes through openFlutterwaveCheckout."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦2,500",
+    "Locked · 18 min",
+    "'How I built a ₦2M a month agency from Enugu'"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H14"
+   ]
+  },
+  {
+   "id": "H6",
+   "flow": "home",
+   "title": "Audio · Following",
+   "kind": "screen",
+   "journey": "Swipe up through the feed",
+   "what_it_shows": "Audio post ('Approved F6') with a scrubbable waveform; author tagged 'Following'.",
+   "user_actions": [
+    "play/pause",
+    "scrub waveform",
+    "swipe on"
+   ],
+   "data_needed": [
+    "audio asset + duration",
+    "waveform peaks",
+    "follow state"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "GET /api/hub/creators/{wawuId}/follow (status)"
+    ],
+    "gap": "No waveform data; follow state per item needs batch lookup (only single GET .../follow status)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Audio · 12 min"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H7",
+   "flow": "home",
+   "title": "Course",
+   "kind": "screen",
+   "journey": "More formats in the same feed",
+   "what_it_shows": "Course post: lesson 1 free, offer bar 'VFX for Beginners · 12 lessons · Pay from wallet ₦8,000'.",
+   "user_actions": [
+    "play free lesson",
+    "tap offer bar (H25 / H14)"
+   ],
+   "data_needed": [
+    "course lesson list with free flag",
+    "price"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "CourseLesson model: id, contentId, title, order, durationLabel (no free flag)"
+    ],
+    "gap": "CourseLesson has no isFree/preview flag, so 'lesson 1 free' cannot be expressed."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦8,000",
+    "12 lessons"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H25"
+   ]
+  },
+  {
+   "id": "H8",
+   "flow": "home",
+   "title": "Template · Following",
+   "kind": "screen",
+   "journey": "More formats in the same feed",
+   "what_it_shows": "Template post with offer bar 'Aba Collection · patterns · Template · Pay from wallet ₦3,500'.",
+   "user_actions": [
+    "tap offer bar",
+    "swipe on"
+   ],
+   "data_needed": [
+    "template content piece + linked offer",
+    "price"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "ContentType 'template' exists"
+    ],
+    "gap": "Offer-bar linkage to a separate paid piece not modelled; wallet payment absent."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web feed (/home For you tab) is a 2-col grid of ContentCard tiles (src/components/home/HomeScreen.tsx), not a full-bleed dark vertical swipe feed; no per-item rail (likes, comments, shares, ₦ Tip), no in-place playback/scrubber."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦3,500",
+    "Template · 9 patterns"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H9",
+   "flow": "home",
+   "title": "Creator card",
+   "kind": "screen",
+   "journey": "More formats in the same feed",
+   "what_it_shows": "Interstitial creator card in the feed ('F4, reworked'): portrait, 18.2K followers, 64 posts, 4.9 rating, 'Followed by Amaka and 12 people you know', swipeable strip of free and locked work, Follow and Profile.",
+   "user_actions": [
+    "Follow",
+    "open Profile (M5)",
+    "swipe the work strip",
+    "open a work item (H19)"
+   ],
+   "data_needed": [
+    "creator follower count, post count, average rating",
+    "mutual followers (people you follow who follow them) with count",
+    "creator's content strip with price/locked state",
+    "follow state"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/creators",
+     "GET /api/hub/users/{wawuId}/public-profile",
+     "GET /api/hub/content/public/creator/{wawuId}/content",
+     "FollowRelationship model (followerWawuId, followingWawuId)"
+    ],
+    "gap": "Feed does not return interstitial card kinds; no mutual-follower query ('Followed by … people you know': grep mutual|followedBy src: none); no creator-level aggregate rating."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web feed has no creator interstitial card. Creator cards exist only in rails (CreatorGridCard)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "18.2K followers · 64 posts · 4.9 rating",
+    "₦5,000 Course, ₦1,500 PDF"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "M5 (Profile)"
+   ]
+  },
+  {
+   "id": "H10",
+   "flow": "home",
+   "title": "Professional card",
+   "kind": "screen",
+   "journey": "More formats in the same feed",
+   "what_it_shows": "Interstitial professional card ('F5, reworked for paid DMs'): 'Professional near you', portrait, 4.9 rating, 212 reviews, 91 Trust Score, ~3h usual reply, service tags, 'Online now. No reply in 24 hours and your ₦1,500 comes back.', Message · ₦1,500 and Profile.",
+   "user_actions": [
+    "Message · ₦1,500 (paid DM, Inbox flow)",
+    "open Profile (P2)"
+   ],
+   "data_needed": [
+    "professional location + viewer location ('near you')",
+    "rating average and review count",
+    "Trust Score",
+    "usual reply time (public)",
+    "online presence",
+    "service tags",
+    "DM price",
+    "24h refund rule"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/professionals, GET /api/hub/professionals/{id} (ratingAvg, reviewCount from ProfessionalReview)",
+     "CreatorState.dmPrice/dmEnabled; POST /api/hub/dm/{creatorWawuId}/send; CreatorNoResponseTracker",
+     "GET /api/hub/dm/response-stats is CreatorAccountGuard + own stats only",
+     "GET /api/hub/creators/{wawuId}/evg (EvgScore.score)"
+    ],
+    "gap": "No location field on ProfessionalProfile or UserProfile (no 'near you'); no public per-professional reply-time; no presence/lastActiveAt (grep lastSeen|isOnline|presence: none); 'Trust Score' has no defined source (EvgScore is closest); feed does not interleave professional cards."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/home",
+     "/professionals/[id]"
+    ],
+    "delta": "No professional card in the web feed. /professionals/[id] exists as a separate page."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "4.9 · 212 reviews",
+    "91 Trust Score",
+    "~3h usual reply",
+    "Message · ₦1,500",
+    "No reply in 24 hours and your ₦1,500 comes back"
+   ],
+   "conflicts": [
+    "Trust Score"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "I2 (paid DM, Inbox flow)",
+    "P2 (professional profile)"
+   ]
+  },
+  {
+   "id": "H11",
+   "flow": "home",
+   "title": "Today · loading",
+   "kind": "state",
+   "journey": "Today and the feed · other states",
+   "what_it_shows": "From H1 while it loads: skeletons matching the real layout.",
+   "user_actions": [],
+   "data_needed": [
+    "none beyond H1"
+   ],
+   "backend": {
+    "status": "n/a",
+    "evidence": [],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/home/HomeOverview.tsx (Skeleton)",
+     "src/components/home/HomeScreen.tsx FeedSkeleton"
+    ],
+    "delta": "Web has skeletons but for its own layout (TGIF hero, creator rail), no balance-card skeleton."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H12",
+   "flow": "home",
+   "title": "Following · empty",
+   "kind": "state",
+   "journey": "Today and the feed · other states",
+   "what_it_shows": "From H1 Following tab when the user follows no one: 'You're not following anyone yet', 'Find people to follow' and the creators rail.",
+   "user_actions": [
+    "Find people to follow",
+    "Follow from rail"
+   ],
+   "data_needed": [
+    "following feed (scope=following)",
+    "count of accounts followed"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "GET /api/hub/content (ListContentQueryDto: scope 'feed'|'mine', category, sort 'trending'|'recent'|'top', page/perPage) (searched: backend-routes 'content', 'feed'; read src/content-piece/dto/list-content-query.dto.ts)",
+     "follow-relationship.controller.ts exposes only GET/POST/DELETE /creators/{wawuId}/follow (status for one target)"
+    ],
+    "gap": "No scope=following on GET /content and no 'who I follow' list/count endpoint, so neither the populated Following feed nor this empty state can be decided server-side."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home (Following tab)"
+    ],
+    "delta": "Web Following tab always shows 'Following feed isn't ready yet' (HomeScreen.tsx comment: no endpoint), not the canvas empty state with a creators rail."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "X4 or X1 (Find people to follow, destination not labelled)"
+   ]
+  },
+  {
+   "id": "H13",
+   "flow": "home",
+   "title": "Feed · couldn't load",
+   "kind": "state",
+   "journey": "Today and the feed · other states",
+   "what_it_shows": "From H2 when the feed fails: 'The feed didn't load … Anything you've bought is still in My purchases.' Try again.",
+   "user_actions": [
+    "Try again"
+   ],
+   "data_needed": [
+    "none"
+   ],
+   "backend": {
+    "status": "n/a",
+    "evidence": [],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home"
+    ],
+    "delta": "Web EmptyState 'Could not load your feed' with Try again (page reload); copy differs, no My purchases reassurance."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "My purchases (Me flow)"
+   ]
+  },
+  {
+   "id": "H14",
+   "flow": "home",
+   "title": "Unlock sheet",
+   "kind": "screen",
+   "journey": "Unlock from the feed",
+   "what_it_shows": "Bottom sheet: title, creator, type, Price ₦2,500, 'Yours Forever, in My purchases', 'Fee: No fee', Pay from wallet (Naira wallet · ₦485,250.75 available), Unlock · ₦2,500. 'Paid from the Naira wallet with the transaction PIN. There's no checkout page and no card form.'",
+   "user_actions": [
+    "Unlock · ₦2,500",
+    "dismiss"
+   ],
+   "data_needed": [
+    "price",
+    "buyer wallet balance",
+    "fee (none)",
+    "entitlement wording"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/content/{id}/unlock + POST /api/hub/content/{id}/unlock/verify: opens a Flutterwave charge (content-piece.service.ts unlock() -> this.flutterwave.initCharge, returns FlutterwaveConfigResponse); no wallet debit path, no PIN (grep -rniE '\\bpin\\b|transactionPin|pinHash' src: no transaction PIN anywhere)",
+     "GET /api/hub/wallet exists but CreatorWallet is a Flutterwave payout subaccount for creator accounts only (wallet.service.ts:292 'That creator has no wallet yet'); no buyer wallet, no debit-to-pay route"
+    ],
+    "gap": "Unlock exists but only as a Flutterwave charge; no wallet-debit unlock, no buyer wallet balance."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id]"
+    ],
+    "delta": "Web opens Flutterwave inline checkout (src/lib/flutterwave openFlutterwaveCheckout); no wallet sheet."
+   },
+   "third_party": [
+    "Fintava (wallet debit, per bundle rule)",
+    "Flutterwave (current charge)"
+   ],
+   "facts_on_canvas": [
+    "Price ₦2,500",
+    "Fee: No fee",
+    "Yours Forever",
+    "Naira wallet ₦485,250.75 available"
+   ],
+   "conflicts": [
+    "payment method",
+    "wallet for every user"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H15"
+   ]
+  },
+  {
+   "id": "H15",
+   "flow": "home",
+   "title": "PIN",
+   "kind": "screen",
+   "journey": "Unlock from the feed",
+   "what_it_shows": "Transaction PIN sheet 'Approve ₦2,500 to Chidi Eze' with keypad; 'The same PIN sheet as Wallet (W11)'. NOT in MANIFEST.json but a real artboard.",
+   "user_actions": [
+    "enter 4-digit PIN"
+   ],
+   "data_needed": [
+    "transaction PIN set/verify, attempt limits, lockout"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE '\\bpin\\b|transactionPin|pinHash' /home/user/wawu-backend/src: no transaction PIN (only event 'pin' = featured)"
+    ],
+    "gap": "No transaction PIN model or verify route anywhere in the backend."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no PIN sheet."
+   },
+   "third_party": [
+    "Fintava (if PIN is provider-side)"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "W11 (Wallet PIN sheet, Wallet flow)"
+   ],
+   "note": "Not listed in MANIFEST.json; included for completeness."
+  },
+  {
+   "id": "H16",
+   "flow": "home",
+   "title": "Unlocked",
+   "kind": "screen",
+   "journey": "Unlock from the feed",
+   "what_it_shows": "Success: 'Unlocked … it's in My purchases from now on.' Paid ₦2,500.00, From Naira wallet, Reference WAW-UNL-4K2P, Watch now.",
+   "user_actions": [
+    "Watch now (plays in place)"
+   ],
+   "data_needed": [
+    "purchase record with reference",
+    "full asset URL after unlock"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/content/{id}/unlock/verify",
+     "GET /api/hub/content/purchases",
+     "Purchase.flutterwaveTxRef"
+    ],
+    "gap": "Purchase + full asset exist; reference is a Flutterwave tx_ref, not a WAW-UNL-xxxx wallet reference; source 'Naira wallet' not modelled."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id]",
+     "/purchases"
+    ],
+    "delta": "Web shows unlocked state on detail after Flutterwave verify; no receipt panel with reference."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Reference format WAW-UNL-4K2P",
+    "Paid ₦2,500.00"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "My purchases (Me flow)"
+   ]
+  },
+  {
+   "id": "H17",
+   "flow": "home",
+   "title": "Not enough in wallet",
+   "kind": "state",
+   "journey": "Unlock from the feed · other states",
+   "what_it_shows": "From H14 when the wallet is too low: 'This costs ₦2,500. You have ₦1,200.00.' Top up at least ₦1,300; Add ₦1,300 opens Wallet W15 with the shortfall filled in, then returns.",
+   "user_actions": [
+    "Add ₦1,300 (W15)",
+    "Cancel"
+   ],
+   "data_needed": [
+    "buyer wallet balance",
+    "shortfall computed server-side or from authoritative balance",
+    "return-to-unlock deep link"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "GET /api/hub/wallet exists but CreatorWallet is a Flutterwave payout subaccount for creator accounts only (wallet.service.ts:292 'That creator has no wallet yet'); no buyer wallet, no debit-to-pay route",
+     "wallet-funding.service.ts exists (creator wallet funding)"
+    ],
+    "gap": "No buyer wallet; no insufficient-funds error contract on unlock."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no wallet-funded unlock, so no shortfall state."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦1,200.00 balance",
+    "shortfall ₦1,300"
+   ],
+   "conflicts": [
+    "payment method",
+    "wallet for every user"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "W15 (Add money, Wallet flow)"
+   ]
+  },
+  {
+   "id": "H18",
+   "flow": "home",
+   "title": "Couldn't confirm",
+   "kind": "state",
+   "journey": "Unlock from the feed · other states",
+   "what_it_shows": "From H15: 'Paid, still opening. ₦2,500 left your wallet and we couldn't finish opening the video. You won't be charged twice.' Refresh, Contact support.",
+   "user_actions": [
+    "Refresh",
+    "Contact support"
+   ],
+   "data_needed": [
+    "purchase status pending-after-debit",
+    "idempotency so a retry never double-debits",
+    "support channel"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "Purchase.status TransactionStatus pending; POST /api/hub/admin/payments/receipts/{id}/reverify",
+     "unlock/verify is idempotent on tx_ref"
+    ],
+    "gap": "Reconciliation exists for Flutterwave charges; no wallet-debit idempotency key or 'debited but entitlement not granted' state; no support-contact route."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web shows Flutterwave verify_failed error text, not this state."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'You won't be charged twice' (guarantee claim)"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H19",
+   "flow": "home",
+   "title": "Detail · locked preview",
+   "kind": "screen",
+   "journey": "Content detail",
+   "what_it_shows": "Content detail (/content/[id]) locked: preview pages 1–4 of 84, title, 2,140 views, Updated Sep 2026, creator with Follow, price card 'Unlock · ₦3,000 · Pay from wallet · ₦485,250 available', 96% liked, Share, Save, Rate, 48 comments.",
+   "user_actions": [
+    "Unlock (H14–H16)",
+    "Follow",
+    "Share (H22)",
+    "Save",
+    "Rate (H23)",
+    "open comments (H21)"
+   ],
+   "data_needed": [
+    "content detail with preview range, views, updatedAt",
+    "creator headline + follower count",
+    "rating percent",
+    "save state",
+    "comments with replies and like counts"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/{id}, GET /api/hub/content/public/{id}",
+     "GET/POST /api/hub/content/{id}/comments, comment like routes",
+     "POST/DELETE /api/hub/content/{id}/save",
+     "POST /api/hub/content/{id}/rate",
+     "POST /api/hub/content/{id}/unlock + POST /api/hub/content/{id}/unlock/verify: opens a Flutterwave charge (content-piece.service.ts unlock() -> this.flutterwave.initCharge, returns FlutterwaveConfigResponse); no wallet debit path, no PIN (grep -rniE '\\bpin\\b|transactionPin|pinHash' src: no transaction PIN anywhere)"
+    ],
+    "gap": "Detail, comments, save, rate exist. Missing: preview page range, views increment, ContentPiece has no updatedAt column, wallet unlock."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id]"
+    ],
+    "delta": "Web detail page exists (1181 lines) with unlock, save, rate, comments, share, tip, download; unlock is Flutterwave; no wallet balance line."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦3,000",
+    "84 pages · 2,140 views",
+    "96% liked · 48",
+    "Preview · pages 1–4 of 84"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H14",
+    "H21",
+    "H22",
+    "H23"
+   ]
+  },
+  {
+   "id": "H20",
+   "flow": "home",
+   "title": "Detail · unlocked",
+   "kind": "screen",
+   "journey": "Content detail",
+   "what_it_shows": "Unlocked detail: All 84 pages, 'Bought 26 Sep', Following, Read now, Download, Tip Kemi, Saved filled.",
+   "user_actions": [
+    "Read now",
+    "Download",
+    "Tip (H26)",
+    "Rate",
+    "Share",
+    "unsave"
+   ],
+   "data_needed": [
+    "purchase date for this viewer",
+    "full asset URL / download URL",
+    "save state"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/{id} (fullAssetUrl when unlocked)",
+     "GET /api/hub/content/purchases (purchasedAt)",
+     "POST /api/hub/tips + POST /api/hub/tips/verify (CreateTipDto: creatorWawuId, amount, note?) -> Flutterwave inline charge; Purchase row type tip; notification kind 'tip_received' with netAmount post-commission (src/notification/notification-event.ts:63)"
+    ],
+    "gap": "Purchase date per viewer not on the detail response (needs join); tip is Flutterwave."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id]"
+    ],
+    "delta": "Web unlocked state has download and TipSheet (Flutterwave)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Bought 26 Sep"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H26"
+   ]
+  },
+  {
+   "id": "H21",
+   "flow": "home",
+   "title": "Comments",
+   "kind": "screen",
+   "journey": "Content detail",
+   "what_it_shows": "Comments list with indented replies; Reply fills the input with @name.",
+   "user_actions": [
+    "reply to a comment",
+    "like a comment",
+    "post"
+   ],
+   "data_needed": [
+    "comments with replyToId, author, time, likes"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET/POST /api/hub/content/{id}/comments (Comment.replyToId self-relation)",
+     "POST/DELETE /api/hub/content/{id}/comments/{commentId}/like"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/content/[id] (Reply, replyTo)"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H22",
+   "flow": "home",
+   "title": "Share sheet",
+   "kind": "screen",
+   "journey": "Content detail",
+   "what_it_shows": "Share sheet: WAWU chat, Copy link, WhatsApp, More; link wawu/c/pricing-playbook; 'Send to' recent people (Amaka, Chidi, Bisi, Tolu).",
+   "user_actions": [
+    "copy link",
+    "share to WhatsApp / OS share",
+    "send inside WAWU chat to a person"
+   ],
+   "data_needed": [
+    "content short link by slug",
+    "recent chat contacts",
+    "send-content-to-DM message type"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "ContentPiece.slug @unique",
+     "GET /api/hub/dm/threads",
+     "POST /api/hub/dm/{creatorWawuId}/send is a PAID DM to a creator, not free person-to-person chat"
+    ],
+    "gap": "No free P2P chat to share into; no shared-content message type; no wawu/c/{slug} resolver; no share counter."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id] (shareContent copies link)"
+    ],
+    "delta": "Web share copies a link with toast; no sheet, no WAWU chat, no WhatsApp target."
+   },
+   "third_party": [
+    "OS share sheet / WhatsApp intent (no API)"
+   ],
+   "facts_on_canvas": [
+    "link format wawu/c/pricing-playbook"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "Inbox flow (WAWU chat)"
+   ]
+  },
+  {
+   "id": "H23",
+   "flow": "home",
+   "title": "Rate",
+   "kind": "screen",
+   "journey": "Content detail",
+   "what_it_shows": "Rate this piece, 1–5 stars, 'only after buying' (from the code), Submit rating -> 'Thanks for rating' -> H20.",
+   "user_actions": [
+    "choose stars",
+    "Submit rating"
+   ],
+   "data_needed": [
+    "eligibility (purchased)",
+    "per-user rating"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/content/{id}/rate (content-piece.service.ts:746-773)"
+    ],
+    "gap": "Route exists but does NOT check purchase and stores no per-user row: it averages the new score into ratingPct ((old + new)/2), so one user can rate repeatedly and skew it. Needs ContentRating(userWawuId, contentId, stars) unique + purchase check."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id] (rateContent)"
+    ],
+    "delta": "Web has Rate; canvas says only after buying."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'1–5 stars, only after buying'"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H24",
+   "flow": "home",
+   "title": "Detail · free video",
+   "kind": "screen",
+   "journey": "Content detail · other layouts",
+   "what_it_shows": "Free video detail: Free · 1:50, 12.4K views, Tip instead of a price, link 'From the course VFX for Beginners · 12 lessons ₦8,000', 340 comments.",
+   "user_actions": [
+    "Tip (H26)",
+    "open parent course (H25)",
+    "Follow",
+    "Share/Save/Rate"
+   ],
+   "data_needed": [
+    "free content piece",
+    "link from free piece to parent paid course"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "ContentPiece.accessType 'free' (AccessType enum free|paid); CreateContentDto accepts 'free'; content-piece.service.ts:488 requires a creator's first upload to be free"
+    ],
+    "gap": "Free content is supported; no relation from a free piece to its parent course."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id]"
+    ],
+    "delta": "Web renders free pieces; no 'From the course' link."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦8,000 course",
+    "12.4K views · 3 days ago"
+   ],
+   "conflicts": [
+    "free content"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H25",
+    "H26"
+   ]
+  },
+  {
+   "id": "H25",
+   "flow": "home",
+   "title": "Detail · course",
+   "kind": "screen",
+   "journey": "Content detail · other layouts",
+   "what_it_shows": "Course detail: 12 lessons · 2h 40m, 1,280 students, lesson list with lesson 01 tagged Free and the rest locked, Unlock course · ₦8,000, Pay from wallet.",
+   "user_actions": [
+    "play free lesson",
+    "See all 12 lessons",
+    "Unlock course"
+   ],
+   "data_needed": [
+    "lessons with free flag and duration",
+    "total duration",
+    "student count (purchases)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "CourseLesson (title, order, durationLabel)",
+     "GET /api/hub/content/{id}"
+    ],
+    "gap": "No per-lesson free flag, no per-lesson asset, no student count on the response, wallet unlock absent."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/content/[id] (lessons)"
+    ],
+    "delta": "Web shows lessons; no free-lesson tagging; Flutterwave unlock."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦8,000",
+    "1,280 students",
+    "12 lessons · 2h 40m"
+   ],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "H26",
+   "flow": "home",
+   "title": "Tip sheet",
+   "kind": "screen",
+   "journey": "Tip a creator",
+   "what_it_shows": "Tip sheet: 'Goes straight to their wallet. They see your name and note.' Quick amounts ₦500/₦1,000/₦2,000/₦5,000, other amount, note, Pay from wallet, Tip ₦2,000.",
+   "user_actions": [
+    "pick amount",
+    "enter other amount",
+    "write note",
+    "Tip"
+   ],
+   "data_needed": [
+    "buyer wallet balance",
+    "tip presets / min / max",
+    "note"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/tips + POST /api/hub/tips/verify (CreateTipDto: creatorWawuId, amount, note?) -> Flutterwave inline charge; Purchase row type tip; notification kind 'tip_received' with netAmount post-commission (src/notification/notification-event.ts:63)"
+    ],
+    "gap": "Tip + note exist via Flutterwave; no wallet-debit tip, no PIN; tip is not tied to a content piece (no contentId in CreateTipDto)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/dm/TipSheet.tsx",
+     "src/lib/api/tips.ts (TIP_PRESETS 500/1000/2000/5000, MIN 100)"
+    ],
+    "delta": "Presets match exactly. Web pays via Flutterwave inline checkout, not wallet + PIN."
+   },
+   "third_party": [
+    "Fintava (wallet debit)",
+    "Flutterwave (current)"
+   ],
+   "facts_on_canvas": [
+    "₦500 / ₦1,000 / ₦2,000 / ₦5,000 presets",
+    "'Goes straight to their wallet'"
+   ],
+   "conflicts": [
+    "payment method",
+    "tip split"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H27"
+   ]
+  },
+  {
+   "id": "H27",
+   "flow": "home",
+   "title": "PIN",
+   "kind": "screen",
+   "journey": "Tip a creator",
+   "what_it_shows": "PIN sheet 'Approve ₦2,000 to Tife Adeola'. NOT in MANIFEST.json but a real artboard.",
+   "user_actions": [
+    "enter PIN"
+   ],
+   "data_needed": [
+    "transaction PIN verify"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "no transaction PIN in backend (grep pin)"
+    ],
+    "gap": "No PIN."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "No PIN on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "payment method"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "W11"
+   ],
+   "note": "Not listed in MANIFEST.json; included for completeness."
+  },
+  {
+   "id": "H28",
+   "flow": "home",
+   "title": "Tip sent",
+   "kind": "screen",
+   "journey": "Tip a creator",
+   "what_it_shows": "'₦2,000 sent to Tife', note echoed. 'The creator gets a notification and an Inbox money bubble.' Done returns to the feed.",
+   "user_actions": [
+    "Done"
+   ],
+   "data_needed": [
+    "tip receipt",
+    "notification to creator",
+    "inbox money message"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "notification kind 'tip_received' (notification-event.ts:38,63)",
+     "GET /api/hub/dm/inbox"
+    ],
+    "gap": "Notification exists; no Inbox money-bubble message type (DM model is paid questions)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/dm/TipSheet.tsx success state"
+    ],
+    "delta": "Web shows a success toast after Flutterwave verify; no inbox bubble."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "Inbox flow (money bubble, I15)"
+   ]
+  },
+  {
+   "id": "H29",
+   "flow": "home",
+   "title": "Verse",
+   "kind": "screen",
+   "journey": "TGIF reading",
+   "what_it_shows": "Full-screen TGIF card (TODAY'S VERSE) for Friday 26 September, series 'SONS, NOT SLAVES': Psalm 118:24 (KJV) quoted. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.",
+   "user_actions": [
+    "Amen (react)",
+    "Share (H35)",
+    "tap to continue"
+   ],
+   "data_needed": [
+    "today's entry field 'quote/ref'",
+    "per-card reaction counts + my reaction",
+    "share count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt"
+    ],
+    "gap": "The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home (TGIF tab + TgifHero card): src/components/tgif/TgifDaily.tsx, TgifHero.tsx; src/lib/api/tgif.ts reads static /tgif/MM.json bundled files (fields quote, ref, reality, remember, prayer, takeaway, series, seriesTheme); 'Nothing here is stored or sent anywhere'"
+    ],
+    "delta": "Web TgifDaily deals the same parts one at a time (quote/ref exists in TgifEntry) inside a card on /home, not full-screen; no reactions, no counts, no share. Web personalises '{Name}'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Amen 2.1K",
+    "3.4K (unlabelled second count)",
+    "Psalm 118:24 (KJV) verse text"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H35"
+   ]
+  },
+  {
+   "id": "H30",
+   "flow": "home",
+   "title": "What it means",
+   "kind": "screen",
+   "journey": "TGIF reading",
+   "what_it_shows": "Full-screen TGIF card (THE REALITY) for Friday 26 September, series 'SONS, NOT SLAVES': 'Today is not a leftover from yesterday…' With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.",
+   "user_actions": [
+    "Amen (react)",
+    "Share (H35)",
+    "tap to continue"
+   ],
+   "data_needed": [
+    "today's entry field 'reality'",
+    "per-card reaction counts + my reaction",
+    "share count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt"
+    ],
+    "gap": "The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home (TGIF tab + TgifHero card): src/components/tgif/TgifDaily.tsx, TgifHero.tsx; src/lib/api/tgif.ts reads static /tgif/MM.json bundled files (fields quote, ref, reality, remember, prayer, takeaway, series, seriesTheme); 'Nothing here is stored or sent anywhere'"
+    ],
+    "delta": "Web TgifDaily deals the same parts one at a time (reality exists in TgifEntry) inside a card on /home, not full-screen; no reactions, no counts, no share. Web personalises '{Name}'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Amen 2.1K",
+    "3.4K (unlabelled second count)"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H35"
+   ]
+  },
+  {
+   "id": "H31",
+   "flow": "home",
+   "title": "The line to carry",
+   "kind": "screen",
+   "journey": "TGIF reading",
+   "what_it_shows": "Full-screen TGIF card (REMEMBER) for Friday 26 September, series 'SONS, NOT SLAVES': 'I don't have to earn today. I get to live it.' With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.",
+   "user_actions": [
+    "Amen (react)",
+    "Share (H35)",
+    "tap to continue"
+   ],
+   "data_needed": [
+    "today's entry field 'remember'",
+    "per-card reaction counts + my reaction",
+    "share count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt"
+    ],
+    "gap": "The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home (TGIF tab + TgifHero card): src/components/tgif/TgifDaily.tsx, TgifHero.tsx; src/lib/api/tgif.ts reads static /tgif/MM.json bundled files (fields quote, ref, reality, remember, prayer, takeaway, series, seriesTheme); 'Nothing here is stored or sent anywhere'"
+    ],
+    "delta": "Web TgifDaily deals the same parts one at a time (remember exists in TgifEntry) inside a card on /home, not full-screen; no reactions, no counts, no share. Web personalises '{Name}'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Amen 2.1K",
+    "3.4K (unlabelled second count)"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H35"
+   ]
+  },
+  {
+   "id": "H32",
+   "flow": "home",
+   "title": "Prayer",
+   "kind": "screen",
+   "journey": "TGIF reading",
+   "what_it_shows": "Full-screen TGIF card (PRAYER) for Friday 26 September, series 'SONS, NOT SLAVES': prayer text with an inline Amen. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.",
+   "user_actions": [
+    "Amen (react)",
+    "Share (H35)",
+    "tap to continue"
+   ],
+   "data_needed": [
+    "today's entry field 'prayer'",
+    "per-card reaction counts + my reaction",
+    "share count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt"
+    ],
+    "gap": "The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home (TGIF tab + TgifHero card): src/components/tgif/TgifDaily.tsx, TgifHero.tsx; src/lib/api/tgif.ts reads static /tgif/MM.json bundled files (fields quote, ref, reality, remember, prayer, takeaway, series, seriesTheme); 'Nothing here is stored or sent anywhere'"
+    ],
+    "delta": "Web TgifDaily deals the same parts one at a time (prayer exists in TgifEntry) inside a card on /home, not full-screen; no reactions, no counts, no share. Web personalises '{Name}'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Amen 8.9K",
+    "3.4K"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H35"
+   ]
+  },
+  {
+   "id": "H33",
+   "flow": "home",
+   "title": "Sponsored",
+   "kind": "screen",
+   "journey": "TGIF reading",
+   "what_it_shows": "Skippable sponsored card before the takeaway: 'SPONSORED · Gospel Night Live · Abuja · Sat 18 October · from ₦5,000 · Get tickets · Ads keep TGIF free · Skip ›'. Note: 'Ads are sold from the WAWU dashboard.'",
+   "user_actions": [
+    "Get tickets (event detail, Events flow)",
+    "Skip"
+   ],
+   "data_needed": [
+    "one live ad creative for placement 'tgif_card' for today (advertiser, headline, subline, CTA label, CTA destination e.g. event id, artwork)",
+    "impression, click and skip events",
+    "admin-side campaign record (dates, placement, status)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "backend-models.txt: no Ad/Sponsor/Campaign(ad) model; grep -rniE 'sponsor|advert' src: only prose comments (shop-admin.service.ts:33, creator-discovery.service.ts:171)",
+     "NotificationCampaign + /api/hub/admin/notifications/campaigns* is an admin push/in-app notification fan-out (title, body, imageUrl, actionLabel, actionHref, audience, recipientCount/deliveredCount), gated by NotificationSettings.promotions. It has no placement, no schedule window, no advertiser, no price, no impressions/clicks: NOT an ad product",
+     "Event.featured + POST /api/hub/admin/events/{id}/feature is an admin pin on the Explore featured rail, unpaid, events only"
+    ],
+    "gap": "Entire ad product missing: ad model, placement, scheduling, serving endpoint, impression/click/skip tracking, admin dashboard to sell/manage, advertiser billing."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "src/lib/auth/gates.ts:32 mentions 'advertising' as a revenue stream only"
+    ],
+    "delta": "No ad slot anywhere in web TGIF (TgifDaily has five cards, no sponsored card)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'from ₦5,000' ticket price",
+    "'Ads keep TGIF free'",
+    "'Ads are sold from the WAWU dashboard'",
+    "event Gospel Night Live, Abuja, Sat 18 October"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "E2 (event detail, Events flow) via Get tickets"
+   ]
+  },
+  {
+   "id": "H34",
+   "flow": "home",
+   "title": "One thing to do",
+   "kind": "screen",
+   "journey": "TGIF reading",
+   "what_it_shows": "Full-screen TGIF card (TAKEAWAY) for Friday 26 September, series 'SONS, NOT SLAVES': 'Before your first meeting, write down one thing today that you're glad for.' 'No streak to lose.' Done returns to Today. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.",
+   "user_actions": [
+    "Amen (react)",
+    "Share (H35)",
+    "tap to continue"
+   ],
+   "data_needed": [
+    "today's entry field 'takeaway'",
+    "per-card reaction counts + my reaction",
+    "share count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt"
+    ],
+    "gap": "The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/home (TGIF tab + TgifHero card): src/components/tgif/TgifDaily.tsx, TgifHero.tsx; src/lib/api/tgif.ts reads static /tgif/MM.json bundled files (fields quote, ref, reality, remember, prayer, takeaway, series, seriesTheme); 'Nothing here is stored or sent anywhere'"
+    ],
+    "delta": "Web TgifDaily deals the same parts one at a time (takeaway exists in TgifEntry) inside a card on /home, not full-screen; no reactions, no counts, no share. Web personalises '{Name}'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Amen 2.1K",
+    "3.4K (unlabelled second count)"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H35"
+   ]
+  },
+  {
+   "id": "H35",
+   "flow": "home",
+   "title": "Share the verse",
+   "kind": "state",
+   "journey": "TGIF reading · other states",
+   "what_it_shows": "From any TGIF card · Share: 'Share today's verse. Posted as an image with a link back to TGIF.' Preview image (TGIF · 26 SEP, verse, Psalm 118:24, wawu/tgif); targets WhatsApp, Story, WAWU chat, Save.",
+   "user_actions": [
+    "share to WhatsApp / Story",
+    "send in WAWU chat",
+    "save image"
+   ],
+   "data_needed": [
+    "rendered share image of today's verse",
+    "deep link wawu/tgif",
+    "share count"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt"
+    ],
+    "gap": "No share-image renderer (client canvas or server OG image) and no wawu/tgif link resolver; WAWU chat target depends on free P2P chat."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/home (TGIF tab + TgifHero card): src/components/tgif/TgifDaily.tsx, TgifHero.tsx; src/lib/api/tgif.ts reads static /tgif/MM.json bundled files (fields quote, ref, reality, remember, prayer, takeaway, series, seriesTheme); 'Nothing here is stored or sent anywhere'"
+    ],
+    "delta": "Web TGIF has no share."
+   },
+   "third_party": [
+    "OS share sheet / WhatsApp, Instagram Story intents"
+   ],
+   "facts_on_canvas": [
+    "link format wawu/tgif"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "Inbox flow (WAWU chat)"
+   ]
+  },
+  {
+   "id": "H36",
+   "flow": "home",
+   "title": "Today · TGIF off",
+   "kind": "state",
+   "journey": "TGIF reading · other states",
+   "what_it_shows": "From Settings (Z2) 'TGIF on Home' off: the sponsored card (Gospel Night Live · Tickets) takes TGIF's place on Today, 'so ads keep running'.",
+   "user_actions": [
+    "Tickets (event detail)"
+   ],
+   "data_needed": [
+    "TGIF-on-Home preference",
+    "ad creative for placement 'today_slot'"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'tgif|devotion' /home/user/wawu-backend/src prisma: zero hits. No TGIF model, route, reaction or counter in backend-models.txt / backend-routes.txt",
+     "no ad model (see H33)",
+     "NotificationSettings/PrivacySettings have no TGIF flag"
+    ],
+    "gap": "No ad serving; TGIF preference is not stored server-side (only needed server-side if ad targeting/reporting must know it)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/lib/tgif-preference.ts (localStorage 'wawu.tgif.hidden')",
+     "src/components/tgif/TgifSetting.tsx in /settings",
+     "HomeScreen.tsx: 'the card is what goes, not the screen'"
+    ],
+    "delta": "Web hides the TGIF card and tab when off and shows nothing in its place; canvas fills the slot with an ad."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "from ₦5,000"
+   ],
+   "conflicts": [
+    "TGIF off behaviour"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "Z2 (Settings · TGIF on Home)",
+    "E2 (event via Tickets)"
+   ]
+  },
+  {
+   "id": "X1",
+   "flow": "explore",
+   "title": "Explore",
+   "kind": "screen",
+   "journey": "Browse (also the 'Start here' entry map, section 0)",
+   "what_it_shows": "Explore ('Approved E4'): search bar, FEATURED EVENT hero (WAWU Creators Summit, Lagos, 12 Oct · Eko Convention Centre), category chips (All + 6 + More), Featured creators rail (@handle, field, Follow), Upcoming events list, then doors: Find a professional, Find a school, List your services.",
+   "user_actions": [
+    "search (X5)",
+    "bell (M31)",
+    "open featured event (Flow E)",
+    "tap category (X3)",
+    "See all creators (X4)",
+    "open creator (M5) / Follow",
+    "open event (Flow E)",
+    "Find a professional (P1)",
+    "Find a school (SC1)",
+    "List your services (P5)"
+   ],
+   "data_needed": [
+    "featured event",
+    "creator categories (taxonomy)",
+    "featured creators with handle, tick, field, follow state",
+    "upcoming published events",
+    "notification unread count"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/events (published) + Event.featured via POST /api/hub/admin/events/{id}/feature",
+     "GET /api/hub/creators?category=",
+     "GET /api/hub/content/public/featured",
+     "GET /api/hub/notifications"
+    ],
+    "gap": "Featured event and event list served. Creators served but 'featured' creators has no featured/paid-featured flag (web FeaturedThisWeek.tsx: 'nothing on the contract marks a creator … as PAID-featured'); creator category filter matches UserProfile.interests strings, not the creator taxonomy categories drawn; no schools backend for the Find a school door."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore",
+     "src/app/(app)/explore/page.tsx"
+    ],
+    "delta": "Web Explore order: ExploreHero (featured events carousel, WAWU pitch fallback), CategoryTiles (25 sector categories from src/lib/categories.ts: Agriculture & Food, Trade & Commerce…), 'Everything WAWU can do' service grid, Featured creators, Featured this week, Upcoming events, ProfessionalsRail, LearningRail. Canvas uses creator taxonomy chips (Music & Audio, Film & Video…), has no service grid, no Featured this week, no Learning rail, and replaces the professionals rail with door rows; web has no search bar on Explore body (header search) and no 'Find a school' / 'List your services' doors."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "WAWU Creators Summit, Lagos, 12 Oct, Eko Convention Centre",
+    "Gospel Night Live, Abuja, OCT 18",
+    "Monetise Your Content, Online, NOV 02"
+   ],
+   "conflicts": [
+    "navigation"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "X5 (search bar)",
+    "M31 (bell)",
+    "E2 (featured event / event card, Events flow)",
+    "X3 (category tile)",
+    "X4 (Featured creators · See all)",
+    "M5 (creator card)",
+    "P1 (Find a professional, Professionals flow)",
+    "SC1 (Find a school, Schools flow)",
+    "P5 (List your services, Professionals flow)",
+    "E1 (Upcoming events · See all, inferred)"
+   ]
+  },
+  {
+   "id": "X15",
+   "flow": "explore",
+   "title": "Explore · scrolled down",
+   "kind": "screen",
+   "journey": "Browse",
+   "what_it_shows": "Explore scrolled: Upcoming events, then the doors: Find a professional (Accountants, lawyers, designers), Find a school (Courses from schools and academies), List your services (Get paid to answer questions).",
+   "user_actions": [
+    "open an event (Flow E)",
+    "Find a professional (P1)",
+    "Find a school (SC1)",
+    "List your services (P5)"
+   ],
+   "data_needed": [
+    "upcoming events",
+    "static door rows"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/events",
+     "GET /api/hub/professionals",
+     "POST /api/hub/professionals/applications",
+     "schools: no model/route (grep -rniE 'school|academy' prisma src: only legal-intake-questions.ts); closest is LearnCourse (externalHostUrl) + GET /api/hub/learn/courses"
+    ],
+    "gap": "Events and professionals served; Schools door target has no backend at all (Schools flow is new)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore",
+     "src/app/(app)/explore/page.tsx",
+     "/professionals",
+     "/professionals/apply",
+     "/learn/courses"
+    ],
+    "delta": "Web has ProfessionalsRail and LearningRail rails instead of door rows; no 'Find a school' entry; 'List your services' maps to /professionals/apply but is not linked as a door from Explore."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "P1 (Find a professional)",
+    "SC1 (Find a school, new Schools flow)",
+    "P5 (List your services)",
+    "E2 (event card)"
+   ]
+  },
+  {
+   "id": "X2",
+   "flow": "explore",
+   "title": "Categories",
+   "kind": "screen",
+   "journey": "Browse",
+   "what_it_shows": "Categories screen: chip row (All, Music & Audio, Film & Video, Art & Design, Photography, Fashion & Beauty) above a creator list with Follow/Following.",
+   "user_actions": [
+    "tap a chip (X3)",
+    "Follow",
+    "open creator (M5)"
+   ],
+   "data_needed": [
+    "creator taxonomy categories",
+    "creators per category with follow state"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/creators?category= (creator-discovery.service.ts:98-114 filters UserProfile.interests hasSome)",
+     "CreateContentDto.category = one of 25 sector ids (deprecated) + specializations from C1 taxonomy"
+    ],
+    "gap": "Filter is on free-text interests, not the creator taxonomy category ids the chips show; no specialization-based creator filter."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore/categories"
+    ],
+    "delta": "Web categories are the 25 sector list (src/lib/categories.ts), not the creator taxonomy (src/lib/taxonomy/taxonomy.ts RAW_CREATOR, which does contain Music & Audio etc.)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "X3",
+    "M5"
+   ]
+  },
+  {
+   "id": "X3",
+   "flow": "explore",
+   "title": "One category",
+   "kind": "screen",
+   "journey": "Browse",
+   "what_it_shows": "Photography selected: chips stay in place; creators @amaka Photographer, @chidi Wedding films, @sade Portraits, @tunde Drone, each with Follow.",
+   "user_actions": [
+    "switch chip",
+    "Follow",
+    "open creator (M5)"
+   ],
+   "data_needed": [
+    "creators filtered by one taxonomy category"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/creators?category="
+    ],
+    "gap": "Same as X2: category semantics differ from the drawn taxonomy."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore/categories"
+    ],
+    "delta": "Web filters by sector category."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "M5 (A creator opens their profile)"
+   ]
+  },
+  {
+   "id": "X4",
+   "flow": "explore",
+   "title": "All creators",
+   "kind": "screen",
+   "journey": "All creators",
+   "what_it_shows": "From X1 Featured creators · See all: 'Creators' with chip row and full creator list (Follow/Following).",
+   "user_actions": [
+    "filter by chip",
+    "Follow in place",
+    "open profile (M5)"
+   ],
+   "data_needed": [
+    "paginated creator directory"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/creators (page, perPage, category)",
+     "POST/DELETE /api/hub/creators/{wawuId}/follow"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore/creators"
+    ],
+    "delta": "Web creator directory exists; category chips use sector list."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "M5"
+   ]
+  },
+  {
+   "id": "X5",
+   "flow": "explore",
+   "title": "Search",
+   "kind": "screen",
+   "journey": "Search",
+   "what_it_shows": "Search landing (from /search): Recent (Clear) with past queries, 'People are searching' chips, 'Creators to know' with Follow.",
+   "user_actions": [
+    "type a query (X6)",
+    "tap a recent or popular query",
+    "Clear recent",
+    "Follow a creator",
+    "Cancel"
+   ],
+   "data_needed": [
+    "recent searches per user",
+    "popular searches",
+    "suggested creators"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search/suggestions (search-response.service.ts:142-162)"
+    ],
+    "gap": "recentSearches is always [] (no SearchHistory model, comment at :151-158); popularSearches is approximated from top content titles by views, not real queries; no clear-history route."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/search",
+     "src/lib/api/search.ts"
+    ],
+    "delta": "Web matches layout; recent searches are kept only in component state for the session."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "popular queries: tax filing, VFX course, CAC registration, wedding photographer, Aba fashion"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "Home search icon (H1) and X1 search bar both open X5"
+   ]
+  },
+  {
+   "id": "X6",
+   "flow": "explore",
+   "title": "Results · All",
+   "kind": "screen",
+   "journey": "Search",
+   "what_it_shows": "Results for 'pricing' with tabs All 11 / Content 6 / Creators 3 / Communities 2; sections Content (title, creator, type, price or Free), Creators (Follow / Profile), Communities (Pricing clinic · 380 members · private · Ask).",
+   "user_actions": [
+    "switch tab",
+    "open content (H19)",
+    "Follow / open creator (M5)",
+    "Ask to join a private community / Join open (I25)"
+   ],
+   "data_needed": [
+    "search across content, creators, communities with counts"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search?q=&tab=all|content|creators|communities"
+    ],
+    "gap": "Content and creators served; communities always [] (search-response.service.ts:77-87 'Returns [] unconditionally' although src/community now exists); creator rows carry no verification tick (web search.ts SEAM note); schools not searchable (Schools flow expects it)."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/search"
+    ],
+    "delta": "Web tabs and sections match; communities tab is empty because backend returns []."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦3,000 / ₦2,500 / Free prices",
+    "Pricing clinic 380 members"
+   ],
+   "conflicts": [
+    "free content"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H19 (content)",
+    "M5 (creator)",
+    "I25 (community)"
+   ]
+  },
+  {
+   "id": "X7",
+   "flow": "explore",
+   "title": "Content",
+   "kind": "screen",
+   "journey": "Search",
+   "what_it_shows": "Content tab: list of content results with creator, type and price (₦3,000, ₦2,500, Free, ₦1,500, ₦1,000).",
+   "user_actions": [
+    "open content (H19)"
+   ],
+   "data_needed": [
+    "content search results"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/search?tab=content"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/search"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦1,500 template",
+    "₦1,000 audio"
+   ],
+   "conflicts": [
+    "free content"
+   ],
+   "designer_questions": [],
+   "cross_references": [
+    "H19"
+   ]
+  },
+  {
+   "id": "X8",
+   "flow": "explore",
+   "title": "Creators",
+   "kind": "screen",
+   "journey": "Search",
+   "what_it_shows": "Creators tab: Adaeze Okonkwo, Funmi Adeyemi (Profile), Kemi Okafor with Follow.",
+   "user_actions": [
+    "Follow",
+    "open profile (M5)"
+   ],
+   "data_needed": [
+    "creator search with follow state + tick"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search?tab=creators"
+    ],
+    "gap": "No verification tick on creator rows."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/search"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "M5"
+   ]
+  },
+  {
+   "id": "X9",
+   "flow": "explore",
+   "title": "Communities",
+   "kind": "screen",
+   "journey": "Search",
+   "what_it_shows": "Communities tab: Pricing clinic (380 members · private · Ask), Lagos Freelancers (1,204 members · open · Join).",
+   "user_actions": [
+    "Ask (request to join private)",
+    "Join (open)",
+    "open community (I25)"
+   ],
+   "data_needed": [
+    "community search: name, member count, kind, my membership"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search?tab=communities returns []",
+     "GET /api/hub/communities, POST /api/hub/communities/{id}/join, GET /api/hub/communities/{id}/membership"
+    ],
+    "gap": "Community search predicate not implemented (always empty) even though community list/join routes exist."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/search (joinCommunity)"
+    ],
+    "delta": "Web renders the tab but it is always empty."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "380 members",
+    "1,204 members"
+   ],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "I25 (community, Inbox flow)"
+   ]
+  },
+  {
+   "id": "X10",
+   "flow": "explore",
+   "title": "No results",
+   "kind": "state",
+   "journey": "Search · other states",
+   "what_it_shows": "From X6 when nothing matches: counts all 0, 'Try a shorter search', 'Closest things we have' list.",
+   "user_actions": [
+    "tap a closest result"
+   ],
+   "data_needed": [
+    "closest matches for a failed query"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/search/closest?q="
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/search (getClosestResults)"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": [
+    "H19"
+   ]
+  },
+  {
+   "id": "X11",
+   "flow": "explore",
+   "title": "No recent searches",
+   "kind": "state",
+   "journey": "Search · other states",
+   "what_it_shows": "From X5 with no history: 'No recent searches yet.' plus popular and creators.",
+   "user_actions": [],
+   "data_needed": [
+    "recent searches (empty)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search/suggestions (recentSearches always [])"
+    ],
+    "gap": "Always this state today because history is not persisted."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/search"
+    ],
+    "delta": "Web shows 'No recent searches yet.'"
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "X12",
+   "flow": "explore",
+   "title": "Search failed",
+   "kind": "state",
+   "journey": "Search · other states",
+   "what_it_shows": "From X6 on error: 'Search isn't working right now … Try again'.",
+   "user_actions": [
+    "Try again"
+   ],
+   "data_needed": [],
+   "backend": {
+    "status": "n/a",
+    "evidence": [],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/search"
+    ],
+    "delta": "Web error copy may differ (not verified line by line)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "X13",
+   "flow": "explore",
+   "title": "Empty category",
+   "kind": "state",
+   "journey": "Browse · other states",
+   "what_it_shows": "From X3 when a category is empty: chips All, Gaming & Esports, Faith & Spirituality; 'Nobody is publishing in Gaming & Esports yet'.",
+   "user_actions": [],
+   "data_needed": [
+    "per-category creator count (or empty list)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/creators?category= returns items: [] when none"
+    ],
+    "gap": "Works as an empty list; categories themselves differ (see X2)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore/categories"
+    ],
+    "delta": "Web uses sector categories, so 'Gaming & Esports' is not a selectable chip."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  },
+  {
+   "id": "X14",
+   "flow": "explore",
+   "title": "Explore · loading",
+   "kind": "state",
+   "journey": "Browse · other states",
+   "what_it_shows": "From X1 while loading: skeleton with search bar and tab bar.",
+   "user_actions": [],
+   "data_needed": [],
+   "backend": {
+    "status": "n/a",
+    "evidence": [],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore",
+     "src/app/(app)/explore/page.tsx"
+    ],
+    "delta": "Web Explore is a server component with force-dynamic; per-section skeletons only in client rails."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": [],
+   "cross_references": []
+  }
+ ],
+ "designer_questions": [
+  {
+   "artboard": "Home board header (not an artboard)",
+   "quote": "Codes run H1–H33. ⚠ marks anything assumed.",
+   "note": "This is the ONLY ⚠ in either board (Home Flow.dc.html header legend; Explore Flow.dc.html has none; flows/home.txt and flows/explore.txt have none). No artboard on Home or Explore carries a ⚠ question. The legend is also stale: the board runs to H36 (and the header says '33 screens'); Explore's header says '14 screens' but the board has 15 (X15 added)."
+  }
+ ],
+ "conflicts": [
+  {
+   "topic": "navigation (bottom tab bar)",
+   "canvas": "Every Home and Explore artboard draws the bar as 'Home · Explore · Inbox 3 · Wallet · Me'. Where the old slots went, per the boards: Communities live inside Inbox ('Inbox is one list for chats, paid DMs, communities and money', Communities filter tab I24, rooms I25, 'Browse communities' on I35) and in search results (X9 -> I25). Messages become Inbox (I1). Settings moves off the bar: 'Settings opens from the menu on Me' (Me · menu icon -> Z1 menu -> Z2 Settings). Profile becomes the Me tab ('Me is your public profile', M1). Create stays a creator-only button: H1 'The Create button shows for creator accounts only', start-map row 'Create button (creators only) Upload new content Flow M', M1 'The Create button shows on creator accounts', M19 'Create button (+)'; the Wallet board says 'The Create button is hidden on Wallet so it never covers amounts'. Search: search icon in the Home header (-> X5) and a search bar at the top of Explore (X1). Notifications: bell in the Home and Explore headers (-> M31). Wallet gets its own slot for every user.",
+   "current": "'Bottom bar, 5 slots, the SAME for everyone: `Home · Communities · Explore · Messages · Settings`. Search and notifications live in the header on every screen. The avatar in the header opens Profile. **Create is a floating action button**, bottom-right above the bar, shown to creator accounts only. It is not a nav slot.' and 'Slot 5 is Settings, not Profile. Profile is a row inside Settings and is also reachable from the header avatar (21 Aug 2026).' Web: src/components/layout/BottomNav.tsx lines 28-34, Sidebar.tsx, CreateFab.tsx.",
+   "artboards": [
+    "H1",
+    "H2",
+    "H36",
+    "X1",
+    "X5",
+    "X15"
+   ]
+  },
+  {
+   "topic": "payment method for unlocks and tips",
+   "canvas": "'Paid from the Naira wallet with the transaction PIN. There's no checkout page and no card form.' (Unlock section); 'Every price is paid from the wallet with the PIN.' (Home board header); offer bars 'Pay from wallet'; design-bundle rule: 'Payments: Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout.'",
+   "current": "'Each wallet is a Flutterwave *payout subaccount* … Flutterwave custodies it, WAWU only instructs.' Unlocks and tips today open a Flutterwave charge (POST /api/hub/content/{id}/unlock, POST /api/hub/tips) completed in Flutterwave's inline checkout on web (src/lib/flutterwave openFlutterwaveCheckout).",
+   "artboards": [
+    "H4",
+    "H5",
+    "H7",
+    "H8",
+    "H14",
+    "H15",
+    "H16",
+    "H17",
+    "H18",
+    "H19",
+    "H25",
+    "H26",
+    "H27"
+   ]
+  },
+  {
+   "topic": "wallet for every user (custody)",
+   "canvas": "Balance card '₦ Naira ₦485,250.75 Send Add Bills Scan' on every user's Today (H1, H36); unlock sheet 'Naira wallet · ₦485,250.75 available' for a buyer (H14); 'Not enough in your Naira wallet … Add ₦1,300' (H17).",
+   "current": "'**Creators have a wallet; WAWU does not hold the money.** Each wallet is a Flutterwave payout subaccount … WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.' Backend CreatorWallet exists for creator accounts only.",
+   "artboards": [
+    "H1",
+    "H14",
+    "H17",
+    "H36"
+   ]
+  },
+  {
+   "topic": "free content",
+   "canvas": "H24 'Free pieces show Tip instead of a price'; search results list 'How to price your first shoot · Tife Adeola · Video · Free' (X6, X7); free pages/lessons as previews (H4, H7, H25); design-bundle rule 'Content can be marked Free.'",
+   "current": "'Maximum 5 items per account … No free/paid slot split, because every listing carries a price (brief B2: no free content).' (Note: the backend itself still accepts accessType 'free' and requires a creator's first upload to be free, content-piece.service.ts:451-488, so code and rule already disagree.)",
+   "artboards": [
+    "H24",
+    "X6",
+    "X7"
+   ]
+  },
+  {
+   "topic": "Trust Score on professional card",
+   "canvas": "H10 '91 Trust Score' on the feed professional card.",
+   "current": "Web CLAUDE.md: the design-system readme 'describes a Trust Score system. **All of that is wrong.**' and '**Creator is an ACCOUNT TYPE**, not a trust-tier badge or an earned level.' Backend has EvgScore (score Int) but no 'Trust Score'.",
+   "artboards": [
+    "H10"
+   ]
+  },
+  {
+   "topic": "Home tab structure and TGIF placement",
+   "canvas": "Tabs 'Today · Following · For you'; TGIF is a card on Today that opens a full-screen reader (H29–H34).",
+   "current": "Web HomeScreen.tsx tabs Home · TGIF · For you · Following, citing 'The product owner's ordering was \"TGIF - For You - Following\"' and keeping TGIF as both a hero card and a tab.",
+   "artboards": [
+    "H1",
+    "H29"
+   ]
+  },
+  {
+   "topic": "TGIF off behaviour (ads take the slot)",
+   "canvas": "H36 'The sponsored card takes TGIF's place, so ads keep running.'; section intro 'If someone turns TGIF off, the ad keeps its place on Today.'",
+   "current": "Web HomeScreen.tsx: 'Home itself still has something to show with the devotional off: the card is what goes, not the screen.' TGIF preference is client-only localStorage ('not something the server needs to know'). Current product rules list 'paid advertising' as a revenue stream but describe no placement.",
+   "artboards": [
+    "H33",
+    "H36"
+   ]
+  },
+  {
+   "topic": "Shop live on Home",
+   "canvas": "H1 service row 'Pay bills · Events · Legal · Shop', Shop opens Flow SH.",
+   "current": "Web explore/page.tsx: 'Shop is pulled off the live surface for now (product-owner instruction, 12 Sep 2026)… dimmed and unclickable'.",
+   "artboards": [
+    "H1",
+    "H36"
+   ]
+  },
+  {
+   "topic": "tip split",
+   "canvas": "Tip section 'Tips go straight into the creator's wallet.'; H26 'Goes straight to their wallet. They see your name and note.'; H28 '₦2,000 sent to Tife'.",
+   "current": "'Revenue split is a flat 85/15, on every stream, with no exceptions.' Backend tip notification carries netAmount post-commission.",
+   "artboards": [
+    "H26",
+    "H28"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "H1",
+   "fact": "Naira wallet balance ₦485,250.75 shown on Home",
+   "kind": "money"
+  },
+  {
+   "artboard": "H1",
+   "fact": "TGIF '5 cards · 2 min · 12.4K reading today' (board itself has 6 cards incl. sponsored)",
+   "kind": "count"
+  },
+  {
+   "artboard": "H3",
+   "fact": "Golden Hour presets ₦2,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "H4",
+   "fact": "Freelancer's Pricing Playbook ₦3,000, 84 pages, '12 pages free'",
+   "kind": "price/limit"
+  },
+  {
+   "artboard": "H19",
+   "fact": "'Pages 1–4 are free' / 'Preview · pages 1–4 of 84' (contradicts H4's '12 pages free' for the same piece)",
+   "kind": "limit"
+  },
+  {
+   "artboard": "H5",
+   "fact": "Locked video ₦2,500, 18 min; caption '₦2M a month agency'",
+   "kind": "price"
+  },
+  {
+   "artboard": "H7",
+   "fact": "VFX for Beginners course ₦8,000, 12 lessons, lesson 1 free",
+   "kind": "price"
+  },
+  {
+   "artboard": "H8",
+   "fact": "Aba Collection patterns ₦3,500",
+   "kind": "price"
+  },
+  {
+   "artboard": "H9",
+   "fact": "₦5,000 course, ₦1,500 PDF; 18.2K followers, 64 posts, 4.9 rating",
+   "kind": "price/count"
+  },
+  {
+   "artboard": "H10",
+   "fact": "Paid DM 'Message · ₦1,500'",
+   "kind": "price"
+  },
+  {
+   "artboard": "H10",
+   "fact": "'No reply in 24 hours and your ₦1,500 comes back' (refund promise)",
+   "kind": "refund/legal"
+  },
+  {
+   "artboard": "H10",
+   "fact": "91 Trust Score; 4.9 rating, 212 reviews; ~3h usual reply",
+   "kind": "score"
+  },
+  {
+   "artboard": "H14",
+   "fact": "'Fee: No fee' on content unlock",
+   "kind": "fee"
+  },
+  {
+   "artboard": "H14",
+   "fact": "'Yours Forever, in My purchases' (perpetual entitlement claim)",
+   "kind": "legal"
+  },
+  {
+   "artboard": "H16",
+   "fact": "Receipt reference format 'WAW-UNL-4K2P'",
+   "kind": "format"
+  },
+  {
+   "artboard": "H17",
+   "fact": "balance ₦1,200.00, shortfall top-up ₦1,300",
+   "kind": "money"
+  },
+  {
+   "artboard": "H18",
+   "fact": "'You won't be charged twice' (guarantee)",
+   "kind": "legal"
+  },
+  {
+   "artboard": "H25",
+   "fact": "1,280 students; 12 lessons · 2h 40m; ₦8,000",
+   "kind": "count/price"
+  },
+  {
+   "artboard": "H26",
+   "fact": "Tip presets ₦500 / ₦1,000 / ₦2,000 / ₦5,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "H26",
+   "fact": "'Goes straight to their wallet' (custody/split claim)",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "H29",
+   "fact": "Psalm 118:24 (KJV) verse text reproduced",
+   "kind": "statutory/licence"
+  },
+  {
+   "artboard": "H29",
+   "fact": "Reaction counts Amen 2.1K / 3.4K (H32: 8.9K)",
+   "kind": "count"
+  },
+  {
+   "artboard": "H33",
+   "fact": "Sponsored 'Gospel Night Live · Abuja · Sat 18 October · from ₦5,000'",
+   "kind": "price"
+  },
+  {
+   "artboard": "H33",
+   "fact": "'Ads keep TGIF free'; 'Ads are sold from the WAWU dashboard'",
+   "kind": "commercial"
+  },
+  {
+   "artboard": "H22",
+   "fact": "Share link format 'wawu/c/pricing-playbook'",
+   "kind": "format"
+  },
+  {
+   "artboard": "H35",
+   "fact": "Share link format 'wawu/tgif'",
+   "kind": "format"
+  },
+  {
+   "artboard": "X1",
+   "fact": "WAWU Creators Summit, Lagos, 12 Oct, Eko Convention Centre; Gospel Night Live OCT 18 Abuja; Monetise Your Content NOV 02 Online",
+   "kind": "event"
+  },
+  {
+   "artboard": "X6",
+   "fact": "Search result prices ₦3,000 / ₦2,500 / Free / ₦1,500 / ₦1,000; Pricing clinic 380 members; Lagos Freelancers 1,204 members",
+   "kind": "price/count"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "Ad product core: AdCampaign + AdCreative models (advertiser name, headline, subline, CTA label, CTA destination from an allowlist e.g. event id, artwork, placement enum tgif_card|today_slot, start/end date, status draft|scheduled|live|paused|ended, weight) and a serving route GET /api/hub/ads?placement= returning at most one creative for today",
+   "why": "H33 sponsored TGIF card and H36 sponsored card in TGIF's Today slot; no ad model or route exists (NotificationCampaign is push fan-out, Event.featured is an unpaid pin)",
+   "artboards": [
+    "H33",
+    "H36"
+   ],
+   "size": "L",
+   "depends_on": [
+    "ruling on whether ads are placement-only or targeted",
+    "Events detail route for CTA (exists)"
+   ]
+  },
+  {
+   "item": "Ad event tracking: POST /api/hub/ads/{id}/events (impression, click, skip) with per-day aggregates and de-duplication per viewer",
+   "why": "An ad that is sold needs delivery proof; H33 has Skip and Get tickets",
+   "artboards": [
+    "H33",
+    "H36"
+   ],
+   "size": "M",
+   "depends_on": [
+    "ad product core"
+   ]
+  },
+  {
+   "item": "Admin dashboard ad management: create, schedule, approve, pause, report (impressions, clicks, skips, CTR) under /api/hub/admin/ads*, with audit rows like AdminEventReview",
+   "why": "'Ads are sold from the WAWU dashboard' (H33)",
+   "artboards": [
+    "H33"
+   ],
+   "size": "L",
+   "depends_on": [
+    "ad product core",
+    "admin dashboard repo"
+   ]
+  },
+  {
+   "item": "Ad selling and billing: advertiser accounts, pricing (per day or per impression), invoicing or self-serve payment",
+   "why": "Ads are a paid revenue stream ('paid advertising' in current rules) but nothing records who paid what for which placement",
+   "artboards": [
+    "H33"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "product-owner decision on ad pricing and how advertisers pay",
+    "payments provider ruling (Fintava vs Flutterwave)"
+   ]
+  },
+  {
+   "item": "TGIF server state: TgifReaction(userWawuId, date, card, kind) + TgifRead(userWawuId, date) with GET /api/hub/tgif/{date}/stats (reactions per card, my reaction, readers today, share count) and POST react/read/share",
+   "why": "Amen counts on every card (H29–H34), '12.4K reading today' on H1; TGIF has zero backend today (static web bundle)",
+   "artboards": [
+    "H1",
+    "H29",
+    "H30",
+    "H31",
+    "H32",
+    "H34",
+    "H35"
+   ],
+   "size": "M",
+   "depends_on": [
+    "decide whether TGIF text stays a client bundle or moves server-side for mobile"
+   ]
+  },
+  {
+   "item": "TGIF-on-Home preference persisted per account (field on NotificationSettings or PrivacySettings, or a new UserPreferences row) with GET/PATCH",
+   "why": "Settings Z2 'TGIF on Home'; mobile and web must agree; ad slot swap (H36). Web keeps it in localStorage only",
+   "artboards": [
+    "H36"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "TGIF share image + wawu/tgif deep link (client-side canvas render, or server OG image route)",
+   "why": "H35 'Posted as an image with a link back to TGIF'",
+   "artboards": [
+    "H35"
+   ],
+   "size": "S",
+   "depends_on": [
+    "link domain ruling (wawu/…)"
+   ]
+  },
+  {
+   "item": "For-you feed composition: interleave creator cards and professional cards into GET /api/hub/content feed (item kind), add media metadata (frame list for photo sets, duration, page count), per-viewer liked/saved/following flags and rail counts",
+   "why": "H2–H10 full-bleed mixed feed with rails and interstitial cards; current feed returns content pieces only",
+   "artboards": [
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7",
+    "H8",
+    "H9",
+    "H10"
+   ],
+   "size": "L",
+   "depends_on": [
+    "content likes",
+    "professional card data"
+   ]
+  },
+  {
+   "item": "Following feed: scope=following on GET /api/hub/content (join FollowRelationship.followerWawuId) plus GET /api/hub/users/me/following count",
+   "why": "H1 Following tab, H12 empty state; web says 'Following feed isn't ready yet' because the scope is missing",
+   "artboards": [
+    "H12",
+    "H6",
+    "H8"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Content likes, views and shares: ContentLike model + POST/DELETE /api/hub/content/{id}/like, likedByMe on responses, view increment on open, share counter",
+   "why": "Rail counts (12.4K / 340 / 1.1K), '96% liked', '2,140 views'; likes are read-only and views never increment today",
+   "artboards": [
+    "H2",
+    "H19",
+    "H24"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Mutual-follower social proof: 'Followed by <name> and N people you know' query on FollowRelationship for creator cards",
+   "why": "H9 creator card",
+   "artboards": [
+    "H9"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Previews: freePages (or previewPageRange) on ContentPiece, isFree + assetUrl on CourseLesson, preview duration for locked video; free piece -> parent course relation",
+   "why": "H4 '12 pages free', H19 'pages 1–4', H7/H25 'lesson 1 free', H5 'Preview ended', H24 'From the course'",
+   "artboards": [
+    "H4",
+    "H5",
+    "H7",
+    "H19",
+    "H24",
+    "H25"
+   ],
+   "size": "M",
+   "depends_on": [
+    "ruling on H4 vs H19 free-page count"
+   ]
+  },
+  {
+   "item": "Pay-from-wallet unlock: wallet debit path on POST /api/hub/content/{id}/unlock with transaction PIN, idempotency key, insufficient-funds error carrying balance and shortfall, debited-but-not-granted state with automatic reconciliation, receipt reference",
+   "why": "H14–H18; today unlock is a Flutterwave charge with no wallet path",
+   "artboards": [
+    "H14",
+    "H15",
+    "H16",
+    "H17",
+    "H18",
+    "H19",
+    "H25"
+   ],
+   "size": "L",
+   "depends_on": [
+    "buyer wallet for every account (Wallet flow, A1)",
+    "transaction PIN (Wallet flow W11)",
+    "payments provider ruling (Fintava vs Flutterwave)"
+   ]
+  },
+  {
+   "item": "Pay-from-wallet tip with PIN, optional contentId, and an Inbox money-bubble message to the creator",
+   "why": "H26–H28; tips are Flutterwave-only today and land only as a notification",
+   "artboards": [
+    "H26",
+    "H27",
+    "H28"
+   ],
+   "size": "M",
+   "depends_on": [
+    "buyer wallet",
+    "transaction PIN",
+    "Inbox money messages (Inbox flow)",
+    "ruling on tip split display"
+   ]
+  },
+  {
+   "item": "Content rating rules: ContentRating(userWawuId, contentId, stars) unique, purchase (or free) required, ratingPct recomputed from rows",
+   "why": "H23 'only after buying'; current rate() has no purchase check and averages into ratingPct so one user can rate repeatedly",
+   "artboards": [
+    "H23"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Share into WAWU chat: shared-content message type + free person-to-person thread, and a wawu/c/{slug} resolver",
+   "why": "H22 'Send to' people and WAWU chat; current DM is a paid question to a creator",
+   "artboards": [
+    "H22",
+    "H35"
+   ],
+   "size": "M",
+   "depends_on": [
+    "Inbox free chat (Inbox flow)"
+   ]
+  },
+  {
+   "item": "Professional card data: city/location on ProfessionalProfile, 'near you' filter, public usual-reply-time aggregate, lastActiveAt presence, DM price on the professional response",
+   "why": "H10; no location, no public reply time (response-stats is own-account only), no presence",
+   "artboards": [
+    "H10"
+   ],
+   "size": "M",
+   "depends_on": [
+    "Trust Score ruling",
+    "Professionals flow (A?)"
+   ]
+  },
+  {
+   "item": "Search completion: implement communities predicate (currently [] unconditionally), SearchHistory model for recent searches + DELETE clear, popular searches from a real query log, verification tick on creator rows, schools in results",
+   "why": "X5, X6, X8, X9, X11",
+   "artboards": [
+    "X5",
+    "X6",
+    "X8",
+    "X9",
+    "X11"
+   ],
+   "size": "M",
+   "depends_on": [
+    "Schools backend (Schools flow) for school results"
+   ]
+  },
+  {
+   "item": "Explore creator categories on the creator taxonomy: filter GET /api/hub/creators by taxonomy category/specialization ids (Music & Audio, Film & Video, …) instead of UserProfile.interests strings",
+   "why": "X1–X4, X13 chips; backend filters free-text interests and content uses deprecated 25-sector ids",
+   "artboards": [
+    "X1",
+    "X2",
+    "X3",
+    "X4",
+    "X13"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Featured creators flag (admin-set, later paid featuring) on creators, mirroring Event.featured",
+   "why": "X1 'Featured creators'; web notes nothing marks a creator as featured",
+   "artboards": [
+    "X1",
+    "X4"
+   ],
+   "size": "S",
+   "depends_on": [
+    "paid featuring pricing ruling"
+   ]
+  },
+  {
+   "item": "Content detail fields: updatedAt on ContentPiece, purchasedAt for the viewer, student/buyer count for courses",
+   "why": "H19 'Updated Sep 2026', H20 'Bought 26 Sep', H25 '1,280 students'",
+   "artboards": [
+    "H19",
+    "H20",
+    "H25"
+   ],
+   "size": "S",
+   "depends_on": []
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "Fintava",
+   "capability": "wallet debit for unlocks/tips + balance per user (design-bundle rule 'Fintava wallet only')",
+   "artboards": [
+    "H1",
+    "H14",
+    "H17",
+    "H26"
+   ]
+  },
+  {
+   "provider": "Flutterwave",
+   "capability": "current charge path for unlocks/tips and creator payout subaccounts (would be replaced or kept per ruling)",
+   "artboards": [
+    "H14",
+    "H26"
+   ]
+  },
+  {
+   "provider": "OS share sheet / WhatsApp / Instagram Story intents",
+   "capability": "share content link and TGIF image (client-only, no API)",
+   "artboards": [
+    "H22",
+    "H35"
+   ]
+  },
+  {
+   "provider": "none (in-house)",
+   "capability": "ad serving and tracking; no third-party ad network is drawn",
+   "artboards": [
+    "H33",
+    "H36"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "Home: TGIF as its own tab in the Home tab row (web: Home · TGIF · For you · Following)",
+  "Home: TGIF hero 'Reflect' button and personalisation of '{Name}' in the devotional text",
+  "Home: desktop eye-icon toggle for TGIF in the tab row",
+  "Home: persistent VerificationPrompt (verification ask with no dismiss) on Home",
+  "Home: full service icon grid (orderedServices: all platform services incl. dimmed 'soon' ones); canvas shows four tiles",
+  "Home: HomeRightRail (desktop)",
+  "Home: floating Sound/music toggle (SoundToggle)",
+  "Explore: 'Everything WAWU can do' service grid",
+  "Explore: 'Featured this week' mixed rail (the paid-featuring placement)",
+  "Explore: ProfessionalsRail (canvas has a door row instead)",
+  "Explore: LearningRail of /learn courses (canvas has 'Find a school' door instead)",
+  "Explore: ExploreHero fallback slide (WAWU's own pitch when no featured event)",
+  "Explore: 25-sector category list and desktop CategoryFilterAside",
+  "Content detail: comment like is drawn as a count only; web lets you like comments (canvas shows counts 24/9/2 but no explicit like control)"
+ ],
+ "cross_references": [
+  {
+   "from": "H1",
+   "door": "Search icon",
+   "opens": "X5",
+   "flow": "explore"
+  },
+  {
+   "from": "H1",
+   "door": "Bell",
+   "opens": "M31",
+   "flow": "me"
+  },
+  {
+   "from": "H1",
+   "door": "Balance card Send / Add / Bills / Scan",
+   "opens": "Flow W (Bills -> S2)",
+   "flow": "wallet / services"
+  },
+  {
+   "from": "H1",
+   "door": "TGIF card",
+   "opens": "H29",
+   "flow": "home"
+  },
+  {
+   "from": "H1",
+   "door": "Pay bills",
+   "opens": "S2",
+   "flow": "services"
+  },
+  {
+   "from": "H1",
+   "door": "Events",
+   "opens": "E1",
+   "flow": "events"
+  },
+  {
+   "from": "H1",
+   "door": "Legal",
+   "opens": "S14",
+   "flow": "services"
+  },
+  {
+   "from": "H1",
+   "door": "Shop",
+   "opens": "Flow SH",
+   "flow": "shop"
+  },
+  {
+   "from": "H1",
+   "door": "Creators to discover (profile)",
+   "opens": "M5",
+   "flow": "me"
+  },
+  {
+   "from": "H1",
+   "door": "Create button (creators only)",
+   "opens": "M19",
+   "flow": "me"
+  },
+  {
+   "from": "H2-H8",
+   "door": "Caption or offer bar",
+   "opens": "H19",
+   "flow": "home"
+  },
+  {
+   "from": "H2-H8",
+   "door": "Feed rail ₦ Tip",
+   "opens": "H26",
+   "flow": "home"
+  },
+  {
+   "from": "H9",
+   "door": "Profile",
+   "opens": "M5",
+   "flow": "me"
+  },
+  {
+   "from": "H10",
+   "door": "Message · ₦1,500",
+   "opens": "I2 (paid DM)",
+   "flow": "inbox"
+  },
+  {
+   "from": "H10",
+   "door": "Profile",
+   "opens": "P2",
+   "flow": "professionals"
+  },
+  {
+   "from": "H15/H27",
+   "door": "PIN sheet",
+   "opens": "same as W11",
+   "flow": "wallet"
+  },
+  {
+   "from": "H17",
+   "door": "Add ₦1,300",
+   "opens": "W15",
+   "flow": "wallet"
+  },
+  {
+   "from": "H13/H16",
+   "door": "My purchases",
+   "opens": "Me menu · My purchases",
+   "flow": "me"
+  },
+  {
+   "from": "H22/H35",
+   "door": "WAWU chat",
+   "opens": "Inbox",
+   "flow": "inbox"
+  },
+  {
+   "from": "H28",
+   "door": "Inbox money bubble",
+   "opens": "I15",
+   "flow": "inbox"
+  },
+  {
+   "from": "H33/H36",
+   "door": "Get tickets / Tickets",
+   "opens": "E2",
+   "flow": "events"
+  },
+  {
+   "from": "H36",
+   "door": "TGIF on Home toggle",
+   "opens": "Z2",
+   "flow": "settings"
+  },
+  {
+   "from": "X1",
+   "door": "Search bar",
+   "opens": "X5",
+   "flow": "explore"
+  },
+  {
+   "from": "X1",
+   "door": "Bell",
+   "opens": "M31",
+   "flow": "me"
+  },
+  {
+   "from": "X1",
+   "door": "Featured event",
+   "opens": "E2",
+   "flow": "events"
+  },
+  {
+   "from": "X1",
+   "door": "Category tile",
+   "opens": "X3",
+   "flow": "explore"
+  },
+  {
+   "from": "X1",
+   "door": "Featured creators · See all",
+   "opens": "X4",
+   "flow": "explore"
+  },
+  {
+   "from": "X1/X2/X3/X4/X8",
+   "door": "A creator card",
+   "opens": "M5",
+   "flow": "me"
+  },
+  {
+   "from": "X1/X15",
+   "door": "An event card",
+   "opens": "E2",
+   "flow": "events"
+  },
+  {
+   "from": "X1/X15",
+   "door": "Find a professional",
+   "opens": "P1",
+   "flow": "professionals"
+  },
+  {
+   "from": "X1/X15",
+   "door": "Find a school",
+   "opens": "SC1",
+   "flow": "schools"
+  },
+  {
+   "from": "X1/X15",
+   "door": "List your services",
+   "opens": "P5",
+   "flow": "professionals"
+  },
+  {
+   "from": "X6/X7/X10",
+   "door": "Content result",
+   "opens": "H19",
+   "flow": "home"
+  },
+  {
+   "from": "X6/X9",
+   "door": "Community result (Ask / Join)",
+   "opens": "I25",
+   "flow": "inbox"
+  },
+  {
+   "from": "Schools start map",
+   "door": "Explore search · a course or school name",
+   "opens": "SC1",
+   "flow": "schools"
+  }
+ ],
+ "notes": [
+  "MANIFEST.json omits H4, H15 and H27; they are real artboards on the Home board and are included (flagged with a 'note').",
+  "'Approved E1 (b)', 'Approved E4', 'F1'–'F6' on H1, X1 and H3–H10 are earlier approval codes, not artboard ids; E1/E4 collide with Events-flow artboard ids E1/E4."
+ ],
+ "summary": "Home is the Today screen (wallet balance card, TGIF card, four service tiles, creators rail), a full-bleed dark For you/Following feed that mixes every content format with interstitial creator and professional cards, a wallet+PIN unlock and tip flow, the content detail page, and a full-screen TGIF reader with a sponsored card. Explore is a near-port of web Explore plus Search, with doors into Events, Professionals (P1, P5) and the new Schools flow (SC1). Backend serves the skeleton (feed list, detail, comments, save, rate, follow, creators, events, search with closest/suggestions) but every money action is a Flutterwave charge, there is no buyer wallet and no transaction PIN, so H14–H18 and H26–H28 depend entirely on the Wallet flow and the provider ruling. There is no ad product at all: no model, placement, serving, tracking, dashboard or billing (NotificationCampaign is an admin push fan-out and Event.featured an unpaid pin), so the TGIF sponsored card and the TGIF-off ad slot are a new XL product. TGIF exists on web as a static, client-only devotional (same five parts as the boards) with a localStorage toggle that hides the card; the boards add reactions, reader counts, share-as-image and an ad, none of which has a backend. Smaller real gaps: no Following feed scope, no content likes or view counting, rate() has no purchase check and can be spammed, search never returns communities and never persists recent searches, and the Explore category chips use the creator taxonomy while web and backend filter on a different list. The navigation change (Home · Explore · Inbox · Wallet · Me, with Communities inside Inbox and Settings under Me) is the largest web-side conflict. The biggest risk is the wallet: every price on these boards is 'Pay from wallet' for every user, which runs into the current custody rule (WAWU must not hold a cashable balance) and needs a ruling before any of the payment rows can be built."
+}

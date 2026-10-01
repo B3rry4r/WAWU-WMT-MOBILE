@@ -1,0 +1,120 @@
+/* ============================================================
+   WAWUAfrica — colour
+   Source of truth: explorations/WAWU Mobile Board v2.html (approved).
+   Two first-class themes. Dark is the default (:root); light is
+   [data-theme="light"]. Every token exists in both.
+   ONE accent: WAWU Purple #9411C9. Everything else is neutral or semantic.
+   ============================================================ */
+
+:root, [data-theme="dark"] {
+  /* Surfaces */
+  --surface-page: #0B0A0D;
+  --surface-card: #16151B;
+  --surface-sunken: #221F29;      /* inset wells: segmented track, secondary circles */
+  --surface-elevated: #1F1D26;
+  --surface-input: #16151B;
+  --surface-tag: #221F29;
+  --surface-chrome: rgba(16, 15, 20, 0.86);  /* tab bar, sticky headers (with blur) */
+  --surface-money: linear-gradient(150deg, #2A1240, #16151B 60%);  /* balance card */
+  --surface-card-ink: #2A1240;    /* WAWU debit card face */
+  --surface-scrim: rgba(0, 0, 0, 0.72);
+  --surface-glass: rgba(255, 255, 255, 0.14);  /* controls over full-bleed media */
+
+  /* Borders — drawn as inset box-shadows in components */
+  --border-hairline: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-glass: rgba(255, 255, 255, 0.16);
+  --border-accent: rgba(148, 17, 201, 0.55);
+
+  /* Text */
+  --text-primary: #F4F2F7;
+  --text-secondary: #A9A5B4;
+  --text-muted: #75717F;
+  --text-disabled: #4A4952;
+  --text-on-accent: #FFFFFF;
+  --text-on-light: #111018;
+
+  /* WAWU Purple */
+  --accent: #9411C9;              /* fills: primary button, FAB, active date block */
+  --accent-hover: #A813E3;
+  --accent-press: #810FAF;
+  --accent-fg: #C368EA;           /* purple used AS TEXT/ICON on dark (contrast-safe) */
+  --accent-deep: #471471;
+  --accent-tint: rgba(195, 104, 234, 0.14);
+  --accent-tint-strong: rgba(195, 104, 234, 0.20);
+  --accent-glow: 0 0 0 3px rgba(148, 17, 201, 0.28);
+
+  /* Semantic */
+  --positive: #3DD68C;            /* money in */
+  --positive-tint: rgba(61, 214, 140, 0.12);
+  --warning: #FFB347;
+  --warning-tint: rgba(255, 179, 71, 0.14);
+  --danger: #FF6B6B;
+  --danger-tint: rgba(255, 107, 107, 0.14);
+  --info: #5BC8FF;
+  --info-tint: rgba(91, 200, 255, 0.14);
+  --success: var(--positive);
+  --success-tint: var(--positive-tint);
+  --locked: #8A8994;
+  --locked-veil: rgba(11, 10, 13, 0.35);
+
+  /* Verification ticks */
+  --tick-creator: #9411C9;
+  --tick-professional: #3DA5FF;
+
+  /* Currencies (account glyph discs) */
+  --cur-ngn: #0B8A4A;
+  --cur-usd: #1E3A8A;
+  --cur-usdt: #26A17B;
+  --cur-btc: #F7931A;
+
+  /* Avatar fallback hues (initials on #111018) */
+  --hue-lilac: #9B7BFF;
+  --hue-lemon: #F4E94E;
+  --hue-green: #69D36A;
+  --hue-sky: #5BC8FF;
+  --hue-pink: #FF4FA8;
+  --hue-coral: #FF7A6B;
+  --hue-sand: #E9D8C4;
+
+  /* Secondary brand hues — category & illustration only, never chrome */
+  --brand-yellow: #FFB703;
+  --brand-lime: #B8E83E;
+  --brand-aqua: #20C9C3;
+  --brand-coral: #FF5C5C;
+}
+
+[data-theme="light"] {
+  --surface-page: #F6F5F8;
+  --surface-card: #FFFFFF;
+  --surface-sunken: #EEECF2;
+  --surface-elevated: #FFFFFF;
+  --surface-input: #FFFFFF;
+  --surface-tag: #EEECF2;
+  --surface-chrome: rgba(255, 255, 255, 0.88);
+  --surface-money: #16151B;
+  --surface-card-ink: #1D0A2B;
+  --surface-scrim: rgba(11, 10, 13, 0.45);
+
+  --border-hairline: rgba(17, 16, 24, 0.07);
+  --border-strong: rgba(17, 16, 24, 0.14);
+
+  --text-primary: #111018;
+  --text-secondary: #5A5766;
+  --text-muted: #8C8997;
+  --text-disabled: #B4B3BB;
+
+  --accent-fg: #9411C9;
+  --accent-tint: rgba(148, 17, 201, 0.10);
+  --accent-tint-strong: rgba(148, 17, 201, 0.14);
+
+  --positive: #12925A;
+  --positive-tint: rgba(18, 146, 90, 0.10);
+  --warning: #C77700;
+  --warning-tint: rgba(199, 119, 0, 0.10);
+  --danger: #D93A3A;
+  --danger-tint: rgba(217, 58, 58, 0.10);
+  --info: #0E7FB8;
+  --info-tint: rgba(14, 127, 184, 0.10);
+  --locked: #6E6D78;
+}

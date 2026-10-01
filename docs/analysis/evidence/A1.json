@@ -1,0 +1,3121 @@
+{
+ "agent": "A1",
+ "flows": [
+  "wallet"
+ ],
+ "artboards": [
+  {
+   "id": "W26",
+   "flow": "wallet",
+   "title": "Transaction history",
+   "kind": "screen",
+   "journey": "Transactions",
+   "what_it_shows": "Full ledger with search, filter chips (All, Money in, Money out, Bills, Content), a monthly In/Out summary, rows grouped by day, tap to open a receipt.",
+   "user_actions": [
+    "search transactions",
+    "filter by All/Money in/Money out/Bills/Content",
+    "tap a row to open W27"
+   ],
+   "data_needed": [
+    "paginated transaction list from the bank record across all money movement types (tips, unlocks, bills, transfers in/out, card spend, swaps)",
+    "per-row counterparty name, avatar, description, signed amount in kobo, time",
+    "monthly in/out totals",
+    "category per row for filtering",
+    "free-text search"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet/history (WalletLedgerEntry rows only: kind earning|withdrawal|reversal, amount, status, reference, failureReason, createdAt, settledAt)",
+     "GET /api/hub/bills/mine (bills, separate table)",
+     "GET /api/hub/content/purchases (buyer side, separate)",
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "History is WAWU's own instruction ledger, not the bank's record: it misses money paid directly into the NUBAN, bills, buyer-side unlocks/tips, and has no counterparty, description, category, search, filter, monthly summary or pagination cursor (take<=200). Amounts are whole naira, canvas shows kobo."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet (components/wallet/WalletScreen.tsx EntryRow: labels Sale/Withdrawal/Reversed)"
+    ],
+    "delta": "Web shows an inline list of ledger entries with three kinds only; no search, filters, monthly summary, day grouping, counterparty or tap-through receipt."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): account transaction history / ledger feed"
+   ],
+   "facts_on_canvas": [
+    "In · September ₦212,400.00",
+    "Out · September ₦96,820.50",
+    "Unlock · Lighting night shoots 3 buyers +₦7,500.00",
+    "MTN airtime −₦2,000.00",
+    "Ikeja Electric Prepaid · 45.2 kWh −₦10,500.00"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W39",
+   "flow": "wallet",
+   "title": "Earnings",
+   "kind": "screen",
+   "journey": "Creator earnings",
+   "what_it_shows": "Creator-only earnings screen: 'Ready to move' amount, all-time earned, Move to wallet button, stream split (Unlocks, Tips, Paid DMs) and per-content earnings this month.",
+   "user_actions": [
+    "tap Move to wallet",
+    "view per-content earnings"
+   ],
+   "data_needed": [
+    "ready-to-move naira amount",
+    "all-time earned",
+    "per-stream totals for unlocks, tips, paid DMs",
+    "per-content-piece unlock count, tip count, sales count and earnings for the month"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/content/mine/earnings (CreatorEarningsService: payable, held, total, streamBreakdown, recentSales)",
+     "wallet/wallet-funding.service.ts cron fund-creator-wallets (auto-sweeps earnings into wallet every 10 min when WALLET_FUNDING=on)"
+    ],
+    "gap": "Earnings exist but are swept automatically into the wallet, so there is no 'ready to move' balance concept and no per-content aggregation (unlocks/tips/sales per piece). The response also carries community_credits and 'held' DM money that the canvas does not show."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/earnings (components/earnings/EarningsDashboard.tsx)",
+     "lib/api/earnings.ts"
+    ],
+    "delta": "Web shows payable/held totals, stream breakdown including community credits as a count, EVG score, recent sales and a link to /wallet; no Move to wallet action, no per-content breakdown."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Ready to move ₦84,500.00",
+    "₦312,800 earned all time",
+    "Unlocks ₦61,500",
+    "Tips ₦14,000",
+    "Paid DMs ₦9,000",
+    "How I light a night shoot +₦42,000"
+   ],
+   "conflicts": [
+    "earnings settlement model (manual move vs automatic sweep)"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W6",
+   "flow": "wallet",
+   "title": "Wallet · can't reach account",
+   "kind": "state",
+   "journey": "Wallet root",
+   "what_it_shows": "Error state when the bank does not respond: no balance is shown, reassurance copy, Try again; bills tiles still visible.",
+   "user_actions": [
+    "tap Try again",
+    "use bill tiles"
+   ],
+   "data_needed": [
+    "distinguishable provider-unreachable error from the balance endpoint"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers) (throws if Flutterwave balance call fails)"
+    ],
+    "gap": "Endpoint fails as a whole when the provider is down; no typed 'provider_unreachable' error code distinct from other failures, and it is Flutterwave, not Fintava."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet (WalletScreen.tsx Callout 'We could not load your wallet')"
+    ],
+    "delta": "Web shows a danger callout with retry; canvas keeps tabs and bills row visible and uses 'Your money is safe' copy."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): balance enquiry"
+   ],
+   "facts_on_canvas": [
+    "'Your money is safe. This is a connection problem between us and the bank.' (custody claim)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W1",
+   "flow": "wallet",
+   "title": "Wallet · Naira",
+   "kind": "screen",
+   "journey": "Wallet root",
+   "what_it_shows": "Naira account home: account tabs (Naira/Dollar/Crypto), balance with kobo, 'WAWU · Fintava MFB' NUBAN with Copy, Send / Add money / Swap, bills tiles (Airtime, Data, Power, TV, More), WAWU Verve card row, recent transactions. Entry map (section 0) numbers 10 hotspots.",
+   "user_actions": [
+    "switch Naira/Dollar/Crypto tab",
+    "copy account number",
+    "Send (W7)",
+    "Add money (W15)",
+    "Swap (W20)",
+    "Scan (W24)",
+    "Settings (W35)",
+    "pay a bill (Services flow)",
+    "open WAWU card (W29/W31)",
+    "See all transactions (W26)"
+   ],
+   "data_needed": [
+    "NGN balance in kobo from the bank",
+    "NUBAN, bank name",
+    "card summary (scheme, last4, physical/virtual, status)",
+    "latest 3 transactions",
+    "bill categories"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers)",
+     "GET /api/hub/wallet/history (WalletLedgerEntry rows only: kind earning|withdrawal|reversal, amount, status, reference, failureReason, createdAt, settledAt)",
+     "GET /api/hub/bills/categories",
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "Balance and NUBAN exist but on a Flutterwave PSA, in whole naira, creator-only. Missing: multi-account (USD, crypto) summary, card summary, bank-record transactions, Fintava provider."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet (WalletScreen.tsx)",
+     "reachable only from /earnings link; no nav slot"
+    ],
+    "delta": "Web wallet is creator-only, Naira-only, shows balance + Paid in/Incoming/Withdrawn tiles + account number + Withdraw; no tabs, Send, Add money page, Swap, Scan, Settings, bills row, card row."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): balance enquiry",
+    "Fintava (named on canvas, unconfirmed): account details",
+    "Fintava (named on canvas, unconfirmed): transaction history"
+   ],
+   "facts_on_canvas": [
+    "WAWU · Fintava MFB",
+    "Naira balance ₦485,250.75",
+    "account number 812 345 6789",
+    "Verve WAWU card Physical · ••4821 · Active",
+    "Amaka Nwosu Tip on your video +₦2,000.00",
+    "Ikeja Electric Prepaid · 45.2 kWh −₦10,500.00",
+    "Chidinma Okoro Transfer · GTBank −₦25,000.00"
+   ],
+   "conflicts": [
+    "payments provider / custody",
+    "wallet for every account",
+    "bottom navigation"
+   ],
+   "designer_questions": [
+    "⚠ I added the WAWU card row under bills, because it's the only way into Cards (W29–W34). ⚠ The Create button is hidden on Wallet so it never covers amounts. Confirm."
+   ]
+  },
+  {
+   "id": "W2",
+   "flow": "wallet",
+   "title": "Wallet · Dollar",
+   "kind": "screen",
+   "journey": "Wallet root",
+   "what_it_shows": "USD account: dollar balance, 'USD account · Fintava' masked number, Send / Add dollars, a 'Get paid from abroad' prompt to share US account details, dollar transactions incl. a swap to Naira.",
+   "user_actions": [
+    "switch tab",
+    "copy USD account",
+    "Send dollars",
+    "Add dollars",
+    "share US account details"
+   ],
+   "data_needed": [
+    "USD balance",
+    "USD account and US routing details",
+    "USD transactions"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; grep -wi 'USD|dollar' src/ -> none outside unrelated code"
+    ],
+    "gap": "No USD account, balance, receiving details or USD ledger anywhere in the backend."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): USD virtual account issuance with US receiving details",
+    "Fintava (named on canvas, unconfirmed): USD balance",
+    "Fintava (named on canvas, unconfirmed): USD transaction feed / inbound webhook"
+   ],
+   "facts_on_canvas": [
+    "Dollar balance $1,240.50",
+    "USD account · Fintava •••• 4410",
+    "Swap to Naira At ₦1,580 per $1",
+    "Upwork Global Freelance payout +$420.00",
+    "Payoneer Client payment +$150.00",
+    "'Share your US account details with Upwork, YouTube or a client' (capability claim)"
+   ],
+   "conflicts": [
+    "Naira only / dollar accounts"
+   ],
+   "designer_questions": [
+    "⚠ A USD account for getting paid from abroad. Bills are Naira-only, so that row gives way to the receive-from-abroad prompt."
+   ]
+  },
+  {
+   "id": "W3",
+   "flow": "wallet",
+   "title": "Wallet · Crypto",
+   "kind": "screen",
+   "journey": "Wallet root",
+   "what_it_shows": "Crypto account: total in dollars, Receive / Send, USDT (TRC-20, ERC-20) and BTC holdings with USD value, crypto transactions with truncated addresses.",
+   "user_actions": [
+    "Receive (W22)",
+    "Send (W23)",
+    "view asset"
+   ],
+   "data_needed": [
+    "per-asset balances",
+    "USD valuation per asset and total",
+    "supported networks per asset",
+    "on-chain transaction list"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; grep -wi 'usdt|btc|crypto' src/ -> only node 'crypto' imports and a legal catalogue item"
+    ],
+    "gap": "No crypto custody, balances, pricing or transactions."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed) custody partner: crypto balances",
+    "Fintava (named on canvas, unconfirmed): crypto price / USD valuation",
+    "Fintava (named on canvas, unconfirmed): crypto deposit webhook"
+   ],
+   "facts_on_canvas": [
+    "USDT and BTC held by Fintava's custody partner",
+    "Tether USDT · TRC-20, ERC-20",
+    "Bitcoin BTC · Bitcoin network",
+    "320.00 USDT ≈ $320.00",
+    "0.014200 BTC ≈ $1,399.90",
+    "Crypto balance $1,719.90"
+   ],
+   "conflicts": [
+    "crypto custody",
+    "Naira only / dollar accounts"
+   ],
+   "designer_questions": [
+    "⚠ USDT and BTC held by Fintava's custody partner, totalled in dollars."
+   ]
+  },
+  {
+   "id": "W4",
+   "flow": "wallet",
+   "title": "Wallet · loading",
+   "kind": "state",
+   "journey": "Wallet root",
+   "what_it_shows": "Skeleton of the real layout; account number hidden until the balance loads.",
+   "user_actions": [],
+   "data_needed": [
+    "same as W1"
+   ],
+   "backend": {
+    "status": "n/a",
+    "evidence": [],
+    "gap": "Client state only."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet (WalletScreen.tsx loading state)"
+    ],
+    "delta": "Web has a loading state for its own, different layout."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W5",
+   "flow": "wallet",
+   "title": "Wallet · new account",
+   "kind": "state",
+   "journey": "Wallet root",
+   "what_it_shows": "First visit after account opening: ₦0.00, NUBAN ready to share, empty transactions with 'Send to 812 345 6789 from any Nigerian bank.'",
+   "user_actions": [
+    "copy account number",
+    "Send",
+    "Add money"
+   ],
+   "data_needed": [
+    "wallet provisioned at sign-up for every account (A-flow)",
+    "NUBAN"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers) provisions lazily via openForAccount for creators",
+     "WalletService.provisionOnRegistration (creators only)"
+    ],
+    "gap": "Provisioning exists only for creator accounts and only at Flutterwave; canvas opens an account for everyone at sign-up (A8 'Tier 1 opens the wallet')."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet (WalletScreen.tsx)"
+    ],
+    "delta": "Web empty state differs; buyers see 'Wallets come with a creator account' instead of an account."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): customer + account creation"
+   ],
+   "facts_on_canvas": [
+    "'Send to 812 345 6789 from any Nigerian bank.'",
+    "₦0.00"
+   ],
+   "conflicts": [
+    "wallet for every account"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W14",
+   "flow": "wallet",
+   "title": "Send · failed",
+   "kind": "state",
+   "journey": "Send money",
+   "what_it_shows": "Transfer the receiving bank did not confirm in time; shows automatic reversal to wallet, amount incl. fee, reference, Done / Try again.",
+   "user_actions": [
+    "Done",
+    "Try again"
+   ],
+   "data_needed": [
+    "final failed status with reason",
+    "reversal confirmation from the bank",
+    "original reference, amount incl. fee"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "WalletService.settleFromWebhook / reconcilePending (Flutterwave transfer.failed + GET /transfers?reference=)",
+     "POST /api/hub/webhooks/flutterwave"
+    ],
+    "gap": "Failure settlement exists for withdrawals, but nothing records a reversal credit or fee refund, and no per-transaction read endpoint exists for the client to poll."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web withdraw sheet has no failed-after-send state."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): transfer status requery",
+    "Fintava (named on canvas, unconfirmed): transfer failed / reversal webhook"
+   ],
+   "facts_on_canvas": [
+    "'the money is reversed automatically' (provider behaviour claim)",
+    "Amount ₦25,010.00",
+    "Reference WAW-8F2K-91QX"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W7",
+   "flow": "wallet",
+   "title": "Send · to a WAWU user",
+   "kind": "screen",
+   "journey": "Send money",
+   "what_it_shows": "Recipient picker: search by name, @handle or phone; recent recipients; WAWU user results with purple (creator) or blue (professional) ticks.",
+   "user_actions": [
+    "type name/@handle/phone",
+    "pick a recent",
+    "pick a result",
+    "switch to Bank account tab"
+   ],
+   "data_needed": [
+    "user search across ALL account types by name, handle and phone returning id, name, handle, avatar, tick kind",
+    "recent recipients for the caller",
+    "recipient's wallet existence"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search (SearchTab 'all'|'content'|'creators'|'communities' in search-response/dto/search-query.dto.ts)",
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "Search covers creators/content/communities only; no buyer or phone lookup, no recents, and no wallet-to-wallet (book) transfer endpoint at all."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no send-to-user."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): intra-bank transfer between customer accounts"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "wallet for every account"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W8",
+   "flow": "wallet",
+   "title": "Send · to a bank account",
+   "kind": "screen",
+   "journey": "Send money",
+   "what_it_shows": "Bank + account number entry; account name resolves from the bank before Continue unlocks; saved beneficiaries incl. 'My payout account' (withdraw).",
+   "user_actions": [
+    "pick bank",
+    "type 10-digit account",
+    "Continue after name resolves",
+    "pick saved beneficiary",
+    "pick My payout account (W17)"
+   ],
+   "data_needed": [
+    "bank list",
+    "name enquiry",
+    "saved beneficiaries",
+    "KYC payout account with bank code"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet/banks (Flutterwave /banks/NG)",
+     "POST /api/hub/wallet/resolve-account (Flutterwave /accounts/resolve)",
+     "KycSubmission.payoutBankName/payoutAccountNumber (schema.prisma)",
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms -> no beneficiary model/route"
+    ],
+    "gap": "Bank list and name enquiry exist on Flutterwave. Missing: beneficiaries store, and KYC stores payoutBankName as free text, not a bank code, so 'My payout account' cannot be sent to without mapping."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WithdrawSheet.tsx (bank picker, account number, resolve, confirm name)"
+    ],
+    "delta": "Web resolve flow exists inside the withdraw sheet; no WAWU user tab, no saved beneficiaries."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): bank list",
+    "Fintava (named on canvas, unconfirmed): name enquiry (NIP)"
+   ],
+   "facts_on_canvas": [
+    "Guaranty Trust Bank 0123456789 -> Chidinma Adaeze Okoro (sample)",
+    "Kuda MFB · 2011458890 (sample)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W9",
+   "flow": "wallet",
+   "title": "Send · amount",
+   "kind": "screen",
+   "journey": "Send money",
+   "what_it_shows": "Custom keypad amount entry with balance beneath, quick amounts, optional note.",
+   "user_actions": [
+    "enter amount",
+    "tap quick amount",
+    "add note",
+    "Continue"
+   ],
+   "data_needed": [
+    "live NGN balance in kobo",
+    "recipient summary"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers)"
+    ],
+    "gap": "Balance exists (whole naira); no note field on transfers, kobo not supported (amounts are Int naira)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web withdraw uses a text field, no keypad/quick amounts/note."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "quick amounts ₦5,000 / ₦10,000 / ₦25,000 / ₦50,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W10",
+   "flow": "wallet",
+   "title": "Send · review",
+   "kind": "screen",
+   "journey": "Send money",
+   "what_it_shows": "Review card: recipient, amount, bank, account, fee shown separately, total, note, Pay from wallet; button shows amount received.",
+   "user_actions": [
+    "Send ₦25,000"
+   ],
+   "data_needed": [
+    "server fee quote per transfer type",
+    "total debit"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; WalletService.withdraw has no fee concept (MIN_WITHDRAWAL_NGN only)"
+    ],
+    "gap": "No fee quote endpoint or fee in the transfer model."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WithdrawSheet.tsx confirm phase"
+    ],
+    "delta": "Web confirm shows resolved name and amount, no fee/total/note."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): transfer fee schedule"
+   ],
+   "facts_on_canvas": [
+    "Fee ₦10.00",
+    "Total ₦25,010.00"
+   ],
+   "conflicts": [
+    "new fee revenue streams",
+    "pay from wallet vs hosted checkout"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W11",
+   "flow": "wallet",
+   "title": "Send · PIN",
+   "kind": "screen",
+   "journey": "Send money",
+   "what_it_shows": "PIN bottom sheet over review: 4-digit transaction PIN approves every money movement; Face ID can stand in; Forgot PIN. Reused by Home, Inbox, Swap, Withdraw, Cards, Earnings.",
+   "user_actions": [
+    "enter 4-digit PIN",
+    "Forgot PIN? (W37)",
+    "Face ID"
+   ],
+   "data_needed": [
+    "server-side PIN verification bound to the pending transaction",
+    "attempt counter / lockout"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; grep -i 'transactionPin|pinHash' src/ -> no matches"
+    ],
+    "gap": "No transaction PIN anywhere: no storage, verify, lockout, or binding to a debit."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Face ID can stand in once it's set up'"
+   ],
+   "conflicts": [
+    "Face ID",
+    "pay from wallet vs hosted checkout"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W12",
+   "flow": "wallet",
+   "title": "Send · success receipt",
+   "kind": "screen",
+   "journey": "Send money",
+   "what_it_shows": "Receipt: amount sent, recipient + bank, Completed, reference, date, source, fee; save as beneficiary; share; Done returns to W1 with new row on top.",
+   "user_actions": [
+    "Save as beneficiary",
+    "Share receipt (W41)",
+    "Done"
+   ],
+   "data_needed": [
+    "transfer record by reference with status, fee, timestamp",
+    "beneficiary create"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/wallet/withdraw (WithdrawDto amount int >= 1000, bankCode, accountNumber; KYC-approved only; Flutterwave /transfers from PSA) returns {reference, amount, accountName, status:'pending'}"
+    ],
+    "gap": "Withdraw returns a pending stub only; no completed receipt read, no fee, no beneficiary create. WAWU reference format differs (wawu-wd-<uuid> vs WAW-XXXX-XXXX)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WithdrawSheet.tsx 'sent' phase"
+    ],
+    "delta": "Web shows a pending confirmation, no receipt, share or beneficiary."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): transfer status"
+   ],
+   "facts_on_canvas": [
+    "Reference WAW-8F2K-91QX",
+    "Fee ₦10.00"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W13",
+   "flow": "wallet",
+   "title": "Send · insufficient balance",
+   "kind": "state",
+   "journey": "Send money",
+   "what_it_shows": "Amount over balance: inline error, Continue disabled, Add money one tap away.",
+   "user_actions": [
+    "Add money"
+   ],
+   "data_needed": [
+    "live balance"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers)",
+     "WalletService.withdraw rejects 'You have ₦X available.'"
+    ],
+    "gap": "Server-side check exists for withdraw only."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WithdrawSheet.tsx error callout"
+    ],
+    "delta": "Web surfaces the server error after submit, not inline; no Add money link."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W19",
+   "flow": "wallet",
+   "title": "Withdraw · on its way",
+   "kind": "screen",
+   "journey": "Money in and out",
+   "what_it_shows": "Withdrawal receipt with a timeline (Requested, Sent to bank, In your bank account), reference, fee.",
+   "user_actions": [
+    "Share receipt",
+    "Done"
+   ],
+   "data_needed": [
+    "withdrawal status timeline with timestamps per step"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/wallet/withdraw (WithdrawDto amount int >= 1000, bankCode, accountNumber; KYC-approved only; Flutterwave /transfers from PSA)",
+     "GET /api/hub/wallet/history (WalletLedgerEntry rows only: kind earning|withdrawal|reversal, amount, status, reference, failureReason, createdAt, settledAt) (status + settledAt only)"
+    ],
+    "gap": "Only pending/completed/failed and settledAt; no intermediate 'sent to bank' timestamp, no fee."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WithdrawSheet.tsx 'sent' phase ('pending until the bank...')"
+    ],
+    "delta": "Web shows a pending note without timeline or share."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): transfer status webhook"
+   ],
+   "facts_on_canvas": [
+    "Fee ₦25.00",
+    "'Usually within minutes'",
+    "Reference WAW-W9L2-33RT"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W15",
+   "flow": "wallet",
+   "title": "Add money",
+   "kind": "screen",
+   "journey": "Money in and out",
+   "what_it_shows": "Bank transfer details first (account name, number, bank Fintava MFB, share); other ways: Debit card (1.5% fee), USSD, From your Dollar account at a rate.",
+   "user_actions": [
+    "copy account number",
+    "share account details",
+    "pick Debit card (W16)",
+    "pick USSD",
+    "fund from Dollar account"
+   ],
+   "data_needed": [
+    "account name, NUBAN, bank name",
+    "funding methods with fees",
+    "USSD codes",
+    "live FX rate"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers) (accountNumber, bankName)"
+    ],
+    "gap": "Account details exist (Flutterwave MFB). Missing: card funding, USSD funding, USD-to-NGN funding, inbound deposit recording."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WalletScreen.tsx 'ADDING MONEY' account number + Copy"
+    ],
+    "delta": "Web shows the number with Copy only; no share sheet, no other methods."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): inbound transfer webhook",
+    "Fintava (named on canvas, unconfirmed): USSD funding",
+    "Fintava (named on canvas, unconfirmed): FX quote"
+   ],
+   "facts_on_canvas": [
+    "Bank transfer Free · instant",
+    "'It lands in seconds'",
+    "Debit card Instant · 1.5% fee",
+    "$1 = ₦1,580.00",
+    "Bank Fintava MFB"
+   ],
+   "conflicts": [
+    "payments provider / custody",
+    "Naira only / dollar accounts"
+   ],
+   "designer_questions": [
+    "⚠ From your Dollar account $1 = ₦1,580.00"
+   ]
+  },
+  {
+   "id": "W16",
+   "flow": "wallet",
+   "title": "Add money · card",
+   "kind": "screen",
+   "journey": "Money in and out",
+   "what_it_shows": "Card top-up: amount with quick picks, saved Verve card or new card, card fee added on top, you pay / wallet gets; then 3-D Secure then receipt.",
+   "user_actions": [
+    "pick amount",
+    "pick saved card",
+    "use new card",
+    "Add ₦10,000"
+   ],
+   "data_needed": [
+    "saved tokenised cards",
+    "fee quote",
+    "card charge with 3DS crediting the wallet"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; existing Flutterwave checkout (FlutterwaveCheckoutVerifier) charges cards for purchases into WAWU's float, never into a user wallet"
+    ],
+    "gap": "No wallet top-up by card, no saved cards, no fee quote."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed) (or acquirer): card charge with 3DS",
+    "Fintava (named on canvas, unconfirmed): card tokenisation"
+   ],
+   "facts_on_canvas": [
+    "Card fee ₦150.00 (1.5%)",
+    "You pay ₦10,150.00",
+    "Wallet gets ₦10,000.00",
+    "Verve ••7710 GTBank · expires 04/28 (sample)"
+   ],
+   "conflicts": [
+    "new fee revenue streams"
+   ],
+   "designer_questions": [
+    "⚠ A 1.5% card fee, added on top."
+   ]
+  },
+  {
+   "id": "W17",
+   "flow": "wallet",
+   "title": "Withdraw to bank",
+   "kind": "screen",
+   "journey": "Money in and out",
+   "what_it_shows": "Withdraw: available NGN, amount with Max, destination defaulting to the KYC payout account with Change, fee, arrival estimate.",
+   "user_actions": [
+    "enter amount",
+    "Max",
+    "Change destination",
+    "Withdraw (then PIN W11)"
+   ],
+   "data_needed": [
+    "balance",
+    "default payout account (bank code + number + resolved name)",
+    "fee quote"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/wallet/withdraw (WithdrawDto amount int >= 1000, bankCode, accountNumber; KYC-approved only; Flutterwave /transfers from PSA)",
+     "KycSubmission.payoutBankName/payoutAccountNumber"
+    ],
+    "gap": "Withdraw exists (Flutterwave, KYC-gated, min ₦1,000, whole naira). Missing: default payout account lookup (bank stored as name), fee, PIN, arrival estimate."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WithdrawSheet.tsx"
+    ],
+    "delta": "Web makes the user pick a bank and type an account each time; no default payout account, fee, Max or PIN."
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): NIP transfer"
+   ],
+   "facts_on_canvas": [
+    "Fee ₦25.00",
+    "Arrives In a few minutes"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W18",
+   "flow": "wallet",
+   "title": "Withdraw · waiting on KYC",
+   "kind": "state",
+   "journey": "Money in and out",
+   "what_it_shows": "Withdraw blocked while ID check is in review; says sending, bills and unlocks still work; link to ID check.",
+   "user_actions": [
+    "View ID check"
+   ],
+   "data_needed": [
+    "withdrawalsEnabled + reason",
+    "KYC submission date and status"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/wallet (wallet.controller.ts -> WalletService.getWallet: Flutterwave PSA balance, nuban, bankName, withdrawalsEnabled, withdrawalsBlockedReason; creator accounts only, 400 for buyers) withdrawalsEnabled/withdrawalsBlockedReason",
+     "GET /api/hub/kyc"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/wallet WalletScreen.tsx withdrawalsBlockedReason",
+     "/kyc"
+    ],
+    "delta": "Web shows the server reason; no submission date or 'you can still send' copy."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'It usually takes 1–2 working days.'"
+   ],
+   "conflicts": [
+    "KYC gate scope (send vs withdraw)",
+    "KYC model (manual review vs tiers)"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W23",
+   "flow": "wallet",
+   "title": "Crypto · send",
+   "kind": "screen",
+   "journey": "Swap and crypto",
+   "what_it_shows": "Send USDT: recipient address, network (must match), amount with Max, balance, network fee deducted, they get, ETA; then review, PIN, receipt.",
+   "user_actions": [
+    "paste address",
+    "pick network",
+    "enter amount",
+    "Max",
+    "Review"
+   ],
+   "data_needed": [
+    "address validation per network",
+    "network fee estimate",
+    "crypto balance",
+    "on-chain send"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No crypto send."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed) custody partner: crypto withdrawal",
+    "Fintava (named on canvas, unconfirmed): network fee estimate",
+    "Fintava (named on canvas, unconfirmed): address validation"
+   ],
+   "facts_on_canvas": [
+    "Network fee 1.00 USDT",
+    "They get 119.00 USDT",
+    "Arrives About 2 minutes",
+    "TRC-20 · Tron"
+   ],
+   "conflicts": [
+    "crypto custody"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W20",
+   "flow": "wallet",
+   "title": "Swap",
+   "kind": "screen",
+   "journey": "Swap and crypto",
+   "what_it_shows": "Currency swap NGN to USD with keypad, both balances, rate held 30 seconds with countdown, fee.",
+   "user_actions": [
+    "choose from/to",
+    "enter amount",
+    "Review swap"
+   ],
+   "data_needed": [
+    "FX quote with id and expiry",
+    "both balances"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; grep -wi 'fx|swap' src/ -> none relevant"
+    ],
+    "gap": "No FX quote or swap."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): FX quote with rate lock",
+    "Fintava (named on canvas, unconfirmed): FX conversion between customer accounts"
+   ],
+   "facts_on_canvas": [
+    "Rate $1 = ₦1,580.00",
+    "Holds 0:28 (30-second rate hold)",
+    "Fee No fee"
+   ],
+   "conflicts": [
+    "Naira only / dollar accounts"
+   ],
+   "designer_questions": [
+    "⚠ Every rate, fee and network below is a placeholder until Fintava's FX and custody terms are confirmed."
+   ]
+  },
+  {
+   "id": "W21",
+   "flow": "wallet",
+   "title": "Swap · review",
+   "kind": "screen",
+   "journey": "Swap and crypto",
+   "what_it_shows": "Review sheet for the swap (from, to, rate, fee), then PIN (W11), then a W12-style receipt.",
+   "user_actions": [
+    "Swap ₦158,000",
+    "Cancel"
+   ],
+   "data_needed": [
+    "quote execution by quote id",
+    "receipt"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No swap execution."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): FX execution"
+   ],
+   "facts_on_canvas": [
+    "Swap ₦158,000 for $100.00",
+    "Rate $1 = ₦1,580.00",
+    "Fee No fee"
+   ],
+   "conflicts": [
+    "Naira only / dollar accounts"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W22",
+   "flow": "wallet",
+   "title": "Crypto · receive",
+   "kind": "screen",
+   "journey": "Swap and crypto",
+   "what_it_shows": "Receive USDT/BTC: pick asset and network, address + QR + Copy, undismissable warning to send only that asset on that network.",
+   "user_actions": [
+    "pick asset",
+    "pick network",
+    "copy address"
+   ],
+   "data_needed": [
+    "deposit address per user per asset per network",
+    "QR of the address"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No address generation."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "src/lib/qr.ts exists but encodes only QR alphanumeric mode, versions 1-4, for ticket codes; mixed-case base58 crypto addresses need byte mode"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed) custody partner: deposit address generation"
+   ],
+   "facts_on_canvas": [
+    "Networks TRC-20, ERC-20, BEP-20",
+    "address TQ7xN3fK8pLm2aVr5sYc9WbE4hJd6KfP (sample)"
+   ],
+   "conflicts": [
+    "crypto custody"
+   ],
+   "designer_questions": [
+    "⚠ The QR is a placeholder; production renders it from src/lib/qr.ts."
+   ]
+  },
+  {
+   "id": "W25",
+   "flow": "wallet",
+   "title": "My QR code",
+   "kind": "screen",
+   "journey": "Scan to pay and my QR",
+   "what_it_shows": "Personal pay code: name, @handle, NUBAN, QR, 'Scan to pay Lennox from any WAWU or bank app', Share / Save image.",
+   "user_actions": [
+    "Share",
+    "Save image"
+   ],
+   "data_needed": [
+    "QR payload (WAWU pay link and/or NQR string)",
+    "handle + NUBAN"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; QR only exists for event tickets (event-ticketing)"
+    ],
+    "gap": "No pay-code payload or NQR generation."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "src/components/ui/QrCode.tsx + src/lib/qr.ts (ticket-only encoder)"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): NQR generation"
+   ],
+   "facts_on_canvas": [
+    "'Scan to pay Lennox from any WAWU or bank app' (NQR interoperability claim)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W24",
+   "flow": "wallet",
+   "title": "Scan to pay",
+   "kind": "screen",
+   "journey": "Scan to pay and my QR",
+   "what_it_shows": "Camera scanner for WAWU or bank QR codes; auto-scan; Scan / My code toggle. A WAWU QR opens W9 prefilled.",
+   "user_actions": [
+    "point camera",
+    "tap My code"
+   ],
+   "data_needed": [
+    "QR decode/resolve endpoint returning recipient for WAWU QR and NQR"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No QR resolve or NQR payment."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "/events/[id]/scan (ticket scanner, not payments)"
+    ],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): NQR decode / pay"
+   ],
+   "facts_on_canvas": [
+    "'Point at a WAWU or bank QR code'"
+   ],
+   "conflicts": [],
+   "designer_questions": [
+    "⚠ NQR support depends on Fintava."
+   ]
+  },
+  {
+   "id": "W28",
+   "flow": "wallet",
+   "title": "History · no results",
+   "kind": "state",
+   "journey": "Transactions",
+   "what_it_shows": "Empty filter result (Bills in September) with 'Pay a bill' CTA.",
+   "user_actions": [
+    "Pay a bill"
+   ],
+   "data_needed": [
+    "filtered history"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "GET /api/hub/wallet/history (WalletLedgerEntry rows only: kind earning|withdrawal|reversal, amount, status, reference, failureReason, createdAt, settledAt) has no filter"
+    ],
+    "gap": "No category filter on history."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W27",
+   "flow": "wallet",
+   "title": "Transaction detail",
+   "kind": "screen",
+   "journey": "Transactions",
+   "what_it_shows": "Receipt for one transaction: type, source content, from, to, date, reference, Completed; Share receipt; Report a problem opens support chat with reference.",
+   "user_actions": [
+    "Share receipt (W41)",
+    "Report a problem"
+   ],
+   "data_needed": [
+    "transaction by id/reference with type, counterparty, linked content title, destination account",
+    "support chat creation with reference"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "GET /api/hub/wallet/history (WalletLedgerEntry rows only: kind earning|withdrawal|reversal, amount, status, reference, failureReason, createdAt, settledAt) (list only, no by-id)",
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; no support-chat route"
+    ],
+    "gap": "No transaction-by-id endpoint, no counterparty/linked content, no support ticket route."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): transaction detail"
+   ],
+   "facts_on_canvas": [
+    "Reference WAW-T1P9-7ZQA"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W43",
+   "flow": "wallet",
+   "title": "PDF",
+   "kind": "state",
+   "journey": "Share a receipt",
+   "what_it_shows": "One-page A4 receipt PDF ready to share (WhatsApp, Email, WAWU chat, Save to Files).",
+   "user_actions": [
+    "share via WhatsApp/Email/WAWU chat",
+    "Save to Files"
+   ],
+   "data_needed": [
+    "server or client PDF render of the receipt"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No receipt rendering."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'One page, A4.'",
+    "'Fintava MFB, licensed by the CBN'",
+    "'Check it at wawu/r/T1P9'"
+   ],
+   "conflicts": [
+    "payments provider / custody"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W41",
+   "flow": "wallet",
+   "title": "Share as",
+   "kind": "screen",
+   "journey": "Share a receipt",
+   "what_it_shows": "Receipt preview (type, from, to with NUBAN, bank, reference, verification link) with a sheet to pick Image or PDF.",
+   "user_actions": [
+    "pick Image",
+    "pick PDF"
+   ],
+   "data_needed": [
+    "receipt data",
+    "short public verification code and page at wawu/r/{code}"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; no public receipt route"
+    ],
+    "gap": "No receipt verification route or short code."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Check it at wawu/r/T1P9'",
+    "'Fintava MFB, licensed by the CBN'",
+    "Bank Fintava MFB"
+   ],
+   "conflicts": [
+    "payments provider / custody"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W42",
+   "flow": "wallet",
+   "title": "Image",
+   "kind": "screen",
+   "journey": "Share a receipt",
+   "what_it_shows": "PNG receipt, always a white document in both themes, share via WhatsApp, Email, WAWU chat, Save image.",
+   "user_actions": [
+    "share",
+    "Save image"
+   ],
+   "data_needed": [
+    "receipt image render",
+    "send to WAWU chat"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No image render; sharing into a WAWU DM would need a message-with-attachment path."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Fintava MFB, licensed by the CBN'"
+   ],
+   "conflicts": [
+    "payments provider / custody"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W29",
+   "flow": "wallet",
+   "title": "Cards · get a card",
+   "kind": "screen",
+   "journey": "WAWU Verve card",
+   "what_it_shows": "No-card state: card art, pitch, choose Physical (3–5 working days, ₦2,000) or Virtual (ready now, free), pay from wallet, Order physical card.",
+   "user_actions": [
+    "pick Physical or Virtual",
+    "Order physical card (W30)",
+    "get virtual card"
+   ],
+   "data_needed": [
+    "card products with price and ETA",
+    "wallet balance"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; grep -wi 'verve|card issu' src/ -> none"
+    ],
+    "gap": "No card issuing of any kind."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): card issuance (virtual + physical Verve)"
+   ],
+   "facts_on_canvas": [
+    "Physical card Delivered in 3–5 working days · ₦2,000",
+    "Virtual card · Free",
+    "'anywhere in Nigeria that takes Verve'"
+   ],
+   "conflicts": [
+    "card issuing",
+    "new fee revenue streams"
+   ],
+   "designer_questions": [
+    "⚠ Fees and delivery times are placeholders."
+   ]
+  },
+  {
+   "id": "W30",
+   "flow": "wallet",
+   "title": "Cards · delivery",
+   "kind": "screen",
+   "journey": "WAWU Verve card",
+   "what_it_shows": "Delivery form: name on card (matches ID), address, city, state; cost breakdown (card + delivery); pay from wallet; then PIN, then W31 'On its way'.",
+   "user_actions": [
+    "edit address",
+    "Order card · ₦2,000"
+   ],
+   "data_needed": [
+    "KYC name",
+    "address capture",
+    "wallet debit for the fee",
+    "physical card order + delivery tracking"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No card order, address or delivery tracking."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): physical card order + delivery status"
+   ],
+   "facts_on_canvas": [
+    "Card ₦1,500",
+    "Delivery ₦500",
+    "Total ₦2,000",
+    "'Matches the name on your ID'"
+   ],
+   "conflicts": [
+    "card issuing",
+    "new fee revenue streams",
+    "pay from wallet vs hosted checkout"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W31",
+   "flow": "wallet",
+   "title": "Card detail",
+   "kind": "screen",
+   "journey": "WAWU Verve card",
+   "what_it_shows": "Manage card: Physical/Virtual tabs, status Active, spends from Naira wallet; Freeze, Details (number/expiry/CVV behind PIN), Card PIN, Limits; card spending list.",
+   "user_actions": [
+    "Freeze (W32)",
+    "Details",
+    "Card PIN (W34)",
+    "Limits (W33)"
+   ],
+   "data_needed": [
+    "card status",
+    "PCI-safe card details reveal",
+    "card transaction feed"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No card management."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): card details reveal (PCI)",
+    "Fintava (named on canvas, unconfirmed): card transactions / authorisation webhook"
+   ],
+   "facts_on_canvas": [
+    "Shoprite Lekki POS −₦18,450.00 (sample)",
+    "ATM withdrawal Access Bank −₦20,000.00 (sample)"
+   ],
+   "conflicts": [
+    "card issuing"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W33",
+   "flow": "wallet",
+   "title": "Card · limits and controls",
+   "kind": "screen",
+   "journey": "WAWU Verve card",
+   "what_it_shows": "Channel toggles (Online, Shops/POS, ATM, Contactless) and editable daily limits with used-today.",
+   "user_actions": [
+    "toggle channel",
+    "Edit limits"
+   ],
+   "data_needed": [
+    "channel controls",
+    "per-channel daily limit and usage"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No card controls."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): card channel controls and spend limits"
+   ],
+   "facts_on_canvas": [
+    "ATM ₦100,000 daily",
+    "Shops and POS ₦500,000 daily",
+    "Online ₦300,000 daily",
+    "₦23,200 used today (sample)"
+   ],
+   "conflicts": [
+    "card issuing",
+    "KYC model (manual review vs tiers)"
+   ],
+   "designer_questions": [
+    "⚠ These are CBN-style default limits. The real caps depend on your KYC tier."
+   ]
+  },
+  {
+   "id": "W34",
+   "flow": "wallet",
+   "title": "Card PIN",
+   "kind": "screen",
+   "journey": "WAWU Verve card",
+   "what_it_shows": "Choose a card PIN for ATMs/POS, explicitly separate from the transaction PIN.",
+   "user_actions": [
+    "enter card PIN"
+   ],
+   "data_needed": [
+    "card PIN set via issuer (never stored by WAWU)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No card PIN."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): card PIN set/change"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "card issuing"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W32",
+   "flow": "wallet",
+   "title": "Card · frozen",
+   "kind": "state",
+   "journey": "WAWU Verve card",
+   "what_it_shows": "Frozen card: payments and ATM blocked, wallet untouched; Unfreeze; Block if lost or stolen.",
+   "user_actions": [
+    "Unfreeze card",
+    "Block it"
+   ],
+   "data_needed": [
+    "freeze/unfreeze",
+    "permanent block"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No card freeze/block."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): card freeze/unfreeze/block"
+   ],
+   "facts_on_canvas": [
+    "'Freezing works instantly'"
+   ],
+   "conflicts": [
+    "card issuing"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "W35",
+   "flow": "wallet",
+   "title": "Wallet settings",
+   "kind": "screen",
+   "journey": "PIN, statements and settings",
+   "what_it_shows": "Settings hub: account tier with daily limit and KYC basis, Transaction PIN (last changed), Face ID for payments, Cards, Beneficiaries count, Statements, Account details, Help with a payment.",
+   "user_actions": [
+    "Transaction PIN (W36)",
+    "toggle Face ID",
+    "Cards",
+    "Beneficiaries",
+    "Statements (W38)",
+    "Account details",
+    "Help with a payment"
+   ],
+   "data_needed": [
+    "KYC tier + limits from provider",
+    "PIN last-changed",
+    "beneficiary count",
+    "card summary"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; CreatorState.kycStatus is a single manual gate, no tiers"
+    ],
+    "gap": "No tiers, limits, PIN, beneficiaries or settings aggregate."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): account tier and limits"
+   ],
+   "facts_on_canvas": [
+    "Tier 2 account ₦5,000,000 daily · BVN + NIN verified",
+    "Fintava MFB · 812 345 6789"
+   ],
+   "conflicts": [
+    "KYC model (manual review vs tiers)",
+    "Face ID",
+    "payments provider / custody"
+   ],
+   "designer_questions": [
+    "⚠ The tiers and limits follow CBN KYC levels. The real numbers come from Fintava."
+   ]
+  },
+  {
+   "id": "W36",
+   "flow": "wallet",
+   "title": "Transaction PIN · create",
+   "kind": "screen",
+   "journey": "PIN, statements and settings",
+   "what_it_shows": "Step 1 of 2: create a 4-digit PIN used for every payment, transfer and withdrawal; then confirm.",
+   "user_actions": [
+    "enter PIN",
+    "confirm PIN"
+   ],
+   "data_needed": [
+    "PIN set endpoint (hashed, never logged)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; grep -i 'pin' src/ -> only event 'pin' to featured rail"
+    ],
+    "gap": "No PIN set/confirm."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Four digits.'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W37",
+   "flow": "wallet",
+   "title": "Transaction PIN · reset",
+   "kind": "screen",
+   "journey": "PIN, statements and settings",
+   "what_it_shows": "Forgot PIN: OTP to phone on file with resend timer, then W36.",
+   "user_actions": [
+    "enter OTP",
+    "Resend"
+   ],
+   "data_needed": [
+    "OTP send/verify to phone on file",
+    "PIN reset token"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; no SMS/OTP provider in the hub (grep 'termii|twilio|sms' -> none); phone OTP lives in WAWU ID"
+    ],
+    "gap": "No PIN reset; OTP must come from WAWU ID or a new SMS provider."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "WAWU ID or SMS provider: OTP send/verify"
+   ],
+   "facts_on_canvas": [
+    "'Resend in 0:42'",
+    "+234 803 ••• 4412 (sample)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "W38",
+   "flow": "wallet",
+   "title": "Statements",
+   "kind": "screen",
+   "journey": "PIN, statements and settings",
+   "what_it_shows": "Statement request: account, period presets or custom range, format Stamped PDF or CSV, email destination, Send statement; toast on W35.",
+   "user_actions": [
+    "pick period",
+    "pick format",
+    "Send statement"
+   ],
+   "data_needed": [
+    "statement generation by date range",
+    "provider-signed PDF",
+    "email delivery"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms; 'statement' hits are SQL-statement comments only"
+    ],
+    "gap": "No statement generation or email."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): signed/stamped account statement"
+   ],
+   "facts_on_canvas": [
+    "Stamped PDF 'for visa and loan applications' (acceptance claim)",
+    "lennox@wawu.africa (sample)"
+   ],
+   "conflicts": [],
+   "designer_questions": [
+    "⚠ This depends on Fintava issuing signed statements."
+   ]
+  },
+  {
+   "id": "W40",
+   "flow": "wallet",
+   "title": "Earnings · move to wallet",
+   "kind": "screen",
+   "journey": "Creator earnings",
+   "what_it_shows": "Sheet to move ready earnings into the Naira wallet, 'instant and free'; KYC-not-approved shows the W18 banner instead; then PIN, then W1 with new balance.",
+   "user_actions": [
+    "Move ₦84,500",
+    "enter PIN"
+   ],
+   "data_needed": [
+    "ready-to-move amount",
+    "move endpoint (internal transfer from WAWU collection to user account)",
+    "KYC status"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "wallet-funding.service.ts auto-sweep (no user-initiated route)",
+     "searched: backend-routes.txt 'wallet|transfer|pin|qr|card|statement|beneficiar'; backend-models.txt; grep src/ for those terms"
+    ],
+    "gap": "No user-initiated move; funding is a background sweep that does not check KYC."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": ""
+   },
+   "third_party": [
+    "Fintava (named on canvas, unconfirmed): book transfer from WAWU account to customer account"
+   ],
+   "facts_on_canvas": [
+    "'It's instant and free.'"
+   ],
+   "conflicts": [
+    "earnings settlement model (manual move vs automatic sweep)",
+    "KYC gate scope (send vs withdraw)"
+   ],
+   "designer_questions": []
+  }
+ ],
+ "designer_questions": [
+  {
+   "artboard": "W1",
+   "quote": "⚠ I added the WAWU card row under bills, because it's the only way into Cards (W29–W34). ⚠ The Create button is hidden on Wallet so it never covers amounts. Confirm."
+  },
+  {
+   "artboard": "W2",
+   "quote": "⚠ A USD account for getting paid from abroad. Bills are Naira-only, so that row gives way to the receive-from-abroad prompt."
+  },
+  {
+   "artboard": "W3",
+   "quote": "⚠ USDT and BTC held by Fintava's custody partner, totalled in dollars."
+  },
+  {
+   "artboard": "W15",
+   "quote": "⚠ From your Dollar account $1 = ₦1,580.00"
+  },
+  {
+   "artboard": "W16",
+   "quote": "⚠ A 1.5% card fee, added on top."
+  },
+  {
+   "artboard": "W20",
+   "quote": "⚠ Every rate, fee and network below is a placeholder until Fintava's FX and custody terms are confirmed."
+  },
+  {
+   "artboard": "W22",
+   "quote": "⚠ The QR is a placeholder; production renders it from src/lib/qr.ts."
+  },
+  {
+   "artboard": "W24",
+   "quote": "⚠ NQR support depends on Fintava."
+  },
+  {
+   "artboard": "W29",
+   "quote": "⚠ Fees and delivery times are placeholders."
+  },
+  {
+   "artboard": "W33",
+   "quote": "⚠ These are CBN-style default limits. The real caps depend on your KYC tier."
+  },
+  {
+   "artboard": "W35",
+   "quote": "⚠ The tiers and limits follow CBN KYC levels. The real numbers come from Fintava."
+  },
+  {
+   "artboard": "W38",
+   "quote": "⚠ This depends on Fintava issuing signed statements."
+  }
+ ],
+ "conflicts": [
+  {
+   "topic": "payments provider / custody",
+   "canvas": "\"Wallet\" is the label, but these are full bank accounts at Fintava MFB. (W1–W6 header); 'WAWU · Fintava MFB' (W1); 'Your money is held at Fintava MFB Licensed by the CBN. Deposits insured by NDIC.' (components banner); design-bundle-rules: 'Payments: Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout.'",
+   "current": "Creators have a wallet; WAWU does not hold the money. Each wallet is a Flutterwave *payout subaccount*: an account at Flutterwave MFB in the creator's own name, under Flutterwave's CBN banking licence. Flutterwave custodies it, WAWU only instructs. ... WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.",
+   "artboards": [
+    "W1",
+    "W5",
+    "W15",
+    "W35",
+    "W41",
+    "W42",
+    "W43"
+   ]
+  },
+  {
+   "topic": "Naira only / dollar accounts",
+   "canvas": "⚠ A USD account for getting paid from abroad. (W2); 'Swap Naira, dollars and crypto' (entry map); 'From your Dollar account $1 = ₦1,580.00' (W15)",
+   "current": "Naira (₦) only. Never dollars.",
+   "artboards": [
+    "W2",
+    "W3",
+    "W15",
+    "W20",
+    "W21"
+   ]
+  },
+  {
+   "topic": "crypto custody",
+   "canvas": "⚠ USDT and BTC held by Fintava's custody partner, totalled in dollars. (W3)",
+   "current": "Naira (₦) only. Never dollars. / Flutterwave custodies it, WAWU only instructs. ... WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria. (No crypto in the product; custody of digital assets carries its own regulatory weight, unruled.)",
+   "artboards": [
+    "W3",
+    "W22",
+    "W23"
+   ]
+  },
+  {
+   "topic": "card issuing",
+   "canvas": "Cards draw on the Naira wallet. Physical cards cost money and are paid from the wallet. Virtual cards are free and ready instantly. (W29–W34); 'Get your WAWU Verve card' (W29)",
+   "current": "Creators have a wallet; WAWU does not hold the money. ... Flutterwave custodies it, WAWU only instructs. (No card product exists; a WAWU-branded debit card needs an issuing bank and scheme sponsorship, unruled.)",
+   "artboards": [
+    "W29",
+    "W30",
+    "W31",
+    "W32",
+    "W33",
+    "W34"
+   ]
+  },
+  {
+   "topic": "Face ID",
+   "canvas": "The transaction PIN approves every movement of money. Face ID can stand in once it's set up. (W11); 'Face ID for payments' (W35)",
+   "current": "No DRM, no screenshot-blocking, no liveness/Face-ID. These do not exist in this product.",
+   "artboards": [
+    "W11",
+    "W35"
+   ]
+  },
+  {
+   "topic": "wallet for every account",
+   "canvas": "Wallet is a bottom-bar tab for everyone (W1); 'The first visit after the account opens (A-flow)' (W5); Send to any WAWU user (W7)",
+   "current": "Creators have a wallet ... (product rules); backend: 'A wallet comes with a creator or professional account. Switch your account type to start selling and one is opened for you.' (wallet.service.ts getWallet)",
+   "artboards": [
+    "W1",
+    "W5",
+    "W7"
+   ]
+  },
+  {
+   "topic": "bottom navigation",
+   "canvas": "Tab bar 'Home Explore Inbox Wallet Me' (W1 and every wallet screen); 'The Create button is hidden on Wallet' (W1)",
+   "current": "Bottom bar, 5 slots, the SAME for everyone: `Home · Communities · Explore · Messages · Settings` ... Create is a floating action button",
+   "artboards": [
+    "W1"
+   ]
+  },
+  {
+   "topic": "pay from wallet vs hosted checkout",
+   "canvas": "'₦ Pay from wallet · Naira wallet · ₦485,250.75 available' (W10, W30); PIN sheet W11 reused for unlocks, tips, credits, paid DMs",
+   "current": "Backend: every purchase, tip, credit pack, bill and verification is a Flutterwave checkout (tx_ref + flutterwaveConfig, verified server-side) into WAWU's own Flutterwave balance; creator shares are then swept to PSAs by wallet-funding.service.ts. Bills: 'A bill is paid out of WAWU's own Flutterwave float, not the customer's card.'",
+   "artboards": [
+    "W10",
+    "W11",
+    "W30"
+   ]
+  },
+  {
+   "topic": "new fee revenue streams",
+   "canvas": "Fee ₦10.00 (W10), Fee ₦25.00 (W17), 'Debit card Instant · 1.5% fee' (W15/W16), card ₦1,500 + delivery ₦500 (W30)",
+   "current": "Revenue now comes from discrete paid actions: verification, paid featuring, paid advertising, WAWU Credits for community chat. / Never invent a rate.",
+   "artboards": [
+    "W10",
+    "W16",
+    "W17",
+    "W29",
+    "W30"
+   ]
+  },
+  {
+   "topic": "KYC gate scope (send vs withdraw)",
+   "canvas": "From the code, KYC gates payouts only. Sending, bills and unlocks still work. (W18); 'Earnings ... KYC gates this move' (W39–W40)",
+   "current": "Backend withdraw() refuses ANY transfer to a bank account unless kycStatus === 'approved' (send-to-bank W8 would be blocked); funding sweep moves earnings into the wallet with no KYC check. Product rules: 'ONE gate now, not two: manual KYC unlocks EARNING.'",
+   "artboards": [
+    "W18",
+    "W40"
+   ]
+  },
+  {
+   "topic": "KYC model (manual review vs tiers)",
+   "canvas": "'Tier 2 account ₦5,000,000 daily · BVN + NIN verified' (W35); ⚠ The tiers and limits follow CBN KYC levels. (W35); ⚠ ... The real caps depend on your KYC tier. (W33)",
+   "current": "KYC is manual review. Nigeria: BVN + NIN. Elsewhere: national-ID equivalent. (single approved/pending/rejected gate)",
+   "artboards": [
+    "W18",
+    "W33",
+    "W35"
+   ]
+  },
+  {
+   "topic": "earnings settlement model (manual move vs automatic sweep)",
+   "canvas": "Earnings build up from unlocks, tips and paid DMs, then move into the Naira wallet. (W39); 'Move to wallet' button (W39/W40)",
+   "current": "wallet-funding.service.ts: 'MOVES WHAT CREATORS HAVE EARNED INTO THEIR WALLETS' on a 10-minute cron; opening the wallet at registration 'moves each share out to its owner as it is earned' to avoid 'WAWU sitting on creator money'.",
+   "artboards": [
+    "W39",
+    "W40"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "W26",
+   "fact": "In · September ₦212,400.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W26",
+   "fact": "Out · September ₦96,820.50",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W26",
+   "fact": "Unlock · Lighting night shoots 3 buyers +₦7,500.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W26",
+   "fact": "MTN airtime −₦2,000.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W26",
+   "fact": "Ikeja Electric Prepaid · 45.2 kWh −₦10,500.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W39",
+   "fact": "Ready to move ₦84,500.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W39",
+   "fact": "₦312,800 earned all time",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W39",
+   "fact": "Unlocks ₦61,500",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W39",
+   "fact": "Tips ₦14,000",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W39",
+   "fact": "Paid DMs ₦9,000",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W39",
+   "fact": "How I light a night shoot +₦42,000",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W6",
+   "fact": "'Your money is safe. This is a connection problem between us and the bank.' (custody claim)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W1",
+   "fact": "WAWU · Fintava MFB",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W1",
+   "fact": "Naira balance ₦485,250.75",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W1",
+   "fact": "account number 812 345 6789",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W1",
+   "fact": "Verve WAWU card Physical · ••4821 · Active",
+   "kind": "card scheme"
+  },
+  {
+   "artboard": "W1",
+   "fact": "Amaka Nwosu Tip on your video +₦2,000.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W1",
+   "fact": "Ikeja Electric Prepaid · 45.2 kWh −₦10,500.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W1",
+   "fact": "Chidinma Okoro Transfer · GTBank −₦25,000.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W2",
+   "fact": "Dollar balance $1,240.50",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W2",
+   "fact": "USD account · Fintava •••• 4410",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W2",
+   "fact": "Swap to Naira At ₦1,580 per $1",
+   "kind": "FX rate"
+  },
+  {
+   "artboard": "W2",
+   "fact": "Upwork Global Freelance payout +$420.00",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W2",
+   "fact": "Payoneer Client payment +$150.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W2",
+   "fact": "'Share your US account details with Upwork, YouTube or a client' (capability claim)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W3",
+   "fact": "USDT and BTC held by Fintava's custody partner",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W3",
+   "fact": "Tether USDT · TRC-20, ERC-20",
+   "kind": "crypto asset"
+  },
+  {
+   "artboard": "W3",
+   "fact": "Bitcoin BTC · Bitcoin network",
+   "kind": "crypto asset"
+  },
+  {
+   "artboard": "W3",
+   "fact": "320.00 USDT ≈ $320.00",
+   "kind": "crypto asset"
+  },
+  {
+   "artboard": "W3",
+   "fact": "0.014200 BTC ≈ $1,399.90",
+   "kind": "crypto asset"
+  },
+  {
+   "artboard": "W3",
+   "fact": "Crypto balance $1,719.90",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W5",
+   "fact": "'Send to 812 345 6789 from any Nigerian bank.'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W5",
+   "fact": "₦0.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W14",
+   "fact": "'the money is reversed automatically' (provider behaviour claim)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W14",
+   "fact": "Amount ₦25,010.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W14",
+   "fact": "Reference WAW-8F2K-91QX",
+   "kind": "reference format"
+  },
+  {
+   "artboard": "W8",
+   "fact": "Guaranty Trust Bank 0123456789 -> Chidinma Adaeze Okoro (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W8",
+   "fact": "Kuda MFB · 2011458890 (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W9",
+   "fact": "quick amounts ₦5,000 / ₦10,000 / ₦25,000 / ₦50,000",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W10",
+   "fact": "Fee ₦10.00",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W10",
+   "fact": "Total ₦25,010.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W11",
+   "fact": "'Face ID can stand in once it's set up'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W12",
+   "fact": "Reference WAW-8F2K-91QX",
+   "kind": "reference format"
+  },
+  {
+   "artboard": "W12",
+   "fact": "Fee ₦10.00",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W19",
+   "fact": "Fee ₦25.00",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W19",
+   "fact": "'Usually within minutes'",
+   "kind": "timing"
+  },
+  {
+   "artboard": "W19",
+   "fact": "Reference WAW-W9L2-33RT",
+   "kind": "reference format"
+  },
+  {
+   "artboard": "W15",
+   "fact": "Bank transfer Free · instant",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W15",
+   "fact": "'It lands in seconds'",
+   "kind": "timing"
+  },
+  {
+   "artboard": "W15",
+   "fact": "Debit card Instant · 1.5% fee",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W15",
+   "fact": "$1 = ₦1,580.00",
+   "kind": "FX rate"
+  },
+  {
+   "artboard": "W15",
+   "fact": "Bank Fintava MFB",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W16",
+   "fact": "Card fee ₦150.00 (1.5%)",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W16",
+   "fact": "You pay ₦10,150.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W16",
+   "fact": "Wallet gets ₦10,000.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W16",
+   "fact": "Verve ••7710 GTBank · expires 04/28 (sample)",
+   "kind": "card scheme"
+  },
+  {
+   "artboard": "W17",
+   "fact": "Fee ₦25.00",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W17",
+   "fact": "Arrives In a few minutes",
+   "kind": "timing"
+  },
+  {
+   "artboard": "W18",
+   "fact": "'It usually takes 1–2 working days.'",
+   "kind": "delivery/timing"
+  },
+  {
+   "artboard": "W23",
+   "fact": "Network fee 1.00 USDT",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W23",
+   "fact": "They get 119.00 USDT",
+   "kind": "crypto asset"
+  },
+  {
+   "artboard": "W23",
+   "fact": "Arrives About 2 minutes",
+   "kind": "timing"
+  },
+  {
+   "artboard": "W23",
+   "fact": "TRC-20 · Tron",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W20",
+   "fact": "Rate $1 = ₦1,580.00",
+   "kind": "FX rate"
+  },
+  {
+   "artboard": "W20",
+   "fact": "Holds 0:28 (30-second rate hold)",
+   "kind": "rate hold"
+  },
+  {
+   "artboard": "W20",
+   "fact": "Fee No fee",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W21",
+   "fact": "Swap ₦158,000 for $100.00",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W21",
+   "fact": "Rate $1 = ₦1,580.00",
+   "kind": "FX rate"
+  },
+  {
+   "artboard": "W21",
+   "fact": "Fee No fee",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W22",
+   "fact": "Networks TRC-20, ERC-20, BEP-20",
+   "kind": "crypto network"
+  },
+  {
+   "artboard": "W22",
+   "fact": "address TQ7xN3fK8pLm2aVr5sYc9WbE4hJd6KfP (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W25",
+   "fact": "'Scan to pay Lennox from any WAWU or bank app' (NQR interoperability claim)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W24",
+   "fact": "'Point at a WAWU or bank QR code'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W27",
+   "fact": "Reference WAW-T1P9-7ZQA",
+   "kind": "reference format"
+  },
+  {
+   "artboard": "W43",
+   "fact": "'One page, A4.'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W43",
+   "fact": "'Fintava MFB, licensed by the CBN'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W43",
+   "fact": "'Check it at wawu/r/T1P9'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W41",
+   "fact": "'Check it at wawu/r/T1P9'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W41",
+   "fact": "'Fintava MFB, licensed by the CBN'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W41",
+   "fact": "Bank Fintava MFB",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W42",
+   "fact": "'Fintava MFB, licensed by the CBN'",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W29",
+   "fact": "Physical card Delivered in 3–5 working days · ₦2,000",
+   "kind": "delivery/timing"
+  },
+  {
+   "artboard": "W29",
+   "fact": "Virtual card · Free",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W29",
+   "fact": "'anywhere in Nigeria that takes Verve'",
+   "kind": "card scheme"
+  },
+  {
+   "artboard": "W30",
+   "fact": "Card ₦1,500",
+   "kind": "card fee"
+  },
+  {
+   "artboard": "W30",
+   "fact": "Delivery ₦500",
+   "kind": "card fee"
+  },
+  {
+   "artboard": "W30",
+   "fact": "Total ₦2,000",
+   "kind": "card fee"
+  },
+  {
+   "artboard": "W30",
+   "fact": "'Matches the name on your ID'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W31",
+   "fact": "Shoprite Lekki POS −₦18,450.00 (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W31",
+   "fact": "ATM withdrawal Access Bank −₦20,000.00 (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W33",
+   "fact": "ATM ₦100,000 daily",
+   "kind": "limit"
+  },
+  {
+   "artboard": "W33",
+   "fact": "Shops and POS ₦500,000 daily",
+   "kind": "limit"
+  },
+  {
+   "artboard": "W33",
+   "fact": "Online ₦300,000 daily",
+   "kind": "limit"
+  },
+  {
+   "artboard": "W33",
+   "fact": "₦23,200 used today (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W32",
+   "fact": "'Freezing works instantly'",
+   "kind": "fee"
+  },
+  {
+   "artboard": "W35",
+   "fact": "Tier 2 account ₦5,000,000 daily · BVN + NIN verified",
+   "kind": "limit/KYC tier"
+  },
+  {
+   "artboard": "W35",
+   "fact": "Fintava MFB · 812 345 6789",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W36",
+   "fact": "'Four digits.'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W37",
+   "fact": "'Resend in 0:42'",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W37",
+   "fact": "+234 803 ••• 4412 (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W38",
+   "fact": "Stamped PDF 'for visa and loan applications' (acceptance claim)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W38",
+   "fact": "lennox@wawu.africa (sample)",
+   "kind": "sample amount / claim"
+  },
+  {
+   "artboard": "W40",
+   "fact": "'It's instant and free.'",
+   "kind": "fee"
+  },
+  {
+   "artboard": "Section 11 (For approval components, no id)",
+   "fact": "Your money is held at Fintava MFB Licensed by the CBN. Deposits insured by NDIC.",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "W1-W6 section header",
+   "fact": "\"Wallet\" is the label, but these are full bank accounts at Fintava MFB.",
+   "kind": "provider/licence"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "Banking-provider gateway for Fintava (auth, request signing, webhook signature guard) replacing FlutterwaveWalletGateway behind the same interface",
+   "why": "Every wallet screen names Fintava MFB; current gateway calls api.flutterwave.com/v3 payout-subaccounts",
+   "artboards": [
+    "W1",
+    "W5",
+    "W6",
+    "W15"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "Fintava API docs and sandbox",
+    "product-owner ruling on provider switch and custody"
+   ]
+  },
+  {
+   "item": "Account provisioning for EVERY account type at sign-up, tier 1 via BVN, with tier upgrades (BVN+NIN) and migration of existing CreatorWallet rows",
+   "why": "W5 'first visit after the account opens (A-flow)'; W35 tiers; today only creators get a Flutterwave PSA",
+   "artboards": [
+    "W5",
+    "W35"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "Fintava customer/account API",
+    "A-flow BVN capture",
+    "ruling on wallet for buyers"
+   ]
+  },
+  {
+   "item": "Multi-account balance endpoint (NGN in kobo, USD, crypto per asset) with typed provider_unreachable error",
+   "why": "W1/W2/W3 tabs; W6 state; balances are whole naira today",
+   "artboards": [
+    "W1",
+    "W2",
+    "W3",
+    "W6"
+   ],
+   "size": "M",
+   "depends_on": [
+    "provider gateway"
+   ]
+  },
+  {
+   "item": "Inbound credit webhook + full transaction store mirrored from the bank record (deposits, transfers in/out, bills, purchases, card spend, swaps, reversals) with counterparty, category, description, kobo amounts",
+   "why": "W26 'Every ledger row comes from the bank's record'; WalletLedgerEntry only holds earning/withdrawal/reversal",
+   "artboards": [
+    "W1",
+    "W5",
+    "W15",
+    "W26"
+   ],
+   "size": "L",
+   "depends_on": [
+    "provider webhooks",
+    "provider transaction history API"
+   ]
+  },
+  {
+   "item": "Transaction history API: search, category filter, cursor pagination, monthly in/out summary; transaction-by-id/reference detail",
+   "why": "W26, W27, W28",
+   "artboards": [
+    "W26",
+    "W27",
+    "W28"
+   ],
+   "size": "M",
+   "depends_on": [
+    "transaction store"
+   ]
+  },
+  {
+   "item": "Receipts: short public verification code + page at wawu/r/{code}; PNG and A4 PDF rendering",
+   "why": "W41–W43 'Check it at wawu/r/T1P9'",
+   "artboards": [
+    "W12",
+    "W27",
+    "W41",
+    "W42",
+    "W43"
+   ],
+   "size": "M",
+   "depends_on": [
+    "transaction detail API"
+   ]
+  },
+  {
+   "item": "Recipient search across all account types by name/@handle/phone + recent recipients",
+   "why": "W7; /api/hub/search covers creators/content/communities only",
+   "artboards": [
+    "W7"
+   ],
+   "size": "M",
+   "depends_on": [
+    "WAWU ID phone lookup policy"
+   ]
+  },
+  {
+   "item": "WAWU-to-WAWU transfer (intra-bank book transfer) with note, idempotency key, PIN",
+   "why": "W7→W9→W12",
+   "artboards": [
+    "W7",
+    "W9",
+    "W10",
+    "W12"
+   ],
+   "size": "L",
+   "depends_on": [
+    "provider book-transfer API",
+    "transaction PIN"
+   ]
+  },
+  {
+   "item": "Generalise withdraw into send-to-any-bank: fee, note, PIN, idempotency key, failure/reversal handling, receipt read, KYC rule per ruling",
+   "why": "W8–W14, W17, W19; withdraw today has no fee/note/PIN and is KYC-gated",
+   "artboards": [
+    "W8",
+    "W10",
+    "W11",
+    "W12",
+    "W13",
+    "W14",
+    "W17",
+    "W19"
+   ],
+   "size": "L",
+   "depends_on": [
+    "provider NIP transfer + requery",
+    "fee ruling",
+    "KYC scope ruling"
+   ]
+  },
+  {
+   "item": "Fee quote service (transfer, withdraw, card top-up, card order) with WAWU fee collection",
+   "why": "W10, W16, W17, W30 show fees; no fee concept exists",
+   "artboards": [
+    "W10",
+    "W16",
+    "W17",
+    "W30"
+   ],
+   "size": "M",
+   "depends_on": [
+    "product-owner ruling on every fee figure"
+   ]
+  },
+  {
+   "item": "Transaction PIN: set/confirm/change/verify, hashed, attempt lockout, required on every debit (also used by Home/Inbox/Me flows)",
+   "why": "W11, W36",
+   "artboards": [
+    "W11",
+    "W35",
+    "W36"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Transaction PIN reset via phone OTP",
+   "why": "W37",
+   "artboards": [
+    "W37"
+   ],
+   "size": "M",
+   "depends_on": [
+    "WAWU ID OTP endpoint or SMS provider"
+   ]
+  },
+  {
+   "item": "Beneficiaries: create/list/delete; default payout account from KYC (KycSubmission.payoutBankName is free text, needs a bank code)",
+   "why": "W8 Saved list, W12 'Save as a beneficiary', W17 default destination, W35 count",
+   "artboards": [
+    "W8",
+    "W12",
+    "W17",
+    "W35"
+   ],
+   "size": "S",
+   "depends_on": [
+    "schema migration for bankCode on KYC payout account"
+   ]
+  },
+  {
+   "item": "Card top-up into wallet with 3DS, saved card tokens",
+   "why": "W16",
+   "artboards": [
+    "W15",
+    "W16"
+   ],
+   "size": "L",
+   "depends_on": [
+    "acquiring API (Fintava or other)",
+    "fee ruling"
+   ]
+  },
+  {
+   "item": "USSD funding",
+   "why": "W15 'USSD Dial from your bank line'",
+   "artboards": [
+    "W15"
+   ],
+   "size": "M",
+   "depends_on": [
+    "provider USSD API"
+   ]
+  },
+  {
+   "item": "USD account: issuance, US receiving details, balance, transactions",
+   "why": "W2",
+   "artboards": [
+    "W2"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "provider USD account API",
+    "regulatory ruling on dollar accounts"
+   ]
+  },
+  {
+   "item": "FX: quote with 30s lock, execute by quote id, NGN<->USD",
+   "why": "W20, W21, W15 'From your Dollar account'",
+   "artboards": [
+    "W15",
+    "W20",
+    "W21"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "provider FX API",
+    "ruling on Naira-only rule"
+   ]
+  },
+  {
+   "item": "Crypto: per-asset/network deposit addresses, balances + USD valuation, send with address validation and network fee, deposit webhooks",
+   "why": "W3, W22, W23",
+   "artboards": [
+    "W3",
+    "W22",
+    "W23"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "custody partner API",
+    "regulatory ruling on crypto"
+   ]
+  },
+  {
+   "item": "Card issuing: virtual + physical order (address, fee from wallet, delivery tracking), details reveal, freeze/unfreeze/block, channel controls + limits, card PIN, card transaction feed",
+   "why": "W29–W34",
+   "artboards": [
+    "W29",
+    "W30",
+    "W31",
+    "W32",
+    "W33",
+    "W34"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "card issuing API + scheme sponsor",
+    "ruling on card product"
+   ]
+  },
+  {
+   "item": "QR: personal pay-code payload and resolve endpoint for WAWU QR; NQR generate/decode/pay",
+   "why": "W24, W25; QR exists only for event tickets",
+   "artboards": [
+    "W24",
+    "W25"
+   ],
+   "size": "L",
+   "depends_on": [
+    "provider NQR support"
+   ]
+  },
+  {
+   "item": "Statements: date range, CSV now, stamped PDF from provider, email delivery",
+   "why": "W38",
+   "artboards": [
+    "W38"
+   ],
+   "size": "M",
+   "depends_on": [
+    "provider signed statements",
+    "email sender"
+   ]
+  },
+  {
+   "item": "Wallet settings aggregate (tier, limits, PIN last changed, cards, beneficiary count, account details)",
+   "why": "W35",
+   "artboards": [
+    "W35"
+   ],
+   "size": "S",
+   "depends_on": [
+    "tier/limits from provider",
+    "PIN",
+    "beneficiaries"
+   ]
+  },
+  {
+   "item": "Earnings 'ready to move' balance, per-content breakdown, and user-initiated move to wallet (replacing or alongside the auto sweep), KYC rule per ruling",
+   "why": "W39, W40",
+   "artboards": [
+    "W39",
+    "W40"
+   ],
+   "size": "M",
+   "depends_on": [
+    "ruling on settlement model",
+    "provider book transfer"
+   ]
+  },
+  {
+   "item": "Pay-from-wallet debit path for purchases, tips, credits, DMs, tickets, card orders, with 85/15 split collected on-ledger (replaces hosted checkout + funding sweep)",
+   "why": "W10/W30 'Pay from wallet'; W11 PIN reused across flows",
+   "artboards": [
+    "W10",
+    "W11",
+    "W30"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "provider book transfer",
+    "ruling on custody/provider",
+    "cross-flow agents' purchase screens"
+   ]
+  },
+  {
+   "item": "Bills paid from wallet (debit NGN account, then Flutterwave Bills or provider bills API) instead of card checkout into WAWU's float",
+   "why": "W1 bills row; W26 Bills filter",
+   "artboards": [
+    "W1",
+    "W26",
+    "W28"
+   ],
+   "size": "L",
+   "depends_on": [
+    "ruling on bills provider",
+    "pay-from-wallet debit"
+   ]
+  },
+  {
+   "item": "Reconciliation/requery for the new provider (port reconcilePending, settleFromWebhook)",
+   "why": "W14 auto-reversal, W19 status",
+   "artboards": [
+    "W14",
+    "W19"
+   ],
+   "size": "M",
+   "depends_on": [
+    "provider requery API"
+   ]
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "customer + NGN account (NUBAN) creation, tier 1 via BVN",
+   "artboards": [
+    "W1",
+    "W5"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "KYC tier upgrade (BVN + NIN) and per-tier limits",
+   "artboards": [
+    "W33",
+    "W35"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "account balance enquiry (NGN, USD, crypto)",
+   "artboards": [
+    "W1",
+    "W2",
+    "W3",
+    "W6"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "account transaction history / ledger feed",
+   "artboards": [
+    "W1",
+    "W26",
+    "W27"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "inbound credit (deposit) webhook",
+   "artboards": [
+    "W5",
+    "W15",
+    "W26"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "bank list",
+   "artboards": [
+    "W8"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "name enquiry (NIP)",
+   "artboards": [
+    "W8"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "outbound NIP transfer",
+   "artboards": [
+    "W10",
+    "W11",
+    "W12",
+    "W17",
+    "W19"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "transfer status requery",
+   "artboards": [
+    "W12",
+    "W14",
+    "W19"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "transfer success/failure/reversal webhook",
+   "artboards": [
+    "W14",
+    "W19"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "intra-bank (book) transfer between customer accounts and from WAWU's account",
+   "artboards": [
+    "W7",
+    "W9",
+    "W40"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "fee / charge collection to WAWU account",
+   "artboards": [
+    "W10",
+    "W17",
+    "W30"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "card charge (acquiring) with 3-D Secure and tokenised saved cards",
+   "artboards": [
+    "W16"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "USSD funding",
+   "artboards": [
+    "W15"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "USD virtual account with foreign receiving details",
+   "artboards": [
+    "W2"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "FX quote with rate lock and conversion execution",
+   "artboards": [
+    "W15",
+    "W20",
+    "W21"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed) custody partner",
+   "capability": "crypto deposit address generation per asset/network",
+   "artboards": [
+    "W22"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed) custody partner",
+   "capability": "crypto balances and USD valuation",
+   "artboards": [
+    "W3"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed) custody partner",
+   "capability": "crypto withdrawal with address validation and network fee estimate",
+   "artboards": [
+    "W23"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed) custody partner",
+   "capability": "crypto deposit webhook",
+   "artboards": [
+    "W3"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "virtual card issuance",
+   "artboards": [
+    "W29"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "physical card order and delivery tracking",
+   "artboards": [
+    "W30"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "card details reveal (PCI-scoped)",
+   "artboards": [
+    "W31"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "card freeze / unfreeze / block",
+   "artboards": [
+    "W32"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "card channel controls and spend limits",
+   "artboards": [
+    "W33"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "card PIN set/change",
+   "artboards": [
+    "W34"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "card transaction / authorisation webhook",
+   "artboards": [
+    "W31"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "NQR generate, decode and pay",
+   "artboards": [
+    "W24",
+    "W25"
+   ]
+  },
+  {
+   "provider": "Fintava (named on canvas, unconfirmed)",
+   "capability": "signed / stamped account statement",
+   "artboards": [
+    "W38"
+   ]
+  },
+  {
+   "provider": "Flutterwave (existing) or Fintava bills",
+   "capability": "bill catalogue, validate, pay (currently Flutterwave Bills API, card-funded)",
+   "artboards": [
+    "W1",
+    "W26",
+    "W28"
+   ]
+  },
+  {
+   "provider": "WAWU ID (existing SSO) or an SMS provider",
+   "capability": "OTP send/verify to phone on file",
+   "artboards": [
+    "W37"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "Paid in / Incoming / Withdrawn ledger tiles beside the balance (WalletScreen.tsx)",
+  "Explicit custody explainer copy: 'Your own account, in your name. WAWU never holds your money, it only moves it on your instruction.'",
+  "Buyer-account state 'Wallets come with a creator account' (no wallet for buyers)",
+  "Minimum withdrawal of ₦1,000 (MIN_WITHDRAWAL_NGN, enforced in the web sheet and server)",
+  "Withdraw to any bank account typed by the user each time (canvas defaults to the KYC payout account with Change)",
+  "Earnings 'Held, not payable yet' figure for unanswered paid DMs",
+  "Community credits earnings stream (shown as a credit count) on /earnings",
+  "EVG score tile on /earnings",
+  "Recent sales list on /earnings",
+  "Ledger kinds 'Sale' and 'Reversed' as labelled on the web history"
+ ],
+ "summary": "Wallet is the fintech core of WMT: 43 artboards turning a creator-only payout account into a full multi-currency bank account for every user at Fintava MFB, with Naira/Dollar/Crypto accounts, send to WAWU users and any Nigerian bank, card/USSD/FX top-ups, swaps, crypto receive/send, NQR scan-to-pay, a physical/virtual Verve card, transaction PIN, statements, receipts and a creator earnings move. Today's backend has exactly five wallet routes (get, history, banks, resolve-account, withdraw) on a Flutterwave payout subaccount, opened for creators only, balance in whole naira, history limited to WAWU-instructed earnings/withdrawals/reversals, and one manual KYC gate on withdraw; bills are card-funded checkouts paid from WAWU's float. Reusable as patterns: the provider-gateway interface, name-enquiry-before-send, pending-not-failed settlement, idempotent references, webhook settlement and reconcile sweep, withdrawalsEnabled/reason, and the Flutterwave Bills catalogue; everything Flutterwave-specific (PSA create/balance/fund/transfer clients, webhook guard, barterId/accountReference columns) must be replaced if Fintava is adopted. Missing outright: transaction PIN, beneficiaries, fees, WAWU-to-WAWU transfer, inbound deposit recording, receipts, statements, QR/NQR, USD, FX, crypto and the entire card stack; the web has only a creator /wallet and /earnings that differ from the canvas. The biggest risk is regulatory and contractual, not code: dollar accounts, crypto custody, card issuing, pay-from-wallet with WAWU-collected fees, and wallets for every user each collide with the current 'WAWU never custodies money, Naira only, Flutterwave PSA' rule, and every Fintava capability, fee, limit and FX rate on the boards is unverified. Most build items are XL because they are blocked on Fintava API docs and product-owner rulings rather than engineering effort."
+}

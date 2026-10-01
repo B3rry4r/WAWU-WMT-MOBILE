@@ -1,0 +1,1087 @@
+# WAWU WMT mobile: analysis evidence (assembled)
+
+Evidence files: 7
+
+## Coverage: every extracted artboard accounted for? **YES**
+
+| flow | expected | returned | missing | duplicated | extra |
+|---|---|---|---|---|---|
+| auth | 25 | 25 | - | - | - |
+| events | 24 | 25 | - | - | E4 |
+| explore | 15 | 15 | - | - | - |
+| home | 33 | 36 | - | - | H4, H15, H27 |
+| inbox | 37 | 37 | - | - | - |
+| me | 33 | 37 | - | - | M13, M16, M27, M35 |
+| professionals | 10 | 10 | - | - | - |
+| schools | 10 | 12 | - | - | SC-START, SC6 |
+| services | 30 | 31 | - | - | S6 |
+| settings | 12 | 12 | - | - | - |
+| shop | 14 | 16 | - | - | SH-START, SH7 |
+| wallet | 43 | 43 | - | - | - |
+
+## Artboards by kind
+
+- screen: 210
+- state: 85
+- cross-reference: 2
+- entry-map: 2
+
+## Real screens + states (295): backend
+
+- partial: 136
+- missing: 84
+- served: 67
+- n/a: 8
+
+## Real screens + states (295): web
+
+- exists-differs: 162
+- missing: 86
+- exists-matches: 47
+
+## Designer questions (17), verbatim
+
+- **W1** (A1): ⚠ I added the WAWU card row under bills, because it's the only way into Cards (W29–W34). ⚠ The Create button is hidden on Wallet so it never covers amounts. Confirm.
+- **W2** (A1): ⚠ A USD account for getting paid from abroad. Bills are Naira-only, so that row gives way to the receive-from-abroad prompt.
+- **W3** (A1): ⚠ USDT and BTC held by Fintava's custody partner, totalled in dollars.
+- **W15** (A1): ⚠ From your Dollar account $1 = ₦1,580.00
+- **W16** (A1): ⚠ A 1.5% card fee, added on top.
+- **W20** (A1): ⚠ Every rate, fee and network below is a placeholder until Fintava's FX and custody terms are confirmed.
+- **W22** (A1): ⚠ The QR is a placeholder; production renders it from src/lib/qr.ts.
+- **W24** (A1): ⚠ NQR support depends on Fintava.
+- **W29** (A1): ⚠ Fees and delivery times are placeholders.
+- **W33** (A1): ⚠ These are CBN-style default limits. The real caps depend on your KYC tier.
+- **W35** (A1): ⚠ The tiers and limits follow CBN KYC levels. The real numbers come from Fintava.
+- **W38** (A1): ⚠ This depends on Fintava issuing signed statements.
+- **A17** (A2): ⚠ Final numbers from Fintava.
+- **A19** (A2): ⚠ Final numbers from Fintava.
+- **M11** (A3): ⚠ Limits are placeholders.
+- **Home board header (not an artboard)** (A4): Codes run H1–H33. ⚠ marks anything assumed.
+- **S14–S26 (Legal section header; applies to S18, S19, S21, S22, S24, S26 fees)** (A6): From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.
+
+## Conflicts with the current product (68)
+
+- **payments provider / custody** [W1, W5, W15, W35, W41, W42, W43] (A1)
+  - canvas: "Wallet" is the label, but these are full bank accounts at Fintava MFB. (W1–W6 header); 'WAWU · Fintava MFB' (W1); 'Your money is held at Fintava MFB Licensed by the CBN. Deposits insured by NDIC.' (components banner); design-bundle-rules: 'Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.'
+  - current: Creators have a wallet; WAWU does not hold the money. Each wallet is a Flutterwave *payout subaccount*: an account at Flutterwave MFB in the creator's own name, under Flutterwave's CBN banking licence. Flutterwave custodies it, WAWU only instructs. ... WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.
+- **Naira only / dollar accounts** [W2, W3, W15, W20, W21] (A1)
+  - canvas: ⚠ A USD account for getting paid from abroad. (W2); 'Swap Naira, dollars and crypto' (entry map); 'From your Dollar account $1 = ₦1,580.00' (W15)
+  - current: Naira (₦) only. Never dollars.
+- **crypto custody** [W3, W22, W23] (A1)
+  - canvas: ⚠ USDT and BTC held by Fintava's custody partner, totalled in dollars. (W3)
+  - current: Naira (₦) only. Never dollars. / Flutterwave custodies it, WAWU only instructs. ... WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria. (No crypto in the product; custody of digital assets carries its own regulatory weight, unruled.)
+- **card issuing** [W29, W30, W31, W32, W33, W34] (A1)
+  - canvas: Cards draw on the Naira wallet. Physical cards cost money and are paid from the wallet. Virtual cards are free and ready instantly. (W29–W34); 'Get your WAWU Verve card' (W29)
+  - current: Creators have a wallet; WAWU does not hold the money. ... Flutterwave custodies it, WAWU only instructs. (No card product exists; a WAWU-branded debit card needs an issuing bank and scheme sponsorship, unruled.)
+- **Face ID** [W11, W35] (A1)
+  - canvas: The transaction PIN approves every movement of money. Face ID can stand in once it's set up. (W11); 'Face ID for payments' (W35)
+  - current: No DRM, no screenshot-blocking, no liveness/Face-ID. These do not exist in this product.
+- **wallet for every account** [W1, W5, W7] (A1)
+  - canvas: Wallet is a bottom-bar tab for everyone (W1); 'The first visit after the account opens (A-flow)' (W5); Send to any WAWU user (W7)
+  - current: Creators have a wallet ... (product rules); backend: 'A wallet comes with a creator or professional account. Switch your account type to start selling and one is opened for you.' (wallet.service.ts getWallet)
+- **bottom navigation** [W1] (A1)
+  - canvas: Tab bar 'Home Explore Inbox Wallet Me' (W1 and every wallet screen); 'The Create button is hidden on Wallet' (W1)
+  - current: Bottom bar, 5 slots, the SAME for everyone: `Home · Communities · Explore · Messages · Settings` ... Create is a floating action button
+- **pay from wallet vs hosted checkout** [W10, W11, W30] (A1)
+  - canvas: '₦ Pay from wallet · Naira wallet · ₦485,250.75 available' (W10, W30); PIN sheet W11 reused for unlocks, tips, credits, paid DMs
+  - current: Backend: every purchase, tip, credit pack, bill and verification is a Flutterwave checkout (tx_ref + flutterwaveConfig, verified server-side) into WAWU's own Flutterwave balance; creator shares are then swept to PSAs by wallet-funding.service.ts. Bills: 'A bill is paid out of WAWU's own Flutterwave float, not the customer's card.'
+- **new fee revenue streams** [W10, W16, W17, W29, W30] (A1)
+  - canvas: Fee ₦10.00 (W10), Fee ₦25.00 (W17), 'Debit card Instant · 1.5% fee' (W15/W16), card ₦1,500 + delivery ₦500 (W30)
+  - current: Revenue now comes from discrete paid actions: verification, paid featuring, paid advertising, WAWU Credits for community chat. / Never invent a rate.
+- **KYC gate scope (send vs withdraw)** [W18, W40] (A1)
+  - canvas: From the code, KYC gates payouts only. Sending, bills and unlocks still work. (W18); 'Earnings ... KYC gates this move' (W39–W40)
+  - current: Backend withdraw() refuses ANY transfer to a bank account unless kycStatus === 'approved' (send-to-bank W8 would be blocked); funding sweep moves earnings into the wallet with no KYC check. Product rules: 'ONE gate now, not two: manual KYC unlocks EARNING.'
+- **KYC model (manual review vs tiers)** [W18, W33, W35] (A1)
+  - canvas: 'Tier 2 account ₦5,000,000 daily · BVN + NIN verified' (W35); ⚠ The tiers and limits follow CBN KYC levels. (W35); ⚠ ... The real caps depend on your KYC tier. (W33)
+  - current: KYC is manual review. Nigeria: BVN + NIN. Elsewhere: national-ID equivalent. (single approved/pending/rejected gate)
+- **earnings settlement model (manual move vs automatic sweep)** [W39, W40] (A1)
+  - canvas: Earnings build up from unlocks, tips and paid DMs, then move into the Naira wallet. (W39); 'Move to wallet' button (W39/W40)
+  - current: wallet-funding.service.ts: 'MOVES WHAT CREATORS HAVE EARNED INTO THEIR WALLETS' on a 10-minute cron; opening the wallet at registration 'moves each share out to its owner as it is earned' to avoid 'WAWU sitting on creator money'.
+- **payments provider / wallet custody** [A8, Z9, Z10] (A2)
+  - canvas: A8: 'Your wallet is open · Tier 1 · Fintava MFB ... Bank Fintava MFB'; Z9: 'Banking by Fintava MFB · Licensed by the CBN'; Z10: 'Payments move through your WAWU wallet, held at Fintava MFB.'
+  - current: 'Each wallet is a Flutterwave payout subaccount: an account at Flutterwave MFB in the creator's own name, under Flutterwave's CBN banking licence. Flutterwave custodies it, WAWU only instructs.'
+- **who gets a wallet** [A2, A8] (A2)
+  - canvas: A2: 'I'm here to discover: Follow creators, buy their work, use the wallet.'; A8 opens a wallet for every sign-up before the earn/discover branch.
+  - current: 'Creators have a wallet' (opened for accountType=creator only, wawu-backend/src/user-profile/user-profile.service.ts:283).
+- **liveness / Face-ID** [A6, A7, A16, A17] (A2)
+  - canvas: A6: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly'; A17: 'Tier 1 BVN and a selfie'.
+  - current: 'No DRM, no screenshot-blocking, no liveness/Face-ID. These do not exist in this product.'
+- **KYC timing and method** [A3, A5, A14, A18] (A2)
+  - canvas: A3: BVN mandatory at account creation, 'Checked with NIBSS'; A18: 'Checked with NIMC against your BVN details.'
+  - current: 'ONE gate now, not two: manual KYC unlocks EARNING.' 'KYC is manual review. Nigeria: BVN + NIN. Elsewhere: national-ID equivalent.' 'Uploading + KYC pending is a normal state.'
+- **non-Nigerian sign-up** [A3] (A2)
+  - canvas: A3 requires a BVN and a BVN-matched phone for every account.
+  - current: 'Elsewhere: national-ID equivalent.' (web sign-up offers a country picker and KYC takes nationalIdEquivalent)
+- **event hosting at sign-up** [A2] (A2)
+  - canvas: A2: 'I want to earn: Sell content, take paid questions, host events. Free.'
+  - current: 'B3 makes hosting an event a VERIFIED-ONLY capability ... an unverified creator or professional cannot either.'
+- **sign-up free / upload limits / free content (bundle rule vs current)** [A2, A11, Z1] (A2)
+  - canvas: Bundle rule: 'Sign-up is free for everyone. Free accounts: 5 uploads. More uploads, library space and wider reach come with a paid verification tick (creator or professional, ₦2,000/yr). Content can be marked Free.' Z1: 'My content 4 of 7 slots'. A11: 'Publish your first piece · Free to list'.
+  - current: 'Registration, profile creation and listing are free' (agrees on free sign-up) BUT 'Maximum 5 items per account ... Hard cap ... No free/paid slot split, because every listing carries a price (brief B2: no free content).'
+- **navigation** [Z1, Z2] (A2)
+  - canvas: Z1 bottom bar: 'Home · Explore · Inbox · Wallet · Me'; 'Settings opens from the menu on Me.'
+  - current: 'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings' and 'Slot 5 is Settings, not Profile.'
+- **account deletion grace period** [Z6, Z8] (A2)
+  - canvas: Z6: 'This can't be undone after 30 days.'; Z8: 'Scheduled for deletion. On 26 October. Sign in before then to cancel.'
+  - current: Implementation (not a product-notes line): 48h grace, content removed immediately, 'There is no cancel-deletion endpoint anywhere in this backend' (wawu-backend/src/account/account.service.ts:9,40).
+- **terms and privacy as one document** [Z10, Z11] (A2)
+  - canvas: Z10 Terms and Z11 Privacy policy as separate screens, each 'Updated 1 September 2026'.
+  - current: 'The terms and the privacy policy are a single Master Terms, Privacy and Platform Policy (product owner, 4 Sep 2026)' (wawuafrica/src/app/(app)/privacy/policy/page.tsx); web effective date '2 February 2026'.
+- **upload cap: flat 5 vs 5 free / 25 with a tick** [M11, M18, M19, M25, M27, M28] (A3)
+  - canvas: 'Every tick gives you Up to 25 uploads Free accounts get 5' (M11); 'Uploads 4 of 5 used Get verified for up to 25 uploads and more reach.' (M18, M19, M28); 'Your 5 free uploads are used Get verified for up to 25 uploads, or take something down.' (M27). Bundle rule: 'Free accounts: 5 uploads. More uploads, library space and wider reach come with a paid verification tick (creator or professional, ₦2,000/yr).'
+  - current: 'Maximum 5 items per account, counted across products, content and services together. Hard cap, enforced server-side. No free/paid slot split, because every listing carries a price (brief B2: no free content).' Also: 'Creator is an ACCOUNT TYPE, not a trust-tier badge or an earned level.' and 'There is no subscription and no creator tier'.
+- **free content** [M24, M37, M30] (A3)
+  - canvas: M24 'Paid Free' toggle; M37 'Free for everyone Anyone can open it. Fans can still tip. Free pieces count toward your uploads.'; M30 'Quiet mornings ep. 4 Free'. Bundle rule: 'Content can be marked Free.'
+  - current: 'No free/paid slot split, because every listing carries a price (brief B2: no free content).'
+- **storage allowance** [M11] (A3)
+  - canvas: '10 GB library space Free accounts get 1 GB' (M11, M12, M14, M15, M16, M17)
+  - current: Not stated in current-product-rules.md. Code: /home/user/wawu-backend/src/common/creator-allowance.ts:48 'STORAGE_BYTES_PER_ACCOUNT = 2 * 1024 * 1024 * 1024' (flat 2 GB, 'Pro Max's 5GB went with the plan that sold it') and :57 DEFAULT_STORAGE_BYTES 2 GB.
+- **tick benefits (reach boost)** [M11, M18, M19, M28] (A3)
+  - canvas: 'Reach more people Your content is pushed further' (M11); 'Get verified for up to 25 uploads and more reach.' (M18, M19, M28)
+  - current: Current rules list verification only as a paid action and 'B3 makes hosting an event a VERIFIED-ONLY capability'. Web /home/user/wawuafrica/src/components/ui/VerificationPrompt.tsx: 'It states benefits, and only the two that B3 actually grants: the tick everywhere, and hosting events. Nothing else may be added here without the mechanism behind it'.
+- **payments provider / pay-from-wallet with PIN** [M12, M13, M14, M15] (A3)
+  - canvas: M12 '₦ Pay from wallet Naira wallet · ₦485,250.75 available Pay ₦2,000'; M13 'Enter your PIN ₦2,000 for the professional tick'. Bundle rule: 'Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.'
+  - current: 'Creators have a wallet; WAWU does not hold the money. Each wallet is a Flutterwave payout subaccount ... Flutterwave custodies it, WAWU only instructs.' Backend route 'POST /api/hub/verification/purchase/verify  Confirm the payment with Flutterwave and grant the tick.'
+- **navigation: Me tab and Menu** [M1, M7] (A3)
+  - canvas: Tab bar 'Home Explore Inbox Wallet Me' on every Me board; Me (M1) is the user's own profile and M7 Menu ('Everything that isn't public lives here') holds dashboard, content, purchases, courses, saved, notifications, verification, settings.
+  - current: 'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings' and 'Slot 5 is Settings, not Profile. Profile is a row inside Settings and is also reachable from the header avatar (21 Aug 2026).'
+- **payout destination** [M14, M18] (A3)
+  - canvas: M14 Identity check 'Payouts go to your bank Approved'
+  - current: 'Creators have a wallet ... Each wallet is a Flutterwave payout subaccount' (earnings land in the wallet; the canvas itself says 'Earnings Move to your wallet (W39)' on M18).
+- **navigation (bottom tab bar)** [H1, H2, H36, X1, X5, X15] (A4)
+  - canvas: Every Home and Explore artboard draws the bar as 'Home · Explore · Inbox 3 · Wallet · Me'. Where the old slots went, per the boards: Communities live inside Inbox ('Inbox is one list for chats, paid DMs, communities and money', Communities filter tab I24, rooms I25, 'Browse communities' on I35) and in search results (X9 -> I25). Messages become Inbox (I1). Settings moves off the bar: 'Settings opens from the menu on Me' (Me · menu icon -> Z1 menu -> Z2 Settings). Profile becomes the Me tab ('Me is your public profile', M1). Create stays a creator-only button: H1 'The Create button shows for creator accounts only', start-map row 'Create button (creators only) Upload new content Flow M', M1 'The Create button shows on creator accounts', M19 'Create button (+)'; the Wallet board says 'The Create button is hidden on Wallet so it never covers amounts'. Search: search icon in the Home header (-> X5) and a search bar at the top of Explore (X1). Notifications: bell in the Home and Explore headers (-> M31). Wallet gets its own slot for every user.
+  - current: 'Bottom bar, 5 slots, the SAME for everyone: `Home · Communities · Explore · Messages · Settings`. Search and notifications live in the header on every screen. The avatar in the header opens Profile. **Create is a floating action button**, bottom-right above the bar, shown to creator accounts only. It is not a nav slot.' and 'Slot 5 is Settings, not Profile. Profile is a row inside Settings and is also reachable from the header avatar (21 Aug 2026).' Web: src/components/layout/BottomNav.tsx lines 28-34, Sidebar.tsx, CreateFab.tsx.
+- **payment method for unlocks and tips** [H4, H5, H7, H8, H14, H15, H16, H17, H18, H19, H25, H26, H27] (A4)
+  - canvas: 'Paid from the Naira wallet with the transaction PIN. There's no checkout page and no card form.' (Unlock section); 'Every price is paid from the wallet with the PIN.' (Home board header); offer bars 'Pay from wallet'; design-bundle rule: 'Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.'
+  - current: 'Each wallet is a Flutterwave *payout subaccount* … Flutterwave custodies it, WAWU only instructs.' Unlocks and tips today open a Flutterwave charge (POST /api/hub/content/{id}/unlock, POST /api/hub/tips) completed in Flutterwave's inline checkout on web (src/lib/flutterwave openFlutterwaveCheckout).
+- **wallet for every user (custody)** [H1, H14, H17, H36] (A4)
+  - canvas: Balance card '₦ Naira ₦485,250.75 Send Add Bills Scan' on every user's Today (H1, H36); unlock sheet 'Naira wallet · ₦485,250.75 available' for a buyer (H14); 'Not enough in your Naira wallet … Add ₦1,300' (H17).
+  - current: '**Creators have a wallet; WAWU does not hold the money.** Each wallet is a Flutterwave payout subaccount … WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.' Backend CreatorWallet exists for creator accounts only.
+- **free content** [H24, X6, X7] (A4)
+  - canvas: H24 'Free pieces show Tip instead of a price'; search results list 'How to price your first shoot · Tife Adeola · Video · Free' (X6, X7); free pages/lessons as previews (H4, H7, H25); design-bundle rule 'Content can be marked Free.'
+  - current: 'Maximum 5 items per account … No free/paid slot split, because every listing carries a price (brief B2: no free content).' (Note: the backend itself still accepts accessType 'free' and requires a creator's first upload to be free, content-piece.service.ts:451-488, so code and rule already disagree.)
+- **Trust Score on professional card** [H10] (A4)
+  - canvas: H10 '91 Trust Score' on the feed professional card.
+  - current: Web CLAUDE.md: the design-system readme 'describes a Trust Score system. **All of that is wrong.**' and '**Creator is an ACCOUNT TYPE**, not a trust-tier badge or an earned level.' Backend has EvgScore (score Int) but no 'Trust Score'.
+- **Home tab structure and TGIF placement** [H1, H29] (A4)
+  - canvas: Tabs 'Today · Following · For you'; TGIF is a card on Today that opens a full-screen reader (H29–H34).
+  - current: Web HomeScreen.tsx tabs Home · TGIF · For you · Following, citing 'The product owner's ordering was "TGIF - For You - Following"' and keeping TGIF as both a hero card and a tab.
+- **TGIF off behaviour (ads take the slot)** [H33, H36] (A4)
+  - canvas: H36 'The sponsored card takes TGIF's place, so ads keep running.'; section intro 'If someone turns TGIF off, the ad keeps its place on Today.'
+  - current: Web HomeScreen.tsx: 'Home itself still has something to show with the devotional off: the card is what goes, not the screen.' TGIF preference is client-only localStorage ('not something the server needs to know'). Current product rules list 'paid advertising' as a revenue stream but describe no placement.
+- **Shop live on Home** [H1, H36] (A4)
+  - canvas: H1 service row 'Pay bills · Events · Legal · Shop', Shop opens Flow SH.
+  - current: Web explore/page.tsx: 'Shop is pulled off the live surface for now (product-owner instruction, 12 Sep 2026)… dimmed and unclickable'.
+- **tip split** [H26, H28] (A4)
+  - canvas: Tip section 'Tips go straight into the creator's wallet.'; H26 'Goes straight to their wallet. They see your name and note.'; H28 '₦2,000 sent to Tife'.
+  - current: 'Revenue split is a flat 85/15, on every stream, with no exceptions.' Backend tip notification carries netAmount post-commission.
+- **paid DM payment path** [I3, I4, I5, I6] (A5)
+  - canvas: "₦ Pay from wallet · Naira wallet · ₦485,250.75 available" / "Send · ₦1,500 · PIN" (I3); design rule: "Payments: Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout."
+  - current: 01_SPEC.md: "Every one-time stream (PPV, downloads, DM, tips, Credits) reuses this exact call pattern" (Flutterwave inline checkout). Code: DirectMessageService.sendInit -> flutterwave.initCharge, sendVerify -> flutterwave.verifyCharge.
+- **custody of paid-DM money** [I3, I4] (A5)
+  - canvas: "Held by WAWU until Chidi answers" (I3); "Your ₦1,500 is held by WAWU." (I4)
+  - current: "Creators have a wallet; WAWU does not hold the money ... WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria." (current-product-rules.md, the one line flagged to raise before building)
+- **refund destination** [I4, I7] (A5)
+  - canvas: "It went back to your Naira wallet on Tuesday at 14:10." (I7); "comes back to your wallet" (I4)
+  - current: DmRefundService sends the refund to the original payment via Flutterwave POST /v3/transactions/:id/refund.
+- **wallet provider** [I3, I6, I14, I28] (A5)
+  - canvas: Design rule: "Payments: Fintava wallet only"
+  - current: "Each wallet is a Flutterwave payout subaccount: an account at Flutterwave MFB in the creator's own name"
+- **who has a wallet / P2P money** [I3, I6, I13, I14, I15, I16, I17, I18, I19] (A5)
+  - canvas: "Send money · From your Naira wallet · instant", "Request money · Femi pays from their wallet" (I13); fan pays paid DMs from a Naira wallet (I3, I6)
+  - current: "Creators have a wallet" (current-product-rules.md); WalletService.getWallet: "A wallet comes with a creator or professional account."; 01_SPEC §3: a balance usable for anything is "wallet/licensing territory"
+- **navigation** [I1, I24] (A5)
+  - canvas: Tab bar "Home Explore Inbox Wallet Me"; Communities is a chip inside Inbox (I1, I24)
+  - current: "Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings"
+- **paid-DM penalty thresholds** [I22, I23] (A5)
+  - canvas: "From I21 · over 20% unanswered" -> warned (I22); "Past 30% and paid messages switch off for 7 days" (I22); "From I21 · over 30% unanswered" -> disabled7 (I23). No 30-day tier drawn.
+  - current: 01_SPEC §2: "Under 10% → no penalty. 10–30% → warning notification. 30–50% → DM auto-disabled for 7 days. Over 50% → DM auto-disabled for 30 days."
+- **credits payment path** [I28, I29] (A5)
+  - canvas: "₦ Pay from wallet ... Buy 120 credits · ₦1,000" then PIN (I28); "Paid ₦1,000 from your Naira wallet" (I29)
+  - current: Credits bought through Flutterwave checkout (01_SPEC line 163; CreditPurchaseService)
+- **creator earnings movement** [I11] (A5)
+  - canvas: "₦1,275 added to your earnings ... It moves to your wallet from Earnings (W39)." (I11)
+  - current: WalletFundingService (cron fund-creator-wallets) "moves each share out to its owner as it is earned" automatically
+- **free user-to-user chat** [I12, I1] (A5)
+  - canvas: "A normal chat between two WAWU users." (I12), messaging from Inbox compose (I1 hotspot 6)
+  - current: 01_SPEC: "They pay for direct access to creators (DM)"; web /messages: "This inbox is for creators"; the only DM in the product is the paid DirectMessage
+- **payments provider / rail for tickets, bills, legal fees, CAC** [E3, E4, E10, E11, E25, S5, S6, S11, S12, S19, S22, S26, S30] (A6)
+  - canvas: Events board: 'Tickets are paid from the wallet.' E3/S5/S19/S22/S30: '₦ Pay from wallet · Naira wallet · ₦485,250.75 available'. Bundle rule: 'Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.'
+  - current: Backend: event-ticketing buy() returns flutterwaveConfig and cancel() is 'a real Flutterwave refund per order'; bills, legal consultation/service fees and CAC all init Flutterwave checkout (ref/backend-payment-providers.txt: '1220 flutterwave'). Product rule: 'Each wallet is a Flutterwave *payout subaccount*… Flutterwave custodies it, WAWU only instructs.'
+- **who has a wallet (buyers vs creators)** [E3, E11, S5, S11, S12, S27] (A6)
+  - canvas: Every buyer (ticket buyer, bill payer, legal client) pays 'from wallet' with a Naira balance; refunds go 'back in your Naira wallet' (E11) and failed bills are 'Reversed to your wallet' (S12).
+  - current: '**Creators have a wallet; WAWU does not hold the money.** Each wallet is a Flutterwave payout subaccount … in the creator's own name.' Backend CreatorWallet is creator-only and supports earning|withdrawal|reversal, no spend.
+- **custody of ticket money between sale and event (and of paid-DM money until reply)** [E3, E11, E18, E25, P2] (A6)
+  - canvas: E25: 'This refunds real money · All 64 buyers get their money back.' E18: 'Yours after WAWU's cut ₦408,000'. P2: 'replies within 24 hours, or you're refunded automatically.'
+  - current: 'The one line to raise before building is the wallet note: who custodies creator money decides whether a CBN licence is needed… WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.' Today Flutterwave holds the charge and refunds from it; host earnings are never paid out at all (WalletFundingService does not fund EventOrder). With wallet-to-wallet payment, someone must hold ticket money until the event (so cancellation can refund) and DM money until reply.
+- **free events vs no free content** [E1, E15] (A6)
+  - canvas: E1: 'Monetise Your Content Online · Free'. E15: 'Set price to ₦0 for a free event.'
+  - current: 'Maximum 5 items per account… every listing carries a price (brief B2: no free content).' and B2 lists 'events & tickets' as a listing type. (Backend already supports TicketTier 'free'; bundle rule also says 'Content can be marked Free.')
+- **paid DM pricing unit (professionals)** [P1, P5] (A6)
+  - canvas: P1: 'Pay to send the first message.' and '₦5,000 a message'; P5: 'People find you here and pay to send the first message.'
+  - current: Backend direct-message.service.ts: 'Paid creator DMs with a 24h response deadline'; every DirectMessage is its own Flutterwave charge with one response (no free follow-up thread).
+- **paid-DM refund hold vs 'no escrow'** [P2] (A6)
+  - canvas: Bundle rule: 'Professionals: paid DMs only. No booking or escrow.' P2: 'Funmi replies within 24 hours, or you're refunded automatically.'
+  - current: Backend holds the DM earning back until answered ('an unanswered one is refundable until it expires', wallet-funding.service.ts) and refunds via DmRefundService. professional.service.ts: 'there is no booking, no scheduling, no escrow'. Whether a wallet-paid conditional hold counts as escrow needs a ruling. Boards P1-P10 otherwise show NO booking, calendar or escrow.
+- **legal consultation fees and media** [S18, S19, S25] (A6)
+  - canvas: S18: 'Video call 30 minutes ₦15,000', 'Phone call 20 minutes ₦10,000', 'In person · Arranged by email, fee per matter · On request'.
+  - current: Backend CONSULTATION_FEES: chat 60 min ₦25,000, zoom 60 min ₦45,000, physical no fee; ConsultationMedium enum has no phone. (Designer marks these fees as placeholders.)
+- **CAC business name registration price** [S24, S26] (A6)
+  - canvas: S24/S26: 'Business name registration · CAC · 5–7 working days · ₦35,000'.
+  - current: service-application.service.ts CAC_FEE_NAIRA = 25_000; legal catalogue 'cac-registration' priceNaira null.
+- **legal assistant before payment** [S14, S15, S17, S24] (A6)
+  - canvas: Legal section: 'it starts with a chat. The assistant profiles the problem and writes a brief.' S14: 'Nothing is charged'.
+  - current: legal-chat.service.ts: 'The thread opens once the consultation is PAID FOR — not at intake.' Pre-payment profiling is a structured form (legal-intake).
+- **bottom navigation on the Start-here entry maps** [E1, S2, P1] (A6)
+  - canvas: Events, Services and Professionals Start-here phones: 'Home Explore Inbox Wallet Me'.
+  - current: 'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings'.
+- **stale 90/10 credits comment in ticketing code** [E15, E18] (A6)
+  - canvas: E15: 'You keep 85% of every ticket.' E18: '85%'.
+  - current: Rule: 'Revenue split is a flat 85/15, on every stream… WAWU Credits… moved to 85/15 on 21 Sep 2026.' But event-ticketing.constants.ts comment still says 'WAWU Credits are the deliberate exception at 90/10 for everyone… do not collapse the two.' Ticket rate itself (0.15) matches the canvas.
+- **shop is switched off on web** [SH-START, SH1, SH2, SH3, SH4, SH5, SH6, SH8, SH9, SH10, SH11, SH12, SH13, SH14, SH15] (A7)
+  - canvas: Shop opens from the Shop tile on Home ... 1 Shop Marketplace Opens SH1
+  - current: const SHOP_LIVE = false; 'Shop is pulled off the live surface for now (product-owner instruction, 12 Sep 2026)' (src/app/(app)/shop/layout.tsx); platform-services Shop tile soon: true
+- **shop sellers: first-party catalogue vs 'Sell on WAWU'** [SH1, SH7] (A7)
+  - canvas: Sell on WAWU · List your gear and products · Get started (SH1); 'Approve ₦263,000 to WAWU Shop' (SH7)
+  - current: schema.prisma WAWU Commerce header: 'No seller/vendor. Stock is uploaded from the admin dashboard, so WAWU is the seller and there is no revenue split to snapshot.' Also current rules: 'Maximum 5 items per account, counted across products, content and services together.'
+- **first-party commerce engine vs handoff-only rule** [SH1, SH4, SH6] (A7)
+  - canvas: Shop · a creator-gear marketplace. The cart is called your WOW. Delivery is arranged with you after paying. Paid from the wallet. (cart, checkout, delivery, orders, refunds)
+  - current: 'WAWUBasket / WAWUBeauty are external apps. Handoff only — never rebuild their commerce engine.' (backend schema says WAWU Commerce is NOT that handoff; the mobile Shop is WAWU's own catalogue, so the rule is not literally breached, but a ruling is needed on whether a first-party commerce engine is intended)
+- **payments provider and method** [SC5, SC6, SH6, SH7, SH14] (A7)
+  - canvas: design rule: 'Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.'; SC5/SH6 'Pay from wallet · Naira wallet'
+  - current: 'Each wallet is a Flutterwave payout subaccount'; shop checkout opens a Flutterwave card charge; schema: 'No wallet. Orders are paid by card, like everything else here.'
+- **who has a wallet / custody** [SC5, SH-START, SH6, SH10] (A7)
+  - canvas: buyer (Lennox) has 'Naira wallet · ₦485,250.75 available' and spends it on a school and on WAWU Shop
+  - current: 'Creators have a wallet; WAWU does not hold the money ... Flutterwave custodies it, WAWU only instructs.' wallet.controller.ts: 'a creator's own wallet, and nobody else's'
+- **revenue split on school enrollment** [SC5, SC6, SC7] (A7)
+  - canvas: 'Course fee ₦150,000 · Fee No fee · Total ₦150,000'; 'Approve ₦150,000 to Greenfield Tech Academy'
+  - current: 'Revenue split is a flat 85/15, on every stream, with no exceptions. Never invent a rate.'
+- **second revenue model: commission paid by school** [SC9] (A7)
+  - canvas: 'Or apply on the school's site through the WAWU link, and the school pays WAWU a commission.' / 'Tracked link, for commission.'
+  - current: 'there is now exactly ONE split in the product'; revenue 'from discrete paid actions: verification, paid featuring, paid advertising, WAWU Credits'
+- **school as a money-receiving counterparty** [SC6, SC7] (A7)
+  - canvas: 'Schools are added from the WAWU dashboard: profile, expertise, courses, prices and their unique WAWU link.' Money approved 'to Greenfield Tech Academy'
+  - current: 'Creator is an ACCOUNT TYPE' (AccountType enum: user | creator); 'ONE gate now ... manual KYC unlocks EARNING'
+- **navigation** [SC-START, SC8, SH-START, SH9] (A7)
+  - canvas: bottom bar 'Home Explore Inbox Wallet Me'; 'Me menu · My courses' / 'Me menu · My purchases → orders'
+  - current: 'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings'; 'Slot 5 is Settings, not Profile'
+
+## Facts drawn on the canvas, unverified (357)
+
+- W26: In · September ₦212,400.00 _(sample amount / claim)_
+- W26: Out · September ₦96,820.50 _(sample amount / claim)_
+- W26: Unlock · Lighting night shoots 3 buyers +₦7,500.00 _(sample amount / claim)_
+- W26: MTN airtime −₦2,000.00 _(sample amount / claim)_
+- W26: Ikeja Electric Prepaid · 45.2 kWh −₦10,500.00 _(sample amount / claim)_
+- W39: Ready to move ₦84,500.00 _(sample amount / claim)_
+- W39: ₦312,800 earned all time _(sample amount / claim)_
+- W39: Unlocks ₦61,500 _(sample amount / claim)_
+- W39: Tips ₦14,000 _(sample amount / claim)_
+- W39: Paid DMs ₦9,000 _(sample amount / claim)_
+- W39: How I light a night shoot +₦42,000 _(sample amount / claim)_
+- W6: 'Your money is safe. This is a connection problem between us and the bank.' (custody claim) _(sample amount / claim)_
+- W1: WAWU · Fintava MFB _(provider/licence)_
+- W1: Naira balance ₦485,250.75 _(sample amount / claim)_
+- W1: account number 812 345 6789 _(sample amount / claim)_
+- W1: Verve WAWU card Physical · ••4821 · Active _(card scheme)_
+- W1: Amaka Nwosu Tip on your video +₦2,000.00 _(sample amount / claim)_
+- W1: Ikeja Electric Prepaid · 45.2 kWh −₦10,500.00 _(sample amount / claim)_
+- W1: Chidinma Okoro Transfer · GTBank −₦25,000.00 _(sample amount / claim)_
+- W2: Dollar balance $1,240.50 _(sample amount / claim)_
+- W2: USD account · Fintava •••• 4410 _(provider/licence)_
+- W2: Swap to Naira At ₦1,580 per $1 _(FX rate)_
+- W2: Upwork Global Freelance payout +$420.00 _(fee)_
+- W2: Payoneer Client payment +$150.00 _(sample amount / claim)_
+- W2: 'Share your US account details with Upwork, YouTube or a client' (capability claim) _(sample amount / claim)_
+- W3: USDT and BTC held by Fintava's custody partner _(provider/licence)_
+- W3: Tether USDT · TRC-20, ERC-20 _(crypto asset)_
+- W3: Bitcoin BTC · Bitcoin network _(crypto asset)_
+- W3: 320.00 USDT ≈ $320.00 _(crypto asset)_
+- W3: 0.014200 BTC ≈ $1,399.90 _(crypto asset)_
+- W3: Crypto balance $1,719.90 _(sample amount / claim)_
+- W5: 'Send to 812 345 6789 from any Nigerian bank.' _(sample amount / claim)_
+- W5: ₦0.00 _(sample amount / claim)_
+- W14: 'the money is reversed automatically' (provider behaviour claim) _(sample amount / claim)_
+- W14: Amount ₦25,010.00 _(sample amount / claim)_
+- W14: Reference WAW-8F2K-91QX _(reference format)_
+- W8: Guaranty Trust Bank 0123456789 -> Chidinma Adaeze Okoro (sample) _(sample amount / claim)_
+- W8: Kuda MFB · 2011458890 (sample) _(sample amount / claim)_
+- W9: quick amounts ₦5,000 / ₦10,000 / ₦25,000 / ₦50,000 _(sample amount / claim)_
+- W10: Fee ₦10.00 _(fee)_
+- W10: Total ₦25,010.00 _(sample amount / claim)_
+- W11: 'Face ID can stand in once it's set up' _(sample amount / claim)_
+- W12: Reference WAW-8F2K-91QX _(reference format)_
+- W12: Fee ₦10.00 _(fee)_
+- W19: Fee ₦25.00 _(fee)_
+- W19: 'Usually within minutes' _(timing)_
+- W19: Reference WAW-W9L2-33RT _(reference format)_
+- W15: Bank transfer Free · instant _(fee)_
+- W15: 'It lands in seconds' _(timing)_
+- W15: Debit card Instant · 1.5% fee _(fee)_
+- W15: $1 = ₦1,580.00 _(FX rate)_
+- W15: Bank Fintava MFB _(provider/licence)_
+- W16: Card fee ₦150.00 (1.5%) _(fee)_
+- W16: You pay ₦10,150.00 _(sample amount / claim)_
+- W16: Wallet gets ₦10,000.00 _(sample amount / claim)_
+- W16: Verve ••7710 GTBank · expires 04/28 (sample) _(card scheme)_
+- W17: Fee ₦25.00 _(fee)_
+- W17: Arrives In a few minutes _(timing)_
+- W18: 'It usually takes 1–2 working days.' _(delivery/timing)_
+- W23: Network fee 1.00 USDT _(fee)_
+- W23: They get 119.00 USDT _(crypto asset)_
+- W23: Arrives About 2 minutes _(timing)_
+- W23: TRC-20 · Tron _(sample amount / claim)_
+- W20: Rate $1 = ₦1,580.00 _(FX rate)_
+- W20: Holds 0:28 (30-second rate hold) _(rate hold)_
+- W20: Fee No fee _(fee)_
+- W21: Swap ₦158,000 for $100.00 _(sample amount / claim)_
+- W21: Rate $1 = ₦1,580.00 _(FX rate)_
+- W21: Fee No fee _(fee)_
+- W22: Networks TRC-20, ERC-20, BEP-20 _(crypto network)_
+- W22: address TQ7xN3fK8pLm2aVr5sYc9WbE4hJd6KfP (sample) _(sample amount / claim)_
+- W25: 'Scan to pay Lennox from any WAWU or bank app' (NQR interoperability claim) _(sample amount / claim)_
+- W24: 'Point at a WAWU or bank QR code' _(sample amount / claim)_
+- W27: Reference WAW-T1P9-7ZQA _(reference format)_
+- W43: 'One page, A4.' _(sample amount / claim)_
+- W43: 'Fintava MFB, licensed by the CBN' _(provider/licence)_
+- W43: 'Check it at wawu/r/T1P9' _(sample amount / claim)_
+- W41: 'Check it at wawu/r/T1P9' _(sample amount / claim)_
+- W41: 'Fintava MFB, licensed by the CBN' _(provider/licence)_
+- W41: Bank Fintava MFB _(provider/licence)_
+- W42: 'Fintava MFB, licensed by the CBN' _(provider/licence)_
+- W29: Physical card Delivered in 3–5 working days · ₦2,000 _(delivery/timing)_
+- W29: Virtual card · Free _(fee)_
+- W29: 'anywhere in Nigeria that takes Verve' _(card scheme)_
+- W30: Card ₦1,500 _(card fee)_
+- W30: Delivery ₦500 _(card fee)_
+- W30: Total ₦2,000 _(card fee)_
+- W30: 'Matches the name on your ID' _(sample amount / claim)_
+- W31: Shoprite Lekki POS −₦18,450.00 (sample) _(sample amount / claim)_
+- W31: ATM withdrawal Access Bank −₦20,000.00 (sample) _(sample amount / claim)_
+- W33: ATM ₦100,000 daily _(limit)_
+- W33: Shops and POS ₦500,000 daily _(limit)_
+- W33: Online ₦300,000 daily _(limit)_
+- W33: ₦23,200 used today (sample) _(sample amount / claim)_
+- W32: 'Freezing works instantly' _(fee)_
+- W35: Tier 2 account ₦5,000,000 daily · BVN + NIN verified _(limit/KYC tier)_
+- W35: Fintava MFB · 812 345 6789 _(provider/licence)_
+- W36: 'Four digits.' _(sample amount / claim)_
+- W37: 'Resend in 0:42' _(sample amount / claim)_
+- W37: +234 803 ••• 4412 (sample) _(sample amount / claim)_
+- W38: Stamped PDF 'for visa and loan applications' (acceptance claim) _(sample amount / claim)_
+- W38: lennox@wawu.africa (sample) _(sample amount / claim)_
+- W40: 'It's instant and free.' _(fee)_
+- Section 11 (For approval components, no id): Your money is held at Fintava MFB Licensed by the CBN. Deposits insured by NDIC. _(provider/licence)_
+- W1-W6 section header: "Wallet" is the label, but these are full bank accounts at Fintava MFB. _(provider/licence)_
+- A1: 'bank it all in one app' (implies a bank account per user) _(provider/licence)_
+- A2: 'I want to earn ... Free.' (earning account costs nothing) _(legal/KYC)_
+- A3: 'Must be the number on your BVN' _(legal/KYC)_
+- A3: 'Dial *565*0# to get it' (USSD code) _(legal/KYC)_
+- A3: 'Checked with NIBSS. We never see your balances.' _(provider/licence)_
+- A3: password 'At least 8 characters' (matches WAWU ID MinLength(8)) _(other)_
+- A4: 'Enter the 6-digit code' _(other)_
+- A4: 'Sent by SMS' _(other)_
+- A4: 'Resend in 0:42' _(time/limit)_
+- A5: 'From your BVN' includes 'State you live in' and 'Occupation' (claim that a BVN record carries these is unverified) _(legal/KYC)_
+- A6: 'It must match your BVN photo' _(legal/KYC)_
+- A8: 'Tier 1 · Fintava MFB' _(provider/licence)_
+- A8: 'Bank Fintava MFB' _(provider/licence)_
+- A8: 'Limit ₦300,000 balance' _(amount/limit)_
+- A8: sample NUBAN 812 345 6789 _(other)_
+- A9: PIN is 'Four digits' _(other)_
+- A9: 'It approves every payment and transfer.' _(other)_
+- A10: 'Four digits' _(other)_
+- A11: 'Free to list' _(other)_
+- A11: 'Free to host' _(other)_
+- A11: 'Getting paid needs your ID checked' _(other)_
+- A12: 'Pick three or more' _(other)_
+- A14: phone must equal the BVN-registered phone _(legal/KYC)_
+- A17: Tier 1: BVN and a selfie, ₦50,000 per deposit, ₦300,000 balance _(limit)_
+- A17: Tier 2: NIN, ₦100,000 per deposit, ₦500,000 balance _(limit)_
+- A17: Tier 3: Proof of address, ₦5,000,000 per deposit, no balance cap _(limit)_
+- A17: 'Limits set by the CBN.' _(provider/licence)_
+- A18: 'Dial *346#' (USSD code) _(legal/KYC)_
+- A18: 'Checked with NIMC against your BVN details.' _(provider/licence)_
+- A19: same tier table as A17 _(other)_
+- A20: 'Utility bill · last 3 months' _(legal/KYC)_
+- A21: 'Creators only. The account must be in your own name.' _(legal/KYC)_
+- A21: 'matches your BVN' _(legal/KYC)_
+- A24: 'It expires in 30 minutes.' (WAWU ID: 1 hour) _(time/limit)_
+- Z1: '₦128,400 this month' _(amount/limit)_
+- Z1: 'My content 4 of 7 slots' _(amount/limit)_
+- Z2: 'Tier 2' on Wallet and PIN row _(other)_
+- Z6: 'This can't be undone after 30 days.' _(time/limit)_
+- Z6: 'You have ₦485,250.75.' _(amount/limit)_
+- Z6: 'Empty your wallet first' _(other)_
+- Z8: 'On 26 October' (≈25 days after board date; implies 30-day window) _(time/limit)_
+- Z8: 'Sign in before then to cancel.' _(other)_
+- Z9: 'Version 2.4.0' _(version/date)_
+- Z9: 'Banking by Fintava MFB' _(provider/licence)_
+- Z9: 'Licensed by the CBN' _(provider/licence)_
+- Z9: 'a real bank account built in' _(provider/licence)_
+- Z9: support@wawuafrica.com (bundle rule says emails stay @wawu.africa) _(other)_
+- Z10: 'Updated 1 September 2026' _(version/date)_
+- Z10: 'You need to be 18 or over' _(legal/KYC)_
+- Z10: 'One account per person' _(legal/KYC)_
+- Z10: 'held at Fintava MFB' _(provider/licence)_
+- Z10: 'Fees are shown before you pay' _(other)_
+- Z11: 'Updated 1 September 2026' _(version/date)_
+- Z11: 'your BVN check result' is collected _(legal/KYC)_
+- Z11: never show 'your BVN, NIN or balance' _(legal/KYC)_
+- M1: Professional tick ₦2,000 a year _(price)_
+- M1: tick 'shows everywhere, lets you host events' _(entitlement)_
+- M2: Paid messages ₦300 a message _(price)_
+- M2: replies within 24 hours _(SLA/limit)_
+- M8: Bio limit 160 characters ('86 / 160'); backend allows 500 _(limit)_
+- M8: profile link format wawu/lennox _(link format)_
+- M11: Up to 25 uploads with a tick; free accounts get 5 _(limit)_
+- M11: 10 GB library space with a tick; free accounts get 1 GB _(limit)_
+- M11: Identity check usually 1–3 days _(SLA)_
+- M11: Ticks are yearly (Active until 12 Oct 2026 / until 26 Sep 2027) _(term)_
+- M11: Every tick: 'Reach more people. Your content is pushed further' _(entitlement)_
+- M12: Professional tick ₦2,000 for 1 year, paid from 'Naira wallet' _(price/provider)_
+- M12: Wallet balance ₦485,250.75 available (sample) _(money amount)_
+- M13: Transaction PIN required to pay _(security requirement)_
+- M14: 'Payouts go to your bank' once identity check approved _(payout/custody)_
+- M16: Identity check is 'Needed to get paid' _(KYC requirement)_
+- M18: You keep 85% of credits _(rate)_
+- M18: Earned in September ₦128,400.00, +18% (sample) _(money amount)_
+- M18: Creator account set-up is Free _(price)_
+- M20: Audio preview clip 30–60 seconds; Video MP4 or MOV; Audio MP3 or WAV _(limit)_
+- M21: PDF upload up to 100 MB (backend global cap 512 MiB) _(limit)_
+- M24: 85% to the creator; You earn per sale ₦2,550 on ₦3,000 _(rate)_
+- M24: Listing fee: Free / No listing fee _(fee)_
+- M24: Price presets ₦1,000 / ₦2,500 / ₦3,000 / ₦5,000 _(money amount)_
+- M24: WAWU checks every piece before it goes live _(policy)_
+- M25: Review usually takes a few hours _(SLA)_
+- M26: Deleting a rejected piece frees the slot _(policy)_
+- M31: Missed paid question: ₦1,500 refunded to the asker, creator earns nothing _(refund rule)_
+- M31: Tip +₦2,000; New sale +₦2,550 (net) _(money amount)_
+- M36: work link format wawu/lennox/kora _(link format)_
+- M37: Free pieces count toward your uploads; fans can still tip _(policy)_
+- H1: Naira wallet balance ₦485,250.75 shown on Home _(money)_
+- H1: TGIF '5 cards · 2 min · 12.4K reading today' (board itself has 6 cards incl. sponsored) _(count)_
+- H3: Golden Hour presets ₦2,500 _(price)_
+- H4: Freelancer's Pricing Playbook ₦3,000, 84 pages, '12 pages free' _(price/limit)_
+- H19: 'Pages 1–4 are free' / 'Preview · pages 1–4 of 84' (contradicts H4's '12 pages free' for the same piece) _(limit)_
+- H5: Locked video ₦2,500, 18 min; caption '₦2M a month agency' _(price)_
+- H7: VFX for Beginners course ₦8,000, 12 lessons, lesson 1 free _(price)_
+- H8: Aba Collection patterns ₦3,500 _(price)_
+- H9: ₦5,000 course, ₦1,500 PDF; 18.2K followers, 64 posts, 4.9 rating _(price/count)_
+- H10: Paid DM 'Message · ₦1,500' _(price)_
+- H10: 'No reply in 24 hours and your ₦1,500 comes back' (refund promise) _(refund/legal)_
+- H10: 91 Trust Score; 4.9 rating, 212 reviews; ~3h usual reply _(score)_
+- H14: 'Fee: No fee' on content unlock _(fee)_
+- H14: 'Yours Forever, in My purchases' (perpetual entitlement claim) _(legal)_
+- H16: Receipt reference format 'WAW-UNL-4K2P' _(format)_
+- H17: balance ₦1,200.00, shortfall top-up ₦1,300 _(money)_
+- H18: 'You won't be charged twice' (guarantee) _(legal)_
+- H25: 1,280 students; 12 lessons · 2h 40m; ₦8,000 _(count/price)_
+- H26: Tip presets ₦500 / ₦1,000 / ₦2,000 / ₦5,000 _(price)_
+- H26: 'Goes straight to their wallet' (custody/split claim) _(provider/licence)_
+- H29: Psalm 118:24 (KJV) verse text reproduced _(statutory/licence)_
+- H29: Reaction counts Amen 2.1K / 3.4K (H32: 8.9K) _(count)_
+- H33: Sponsored 'Gospel Night Live · Abuja · Sat 18 October · from ₦5,000' _(price)_
+- H33: 'Ads keep TGIF free'; 'Ads are sold from the WAWU dashboard' _(commercial)_
+- H22: Share link format 'wawu/c/pricing-playbook' _(format)_
+- H35: Share link format 'wawu/tgif' _(format)_
+- X1: WAWU Creators Summit, Lagos, 12 Oct, Eko Convention Centre; Gospel Night Live OCT 18 Abuja; Monetise Your Content NOV 02 Online _(event)_
+- X6: Search result prices ₦3,000 / ₦2,500 / Free / ₦1,500 / ₦1,000; Pricing clinic 380 members; Lagos Freelancers 1,204 members _(price/count)_
+- I3: ₦1,500 per paid message (example price) _(money)_
+- I3: 24-hour default reply window _(limit)_
+- I3: "Usually replies in about 3 hours" _(metric)_
+- I3: Naira wallet · ₦485,250.75 available _(money)_
+- I3: "Held by WAWU until Chidi answers" _(provider/licence)_
+- I3: full refund if no reply in time _(policy)_
+- I6: You need ₦1,500. You have ₦900.00. Add ₦600 _(money)_
+- I7: ₦200 refunded to Naira wallet; creator earned nothing _(policy)_
+- I10: 85% of ₦1,500 = ₦1,275 _(rate)_
+- I11: ₦1,275 added to earnings _(money)_
+- I21: lowest price ₦50 (board note) _(limit)_
+- I21: presets ₦100, ₦500, ₦1,000, ₦2,500 _(money)_
+- I21: reply windows 24 hours / 2 days / 3 days / 1 week _(limit)_
+- I21: Your share 85% _(rate)_
+- I22: warning over 20% unanswered _(limit)_
+- I22: switch off past 30% for 7 days _(limit)_
+- I23: locked 7 days, "Back on 3 October" _(limit)_
+- I24: 1 credit per message sent; reading free _(rate)_
+- I28: 50 credits ₦500 / 120 credits ₦1,000 / 300 credits ₦2,000 _(money)_
+- I28: Credits don't expire and can't be cashed out _(policy)_
+- I32: Free to host; host keeps 85% of every credit spent in the room _(rate)_
+- I32: Private rooms need a cover image _(policy)_
+- I13: File: PDF up to 20 MB _(limit)_
+- I13: Send money "instant" _(provider/licence)_
+- I14: ₦25,000 send example _(money)_
+- I16: ₦12,000 request example _(money)_
+- I1: ₦5,000 received example _(money)_
+- I33: share link wawu/c/aba-tailors _(link)_
+- I2: Section note: "From the code: the fan pays once per message, the creator has a reply window (24 hours by default) ... Paid from the wallet with the PIN. Professionals work the same way." _(claim)_
+- I24: Section note: "From the code: reading is always free, sending costs 1 WAWU Credit a message ... bought from the wallet. There's no trial. Rooms are open or private, and hosting is free for creators." _(claim)_
+- E1: WAWU Creators Summit from ₦7,500 _(price)_
+- E1: Gospel Night Live from ₦5,000 _(price)_
+- E1: Monetise Your Content Online: Free _(price)_
+- E1: Aba Fashion Market from ₦3,500 _(price)_
+- E1: Host your event: 'Sell tickets. Verified accounts only.' _(verification price)_
+- E2: Regular · General admission ₦7,500 _(price)_
+- E2: VIP · Front rows, lunch ₦12,000 _(price)_
+- E2: Early bird · Ended 30 Sep · Sold out _(price)_
+- E2: 1 ticket ₦7,500 _(verification price)_
+- E2: Sun 12 Oct · 10:00 WAT, Eko Convention Centre, Victoria Island _(price)_
+- E3: Fee: No fee (on ticket purchase) _(fee)_
+- E3: Naira wallet · ₦485,250.75 available _(balance (sample))_
+- E3: Total ₦7,500 _(price)_
+- E5: ticket code format K7QX-4M2P-9WLA-3RTE _(verification price)_
+- E8: Show 24 events _(price)_
+- E11: ₦7,500 is back in your Naira wallet _(balance (sample))_
+- E14: 'Missing addresses are the top reason events get sent back.' _(price)_
+- E15: You keep 85% of every ticket _(commission/split)_
+- E15: Regular ₦5,000 × 100 _(price)_
+- E15: VIP ₦12,000 × 20 _(price)_
+- E15: Set price to ₦0 for a free event _(price)_
+- E17: Creators Summit 64 sold _(price)_
+- E18: Yours after WAWU's cut ₦408,000 · 85% (64 × ₦7,500 = ₦480,000 gross; 85% = ₦408,000) _(commission/split)_
+- E18: Left 56 (implies capacity 120) _(price)_
+- E18: 3 links · 22 sales _(price)_
+- E21: Verified tick ₦2,000 a year (creator or professional) _(verification price)_
+- E25: All 64 buyers get their money back _(price)_
+- P1: Funmi Adeyemi ₦5,000 a message _(price)_
+- P1: Tunde Bakare ₦7,500 a message _(price)_
+- P1: Ngozi Umeh ₦2,500 a message _(price)_
+- P1: Emeka Obi ₦3,000 a message _(price)_
+- P1: 'Pay to send the first message' _(price)_
+- P2: Ask a question · ₦5,000 _(price)_
+- P2: Replies within 24 hours, or you're refunded automatically _(timing/limit)_
+- P2: Practising licence · Issued by ICAN · checked by WAWU _(provider/body name)_
+- P5: 'pay to send the first message' _(price)_
+- P6: 'We check your licence with the body that issued it' (verification claim) _(legal/verification claim)_
+- P6: Licence number ICAN/2016/40921, issuer ICAN _(provider/body name)_
+- P10: Creator account setup is free _(price)_
+- S2: 3 due in October · ₦38,200 _(price)_
+- S2: Ikeja Electric ₦10,500 _(price)_
+- S2: MTN airtime ₦2,000 _(price)_
+- S2: DStv Compact ₦15,700 _(price)_
+- S3: Billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric _(provider/body name)_
+- S4: Amount presets ₦2,000 / ₦5,000 / ₦10,000 / ₦20,000 _(price)_
+- S5: Fee: No fee (bills) _(fee)_
+- S5: Naira wallet · ₦485,250.75 available _(balance (sample))_
+- S7: 45.2 kWh for ₦10,000 _(price)_
+- S7: Reference format WAW-BIL-8Q2M _(price)_
+- S8: Airtime presets ₦500 / ₦1,000 / ₦2,000 / ₦5,000 _(price)_
+- S8: Networks MTN, Airtel, Glo, 9mobile _(provider/body name)_
+- S9: DStv Padi ₦4,400/month _(price)_
+- S9: DStv Yanga ₦6,000/month _(price)_
+- S9: DStv Confam ₦11,000/month _(price)_
+- S9: DStv Compact ₦15,700/month _(price)_
+- S9: DStv Compact Plus ₦25,000/month _(price)_
+- S11: Balance ₦6,200.00, shortfall ₦3,800 _(balance (sample))_
+- S27: Still to pay ₦38,200 _(price)_
+- S27: In your wallet ₦485,250 _(balance (sample))_
+- S27: DStv Compact ₦15,700 _(price)_
+- S27: Ikeja Electric ₦10,500 _(price)_
+- S27: House rent ₦25,000 _(price)_
+- S27: Gym membership ₦2,700 _(price)_
+- S28: Ikeja Electric usual amount ₦10,500, due the 28th _(price)_
+- S14: 'Nothing is charged, and no price is quoted until a consultant has read it.' _(price)_
+- S16: 'Nothing is charged yet.' _(price)_
+- S18: Video call 30 minutes ₦15,000 _(price)_
+- S18: Phone call 20 minutes ₦10,000 _(price)_
+- S18: In person: arranged by email, fee per matter, on request _(fee)_
+- S18: Slots 09:00, 10:30, 12:00, 14:00, 15:30, 17:00 Lagos time _(timing/limit)_
+- S19: ₦15,000 video consultation _(price)_
+- S21: Quote ₦45,000 (tenancy agreement review) _(price)_
+- S21: Typed-name e-signature _(legal/verification claim)_
+- S22: Fee ₦45,000 _(fee)_
+- S24: Business name registration · CAC · 5–7 working days · ₦35,000 _(timing/limit)_
+- S26: Fee ₦35,000 _(fee)_
+- S26: Takes 5–7 working days _(timing/limit)_
+- S26: Needs ID, 2 name options, address _(price)_
+- S26: 'No lawyer needed' _(legal/verification claim)_
+- S25: Booking horizon: three weeks _(timing/limit)_
+- Events board header (E13–E25): 'From the code: verified accounts only, reviewed before it goes live, 85% to the host. Cancelling refunds every buyer.' _(commission/split)_
+- Events board header (E1–E12): 'Going is a free interest signal. Tickets are paid from the wallet.' _(payment rail)_
+- Services Start-here / S2: Sample Naira wallet balance ₦485,250.75 on Home balance card _(balance (sample))_
+- SC1: Greenfield from ₦45,000; Aba Fashion Institute from ₦30,000 _(price)_
+- SC1: ratings 4.8 and 4.7 (no review system exists) _(rating/social proof)_
+- SC2: 4.8 (1,240), Since 2016, '6,000 graduates placed in Lagos and remote roles' _(marketing claim)_
+- SC2: Product Design Bootcamp ₦150,000 / Frontend Development ₦180,000 / Data Analysis with Excel ₦45,000 _(price)_
+- SC3: ₦150,000 One payment; Starts Mon 3 November; 'Certificate, mentor, portfolio' _(price/claim)_
+- SC4: 'Greenfield gets these details so they can follow up with you.' (sharing name, email, phone with a third party) _(legal/data-protection)_
+- SC4: 8 seats left _(limit)_
+- SC5: Fee: No fee; Total ₦150,000 _(fee)_
+- SC5: Naira wallet · ₦485,250.75 available (kobo precision; backend stores whole naira) _(balance)_
+- SC6: Approve ₦150,000 to Greenfield Tech Academy (payee is the school; WAWU share unstated) _(payee/split)_
+- SC7: Greenfield will contact you within 2 working days _(SLA)_
+- SC7: Reference WAW-SC4K-81PQ _(reference format)_
+- SC9: the school pays WAWU a commission (rate not drawn) _(rate)_
+- SC9: greenfield.ng/apply?ref=wawu-7KQ2 _(link format)_
+- SC9: OPEN QUESTION: who receives on-WAWU enrollment money (school directly, or WAWU then payout), at what split, and is the school KYB'd; current product has exactly one split, 85/15 _(open question/split)_
+- SC11: November class full; next starts 12 January _(date)_
+- SH1: Rode NT-USB ₦185,000 was ₦210,000; Neewer 18" LED Ring Light ₦78,000 was ₦95,000 _(price)_
+- SH2: DJI Mic 2 Wireless Kit ₦430,000 _(price)_
+- SH3: 'Verified' (WAWU editorial genuineness claim) _(claim)_
+- SH4: Delivery 'Arranged with you' (no delivery fee) _(fee)_
+- SH6: Total ₦263,000 paid from Naira wallet ₦485,250.75 _(price/balance)_
+- SH7: Approve ₦263,000 to WAWU Shop (WAWU is merchant of record) _(payee)_
+- SH8: 'We'll call to arrange delivery'; Order WAW-SHP-2K9Q; Paid 26 Sep _(process claim/reference)_
+- SH10: Wacom Intuos Pro ₦385,000; 'Paid from Naira wallet' _(price/payment source)_
+- SH-START: Home Naira wallet ₦485,250.75 shown to a buyer _(balance)_
+
+## Third-party API capabilities needed (67)
+
+- **Fintava (named on canvas, unconfirmed)**: customer + NGN account (NUBAN) creation, tier 1 via BVN  [W1, W5]
+- **Fintava (named on canvas, unconfirmed)**: KYC tier upgrade (BVN + NIN) and per-tier limits  [W33, W35]
+- **Fintava (named on canvas, unconfirmed)**: account balance enquiry (NGN, USD, crypto)  [W1, W2, W3, W6]
+- **Fintava (named on canvas, unconfirmed)**: account transaction history / ledger feed  [W1, W26, W27]
+- **Fintava (named on canvas, unconfirmed)**: inbound credit (deposit) webhook  [W15, W26, W5]
+- **Fintava (named on canvas, unconfirmed)**: bank list  [W8]
+- **Fintava (named on canvas, unconfirmed)**: name enquiry (NIP)  [W8]
+- **Fintava (named on canvas, unconfirmed)**: outbound NIP transfer  [W10, W11, W12, W17, W19]
+- **Fintava (named on canvas, unconfirmed)**: transfer status requery  [W12, W14, W19]
+- **Fintava (named on canvas, unconfirmed)**: transfer success/failure/reversal webhook  [W14, W19]
+- **Fintava (named on canvas, unconfirmed)**: intra-bank (book) transfer between customer accounts and from WAWU's account  [W40, W7, W9]
+- **Fintava (named on canvas, unconfirmed)**: fee / charge collection to WAWU account  [W10, W17, W30]
+- **Fintava (named on canvas, unconfirmed)**: card charge (acquiring) with 3-D Secure and tokenised saved cards  [W16]
+- **Fintava (named on canvas, unconfirmed)**: USSD funding  [W15]
+- **Fintava (named on canvas, unconfirmed)**: USD virtual account with foreign receiving details  [W2]
+- **Fintava (named on canvas, unconfirmed)**: FX quote with rate lock and conversion execution  [W15, W20, W21]
+- **Fintava (named on canvas, unconfirmed) custody partner**: crypto deposit address generation per asset/network  [W22]
+- **Fintava (named on canvas, unconfirmed) custody partner**: crypto balances and USD valuation  [W3]
+- **Fintava (named on canvas, unconfirmed) custody partner**: crypto withdrawal with address validation and network fee estimate  [W23]
+- **Fintava (named on canvas, unconfirmed) custody partner**: crypto deposit webhook  [W3]
+- **Fintava (named on canvas, unconfirmed)**: virtual card issuance  [W29]
+- **Fintava (named on canvas, unconfirmed)**: physical card order and delivery tracking  [W30]
+- **Fintava (named on canvas, unconfirmed)**: card details reveal (PCI-scoped)  [W31]
+- **Fintava (named on canvas, unconfirmed)**: card freeze / unfreeze / block  [W32]
+- **Fintava (named on canvas, unconfirmed)**: card channel controls and spend limits  [W33]
+- **Fintava (named on canvas, unconfirmed)**: card PIN set/change  [W34]
+- **Fintava (named on canvas, unconfirmed)**: card transaction / authorisation webhook  [W31]
+- **Fintava (named on canvas, unconfirmed)**: NQR generate, decode and pay  [W24, W25]
+- **Fintava (named on canvas, unconfirmed)**: signed / stamped account statement  [W38]
+- **Flutterwave (existing) or Fintava bills**: bill catalogue, validate, pay (currently Flutterwave Bills API, card-funded)  [W1, W26, W28]
+- **WAWU ID (existing SSO) or an SMS provider**: OTP send/verify to phone on file  [W37]
+- **BVN verification (canvas: NIBSS; via Fintava or KYC aggregator, unconfirmed)**: BVN lookup returning phone, name, DOB, gender, photo  [A14, A3, A5]
+- **Liveness/face-match vendor (unnamed on canvas)**: liveness check + face match to BVN photo  [A16, A6, A7]
+- **NIN verification (canvas: NIMC)**: NIN lookup and match to BVN identity  [A18, A19]
+- **SMS gateway (canvas says SMS; WAWU ID uses Meta WhatsApp Cloud API with email fallback)**: 6-digit OTP delivery  [A15, A4]
+- **Fintava**: Tier 1 account (NUBAN) provisioning  [A8]
+- **Fintava**: account tier upgrade + per-tier limits  [A17, A18, A19, A20]
+- **Fintava (or current Flutterwave resolve-account)**: bank name enquiry for payout account  [A21]
+- **Fintava (or current Flutterwave)**: authoritative wallet balance for delete-account precheck  [Z6]
+- **Resend (existing in WAWU ID mail)**: password reset link email; data-export email  [A23, A24, Z4]
+- **Apple App Store / Google Play**: in-app review prompt (Rate the app)  [Z9]
+- **Fintava**: pay a platform fee from the user's wallet (per bundle rule 'Fintava wallet only'); possibly provider-side PIN  [M12, M13]
+- **Flutterwave**: current tick checkout + verify (POST /verification/purchase, /purchase/verify) and payout subaccount wallet; would need a subaccount-debit or transfer-to-merchant call to support pay-from-wallet if kept  [M12, M14, M15]
+- **Object storage (existing presign target)**: media for featured works  [M36]
+- **OS share sheet (Web Share API / native)**: share profile  [M1]
+- **Fintava**: wallet debit for unlocks/tips + balance per user (design-bundle rule 'Fintava wallet only')  [H1, H14, H17, H26]
+- **Flutterwave**: current charge path for unlocks/tips and creator payout subaccounts (would be replaced or kept per ruling)  [H14, H26]
+- **OS share sheet / WhatsApp / Instagram Story intents**: share content link and TGIF image (client-only, no API)  [H22, H35]
+- **none (in-house)**: ad serving and tracking; no third-party ad network is drawn  [H33, H36]
+- **Fintava (named in design rules)**: wallet balance, PIN-authorised debit/hold, wallet-to-wallet transfer, credit back on refund  [I14, I18, I28, I3, I6, I7]
+- **FCM / APNs or Expo Push (not chosen)**: mobile push delivery for replies, refunds, money and join decisions  [I15, I18, I31, I5, I7]
+- **Redis (or managed pub/sub)**: fan-out for WebSocket gateway across replicas  [I12, I25]
+- **Flutterwave (current)**: inline charge + refund for paid DMs and credits; would be removed from these paths by the canvas  [I28, I3, I7]
+- **Fintava**: buyer wallet balance enquiry  [E3, S11, S27, S5]
+- **Fintava**: wallet debit / transfer to a collection account for tickets, bills, legal fees, CAC  [E3, S19, S22, S26, S30, S5]
+- **Fintava**: transaction status requery + webhook  [E10, S12]
+- **Fintava**: credit/reversal to a buyer wallet (event cancellation refunds, failed bills)  [E11, E25, S12]
+- **Fintava**: transfer to host wallet for ticket settlement  [E18]
+- **Fintava**: transaction PIN / authorisation (if provider-side)  [E4, S6]
+- **Fintava (or keep Flutterwave Bills)**: bill payment / VAS: airtime, data, electricity token, cable; customer validation with address  [S3, S4, S7, S8, S9]
+- **Google Gemini**: legal assistant chat (already integrated via GEMINI_CLIENT), extended to pre-payment profiling  [S14, S15, S16]
+- **FCM/APNs (or Expo push)**: lock-screen push for bill reminders  [S29]
+- **Fintava (design rule) or Flutterwave (current)**: debit a buyer wallet to pay a merchant (WAWU Shop / a school)  [SC5, SH6]
+- **Fintava or Flutterwave**: transaction PIN / payment authorisation  [SC6, SH7]
+- **Flutterwave or Fintava**: payout/subaccount for schools as payees (KYB)  [SC6, SC7]
+- **transactional email provider**: school enrollment report delivery  [SC7]
+- **each school (external website)**: conversion reporting/postback for ?ref=wawu-xxxx applications  [SC9]
+
+## Backend build list (136 items, sizes {'XL': 19, 'M': 55, 'L': 20, 'S': 42}, ~421 dev-days by size midpoint)
+
+- [XL] Banking-provider gateway for Fintava (auth, request signing, webhook signature guard) replacing FlutterwaveWalletGateway behind the same interface (A1) [W1, W5, W6, W15] depends on: Fintava API docs and sandbox, product-owner ruling on provider switch and custody
+  - why: Every wallet screen names Fintava MFB; current gateway calls api.flutterwave.com/v3 payout-subaccounts
+- [XL] Account provisioning for EVERY account type at sign-up, tier 1 via BVN, with tier upgrades (BVN+NIN) and migration of existing CreatorWallet rows (A1) [W5, W35] depends on: Fintava customer/account API, A-flow BVN capture, ruling on wallet for buyers
+  - why: W5 'first visit after the account opens (A-flow)'; W35 tiers; today only creators get a Flutterwave PSA
+- [M] Multi-account balance endpoint (NGN in kobo, USD, crypto per asset) with typed provider_unreachable error (A1) [W1, W2, W3, W6] depends on: provider gateway
+  - why: W1/W2/W3 tabs; W6 state; balances are whole naira today
+- [L] Inbound credit webhook + full transaction store mirrored from the bank record (deposits, transfers in/out, bills, purchases, card spend, swaps, reversals) with counterparty, category, description, kobo amounts (A1) [W1, W5, W15, W26] depends on: provider webhooks, provider transaction history API
+  - why: W26 'Every ledger row comes from the bank's record'; WalletLedgerEntry only holds earning/withdrawal/reversal
+- [M] Transaction history API: search, category filter, cursor pagination, monthly in/out summary; transaction-by-id/reference detail (A1) [W26, W27, W28] depends on: transaction store
+  - why: W26, W27, W28
+- [M] Receipts: short public verification code + page at wawu/r/{code}; PNG and A4 PDF rendering (A1) [W12, W27, W41, W42, W43] depends on: transaction detail API
+  - why: W41–W43 'Check it at wawu/r/T1P9'
+- [M] Recipient search across all account types by name/@handle/phone + recent recipients (A1) [W7] depends on: WAWU ID phone lookup policy
+  - why: W7; /api/hub/search covers creators/content/communities only
+- [L] WAWU-to-WAWU transfer (intra-bank book transfer) with note, idempotency key, PIN (A1) [W7, W9, W10, W12] depends on: provider book-transfer API, transaction PIN
+  - why: W7→W9→W12
+- [L] Generalise withdraw into send-to-any-bank: fee, note, PIN, idempotency key, failure/reversal handling, receipt read, KYC rule per ruling (A1) [W8, W10, W11, W12, W13, W14, W17, W19] depends on: provider NIP transfer + requery, fee ruling, KYC scope ruling
+  - why: W8–W14, W17, W19; withdraw today has no fee/note/PIN and is KYC-gated
+- [M] Fee quote service (transfer, withdraw, card top-up, card order) with WAWU fee collection (A1) [W10, W16, W17, W30] depends on: product-owner ruling on every fee figure
+  - why: W10, W16, W17, W30 show fees; no fee concept exists
+- [M] Transaction PIN: set/confirm/change/verify, hashed, attempt lockout, required on every debit (also used by Home/Inbox/Me flows) (A1) [W11, W35, W36]
+  - why: W11, W36
+- [M] Transaction PIN reset via phone OTP (A1) [W37] depends on: WAWU ID OTP endpoint or SMS provider
+  - why: W37
+- [S] Beneficiaries: create/list/delete; default payout account from KYC (KycSubmission.payoutBankName is free text, needs a bank code) (A1) [W8, W12, W17, W35] depends on: schema migration for bankCode on KYC payout account
+  - why: W8 Saved list, W12 'Save as a beneficiary', W17 default destination, W35 count
+- [L] Card top-up into wallet with 3DS, saved card tokens (A1) [W15, W16] depends on: acquiring API (Fintava or other), fee ruling
+  - why: W16
+- [M] USSD funding (A1) [W15] depends on: provider USSD API
+  - why: W15 'USSD Dial from your bank line'
+- [XL] USD account: issuance, US receiving details, balance, transactions (A1) [W2] depends on: provider USD account API, regulatory ruling on dollar accounts
+  - why: W2
+- [XL] FX: quote with 30s lock, execute by quote id, NGN<->USD (A1) [W15, W20, W21] depends on: provider FX API, ruling on Naira-only rule
+  - why: W20, W21, W15 'From your Dollar account'
+- [XL] Crypto: per-asset/network deposit addresses, balances + USD valuation, send with address validation and network fee, deposit webhooks (A1) [W3, W22, W23] depends on: custody partner API, regulatory ruling on crypto
+  - why: W3, W22, W23
+- [XL] Card issuing: virtual + physical order (address, fee from wallet, delivery tracking), details reveal, freeze/unfreeze/block, channel controls + limits, card PIN, card transaction feed (A1) [W29, W30, W31, W32, W33, W34] depends on: card issuing API + scheme sponsor, ruling on card product
+  - why: W29–W34
+- [L] QR: personal pay-code payload and resolve endpoint for WAWU QR; NQR generate/decode/pay (A1) [W24, W25] depends on: provider NQR support
+  - why: W24, W25; QR exists only for event tickets
+- [M] Statements: date range, CSV now, stamped PDF from provider, email delivery (A1) [W38] depends on: provider signed statements, email sender
+  - why: W38
+- [S] Wallet settings aggregate (tier, limits, PIN last changed, cards, beneficiary count, account details) (A1) [W35] depends on: tier/limits from provider, PIN, beneficiaries
+  - why: W35
+- [M] Earnings 'ready to move' balance, per-content breakdown, and user-initiated move to wallet (replacing or alongside the auto sweep), KYC rule per ruling (A1) [W39, W40] depends on: ruling on settlement model, provider book transfer
+  - why: W39, W40
+- [XL] Pay-from-wallet debit path for purchases, tips, credits, DMs, tickets, card orders, with 85/15 split collected on-ledger (replaces hosted checkout + funding sweep) (A1) [W10, W11, W30] depends on: provider book transfer, ruling on custody/provider, cross-flow agents' purchase screens
+  - why: W10/W30 'Pay from wallet'; W11 PIN reused across flows
+- [L] Bills paid from wallet (debit NGN account, then Flutterwave Bills or provider bills API) instead of card checkout into WAWU's float (A1) [W1, W26, W28] depends on: ruling on bills provider, pay-from-wallet debit
+  - why: W1 bills row; W26 Bills filter
+- [M] Reconciliation/requery for the new provider (port reconcilePending, settleFromWebhook) (A1) [W14, W19] depends on: provider requery API
+  - why: W14 auto-reversal, W19 status
+- [M] Transaction PIN: set/confirm, verify on every money movement, change, reset via OTP, attempt lockout, stored as argon2 hash (WAWU ID or Hub, ownership undecided) (A2) [A8, A9, A10, Z2] depends on: decision: PIN lives in WAWU ID (shared across apps) or Hub, SMS/WhatsApp OTP for reset
+  - why: A9/A10 create a 4-digit PIN at sign-up; Z2 'Wallet and PIN'; Wallet W11/W36/W37 require it. Nothing exists: no column, no route; POST /api/hub/wallet/withdraw approves on bearer token alone.
+- [L] Device binding + biometric unlock for payments (device registry, public-key enrolment, signed challenge as PIN substitute) (A2) [Z2, A9] depends on: Transaction PIN, ruling on 'no liveness/Face-ID' rule (device biometric is not liveness, but the rule wording covers Face-ID)
+  - why: Wallet W11 says 'Face ID can stand in' and W35 'Face ID for payments'; Settings Z2 routes Wallet and PIN to W35. No device or biometric concept exists in WAWU ID, Hub, or web.
+- [XL] BVN verification at registration: lookup, phone-match, prefill name/DOB/gender/state, store bvnVerifiedAt + BVN hash/last4 on WAWU ID user; extend RegisterDto with bvn (or a verification token) and dateOfBirth (A2) [A3, A5, A14] depends on: BVN provider contract (NIBSS via Fintava or aggregator), ruling on KYC-at-sign-up vs 'manual KYC unlocks earning', NDPA handling of BVN storage
+  - why: A3/A5/A14 make BVN the identity source; WAWU ID register has no bvn/dob and WawuUser has no such columns.
+- [XL] Liveness + face match against BVN photo, with result stored and retry policy (A2) [A6, A7, A16, A17] depends on: provider, ruling on 'no liveness/Face-ID' rule
+  - why: A6/A7/A16; Tier 1 requires 'BVN and a selfie'.
+- [M] Registration phone verification: endpoint to verify the phone of an in-flight/just-registered account (not otp/verify's find-or-create login), WawuUser.phoneVerified column, SMS channel (A2) [A4, A15] depends on: SMS provider (or ruling that WhatsApp is acceptable)
+  - why: A4/A15 verify the phone by SMS; WAWU ID otp/verify signs in or creates a phone-only user and delivers via WhatsApp.
+- [S] Reconcile email verification with the board's sign-up path (either add an email-code step to mobile, or verify email by link post-signup, or relax the login gate when phone+BVN verified) (A2) [A3, A4, A22] depends on: product ruling
+  - why: WAWU ID login rejects EMAIL_NOT_VERIFIED (auth.service.ts:206); the board never verifies email, so a board-path user is locked out of A22.
+- [S] Persist occupation (and DOB) somewhere; RegisterDto accepts occupation but neither WAWU ID nor Hub stores it (A2) [A5] depends on: decision WAWU ID vs Hub UserProfile
+  - why: A5 shows Occupation and Date of birth.
+- [XL] Fintava account provisioning per user at Tier 1 (NUBAN, account name, bank) at sign-up for every account type (A2) [A7, A8] depends on: Fintava API docs + contract, custody/licence ruling, BVN verification
+  - why: A8 opens a Fintava MFB account for every sign-up; today only creators get a Flutterwave payout subaccount.
+- [XL] KYC tier model + limits (Tier 1/2/3 state per user, limits read from provider), Tier 2 NIN verification endpoint, Tier 3 address + proof-of-address submission and review queue (A2) [A17, A18, A19, A20, Z2] depends on: Fintava tier APIs, NIN provider (NIMC), admin review surface
+  - why: A17-A20; nothing exists (WAWU ID VerificationTier is the legacy badge ladder).
+- [M] Saved payout account: model + POST/GET endpoint storing bankCode, accountNumber, resolved name; auto name-match against verified BVN name; withdraw defaults to it (A2) [A21] depends on: BVN name on file, provider name enquiry (Flutterwave resolve exists; Fintava if switched)
+  - why: A21 'Save payout account' with 'matches your BVN'; today payout bank is free text inside KycSubmission and withdraw takes the account each call.
+- [S] Change password while signed in: WAWU ID POST /auth/change-password {currentPassword, newPassword}, revoke other refresh tokens (A2) [Z2]
+  - why: Z2 'Password' row; WAWU ID only has forgot/reset.
+- [S] Server-side sign-out: WAWU ID POST /auth/logout revoking the refresh token (and optionally all sessions) (A2) [Z2]
+  - why: Z2 'Sign out'; today sign-out only clears client storage (wawuafrica/src/lib/auth/session-provider.tsx:83) and refresh tokens stay valid.
+- [M] Notification preference keys: moneyIn, communityMessages (per message, not digest), contentReviews; honour them in notification dispatch (A2) [Z3]
+  - why: Z3 categories not in NotificationSettings.
+- [M] Data export fulfilment job: compile user data, email a download link, move DataExportRequest status pending -> sent (A2) [Z4] depends on: storage signed URLs, mail
+  - why: Z4 'Download my data · Sent to your email'; service only ever writes 'pending'.
+- [S] Enforce blocks in search results and public profile (A2) [Z5]
+  - why: Z5 caption 'can't ... see your profile or find you in search'; search-response and user-profile modules never read BlockedAccount.
+- [M] Account deletion: 30-day grace, cancel by signing in (WAWU ID login clears pending_deletion; hub restores), defer content removal to finalisation, wallet-must-be-empty precheck from provider balance, optional reason field (A2) [Z6, Z7, Z8] depends on: ruling on grace length, wallet provider balance read
+  - why: Z6/Z7/Z8; today 48h, content removed immediately, no cancel, no balance check, DTO rejects a body.
+- [S] Suggested follows by multiple interests (GET /api/hub/creators?interests=a,b,c ranked) and a canonical interest vocabulary shared by sign-up, explore and suggestions (A2) [A12, A13] depends on: ruling on which vocabulary
+  - why: A12/A13; discovery filters by a single category and three different interest lists exist.
+- [S] Mobile deep link for password-reset email (universal/app link) and align reset TTL with copy (A2) [A23, A24] depends on: fact ruling on TTL, mobile app link domain
+  - why: A24 says the emailed link opens New password in-app and expires in 30 minutes; WAWU ID links to web /reset-password with a 1-hour TTL.
+- [M] Tick-dependent upload allowance: uploadAllowanceFor(verificationState) returning 5 untick / 25 ticked (placeholder numbers), surfaced as slotsTotal on GET /creator/state and admin views; lapse policy for accounts over the lower cap (A3) [M11, M18, M19, M25, M27, M28] depends on: product ruling on cap conflict, final limits ('⚠ Limits are placeholders.'), deriveVerificationState in src/common/verification/verification-state.ts, update specs upload-allowance.spec.ts, creator-state-gate.spec.ts, web gates.ts:12 to read server slotsTotal
+  - why: M11/M18/M19/M27/M28 promise up to 25 uploads with a tick
+- [S] Tick-dependent storage allowance: storageAllowanceFor() keyed on ticks (1 GB / 10 GB) instead of hasCreatorState, reported by GET /uploads/usage (A3) [M11] depends on: ruling on storage conflict, policy for accounts already over 1 GB
+  - why: M11 '10 GB library space Free accounts get 1 GB'
+- [S] Remove the 'first upload must be free' rule (content-piece.service.ts:486-490, creatorFirstUploadFree) and set the free-content policy per ruling (A3) [M24, M37] depends on: ruling on free-content conflict
+  - why: Blocks every new creator's first publish from the web today; canvas M24/M37 want an explicit Free option instead
+- [M] Verified reach boost in ranking (content-piece/ranking.ts, creator-discovery) for active ticks (A3) [M11] depends on: ruling on tick-benefits conflict, ranking weights from product
+  - why: M11 'Reach more people Your content is pushed further'
+- [XL] Pay a platform fee (tick) from the user's wallet: wallet-debit endpoint + VerificationPurchase settled from wallet, idempotency, pending state (A3) [M12, M14, M15] depends on: payments provider ruling (Fintava vs Flutterwave), wallet for non-creator accounts (CreatorWallet is creator-only), Wallet flow (A1)
+  - why: M12 'Pay from wallet'
+- [M] Transaction PIN: set, verify (hashed, attempt-limited, lockout), reset (A3) [M13] depends on: Wallet flow (A1) PIN design, provider: PIN may be provider-side
+  - why: M13 'Enter your PIN'
+- [S] Expose pending tick purchase on GET /verification/me (per kind: pending since, txRef) (A3) [M15]
+  - why: M15 'Paid, still confirming. Don't pay again.' must survive reload
+- [M] Profile fields: UserProfile.location, skills[] (or ruling that interests = skills), openTo[], threadsHandle, socials order; return memberSince (createdAt) and location on GET /users/me and public-profile (A3) [M4, M8, M9, M33] depends on: migration on UserProfile, WAWU ID name field (single name on M8)
+  - why: M4/M8/M9/M33 show location, member since, open-to, skills, Threads and reorderable socials
+- [S] Education entries: ProfileEducation {school, field, startYear, endYear} + CRUD on /users/me/education, included in public-profile (A3) [M33]
+  - why: M33 Education section
+- [L] Featured works (portfolio): ProfileWork model {title, role, client, year, link, media[], category, position}; POST/PATCH/DELETE /users/me/works; GET /users/{wawuId}/works?category=; GET work by id (A3) [M4, M33, M34, M35, M36] depends on: ruling: do works count toward the upload cap/storage and are they moderated, presign upload (exists)
+  - why: M4 Featured works + Add, M33, M34 All works with filters, M35 work detail, M36 Add a work
+- [M] Content edit/resubmit: PATCH /content/{id} (details), replace full/preview asset, POST /content/{id}/resubmit (back to pending), allowed while pending (A3) [M25, M26] depends on: admin content-review flow re-queue
+  - why: M25 'You can edit it while it waits'; M26 Replace the file / Edit details / Send again
+- [S] Return latest rejection reason and per-piece sales count on GET /content/mine and /content/{id} (owner) (A3) [M26, M28]
+  - why: M26 reviewer reason; M28 '18 sales' and 'see why'
+- [S] Month-scoped earnings with previous-month comparison on GET /content/mine/earnings (A3) [M7, M18]
+  - why: M18 'Earned in September +18%'; M7 '₦128,400 this month' (web currently mislabels all-time as this month)
+- [S] Me menu counts endpoint (purchases, enrolled courses, saved, unread notifications, slots, tick/KYC summary) (A3) [M7]
+  - why: M7 badges without five list calls
+- [M] Unified saved feed: GET saved events (EventSave exists, no list route), saved creators (new model or ruling it means Following), merged 'All' (A3) [M30] depends on: ruling on 'saved creators' vs follow
+  - why: M30 tabs All/Content/Events/Creators
+- [M] Per-buyer course lesson progress for content-type courses (CourseLessonProgress) + search param on GET /content/purchases (A3) [M29]
+  - why: M29 'VFX for Beginners 3 of 12 done · Resume' and 'Search what you've bought'
+- [S] Notifications: add a review-received kind and target ids (contentId/threadId/actorWawuId) for deep links (A3) [M31]
+  - why: M31 lists reviews; 'Reply' and 'See why' need targets
+- [S] Creator Shop tab source: filter of template/image ContentPiece (S) or a creator product model (L+, collides with Basket/Beauty handoff) (A3) [M3] depends on: ruling on what a creator's Shop is
+  - why: M3 'Shop · Your products'
+- [S] Per-format upload rules (PDF 100 MB, video MP4/MOV, audio MP3/WAV, 30-60 s audio preview) in presign/create validation (A3) [M20, M21] depends on: confirm limits (facts on canvas)
+  - why: M20/M21 copy
+- [S] Profile QR payload/share link in wawu/<handle> form (A3) [M1] depends on: Wallet flow W25 owner (A1), link-format rule 'wawu/…'
+  - why: M1 QR (W25) and Share
+- [L] Ad product core: AdCampaign + AdCreative models (advertiser name, headline, subline, CTA label, CTA destination from an allowlist e.g. event id, artwork, placement enum tgif_card|today_slot, start/end date, status draft|scheduled|live|paused|ended, weight) and a serving route GET /api/hub/ads?placement= returning at most one creative for today (A4) [H33, H36] depends on: ruling on whether ads are placement-only or targeted, Events detail route for CTA (exists)
+  - why: H33 sponsored TGIF card and H36 sponsored card in TGIF's Today slot; no ad model or route exists (NotificationCampaign is push fan-out, Event.featured is an unpaid pin)
+- [M] Ad event tracking: POST /api/hub/ads/{id}/events (impression, click, skip) with per-day aggregates and de-duplication per viewer (A4) [H33, H36] depends on: ad product core
+  - why: An ad that is sold needs delivery proof; H33 has Skip and Get tickets
+- [L] Admin dashboard ad management: create, schedule, approve, pause, report (impressions, clicks, skips, CTR) under /api/hub/admin/ads*, with audit rows like AdminEventReview (A4) [H33] depends on: ad product core, admin dashboard repo
+  - why: 'Ads are sold from the WAWU dashboard' (H33)
+- [XL] Ad selling and billing: advertiser accounts, pricing (per day or per impression), invoicing or self-serve payment (A4) [H33] depends on: product-owner decision on ad pricing and how advertisers pay, payments provider ruling (Fintava vs Flutterwave)
+  - why: Ads are a paid revenue stream ('paid advertising' in current rules) but nothing records who paid what for which placement
+- [M] TGIF server state: TgifReaction(userWawuId, date, card, kind) + TgifRead(userWawuId, date) with GET /api/hub/tgif/{date}/stats (reactions per card, my reaction, readers today, share count) and POST react/read/share (A4) [H1, H29, H30, H31, H32, H34, H35] depends on: decide whether TGIF text stays a client bundle or moves server-side for mobile
+  - why: Amen counts on every card (H29–H34), '12.4K reading today' on H1; TGIF has zero backend today (static web bundle)
+- [S] TGIF-on-Home preference persisted per account (field on NotificationSettings or PrivacySettings, or a new UserPreferences row) with GET/PATCH (A4) [H36]
+  - why: Settings Z2 'TGIF on Home'; mobile and web must agree; ad slot swap (H36). Web keeps it in localStorage only
+- [S] TGIF share image + wawu/tgif deep link (client-side canvas render, or server OG image route) (A4) [H35] depends on: link domain ruling (wawu/…)
+  - why: H35 'Posted as an image with a link back to TGIF'
+- [L] For-you feed composition: interleave creator cards and professional cards into GET /api/hub/content feed (item kind), add media metadata (frame list for photo sets, duration, page count), per-viewer liked/saved/following flags and rail counts (A4) [H2, H3, H4, H5, H6, H7, H8, H9, H10] depends on: content likes, professional card data
+  - why: H2–H10 full-bleed mixed feed with rails and interstitial cards; current feed returns content pieces only
+- [S] Following feed: scope=following on GET /api/hub/content (join FollowRelationship.followerWawuId) plus GET /api/hub/users/me/following count (A4) [H12, H6, H8]
+  - why: H1 Following tab, H12 empty state; web says 'Following feed isn't ready yet' because the scope is missing
+- [S] Content likes, views and shares: ContentLike model + POST/DELETE /api/hub/content/{id}/like, likedByMe on responses, view increment on open, share counter (A4) [H2, H19, H24]
+  - why: Rail counts (12.4K / 340 / 1.1K), '96% liked', '2,140 views'; likes are read-only and views never increment today
+- [M] Mutual-follower social proof: 'Followed by <name> and N people you know' query on FollowRelationship for creator cards (A4) [H9]
+  - why: H9 creator card
+- [M] Previews: freePages (or previewPageRange) on ContentPiece, isFree + assetUrl on CourseLesson, preview duration for locked video; free piece -> parent course relation (A4) [H4, H5, H7, H19, H24, H25] depends on: ruling on H4 vs H19 free-page count
+  - why: H4 '12 pages free', H19 'pages 1–4', H7/H25 'lesson 1 free', H5 'Preview ended', H24 'From the course'
+- [L] Pay-from-wallet unlock: wallet debit path on POST /api/hub/content/{id}/unlock with transaction PIN, idempotency key, insufficient-funds error carrying balance and shortfall, debited-but-not-granted state with automatic reconciliation, receipt reference (A4) [H14, H15, H16, H17, H18, H19, H25] depends on: buyer wallet for every account (Wallet flow, A1), transaction PIN (Wallet flow W11), payments provider ruling (Fintava vs Flutterwave)
+  - why: H14–H18; today unlock is a Flutterwave charge with no wallet path
+- [M] Pay-from-wallet tip with PIN, optional contentId, and an Inbox money-bubble message to the creator (A4) [H26, H27, H28] depends on: buyer wallet, transaction PIN, Inbox money messages (Inbox flow), ruling on tip split display
+  - why: H26–H28; tips are Flutterwave-only today and land only as a notification
+- [S] Content rating rules: ContentRating(userWawuId, contentId, stars) unique, purchase (or free) required, ratingPct recomputed from rows (A4) [H23]
+  - why: H23 'only after buying'; current rate() has no purchase check and averages into ratingPct so one user can rate repeatedly
+- [M] Share into WAWU chat: shared-content message type + free person-to-person thread, and a wawu/c/{slug} resolver (A4) [H22, H35] depends on: Inbox free chat (Inbox flow)
+  - why: H22 'Send to' people and WAWU chat; current DM is a paid question to a creator
+- [M] Professional card data: city/location on ProfessionalProfile, 'near you' filter, public usual-reply-time aggregate, lastActiveAt presence, DM price on the professional response (A4) [H10] depends on: Trust Score ruling, Professionals flow (A?)
+  - why: H10; no location, no public reply time (response-stats is own-account only), no presence
+- [M] Search completion: implement communities predicate (currently [] unconditionally), SearchHistory model for recent searches + DELETE clear, popular searches from a real query log, verification tick on creator rows, schools in results (A4) [X5, X6, X8, X9, X11] depends on: Schools backend (Schools flow) for school results
+  - why: X5, X6, X8, X9, X11
+- [M] Explore creator categories on the creator taxonomy: filter GET /api/hub/creators by taxonomy category/specialization ids (Music & Audio, Film & Video, …) instead of UserProfile.interests strings (A4) [X1, X2, X3, X4, X13]
+  - why: X1–X4, X13 chips; backend filters free-text interests and content uses deprecated 25-sector ids
+- [S] Featured creators flag (admin-set, later paid featuring) on creators, mirroring Event.featured (A4) [X1, X4] depends on: paid featuring pricing ruling
+  - why: X1 'Featured creators'; web notes nothing marks a creator as featured
+- [S] Content detail fields: updatedAt on ContentPiece, purchasedAt for the viewer, student/buyer count for courses (A4) [H19, H20, H25]
+  - why: H19 'Updated Sep 2026', H20 'Bought 26 Sep', H25 '1,280 students'
+- [L] Unified inbox feed endpoint GET /inbox?filter=all|paid_dms|communities|money returning mixed rows (P2P chat, paid DM, community, money event, WAWU system) with lastMessage preview, timestamp, unreadCount, money signal, plus total unread for the tab badge (A5) [I1, I20, I35, I36, I9, I24] depends on: free chat model, money-request model, per-thread last-read state
+  - why: I1, I20, I35 show one list with chips; today the data is spread over /dm/threads, /dm/inbox, /communities, /notifications with no unread state
+- [L] Free user-to-user chat: Conversation + ConversationParticipant(lastReadAt) + ChatMessage(kind text|image|video|file|money_sent|money_request, body, attachmentUrl, deliveredAt) with list/send/mark-read endpoints, block-list enforcement, cursor pagination (?before/?after) (A5) [I12, I13, I15, I17, I18, I19] depends on: product ruling on free chat vs paid-DM model
+  - why: I12 is a free chat between two users; nothing in backend-models supports it
+- [L] Real-time transport: authenticated WebSocket gateway (@nestjs/websockets) with Redis pub/sub adapter for multi-replica fan-out; events message.new, message.delivered, message.read, typing, dm.status_changed, money_request.updated, community.message.new; plus ?after cursor on GET /communities/{id}/messages and GET /dm/{id} for polling fallback (A5) [I1, I4, I12, I15, I17, I25, I26] depends on: hosting supports sticky/WebSocket connections, Redis instance
+  - why: Live chat, delivery receipts ("Delivered to Femi"), countdown flips and room messages; backend has no websocket/SSE today, only cron
+- [M] Push notifications: DeviceToken model (userWawuId, platform ios|android, provider, token unique, appVersion, lastSeenAt, revokedAt), POST/DELETE /devices endpoints, sender behind NotificationService.emit honoring NotificationSettings, invalid-token pruning (A5) [I5, I7, I15, I17, I18, I31, I37] depends on: push provider choice (FCM/APNs or Expo), Apple/Google credentials
+  - why: Mobile app needs push for replies, refunds, money, join approvals; no device-token storage exists (searched schema/src for device|fcm|apns|expo|pushToken: none)
+- [XL] Paid DM payment via wallet: replace Flutterwave initCharge/verifyCharge in DirectMessageService.sendInit/sendVerify with a PIN-authorised wallet debit into a hold; release to creator on respond; release back to payer wallet on expiry (replace DmRefundService.refundOne Flutterwave refund); drop the PaymentWebhookService dm branch; migrate DirectMessage.flutterwaveTxRef (required, unique) to a provider-neutral payment reference (A5) [I3, I4, I5, I6, I7, I11] depends on: custody/CBN ruling, Fintava (or provider) wallet API for every account, transaction PIN (wallet flow W11)
+  - why: Canvas: "Pay from wallet" with PIN and refund to the Naira wallet; custody wording "Held by WAWU" needs a ruling first
+- [M] Paid DM thread model: group DMs by (senderWawuId, creatorWawuId) into one thread; allow multiple creator reply bubbles (DmReply rows) within the paid window; refuse a new paid DM while one is awaiting_response; expose creator median reply time ("usually replies in about N hours") and reply duration (A5) [I3, I4, I5, I11]
+  - why: I4 locks the composer until reply; I5 shows two reply bubbles and a follow-up in the same thread; I3 shows typical reply time
+- [S] Creator paid-DM inbox query: GET /dm/inbox?status=awaiting_response&sort=deadline with totalAwaitingAmount (A5) [I9]
+  - why: I9 sorts by time left and shows "₦4,500 from 3 questions"
+- [M] No-response tracker computation: sweep computing rolling 30-day unanswered rate and missed/total counts, writing penaltyState and dmDisabledUntil, emitting a warning notification, enforced in DirectMessageService.sendInit and PATCH /creator/dm-settings, and exposed on the public profile (A5) [I8, I21, I22, I23] depends on: threshold ruling (canvas 20/30 vs spec 10/30/50)
+  - why: I21-I23 and I8 depend on a rate nothing computes; CreatorNoResponseTracker is read-only today
+- [XL] Money in chat: P2P wallet transfer with note (WalletEntryKind transfer_in/transfer_out or equivalent) and MoneyRequest model (pending|paid|declined|cancelled) with create/pay/decline endpoints, each writing a chat message (A5) [I13, I14, I15, I16, I17, I18, I19, I20] depends on: wallet for every account (wallet flow), custody ruling, transaction PIN, free chat model
+  - why: I13-I19 send and request money inside a chat
+- [M] Credits purchase from wallet: replace Flutterwave charge in CreditPurchaseService with a PIN-authorised wallet debit; keep PACK_TABLE and CreditLot cost-basis logic (A5) [I28, I29] depends on: wallet for every account, transaction PIN
+  - why: I28/I29 pay from the Naira wallet
+- [S] Fund host credit earnings into the wallet: add fundCreditSpends to WalletFundingService reading CreditSpendEarning.hostShareKobo (A5) [I32]
+  - why: I32 promises the host 85% of credits spent; today no credit-spend share ever reaches a wallet (admin finance notes it as outstanding)
+- [M] Communities for the inbox: GET /communities?member=me (joined + hosted) with last message preview and unread; suggested list; host display name on community payload; "people you follow who are members" and host approval-time on community detail; requester display name/headline/location on join-request queue (A5) [I24, I30, I34]
+  - why: I24, I30, I34 show data the endpoints do not return; web joined tab is session-local
+- [S] Community slug + share link: unique slug column, generation on create, GET /communities/by-slug/{slug} (A5) [I33]
+  - why: I33 shows wawu/c/aba-tailors
+- [S] Private community cover required: reject kind=private without imageUrl in CreateCommunityDto/PATCH (A5) [I30, I32] depends on: confirm it applies to existing private rooms without a cover
+  - why: I32 "Needs a cover image"; I30 "Every private room has a cover image header"
+- [S] New notification kinds: dm_replied (to fan), community_join_approved / community_join_declined (to requester), money_received, money_requested, money_request_paid/declined, dm_penalty_warned (A5) [I5, I15, I17, I18, I22, I31, I37] depends on: push delivery for mobile
+  - why: "We'll let you know when she answers" (I31) and reply/money events have no notification today (notification-event.ts has 12 kinds, none of these)
+- [L] Buyer wallet debit for event tickets: replace flutterwave.initCharge/verifyCharge in EventTicketingService.buy/verifyOrder with a Fintava wallet debit; drop flutterwaveConfig from the buy response; VerifyOrderDto(transaction_id, tx_ref) replaced by PIN-authorised confirm (A6) [E3, E4, E10] depends on: Fintava API docs and contract, buyer wallet provisioning (Wallet flow), wallet PIN
+  - why: E3/E4 pay from wallet; E10 pending state
+- [M] EventOrder schema migration: flutterwaveTxRef (@unique, required) / flutterwaveTxId → provider-neutral paymentProvider + paymentReference + providerTxId; update payment-webhook.service.ts (event-ticket-order lookup), payment-link.service.ts:100, admin-finance.service.ts and admin-finance-wallets.service.ts raw SQL that select flutterwaveTxRef/TxId (A6) [E3, E10, E25] depends on: Fintava reference format
+  - why: every EventOrder is keyed on a Flutterwave reference today
+- [M] Event cancel refunds to buyer wallets: replace flutterwave.refundCharge loop in EventTicketingService.cancel with Fintava credits from the account holding ticket money; expose refund status/amount on GET /events/tickets/mine (A6) [E11, E25] depends on: custody ruling, Fintava transfer API
+  - why: E11 '₦7,500 is back in your Naira wallet'; E25 refunds everyone
+- [M] Host settlement: pay the host 85% of paid EventOrders into their wallet (none today: WalletFundingService funds Purchase and answered DMs only), with a hold rule (e.g. after the event ends) so cancellations stay refundable (A6) [E18, E25] depends on: custody ruling (who holds ticket money pre-event), Fintava
+  - why: E18 'Yours after WAWU's cut ₦408,000' is computed but never paid
+- [M] Multi-tier ticket order: allow one order/one debit across several ticket types (order lines), keeping the conditional per-tier capacity claim (A6) [E2, E3]
+  - why: E2 shows quantity steppers on every tier
+- [M] Wallet transaction PIN: set/change/reset, hashed storage, attempt lockout, verify-before-debit (shared by tickets, bills, legal) (A6) [E4, S6, S19, S22, S30] depends on: whether Fintava owns PIN/transaction auth
+  - why: E4, S6, S19, S22 PIN step
+- [S] Event model additions: EventFormat 'hybrid'; Kind values Conference/Concert (EventType or remap to EventCategory); category display labels ('Business & Finance'); make `type` and `location` optional or derivable since the wizard never asks (A6) [E8, E13, E14]
+  - why: E8, E13, E14
+- [S] Single-submit host wizard: accept ticket types in POST /events (or a combined submit) and ₦0 → tier 'free' mapping server-side (A6) [E15, E16]
+  - why: E15 sends event + tickets for review in one step
+- [S] Organiser data: soldCount on GET /events/mine; per-referral ticket count (dashboard byCode.tickets is never incremented) and a referrals list route; distinct buyer count for cancel copy (A6) [E17, E18, E25]
+  - why: E17 '64 sold', E18 '3 links · 22 sales', E25 'All 64 buyers'
+- [M] Door staff: let a host delegate scanners with door labels; return holder display name and checkedInBy label from check-in (A6) [E19, E20, E23]
+  - why: E20 holder name, E23 'by Door 1'
+- [S] Professional category taxonomy: map board field labels to PROFESSIONAL_CATEGORIES or rename; add 'engineering' if kept (A6) [P1, P4, P5] depends on: product ruling on field list
+  - why: P1/P4/P5 field names do not exist as slugs
+- [L] Wallet-funded bill payment: debit buyer wallet after PIN, then pay biller (Fintava VAS if available, else Flutterwave Bills from a float funded by the debit); provider-neutral BillPayment reference; automatic wallet reversal on biller failure (today refunds are manual record-refund) (A6) [S5, S6, S11, S12, S30] depends on: Fintava API docs (VAS coverage), buyer wallet, PIN
+  - why: S5, S11, S12
+- [S] Bill receipt data: store/return prepaid electricity token and units, customer address from validate; WAWU-style receipt reference (A6) [S4, S7] depends on: provider bill-status payload
+  - why: S4 address, S7 token + kWh
+- [M] Bill reminders: BillReminder model + CRUD (on-WAWU and external), month view with paid state derived from BillPayment, mark-as-paid for external, daily scheduler job (A6) [S2, S27, S28, S30, S31, S32]
+  - why: S2 banner, S27-S32
+- [M] Mobile push notifications: device token registration and a push provider, used by bill reminders (A6) [S29] depends on: FCM/APNs or Expo account
+  - why: S29 lock-screen reminder
+- [L] Legal chat-first intake: make the Gemini assistant available on an unpaid LegalIntake, have it fill intake answers and complete the brief, and let a consultant join that thread before payment (today chat requires a paid LegalRequest) (A6) [S14, S15, S16, S17, S24] depends on: Gemini prompt/safety review, product ruling on free pre-payment consultant contact
+  - why: S14-S17, S24
+- [S] Legal consultation options: add 'phone' medium, per-medium duration, slot grid matching the board; fees stay configuration pending ruling (board fees are placeholders) (A6) [S18, S25] depends on: fee ruling
+  - why: S18
+- [M] Legal payments from wallet: consultation fee and service fee via wallet debit + PIN instead of Flutterwave init/verify (A6) [S19, S22] depends on: buyer wallet, PIN
+  - why: S19, S22
+- [S] Multiple legal deliverables (files with page counts) and posting them into the chat + notifications (A6) [S23]
+  - why: S23 shows two PDFs
+- [S] Unify CAC registration: one route and one configured price for business-name registration reachable from the legal chat, paid from wallet (A6) [S24, S26] depends on: price ruling
+  - why: S24/S26 vs legal catalogue cac-registration (no price) and service-application CAC (₦25,000)
+- [L] School, SchoolCourse, CourseIntake models (name, location, foundedYear, expertise[], about, logo, applyUrl, contact for reports; course title, durationWeeks, deliveryMode, syllabus[], outcomes[], priceNaira; intake startDate, schedule, location, capacity, seatsTaken) + admin CRUD routes (A7) [SC1, SC2, SC3, SC4, SC11] depends on: ruling: admin-curated vs school accounts, admin dashboard repo
+  - why: SC1-SC3 and the section note 'Schools are added from the WAWU dashboard'; nothing in schema models a school or a priced course
+- [M] Public school browse/search: GET /api/hub/schools?category=&q=, GET /api/hub/schools/{id}, GET /api/hub/schools/courses/{id}; plus a 'schools' SearchTab in GET /api/hub/search (A7) [SC-START, SC1, SC2, SC3, SC10] depends on: School models
+  - why: SC1, SC10, entry map 'Results include schools'
+- [L] School enrollment order: POST /api/hub/schools/courses/{id}/enrollments {intakeId} with amount + commission snapshot, race-safe seat claim (Product.stock pattern), reference generator, class-full + next-intake, receipt GET (A7) [SC4, SC5, SC7, SC11] depends on: School models, pay-from-wallet, split ruling
+  - why: SC4, SC5, SC7, SC11
+- [XL] School payee + settlement: payout destination per school (bank/subaccount), KYB of the school, settlement at the ruled split (A7) [SC5, SC6, SC7] depends on: product ruling on recipient and split, wallet/payments provider ruling (Fintava vs Flutterwave), legal on custody
+  - why: SC6 'Approve ₦150,000 to Greenfield Tech Academy'; current payees are KYC'd creators only
+- [M] School report delivery: send enrollee name/email/phone + course/intake to the school (email or school dashboard view), with consent timestamp (A7) [SC4, SC7] depends on: email provider, data-protection review
+  - why: SC4 disclosure and SC7 'WAWU sends the school a report with your details'
+- [XL] Tracked outbound school link: SchoolLink(code), redirect endpoint logging SchoolLinkClick (userWawuId, courseId, ts), conversion intake (school self-report/CSV/postback), commission ledger and invoicing to the school, admin reporting (A7) [SC9] depends on: commission rate ruling, school cooperation for conversion reporting
+  - why: SC9 'Tracked link, for commission'; EventReferral only attributes inbound on-platform sales
+- [M] My courses: GET /api/hub/me/school-enrollments with status (awaiting contact / in progress week x of y / finished) and a way to update progress (admin or school) (A7) [SC8] depends on: enrollment order
+  - why: SC8
+- [M] School ratings: review model + aggregate, or drop ratings from SC1/SC2 (A7) [SC1, SC2] depends on: product ruling
+  - why: SC1/SC2 show 4.8 (1,240); no review system, and seeded ratings are refused in this codebase
+- [XL] Buyer pay-from-wallet: wallet for every account (not only creators), debit-to-merchant route used by shop checkout and school enrollment, with idempotency and provider confirmation (A7) [SC5, SH6, SH10, SH14] depends on: provider ruling (Fintava per design rule vs Flutterwave today), CBN custody check per CLAUDE.md wallet note
+  - why: SC5, SH6 'Pay from wallet'; only creator withdraw-to-bank exists
+- [M] Transaction PIN: set, verify, reset, lockout (A7) [SC6, SH7] depends on: wallet provider (provider-held vs WAWU-held PIN)
+  - why: SC6, SH7 'Enter your PIN'
+- [M] Shop checkout wallet payment method (replace/augment Flutterwave initCharge in shop.service.ts checkout) (A7) [SH6, SH7, SH14] depends on: Buyer pay-from-wallet
+  - why: SH6/SH7 pay from wallet to 'WAWU Shop'
+- [M] Product back-in-stock alert: ProductStockAlert + POST/DELETE /api/hub/shop/{productId}/alert + notification when stock goes from 0 to >0 (A7) [SH11]
+  - why: SH11 'Save it and we'll tell you when it's back'; MarketplaceSave is basket/beauty only
+- [M] Shop refund execution (admin route to refund via provider and set ShopOrderStatus.refunded) (A7) [SH9] depends on: payment method ruling
+  - why: SH9 shows 'Refunded'; enum exists but nothing sets it
+- [S] Order help: 'Get help with this order' support channel (e.g. open a WAWU support DM or ticket with orderId) (A7) [SH10]
+  - why: SH10; no support route
+- [S] Human-readable order reference (WAW-SHP-xxxx) column (A7) [SH8, SH10]
+  - why: SH8/SH10 show WAW-SHP references; only uuid and flutterwaveTxRef exist
+- [XL] Third-party sellers in Shop (sellerWawuId + commission on ShopOrderItem, seller payouts, product listing by creators, 5-item cap) (A7) [SH1] depends on: product ruling on sellers, split ruling
+  - why: SH1 'Sell on WAWU · List your gear and products', only if ruled in
+
+## On the web today, absent from the canvas by name (89)
+
+- (A1) Paid in / Incoming / Withdrawn ledger tiles beside the balance (WalletScreen.tsx)
+- (A1) Explicit custody explainer copy: 'Your own account, in your name. WAWU never holds your money, it only moves it on your instruction.'
+- (A1) Buyer-account state 'Wallets come with a creator account' (no wallet for buyers)
+- (A1) Minimum withdrawal of ₦1,000 (MIN_WITHDRAWAL_NGN, enforced in the web sheet and server)
+- (A1) Withdraw to any bank account typed by the user each time (canvas defaults to the KYC payout account with Change)
+- (A1) Earnings 'Held, not payable yet' figure for unanswered paid DMs
+- (A1) Community credits earnings stream (shown as a credit count) on /earnings
+- (A1) EVG score tile on /earnings
+- (A1) Recent sales list on /earnings
+- (A1) Ledger kinds 'Sale' and 'Reversed' as labelled on the web history
+- (A2) Web sign-up captures first/middle/last name, gender, country, state/region and occupation by hand (SignUpFlow details step); board derives them from BVN and has no country picker.
+- (A2) Non-Nigerian sign-up and KYC (country picker; KYC nationalIdEquivalent + passport/national ID/driver's licence document upload in /kyc).
+- (A2) Email verification code step at sign-up (WAWU ID /auth/email/verify/start|confirm).
+- (A2) Manual KYC form at /kyc (BVN + NIN + ID document upload + payout bank) as the earning gate; board splits this into wallet tiers (A17-A20) and payout bank (A21) with no ID document upload.
+- (A2) Switching a discover account to creator later (/onboarding 'Become a creator', becomeCreator() PATCH /users/me).
+- (A2) Settings rows: Profile, Edit profile, Verification ticks (/profile/verification), Identity verification (/kyc), Paid messages (/messages/settings), Earnings (/earnings), Saved, My tickets, Shop orders, 'About and partners'.
+- (A2) Settings header account-type label ('Creator' / 'Member' account).
+- (A2) Sound setting that plays 'The WAWU theme' music track (board's Sound row is 'Taps and alerts').
+- (A2) Notification toggles '24-hour message reminders', 'Replies to my messages' and weekly 'Community digest'.
+- (A2) About page sections: mission statement, 'What creators earn' (85/15), 'Credits, never cash', 'Nigeria-first'.
+- (A2) Single Master Terms, Privacy and Platform Policy document with privacy anchor (/privacy/policy redirects to /terms).
+- (A2) Delete-account warning that unused credits are removed and there is no refund for time already spent.
+- (A2) Phone-number sign-in and WhatsApp-code password reset supported by WAWU ID (identifier accepts phone; forgot-password method 'sms') - not on web either, but available in WAWU ID.
+- (A3) EVG score on the creator dashboard and GET /creators/{wawuId}/evg (no EVG anywhere on Me boards)
+- (A3) Owner stat cards on profile: Total earnings, Profile views, Products sold this month (GET /users/me/profile-stats)
+- (A3) Four-up stat row with Monthly Views
+- (A3) Profile Strength / completeness ring with missing steps (avatar, cover, handle, bio, links)
+- (A3) Creator tools rail on the owner's profile (Upload content, Create event, Start a community, Offer a service)
+- (A3) Cover image upload on profile and edit
+- (A3) Headline and Company inputs in Edit profile (canvas M8 has neither, though M33 displays both)
+- (A3) Experience editor (add/edit/delete roles) - canvas displays experience but draws no editor
+- (A3) Interests/specialization chips editor
+- (A3) WhatsApp handle and Website as social fields in edit (canvas M9 list has neither)
+- (A3) First/middle/last name split
+- (A3) Events tab on profile and Communities block on profile overview
+- (A3) Professional standing block on profile
+- (A3) Profile cross-sell block
+- (A3) Earnings statement CSV download on the dashboard
+- (A3) Questions answered / DM response stats on the dashboard
+- (A3) Saved tabs for Guides and Products
+- (A3) My tickets and Shop orders rows (web Settings)
+- (A3) KYC status panel component on profile
+- (A3) Paid-DM settings screen (/messages/settings) - canvas M18 only shows 'Paid messages On · ₦300' as a row
+- (A3) Public share page /wawu/[handle]
+- (A4) Home: TGIF as its own tab in the Home tab row (web: Home · TGIF · For you · Following)
+- (A4) Home: TGIF hero 'Reflect' button and personalisation of '{Name}' in the devotional text
+- (A4) Home: desktop eye-icon toggle for TGIF in the tab row
+- (A4) Home: persistent VerificationPrompt (verification ask with no dismiss) on Home
+- (A4) Home: full service icon grid (orderedServices: all platform services incl. dimmed 'soon' ones); canvas shows four tiles
+- (A4) Home: HomeRightRail (desktop)
+- (A4) Home: floating Sound/music toggle (SoundToggle)
+- (A4) Explore: 'Everything WAWU can do' service grid
+- (A4) Explore: 'Featured this week' mixed rail (the paid-featuring placement)
+- (A4) Explore: ProfessionalsRail (canvas has a door row instead)
+- (A4) Explore: LearningRail of /learn courses (canvas has 'Find a school' door instead)
+- (A4) Explore: ExploreHero fallback slide (WAWU's own pitch when no featured event)
+- (A4) Explore: 25-sector category list and desktop CategoryFilterAside
+- (A4) Content detail: comment like is drawn as a count only; web lets you like comments (canvas shows counts 24/9/2 but no explicit like control)
+- (A5) Report a paid DM (POST /api/hub/dm/{messageId}/report, web reportDmThread)
+- (A5) Leave a community (DELETE /api/hub/communities/{id}/join)
+- (A5) Host edits community name/description/image (PATCH /api/hub/communities/{id})
+- (A5) Host removes a member (DELETE /api/hub/communities/{id}/members/{userWawuId})
+- (A5) Hosting tab listing communities I host (web CommunityTabs "hosting")
+- (A5) Standalone notifications page /notifications with mark-all-read (canvas only shows a WAWU row in the inbox)
+- (A5) Notification settings toggles (newReplies, dmReminders, refunds, communityDigest) at /settings/notifications
+- (A5) 30-day paid-DM suspension tier (disabled_30d) shown on web settings
+- (A5) Posting a photo into a community room (CommunityMessage.imageUrl)
+- (A5) credits_low warning notification
+- (A5) Desktop three-pane questions view (QuestionsDesktop)
+- (A5) Dispute/query on an unanswered DM (01_SPEC §2)
+- (A6) Events: speakers (EventSpeaker), save/bookmark (POST/DELETE /events/{id}/save), event recap (recapUrl/recapText), external URL, contact email/phone, admin featuring is fine but the web 'starting soon/trending' sorts are not drawn; per-tier sales start/end editing (salesStartAt/salesEndAt) is not drawn on E15.
+- (A6) Events: creating a referral link is on web (/events/[id]/manage) but the board only shows the count 'Shared links 3 links · 22 sales'.
+- (A6) Professionals: ratings and reviews (ProfessionalReview, POST /api/hub/professionals/{id}/reviews, ratingAvg/reviewCount in the listing) appear nowhere on the boards.
+- (A6) Services hub /services (partner-service catalogue, 'Top Professionals', Business playbook): board says 'There's no Services screen.'
+- (A6) Health plans / Telemedicine (/services/care, /api/hub/care/*, WellaHealth, HealthSubscription): absent from canvas.
+- (A6) NEPC export licence (/services/nepc, POST /api/hub/services/nepc/apply): absent.
+- (A6) Partner services Pension, Banking, Grants (POST /api/hub/services/partner/apply) and web catalogue Loans/EasyBuy, Pensions: absent.
+- (A6) Mentors (/api/hub/services/mentors, MentorRequest): absent.
+- (A6) Service applications list/timeline page (/services/applications/[id]) other than CAC tracking: absent.
+- (A6) Legal service catalogue browse by category (LEGAL_CATEGORIES, 15+ services e.g. trademark, contract drafting, debt recovery) on /services/legal: the board replaces it with chat quick replies.
+- (A6) Legal in-person and chat consultation media as listed on web (chat/zoom/physical): board has video/phone/in person.
+- (A7) WAWU Learn (/learn, /learn/courses, /learn/guides, /learn/playbook; LearnCourse + CourseEnrollment with free-course slots) does not appear on the Schools boards
+- (A7) Mentors (GET /api/hub/services/mentors, POST /mentors/{id}/requests) do not appear on the Schools boards
+- (A7) Web ShopHome 'Featured Services' rail of partner services (ShopHome.tsx ServiceCard) is not on SH1
+- (A7) Web shop max-price filter (CategoryBrowser maxPriceNaira) is not on SH2
+- (A7) Web Flutterwave card checkout for shop is not on canvas (replaced by Pay from wallet)
+- (A7) Web 'Shop orders' row in Settings is not on canvas (canvas uses Me menu · My purchases)
+- (A7) WAWUBasket / WAWUBeauty handoff saves (POST /api/hub/marketplace/saves, ShopKind basket|beauty) do not appear on the Shop boards
+- (A7) Admin shop dispatch queue (GET /api/hub/admin/shop/orders, PATCH fulfilment, trackingNote) has no buyer-facing tracking-note display on SH8/SH10
+
+## Agent summaries
+
+### A1 (wallet)
+Wallet is the fintech core of WMT: 43 artboards turning a creator-only payout account into a full multi-currency bank account for every user at Fintava MFB, with Naira/Dollar/Crypto accounts, send to WAWU users and any Nigerian bank, card/USSD/FX top-ups, swaps, crypto receive/send, NQR scan-to-pay, a physical/virtual Verve card, transaction PIN, statements, receipts and a creator earnings move. Today's backend has exactly five wallet routes (get, history, banks, resolve-account, withdraw) on a Flutterwave payout subaccount, opened for creators only, balance in whole naira, history limited to WAWU-instructed earnings/withdrawals/reversals, and one manual KYC gate on withdraw; bills are card-funded checkouts paid from WAWU's float. Reusable as patterns: the provider-gateway interface, name-enquiry-before-send, pending-not-failed settlement, idempotent references, webhook settlement and reconcile sweep, withdrawalsEnabled/reason, and the Flutterwave Bills catalogue; everything Flutterwave-specific (PSA create/balance/fund/transfer clients, webhook guard, barterId/accountReference columns) must be replaced if Fintava is adopted. Missing outright: transaction PIN, beneficiaries, fees, WAWU-to-WAWU transfer, inbound deposit recording, receipts, statements, QR/NQR, USD, FX, crypto and the entire card stack; the web has only a creator /wallet and /earnings that differ from the canvas. The biggest risk is regulatory and contractual, not code: dollar accounts, crypto custody, card issuing, pay-from-wallet with WAWU-collected fees, and wallets for every user each collide with the current 'WAWU never custodies money, Naira only, Flutterwave PSA' rule, and every Fintava capability, fee, limit and FX rate on the boards is unverified. Most build items are XL because they are blocked on Fintava API docs and product-owner rulings rather than engineering effort.
+
+### A2 (auth, settings)
+Auth and Settings cover sign-up, sign-in, password reset, CBN-style account tiers, payout bank, and the Settings/Privacy/Delete/About/legal screens. Authentication lives in WAWU ID (/home/user/wawu-id/src), which today serves email+password register/login, refresh, email-code verification, phone OTP login, forgot/reset password and versioned policies; the Hub only mirrors profile data (accountType, interests) and owns settings, privacy, blocking and account deletion. Sign-in, forgot password and the settings/privacy/blocked screens are largely served and already built on web. The board's sign-up is a different product: BVN mandatory for everyone, NIBSS phone match, BVN-prefilled details incl. DOB, liveness selfie, an automatic Fintava MFB Tier 1 wallet for every account, and a 4-digit transaction PIN; none of BVN lookup, face match, DOB, tiers, Fintava, or PIN exists in WAWU ID, the Hub or web, and several conflict directly with current product rules (no liveness/Face-ID, manual KYC only for earning, Flutterwave custody, creator-only wallet). WAWU ID register accepts names, email, phone, country, state, gender, occupation (dropped) and password but no BVN, NIN, DOB or account type. A concrete trap: the board never verifies email, yet WAWU ID login refuses unverified-email accounts, so a board-path user could not sign back in. Highest-priority dependency for Wallet is the transaction PIN plus device/biometric binding, which have zero existing footprint. Settings gaps are smaller: change-password, server-side sign-out, three notification keys, data-export fulfilment, block enforcement in search/profile, and a 30-day cancellable deletion versus today's 48h non-cancellable one.
+
+### A3 (me)
+Me is the new tab-bar slot that IS the user's public profile (Content/Services/Shop/About) plus a private Menu (M7) fanning out to creator dashboard, library, purchases, courses, saved, notifications, verification and settings, and it also carries the whole Create/publish wizard and the two-tick verification purchase. Backend coverage is good for the core: profile, experience, follow, paid-DM price, tips, ticks with prices/expiry/eligibility, KYC states, content create/list/delete, moderation and notifications are all live routes. The big gaps are product-rule changes, not missing plumbing: the canvas turns ticks into an upload/storage/reach tier (5 free vs 25, 1 GB vs 10 GB, '⚠ Limits are placeholders.') against a hard flat cap of 5 (src/common/creator-allowance.ts:25) and flat 2 GB storage; it reintroduces Free content against 'no free content'; and it pays for ticks from a wallet with a PIN, against Flutterwave checkout today (no wallet-debit, no PIN anywhere). New entities are needed for featured works (M34-M36), education, profile location/open-to/skills/Threads/social order, content edit-resubmit with reviewer reason, per-piece sales, month-scoped earnings, saved events/creators and course progress. The web profile (LinkedIn-style rebuild) already matches the CV direction (headline, company, experience, skills) but differs on tabs (Overview/Content/Services/Events vs Content/Services/Shop/About), adds a four-up stat row, completeness ring and creator-tools rail the canvas omits, and has no Menu, Education, Open-to or Works; location/member-since render empty because the backend has no data. Independent live defect found: the backend still forces a creator's FIRST upload to be free (content-piece.service.ts:486-490) while the web only ever sends paid, so a new creator cannot publish their first piece from the web; the web also labels all-time earnings as 'this month' and renders the LinkedIn input twice in Edit profile. Biggest risk: the tick-as-tier and pay-from-wallet decisions touch the cap, storage, ranking and the custody/CBN question at once and need rulings before any build. Note: MANIFEST missed M13, M16, M27 and M35 (included here); the board header says 'Codes run M1–M32' and '⚠ marks anything assumed', but ids run to M37.
+
+### A4 (home, explore)
+Home is the Today screen (wallet balance card, TGIF card, four service tiles, creators rail), a full-bleed dark For you/Following feed that mixes every content format with interstitial creator and professional cards, a wallet+PIN unlock and tip flow, the content detail page, and a full-screen TGIF reader with a sponsored card. Explore is a near-port of web Explore plus Search, with doors into Events, Professionals (P1, P5) and the new Schools flow (SC1). Backend serves the skeleton (feed list, detail, comments, save, rate, follow, creators, events, search with closest/suggestions) but every money action is a Flutterwave charge, there is no buyer wallet and no transaction PIN, so H14–H18 and H26–H28 depend entirely on the Wallet flow and the provider ruling. There is no ad product at all: no model, placement, serving, tracking, dashboard or billing (NotificationCampaign is an admin push fan-out and Event.featured an unpaid pin), so the TGIF sponsored card and the TGIF-off ad slot are a new XL product. TGIF exists on web as a static, client-only devotional (same five parts as the boards) with a localStorage toggle that hides the card; the boards add reactions, reader counts, share-as-image and an ad, none of which has a backend. Smaller real gaps: no Following feed scope, no content likes or view counting, rate() has no purchase check and can be spammed, search never returns communities and never persists recent searches, and the Explore category chips use the creator taxonomy while web and backend filter on a different list. The navigation change (Home · Explore · Inbox · Wallet · Me, with Communities inside Inbox and Settings under Me) is the largest web-side conflict. The biggest risk is the wallet: every price on these boards is 'Pay from wallet' for every user, which runs into the current custody rule (WAWU must not hold a cashable balance) and needs a ruling before any of the payment rows can be built.
+
+### A5 (inbox)
+Inbox replaces the Messages tab and absorbs four things: paid DMs (fan and creator sides, same mechanics for professionals), a new free user-to-user chat with money send/request bubbles, Communities with WAWU Credits (moved out of the tab bar into a chip), and a WAWU system row. The paid-DM engine (send, 24h-default window, respond, expiry sweep, Flutterwave refund executor, settings) and the community/credits engine (rooms, join requests, 1-credit atomic debit, 85% host share) are real and largely served, but every payment on these boards is "Pay from wallet" with a PIN, while the backend charges and refunds through Flutterwave and only creators have a wallet. Free chat, P2P send/request money, a unified inbox feed, unread state, community slugs and "my communities" do not exist in the backend; the no-response penalty is modelled but never computed or enforced, and host credit earnings never reach a wallet. There is no real-time transport at all (no WebSocket/SSE, only cron) and no device-token storage or push provider, so live chat, delivery receipts and mobile push are greenfield. Web /messages is a creator-only paid inbox and Communities is its own nav slot, so the web differs structurally. The biggest risk is custody: "Held by WAWU" and fan-to-fan wallet transfers contradict the current rule that WAWU never holds money, the one line the product rules say must be raised before building. No designer warnings (⚠) appear on the Inbox board.
+
+### A6 (events, professionals, services)
+Events, professionals and services are all substantially built on backend and web, and every gap here is about money movement and a few model mismatches, not missing domains. Events ticketing (event + event-ticketing modules; EventOrder/EventTicket/EventTicketType/EventReferral models, there is no separate event-order module) already does verified-only hosting, admin review, tiered capacity-safe sales, QR check-in and cancel-with-refund, but every paid path is Flutterwave: buy() returns flutterwaveConfig, verifyOrder() verifies a Flutterwave charge, cancel() calls flutterwave.refundCharge, EventOrder is keyed on flutterwaveTxRef, and the host's 85% is computed on the dashboard but never paid into any wallet. Moving to the Fintava wallet means a buyer wallet and PIN that do not exist, a provider-neutral EventOrder reference, wallet credits for refunds, host settlement, and above all a ruling on who holds ticket money between sale and event (the CBN custody line in the product rules). Professionals match the bundle rule: P1-P10 show paid DMs only, with no booking, calendar or escrow, and the backend says the same. Two open points: the 24-hour auto-refund is a conditional hold that may count as escrow once it is paid from a wallet, and the board's field names do not match the backend category slugs. Services on the board are bills, bill reminders and legal. Bills exist on Flutterwave Bills with checkout, minus wallet debit, the electricity token and auto-reversal. Bill reminders and push notifications have no backend at all. Legal exists end to end, but its assistant chat only opens after payment while the board puts it first and free, and the board's consultation media and fees and its CAC price (₦35,000 vs ₦25,000) differ from code; the designer flags those fees as placeholders. Health plans, NEPC, partner services, mentors, the /services hub and professional reviews are on the web and backend but absent from these boards. The biggest risk is custody: wallet-paid tickets, refunds and DM refund holds put money in WAWU's hands unless the Fintava structure is ruled on first.
+
+### A7 (schools, shop)
+Schools is an entirely new product area: admin-curated schools (per the board note 'added from the WAWU dashboard', not a new account type) with priced courses and dated intakes with seat caps, enroll-and-pay-from-wallet with a PIN, a report of the enrollee's details sent to the school, and an alternative outbound tracked link for which the school pays WAWU a commission. Nothing in the backend models a school, a priced course, an intake or a payee that is not a creator; LearnCourse/CourseEnrollment is a different product (free-slot handoff, still gated on the removed subscription) and EventReferral attributes inbound on-platform sales, so neither fits beyond reusable patterns (Product.stock race-safe decrement, EventOrder commission snapshot). The schools backend surface is XL overall, and blocked on rulings: who receives enrollment money and at what split (current product has one 85/15 split; canvas shows 'No fee' and money 'to Greenfield'), the commission rate, and school KYB. Shop on canvas is WAWU's own first-party gear catalogue ('Approve ₦263,000 to WAWU Shop'), which matches the backend Product model with no seller and is not the WAWUBasket/WAWUBeauty handoff; backend and web already serve almost every shop screen, but the web shop is switched off (SHOP_LIVE = false, 12 Sep 2026) and the 'Sell on WAWU · List your gear and products' banner implies third-party sellers the model cannot hold. Shop gaps are pay-from-wallet + PIN (orders are Flutterwave card charges today), back-in-stock alerts, refund execution, and order help. The biggest risk across both flows is pay-from-wallet: it needs every buyer to have a spendable wallet and a debit-to-merchant path under a provider (Fintava per the design rule vs Flutterwave today), which reopens the custody/CBN question the current product notes say to check before building.

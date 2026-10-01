@@ -1,0 +1,19 @@
+:root {
+  /* 4pt steps */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+
+  /* Mobile layout constants */
+  --screen-w: 390px;
+  --gutter: 20px;          /* screen side padding */
+  --section-gap: 22px;     /* between sections on a screen */
+  --card-pad: 16px;
+  --tabbar-h: 90px;        /* incl. 26px home-indicator zone */
+  --control-h: 48px;
+  --tap-min: 44px;
+}

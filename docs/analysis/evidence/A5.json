@@ -1,0 +1,2030 @@
+{
+ "agent": "A5",
+ "flows": [
+  "inbox"
+ ],
+ "artboards": [
+  {
+   "id": "I1",
+   "flow": "inbox",
+   "title": "Inbox · All",
+   "kind": "screen",
+   "journey": "Inbox root (also the phone on the Start-here entry map)",
+   "what_it_shows": "One list mixing P2P chats, paid DMs with countdown, community rooms, money requests and a WAWU system thread, with filter chips All / Paid DMs / Communities / Money. Tab bar is Home · Explore · Inbox · Wallet · Me, with an unread badge on Inbox.",
+   "user_actions": [
+    "switch chip All/Paid DMs/Communities/Money",
+    "open a chat row",
+    "open a paid DM row",
+    "open a community row",
+    "open a money-request row",
+    "open paid-message settings (creator)",
+    "compose a new message or community"
+   ],
+   "data_needed": [
+    "unified thread list across DMs, P2P chats, communities, money events and system notifications, newest first",
+    "per-row last-message preview, timestamp, unread count",
+    "per-row money signal (money in, paid DM waiting with hours left, request amount + memo)",
+    "total unread for the tab badge",
+    "paid-DM count for the chip (creator: awaiting replies)"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/dm/threads (sender side) and GET /api/hub/dm/inbox (creator only, CreatorAccountGuard)",
+     "GET /api/hub/communities (page/perPage only, no membership filter)",
+     "GET /api/hub/notifications",
+     "searched backend-routes for inbox|chat|conversation|thread: only /dm/*, /legal/intake/chat/*, /communities/*/messages"
+    ],
+    "gap": "No unified inbox/feed endpoint; no free user-to-user chat model (models searched: only DirectMessage, CommunityMessage, LegalChatMessage); no money-in-chat events; no unread/last-read state on DirectMessage or CommunityMessage; no \"my communities\" list; no per-thread last-message preview for communities. No real-time transport exists: grep of wawu-backend/src and package.json for WebSocketGateway|@SubscribeMessage|socket.io|@Sse|text/event-stream returned nothing; only @nestjs/schedule cron jobs run server-side. Web fetches once on mount (no setInterval/EventSource/WebSocket in src/lib or src/components messaging code)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/messages",
+     "src/app/(app)/messages/page.tsx",
+     "src/components/layout/BottomNav.tsx"
+    ],
+    "delta": "Web /messages is the CREATOR-only paid-DM inbox (\"This inbox is for creators\"; fans are sent to /purchases). Communities are a separate bottom-nav slot (/communities). No chips, no P2P chats, no money rows, no WAWU system row. Nav is Home · Communities · Explore · Messages · Settings."
+   },
+   "third_party": [
+    "real-time transport (WebSocket) for live list updates",
+    "push provider (FCM/APNs or Expo) for unread badge when backgrounded"
+   ],
+   "facts_on_canvas": [
+    "Amaka Nwosu \"Sent you ₦5,000\"",
+    "Chidi Eze \"Paid DM · 18h left to reply\"",
+    "Kemi Okafor \"Requested ₦12,000 · Logo edits\"",
+    "WAWU \"Your card has shipped\""
+   ],
+   "conflicts": [
+    "navigation: tab bar Home · Explore · Inbox · Wallet · Me vs current Home · Communities · Explore · Messages · Settings"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I35",
+   "flow": "inbox",
+   "title": "Inbox · empty",
+   "kind": "state",
+   "journey": "Inbox root",
+   "what_it_shows": "Empty inbox with \"No messages yet\", guidance to message a creator from their profile or join a community, and a Browse communities button.",
+   "user_actions": [
+    "tap Browse communities"
+   ],
+   "data_needed": [
+    "empty unified list",
+    "Paid DMs count 0"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "depends on the unified inbox feed missing for I1"
+    ],
+    "gap": "Empty state needs the same unified feed I1 lacks; an empty response from the existing per-module endpoints is available today."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/messages/Inbox.tsx (EmptyState title \"No messages yet\")"
+    ],
+    "delta": "Web empty state exists only on the creator paid-DM inbox; fans get \"This inbox is for creators\" instead. No Browse communities CTA."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I36",
+   "flow": "inbox",
+   "title": "Inbox · loading",
+   "kind": "state",
+   "journey": "Inbox root",
+   "what_it_shows": "Skeleton list under the chips while the inbox loads.",
+   "user_actions": [],
+   "data_needed": [
+    "loading state only"
+   ],
+   "backend": {
+    "status": "n/a",
+    "evidence": [],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/app/(app)/messages/page.tsx (Skeleton rows)"
+    ],
+    "delta": "Web shows two skeleton cards under a \"Messages\" header, no chip row."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I2",
+   "flow": "inbox",
+   "title": "Profile · Message",
+   "kind": "cross-reference",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Creator profile header with Follow and \"Message · ₦1,500\"; the price sits on the button.",
+   "user_actions": [
+    "tap Message · ₦price"
+   ],
+   "data_needed": [
+    "creator dmEnabled, dmPrice, dmResponseHours, penalty-disabled flag"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/users/public/{wawuId} returns dmEnabled + dmPrice (src/user-profile/user-profile.service.ts:374-375)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "src/components/profile/ProfileActions.tsx (\"Message {formatNaira(dmPrice)}\")"
+    ],
+    "delta": ""
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Message · ₦1,500",
+    "Chidi Eze 41K followers"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I3",
+   "flow": "inbox",
+   "title": "Write the question",
+   "kind": "screen",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Ask sheet: question text, \"Usually replies in about 3 hours\", reply window, full-refund promise, \"Held by WAWU until Chidi answers\", Pay from wallet with Naira wallet balance, Send · ₦1,500 then PIN.",
+   "user_actions": [
+    "type question",
+    "Send · ₦1,500",
+    "enter wallet PIN (W11)"
+   ],
+   "data_needed": [
+    "creator price + response window",
+    "creator typical reply time",
+    "payer Naira wallet available balance",
+    "wallet debit + hold on PIN"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/dm/{creatorWawuId}/send + POST /api/hub/dm/{messageId}/send/verify",
+     "DirectMessageService.sendInit -> this.flutterwave.initCharge (src/direct-message/direct-message.service.ts) and sendVerify -> this.flutterwave.verifyCharge; FLUTTERWAVE_CLIENT from src/direct-message/flutterwave-client.interface.ts",
+     "searched schema/src for pin|transactionPin|fintava: none"
+    ],
+    "gap": "Send exists but is a Flutterwave inline-checkout charge, not a wallet debit; no payer wallet for non-creators (WalletService.getWallet rejects accountType != creator); no transaction PIN anywhere; no \"usually replies in\" metric (median respondedAt - sentAt is computable from DirectMessage but no endpoint returns it)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/dm/DmPaySheet.tsx",
+     "src/lib/api/dm.ts sendPaidDm"
+    ],
+    "delta": "Web pays through Flutterwave checkout popup, no wallet balance or PIN, no typical-reply-time line."
+   },
+   "third_party": [
+    "Fintava (per design rule): wallet debit + hold",
+    "Flutterwave (current): inline charge to be removed"
+   ],
+   "facts_on_canvas": [
+    "₦1,500 per message",
+    "24 hours to reply",
+    "Usually replies in about 3 hours",
+    "Naira wallet · ₦485,250.75 available",
+    "Held by WAWU until Chidi answers",
+    "No reply in time, your ₦1,500 comes back in full"
+   ],
+   "conflicts": [
+    "paid-DM payment path: wallet+PIN vs Flutterwave checkout",
+    "custody: \"Held by WAWU\" vs WAWU never holds money"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I4",
+   "flow": "inbox",
+   "title": "Waiting for a reply",
+   "kind": "screen",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Fan thread with the paid question, countdown \"17h 52m left to reply\", held-by-WAWU note, and the composer locked \"You can send once Chidi replies\".",
+   "user_actions": [
+    "wait",
+    "view countdown"
+   ],
+   "data_needed": [
+    "DM status, deadlineAt, amount",
+    "lock: no second paid message while one awaits"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/dm/{messageId} returns status, deadlineAt, amount (DirectMessageService.findOne)"
+    ],
+    "gap": "Backend does NOT stop a fan from opening a second paid DM while one is awaiting_response (sendInit checks only block list, dmEnabled, dmPrice). No pair-level thread: each DirectMessage is its own \"thread\" (id == threadId), so the history view shown here needs grouping by (senderWawuId, creatorWawuId). Countdown is client-side from deadlineAt; live update on reply needs real-time or polling."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/messages/[threadId]",
+     "src/app/(app)/messages/[threadId]/page.tsx",
+     "src/components/dm/DmThreadFooter.tsx"
+    ],
+    "delta": "Thread page exists and loads one DM once (no refresh). Fan side is reached from /purchases, not an inbox."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "17h 52m left",
+    "₦1,500 paid",
+    "No reply by tomorrow 09:51 and it comes back to your wallet"
+   ],
+   "conflicts": [
+    "custody: \"Your ₦1,500 is held by WAWU\" vs current product",
+    "refund destination: wallet vs original card"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I5",
+   "flow": "inbox",
+   "title": "Replied",
+   "kind": "screen",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Thread after the creator answered with two message bubbles, \"Replied in 2h 14m\", \"Chidi answered, so he's been paid\", and Ask a follow-up · ₦1,500 (a new paid message with its own window).",
+   "user_actions": [
+    "read reply",
+    "Ask a follow-up · ₦1,500"
+   ],
+   "data_needed": [
+    "responseText (multiple bubbles)",
+    "respondedAt for reply duration",
+    "push/notification to fan that the creator replied"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/dm/{messageId}/respond sets responseText, respondedAt",
+     "GET /api/hub/dm/{messageId}",
+     "notification kinds in src/notification/notification-event.ts: no dm_replied/dm_responded kind"
+    ],
+    "gap": "DirectMessage holds ONE responseText string, so the two creator bubbles shown are not representable (needs a reply-message child table or multi-part reply). No notification to the fan on reply (only dm_received to creator, dm_deadline, dm_refunded exist). Follow-up as a new paid DM works via the existing send flow but is not linked to the prior message."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/app/(app)/messages/[threadId]/page.tsx"
+    ],
+    "delta": "Web renders a single reply; follow-up goes through Flutterwave checkout."
+   },
+   "third_party": [
+    "push provider for \"Chidi replied\""
+   ],
+   "facts_on_canvas": [
+    "Replied in 2h 14m",
+    "₦450K a month (seeded copy)",
+    "Ask a follow-up for ₦1,500",
+    "Each paid message gets its own 24-hour window"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I6",
+   "flow": "inbox",
+   "title": "Not enough in wallet",
+   "kind": "state",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Ask sheet with an insufficient-balance banner \"You need ₦1,500. You have ₦900.00.\" and \"Add ₦600\", which opens Add money (W15) with the shortfall prefilled.",
+   "user_actions": [
+    "Add ₦600 -> W15"
+   ],
+   "data_needed": [
+    "payer wallet available balance",
+    "shortfall computation"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched backend-routes for wallet: only GET /wallet, /wallet/banks, /wallet/history, POST /wallet/resolve-account, /wallet/withdraw (creator payout subaccount; no top-up/fund route)",
+     "WalletService.getWallet throws for accountType != creator"
+    ],
+    "gap": "No payer (fan) wallet, no wallet balance check in the DM send path, no add-money/top-up endpoint. Owned jointly with the wallet flow (W15)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no balance check; Flutterwave checkout handles the card."
+   },
+   "third_party": [
+    "Fintava: wallet balance + funding"
+   ],
+   "facts_on_canvas": [
+    "You need ₦1,500. You have ₦900.00.",
+    "Add ₦600"
+   ],
+   "conflicts": [
+    "payer wallet for every account vs creator-only Flutterwave payout subaccount"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I7",
+   "flow": "inbox",
+   "title": "Refunded",
+   "kind": "state",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Thread after the window passed unanswered: \"No reply in 24 hours, so you got ₦200 back. It went back to your Naira wallet on Tuesday at 14:10. Zainab earned nothing.\" with Try again · ₦200.",
+   "user_actions": [
+    "Try again · ₦200"
+   ],
+   "data_needed": [
+    "DM status refunded + refund settled time",
+    "refund destination"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "DmStatus.refunded + DmRefundStatus (owed/submitted/settled/failed) + refundedAt on DirectMessage",
+     "SchedulerService.refundExpiredDms (cron every 10 min) + DmRefundService.processOwedRefunds -> flutterwave.refundCharge",
+     "notification kind dm_refunded",
+     "GET /api/hub/admin/payments/dm-refunds + /retry"
+    ],
+    "gap": "Refund exists end to end but goes back to the payer's CARD through Flutterwave (POST /v3/transactions/:id/refund keyed by flutterwaveTxId), not to a Naira wallet. A wallet refund would replace DmRefundService.refundOne with a wallet credit/release of the hold."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/messages/Inbox.tsx (StatusPill \"Refunded\")",
+     "/messages/[threadId]"
+    ],
+    "delta": "Web shows a Refunded pill; copy does not say \"back to your wallet\"."
+   },
+   "third_party": [
+    "Flutterwave refund API (current)",
+    "Fintava wallet credit (canvas)"
+   ],
+   "facts_on_canvas": [
+    "₦200 paid",
+    "No reply in 24 hours",
+    "went back to your Naira wallet on Tuesday at 14:10"
+   ],
+   "conflicts": [
+    "refund destination: Naira wallet vs Flutterwave card refund"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I8",
+   "flow": "inbox",
+   "title": "Creator has paid messages off",
+   "kind": "state",
+   "journey": "Ask a creator a paid question",
+   "what_it_shows": "Profile with \"Messages off\" and \"Tolu isn't taking paid messages right now. You can still follow, tip and buy from Tolu's shop.\" Designer note: off by choice, or switched off after missing too many.",
+   "user_actions": [
+    "follow",
+    "tip",
+    "open shop"
+   ],
+   "data_needed": [
+    "dmEnabled",
+    "penalty disabled-until flag"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "dmEnabled exposed on GET /api/hub/users/public/{wawuId}",
+     "CreatorNoResponseTracker.penaltyState/dmDisabledUntil exist in schema",
+     "grep src for penaltyState|dmDisabledUntil writers: none outside creator-no-response-tracker read path and seed"
+    ],
+    "gap": "The \"switched off after missing too many\" half does not work: nothing computes or writes CreatorNoResponseTracker, sendInit never checks dmDisabledUntil, and the public profile does not expose the penalty state."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/profile/ProfileActions.tsx (\"Messages off\")"
+    ],
+    "delta": "Web copy says \"Comment on their work instead\", not \"follow, tip and buy from the shop\"."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I9",
+   "flow": "inbox",
+   "title": "Paid DMs · to answer",
+   "kind": "screen",
+   "journey": "Answer paid questions (creator)",
+   "what_it_shows": "Creator view of the Paid DMs chip: \"Waiting on your reply ₦4,500 from 3 questions\", rows sorted by time left with price and countdown, red under 2 hours, Settings link.",
+   "user_actions": [
+    "tap a question",
+    "open Settings"
+   ],
+   "data_needed": [
+    "awaiting_response DMs for this creator sorted by deadlineAt asc",
+    "sum of amounts awaiting",
+    "sender name/avatar"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/dm/inbox (CreatorAccountGuard) returns all statuses ordered by sentAt desc, with otherParty name/handle/avatar"
+    ],
+    "gap": "No status filter, no deadline ordering, no pending-total aggregate; client would have to page through everything. Add ?status=awaiting_response&sort=deadline and a total."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/messages",
+     "src/components/messages/Inbox.tsx",
+     "src/components/messages/QuestionsDesktop.tsx"
+    ],
+    "delta": "Web creator inbox lists \"Respond by <date>\" rows with price; not a chip inside a unified inbox and no pending-total header."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦4,500 from 3 questions",
+    "₦1,500 each",
+    "1h 12m / 9h 04m / 21h 40m left",
+    "red under 2 hours"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I10",
+   "flow": "inbox",
+   "title": "Reply",
+   "kind": "screen",
+   "journey": "Answer paid questions (creator)",
+   "what_it_shows": "Creator thread with the fan question, \"Reply in 1h 12m to earn ₦1,275. That's 85% of ₦1,500. Miss it and Bisi gets the full amount back.\" and a reply composer.",
+   "user_actions": [
+    "type reply",
+    "Reply"
+   ],
+   "data_needed": [
+    "DM with deadlineAt and amount",
+    "creator share (85%)"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/dm/{messageId}/respond (CreatorAccountGuard, owner check, deadline check -> 409)",
+     "STANDARD_COMMISSION_RATE = 0.15 in src/creator-earnings/creator-earnings.service.ts"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/messages/QuestionDetail.tsx",
+     "src/lib/api/messaging.ts respondToThread"
+    ],
+    "delta": "Reply composer exists; not visually compared to I10."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "earn ₦1,275",
+    "85% of ₦1,500",
+    "1h 12m left"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I11",
+   "flow": "inbox",
+   "title": "Answered",
+   "kind": "screen",
+   "journey": "Answer paid questions (creator)",
+   "what_it_shows": "Answered thread: \"₦1,275 added to your earnings. Replied in 49 minutes. It moves to your wallet from Earnings (W39).\"",
+   "user_actions": [
+    "Message (continue)"
+   ],
+   "data_needed": [
+    "respondedAt",
+    "earning amount",
+    "earnings -> wallet move"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/dm/{messageId}/respond",
+     "WalletFundingService.fundAnsweredDms (cron fund-creator-wallets every 10 min) credits floor(amount*0.85) into the creator wallet automatically",
+     "GET /api/hub/content/mine/earnings"
+    ],
+    "gap": "Backend moves the share into the wallet automatically; the canvas says the creator moves it from Earnings (W39). Which model wins is a ruling. \"Message\" after answering implies continued chat, which the single-reply DM model does not support."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/messages/[threadId]",
+     "/earnings"
+    ],
+    "delta": "Web shows Answered status; no \"added to your earnings\" banner tied to W39."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦1,275 added to your earnings",
+    "Replied in 49 minutes"
+   ],
+   "conflicts": [
+    "earnings movement: manual move from Earnings (W39) vs automatic funding sweep"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I12",
+   "flow": "inbox",
+   "title": "Chat",
+   "kind": "screen",
+   "journey": "Send money in a chat",
+   "what_it_shows": "An ordinary free chat between two WAWU users (Femi Bankole, @femib · on WAWU) with text bubbles and a composer with +.",
+   "user_actions": [
+    "type and send a message",
+    "tap + for attachments/money"
+   ],
+   "data_needed": [
+    "conversation between any two users",
+    "messages with sender, text, timestamp, delivery/read state",
+    "typing indicator (implied by live chat)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "backend-models searched: DirectMessage (paid, creator-recipient only), CommunityMessage, LegalChatMessage; no Conversation/ChatMessage",
+     "backend-routes searched message|chat|conversation|thread: none for user-to-user"
+    ],
+    "gap": "No free user-to-user messaging exists. Needs Conversation(participants) + ChatMessage(id, conversationId, senderWawuId, kind text|image|file|money_sent|money_request, body, attachmentUrl, createdAt, deliveredAt, readAt) and list/send/mark-read endpoints, respecting BlockedAccount. No real-time transport exists: grep of wawu-backend/src and package.json for WebSocketGateway|@SubscribeMessage|socket.io|@Sse|text/event-stream returned nothing; only @nestjs/schedule cron jobs run server-side. Web fetches once on mount (no setInterval/EventSource/WebSocket in src/lib or src/components messaging code)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web has no free chat; /messages is paid DMs only."
+   },
+   "third_party": [
+    "WebSocket transport",
+    "push provider (FCM/APNs or Expo)"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "free chat between users vs \"pay to connect\" paid-DM model"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I13",
+   "flow": "inbox",
+   "title": "Add to chat",
+   "kind": "screen",
+   "journey": "Send money in a chat",
+   "what_it_shows": "Attachment sheet: Send money (from your Naira wallet · instant), Request money (Femi pays from their wallet), Photo or video, File (PDF, up to 20 MB).",
+   "user_actions": [
+    "Send money",
+    "Request money",
+    "attach photo/video",
+    "attach PDF"
+   ],
+   "data_needed": [
+    "wallet availability for both parties",
+    "presigned upload for media and PDF"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/uploads/presign exists (StorageObject model) and could back attachments",
+     "no chat model to attach to (see I12)",
+     "no P2P transfer or request route"
+    ],
+    "gap": "Attachments have an upload primitive (presign) but no chat to attach to and no PDF/video folder for chat; send/request money needs P2P wallet transfer and a money-request model (see I14-I19)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [
+    "Fintava: internal wallet-to-wallet transfer"
+   ],
+   "facts_on_canvas": [
+    "PDF, up to 20 MB",
+    "instant"
+   ],
+   "conflicts": [
+    "P2P money between users vs creator-only payout subaccount"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I14",
+   "flow": "inbox",
+   "title": "Amount",
+   "kind": "screen",
+   "journey": "Send money in a chat",
+   "what_it_shows": "Send to Femi keypad (same as Send W9): ₦25,000 with Naira balance and a note, Send ₦25,000 then PIN (W11).",
+   "user_actions": [
+    "enter amount",
+    "add note",
+    "Send",
+    "enter PIN"
+   ],
+   "data_needed": [
+    "payer balance",
+    "recipient wallet",
+    "transfer with note, idempotency key",
+    "PIN verification"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "wallet routes: no transfer-to-user route (only withdraw to bank)",
+     "searched src for transactionPin|pin: none"
+    ],
+    "gap": "No user-to-user transfer, no PIN. Depends on the wallet flow (W9/W11)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [
+    "Fintava: P2P transfer, balance"
+   ],
+   "facts_on_canvas": [
+    "₦25,000",
+    "Naira balance ₦485,250.75"
+   ],
+   "conflicts": [
+    "P2P transfers vs current creator-only wallet"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I15",
+   "flow": "inbox",
+   "title": "Sent",
+   "kind": "screen",
+   "journey": "Send money in a chat",
+   "what_it_shows": "Chat with a money bubble \"You sent ₦25,000.00 · For the shoot, thank you · Delivered to Femi 10:42\".",
+   "user_actions": [
+    "view bubble"
+   ],
+   "data_needed": [
+    "money message kind in chat linked to a ledger entry",
+    "delivery status"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "no chat model; WalletLedgerEntry kinds are earning|withdrawal|reversal only (no transfer)"
+    ],
+    "gap": "Needs a money_sent chat message linked to a transfer ledger row, plus a delivery state; WalletEntryKind has no transfer kind."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦25,000.00",
+    "Delivered to Femi 10:42"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I16",
+   "flow": "inbox",
+   "title": "Request sheet",
+   "kind": "screen",
+   "journey": "Request money",
+   "what_it_shows": "Request from Femi sheet: amount ₦12,000, what it's for, \"Nothing moves until they tap Pay\", Request ₦12,000.",
+   "user_actions": [
+    "enter amount and reason",
+    "Request"
+   ],
+   "data_needed": [
+    "money request create (amount, memo, requester, payer, conversation)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched routes/models for request: MentorRequest, LegalRequest, CommunityMembership requests only"
+    ],
+    "gap": "Needs MoneyRequest(id, conversationId, requesterWawuId, payerWawuId, amount, memo, status pending|paid|declined|cancelled, paidLedgerRef) and POST create."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦12,000",
+    "Logo edits, round 2"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I17",
+   "flow": "inbox",
+   "title": "Request sent",
+   "kind": "screen",
+   "journey": "Request money",
+   "what_it_shows": "Chat bubble \"You requested ₦12,000 · Logo edits, round 2 · Waiting for Femi\".",
+   "user_actions": [],
+   "data_needed": [
+    "request bubble with live status"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "see I16"
+    ],
+    "gap": "Request bubble and status updates need the MoneyRequest model and live delivery."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [
+    "WebSocket/push for status change"
+   ],
+   "facts_on_canvas": [
+    "₦12,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I18",
+   "flow": "inbox",
+   "title": "Request from someone",
+   "kind": "screen",
+   "journey": "Pay a request",
+   "what_it_shows": "Incoming request bubble from Kemi with Decline and Pay ₦12,000 (then PIN W11).",
+   "user_actions": [
+    "Decline",
+    "Pay ₦12,000",
+    "enter PIN"
+   ],
+   "data_needed": [
+    "incoming money request",
+    "pay = wallet transfer + mark paid atomically",
+    "decline"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "see I16; no wallet transfer route"
+    ],
+    "gap": "Needs POST pay (wallet debit/transfer + status paid, idempotent) and POST decline, plus notification to requester."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [
+    "Fintava: P2P transfer"
+   ],
+   "facts_on_canvas": [
+    "₦12,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I19",
+   "flow": "inbox",
+   "title": "Request paid",
+   "kind": "screen",
+   "journey": "Pay a request",
+   "what_it_shows": "The request bubble flips to Paid and the conversation continues.",
+   "user_actions": [],
+   "data_needed": [
+    "request status paid"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "see I16"
+    ],
+    "gap": "As I18."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Not on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I20",
+   "flow": "inbox",
+   "title": "Money filter",
+   "kind": "screen",
+   "journey": "Filter by money",
+   "what_it_shows": "Inbox filtered to money moments only: tips/transfers in, requests, sends, refunds (e.g. \"Refunded ₦200 · no reply\").",
+   "user_actions": [
+    "tap Money chip",
+    "open a row"
+   ],
+   "data_needed": [
+    "per-conversation money events: tips received, P2P sends/receives, requests, DM refunds"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "tips exist as Purchase rows via POST /api/hub/tips (Flutterwave)",
+     "DM refunds exist on DirectMessage",
+     "GET /api/hub/wallet/history is creator-only and lists wallet ledger, not chat money"
+    ],
+    "gap": "Tips and DM refunds exist as data but there is no aggregation by counterpart; P2P transfers and requests do not exist. Tips are not linked to any chat (the entry map calls a tip \"shown as a bubble\" in chat)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [],
+    "delta": "Web notifications page groups notifications with an amount, which is the nearest thing; no inbox money filter."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Sent you ₦5,000",
+    "Requested ₦12,000",
+    "You sent ₦25,000",
+    "Refunded ₦200"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I21",
+   "flow": "inbox",
+   "title": "Settings",
+   "kind": "screen",
+   "journey": "Paid message settings (creator)",
+   "what_it_shows": "Paid messages settings: toggle, price per message with presets, reply window, \"You earn per message ₦1,275 · Your share 85%\", \"Unanswered, last 30 days 4%\", Save.",
+   "user_actions": [
+    "toggle on/off",
+    "pick price preset or type",
+    "pick reply window",
+    "Save"
+   ],
+   "data_needed": [
+    "dmEnabled, dmPrice (min 50), dmResponseHours",
+    "30-day unanswered rate"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "PATCH /api/hub/creator/dm-settings (UpdateDmSettingsDto: dmEnabled, dmPrice Min 50 Max 10,000,000, dmResponseHours 1-336)",
+     "GET /api/hub/creator/state",
+     "GET /api/hub/dm/response-stats"
+    ],
+    "gap": "Settings write is served. The unanswered rate is never computed: CreatorNoResponseTrackerService only upserts a zero row on read, and no cron or sweep writes noResponseRatePct."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/messages/settings",
+     "src/components/messages/PaidMessagesSettings.tsx"
+    ],
+    "delta": "Presets (₦100/500/1,000/2,500) and windows (24h/2d/3d/1w) match. Web penalty explainer states 10-30% warning, 30% off for 7 days and a 30-day tier, which differs from the canvas thresholds."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "lowest ₦50",
+    "presets ₦100, ₦500, ₦1,000, ₦2,500",
+    "24 hours / 2 days / 3 days / 1 week",
+    "You earn per message ₦1,275",
+    "Your share 85%",
+    "Unanswered, last 30 days 4%"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I22",
+   "flow": "inbox",
+   "title": "Warning",
+   "kind": "state",
+   "journey": "Paid message settings (creator)",
+   "what_it_shows": "Settings in the \"warned\" state: \"You missed 4 of your last 18. Past 30% and paid messages switch off for 7 days.\" with Raise to ₦2,500. Board says the state triggers over 20% unanswered.",
+   "user_actions": [
+    "Raise to ₦2,500",
+    "Save"
+   ],
+   "data_needed": [
+    "penaltyState warned",
+    "missed count / total count"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "PenaltyState enum: none|warned|disabled_7d|disabled_30d",
+     "GET /api/hub/dm/response-stats returns penaltyState"
+    ],
+    "gap": "Nothing ever sets warned (no writer of CreatorNoResponseTracker). \"Missed 4 of last 18\" counts are not returned (only a percent). No warning notification kind."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/messages/PaidMessagesSettings.tsx (warned state, raise-price action)"
+    ],
+    "delta": "Web has the warned state and a raise-price action; thresholds in copy differ."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "over 20% unanswered",
+    "You missed 4 of your last 18",
+    "Past 30% ... switch off for 7 days",
+    "Unanswered 22%",
+    "Raise to ₦2,500"
+   ],
+   "conflicts": [
+    "penalty thresholds: canvas 20% warn / 30% off 7 days vs spec 10-30% warn, 30-50% 7 days, >50% 30 days"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I23",
+   "flow": "inbox",
+   "title": "Switched off for 7 days",
+   "kind": "state",
+   "journey": "Paid message settings (creator)",
+   "what_it_shows": "Settings locked: \"Paid messages are off for 7 days. Back on 3 October.\" toggle locked until the date; publishing, communities, tips and shop keep working.",
+   "user_actions": [],
+   "data_needed": [
+    "penaltyState disabled_7d",
+    "dmDisabledUntil"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "CreatorNoResponseTracker.dmDisabledUntil in schema",
+     "grep creator-state service for penalty|disabledUntil: none"
+    ],
+    "gap": "Nothing writes disabled_7d; PATCH /creator/dm-settings does not refuse turning DMs back on during a lock; sendInit does not enforce dmDisabledUntil."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/messages/PaidMessagesSettings.tsx (locked state from dmDisabledUntil)"
+    ],
+    "delta": "Web renders a locked state including a 30-day variant the canvas does not show."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "off for 7 days",
+    "Back on 3 October",
+    "Unanswered 34%"
+   ],
+   "conflicts": [
+    "penalty thresholds (as I22)"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I24",
+   "flow": "inbox",
+   "title": "Communities",
+   "kind": "screen",
+   "journey": "Talk in a community",
+   "what_it_shows": "Communities chip inside Inbox: \"48 WAWU Credits · Reading is free · 1 credit per message you send · Buy\", Your communities with last-message previews, Suggested with member count, open Join / private Ask.",
+   "user_actions": [
+    "Buy credits",
+    "open a room",
+    "Join (open)",
+    "Ask (private)"
+   ],
+   "data_needed": [
+    "credit balance (count)",
+    "communities I belong to (joined + hosted) with last message + time",
+    "suggested communities with memberCount and kind"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/credits",
+     "GET /api/hub/communities (page/perPage, name asc, memberCount + messagesToday)",
+     "POST /api/hub/communities/{id}/join",
+     "GET /api/hub/communities/{id}/membership (one at a time)"
+    ],
+    "gap": "No \"my communities\" query (web comment: joined tab only reflects joins made this session); no last-message preview or unread per room; no suggestion/ranking logic; no ?host= filter."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/communities",
+     "src/components/communities/CommunityTabs.tsx (joined/discover/hosting)",
+     "src/components/communities/CreditsCard.tsx"
+    ],
+    "delta": "Web has Communities as its own bottom-nav slot with Joined/Discover/Hosting tabs, not a chip inside Inbox. Joined list is session-local."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "48 WAWU Credits",
+    "1 credit per message",
+    "Afrobeats producers 2.1K members",
+    "Founders under 30 640 members"
+   ],
+   "conflicts": [
+    "navigation: Communities moved from a tab-bar slot into an Inbox chip"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I25",
+   "flow": "inbox",
+   "title": "Community",
+   "kind": "screen",
+   "journey": "Talk in a community",
+   "what_it_shows": "Room view for an open community with member count, credit balance in header, Host tag on the host's message, and composer \"Message · 1 credit\".",
+   "user_actions": [
+    "read messages",
+    "type a message"
+   ],
+   "data_needed": [
+    "community header (name, memberCount, kind)",
+    "messages with sender name/avatar and host flag",
+    "credit balance",
+    "live new messages"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/communities/{id}",
+     "GET /api/hub/communities/{id}/messages (members only, newest first, page/perPage)",
+     "GET /api/hub/credits"
+    ],
+    "gap": "Served for request/response. No incremental fetch (no since/cursor param) and no live delivery: No real-time transport exists: grep of wawu-backend/src and package.json for WebSocketGateway|@SubscribeMessage|socket.io|@Sse|text/event-stream returned nothing; only @nestjs/schedule cron jobs run server-side. Web fetches once on mount (no setInterval/EventSource/WebSocket in src/lib or src/components messaging code)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/communities/[id]",
+     "src/components/communities/CommunityThreadDesktop.tsx"
+    ],
+    "delta": "Room exists on web; not visually compared; loads once."
+   },
+   "third_party": [
+    "WebSocket transport for live room"
+   ],
+   "facts_on_canvas": [
+    "1,204 members",
+    "48 credits",
+    "Message · 1 credit"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I26",
+   "flow": "inbox",
+   "title": "Sending",
+   "kind": "screen",
+   "journey": "Talk in a community",
+   "what_it_shows": "Composer with text and send button \"Send · 1\" showing the credit cost.",
+   "user_actions": [
+    "Send · 1"
+   ],
+   "data_needed": [
+    "send debits 1 credit atomically"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/communities/{id}/messages (MESSAGE_COST_IN_CREDITS = 1, conditional decrement, CreditSpend + CreditSpendEarning in one transaction)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/communities/CommunityComposer.tsx"
+    ],
+    "delta": "Exists; not visually compared."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Send · 1"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I27",
+   "flow": "inbox",
+   "title": "Out of credits",
+   "kind": "state",
+   "journey": "Buy credits",
+   "what_it_shows": "Room with 0 credits: \"You're out of credits. Reading stays free. Buy credits to send messages here.\" with Buy credits.",
+   "user_actions": [
+    "Buy credits"
+   ],
+   "data_needed": [
+    "402 insufficient_credits from send",
+    "balance 0"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/communities/{id}/messages -> 402 {reason: insufficient_credits}",
+     "credits_low notification kind"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/communities/CreditsCard.tsx"
+    ],
+    "delta": "Exists; not visually compared."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "0 credits",
+    "Reading stays free"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I28",
+   "flow": "inbox",
+   "title": "Buy credits",
+   "kind": "screen",
+   "journey": "Buy credits",
+   "what_it_shows": "Buy WAWU Credits sheet: packs 50/₦500, 120/₦1,000 (Popular), 300/₦2,000 (Best value), \"Credits don't expire and can't be cashed out\", Pay from wallet, Buy 120 credits · ₦1,000 then PIN.",
+   "user_actions": [
+    "pick a pack",
+    "Buy",
+    "enter PIN"
+   ],
+   "data_needed": [
+    "pack table",
+    "wallet balance",
+    "wallet debit"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/credits/purchase + /verify (CreditPurchaseService, PACK_TABLE starter 500/50, popular 1000/120, pro 2000/300)",
+     "src/credit-purchase/flutterwave-client.interface.ts"
+    ],
+    "gap": "Packs match the server table. Payment is a Flutterwave charge, not a wallet debit with PIN; CreditPurchase.flutterwaveTxRef is the lookup key."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/communities/CreditsCard.tsx",
+     "src/lib/api/communities.ts topUpCredits"
+    ],
+    "delta": "Web buys through Flutterwave checkout; no wallet balance line."
+   },
+   "third_party": [
+    "Fintava wallet debit (canvas)",
+    "Flutterwave (current)"
+   ],
+   "facts_on_canvas": [
+    "50 credits ₦500",
+    "120 credits ₦1,000",
+    "300 credits ₦2,000",
+    "Credits don't expire and can't be cashed out",
+    "Naira wallet · ₦485,250.75"
+   ],
+   "conflicts": [
+    "credits payment path: wallet vs Flutterwave checkout"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I29",
+   "flow": "inbox",
+   "title": "Credits added",
+   "kind": "screen",
+   "journey": "Buy credits",
+   "what_it_shows": "\"120 credits added. Paid ₦1,000 from your Naira wallet. You have 120 credits.\" Back to chat.",
+   "user_actions": [
+    "Back to chat"
+   ],
+   "data_needed": [
+    "new balance"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/credits/purchase/verify upserts CreditsState.creditBalance and opens a CreditLot"
+    ],
+    "gap": "Crediting is served; \"paid from your Naira wallet\" is not (Flutterwave). Note: the board shows 48 + 120 = 120, which reads as the balance replaced rather than added; the server adds."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/communities/CreditsCard.tsx"
+    ],
+    "delta": "Web confirms credits added after Flutterwave."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "120 credits added",
+    "Paid ₦1,000",
+    "You have 120 credits"
+   ],
+   "conflicts": [
+    "credits payment path (as I28)"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "I30",
+   "flow": "inbox",
+   "title": "Private · ask to join",
+   "kind": "screen",
+   "journey": "Join a private community",
+   "what_it_shows": "Private room landing with cover image header, host name, \"The host approves every member\", avatars \"Bisi and 12 people you follow are members\", member count, host \"Answers requests usually within a day\", Ask to join.",
+   "user_actions": [
+    "Ask to join"
+   ],
+   "data_needed": [
+    "community with cover, host display name",
+    "followed users who are members",
+    "host typical approval time"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/communities/{id} (imageUrl, hostWawuId, memberCount)",
+     "POST /api/hub/communities/{id}/join -> pending for private"
+    ],
+    "gap": "No host display name on the community payload (only hostWawuId); no \"people you follow who are members\" query (FollowRelationship x CommunityMembership); no host approval-time metric. Cover is optional server-side though the board says every private room has one."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/communities/CommunityJoinGate.tsx"
+    ],
+    "delta": "Web join gate exists; no followed-members strip or approval-time line."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "640 members",
+    "Bisi and 12 people you follow",
+    "Usually within a day"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I31",
+   "flow": "inbox",
+   "title": "Request sent",
+   "kind": "state",
+   "journey": "Join a private community",
+   "what_it_shows": "\"Request sent. Adaeze will see it in her join requests. We'll let you know when she answers.\" Waiting for the host, Cancel request.",
+   "user_actions": [
+    "Cancel request"
+   ],
+   "data_needed": [
+    "pending membership",
+    "cancel",
+    "notification on decision"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "DELETE /api/hub/communities/{id}/join deletes the membership row (works for pending)",
+     "approve/decline routes exist; community.service.ts notes \"no notification exists either way\""
+    ],
+    "gap": "No notification to the requester when the host approves or declines (\"We'll let you know\" is not backed); no community kind in notification-event.ts."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "src/components/communities/CommunityJoinGate.tsx (pending copy)"
+    ],
+    "delta": "Web shows the pending state; not compared for Cancel request."
+   },
+   "third_party": [
+    "push provider"
+   ],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I37",
+   "flow": "inbox",
+   "title": "Approved · inside",
+   "kind": "screen",
+   "journey": "Join a private community",
+   "what_it_shows": "Inside the private room after approval; cover stays as the room header, credit balance, host welcome message, Message · 1 credit.",
+   "user_actions": [
+    "read",
+    "send (1 credit)"
+   ],
+   "data_needed": [
+    "membership joined",
+    "room messages",
+    "cover imageUrl"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/communities/{id}/requests/{userWawuId}/approve",
+     "GET /api/hub/communities/{id}/messages",
+     "Community.imageUrl"
+    ],
+    "gap": "Room itself is served; the approval is not announced to the member (see I31)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/communities/[id]",
+     "src/components/communities/CommunityRoomImage.tsx"
+    ],
+    "delta": "Exists; not visually compared."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "48 credits",
+    "640 members"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I32",
+   "flow": "inbox",
+   "title": "New community",
+   "kind": "screen",
+   "journey": "Host a community",
+   "what_it_shows": "New community form: picture, name, what it's for, Open vs Private (\"You approve every member. Needs a cover image.\"), \"Free to host. You keep 85% of every credit spent in your room.\" Creator accounts only.",
+   "user_actions": [
+    "add picture",
+    "enter name/description",
+    "pick Open or Private",
+    "Create community"
+   ],
+   "data_needed": [
+    "create community with name, description, kind, imageUrl",
+    "creator account check"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/communities (CreatorAccountGuard; CreateCommunityDto name 3-80, description 1-500, kind open|private, imageUrl optional)",
+     "POST /api/hub/uploads/presign (community/image)",
+     "CREDITS_HOST_SHARE 17/20 = 85% in src/credit-spend/credit-spend.service.ts"
+    ],
+    "gap": "Create is served. \"Needs a cover image\" for Private is not enforced (imageUrl optional for both kinds). The host's 85% is computed into CreditSpendEarning but WalletFundingService only funds purchases and answered DMs, so credit-spend earnings never reach the wallet (admin finance service says the whole lifetime figure is outstanding)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/communities/new",
+     "src/components/communities/CreateCommunity.tsx"
+    ],
+    "delta": "Web form exists; does not require a cover for private; reached from Communities tab, not Inbox compose."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Free to host",
+    "You keep 85% of every credit spent in your room"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I33",
+   "flow": "inbox",
+   "title": "Created",
+   "kind": "screen",
+   "journey": "Host a community",
+   "what_it_shows": "\"Aba tailors circle is live. Open · you're the host\" with share link wawu/c/aba-tailors, Copy, Share link, Open room.",
+   "user_actions": [
+    "Copy link",
+    "Share link",
+    "Open room"
+   ],
+   "data_needed": [
+    "community slug / short link"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/communities returns id",
+     "searched schema for slug on Community: none"
+    ],
+    "gap": "No community slug or short-link route; only a uuid id. A wawu/c/<slug> link needs a unique slug column, generation, and a resolve route."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/communities/[id]"
+    ],
+    "delta": "Web navigates by uuid; no share-link success screen verified."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "wawu/c/aba-tailors",
+    "Members pay 1 credit a message"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "I34",
+   "flow": "inbox",
+   "title": "Join requests",
+   "kind": "screen",
+   "journey": "Approve members",
+   "what_it_shows": "Host queue for a private room: requester name, headline and city, how long ago, Decline / Approve.",
+   "user_actions": [
+    "Approve",
+    "Decline"
+   ],
+   "data_needed": [
+    "pending requests ordered by requestedAt with display name, headline, location, avatar"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/communities/{id}/requests (handle + avatarUrl + requestedAt)",
+     "POST .../requests/{userWawuId}/approve",
+     "DELETE .../requests/{userWawuId}"
+    ],
+    "gap": "Queue and actions are served; payload lacks display name, headline (\"Brand designer\") and location (\"Enugu\") shown on the board."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/communities/[id]/requests",
+     "src/components/communities/JoinRequestQueue.tsx"
+    ],
+    "delta": "Exists; reached from the community, not from Inbox."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "asked 2h ago"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  }
+ ],
+ "designer_questions": [],
+ "conflicts": [
+  {
+   "topic": "paid DM payment path",
+   "canvas": "\"₦ Pay from wallet · Naira wallet · ₦485,250.75 available\" / \"Send · ₦1,500 · PIN\" (I3); design rule: \"Payments: Fintava wallet only (\\\"Pay from wallet\\\"). No Flutterwave, no hosted checkout.\"",
+   "current": "01_SPEC.md: \"Every one-time stream (PPV, downloads, DM, tips, Credits) reuses this exact call pattern\" (Flutterwave inline checkout). Code: DirectMessageService.sendInit -> flutterwave.initCharge, sendVerify -> flutterwave.verifyCharge.",
+   "artboards": [
+    "I3",
+    "I4",
+    "I5",
+    "I6"
+   ],
+   "backend_code_that_changes": [
+    "src/direct-message/direct-message.service.ts: sendInit (initCharge + PendingCharge kind dm + DmSendInitResponse.flutterwaveConfig) and sendVerify (verifyCharge, flutterwaveTxRef/flutterwaveTxId write)",
+    "src/direct-message/dm-refund.service.ts: refundOne -> flutterwave.refundCharge; settleFromWebhook",
+    "src/direct-message/flutterwave-client.interface.ts + real-flutterwave.adapter.ts + mock-flutterwave.adapter.ts (FLUTTERWAVE_CLIENT binding in direct-message.module.ts)",
+    "src/payment-webhook/payment-webhook.service.ts: dm branch (PendingCharge kind dm -> directMessages.sendVerify) and dm_refund settle branch",
+    "src/scheduler/scheduler.service.ts: refundExpiredDms -> dmRefunds.processOwedRefunds",
+    "src/admin/payments (dm-refunds queue + retry) and src/admin/finance (DM rows in ledger)",
+    "prisma DirectMessage: flutterwaveTxRef @unique (required), flutterwaveTxId, refundReference, refundStatus semantics",
+    "web: src/lib/api/dm.ts sendPaidDm, src/components/dm/DmPaySheet.tsx"
+   ]
+  },
+  {
+   "topic": "custody of paid-DM money",
+   "canvas": "\"Held by WAWU until Chidi answers\" (I3); \"Your ₦1,500 is held by WAWU.\" (I4)",
+   "current": "\"Creators have a wallet; WAWU does not hold the money ... WAWU holding a cashable balance itself would be a CBN licensing trigger in Nigeria.\" (current-product-rules.md, the one line flagged to raise before building)",
+   "artboards": [
+    "I3",
+    "I4"
+   ]
+  },
+  {
+   "topic": "refund destination",
+   "canvas": "\"It went back to your Naira wallet on Tuesday at 14:10.\" (I7); \"comes back to your wallet\" (I4)",
+   "current": "DmRefundService sends the refund to the original payment via Flutterwave POST /v3/transactions/:id/refund.",
+   "artboards": [
+    "I4",
+    "I7"
+   ]
+  },
+  {
+   "topic": "wallet provider",
+   "canvas": "Design rule: \"Payments: Fintava wallet only\"",
+   "current": "\"Each wallet is a Flutterwave payout subaccount: an account at Flutterwave MFB in the creator's own name\"",
+   "artboards": [
+    "I3",
+    "I6",
+    "I14",
+    "I28"
+   ]
+  },
+  {
+   "topic": "who has a wallet / P2P money",
+   "canvas": "\"Send money · From your Naira wallet · instant\", \"Request money · Femi pays from their wallet\" (I13); fan pays paid DMs from a Naira wallet (I3, I6)",
+   "current": "\"Creators have a wallet\" (current-product-rules.md); WalletService.getWallet: \"A wallet comes with a creator or professional account.\"; 01_SPEC §3: a balance usable for anything is \"wallet/licensing territory\"",
+   "artboards": [
+    "I3",
+    "I6",
+    "I13",
+    "I14",
+    "I15",
+    "I16",
+    "I17",
+    "I18",
+    "I19"
+   ]
+  },
+  {
+   "topic": "navigation",
+   "canvas": "Tab bar \"Home Explore Inbox Wallet Me\"; Communities is a chip inside Inbox (I1, I24)",
+   "current": "\"Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings\"",
+   "artboards": [
+    "I1",
+    "I24"
+   ]
+  },
+  {
+   "topic": "paid-DM penalty thresholds",
+   "canvas": "\"From I21 · over 20% unanswered\" -> warned (I22); \"Past 30% and paid messages switch off for 7 days\" (I22); \"From I21 · over 30% unanswered\" -> disabled7 (I23). No 30-day tier drawn.",
+   "current": "01_SPEC §2: \"Under 10% → no penalty. 10–30% → warning notification. 30–50% → DM auto-disabled for 7 days. Over 50% → DM auto-disabled for 30 days.\"",
+   "artboards": [
+    "I22",
+    "I23"
+   ]
+  },
+  {
+   "topic": "credits payment path",
+   "canvas": "\"₦ Pay from wallet ... Buy 120 credits · ₦1,000\" then PIN (I28); \"Paid ₦1,000 from your Naira wallet\" (I29)",
+   "current": "Credits bought through Flutterwave checkout (01_SPEC line 163; CreditPurchaseService)",
+   "artboards": [
+    "I28",
+    "I29"
+   ]
+  },
+  {
+   "topic": "creator earnings movement",
+   "canvas": "\"₦1,275 added to your earnings ... It moves to your wallet from Earnings (W39).\" (I11)",
+   "current": "WalletFundingService (cron fund-creator-wallets) \"moves each share out to its owner as it is earned\" automatically",
+   "artboards": [
+    "I11"
+   ]
+  },
+  {
+   "topic": "free user-to-user chat",
+   "canvas": "\"A normal chat between two WAWU users.\" (I12), messaging from Inbox compose (I1 hotspot 6)",
+   "current": "01_SPEC: \"They pay for direct access to creators (DM)\"; web /messages: \"This inbox is for creators\"; the only DM in the product is the paid DirectMessage",
+   "artboards": [
+    "I12",
+    "I1"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "I3",
+   "fact": "₦1,500 per paid message (example price)",
+   "kind": "money"
+  },
+  {
+   "artboard": "I3",
+   "fact": "24-hour default reply window",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I3",
+   "fact": "\"Usually replies in about 3 hours\"",
+   "kind": "metric"
+  },
+  {
+   "artboard": "I3",
+   "fact": "Naira wallet · ₦485,250.75 available",
+   "kind": "money"
+  },
+  {
+   "artboard": "I3",
+   "fact": "\"Held by WAWU until Chidi answers\"",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "I3",
+   "fact": "full refund if no reply in time",
+   "kind": "policy"
+  },
+  {
+   "artboard": "I6",
+   "fact": "You need ₦1,500. You have ₦900.00. Add ₦600",
+   "kind": "money"
+  },
+  {
+   "artboard": "I7",
+   "fact": "₦200 refunded to Naira wallet; creator earned nothing",
+   "kind": "policy"
+  },
+  {
+   "artboard": "I10",
+   "fact": "85% of ₦1,500 = ₦1,275",
+   "kind": "rate"
+  },
+  {
+   "artboard": "I11",
+   "fact": "₦1,275 added to earnings",
+   "kind": "money"
+  },
+  {
+   "artboard": "I21",
+   "fact": "lowest price ₦50 (board note)",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I21",
+   "fact": "presets ₦100, ₦500, ₦1,000, ₦2,500",
+   "kind": "money"
+  },
+  {
+   "artboard": "I21",
+   "fact": "reply windows 24 hours / 2 days / 3 days / 1 week",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I21",
+   "fact": "Your share 85%",
+   "kind": "rate"
+  },
+  {
+   "artboard": "I22",
+   "fact": "warning over 20% unanswered",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I22",
+   "fact": "switch off past 30% for 7 days",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I23",
+   "fact": "locked 7 days, \"Back on 3 October\"",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I24",
+   "fact": "1 credit per message sent; reading free",
+   "kind": "rate"
+  },
+  {
+   "artboard": "I28",
+   "fact": "50 credits ₦500 / 120 credits ₦1,000 / 300 credits ₦2,000",
+   "kind": "money"
+  },
+  {
+   "artboard": "I28",
+   "fact": "Credits don't expire and can't be cashed out",
+   "kind": "policy"
+  },
+  {
+   "artboard": "I32",
+   "fact": "Free to host; host keeps 85% of every credit spent in the room",
+   "kind": "rate"
+  },
+  {
+   "artboard": "I32",
+   "fact": "Private rooms need a cover image",
+   "kind": "policy"
+  },
+  {
+   "artboard": "I13",
+   "fact": "File: PDF up to 20 MB",
+   "kind": "limit"
+  },
+  {
+   "artboard": "I13",
+   "fact": "Send money \"instant\"",
+   "kind": "provider/licence"
+  },
+  {
+   "artboard": "I14",
+   "fact": "₦25,000 send example",
+   "kind": "money"
+  },
+  {
+   "artboard": "I16",
+   "fact": "₦12,000 request example",
+   "kind": "money"
+  },
+  {
+   "artboard": "I1",
+   "fact": "₦5,000 received example",
+   "kind": "money"
+  },
+  {
+   "artboard": "I33",
+   "fact": "share link wawu/c/aba-tailors",
+   "kind": "link"
+  },
+  {
+   "artboard": "I2",
+   "fact": "Section note: \"From the code: the fan pays once per message, the creator has a reply window (24 hours by default) ... Paid from the wallet with the PIN. Professionals work the same way.\"",
+   "kind": "claim"
+  },
+  {
+   "artboard": "I24",
+   "fact": "Section note: \"From the code: reading is always free, sending costs 1 WAWU Credit a message ... bought from the wallet. There's no trial. Rooms are open or private, and hosting is free for creators.\"",
+   "kind": "claim"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "Unified inbox feed endpoint GET /inbox?filter=all|paid_dms|communities|money returning mixed rows (P2P chat, paid DM, community, money event, WAWU system) with lastMessage preview, timestamp, unreadCount, money signal, plus total unread for the tab badge",
+   "why": "I1, I20, I35 show one list with chips; today the data is spread over /dm/threads, /dm/inbox, /communities, /notifications with no unread state",
+   "artboards": [
+    "I1",
+    "I20",
+    "I35",
+    "I36",
+    "I9",
+    "I24"
+   ],
+   "size": "L",
+   "depends_on": [
+    "free chat model",
+    "money-request model",
+    "per-thread last-read state"
+   ]
+  },
+  {
+   "item": "Free user-to-user chat: Conversation + ConversationParticipant(lastReadAt) + ChatMessage(kind text|image|video|file|money_sent|money_request, body, attachmentUrl, deliveredAt) with list/send/mark-read endpoints, block-list enforcement, cursor pagination (?before/?after)",
+   "why": "I12 is a free chat between two users; nothing in backend-models supports it",
+   "artboards": [
+    "I12",
+    "I13",
+    "I15",
+    "I17",
+    "I18",
+    "I19"
+   ],
+   "size": "L",
+   "depends_on": [
+    "product ruling on free chat vs paid-DM model"
+   ]
+  },
+  {
+   "item": "Real-time transport: authenticated WebSocket gateway (@nestjs/websockets) with Redis pub/sub adapter for multi-replica fan-out; events message.new, message.delivered, message.read, typing, dm.status_changed, money_request.updated, community.message.new; plus ?after cursor on GET /communities/{id}/messages and GET /dm/{id} for polling fallback",
+   "why": "Live chat, delivery receipts (\"Delivered to Femi\"), countdown flips and room messages; backend has no websocket/SSE today, only cron",
+   "artboards": [
+    "I1",
+    "I4",
+    "I12",
+    "I15",
+    "I17",
+    "I25",
+    "I26"
+   ],
+   "size": "L",
+   "depends_on": [
+    "hosting supports sticky/WebSocket connections",
+    "Redis instance"
+   ]
+  },
+  {
+   "item": "Push notifications: DeviceToken model (userWawuId, platform ios|android, provider, token unique, appVersion, lastSeenAt, revokedAt), POST/DELETE /devices endpoints, sender behind NotificationService.emit honoring NotificationSettings, invalid-token pruning",
+   "why": "Mobile app needs push for replies, refunds, money, join approvals; no device-token storage exists (searched schema/src for device|fcm|apns|expo|pushToken: none)",
+   "artboards": [
+    "I5",
+    "I7",
+    "I15",
+    "I17",
+    "I18",
+    "I31",
+    "I37"
+   ],
+   "size": "M",
+   "depends_on": [
+    "push provider choice (FCM/APNs or Expo)",
+    "Apple/Google credentials"
+   ]
+  },
+  {
+   "item": "Paid DM payment via wallet: replace Flutterwave initCharge/verifyCharge in DirectMessageService.sendInit/sendVerify with a PIN-authorised wallet debit into a hold; release to creator on respond; release back to payer wallet on expiry (replace DmRefundService.refundOne Flutterwave refund); drop the PaymentWebhookService dm branch; migrate DirectMessage.flutterwaveTxRef (required, unique) to a provider-neutral payment reference",
+   "why": "Canvas: \"Pay from wallet\" with PIN and refund to the Naira wallet; custody wording \"Held by WAWU\" needs a ruling first",
+   "artboards": [
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "I11"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "custody/CBN ruling",
+    "Fintava (or provider) wallet API for every account",
+    "transaction PIN (wallet flow W11)"
+   ]
+  },
+  {
+   "item": "Paid DM thread model: group DMs by (senderWawuId, creatorWawuId) into one thread; allow multiple creator reply bubbles (DmReply rows) within the paid window; refuse a new paid DM while one is awaiting_response; expose creator median reply time (\"usually replies in about N hours\") and reply duration",
+   "why": "I4 locks the composer until reply; I5 shows two reply bubbles and a follow-up in the same thread; I3 shows typical reply time",
+   "artboards": [
+    "I3",
+    "I4",
+    "I5",
+    "I11"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Creator paid-DM inbox query: GET /dm/inbox?status=awaiting_response&sort=deadline with totalAwaitingAmount",
+   "why": "I9 sorts by time left and shows \"₦4,500 from 3 questions\"",
+   "artboards": [
+    "I9"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "No-response tracker computation: sweep computing rolling 30-day unanswered rate and missed/total counts, writing penaltyState and dmDisabledUntil, emitting a warning notification, enforced in DirectMessageService.sendInit and PATCH /creator/dm-settings, and exposed on the public profile",
+   "why": "I21-I23 and I8 depend on a rate nothing computes; CreatorNoResponseTracker is read-only today",
+   "artboards": [
+    "I8",
+    "I21",
+    "I22",
+    "I23"
+   ],
+   "size": "M",
+   "depends_on": [
+    "threshold ruling (canvas 20/30 vs spec 10/30/50)"
+   ]
+  },
+  {
+   "item": "Money in chat: P2P wallet transfer with note (WalletEntryKind transfer_in/transfer_out or equivalent) and MoneyRequest model (pending|paid|declined|cancelled) with create/pay/decline endpoints, each writing a chat message",
+   "why": "I13-I19 send and request money inside a chat",
+   "artboards": [
+    "I13",
+    "I14",
+    "I15",
+    "I16",
+    "I17",
+    "I18",
+    "I19",
+    "I20"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "wallet for every account (wallet flow)",
+    "custody ruling",
+    "transaction PIN",
+    "free chat model"
+   ]
+  },
+  {
+   "item": "Credits purchase from wallet: replace Flutterwave charge in CreditPurchaseService with a PIN-authorised wallet debit; keep PACK_TABLE and CreditLot cost-basis logic",
+   "why": "I28/I29 pay from the Naira wallet",
+   "artboards": [
+    "I28",
+    "I29"
+   ],
+   "size": "M",
+   "depends_on": [
+    "wallet for every account",
+    "transaction PIN"
+   ]
+  },
+  {
+   "item": "Fund host credit earnings into the wallet: add fundCreditSpends to WalletFundingService reading CreditSpendEarning.hostShareKobo",
+   "why": "I32 promises the host 85% of credits spent; today no credit-spend share ever reaches a wallet (admin finance notes it as outstanding)",
+   "artboards": [
+    "I32"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Communities for the inbox: GET /communities?member=me (joined + hosted) with last message preview and unread; suggested list; host display name on community payload; \"people you follow who are members\" and host approval-time on community detail; requester display name/headline/location on join-request queue",
+   "why": "I24, I30, I34 show data the endpoints do not return; web joined tab is session-local",
+   "artboards": [
+    "I24",
+    "I30",
+    "I34"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Community slug + share link: unique slug column, generation on create, GET /communities/by-slug/{slug}",
+   "why": "I33 shows wawu/c/aba-tailors",
+   "artboards": [
+    "I33"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Private community cover required: reject kind=private without imageUrl in CreateCommunityDto/PATCH",
+   "why": "I32 \"Needs a cover image\"; I30 \"Every private room has a cover image header\"",
+   "artboards": [
+    "I30",
+    "I32"
+   ],
+   "size": "S",
+   "depends_on": [
+    "confirm it applies to existing private rooms without a cover"
+   ]
+  },
+  {
+   "item": "New notification kinds: dm_replied (to fan), community_join_approved / community_join_declined (to requester), money_received, money_requested, money_request_paid/declined, dm_penalty_warned",
+   "why": "\"We'll let you know when she answers\" (I31) and reply/money events have no notification today (notification-event.ts has 12 kinds, none of these)",
+   "artboards": [
+    "I5",
+    "I15",
+    "I17",
+    "I18",
+    "I22",
+    "I31",
+    "I37"
+   ],
+   "size": "S",
+   "depends_on": [
+    "push delivery for mobile"
+   ]
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "Fintava (named in design rules)",
+   "capability": "wallet balance, PIN-authorised debit/hold, wallet-to-wallet transfer, credit back on refund",
+   "artboards": [
+    "I3",
+    "I6",
+    "I7",
+    "I14",
+    "I18",
+    "I28"
+   ]
+  },
+  {
+   "provider": "FCM / APNs or Expo Push (not chosen)",
+   "capability": "mobile push delivery for replies, refunds, money and join decisions",
+   "artboards": [
+    "I5",
+    "I7",
+    "I15",
+    "I18",
+    "I31"
+   ]
+  },
+  {
+   "provider": "Redis (or managed pub/sub)",
+   "capability": "fan-out for WebSocket gateway across replicas",
+   "artboards": [
+    "I12",
+    "I25"
+   ]
+  },
+  {
+   "provider": "Flutterwave (current)",
+   "capability": "inline charge + refund for paid DMs and credits; would be removed from these paths by the canvas",
+   "artboards": [
+    "I3",
+    "I7",
+    "I28"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "Report a paid DM (POST /api/hub/dm/{messageId}/report, web reportDmThread)",
+  "Leave a community (DELETE /api/hub/communities/{id}/join)",
+  "Host edits community name/description/image (PATCH /api/hub/communities/{id})",
+  "Host removes a member (DELETE /api/hub/communities/{id}/members/{userWawuId})",
+  "Hosting tab listing communities I host (web CommunityTabs \"hosting\")",
+  "Standalone notifications page /notifications with mark-all-read (canvas only shows a WAWU row in the inbox)",
+  "Notification settings toggles (newReplies, dmReminders, refunds, communityDigest) at /settings/notifications",
+  "30-day paid-DM suspension tier (disabled_30d) shown on web settings",
+  "Posting a photo into a community room (CommunityMessage.imageUrl)",
+  "credits_low warning notification",
+  "Desktop three-pane questions view (QuestionsDesktop)",
+  "Dispute/query on an unanswered DM (01_SPEC §2)"
+ ],
+ "summary": "Inbox replaces the Messages tab and absorbs four things: paid DMs (fan and creator sides, same mechanics for professionals), a new free user-to-user chat with money send/request bubbles, Communities with WAWU Credits (moved out of the tab bar into a chip), and a WAWU system row. The paid-DM engine (send, 24h-default window, respond, expiry sweep, Flutterwave refund executor, settings) and the community/credits engine (rooms, join requests, 1-credit atomic debit, 85% host share) are real and largely served, but every payment on these boards is \"Pay from wallet\" with a PIN, while the backend charges and refunds through Flutterwave and only creators have a wallet. Free chat, P2P send/request money, a unified inbox feed, unread state, community slugs and \"my communities\" do not exist in the backend; the no-response penalty is modelled but never computed or enforced, and host credit earnings never reach a wallet. There is no real-time transport at all (no WebSocket/SSE, only cron) and no device-token storage or push provider, so live chat, delivery receipts and mobile push are greenfield. Web /messages is a creator-only paid inbox and Communities is its own nav slot, so the web differs structurally. The biggest risk is custody: \"Held by WAWU\" and fan-to-fan wallet transfers contradict the current rule that WAWU never holds money, the one line the product rules say must be raised before building. No designer warnings (⚠) appear on the Inbox board."
+}

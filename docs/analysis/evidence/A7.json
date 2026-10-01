@@ -1,0 +1,1588 @@
+{
+ "agent": "A7",
+ "flows": [
+  "schools",
+  "shop"
+ ],
+ "artboards": [
+  {
+   "id": "SC-START",
+   "flow": "schools",
+   "title": "Start here · Schools entry map",
+   "kind": "entry-map",
+   "journey": "Entry",
+   "what_it_shows": "Explore scrolled past Upcoming events to the doors: 'Find a professional', 'Find a school · Courses from schools and academies', 'List your services'. Legend: Find a school -> SC1; Explore search with a course/school name -> results include schools -> SC1; Me menu · My courses -> SC8. Bottom bar Home/Explore/Inbox/Wallet/Me.",
+   "user_actions": [
+    "tap 'Find a school' door",
+    "search a course or school name from Explore search",
+    "Me menu · My courses"
+   ],
+   "data_needed": [
+    "Explore doors config",
+    "search results containing schools",
+    "my enrollments"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/search exists but SearchTab = 'all'|'content'|'creators'|'communities' (search-response/dto/search-query.dto.ts:10); no schools tab",
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files"
+    ],
+    "gap": "No schools entity, so neither the door target nor search-includes-schools nor My courses can be served. Search needs a 'schools' tab/aggregate."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/explore (ProfessionalsRail.tsx has 'Find a professional')"
+    ],
+    "delta": "Web Explore has no 'Find a school' door; web bottom nav is Home/Communities/Explore/Messages/Settings, canvas is Home/Explore/Inbox/Wallet/Me. No 'My courses' in a Me menu."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "nav: canvas bottom bar 'Home Explore Inbox 3 Wallet Me 1' vs current 'Home · Communities · Explore · Messages · Settings'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SC1",
+   "flow": "schools",
+   "title": "Schools",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "Schools directory: search 'Search schools or courses', category chips All/Tech/Business/Creative/Languages/Vocational, school cards with initials avatar, city, course count, rating and 'from' price (Greenfield Tech Academy, Lagos, 18 courses, 4.8, from ₦45,000; Aba Fashion Institute, Aba, 9 courses, 4.7, from ₦30,000). Entry: Explore (X15) · Find a school.",
+   "user_actions": [
+    "search schools or courses",
+    "filter by category chip",
+    "tap a school"
+   ],
+   "data_needed": [
+    "school list: id, name, logo/initials, city, courseCount, ratingAvg, minCoursePriceNaira, category",
+    "search across school name AND course title",
+    "category taxonomy (Tech, Business, Creative, Languages, Vocational)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "GET /api/hub/learn/courses is WAWU Learn (LearnCourse: title, category, hours, certificate, externalHostUrl) with no school/provider, no price, no rating, so it does not fit",
+     "GET /api/hub/professionals lists ProfessionalProfile (individual credentialed people), not institutions"
+    ],
+    "gap": "Needs School model + GET /api/hub/schools?category=&q= returning aggregate courseCount and min price; rating requires a review system that does not exist (Product.ratingAvg comment forbids seeded ratings)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Entire screen absent on web."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Greenfield Tech Academy · Lagos · 18 courses · 4.8 · from ₦45,000",
+    "Aba Fashion Institute · Aba · 9 courses · 4.7 · from ₦30,000",
+    "ratings 4.8 / 4.7 (no review system exists to derive them)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SC2",
+   "flow": "schools",
+   "title": "School",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "School profile: initials avatar, name, 'Yaba, Lagos · Since 2016 · 4.8 (1,240)', expertise chips (Product design, Software, Data, Cloud), blurb with a placement claim, 'Courses 18' list with course name, length/mode and price.",
+   "user_actions": [
+    "read profile",
+    "tap a course"
+   ],
+   "data_needed": [
+    "school: name, location (area, city), foundedYear, ratingAvg, ratingCount, expertise tags[], about",
+    "courses: id, title, durationWeeks, deliveryMode (online/weekends/weekday evenings), priceNaira"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "LearnCourse has no price, provider or duration-in-weeks (hours Int only)"
+    ],
+    "gap": "Needs GET /api/hub/schools/{id} with nested courses. ratingCount 1,240 needs reviews; placement claim is free text the admin enters."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Since 2016",
+    "4.8 (1,240) rating",
+    "'6,000 graduates placed in Lagos and remote roles' (marketing claim WAWU would publish)",
+    "Product Design Bootcamp 12 weeks ₦150,000",
+    "Frontend Development 16 weeks ₦180,000",
+    "Data Analysis with Excel 4 weeks ₦45,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SC3",
+   "flow": "schools",
+   "title": "Course",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "Course detail: school name, course title, Length 12 weeks, Classes 'Online, Saturdays in Yaba', Starts Mon 3 November, You get 'Certificate, mentor, portfolio', numbered syllabus, secondary link 'Or apply on Greenfield's website', sticky price '₦150,000 One payment' + Enroll.",
+   "user_actions": [
+    "Enroll",
+    "Or apply on Greenfield's website (-> SC9)"
+   ],
+   "data_needed": [
+    "course: title, length, classesDescription, nextStartDate, outcomes[], syllabus[], priceNaira, paymentPlan ('One payment')",
+    "school external apply URL + WAWU tracked ref",
+    "next intake + capacity (to show SC11)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "LearnCourse.whatItCovers String[] and externalHostUrl are the nearest fields; GET /api/hub/learn/courses/{id} has no price, intake, or provider"
+    ],
+    "gap": "Needs GET /api/hub/schools/courses/{id} with intakes[], syllabus[], outcomes[], priceNaira, applyUrl (tracked). 'One payment' implies a payment-plan field (instalments not drawn)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)",
+     "/learn/courses/[id] is WAWU Learn, free-slot enrol + handoff to externalHostUrl"
+    ],
+    "delta": "Absent; /learn/courses/[id] is a different model (no price, no school)."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "₦150,000 One payment",
+    "Starts Mon 3 November",
+    "You get Certificate, mentor, portfolio (school's claim)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SC4",
+   "flow": "schools",
+   "title": "Your details",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "Enroll step 1: 'Prefilled. Nothing to type.' Name, email, masked phone from the WAWU account; 'Pick a class' radio list of intakes (Starts 3 November · Weekend class · 8 seats left; Starts 12 January · Weekday evenings). Disclosure: 'Greenfield gets these details so they can follow up with you.' Continue.",
+   "user_actions": [
+    "confirm prefilled details",
+    "pick a class/intake",
+    "Continue"
+   ],
+   "data_needed": [
+    "current user name, email, phone (UserProfile)",
+    "course intakes: id, startDate, schedule label, location, capacity, seatsLeft",
+    "consent record that details are shared with the school"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "profile fields exist via GET /api/hub/users/me (UserProfile) but no intake/seat model; Product.stock conditional-decrement pattern (shop.service.ts:429-435) is the reusable seat-claim pattern"
+    ],
+    "gap": "Needs CourseIntake model (capacity, seatsTaken) and an enrollment draft; needs a consent flag/timestamp for sharing PII with the school (data-protection)."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "8 seats left",
+    "'Greenfield gets these details so they can follow up with you.' (data-sharing disclosure, legal/NDPR wording unverified)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SC5",
+   "flow": "schools",
+   "title": "Pay",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "Enroll payment summary: name, course card, Course fee ₦150,000, Fee 'No fee', Total ₦150,000, source 'Pay from wallet · Naira wallet · ₦485,250.75 available', CTA 'Pay ₦150,000'.",
+   "user_actions": [
+    "review total",
+    "Pay ₦150,000 from wallet"
+   ],
+   "data_needed": [
+    "course price snapshot",
+    "buyer wallet balance (authoritative from provider)",
+    "fee rule (none)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/wallet/withdraw is the only wallet debit and it pays to a bank account; there is no 'pay WAWU / pay a merchant from wallet' route. Wallet routes: GET /wallet, /wallet/history, /wallet/banks, POST /wallet/resolve-account, /wallet/withdraw (all creator-only: wallet.controller.ts 'a creator's own wallet, and nobody else's'). CreatorWallet keyed to creators only.",
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files"
+    ],
+    "gap": "No buyer-side wallet, no debit-to-merchant route, no enrollment order model (amount snapshot, commission snapshot, payee). Also no rule for where ₦150,000 goes (school payee) or WAWU's share."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)",
+     "/wallet exists but is creator earnings/withdraw only"
+    ],
+    "delta": "Absent; web has no pay-from-wallet anywhere."
+   },
+   "third_party": [
+    "Fintava (design rule: 'Fintava wallet only') or Flutterwave (current wallet provider): wallet debit/transfer to merchant"
+   ],
+   "facts_on_canvas": [
+    "Course fee ₦150,000",
+    "Fee: No fee",
+    "Naira wallet · ₦485,250.75 available (kobo shown; backend amounts are whole-naira Int)",
+    "recipient and split of enrollment money unstated"
+   ],
+   "conflicts": [
+    "payments: canvas 'Pay from wallet' (Fintava wallet only) vs current Flutterwave subaccount wallets for creators and card charges for purchases",
+    "wallet: buyer Lennox has a Naira wallet vs current 'Creators have a wallet'",
+    "revenue split: canvas 'Fee: No fee' with full ₦150,000 approved 'to Greenfield Tech Academy' vs current 'flat 85/15, on every stream, with no exceptions'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SC6",
+   "flow": "schools",
+   "title": "PIN",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "PIN sheet: 'Enter your PIN · Approve ₦150,000 to Greenfield Tech Academy', numeric keypad. (Present on the board but NOT in MANIFEST.json; added so it is not a hole.)",
+   "user_actions": [
+    "enter transaction PIN"
+   ],
+   "data_needed": [
+    "transaction PIN set/verify, attempt lockout",
+    "payee display name (school)"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'transaction ?pin|txPin|transactionPin' wawu-backend/src -> 0 hits; no PIN route in backend-routes.txt",
+     "POST /api/hub/wallet/withdraw is the only wallet debit and it pays to a bank account; there is no 'pay WAWU / pay a merchant from wallet' route. Wallet routes: GET /wallet, /wallet/history, /wallet/banks, POST /wallet/resolve-account, /wallet/withdraw (all creator-only: wallet.controller.ts 'a creator's own wallet, and nobody else's'). CreatorWallet keyed to creators only."
+    ],
+    "gap": "No transaction PIN anywhere (set, verify, reset, lockout). Payee is the school, which is not an account in the system."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no PIN UI on web (grep -rnw PIN wawuafrica/src -> only map-pin comments)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [
+    "wallet provider (Fintava or Flutterwave) if PIN is provider-held"
+   ],
+   "facts_on_canvas": [
+    "'Approve ₦150,000 to Greenfield Tech Academy' (school named as payee)"
+   ],
+   "conflicts": [
+    "payee: canvas approves money 'to Greenfield Tech Academy' vs current: only creators (KYC'd, account type creator) earn; a school is neither an account type nor KYC'd"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SC7",
+   "flow": "schools",
+   "title": "Enrolled",
+   "kind": "screen",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "Receipt: You're enrolled · course · starts 3 Nov; School; Class 'Weekend · Yaba'; Paid ₦150,000; Reference WAW-SC4K-81PQ; 'Greenfield will contact you within 2 working days. We've sent them your details.' Share receipt / My courses. Then: 'WAWU sends the school a report with your details'.",
+   "user_actions": [
+    "Share receipt",
+    "My courses"
+   ],
+   "data_needed": [
+    "enrollment: reference, school, intake label, amountPaid, status",
+    "school report dispatch (email/webhook/dashboard) with enrollee PII",
+    "shareable receipt"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "EventOrder/ShopOrder are the nearest paid-order patterns; no school report mechanism; notification routes are user-facing (GET /api/hub/notifications), not outbound partner reports"
+    ],
+    "gap": "Needs SchoolEnrollment order with reference generator, receipt endpoint, and a school-report delivery (email to school contact or school dashboard), plus a 2-working-day follow-up SLA tracker if WAWU promises it."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [
+    "transactional email provider for the school report (none confirmed for this use)"
+   ],
+   "facts_on_canvas": [
+    "Paid ₦150,000",
+    "Reference WAW-SC4K-81PQ",
+    "'Greenfield will contact you within 2 working days' (SLA WAWU would be promising on a school's behalf)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SC8",
+   "flow": "schools",
+   "title": "My courses",
+   "kind": "screen",
+   "journey": "Your courses",
+   "what_it_shows": "My courses with Current/Finished tabs: Product Design Bootcamp · Greenfield · starts 3 Nov · 'School will contact you'; Pattern Cutting Basics · Aba Fashion Institute · week 3 of 6 · 'In progress'. Entry: SC7 My courses or Me menu.",
+   "user_actions": [
+    "switch Current/Finished",
+    "open an enrollment"
+   ],
+   "data_needed": [
+    "my enrollments: course, school, startDate, status (awaiting school contact / in progress / finished), progress week x of y"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "CourseEnrollment model (userWawuId, courseId, progressPct) and POST /api/hub/learn/courses/{id}/enrol exist but are WAWU Learn: tied to LearnCourse, gated on 'free-course slots from an active, paid creator subscription (basic=1, pro=3)' (course-enrollment.service.ts), no GET-my-enrollments route listed in backend-routes"
+    ],
+    "gap": "No list route for my enrollments; CourseEnrollment has no school, intake, payment or status. 'week 3 of 6' needs a progress source (school or admin updates it), none exists. The existing enrol gate references the removed subscription."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)",
+     "/learn shows WAWU Learn entitlement, not school enrollments"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "entry: canvas 'Me menu · My courses' vs current Slot 5 'Settings, not Profile'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SC9",
+   "flow": "schools",
+   "title": "Apply on their site",
+   "kind": "state",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "From SC3 'Or apply on their website'. Sheet: 'Apply on Greenfield's site. You finish signing up on their website. Your WAWU link tells them you came from here.' Shows greenfield.ng/apply?ref=wawu-7KQ2, 'Continue to their site', 'Enroll on WAWU instead'. Board note: 'Tracked link, for commission.' Section note: 'Or apply on the school's site through the WAWU link, and the school pays WAWU a commission.'",
+   "user_actions": [
+    "Continue to their site (external)",
+    "Enroll on WAWU instead"
+   ],
+   "data_needed": [
+    "school applyUrl + WAWU ref code (per school, per the section text 'their unique WAWU link'; per user/session if attribution is per buyer)",
+    "click log (who, when, which course)",
+    "conversion report from school",
+    "commission rate and invoicing"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "POST /api/hub/events/{id}/referrals + EventReferral(code, label, ownerWawuId) + EventOrder.referralCode: INBOUND attribution of ON-PLATFORM sales; does not fit an OUTBOUND link whose conversion happens on the school's site",
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "POST /api/hub/payments/hosted-link is a payment link, unrelated"
+    ],
+    "gap": "Needs: SchoolLink(code, schoolId, courseId?) and a redirect endpoint (e.g. GET /api/hub/schools/go/{code} -> 302 + SchoolLinkClick row with userWawuId, courseId, ts); a way to learn conversions (school self-report in dashboard, CSV import, or a postback API the school calls); commission invoicing to the school (off-platform receivable). WAWU can see clicks only; conversions depend on the school."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "greenfield.ng/apply?ref=wawu-7KQ2",
+    "'the school pays WAWU a commission' (rate unstated)",
+    "who sees the tracking: unstated (school? WAWU admin? user?)"
+   ],
+   "conflicts": [
+    "revenue model: canvas 'the school pays WAWU a commission' (a receivable from an outside party, rate not drawn) vs current 'there is now exactly ONE split in the product' (85/15)"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SC10",
+   "flow": "schools",
+   "title": "No results",
+   "kind": "state",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "From SC1 no results: query 'drone piloting', 'No schools for \"drone piloting\" · Try a shorter search, or browse a category.'",
+   "user_actions": [
+    "edit search",
+    "pick a category chip"
+   ],
+   "data_needed": [
+    "empty result set from school search"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files"
+    ],
+    "gap": "Same as SC1: no schools search endpoint."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SC11",
+   "flow": "schools",
+   "title": "Class full",
+   "kind": "state",
+   "journey": "Find a school and enroll",
+   "what_it_shows": "From SC3 class full: banner 'The November class is full · The next one starts 12 January.' CTA 'Enroll for January'.",
+   "user_actions": [
+    "Enroll for January (next intake)"
+   ],
+   "data_needed": [
+    "intake capacity, seatsTaken, next open intake"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "searched: backend-routes 'school|course|learn|enrol|referr|link|wallet'; backend-models (no School/SchoolCourse/Intake/Cohort model); grep -rli 'school' wawu-backend/src -> 0 files",
+     "Product.stock conditional decrement (shop.service.ts) is the reusable race-safe pattern for seats"
+    ],
+    "gap": "Needs CourseIntake capacity + seat claim at payment time (not at SC4), with 'full' derived server-side and next-intake lookup."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no /schools route in web-routes.txt; grep -rli school wawuafrica/src -> only a SCHOOLFEES biller icon and a mock DM. Closest: /learn/courses (WAWU Learn, a different product)"
+    ],
+    "delta": "Absent."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "November class full; next starts 12 January"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH-START",
+   "flow": "shop",
+   "title": "Start here · Shop entry map",
+   "kind": "entry-map",
+   "journey": "Entry",
+   "what_it_shows": "Home 'Today' with Naira wallet ₦485,250.75 (Send/Add/Bills/Scan), TGIF verse card, 'What would you like to do today?' tiles Pay bills / Events / Legal / Shop, creators to discover. Legend: Shop -> SH1 Marketplace; Me menu · My purchases -> orders -> SH9.",
+   "user_actions": [
+    "tap Shop tile",
+    "Me menu · My purchases → orders"
+   ],
+   "data_needed": [
+    "Home service tiles",
+    "buyer wallet balance",
+    "my orders"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/shop/products, GET /api/hub/shop/orders exist",
+     "GET /api/hub/wallet is creator-only (wallet.controller.ts)"
+    ],
+    "gap": "Shop entry is served; the Home wallet header for a non-creator buyer is not (no buyer wallet)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/ (home)",
+     "lib/platform-services.ts Shop tile (soon: true)",
+     "/settings row 'Shop orders' -> /shop/orders",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Web Shop tile is dimmed/unlinked (soon) and every /shop route shows Coming soon. Orders are reached from Settings, not a Me menu."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Naira wallet ₦485,250.75 on Home"
+   ],
+   "conflicts": [
+    "shop availability: canvas Home tile 'Shop' opens a live Marketplace vs current web SHOP_LIVE = false (12 Sep 2026)",
+    "nav: canvas 'Home Explore Inbox Wallet Me' vs current 'Home · Communities · Explore · Messages · Settings'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SH1",
+   "flow": "shop",
+   "title": "Marketplace",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Marketplace home: bag icon with count 2, 'Search products', aisle chips All/Audio & Music/Video & Film/Lighting & Studio/Photography, 'Featured products · See all' with WAWU pick cards (Rode NT-USB ₦185,000 was ₦210,000; Neewer 18\" LED Ring Light ₦78,000 was ₦95,000) and 'Add to WOW', banner 'Sell on WAWU · List your gear and products · Get started'. Board note: 'From the code: a creator-gear marketplace. The cart is called your WOW. Delivery is arranged with you after paying. Paid from the wallet.'",
+   "user_actions": [
+    "search products",
+    "pick an aisle",
+    "Add to WOW",
+    "See all featured",
+    "Sell on WAWU · Get started"
+   ],
+   "data_needed": [
+    "products (name, brand, priceNaira, compareAtNaira, images, wawuPick)",
+    "cart count",
+    "categories"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/products (ListProductsDto: category, subcategory, search, maxPriceNaira, wawuPick)",
+     "GET /api/hub/shop/cart",
+     "POST /api/hub/shop/cart",
+     "Product.wawuPick, compareAtNaira, ProductCategory enum (11 aisles)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/shop (components/shop/ShopHome.tsx)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Web ShopHome matches structurally (featured, aisles, 'Sell on WAWU' CtaBanner -> /create) and also shows a Featured Services rail of partner services; but it is switched off. 'Sell on WAWU' on web links to /create (content upload), not to a product-listing flow."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Rode NT-USB ₦185,000 (was ₦210,000)",
+    "Neewer 18\" LED Ring Light ₦78,000 (was ₦95,000)",
+    "'Paid from the wallet'"
+   ],
+   "conflicts": [
+    "sellers: canvas 'Sell on WAWU · List your gear and products' vs backend Product has no seller column ('No seller/vendor. Stock is uploaded from the admin dashboard, so WAWU is the seller', schema.prisma WAWU Commerce header)",
+    "shop availability: SHOP_LIVE = false vs live canvas flow"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SH2",
+   "flow": "shop",
+   "title": "Aisle",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Audio & Music aisle: search this aisle, subcategory chips All/Microphones/Headphones/Interfaces, product cards (Rode WAWU pick ₦185,000 was ₦210,000; DJI Mic 2 Wireless Kit ₦430,000) with Add to WOW.",
+   "user_actions": [
+    "filter by subcategory",
+    "search in aisle",
+    "Add to WOW",
+    "tap a product"
+   ],
+   "data_needed": [
+    "products by category+subcategory",
+    "subcategories with stock"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/categories/{category}/subcategories",
+     "GET /api/hub/shop/products?category=&subcategory=&search="
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/browse/[category] (CategoryBrowser.tsx, subcategory chips, price filter)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Web adds a max-price filter not on canvas; gated off."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "DJI Mic 2 Wireless Kit ₦430,000"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH3",
+   "flow": "shop",
+   "title": "Product",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Product detail: 'WAWU pick' and 'Verified' pills, 'Rode · Microphones', name, ₦185,000 was ₦210,000, description, quantity stepper 1, Add to WOW.",
+   "user_actions": [
+    "change quantity",
+    "Add to WOW"
+   ],
+   "data_needed": [
+    "product by slug: brand, subcategory, wawuVerified, wawuPick, price, compareAt, description, images, stock"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/{slug}",
+     "POST /api/hub/shop/cart (quantity, capped by stock and MAX_QUANTITY_PER_LINE)",
+     "Product.wawuVerified"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/product/[slug] (ProductDetail.tsx renders 'WAWU Verified' and 'WAWU pick')",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off; label 'WAWU Verified' vs canvas 'Verified'."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Verified' (editorial genuineness claim WAWU stands behind)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH4",
+   "flow": "shop",
+   "title": "Your WOW",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Cart: two lines with quantity, Items ₦263,000, Delivery 'Arranged with you', 'Checkout · ₦263,000'.",
+   "user_actions": [
+    "change quantity",
+    "Checkout"
+   ],
+   "data_needed": [
+    "cart lines, subtotal, delivery label"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/cart",
+     "PATCH /api/hub/shop/cart/{productId}",
+     "DELETE /api/hub/shop/cart/{productId}"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/wow (WowCart.tsx)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Items ₦263,000",
+    "Delivery 'Arranged with you' (no delivery fee)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH5",
+   "flow": "shop",
+   "title": "Delivery",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Checkout delivery form: who is receiving, phone, address, town or city, state, 'Anything that helps us find you' note. Continue to pay.",
+   "user_actions": [
+    "fill delivery details",
+    "Continue to pay"
+   ],
+   "data_needed": [
+    "deliveryName, deliveryPhone, deliveryAddress, deliveryCity, deliveryState, deliveryNote"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/shop/checkout (CheckoutDto) -> ShopOrder delivery* columns, all required except deliveryNote"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/checkout (ShopCheckout.tsx, same field set incl. 'Anything that helps us find you')",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off. Web has delivery and payment on one page; canvas splits SH5/SH6."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH6",
+   "flow": "shop",
+   "title": "Pay",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Checkout summary: lines, Delivery 'Arranged with you', Total ₦263,000, recipient + address with Change, 'Pay from wallet · Naira wallet · ₦485,250.75 available', 'Pay ₦263,000'.",
+   "user_actions": [
+    "Change address",
+    "Pay from wallet"
+   ],
+   "data_needed": [
+    "order summary",
+    "buyer wallet balance",
+    "wallet debit"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/shop/checkout opens a Flutterwave card charge (shop.service.ts:341 flutterwave.initCharge) and returns flutterwaveConfig",
+     "POST /api/hub/wallet/withdraw is the only wallet debit and it pays to a bank account; there is no 'pay WAWU / pay a merchant from wallet' route. Wallet routes: GET /wallet, /wallet/history, /wallet/banks, POST /wallet/resolve-account, /wallet/withdraw (all creator-only: wallet.controller.ts 'a creator's own wallet, and nobody else's'). CreatorWallet keyed to creators only.",
+     "schema header: 'No wallet. Orders are paid by card, like everything else here.'"
+    ],
+    "gap": "Order creation is served; paying from a wallet is not. Needs a wallet-debit payment method on checkout (debit buyer wallet -> WAWU merchant account), idempotent, and a buyer wallet for non-creators."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/shop/checkout (openFlutterwaveCheckout, components/shop/ShopCheckout.tsx:138)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Web pays by Flutterwave inline card checkout; canvas pays from wallet."
+   },
+   "third_party": [
+    "Fintava per design rule, or Flutterwave subaccount debit: wallet-to-merchant transfer"
+   ],
+   "facts_on_canvas": [
+    "Total ₦263,000",
+    "Naira wallet · ₦485,250.75 available"
+   ],
+   "conflicts": [
+    "payments: canvas 'Pay from wallet' / design rule 'Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout.' vs current Flutterwave card checkout and Flutterwave payout-subaccount wallets for creators only",
+    "custody: buyer spending a wallet balance into 'WAWU Shop' vs current 'WAWU does not hold the money ... Flutterwave custodies it, WAWU only instructs'"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SH7",
+   "flow": "shop",
+   "title": "PIN",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "PIN sheet over checkout: 'Enter your PIN · Approve ₦263,000 to WAWU Shop', keypad. (Present on the board but NOT in MANIFEST.json; added so it is not a hole.)",
+   "user_actions": [
+    "enter PIN"
+   ],
+   "data_needed": [
+    "transaction PIN verify; payee 'WAWU Shop'"
+   ],
+   "backend": {
+    "status": "missing",
+    "evidence": [
+     "grep -rniE 'transaction ?pin|txPin|transactionPin' wawu-backend/src -> 0 hits; no PIN route in backend-routes.txt"
+    ],
+    "gap": "No transaction PIN capability."
+   },
+   "web": {
+    "status": "missing",
+    "evidence": [
+     "no PIN UI on web"
+    ],
+    "delta": "Absent; web uses Flutterwave's own card authentication."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "'Approve ₦263,000 to WAWU Shop' (WAWU is the merchant, i.e. first-party catalogue)"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH8",
+   "flow": "shop",
+   "title": "Confirmed",
+   "kind": "screen",
+   "journey": "Buy something",
+   "what_it_shows": "Order WAW-SHP-2K9Q confirmed, 'We'll call to arrange delivery.' Tracker: Being packed · Paid 26 Sep · On its way · Delivered; items with qty and price. My orders.",
+   "user_actions": [
+    "My orders"
+   ],
+   "data_needed": [
+    "order id/reference, fulfilment stage, paidAt, items snapshot"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "POST /api/hub/shop/orders/{orderId}/verify",
+     "GET /api/hub/shop/orders/{orderId}",
+     "ShopOrder.fulfilment (awaiting_dispatch/dispatched/delivered), paidAt, ShopOrderItem snapshots"
+    ],
+    "gap": "Reference format WAW-SHP-xxxx is not a column (id is uuid, flutterwaveTxRef is the provider ref); a human-readable order reference would need adding if the canvas format is kept."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/orders/[orderId] (ShopOrders.tsx)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Order WAW-SHP-2K9Q",
+    "Paid 26 Sep",
+    "'We'll call to arrange delivery'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH9",
+   "flow": "shop",
+   "title": "My orders",
+   "kind": "screen",
+   "journey": "Your orders",
+   "what_it_shows": "Orders list grouped by date: Today '2 items · ₦263,000' Being packed; 12 Sep Wacom Intuos Pro On its way; Aug Jackery Explorer 500 Delivered; Jul DJI Mic 2 Refunded. Entry: SH8 or Me menu.",
+   "user_actions": [
+    "tap an order"
+   ],
+   "data_needed": [
+    "my orders with status + fulfilment"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/orders (non-pending, buyer's own)"
+    ],
+    "gap": "'Refunded' is an enum value (ShopOrderStatus.refunded) but no route performs or records a shop refund (grep refund in shop/*.ts: comments and a status filter only)."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/orders (ShopOrders.tsx shows Refunded pill)",
+     "/settings 'Shop orders' row",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off; reached from Settings on web, Me menu on canvas."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [
+    "entry: canvas 'Me menu · My purchases → orders' vs current Settings slot / 'Shop orders' row in Settings"
+   ],
+   "designer_questions": []
+  },
+  {
+   "id": "SH10",
+   "flow": "shop",
+   "title": "Order",
+   "kind": "screen",
+   "journey": "Your orders",
+   "what_it_shows": "Order WAW-SHP-7T1D: tracker, Wacom Intuos Pro ₦385,000, Delivery 'Arranged with you', 'Paid from Naira wallet', 'Get help with this order'.",
+   "user_actions": [
+    "Get help with this order"
+   ],
+   "data_needed": [
+    "order detail",
+    "payment source label",
+    "support channel for an order"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "GET /api/hub/shop/orders/{orderId}",
+     "no support/help route in backend-routes.txt (searched 'support|help|ticket')"
+    ],
+    "gap": "No order-help/support endpoint; 'Paid from Naira wallet' has no source (orders are card-paid)."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/shop/orders/[orderId]",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Web order detail has no 'Get help with this order' control and no paid-from label."
+   },
+   "third_party": [],
+   "facts_on_canvas": [
+    "Wacom Intuos Pro ₦385,000",
+    "'Paid from Naira wallet'"
+   ],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH11",
+   "flow": "shop",
+   "title": "Sold out",
+   "kind": "state",
+   "journey": "Buy something",
+   "what_it_shows": "From SH3 sold out: banner 'Sold out · Save it and we'll tell you when it's back.' Disabled 'Sold out' CTA.",
+   "user_actions": [
+    "save for back-in-stock alert"
+   ],
+   "data_needed": [
+    "product stock = 0",
+    "restock subscription per user/product",
+    "notification on restock"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "stock surfaced on GET /api/hub/shop/{slug}",
+     "POST /api/hub/marketplace/saves is MarketplaceSave with ShopKind basket|beauty only (external apps), not Product",
+     "GET /api/hub/users/me/saved is SavedItem for content",
+     "no notify-me for products (grep 'restock|back in stock|notify' shop/ -> 0; /services/{id}/notify-me is PartnerService only)"
+    ],
+    "gap": "Needs ProductStockAlert(userWawuId, productId) + POST/DELETE /api/hub/shop/{productId}/alert + a notification when admin PUT raises stock from 0."
+   },
+   "web": {
+    "status": "exists-differs",
+    "evidence": [
+     "/shop/product/[slug] sold-out Callout: 'This one has gone. Nothing has been reserved and you have not been charged.'",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Web has no 'save and tell me when back' action."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH12",
+   "flow": "shop",
+   "title": "Item gone",
+   "kind": "state",
+   "journey": "Buy something",
+   "what_it_shows": "From SH4: 'Some of this is no longer available · Remove it to carry on.' DJI Mic 2 'No longer available' with Remove; Checkout disabled.",
+   "user_actions": [
+    "Remove unavailable item"
+   ],
+   "data_needed": [
+    "cart lines flagged unsellable"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/cart keeps unsellable lines with lineTotalNaira 0 (shop.service.ts:186-195)",
+     "DELETE /api/hub/shop/cart/{productId}",
+     "checkout refuses unavailable lines (shop.service.ts:317)"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/wow (WowCart.tsx 'Some of this is no longer available ... Remove it to carry on')",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH13",
+   "flow": "shop",
+   "title": "Empty WOW",
+   "kind": "state",
+   "journey": "Buy something",
+   "what_it_shows": "From SH4: 'Your WOW is empty · Add something you like from the marketplace.' Start shopping.",
+   "user_actions": [
+    "Start shopping"
+   ],
+   "data_needed": [
+    "empty cart"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/cart"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/wow EmptyState 'Your WOW is empty'",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH14",
+   "flow": "shop",
+   "title": "Still confirming",
+   "kind": "state",
+   "journey": "Buy something",
+   "what_it_shows": "From SH7: 'Paid, still confirming · Don't pay again. Your order shows up in a minute.' Refresh.",
+   "user_actions": [
+    "Refresh"
+   ],
+   "data_needed": [
+    "order pending-verification state"
+   ],
+   "backend": {
+    "status": "partial",
+    "evidence": [
+     "POST /api/hub/shop/orders/{orderId}/verify (idempotent; returns paid order if already paid)",
+     "ShopOrderStatus.pending"
+    ],
+    "gap": "Served for the card path; for a wallet debit the confirmation source (provider webhook vs sync debit) does not exist."
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/checkout Callout 'Your payment went through. We are still confirming it' (ShopCheckout.tsx:181)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off; triggered after Flutterwave, not after a PIN."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  },
+  {
+   "id": "SH15",
+   "flow": "shop",
+   "title": "No orders",
+   "kind": "state",
+   "journey": "Your orders",
+   "what_it_shows": "From SH9: 'No orders yet · What you buy shows up here.' Start shopping.",
+   "user_actions": [
+    "Start shopping"
+   ],
+   "data_needed": [
+    "empty orders list"
+   ],
+   "backend": {
+    "status": "served",
+    "evidence": [
+     "GET /api/hub/shop/orders"
+    ],
+    "gap": ""
+   },
+   "web": {
+    "status": "exists-matches",
+    "evidence": [
+     "/shop/orders EmptyState (ShopOrders.tsx:64)",
+     "web /shop/* built but gated: SHOP_LIVE = false in src/app/(app)/shop/layout.tsx renders ServiceComingSoon (product-owner instruction 12 Sep 2026); lib/platform-services.ts Shop tile soon: true"
+    ],
+    "delta": "Gated off."
+   },
+   "third_party": [],
+   "facts_on_canvas": [],
+   "conflicts": [],
+   "designer_questions": []
+  }
+ ],
+ "designer_questions": [],
+ "conflicts": [
+  {
+   "topic": "shop is switched off on web",
+   "canvas": "Shop opens from the Shop tile on Home ... 1 Shop Marketplace Opens SH1",
+   "current": "const SHOP_LIVE = false; 'Shop is pulled off the live surface for now (product-owner instruction, 12 Sep 2026)' (src/app/(app)/shop/layout.tsx); platform-services Shop tile soon: true",
+   "artboards": [
+    "SH-START",
+    "SH1",
+    "SH2",
+    "SH3",
+    "SH4",
+    "SH5",
+    "SH6",
+    "SH8",
+    "SH9",
+    "SH10",
+    "SH11",
+    "SH12",
+    "SH13",
+    "SH14",
+    "SH15"
+   ]
+  },
+  {
+   "topic": "shop sellers: first-party catalogue vs 'Sell on WAWU'",
+   "canvas": "Sell on WAWU · List your gear and products · Get started (SH1); 'Approve ₦263,000 to WAWU Shop' (SH7)",
+   "current": "schema.prisma WAWU Commerce header: 'No seller/vendor. Stock is uploaded from the admin dashboard, so WAWU is the seller and there is no revenue split to snapshot.' Also current rules: 'Maximum 5 items per account, counted across products, content and services together.'",
+   "artboards": [
+    "SH1",
+    "SH7"
+   ]
+  },
+  {
+   "topic": "first-party commerce engine vs handoff-only rule",
+   "canvas": "Shop · a creator-gear marketplace. The cart is called your WOW. Delivery is arranged with you after paying. Paid from the wallet. (cart, checkout, delivery, orders, refunds)",
+   "current": "'WAWUBasket / WAWUBeauty are external apps. Handoff only — never rebuild their commerce engine.' (backend schema says WAWU Commerce is NOT that handoff; the mobile Shop is WAWU's own catalogue, so the rule is not literally breached, but a ruling is needed on whether a first-party commerce engine is intended)",
+   "artboards": [
+    "SH1",
+    "SH4",
+    "SH6"
+   ]
+  },
+  {
+   "topic": "payments provider and method",
+   "canvas": "design rule: 'Payments: Fintava wallet only (\"Pay from wallet\"). No Flutterwave, no hosted checkout.'; SC5/SH6 'Pay from wallet · Naira wallet'",
+   "current": "'Each wallet is a Flutterwave payout subaccount'; shop checkout opens a Flutterwave card charge; schema: 'No wallet. Orders are paid by card, like everything else here.'",
+   "artboards": [
+    "SC5",
+    "SC6",
+    "SH6",
+    "SH7",
+    "SH14"
+   ]
+  },
+  {
+   "topic": "who has a wallet / custody",
+   "canvas": "buyer (Lennox) has 'Naira wallet · ₦485,250.75 available' and spends it on a school and on WAWU Shop",
+   "current": "'Creators have a wallet; WAWU does not hold the money ... Flutterwave custodies it, WAWU only instructs.' wallet.controller.ts: 'a creator's own wallet, and nobody else's'",
+   "artboards": [
+    "SC5",
+    "SH-START",
+    "SH6",
+    "SH10"
+   ]
+  },
+  {
+   "topic": "revenue split on school enrollment",
+   "canvas": "'Course fee ₦150,000 · Fee No fee · Total ₦150,000'; 'Approve ₦150,000 to Greenfield Tech Academy'",
+   "current": "'Revenue split is a flat 85/15, on every stream, with no exceptions. Never invent a rate.'",
+   "artboards": [
+    "SC5",
+    "SC6",
+    "SC7"
+   ]
+  },
+  {
+   "topic": "second revenue model: commission paid by school",
+   "canvas": "'Or apply on the school's site through the WAWU link, and the school pays WAWU a commission.' / 'Tracked link, for commission.'",
+   "current": "'there is now exactly ONE split in the product'; revenue 'from discrete paid actions: verification, paid featuring, paid advertising, WAWU Credits'",
+   "artboards": [
+    "SC9"
+   ]
+  },
+  {
+   "topic": "school as a money-receiving counterparty",
+   "canvas": "'Schools are added from the WAWU dashboard: profile, expertise, courses, prices and their unique WAWU link.' Money approved 'to Greenfield Tech Academy'",
+   "current": "'Creator is an ACCOUNT TYPE' (AccountType enum: user | creator); 'ONE gate now ... manual KYC unlocks EARNING'",
+   "artboards": [
+    "SC6",
+    "SC7"
+   ]
+  },
+  {
+   "topic": "navigation",
+   "canvas": "bottom bar 'Home Explore Inbox Wallet Me'; 'Me menu · My courses' / 'Me menu · My purchases → orders'",
+   "current": "'Bottom bar, 5 slots, the SAME for everyone: Home · Communities · Explore · Messages · Settings'; 'Slot 5 is Settings, not Profile'",
+   "artboards": [
+    "SC-START",
+    "SC8",
+    "SH-START",
+    "SH9"
+   ]
+  }
+ ],
+ "facts_on_canvas": [
+  {
+   "artboard": "SC1",
+   "fact": "Greenfield from ₦45,000; Aba Fashion Institute from ₦30,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "SC1",
+   "fact": "ratings 4.8 and 4.7 (no review system exists)",
+   "kind": "rating/social proof"
+  },
+  {
+   "artboard": "SC2",
+   "fact": "4.8 (1,240), Since 2016, '6,000 graduates placed in Lagos and remote roles'",
+   "kind": "marketing claim"
+  },
+  {
+   "artboard": "SC2",
+   "fact": "Product Design Bootcamp ₦150,000 / Frontend Development ₦180,000 / Data Analysis with Excel ₦45,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "SC3",
+   "fact": "₦150,000 One payment; Starts Mon 3 November; 'Certificate, mentor, portfolio'",
+   "kind": "price/claim"
+  },
+  {
+   "artboard": "SC4",
+   "fact": "'Greenfield gets these details so they can follow up with you.' (sharing name, email, phone with a third party)",
+   "kind": "legal/data-protection"
+  },
+  {
+   "artboard": "SC4",
+   "fact": "8 seats left",
+   "kind": "limit"
+  },
+  {
+   "artboard": "SC5",
+   "fact": "Fee: No fee; Total ₦150,000",
+   "kind": "fee"
+  },
+  {
+   "artboard": "SC5",
+   "fact": "Naira wallet · ₦485,250.75 available (kobo precision; backend stores whole naira)",
+   "kind": "balance"
+  },
+  {
+   "artboard": "SC6",
+   "fact": "Approve ₦150,000 to Greenfield Tech Academy (payee is the school; WAWU share unstated)",
+   "kind": "payee/split"
+  },
+  {
+   "artboard": "SC7",
+   "fact": "Greenfield will contact you within 2 working days",
+   "kind": "SLA"
+  },
+  {
+   "artboard": "SC7",
+   "fact": "Reference WAW-SC4K-81PQ",
+   "kind": "reference format"
+  },
+  {
+   "artboard": "SC9",
+   "fact": "the school pays WAWU a commission (rate not drawn)",
+   "kind": "rate"
+  },
+  {
+   "artboard": "SC9",
+   "fact": "greenfield.ng/apply?ref=wawu-7KQ2",
+   "kind": "link format"
+  },
+  {
+   "artboard": "SC9",
+   "fact": "OPEN QUESTION: who receives on-WAWU enrollment money (school directly, or WAWU then payout), at what split, and is the school KYB'd; current product has exactly one split, 85/15",
+   "kind": "open question/split"
+  },
+  {
+   "artboard": "SC11",
+   "fact": "November class full; next starts 12 January",
+   "kind": "date"
+  },
+  {
+   "artboard": "SH1",
+   "fact": "Rode NT-USB ₦185,000 was ₦210,000; Neewer 18\" LED Ring Light ₦78,000 was ₦95,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "SH2",
+   "fact": "DJI Mic 2 Wireless Kit ₦430,000",
+   "kind": "price"
+  },
+  {
+   "artboard": "SH3",
+   "fact": "'Verified' (WAWU editorial genuineness claim)",
+   "kind": "claim"
+  },
+  {
+   "artboard": "SH4",
+   "fact": "Delivery 'Arranged with you' (no delivery fee)",
+   "kind": "fee"
+  },
+  {
+   "artboard": "SH6",
+   "fact": "Total ₦263,000 paid from Naira wallet ₦485,250.75",
+   "kind": "price/balance"
+  },
+  {
+   "artboard": "SH7",
+   "fact": "Approve ₦263,000 to WAWU Shop (WAWU is merchant of record)",
+   "kind": "payee"
+  },
+  {
+   "artboard": "SH8",
+   "fact": "'We'll call to arrange delivery'; Order WAW-SHP-2K9Q; Paid 26 Sep",
+   "kind": "process claim/reference"
+  },
+  {
+   "artboard": "SH10",
+   "fact": "Wacom Intuos Pro ₦385,000; 'Paid from Naira wallet'",
+   "kind": "price/payment source"
+  },
+  {
+   "artboard": "SH-START",
+   "fact": "Home Naira wallet ₦485,250.75 shown to a buyer",
+   "kind": "balance"
+  }
+ ],
+ "backend_build_list": [
+  {
+   "item": "School, SchoolCourse, CourseIntake models (name, location, foundedYear, expertise[], about, logo, applyUrl, contact for reports; course title, durationWeeks, deliveryMode, syllabus[], outcomes[], priceNaira; intake startDate, schedule, location, capacity, seatsTaken) + admin CRUD routes",
+   "why": "SC1-SC3 and the section note 'Schools are added from the WAWU dashboard'; nothing in schema models a school or a priced course",
+   "artboards": [
+    "SC1",
+    "SC2",
+    "SC3",
+    "SC4",
+    "SC11"
+   ],
+   "size": "L",
+   "depends_on": [
+    "ruling: admin-curated vs school accounts",
+    "admin dashboard repo"
+   ]
+  },
+  {
+   "item": "Public school browse/search: GET /api/hub/schools?category=&q=, GET /api/hub/schools/{id}, GET /api/hub/schools/courses/{id}; plus a 'schools' SearchTab in GET /api/hub/search",
+   "why": "SC1, SC10, entry map 'Results include schools'",
+   "artboards": [
+    "SC-START",
+    "SC1",
+    "SC2",
+    "SC3",
+    "SC10"
+   ],
+   "size": "M",
+   "depends_on": [
+    "School models"
+   ]
+  },
+  {
+   "item": "School enrollment order: POST /api/hub/schools/courses/{id}/enrollments {intakeId} with amount + commission snapshot, race-safe seat claim (Product.stock pattern), reference generator, class-full + next-intake, receipt GET",
+   "why": "SC4, SC5, SC7, SC11",
+   "artboards": [
+    "SC4",
+    "SC5",
+    "SC7",
+    "SC11"
+   ],
+   "size": "L",
+   "depends_on": [
+    "School models",
+    "pay-from-wallet",
+    "split ruling"
+   ]
+  },
+  {
+   "item": "School payee + settlement: payout destination per school (bank/subaccount), KYB of the school, settlement at the ruled split",
+   "why": "SC6 'Approve ₦150,000 to Greenfield Tech Academy'; current payees are KYC'd creators only",
+   "artboards": [
+    "SC5",
+    "SC6",
+    "SC7"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "product ruling on recipient and split",
+    "wallet/payments provider ruling (Fintava vs Flutterwave)",
+    "legal on custody"
+   ]
+  },
+  {
+   "item": "School report delivery: send enrollee name/email/phone + course/intake to the school (email or school dashboard view), with consent timestamp",
+   "why": "SC4 disclosure and SC7 'WAWU sends the school a report with your details'",
+   "artboards": [
+    "SC4",
+    "SC7"
+   ],
+   "size": "M",
+   "depends_on": [
+    "email provider",
+    "data-protection review"
+   ]
+  },
+  {
+   "item": "Tracked outbound school link: SchoolLink(code), redirect endpoint logging SchoolLinkClick (userWawuId, courseId, ts), conversion intake (school self-report/CSV/postback), commission ledger and invoicing to the school, admin reporting",
+   "why": "SC9 'Tracked link, for commission'; EventReferral only attributes inbound on-platform sales",
+   "artboards": [
+    "SC9"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "commission rate ruling",
+    "school cooperation for conversion reporting"
+   ]
+  },
+  {
+   "item": "My courses: GET /api/hub/me/school-enrollments with status (awaiting contact / in progress week x of y / finished) and a way to update progress (admin or school)",
+   "why": "SC8",
+   "artboards": [
+    "SC8"
+   ],
+   "size": "M",
+   "depends_on": [
+    "enrollment order"
+   ]
+  },
+  {
+   "item": "School ratings: review model + aggregate, or drop ratings from SC1/SC2",
+   "why": "SC1/SC2 show 4.8 (1,240); no review system, and seeded ratings are refused in this codebase",
+   "artboards": [
+    "SC1",
+    "SC2"
+   ],
+   "size": "M",
+   "depends_on": [
+    "product ruling"
+   ]
+  },
+  {
+   "item": "Buyer pay-from-wallet: wallet for every account (not only creators), debit-to-merchant route used by shop checkout and school enrollment, with idempotency and provider confirmation",
+   "why": "SC5, SH6 'Pay from wallet'; only creator withdraw-to-bank exists",
+   "artboards": [
+    "SC5",
+    "SH6",
+    "SH10",
+    "SH14"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "provider ruling (Fintava per design rule vs Flutterwave today)",
+    "CBN custody check per CLAUDE.md wallet note"
+   ]
+  },
+  {
+   "item": "Transaction PIN: set, verify, reset, lockout",
+   "why": "SC6, SH7 'Enter your PIN'",
+   "artboards": [
+    "SC6",
+    "SH7"
+   ],
+   "size": "M",
+   "depends_on": [
+    "wallet provider (provider-held vs WAWU-held PIN)"
+   ]
+  },
+  {
+   "item": "Shop checkout wallet payment method (replace/augment Flutterwave initCharge in shop.service.ts checkout)",
+   "why": "SH6/SH7 pay from wallet to 'WAWU Shop'",
+   "artboards": [
+    "SH6",
+    "SH7",
+    "SH14"
+   ],
+   "size": "M",
+   "depends_on": [
+    "Buyer pay-from-wallet"
+   ]
+  },
+  {
+   "item": "Product back-in-stock alert: ProductStockAlert + POST/DELETE /api/hub/shop/{productId}/alert + notification when stock goes from 0 to >0",
+   "why": "SH11 'Save it and we'll tell you when it's back'; MarketplaceSave is basket/beauty only",
+   "artboards": [
+    "SH11"
+   ],
+   "size": "M",
+   "depends_on": []
+  },
+  {
+   "item": "Shop refund execution (admin route to refund via provider and set ShopOrderStatus.refunded)",
+   "why": "SH9 shows 'Refunded'; enum exists but nothing sets it",
+   "artboards": [
+    "SH9"
+   ],
+   "size": "M",
+   "depends_on": [
+    "payment method ruling"
+   ]
+  },
+  {
+   "item": "Order help: 'Get help with this order' support channel (e.g. open a WAWU support DM or ticket with orderId)",
+   "why": "SH10; no support route",
+   "artboards": [
+    "SH10"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Human-readable order reference (WAW-SHP-xxxx) column",
+   "why": "SH8/SH10 show WAW-SHP references; only uuid and flutterwaveTxRef exist",
+   "artboards": [
+    "SH8",
+    "SH10"
+   ],
+   "size": "S",
+   "depends_on": []
+  },
+  {
+   "item": "Third-party sellers in Shop (sellerWawuId + commission on ShopOrderItem, seller payouts, product listing by creators, 5-item cap)",
+   "why": "SH1 'Sell on WAWU · List your gear and products', only if ruled in",
+   "artboards": [
+    "SH1"
+   ],
+   "size": "XL",
+   "depends_on": [
+    "product ruling on sellers",
+    "split ruling"
+   ]
+  }
+ ],
+ "third_party_apis_needed": [
+  {
+   "provider": "Fintava (design rule) or Flutterwave (current)",
+   "capability": "debit a buyer wallet to pay a merchant (WAWU Shop / a school)",
+   "artboards": [
+    "SC5",
+    "SH6"
+   ]
+  },
+  {
+   "provider": "Fintava or Flutterwave",
+   "capability": "transaction PIN / payment authorisation",
+   "artboards": [
+    "SC6",
+    "SH7"
+   ]
+  },
+  {
+   "provider": "Flutterwave or Fintava",
+   "capability": "payout/subaccount for schools as payees (KYB)",
+   "artboards": [
+    "SC6",
+    "SC7"
+   ]
+  },
+  {
+   "provider": "transactional email provider",
+   "capability": "school enrollment report delivery",
+   "artboards": [
+    "SC7"
+   ]
+  },
+  {
+   "provider": "each school (external website)",
+   "capability": "conversion reporting/postback for ?ref=wawu-xxxx applications",
+   "artboards": [
+    "SC9"
+   ]
+  }
+ ],
+ "web_features_absent_from_canvas": [
+  "WAWU Learn (/learn, /learn/courses, /learn/guides, /learn/playbook; LearnCourse + CourseEnrollment with free-course slots) does not appear on the Schools boards",
+  "Mentors (GET /api/hub/services/mentors, POST /mentors/{id}/requests) do not appear on the Schools boards",
+  "Web ShopHome 'Featured Services' rail of partner services (ShopHome.tsx ServiceCard) is not on SH1",
+  "Web shop max-price filter (CategoryBrowser maxPriceNaira) is not on SH2",
+  "Web Flutterwave card checkout for shop is not on canvas (replaced by Pay from wallet)",
+  "Web 'Shop orders' row in Settings is not on canvas (canvas uses Me menu · My purchases)",
+  "WAWUBasket / WAWUBeauty handoff saves (POST /api/hub/marketplace/saves, ShopKind basket|beauty) do not appear on the Shop boards",
+  "Admin shop dispatch queue (GET /api/hub/admin/shop/orders, PATCH fulfilment, trackingNote) has no buyer-facing tracking-note display on SH8/SH10"
+ ],
+ "summary": "Schools is an entirely new product area: admin-curated schools (per the board note 'added from the WAWU dashboard', not a new account type) with priced courses and dated intakes with seat caps, enroll-and-pay-from-wallet with a PIN, a report of the enrollee's details sent to the school, and an alternative outbound tracked link for which the school pays WAWU a commission. Nothing in the backend models a school, a priced course, an intake or a payee that is not a creator; LearnCourse/CourseEnrollment is a different product (free-slot handoff, still gated on the removed subscription) and EventReferral attributes inbound on-platform sales, so neither fits beyond reusable patterns (Product.stock race-safe decrement, EventOrder commission snapshot). The schools backend surface is XL overall, and blocked on rulings: who receives enrollment money and at what split (current product has one 85/15 split; canvas shows 'No fee' and money 'to Greenfield'), the commission rate, and school KYB. Shop on canvas is WAWU's own first-party gear catalogue ('Approve ₦263,000 to WAWU Shop'), which matches the backend Product model with no seller and is not the WAWUBasket/WAWUBeauty handoff; backend and web already serve almost every shop screen, but the web shop is switched off (SHOP_LIVE = false, 12 Sep 2026) and the 'Sell on WAWU · List your gear and products' banner implies third-party sellers the model cannot hold. Shop gaps are pay-from-wallet + PIN (orders are Flutterwave card charges today), back-in-stock alerts, refund execution, and order help. The biggest risk across both flows is pay-from-wallet: it needs every buyer to have a spendable wallet and a debit-to-merchant path under a provider (Fintava per the design rule vs Flutterwave today), which reopens the custody/CBN question the current product notes say to check before building."
+}

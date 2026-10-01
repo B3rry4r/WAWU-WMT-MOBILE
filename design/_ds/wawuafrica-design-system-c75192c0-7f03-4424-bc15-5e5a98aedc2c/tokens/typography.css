@@ -1,0 +1,26 @@
+:root {
+  /* Alan Sans throughout. Mobile scale, from the approved board. */
+  --text-display: 40px;   /* 600, -0.045em — balance on the wallet */
+  --text-title: 30px;     /* 700, -0.035em — large screen titles (Inbox, Wallet) */
+  --text-h1: 24px;        /* 700, -0.03em — profile name, sheet titles */
+  --text-h2: 18.5px;      /* 700, -0.025em — section headers */
+  --text-h3: 16px;        /* 600, -0.015em — card titles, list titles */
+  --text-body: 15px;      /* 400 — body, list primary */
+  --text-sec: 13.5px;     /* 400 — secondary, captions under titles */
+  --text-caption: 12.5px; /* 400/600 — meta, labels under icons */
+  --text-label: 11px;     /* 700, +0.08em, uppercase — eyebrows */
+  --text-tab: 11px;       /* 500 / 700 active — tab bar labels */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-body: 1.45;
+
+  --tracking-title: -0.035em;
+  --tracking-heading: -0.025em;
+  --tracking-money: -0.03em;
+}
