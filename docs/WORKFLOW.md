@@ -212,9 +212,9 @@ the owner has signed off (tasks `G-0` to `G-9`). Tasks of the next stage stay
 | 3 Screens on today's backend | 3-6 | Feed, explore, profiles, events browse, professionals, settings, sign-in; Shop retired | V9 with the seeded creator; stage audit; first tester build on real phones (V10) |
 | 4 Backend additions, no money | 4-8 | Likes, following, search, profile fields, settings, push, realtime, chat, inbox, schools browse | Regression green after every merge; every new field has writer and reader |
 | 5 Identity and wallets (sandbox) | 5-9 | Fintava connection, BVN sign-up, accounts, PIN, ledger, existing-user wallet | New and existing user each have wallet, PIN and a balance matching Fintava on staging; three clean nightly checks; owner approves staff-live |
-| 6 Payments move | 8-13 | Pay-from-wallet, then each payment path, wallet screens | Per path: one debit under replay, refunds land, ledger matches, a week of staff real-money use with no mismatch |
-| 7 New products | 11-15 | School enrolment, tracked links, ads, TGIF social, receipts, statements, QR, admin screens | V7 on every flow and user type; stage audit |
-| 8 Release | 15-18 | Full audit, release builds on devices, store submission, staged rollout | Every artboard compared or ruled; no open defects; release builds checked on devices |
+| 6 Payments move | 8-15 | Pay-from-wallet, then each payment path, wallet screens | Per path: one debit under replay, refunds land, ledger matches, a week of staff real-money use with no mismatch |
+| 7 New products | 12-18 | School enrolment, tracked links, ads, TGIF social, receipts, statements, QR, admin screens | V7 on every flow and user type; stage audit |
+| 8 Release | 18-22 | Full audit, release builds on devices, store submission, staged rollout | Every artboard compared or ruled; no open defects; release builds checked on devices |
 | 9 Web follows, Flutterwave goes | 19+ | Web ports, Flutterwave removal, creator balance cutover | No Flutterwave calls in the logs; regression suite rebuilt; final web audit |
 
 ---
