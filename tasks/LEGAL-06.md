@@ -3,12 +3,12 @@ id: LEGAL-06
 title: Legal: quote, pay to start, delivery, fixed price
 owner: YOU
 area: LEGAL
-day: 4
+order: 128
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D9 is ruled in DECISIONS.md"
-depends_on: [LEGAL-05, LEGAL-03]
+status: todo
+depends_on: [LEGAL-03, LEGAL-05]
 decisions: [D9]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S21, S22, S23, S24, S26]
@@ -20,13 +20,13 @@ artboards: [S21, S22, S23, S24, S26]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D9 (open: this task is blocked until they are ruled)
+- `DECISIONS.md`: D9 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py S21 S22 S23 S24 S26` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,13 +34,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| S21 | Quote and sign | Quote ₦45,000 with 'Read letter', 'Type your full name to sign', Sign this agreement. |
-| S22 | Pay to start | 'Signed as Lennox Emmanuel', Fee ₦45,000, Pay from wallet, 'Pay ₦45,000 to start', then PIN. |
-| S23 | Delivered | Documents delivered: 'Reviewed tenancy agreement.pdf · 12 pages', 'Consultant notes.pdf · 3 pages'; documents also land in chat and Notifications. |
-| S24 | Fixed price, in chat | In chat: 'I want to register my business name.' Assistant: fixed price, card 'Business name registration · CAC · 5–7 working days · ₦35,000', Start this request. |
-| S26 | Fixed-price request | 'Register your business name · With CAC. No lawyer needed. Takes 5–7 working days · You'll need ID, 2 name options, address · Fee ₦35,000', First name choice 'Lennox Films', Continue · ₦35,000; then Pay · PIN and tracked like S20. |
+- **S21 · Quote and sign**: Quote ₦45,000 with 'Read letter', 'Type your full name to sign', Sign this agreement.
+- **S22 · Pay to start**: 'Signed as Lennox Emmanuel', Fee ₦45,000, Pay from wallet, 'Pay ₦45,000 to start', then PIN.
+- **S23 · Delivered**: Documents delivered: 'Reviewed tenancy agreement.pdf · 12 pages', 'Consultant notes.pdf · 3 pages'; documents also land in chat and Notifications.
+- **S24 · Fixed price, in chat**: In chat: 'I want to register my business name.' Assistant: fixed price, card 'Business name registration · CAC · 5–7 working days · ₦35,000', Start this request.
+- **S26 · Fixed-price request**: 'Register your business name · With CAC. No lawyer needed. Takes 5–7 working days · You'll need ID, 2 name options, address · Fee ₦35,000', First name choice 'Lennox Films', Continue · ₦35,000; then Pay · PIN and tracked like S20.
 
 ## Capability checks
 
@@ -55,15 +53,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| S21 | served | served |
-| S22 | missing | Service fee is Flutterwave checkout; needs wallet debit + PIN. |
-| S23 | partial | Only ONE deliverable URL per request; board shows several files with page counts. Posting documents into the chat thread is not implemented. |
-| S24 | partial | Assistant-in-chat surfacing (pre-payment) missing (see S14). Two CAC routes exist (legal catalogue entry with no price, and service-application CAC at ₦25,000); the board's ₦35,000 matches neither. |
-| S26 | partial | CAC application and timeline exist under service-application, paid by Flutterwave at ₦25,000; needs wallet debit + PIN and a decision on which price/route (legal 'simple' vs service-application) is canonical. |
+- **S21**: served.
+- **S22**: missing. Missing: Service fee is Flutterwave checkout; needs wallet debit + PIN.
+- **S23**: partial. Missing: Only ONE deliverable URL per request; board shows several files with page counts. Posting documents into the chat thread is not implemented.
+- **S24**: partial. Missing: Assistant-in-chat surfacing (pre-payment) missing (see S14). Two CAC routes exist (legal catalogue entry with no price, and service-application CAC at ₦25,000); the board's ₦35,000 matches neither.
+- **S26**: partial. Missing: CAC application and timeline exist under service-application, paid by Flutterwave at ₦25,000; needs wallet debit + PIN and a decision on which price/route (legal 'simple' vs service-application) is canonical.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

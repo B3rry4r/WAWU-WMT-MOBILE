@@ -1,14 +1,14 @@
 ---
 id: WALLET-12
 title: Share a receipt as image or PDF
-owner: DEV1
+owner: YOU
 area: WALLET
-day: later
+order: 166
+priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
-depends_on: [WALLET-18, WALLET-04]
+status: todo
+depends_on: [WALLET-04, WALLET-18]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [W41, W42, W43]
@@ -19,13 +19,13 @@ artboards: [W41, W42, W43]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W41 W42 W43` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled after launch.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W41 | Share as | Receipt preview (type, from, to with NUBAN, bank, reference, verification link) with a sheet to pick Image or PDF. |
-| W42 | Image | PNG receipt, always a white document in both themes, share via WhatsApp, Email, WAWU chat, Save image. |
-| W43 | PDF | One-page A4 receipt PDF ready to share (WhatsApp, Email, WAWU chat, Save to Files). |
+- **W41 · Share as**: Receipt preview (type, from, to with NUBAN, bank, reference, verification link) with a sheet to pick Image or PDF.
+- **W42 · Image**: PNG receipt, always a white document in both themes, share via WhatsApp, Email, WAWU chat, Save image.
+- **W43 · PDF**: One-page A4 receipt PDF ready to share (WhatsApp, Email, WAWU chat, Save to Files).
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W41 | missing | No receipt verification route or short code. |
-| W42 | missing | No image render; sharing into a WAWU DM would need a message-with-attachment path. |
-| W43 | missing | No receipt rendering. |
+- **W41**: missing. Missing: No receipt verification route or short code.
+- **W42**: missing. Missing: No image render; sharing into a WAWU DM would need a message-with-attachment path.
+- **W43**: missing. Missing: No receipt rendering.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

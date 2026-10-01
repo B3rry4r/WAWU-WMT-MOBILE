@@ -1,13 +1,13 @@
 ---
 id: EVENTS-08
 title: My events, organiser dashboard, call it off
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 4
+order: 125
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [EVENTS-05, EVENTS-10]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [E17, E18, E25]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E17 E18 E25` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| E17 | My events | Host's events with status pills: Live (64 sold), In review, Sent back (with reviewer's note 'Add the street address.'), Removed (Taken down 20 Sep). |
-| E18 | Organiser dashboard | Live event dashboard: Sold 64, Checked in 0, Left 56, 'Yours after WAWU's cut ₦408,000 · 85%', At the door (scan), Ticket types, Shared links '3 links · 22 sales', Edit event, Call the event off. |
-| E25 | Call it off | Cancel sheet over E18: 'Cancel this event · This refunds real money · All 64 buyers get their money back. Why: The venue withdrew.' Cancel and refund everyone / Keep the event. |
+- **E17 · My events**: Host's events with status pills: Live (64 sold), In review, Sent back (with reviewer's note 'Add the street address.'), Removed (Taken down 20 Sep).
+- **E18 · Organiser dashboard**: Live event dashboard: Sold 64, Checked in 0, Left 56, 'Yours after WAWU's cut ₦408,000 · 85%', At the door (scan), Ticket types, Shared links '3 links · 22 sales', Edit event, Call the event off.
+- **E25 · Call it off**: Cancel sheet over E18: 'Cancel this event · This refunds real money · All 64 buyers get their money back. Why: The venue withdrew.' Cancel and refund everyone / Keep the event.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| E17 | partial | EventView carries no sold count; '64 sold' needs a soldCount on /events/mine or one GET /events/{id}/dashboard per row. |
-| E18 | partial | Referral rows return revenue only: dashboard() builds byCode.tickets but never increments or returns it, so '22 sales' has no source. netNaira is a computed figure only: no money ever reaches the host (WalletFundingService.run funds Purchase and answered DMs only; grep EventOrder outside event-ticketing finds only admin finance, webhook, payment-link). No GET /events/{id}/referrals list route either (create only). |
-| E25 | partial | Refund is flutterwave.refundCharge per EventOrder keyed on flutterwaveTxId; with wallet payment it must be a Fintava credit to each buyer wallet from the account holding ticket money. '64 buyers' on the board is the ticket count; the backend refunds per order (buyers ≠ tickets), no distinct-buyer count is returned by the dashboard. |
+- **E17**: partial. Missing: EventView carries no sold count; '64 sold' needs a soldCount on /events/mine or one GET /events/{id}/dashboard per row.
+- **E18**: partial. Missing: Referral rows return revenue only: dashboard() builds byCode.tickets but never increments or returns it, so '22 sales' has no source. netNaira is a computed figure only: no money ever reaches the host (WalletFundingService.run funds Purchase and answered DMs only; grep EventOrder outside event-ticketing finds only admin finance, webhook, payment-link). No GET /events/{id}/referrals list route either (create only).
+- **E25**: partial. Missing: Refund is flutterwave.refundCharge per EventOrder keyed on flutterwaveTxId; with wallet payment it must be a Fintava credit to each buyer wallet from the account holding ticket money. '64 buyers' on the board is the ticket count; the backend refunds per order (buyers ≠ tickets), no distinct-buyer count is returned by the dashboard.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

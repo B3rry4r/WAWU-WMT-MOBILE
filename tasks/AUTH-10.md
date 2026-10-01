@@ -1,13 +1,13 @@
 ---
 id: AUTH-10
 title: After sign-up: creator setup, interests, people to follow
-owner: DEV2
+owner: DEV
 area: AUTH
-day: 4
+order: 106
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [AUTH-09]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [A11, A12, A13]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A11 A12 A13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| A11 | Creator setup | 'Set up your account' checklist, 1 of 5: Price your paid messages; Finish your profile; Publish your first piece (Free to list); Start your first community (Optional, Free to host); Verify your identity (Needed to get paid). 'Uploading is open. Getting paid needs your ID checked.' Later -> Home. |
-| A12 | Interests | 'What are you into? 3 of 3. Pick three or more.' 12 chips: Music & Audio, Film & Video, Photography, Fashion & Beauty, Business & Finance, Technology, Food & Lifestyle, Faith & Spirituality, Art & Design, Writing & Publishing, Sports & Fitness, Gaming & Esports. |
-| A13 | People to follow | Suggested creators 'Based on what you picked' with Follow/Following toggles (name + role line). Go to Home. |
+- **A11 · Creator setup**: 'Set up your account' checklist, 1 of 5: Price your paid messages; Finish your profile; Publish your first piece (Free to list); Start your first community (Optional, Free to host); Verify your identity (Needed to get paid). 'Uploading is open. Getting paid needs your ID checked.' Later -> Home.
+- **A12 · Interests**: 'What are you into? 3 of 3. Pick three or more.' 12 chips: Music & Audio, Film & Video, Photography, Fashion & Beauty, Business & Finance, Technology, Food & Lifestyle, Faith & Spirituality, Art & Design, Writing & Publishing, Sports & Fitness, Gaming & Esports.
+- **A13 · People to follow**: Suggested creators 'Based on what you picked' with Follow/Following toggles (name + role line). Go to Home.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| A11 | served | served |
-| A12 | served | Interests are free strings; no canonical vocabulary server-side, so the 12 canvas labels will not match the 25 explore category ids or web's 11 sign-up labels unless one list is adopted. |
-| A13 | partial | Discovery filters by ONE category; a multi-interest 'based on what you picked' ranking needs either repeated calls merged client-side or an interests[] param. |
+- **A11**: served.
+- **A12**: served. Missing: Interests are free strings; no canonical vocabulary server-side, so the 12 canvas labels will not match the 25 explore category ids or web's 11 sign-up labels unless one list is adopted.
+- **A13**: partial. Missing: Discovery filters by ONE category; a multi-interest 'based on what you picked' ranking needs either repeated calls merged client-side or an interests[] param.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

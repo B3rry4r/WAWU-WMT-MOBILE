@@ -1,13 +1,13 @@
 ---
 id: WALLET-34
 title: Admin screens: tier 3 review queue
-owner: DEV1
+owner: YOU
 area: WALLET
-day: later
+order: 182
+priority: after-launch
 repo: wawu-dashboard
 type: admin-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [WALLET-24]
 decisions: []
 passes: [V1, V6, V7, V9]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - This task changes `wawu-dashboard`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

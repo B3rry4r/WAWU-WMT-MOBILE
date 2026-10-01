@@ -3,12 +3,12 @@ id: LEGAL-04
 title: Legal: book and pay a consultation
 owner: YOU
 area: LEGAL
-day: 4
+order: 127
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D9 is ruled in DECISIONS.md"
-depends_on: [LEGAL-05, LEGAL-03]
+status: todo
+depends_on: [LEGAL-03, LEGAL-05]
 decisions: [D9]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S18, S19, S20, S25]
@@ -20,13 +20,13 @@ artboards: [S18, S19, S20, S25]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D9 (open: this task is blocked until they are ruled)
+- `DECISIONS.md`: D9 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py S18 S19 S20 S25` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,12 +34,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| S18 | Book | Booking: Video call 30 min ₦15,000, Phone call 20 min ₦10,000, In person 'Arranged by email, fee per matter · On request'; day strip (Tue 30–Mon 6) and times 09:00/10:30/12:00/14:00/15:30/17:00; 'Thu 2 Oct, 12:00 (Lagos time)', Pay ₦15,000. |
-| S19 | Pay | Pay sheet over S18: Video consultation Thu 2 Oct 12:00 · 30 min ₦15,000, Pay from wallet; then PIN accepted. |
-| S20 | Booked | Matter tracker 'Tenancy agreement review': steps Request sent → Answers read → Consultation Thu 2 Oct 12:00 video → Quote and agreement → Pay and start → Documents delivered; 'Details are in your email.' Add to calendar. |
-| S25 | No slots | 'No slots in the next three weeks · Choose in person and we'll arrange a time by email.' Request in person. |
+- **S18 · Book**: Booking: Video call 30 min ₦15,000, Phone call 20 min ₦10,000, In person 'Arranged by email, fee per matter · On request'; day strip (Tue 30–Mon 6) and times 09:00/10:30/12:00/14:00/15:30/17:00; 'Thu 2 Oct, 12:00 (Lagos time)', Pay ₦15,000.
+- **S19 · Pay**: Pay sheet over S18: Video consultation Thu 2 Oct 12:00 · 30 min ₦15,000, Pay from wallet; then PIN accepted.
+- **S20 · Booked**: Matter tracker 'Tenancy agreement review': steps Request sent → Answers read → Consultation Thu 2 Oct 12:00 video → Quote and agreement → Pay and start → Documents delivered; 'Details are in your email.' Add to calendar.
+- **S25 · No slots**: 'No slots in the next three weeks · Choose in person and we'll arrange a time by email.' Request in person.
 
 ## Capability checks
 
@@ -53,14 +51,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| S18 | partial | Media differ: backend ConsultationMedium = chat|zoom|physical, no phone. Fees differ: CONSULTATION_FEES chat ₦25,000/60 min, zoom ₦45,000/60 min, physical null. Slots differ: CONSULTATION_HOURS 09:00-16:00 hourly (slotMinutes 60), weekdays, 21-day horizon; board shows 90-minute spacing to 17:00. |
-| S19 | missing | Consultation payment is Flutterwave checkout; needs wallet debit + PIN (LegalRequest.consultationTxRef is Flutterwave-shaped). |
-| S20 | served | Email of booking details not verified in this pass. |
-| S25 | served | served |
+- **S18**: partial. Missing: Media differ: backend ConsultationMedium = chat|zoom|physical, no phone. Fees differ: CONSULTATION_FEES chat ₦25,000/60 min, zoom ₦45,000/60 min, physical null. Slots differ: CONSULTATION_HOURS 09:00-16:00 hourly (slotMinutes 60), weekdays, 21-day horizon; board shows 90-minute spacing to 17:00.
+- **S19**: missing. Missing: Consultation payment is Flutterwave checkout; needs wallet debit + PIN (LegalRequest.consultationTxRef is Flutterwave-shaped).
+- **S20**: served. Missing: Email of booking details not verified in this pass.
+- **S25**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

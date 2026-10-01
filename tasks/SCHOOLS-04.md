@@ -3,11 +3,11 @@ id: SCHOOLS-04
 title: Schools: browse, search, course detail
 owner: YOU
 area: SCHOOLS
-day: 3
+order: 90
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V2, V3, V4, V9]

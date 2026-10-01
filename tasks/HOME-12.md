@@ -1,14 +1,14 @@
 ---
 id: HOME-12
 title: Unlock from the feed
-owner: DEV3
+owner: DEV
 area: HOME
-day: 4
+order: 120
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
-depends_on: [HOME-15, MONEY-02, MONEY-03]
+status: todo
+depends_on: [MONEY-02, MONEY-03, HOME-15]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [H14, H15, H16, H17, H18]
@@ -19,13 +19,13 @@ artboards: [H14, H15, H16, H17, H18]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H14 H15 H16 H17 H18` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,13 +33,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| H14 | Unlock sheet | Bottom sheet: title, creator, type, Price ₦2,500, 'Yours Forever, in My purchases', 'Fee: No fee', Pay from wallet (Naira wallet · ₦485,250.75 available), Unlock · ₦2,500. 'Paid from the Naira wallet with the transaction PIN. There's no checkout page and no card form.' |
-| H15 | PIN | Transaction PIN sheet 'Approve ₦2,500 to Chidi Eze' with keypad; 'The same PIN sheet as Wallet (W11)'. NOT in MANIFEST.json but a real artboard. |
-| H16 | Unlocked | Success: 'Unlocked … it's in My purchases from now on.' Paid ₦2,500.00, From Naira wallet, Reference WAW-UNL-4K2P, Watch now. |
-| H17 | Not enough in wallet | From H14 when the wallet is too low: 'This costs ₦2,500. You have ₦1,200.00.' Top up at least ₦1,300; Add ₦1,300 opens Wallet W15 with the shortfall filled in, then returns. |
-| H18 | Couldn't confirm | From H15: 'Paid, still opening. ₦2,500 left your wallet and we couldn't finish opening the video. You won't be charged twice.' Refresh, Contact support. |
+- **H14 · Unlock sheet**: Bottom sheet: title, creator, type, Price ₦2,500, 'Yours Forever, in My purchases', 'Fee: No fee', Pay from wallet (Naira wallet · ₦485,250.75 available), Unlock · ₦2,500. 'Paid from the Naira wallet with the transaction PIN. There's no checkout page and no card form.'
+- **H15 · PIN**: Transaction PIN sheet 'Approve ₦2,500 to Chidi Eze' with keypad; 'The same PIN sheet as Wallet (W11)'. NOT in MANIFEST.json but a real artboard.
+- **H16 · Unlocked**: Success: 'Unlocked … it's in My purchases from now on.' Paid ₦2,500.00, From Naira wallet, Reference WAW-UNL-4K2P, Watch now.
+- **H17 · Not enough in wallet**: From H14 when the wallet is too low: 'This costs ₦2,500. You have ₦1,200.00.' Top up at least ₦1,300; Add ₦1,300 opens Wallet W15 with the shortfall filled in, then returns.
+- **H18 · Couldn't confirm**: From H15: 'Paid, still opening. ₦2,500 left your wallet and we couldn't finish opening the video. You won't be charged twice.' Refresh, Contact support.
 
 ## Capability checks
 
@@ -54,15 +52,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| H14 | partial | Unlock exists but only as a Flutterwave charge; no wallet-debit unlock, no buyer wallet balance. |
-| H15 | missing | No transaction PIN model or verify route anywhere in the backend. |
-| H16 | partial | Purchase + full asset exist; reference is a Flutterwave tx_ref, not a WAW-UNL-xxxx wallet reference; source 'Naira wallet' not modelled. |
-| H17 | missing | No buyer wallet; no insufficient-funds error contract on unlock. |
-| H18 | partial | Reconciliation exists for Flutterwave charges; no wallet-debit idempotency key or 'debited but entitlement not granted' state; no support-contact route. |
+- **H14**: partial. Missing: Unlock exists but only as a Flutterwave charge; no wallet-debit unlock, no buyer wallet balance.
+- **H15**: missing. Missing: No transaction PIN model or verify route anywhere in the backend.
+- **H16**: partial. Missing: Purchase + full asset exist; reference is a Flutterwave tx_ref, not a WAW-UNL-xxxx wallet reference; source 'Naira wallet' not modelled.
+- **H17**: missing. Missing: No buyer wallet; no insufficient-funds error contract on unlock.
+- **H18**: partial. Missing: Reconciliation exists for Flutterwave charges; no wallet-debit idempotency key or 'debited but entitlement not granted' state; no support-contact route.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

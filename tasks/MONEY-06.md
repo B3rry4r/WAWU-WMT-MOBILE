@@ -1,13 +1,13 @@
 ---
 id: MONEY-06
 title: Fintava client
-owner: DEV1
+owner: YOU
 area: MONEY
-day: 2
+order: 23
+priority: launch
 repo: wawu-backend
 type: third-party
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [OPS-02, MONEY-04]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 

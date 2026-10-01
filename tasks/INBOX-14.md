@@ -1,13 +1,13 @@
 ---
 id: INBOX-14
 title: Private communities, hosting, join requests
-owner: DEV3
+owner: DEV
 area: INBOX
-day: 4
+order: 150
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [INBOX-01]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [I30, I31, I37, I32, I33, I34]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I30 I31 I37 I32 I33 I34` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,14 +33,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| I30 | Private · ask to join | Private room landing with cover image header, host name, "The host approves every member", avatars "Bisi and 12 people you follow are members", member count, host "Answers requests usually within a day", Ask to join. |
-| I31 | Request sent | "Request sent. Adaeze will see it in her join requests. We'll let you know when she answers." Waiting for the host, Cancel request. |
-| I37 | Approved · inside | Inside the private room after approval; cover stays as the room header, credit balance, host welcome message, Message · 1 credit. |
-| I32 | New community | New community form: picture, name, what it's for, Open vs Private ("You approve every member. Needs a cover image."), "Free to host. You keep 85% of every credit spent in your room." Creator accounts only. |
-| I33 | Created | "Aba tailors circle is live. Open · you're the host" with share link wawu/c/aba-tailors, Copy, Share link, Open room. |
-| I34 | Join requests | Host queue for a private room: requester name, headline and city, how long ago, Decline / Approve. |
+- **I30 · Private · ask to join**: Private room landing with cover image header, host name, "The host approves every member", avatars "Bisi and 12 people you follow are members", member count, host "Answers requests usually within a day", Ask to join.
+- **I31 · Request sent**: "Request sent. Adaeze will see it in her join requests. We'll let you know when she answers." Waiting for the host, Cancel request.
+- **I37 · Approved · inside**: Inside the private room after approval; cover stays as the room header, credit balance, host welcome message, Message · 1 credit.
+- **I32 · New community**: New community form: picture, name, what it's for, Open vs Private ("You approve every member. Needs a cover image."), "Free to host. You keep 85% of every credit spent in your room." Creator accounts only.
+- **I33 · Created**: "Aba tailors circle is live. Open · you're the host" with share link wawu/c/aba-tailors, Copy, Share link, Open room.
+- **I34 · Join requests**: Host queue for a private room: requester name, headline and city, how long ago, Decline / Approve.
 
 ## Capability checks
 
@@ -56,16 +54,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| I30 | partial | No host display name on the community payload (only hostWawuId); no "people you follow who are members" query (FollowRelationship x CommunityMembership); no host approval-time metric. Cover is optional server-side though the board says every private room has one. |
-| I31 | partial | No notification to the requester when the host approves or declines ("We'll let you know" is not backed); no community kind in notification-event.ts. |
-| I37 | served | Room itself is served; the approval is not announced to the member (see I31). |
-| I32 | partial | Create is served. "Needs a cover image" for Private is not enforced (imageUrl optional for both kinds). The host's 85% is computed into CreditSpendEarning but WalletFundingService only funds purchases and answered DMs, so credit-spend earnings never reach the wallet (admin finance service says the whole lifetime figure is outstanding). |
-| I33 | partial | No community slug or short-link route; only a uuid id. A wawu/c/<slug> link needs a unique slug column, generation, and a resolve route. |
-| I34 | partial | Queue and actions are served; payload lacks display name, headline ("Brand designer") and location ("Enugu") shown on the board. |
+- **I30**: partial. Missing: No host display name on the community payload (only hostWawuId); no "people you follow who are members" query (FollowRelationship x CommunityMembership); no host approval-time metric. Cover is optional server-side though the board says every private room has one.
+- **I31**: partial. Missing: No notification to the requester when the host approves or declines ("We'll let you know" is not backed); no community kind in notification-event.ts.
+- **I37**: served. Missing: Room itself is served; the approval is not announced to the member (see I31).
+- **I32**: partial. Missing: Create is served. "Needs a cover image" for Private is not enforced (imageUrl optional for both kinds). The host's 85% is computed into CreditSpendEarning but WalletFundingService only funds purchases and answered DMs, so credit-spend earnings never reach the wallet (admin finance service says the whole lifetime figure is outstanding).
+- **I33**: partial. Missing: No community slug or short-link route; only a uuid id. A wawu/c/<slug> link needs a unique slug column, generation, and a resolve route.
+- **I34**: partial. Missing: Queue and actions are served; payload lacks display name, headline ("Brand designer") and location ("Enugu") shown on the board.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

@@ -1,14 +1,14 @@
 ---
 id: INBOX-10
 title: Ask a creator a paid question
-owner: DEV3
+owner: DEV
 area: INBOX
-day: 4
+order: 155
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
-depends_on: [INBOX-17, MONEY-02]
+status: todo
+depends_on: [MONEY-02, INBOX-17]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I2, I3, I4, I5]
@@ -19,13 +19,13 @@ artboards: [I2, I3, I4, I5]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I2 I3 I4 I5` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| I2 | Profile · Message | Creator profile header with Follow and "Message · ₦1,500"; the price sits on the button. |
-| I3 | Write the question | Ask sheet: question text, "Usually replies in about 3 hours", reply window, full-refund promise, "Held by WAWU until Chidi answers", Pay from wallet with Naira wallet balance, Send · ₦1,500 then PIN. |
-| I4 | Waiting for a reply | Fan thread with the paid question, countdown "17h 52m left to reply", held-by-WAWU note, and the composer locked "You can send once Chidi replies". |
-| I5 | Replied | Thread after the creator answered with two message bubbles, "Replied in 2h 14m", "Chidi answered, so he's been paid", and Ask a follow-up · ₦1,500 (a new paid message with its own window). |
+- **I2 · Profile · Message**: Creator profile header with Follow and "Message · ₦1,500"; the price sits on the button.
+- **I3 · Write the question**: Ask sheet: question text, "Usually replies in about 3 hours", reply window, full-refund promise, "Held by WAWU until Chidi answers", Pay from wallet with Naira wallet balance, Send · ₦1,500 then PIN.
+- **I4 · Waiting for a reply**: Fan thread with the paid question, countdown "17h 52m left to reply", held-by-WAWU note, and the composer locked "You can send once Chidi replies".
+- **I5 · Replied**: Thread after the creator answered with two message bubbles, "Replied in 2h 14m", "Chidi answered, so he's been paid", and Ask a follow-up · ₦1,500 (a new paid message with its own window).
 
 ## Capability checks
 
@@ -52,14 +50,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| I2 | served | served |
-| I3 | partial | Send exists but is a Flutterwave inline-checkout charge, not a wallet debit; no payer wallet for non-creators (WalletService.getWallet rejects accountType != creator); no transaction PIN anywhere; no "usually replies in" metric (median respondedAt - sentAt is computable from DirectMessage but no endpoint returns it). |
-| I4 | partial | Backend does NOT stop a fan from opening a second paid DM while one is awaiting_response (sendInit checks only block list, dmEnabled, dmPrice). No pair-level thread: each DirectMessage is its own "thread" (id == threadId), so the history view shown here needs grouping by (senderWawuId, creatorWawuId). Countdown is client-side from deadlineAt; live update on reply needs real-time or polling. |
-| I5 | partial | DirectMessage holds ONE responseText string, so the two creator bubbles shown are not representable (needs a reply-message child table or multi-part reply). No notification to the fan on reply (only dm_received to creator, dm_deadline, dm_refunded exist). Follow-up as a new paid DM works via the existing send flow but is not linked to the prior message. |
+- **I2**: served.
+- **I3**: partial. Missing: Send exists but is a Flutterwave inline-checkout charge, not a wallet debit; no payer wallet for non-creators (WalletService.getWallet rejects accountType != creator); no transaction PIN anywhere; no "usually replies in" metric (median respondedAt - sentAt is computable from DirectMessage but no endpoint returns it).
+- **I4**: partial. Missing: Backend does NOT stop a fan from opening a second paid DM while one is awaiting_response (sendInit checks only block list, dmEnabled, dmPrice). No pair-level thread: each DirectMessage is its own "thread" (id == threadId), so the history view shown here needs grouping by (senderWawuId, creatorWawuId). Countdown is client-side from deadlineAt; live update on reply needs real-time or polling.
+- **I5**: partial. Missing: DirectMessage holds ONE responseText string, so the two creator bubbles shown are not representable (needs a reply-message child table or multi-part reply). No notification to the fan on reply (only dm_received to creator, dm_deadline, dm_refunded exist). Follow-up as a new paid DM works via the existing send flow but is not linked to the prior message.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

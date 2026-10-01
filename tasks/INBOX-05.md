@@ -1,13 +1,13 @@
 ---
 id: INBOX-05
 title: Communities: list, room, sending
-owner: DEV3
+owner: DEV
 area: INBOX
-day: 3
+order: 98
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [INBOX-01]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [I24, I25, I26]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I24 I25 I26` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| I24 | Communities | Communities chip inside Inbox: "48 WAWU Credits · Reading is free · 1 credit per message you send · Buy", Your communities with last-message previews, Suggested with member count, open Join / private Ask. |
-| I25 | Community | Room view for an open community with member count, credit balance in header, Host tag on the host's message, and composer "Message · 1 credit". |
-| I26 | Sending | Composer with text and send button "Send · 1" showing the credit cost. |
+- **I24 · Communities**: Communities chip inside Inbox: "48 WAWU Credits · Reading is free · 1 credit per message you send · Buy", Your communities with last-message previews, Suggested with member count, open Join / private Ask.
+- **I25 · Community**: Room view for an open community with member count, credit balance in header, Host tag on the host's message, and composer "Message · 1 credit".
+- **I26 · Sending**: Composer with text and send button "Send · 1" showing the credit cost.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| I24 | partial | No "my communities" query (web comment: joined tab only reflects joins made this session); no last-message preview or unread per room; no suggestion/ranking logic; no ?host= filter. |
-| I25 | served | Served for request/response. No incremental fetch (no since/cursor param) and no live delivery: No real-time transport exists: grep of wawu-backend/src and package.json for WebSocketGateway|@SubscribeMessage|socket.io|@Sse|text/event-stream returned nothing; only @nestjs/schedule cron jobs run server-side. Web fetches once on mount (no setInterval/EventSource/WebSocket in src/lib or src/components messaging code). |
-| I26 | served | served |
+- **I24**: partial. Missing: No "my communities" query (web comment: joined tab only reflects joins made this session); no last-message preview or unread per room; no suggestion/ranking logic; no ?host= filter.
+- **I25**: served. Missing: Served for request/response. No incremental fetch (no since/cursor param) and no live delivery: No real-time transport exists: grep of wawu-backend/src and package.json for WebSocketGateway|@SubscribeMessage|socket.io|@Sse|text/event-stream returned nothing; only @nestjs/schedule cron jobs run server-side. Web fetches once on mount (no setInterval/EventSource/WebSocket in src/lib or src/components messaging code).
+- **I26**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

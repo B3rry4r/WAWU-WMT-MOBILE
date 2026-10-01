@@ -1,19 +1,19 @@
 ---
 id: CHECK-3
-title: Day 5: full verification and QA
+title: Checkpoint 3: full verification and QA (nothing new is built)
 owner: YOU
 area: CHECK
-day: 5
+order: 161
+priority: launch
 repo: all
 type: ops
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [CHECK-2, RELEASE-01]
 decisions: []
 passes: [V10, V11]
 artboards: []
 ---
-# CHECK-3 · Day 5: full verification and QA
+# CHECK-3 · Checkpoint 3: full verification and QA (nothing new is built)
 
 ## Read first
 
@@ -23,15 +23,15 @@ artboards: []
 
 ## Goal
 
-Day 5 builds nothing. An independent AUDITOR session checks everything built in Days 1 to 4: every artboard picture against picture, every flow as every type of user, every payment path attacked, release builds on real phones. Its defects are fixed on Day 6.
+Nothing new is built here. An independent AUDITOR session checks everything built so far: every artboard picture against picture, every flow as every type of user, every payment path attacked, release builds on real phones. Its defects are fixed in RELEASE-02.
 
 ## Scope
 
-An AUDITOR session over the whole app: every artboard built this week compared picture against picture, every flow walked as every type of user, release builds on real phones.
+An AUDITOR session over the whole app: every launch artboard compared picture against picture, every flow walked as every type of user, release builds on real phones.
 
 ## Capability checks
 
-- [ ] Every artboard scheduled this week is either compared and conforming, or listed with a reason.
+- [ ] Every launch artboard is either compared and conforming, or listed with a reason.
 - [ ] No open defects.
 - [ ] Release builds work on a real Android phone and a real iPhone (network, camera, push, deep links).
 

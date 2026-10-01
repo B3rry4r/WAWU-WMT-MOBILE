@@ -3,11 +3,11 @@ id: RELEASE-01
 title: Store listings and production builds
 owner: YOU
 area: RELEASE
-day: 4
+order: 160
+priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SHELL-03]
 decisions: []
 passes: [V1, V10]

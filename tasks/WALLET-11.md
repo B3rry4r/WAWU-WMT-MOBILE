@@ -1,13 +1,13 @@
 ---
 id: WALLET-11
 title: Payout bank account
-owner: DEV1
+owner: YOU
 area: WALLET
-day: 4
+order: 142
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [WALLET-14]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [A21]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A21` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,9 +33,7 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| A21 | Payout bank | 'Where you get paid. Creators only. The account must be in your own name.' Bank Access Bank, Account number, resolved 'Lennox Emmanuel · matches your BVN'. Save payout account. |
+- **A21 · Payout bank**: 'Where you get paid. Creators only. The account must be in your own name.' Bank Access Bank, Account number, resolved 'Lennox Emmanuel · matches your BVN'. Save payout account.
 
 ## Capability checks
 
@@ -46,11 +44,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| A21 | partial | No standalone saved payout account (no model; withdraw takes the account every time); no automated name-vs-BVN match (no BVN name on file); KYC stores bank NAME not bank code. |
+- **A21**: partial. Missing: No standalone saved payout account (no model; withdraw takes the account every time); no automated name-vs-BVN match (no BVN name on file); KYC stores bank NAME not bank code.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

@@ -1,13 +1,13 @@
 ---
 id: WALLET-06
 title: Wallet settings, PIN create and reset, statements
-owner: DEV1
+owner: YOU
 area: WALLET
-day: 4
+order: 133
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [MONEY-09, MONEY-14]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -19,13 +19,13 @@ artboards: [W35, W36, W37, W38]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W35 W36 W37 W38` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,16 +33,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W35 | Wallet settings | Settings hub: account tier with daily limit and KYC basis, Transaction PIN (last changed), Face ID for payments, Cards, Beneficiaries count, Statements, Account details, Help with a payment. |
-| W36 | Transaction PIN · create | Step 1 of 2: create a 4-digit PIN used for every payment, transfer and withdrawal; then confirm. |
-| W37 | Transaction PIN · reset | Forgot PIN: OTP to phone on file with resend timer, then W36. |
-| W38 | Statements | Statement request: account, period presets or custom range, format Stamped PDF or CSV, email destination, Send statement; toast on W35. |
+- **W35 · Wallet settings**: Settings hub: account tier with daily limit and KYC basis, Transaction PIN (last changed), Face ID for payments, Cards, Beneficiaries count, Statements, Account details, Help with a payment.
+- **W36 · Transaction PIN · create**: Step 1 of 2: create a 4-digit PIN used for every payment, transfer and withdrawal; then confirm.
+- **W37 · Transaction PIN · reset**: Forgot PIN: OTP to phone on file with resend timer, then W36.
+- **W38 · Statements**: Statement request: account, period presets or custom range, format Stamped PDF or CSV, email destination, Send statement; toast on W35.
 
 ## Launch scope
 
-Statements (W38) launch after this week (WALLET-27): the row is hidden until then, not shown disabled.
+Statements (W38) come after launch (WALLET-27): the row is hidden until then, not shown disabled.
 
 ## Capability checks
 
@@ -56,14 +54,12 @@ Statements (W38) launch after this week (WALLET-27): the row is hidden until the
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W35 | missing | No tiers, limits, PIN, beneficiaries or settings aggregate. |
-| W36 | missing | No PIN set/confirm. |
-| W37 | missing | No PIN reset; OTP must come from WAWU ID or a new SMS provider. |
-| W38 | missing | No statement generation or email. |
+- **W35**: missing. Missing: No tiers, limits, PIN, beneficiaries or settings aggregate.
+- **W36**: missing. Missing: No PIN set/confirm.
+- **W37**: missing. Missing: No PIN reset; OTP must come from WAWU ID or a new SMS provider.
+- **W38**: missing. Missing: No statement generation or email.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

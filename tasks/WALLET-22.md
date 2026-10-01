@@ -1,13 +1,13 @@
 ---
 id: WALLET-22
 title: WAWU card
-owner: DEV1
+owner: YOU
 area: WALLET
-day: later
+order: 178
+priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D11 is ruled in DECISIONS.md"
+status: todo
 depends_on: [WALLET-31]
 decisions: [D11]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -19,14 +19,14 @@ artboards: [W29, W30, W31, W32, W33, W34]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
-- `DECISIONS.md`: D11 (open: this task is blocked until they are ruled)
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: D11 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py W29 W30 W31 W32 W33 W34` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled after launch.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,14 +34,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W29 | Cards · get a card | No-card state: card art, pitch, choose Physical (3–5 working days, ₦2,000) or Virtual (ready now, free), pay from wallet, Order physical card. |
-| W30 | Cards · delivery | Delivery form: name on card (matches ID), address, city, state; cost breakdown (card + delivery); pay from wallet; then PIN, then W31 'On its way'. |
-| W31 | Card detail | Manage card: Physical/Virtual tabs, status Active, spends from Naira wallet; Freeze, Details (number/expiry/CVV behind PIN), Card PIN, Limits; card spending list. |
-| W32 | Card · frozen | Frozen card: payments and ATM blocked, wallet untouched; Unfreeze; Block if lost or stolen. |
-| W33 | Card · limits and controls | Channel toggles (Online, Shops/POS, ATM, Contactless) and editable daily limits with used-today. |
-| W34 | Card PIN | Choose a card PIN for ATMs/POS, explicitly separate from the transaction PIN. |
+- **W29 · Cards · get a card**: No-card state: card art, pitch, choose Physical (3–5 working days, ₦2,000) or Virtual (ready now, free), pay from wallet, Order physical card.
+- **W30 · Cards · delivery**: Delivery form: name on card (matches ID), address, city, state; cost breakdown (card + delivery); pay from wallet; then PIN, then W31 'On its way'.
+- **W31 · Card detail**: Manage card: Physical/Virtual tabs, status Active, spends from Naira wallet; Freeze, Details (number/expiry/CVV behind PIN), Card PIN, Limits; card spending list.
+- **W32 · Card · frozen**: Frozen card: payments and ATM blocked, wallet untouched; Unfreeze; Block if lost or stolen.
+- **W33 · Card · limits and controls**: Channel toggles (Online, Shops/POS, ATM, Contactless) and editable daily limits with used-today.
+- **W34 · Card PIN**: Choose a card PIN for ATMs/POS, explicitly separate from the transaction PIN.
 
 ## Capability checks
 
@@ -57,16 +55,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W29 | missing | No card issuing of any kind. |
-| W30 | missing | No card order, address or delivery tracking. |
-| W31 | missing | No card management. |
-| W32 | missing | No card freeze/block. |
-| W33 | missing | No card controls. |
-| W34 | missing | No card PIN. |
+- **W29**: missing. Missing: No card issuing of any kind.
+- **W30**: missing. Missing: No card order, address or delivery tracking.
+- **W31**: missing. Missing: No card management.
+- **W32**: missing. Missing: No card freeze/block.
+- **W33**: missing. Missing: No card controls.
+- **W34**: missing. Missing: No card PIN.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

@@ -1,14 +1,14 @@
 ---
 id: EVENTS-06
 title: Buy a ticket: pay, PIN, ticket, still confirming
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 4
+order: 122
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
-depends_on: [EVENTS-07, EVENTS-01, MONEY-02]
+status: todo
+depends_on: [MONEY-02, EVENTS-01, EVENTS-07]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [E3, E4, E5, E10]
@@ -19,13 +19,13 @@ artboards: [E3, E4, E5, E10]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E3 E4 E5 E10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| E3 | Pay | Order review sheet over E2: 1 × Regular, Tickets ₦7,500, Fee 'No fee', Total ₦7,500, funding source 'Pay from wallet · Naira wallet · ₦485,250.75 available', button Pay ₦7,500. |
-| E4 | PIN | PIN keypad over the order sheet: 'Enter your PIN · Approve ₦7,500 to WAWU Creators Summit', then 'PIN accepted'. (Not in MANIFEST; regex missed it, present in events.txt between E3 and E5.) |
-| E5 | Ticket | Success: 'Your ticket · You're in. Show this at the door.' QR, code K7QX-4M2P-9WLA-3RTE, tier + holder name, Add to calendar, My tickets. |
-| E10 | Still confirming | After PIN: 'Paid, still confirming. Don't pay again. Your ticket shows up in a minute.' with Refresh. |
+- **E3 · Pay**: Order review sheet over E2: 1 × Regular, Tickets ₦7,500, Fee 'No fee', Total ₦7,500, funding source 'Pay from wallet · Naira wallet · ₦485,250.75 available', button Pay ₦7,500.
+- **E4 · PIN**: PIN keypad over the order sheet: 'Enter your PIN · Approve ₦7,500 to WAWU Creators Summit', then 'PIN accepted'. (Not in MANIFEST; regex missed it, present in events.txt between E3 and E5.)
+- **E5 · Ticket**: Success: 'Your ticket · You're in. Show this at the door.' QR, code K7QX-4M2P-9WLA-3RTE, tier + holder name, Add to calendar, My tickets.
+- **E10 · Still confirming**: After PIN: 'Paid, still confirming. Don't pay again. Your ticket shows up in a minute.' with Refresh.
 
 ## Capability checks
 
@@ -52,14 +50,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| E3 | missing | No buyer wallet debit exists. EventTicketingService.buy() calls flutterwave.initCharge and returns flutterwaveConfig for a hosted/inline Flutterwave checkout; there is no Fintava client anywhere in wawu-backend/src (grep 'fintava' = 0 hits) and the only wallet is CreatorWallet (a Flutterwave payout subaccount, creators only) whose WalletEntryKind is earning|withdrawal|reversal, with no spend/debit kind. Change: buy() must create a pending EventOrder and either (a) return an order to be confirmed with a PIN, then debit the buyer's Fintava wallet, or (b) debit immediately; the flutterwaveConfig response field disappears. |
-| E4 | missing | Needs a wallet PIN: set/change/reset endpoints, hashed storage, attempt counter + lockout, and the ticket debit authorised only after PIN verify. If Fintava issues/validates the PIN, needs that integration instead. |
-| E5 | served | With wallet payment the issue step is no longer behind verifyOrder(transaction_id, tx_ref); tickets are issued on confirmed wallet debit (same issueOrder transaction). |
-| E10 | partial | Today 'still confirming' is a Flutterwave charge awaiting verify/webhook. With wallet payment it becomes a Fintava debit whose status is pending: needs a GET order-status route (none exists; only verify) and a Fintava webhook/requery path replacing the Flutterwave webhook lookup on EventOrder.flutterwaveTxRef. |
+- **E3**: missing. Missing: No buyer wallet debit exists. EventTicketingService.buy() calls flutterwave.initCharge and returns flutterwaveConfig for a hosted/inline Flutterwave checkout; there is no Fintava client anywhere in wawu-backend/src (grep 'fintava' = 0 hits) and the only wallet is CreatorWallet (a Flutterwave payout subaccount, creators only) whose WalletEntryKind is earning|withdrawal|reversal, with no spend/debit kind. Change: buy() must create a pending EventOrder and either (a) return an order to be confirmed with a PIN, then debit the buyer's Fintava wallet, or (b) debit immediately; the flutterwaveConfig response field disappears.
+- **E4**: missing. Missing: Needs a wallet PIN: set/change/reset endpoints, hashed storage, attempt counter + lockout, and the ticket debit authorised only after PIN verify. If Fintava issues/validates the PIN, needs that integration instead.
+- **E5**: served. Missing: With wallet payment the issue step is no longer behind verifyOrder(transaction_id, tx_ref); tickets are issued on confirmed wallet debit (same issueOrder transaction).
+- **E10**: partial. Missing: Today 'still confirming' is a Flutterwave charge awaiting verify/webhook. With wallet payment it becomes a Fintava debit whose status is pending: needs a GET order-status route (none exists; only verify) and a Fintava webhook/requery path replacing the Flutterwave webhook lookup on EventOrder.flutterwaveTxRef.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

@@ -1,13 +1,13 @@
 ---
 id: INBOX-12
 title: Paid message settings, warning, switched off
-owner: DEV3
+owner: DEV
 area: INBOX
-day: 4
+order: 149
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D8 is ruled in DECISIONS.md"
+status: todo
 depends_on: [INBOX-09]
 decisions: [D8]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,14 +19,14 @@ artboards: [I21, I22, I23]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
-- `DECISIONS.md`: D8 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D8 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py I21 I22 I23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,11 +34,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| I21 | Settings | Paid messages settings: toggle, price per message with presets, reply window, "You earn per message ₦1,275 · Your share 85%", "Unanswered, last 30 days 4%", Save. |
-| I22 | Warning | Settings in the "warned" state: "You missed 4 of your last 18. Past 30% and paid messages switch off for 7 days." with Raise to ₦2,500. Board says the state triggers over 20% unanswered. |
-| I23 | Switched off for 7 days | Settings locked: "Paid messages are off for 7 days. Back on 3 October." toggle locked until the date; publishing, communities, tips and shop keep working. |
+- **I21 · Settings**: Paid messages settings: toggle, price per message with presets, reply window, "You earn per message ₦1,275 · Your share 85%", "Unanswered, last 30 days 4%", Save.
+- **I22 · Warning**: Settings in the "warned" state: "You missed 4 of your last 18. Past 30% and paid messages switch off for 7 days." with Raise to ₦2,500. Board says the state triggers over 20% unanswered.
+- **I23 · Switched off for 7 days**: Settings locked: "Paid messages are off for 7 days. Back on 3 October." toggle locked until the date; publishing, communities, tips and shop keep working.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| I21 | partial | Settings write is served. The unanswered rate is never computed: CreatorNoResponseTrackerService only upserts a zero row on read, and no cron or sweep writes noResponseRatePct. |
-| I22 | partial | Nothing ever sets warned (no writer of CreatorNoResponseTracker). "Missed 4 of last 18" counts are not returned (only a percent). No warning notification kind. |
-| I23 | partial | Nothing writes disabled_7d; PATCH /creator/dm-settings does not refuse turning DMs back on during a lock; sendInit does not enforce dmDisabledUntil. |
+- **I21**: partial. Missing: Settings write is served. The unanswered rate is never computed: CreatorNoResponseTrackerService only upserts a zero row on read, and no cron or sweep writes noResponseRatePct.
+- **I22**: partial. Missing: Nothing ever sets warned (no writer of CreatorNoResponseTracker). "Missed 4 of last 18" counts are not returned (only a percent). No warning notification kind.
+- **I23**: partial. Missing: Nothing writes disabled_7d; PATCH /creator/dm-settings does not refuse turning DMs back on during a lock; sendInit does not enforce dmDisabledUntil.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

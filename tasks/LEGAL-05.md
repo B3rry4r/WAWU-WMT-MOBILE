@@ -3,11 +3,11 @@ id: LEGAL-05
 title: Move legal fees to the wallet
 owner: YOU
 area: LEGAL
-day: 4
+order: 126
+priority: launch
 repo: wawu-backend
 type: money-path
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [MONEY-17]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -25,11 +25,11 @@ artboards: []
 
 ## Goal
 
-Payments move one at a time, safest first (docs/WORKFLOW.md section 6). Staging with the sandbox, then staff with real money, then everyone on mobile.
+Payments move one at a time, safest first (docs/WORKFLOW.md section 6): staging with the sandbox, then staff with real money, then everyone on mobile.
 
 ## Scope
 
-Consultation and service fees, and business-name registration, pay from the wallet (S19, S22, S26) at configured prices. The web stays on Flutterwave until Stage 9; V3 checks it still works.
+Consultation and service fees, and business-name registration, pay from the wallet (S19, S22, S26) at configured prices. The web stays on Flutterwave until after launch; V3 checks it still works.
 
 ## Capability checks
 

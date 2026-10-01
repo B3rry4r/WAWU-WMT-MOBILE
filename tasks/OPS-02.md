@@ -3,11 +3,11 @@ id: OPS-02
 title: Fintava docs, sandbox keys and the 14 sandbox calls
 owner: YOU
 area: OPS
-day: 0
+order: 3
+priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: []
@@ -23,7 +23,7 @@ artboards: []
 
 ## Goal
 
-Dev 1 builds the money layer from Fintava's real API, not from guesses. Field names come from real responses.
+The money layer is built from Fintava's real API, not from guesses. Field names come from real responses.
 
 ## Scope
 

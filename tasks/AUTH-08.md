@@ -1,13 +1,13 @@
 ---
 id: AUTH-08
 title: Selfie match to the BVN photo
-owner: DEV2
+owner: DEV
 area: AUTH
-day: 3
+order: 68
+priority: launch
 repo: wawu-id
 type: third-party
-status: blocked
-blocked_by: "until D1 is ruled in DECISIONS.md"
+status: todo
 depends_on: [AUTH-03]
 decisions: [D1]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -19,8 +19,8 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
-- `DECISIONS.md`: D1 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 

@@ -1,13 +1,13 @@
 ---
 id: EVENTS-04
 title: Host an event: basics, when and where, tickets, review
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 3
+order: 85
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D3 is ruled in DECISIONS.md"
+status: todo
 depends_on: [EVENTS-02]
 decisions: [D3]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,14 +19,14 @@ artboards: [E13, E14, E15, E16, E21, E22]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
-- `DECISIONS.md`: D3 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D3 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py E13 E14 E15 E16 E21 E22` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,14 +34,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| E13 | Basics | Host wizard step 1 of 3 (Basics / When and where / Tickets): event name, what happens at it, who is running it (Adeyemi & Co), Format In person / Online / Hybrid. |
-| E14 | When and where | Step 2: starts/ends, street address with hint 'Missing addresses are the top reason events get sent back.', banner image upload, Category 'Business & Finance'. |
-| E15 | Tickets | Step 3: ticket types (name, price, quantity): Regular ₦5,000 × 100, VIP ₦12,000 × 20, Add a ticket type; note 'You keep 85% of every ticket. Set price to ₦0 for a free event.'; Send for review. |
-| E16 | Sent for review | Confirmation: 'A person checks it. It goes live on its own once approved.' My events / Done. |
-| E21 | Needs a tick | Gate: 'Hosting needs a verified tick · A creator or professional tick, ₦2,000 a year.' Get verified. |
-| E22 | Sent back | Rejected event: 'Sent back · Add the street address, then send it again.' with the address field flagged 'Needed before it can go live' and Send again. |
+- **E13 · Basics**: Host wizard step 1 of 3 (Basics / When and where / Tickets): event name, what happens at it, who is running it (Adeyemi & Co), Format In person / Online / Hybrid.
+- **E14 · When and where**: Step 2: starts/ends, street address with hint 'Missing addresses are the top reason events get sent back.', banner image upload, Category 'Business & Finance'.
+- **E15 · Tickets**: Step 3: ticket types (name, price, quantity): Regular ₦5,000 × 100, VIP ₦12,000 × 20, Add a ticket type; note 'You keep 85% of every ticket. Set price to ₦0 for a free event.'; Send for review.
+- **E16 · Sent for review**: Confirmation: 'A person checks it. It goes live on its own once approved.' My events / Done.
+- **E21 · Needs a tick**: Gate: 'Hosting needs a verified tick · A creator or professional tick, ₦2,000 a year.' Get verified.
+- **E22 · Sent back**: Rejected event: 'Sent back · Add the street address, then send it again.' with the address field flagged 'Needed before it can go live' and Send again.
 
 ## Capability checks
 
@@ -57,16 +55,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| E13 | partial | Format 'Hybrid' does not exist: enum EventFormat = in_person|online. CreateEventDto also REQUIRES `type` (EventType) and `location`, which no board step collects (board has Category, and Street address only). |
-| E14 | partial | Category label 'Business & Finance' has no matching enum (EventCategory.business); labels need a mapping table. `location` (required) has no field on the board. |
-| E15 | partial | Two calls today (POST /events then PUT /events/{id}/tickets) where the board submits once; backend needs a `tier` enum per type (regular|vip|vvip|early_bird|group|free) the board never asks for, and rejects ₦0 unless tier='free' (client must map). Ticket tiers are not part of admin review (AdminEventReview covers the event only). |
-| E16 | served | served |
-| E21 | served | Gate fires only on submit; a pre-check (GET /api/hub/verification/me) is needed to show this before the wizard starts. |
-| E22 | served | No per-field flag: the reason is free text, so 'Needed before it can go live' on a specific field cannot be driven by data. |
+- **E13**: partial. Missing: Format 'Hybrid' does not exist: enum EventFormat = in_person|online. CreateEventDto also REQUIRES `type` (EventType) and `location`, which no board step collects (board has Category, and Street address only).
+- **E14**: partial. Missing: Category label 'Business & Finance' has no matching enum (EventCategory.business); labels need a mapping table. `location` (required) has no field on the board.
+- **E15**: partial. Missing: Two calls today (POST /events then PUT /events/{id}/tickets) where the board submits once; backend needs a `tier` enum per type (regular|vip|vvip|early_bird|group|free) the board never asks for, and rejects ₦0 unless tier='free' (client must map). Ticket tiers are not part of admin review (AdminEventReview covers the event only).
+- **E16**: served.
+- **E21**: served. Missing: Gate fires only on submit; a pre-check (GET /api/hub/verification/me) is needed to show this before the wizard starts.
+- **E22**: served. Missing: No per-field flag: the reason is free text, so 'Needed before it can go live' on a specific field cannot be driven by data.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

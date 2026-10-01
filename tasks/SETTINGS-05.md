@@ -1,13 +1,13 @@
 ---
 id: SETTINGS-05
 title: Delete account
-owner: DEV2
+owner: DEV
 area: SETTINGS
-day: 4
+order: 108
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D12 is ruled in DECISIONS.md"
+status: todo
 depends_on: [SETTINGS-06]
 decisions: [D12]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,14 +19,14 @@ artboards: [Z6, Z7, Z8]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
-- `DECISIONS.md`: D12 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D12 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py Z6 Z7 Z8` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,11 +34,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| Z6 | Delete account | 'Delete your account? This can't be undone after 30 days.' Warning card 'Empty your wallet first. You have ₦485,250.75. Withdraw it to your bank before deleting.' Withdraw. Lists what goes: profile, content and communities; purchases and tickets; wallet and cards. Continue (enabled when wallet empty). |
-| Z7 | Confirm | 'Why are you leaving? (optional)' select (I don't use it enough); 'Type DELETE to confirm'; Delete my account. |
-| Z8 | Scheduled | 'Scheduled for deletion. On 26 October. Sign in before then to cancel.' Done. |
+- **Z6 · Delete account**: 'Delete your account? This can't be undone after 30 days.' Warning card 'Empty your wallet first. You have ₦485,250.75. Withdraw it to your bank before deleting.' Withdraw. Lists what goes: profile, content and communities; purchases and tickets; wallet and cards. Continue (enabled when wallet empty).
+- **Z7 · Confirm**: 'Why are you leaving? (optional)' select (I don't use it enough); 'Type DELETE to confirm'; Delete my account.
+- **Z8 · Scheduled**: 'Scheduled for deletion. On 26 October. Sign in before then to cancel.' Done.
 
 ## Capability checks
 
@@ -51,13 +49,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| Z6 | partial | No wallet-empty precheck on delete; grace is 48h not 30 days; content is removed immediately (not restorable); cards do not exist. |
-| Z7 | partial | No place to send or store the leaving reason. |
-| Z8 | partial | No cancel path: WAWU ID login does not check or clear pending_deletion, and the hub has no cancel endpoint; content already marked removed would not come back. |
+- **Z6**: partial. Missing: No wallet-empty precheck on delete; grace is 48h not 30 days; content is removed immediately (not restorable); cards do not exist.
+- **Z7**: partial. Missing: No place to send or store the leaving reason.
+- **Z8**: partial. Missing: No cancel path: WAWU ID login does not check or clear pending_deletion, and the hub has no cancel endpoint; content already marked removed would not come back.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

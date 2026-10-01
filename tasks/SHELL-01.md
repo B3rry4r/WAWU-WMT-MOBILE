@@ -1,13 +1,13 @@
 ---
 id: SHELL-01
 title: App shell: the five tabs
-owner: DEV2
+owner: DEV
 area: SHELL
-day: 1
+order: 15
+priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: ready
-blocked_by: ""
+status: todo
 depends_on: [SETUP-01]
 decisions: []
 passes: [V1, V5, V6, V7, V9]
@@ -19,7 +19,7 @@ artboards: [H1, W1, I1, M1, X1]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H1 W1 I1 M1 X1` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`, `docs/analysis/evidence/A3.json`, `docs/analysis/evidence/A4.json`, `docs/analysis/evidence/A5.json`
 

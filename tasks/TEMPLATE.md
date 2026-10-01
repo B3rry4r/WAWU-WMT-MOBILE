@@ -1,13 +1,13 @@
 ---
 id: X-00
 title: One line, what a user gets
-owner: YOU | DEV1 | DEV2 | DEV3
+owner: YOU | DEV
 area: e.g. WALLET, HOME, EVENTS
-day: 0-4 to build (5 and 6 are QA), or later
+order: a number after every task it depends on
+priority: launch | after-launch
 repo: wawu-wmt-mobile | wawu-backend | wawu-id | wawuafrica | wawu-dashboard
 type: setup | contract | ops | component | mobile-screen | flow | backend-endpoint | migration | third-party | money-path | removal | admin-screen | web-port
-status: queued | blocked | ready | building | verifying | review | done
-blocked_by: "until <a fact anyone can check>"
+status: todo | building | verifying | review | done
 depends_on: [task ids]
 decisions: [D or R ids]
 passes: [at least what the type requires, docs/WORKFLOW.md section 5]

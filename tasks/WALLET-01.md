@@ -1,13 +1,13 @@
 ---
 id: WALLET-01
 title: Wallet home: Naira account and its states
-owner: DEV1
+owner: YOU
 area: WALLET
-day: 3
+order: 93
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [MONEY-11, MONEY-15, MONEY-13]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [W1, W4, W5, W6]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W1 W4 W5 W6` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W1 | Wallet · Naira | Naira account home: account tabs (Naira/Dollar/Crypto), balance with kobo, 'WAWU · Fintava MFB' NUBAN with Copy, Send / Add money / Swap, bills tiles (Airtime, Data, Power, TV, More), WAWU Verve card row, recent transactions. Entry map (section 0) numbers 10 hotspots. |
-| W4 | Wallet · loading | Skeleton of the real layout; account number hidden until the balance loads. |
-| W5 | Wallet · new account | First visit after account opening: ₦0.00, NUBAN ready to share, empty transactions with 'Send to 812 345 6789 from any Nigerian bank.' |
-| W6 | Wallet · can't reach account | Error state when the bank does not respond: no balance is shown, reassurance copy, Try again; bills tiles still visible. |
+- **W1 · Wallet · Naira**: Naira account home: account tabs (Naira/Dollar/Crypto), balance with kobo, 'WAWU · Fintava MFB' NUBAN with Copy, Send / Add money / Swap, bills tiles (Airtime, Data, Power, TV, More), WAWU Verve card row, recent transactions. Entry map (section 0) numbers 10 hotspots.
+- **W4 · Wallet · loading**: Skeleton of the real layout; account number hidden until the balance loads.
+- **W5 · Wallet · new account**: First visit after account opening: ₦0.00, NUBAN ready to share, empty transactions with 'Send to 812 345 6789 from any Nigerian bank.'
+- **W6 · Wallet · can't reach account**: Error state when the bank does not respond: no balance is shown, reassurance copy, Try again; bills tiles still visible.
 
 ## Capability checks
 
@@ -51,14 +49,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W1 | partial | Balance and NUBAN exist but on a Flutterwave PSA, in whole naira, creator-only. Missing: multi-account (USD, crypto) summary, card summary, bank-record transactions, Fintava provider. |
-| W4 | n/a | Client state only. |
-| W5 | partial | Provisioning exists only for creator accounts and only at Flutterwave; canvas opens an account for everyone at sign-up (A8 'Tier 1 opens the wallet'). |
-| W6 | partial | Endpoint fails as a whole when the provider is down; no typed 'provider_unreachable' error code distinct from other failures, and it is Flutterwave, not Fintava. |
+- **W1**: partial. Missing: Balance and NUBAN exist but on a Flutterwave PSA, in whole naira, creator-only. Missing: multi-account (USD, crypto) summary, card summary, bank-record transactions, Fintava provider.
+- **W4**: n/a. Missing: Client state only.
+- **W5**: partial. Missing: Provisioning exists only for creator accounts and only at Flutterwave; canvas opens an account for everyone at sign-up (A8 'Tier 1 opens the wallet').
+- **W6**: partial. Missing: Endpoint fails as a whole when the provider is down; no typed 'provider_unreachable' error code distinct from other failures, and it is Flutterwave, not Fintava.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

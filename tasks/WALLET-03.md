@@ -1,14 +1,14 @@
 ---
 id: WALLET-03
 title: Send to a bank, not enough money, failed send
-owner: DEV1
+owner: YOU
 area: WALLET
-day: 4
+order: 138
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D5 is ruled in DECISIONS.md"
-depends_on: [WALLET-09, WALLET-02]
+status: todo
+depends_on: [WALLET-02, WALLET-09]
 decisions: [D5]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W8, W13, W14]
@@ -19,14 +19,14 @@ artboards: [W8, W13, W14]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
-- `DECISIONS.md`: D5 (open: this task is blocked until they are ruled)
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: D5 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py W8 W13 W14` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,11 +34,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W8 | Send · to a bank account | Bank + account number entry; account name resolves from the bank before Continue unlocks; saved beneficiaries incl. 'My payout account' (withdraw). |
-| W13 | Send · insufficient balance | Amount over balance: inline error, Continue disabled, Add money one tap away. |
-| W14 | Send · failed | Transfer the receiving bank did not confirm in time; shows automatic reversal to wallet, amount incl. fee, reference, Done / Try again. |
+- **W8 · Send · to a bank account**: Bank + account number entry; account name resolves from the bank before Continue unlocks; saved beneficiaries incl. 'My payout account' (withdraw).
+- **W13 · Send · insufficient balance**: Amount over balance: inline error, Continue disabled, Add money one tap away.
+- **W14 · Send · failed**: Transfer the receiving bank did not confirm in time; shows automatic reversal to wallet, amount incl. fee, reference, Done / Try again.
 
 ## Capability checks
 
@@ -51,13 +49,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W8 | partial | Bank list and name enquiry exist on Flutterwave. Missing: beneficiaries store, and KYC stores payoutBankName as free text, not a bank code, so 'My payout account' cannot be sent to without mapping. |
-| W13 | partial | Server-side check exists for withdraw only. |
-| W14 | partial | Failure settlement exists for withdrawals, but nothing records a reversal credit or fee refund, and no per-transaction read endpoint exists for the client to poll. |
+- **W8**: partial. Missing: Bank list and name enquiry exist on Flutterwave. Missing: beneficiaries store, and KYC stores payoutBankName as free text, not a bank code, so 'My payout account' cannot be sent to without mapping.
+- **W13**: partial. Missing: Server-side check exists for withdraw only.
+- **W14**: partial. Missing: Failure settlement exists for withdrawals, but nothing records a reversal credit or fee refund, and no per-transaction read endpoint exists for the client to poll.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

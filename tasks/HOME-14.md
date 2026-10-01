@@ -1,13 +1,13 @@
 ---
 id: HOME-14
 title: Move tips to the wallet
-owner: DEV3
+owner: DEV
 area: HOME
-day: 4
+order: 117
+priority: launch
 repo: wawu-backend
 type: money-path
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [MONEY-17]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,17 +19,17 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-Payments move one at a time, safest first (docs/WORKFLOW.md section 6). Staging with the sandbox, then staff with real money, then everyone on mobile.
+Payments move one at a time, safest first (docs/WORKFLOW.md section 6): staging with the sandbox, then staff with real money, then everyone on mobile.
 
 ## Scope
 
-Tips pay from the wallet (H26-H28) with an optional note, and land in the creator's wallet. The web stays on Flutterwave until Stage 9; V3 checks it still works.
+Tips pay from the wallet (H26-H28) with an optional note, and land in the creator's wallet. The web stays on Flutterwave until after launch; V3 checks it still works.
 
 ## Capability checks
 

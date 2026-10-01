@@ -3,11 +3,11 @@ id: SCHOOLS-02
 title: Admin: create and edit schools, courses and intakes
 owner: YOU
 area: SCHOOLS
-day: 2
+order: 55
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SCHOOLS-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]

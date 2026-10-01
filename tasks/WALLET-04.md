@@ -1,13 +1,13 @@
 ---
 id: WALLET-04
 title: Transaction history and detail
-owner: DEV1
+owner: YOU
 area: WALLET
-day: 3
+order: 94
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [W26, W27, W28]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W26 W27 W28` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W26 | Transaction history | Full ledger with search, filter chips (All, Money in, Money out, Bills, Content), a monthly In/Out summary, rows grouped by day, tap to open a receipt. |
-| W27 | Transaction detail | Receipt for one transaction: type, source content, from, to, date, reference, Completed; Share receipt; Report a problem opens support chat with reference. |
-| W28 | History · no results | Empty filter result (Bills in September) with 'Pay a bill' CTA. |
+- **W26 · Transaction history**: Full ledger with search, filter chips (All, Money in, Money out, Bills, Content), a monthly In/Out summary, rows grouped by day, tap to open a receipt.
+- **W27 · Transaction detail**: Receipt for one transaction: type, source content, from, to, date, reference, Completed; Share receipt; Report a problem opens support chat with reference.
+- **W28 · History · no results**: Empty filter result (Bills in September) with 'Pay a bill' CTA.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W26 | partial | History is WAWU's own instruction ledger, not the bank's record: it misses money paid directly into the NUBAN, bills, buyer-side unlocks/tips, and has no counterparty, description, category, search, filter, monthly summary or pagination cursor (take<=200). Amounts are whole naira, canvas shows kobo. |
-| W27 | missing | No transaction-by-id endpoint, no counterparty/linked content, no support ticket route. |
-| W28 | missing | No category filter on history. |
+- **W26**: partial. Missing: History is WAWU's own instruction ledger, not the bank's record: it misses money paid directly into the NUBAN, bills, buyer-side unlocks/tips, and has no counterparty, description, category, search, filter, monthly summary or pagination cursor (take<=200). Amounts are whole naira, canvas shows kobo.
+- **W27**: missing. Missing: No transaction-by-id endpoint, no counterparty/linked content, no support ticket route.
+- **W28**: missing. Missing: No category filter on history.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

@@ -3,11 +3,11 @@ id: PROS-03
 title: Get listed as a professional
 owner: YOU
 area: PROS
-day: 3
+order: 87
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [PROS-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -25,7 +25,7 @@ artboards: [P5, P6, P7, P8, P9, P10]
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,14 +33,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| P5 | Offer your services | Application step 1: 'People find you here and pay to send the first message.' Which fields? (Accounting & Tax, Add), one-line headline, about, what you take on (chips). |
-| P6 | Credentials | Step 2 for a regulated field: 'This field is regulated · We check your licence with the body that issued it.' Kind (Practising licence / Qualification / Work samples), Licence number ICAN/2016/40921, Who issued it ICAN, uploaded ican-licence.pdf, Send for review. |
-| P7 | Under review | 'Under review · Accounting & Tax · A person checks it. You'll see the outcome in your listings.' My listings / Done. |
-| P8 | Your listings | Listings per field: Listed (Hide), Under review, Turned down with reason 'This field needs a practising licence.' + Apply again; Apply in another field; note 'People reach you through paid messages · Set your price and reply time in Inbox settings (I21).' |
-| P9 | Hidden | Listing hidden: 'Hidden. Nobody can find you' with Show. |
-| P10 | Needs a creator account | Gate: 'This needs a creator account · Setting one up is free.' Become a creator. |
+- **P5 · Offer your services**: Application step 1: 'People find you here and pay to send the first message.' Which fields? (Accounting & Tax, Add), one-line headline, about, what you take on (chips).
+- **P6 · Credentials**: Step 2 for a regulated field: 'This field is regulated · We check your licence with the body that issued it.' Kind (Practising licence / Qualification / Work samples), Licence number ICAN/2016/40921, Who issued it ICAN, uploaded ican-licence.pdf, Send for review.
+- **P7 · Under review**: 'Under review · Accounting & Tax · A person checks it. You'll see the outcome in your listings.' My listings / Done.
+- **P8 · Your listings**: Listings per field: Listed (Hide), Under review, Turned down with reason 'This field needs a practising licence.' + Apply again; Apply in another field; note 'People reach you through paid messages · Set your price and reply time in Inbox settings (I21).'
+- **P9 · Hidden**: Listing hidden: 'Hidden. Nobody can find you' with Show.
+- **P10 · Needs a creator account**: Gate: 'This needs a creator account · Setting one up is free.' Become a creator.
 
 ## Capability checks
 
@@ -56,16 +54,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| P5 | partial | Board lets the user Add several fields in one pass; backend takes one category per application (unique wawuUserId+category), so the client must post once per field. Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug. |
-| P6 | served | served |
-| P7 | served | served |
-| P8 | served | served |
-| P9 | served | served |
-| P10 | served | served |
+- **P5**: partial. Missing: Board lets the user Add several fields in one pass; backend takes one category per application (unique wawuUserId+category), so the client must post once per field. Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug.
+- **P6**: served.
+- **P7**: served.
+- **P8**: served.
+- **P9**: served.
+- **P10**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

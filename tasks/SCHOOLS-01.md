@@ -3,11 +3,11 @@ id: SCHOOLS-01
 title: Schools data model
 owner: YOU
 area: SCHOOLS
-day: 2
+order: 54
+priority: launch
 repo: wawu-backend
 type: migration
-status: queued
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V3, V4, V9]

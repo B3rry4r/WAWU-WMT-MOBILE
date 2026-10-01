@@ -1,13 +1,13 @@
 ---
 id: HOME-03
 title: Content detail: preview, unlocked, comments, share, rate
-owner: DEV3
+owner: DEV
 area: HOME
-day: 2
+order: 45
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [HOME-06]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [H19, H20, H21, H22, H23]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H19 H20 H21 H22 H23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,13 +33,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| H19 | Detail · locked preview | Content detail (/content/[id]) locked: preview pages 1–4 of 84, title, 2,140 views, Updated Sep 2026, creator with Follow, price card 'Unlock · ₦3,000 · Pay from wallet · ₦485,250 available', 96% liked, Share, Save, Rate, 48 comments. |
-| H20 | Detail · unlocked | Unlocked detail: All 84 pages, 'Bought 26 Sep', Following, Read now, Download, Tip Kemi, Saved filled. |
-| H21 | Comments | Comments list with indented replies; Reply fills the input with @name. |
-| H22 | Share sheet | Share sheet: WAWU chat, Copy link, WhatsApp, More; link wawu/c/pricing-playbook; 'Send to' recent people (Amaka, Chidi, Bisi, Tolu). |
-| H23 | Rate | Rate this piece, 1–5 stars, 'only after buying' (from the code), Submit rating -> 'Thanks for rating' -> H20. |
+- **H19 · Detail · locked preview**: Content detail (/content/[id]) locked: preview pages 1–4 of 84, title, 2,140 views, Updated Sep 2026, creator with Follow, price card 'Unlock · ₦3,000 · Pay from wallet · ₦485,250 available', 96% liked, Share, Save, Rate, 48 comments.
+- **H20 · Detail · unlocked**: Unlocked detail: All 84 pages, 'Bought 26 Sep', Following, Read now, Download, Tip Kemi, Saved filled.
+- **H21 · Comments**: Comments list with indented replies; Reply fills the input with @name.
+- **H22 · Share sheet**: Share sheet: WAWU chat, Copy link, WhatsApp, More; link wawu/c/pricing-playbook; 'Send to' recent people (Amaka, Chidi, Bisi, Tolu).
+- **H23 · Rate**: Rate this piece, 1–5 stars, 'only after buying' (from the code), Submit rating -> 'Thanks for rating' -> H20.
 
 ## Capability checks
 
@@ -54,15 +52,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| H19 | partial | Detail, comments, save, rate exist. Missing: preview page range, views increment, ContentPiece has no updatedAt column, wallet unlock. |
-| H20 | partial | Purchase date per viewer not on the detail response (needs join); tip is Flutterwave. |
-| H21 | served | served |
-| H22 | partial | No free P2P chat to share into; no shared-content message type; no wawu/c/{slug} resolver; no share counter. |
-| H23 | partial | Route exists but does NOT check purchase and stores no per-user row: it averages the new score into ratingPct ((old + new)/2), so one user can rate repeatedly and skew it. Needs ContentRating(userWawuId, contentId, stars) unique + purchase check. |
+- **H19**: partial. Missing: Detail, comments, save, rate exist. Missing: preview page range, views increment, ContentPiece has no updatedAt column, wallet unlock.
+- **H20**: partial. Missing: Purchase date per viewer not on the detail response (needs join); tip is Flutterwave.
+- **H21**: served.
+- **H22**: partial. Missing: No free P2P chat to share into; no shared-content message type; no wawu/c/{slug} resolver; no share counter.
+- **H23**: partial. Missing: Route exists but does NOT check purchase and stores no per-user row: it averages the new score into ratingPct ((old + new)/2), so one user can rate repeatedly and skew it. Needs ContentRating(userWawuId, contentId, stars) unique + purchase check.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

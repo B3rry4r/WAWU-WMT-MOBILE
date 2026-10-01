@@ -1,39 +1,35 @@
 # WMT plan
 
-A five-day build, then two days of QA. Four people. Each person owns whole
-features: the screens AND the backend behind them.
+Two people, you and one developer. Each owns whole features: the screens AND
+the backend behind them. You set the pace; the order of each person's list is
+the only schedule.
 
 ## Who owns what
 
-| Person | Owns, end to end |
-|--------|------------------|
-| **You** | Running the build (decisions, Fintava, staging, reviews, checkpoints, store submission). Features: Schools, Professionals, Legal |
-| **Dev 1 · Money** | The money core every payment uses (Fintava, accounts, PIN, ledger, pay-from-wallet). Features: Wallet, Bills |
-| **Dev 2 · Account, Me, Events** | App shell and session. Features: sign-up and sign-in, Settings, Me (profile, create, ticks), Events (including tickets) |
-| **Dev 3 · Feed and Inbox** | Design-system components. Features: Home (feed, TGIF, unlock, tips), Explore, Inbox (paid questions, chat, money in chat, communities, credits, push) |
+**You:** running the build (Fintava, staging, the designer, reviews,
+checkpoints, store submission). Features: the money core, Wallet, Bills,
+Schools, Professionals, Legal, Ads. Details: `docs/people/YOU.md`.
 
-The payment path for a feature belongs to that feature's owner, built on Dev
-1's money core. Details for each person: `docs/people/`.
+**Developer:** verifying the setup, the app shell, the shared components.
+Features: sign-up and sign-in, Settings, Me, Home, Explore, Events, Inbox.
+Details: `docs/people/DEV.md`.
 
-## The week
+A feature's payment (tickets, unlocks, tips, credits, ticks) belongs to that
+feature's owner, built on the money core.
 
-| Day | What happens |
-|-----|-------------|
-| 0 | Setup verified, staging, protected routes, D1 to D4 ruled, Fintava sandbox. **CHECK-0** |
-| 1 | App shell, components, PIN and pay sheets, wallet contract and mock, feature flags |
-| 2 | Screens on today's backend and the backend gaps behind them; Fintava core. **CHECK-1** |
-| 3 | More screens; sign-up with BVN; wallets; pay-from-wallet core |
-| 4 | Every payment path; send money; bills; events door; inbox money; schools payment. **CHECK-2** |
-| 5 | Verification and QA only. **CHECK-3** |
-| 6 | QA fixes only, re-verified; store submission. **RELEASE-02** |
+## How the lists work
 
-Each developer runs several Claude sessions in parallel: builders on their
-day's tasks, and separate verifier sessions checking yesterday's. Day 4 is the
-heaviest day. Every day's task list is in `tasks/INDEX.md`.
+`tasks/INDEX.md` has one list per person. Work down it top to bottom:
 
-**The one outside dependency:** anything that moves real money needs Fintava
-sandbox access on Day 0. Without it, money screens are built against the mock
-and stay off behind their flags until access arrives.
+- A task never comes before something it depends on. The checker enforces it.
+- If a task needs the other person's work first, the list says so.
+- Open decisions never block anything. Each has a default to build now
+  (`DECISIONS.md`); numbers go into config, marked provisional.
+- "After launch" tasks sit at the end of your list. They can wait.
+
+Checkpoints sit in your list where they fall: CHECK-0 (safe to start), CHECK-1
+(the app talks to the real backend), CHECK-2 (money moves correctly), CHECK-3
+(full QA, nothing new built), then RELEASE-02 (QA fixes only, then submit).
 
 ## Handing out work
 
@@ -42,14 +38,14 @@ You are the BUILDER for task WALLET-02. Open tasks/WALLET-02.md and follow it.
 You are the VERIFIER for task WALLET-02. Open tasks/WALLET-02.md and follow it.
 ```
 
-Builder and verifier are always different sessions. Backend tasks: start the
-session with the backend repo and this repo both attached.
+Builder and verifier are always different sessions. For backend tasks, start
+the session with the backend repo and this repo both attached.
 
-## Needed from outside the team
+## Needed from outside
 
-**From Fintava (OPS-02), Day 0:** API docs, sandbox keys, and these sandbox
-calls saved in `docs/fintava/` (request and full response, keys and BVNs
-masked, webhooks with headers):
+**From Fintava (OPS-02):** API docs, sandbox keys, and these sandbox calls
+saved in `docs/fintava/` (request and full response, keys and BVNs masked,
+webhooks with their headers):
 
 1. Create a customer
 2. Open a Naira account at Tier 1
@@ -72,9 +68,11 @@ Questions for Fintava:
 - What are their fees and tier limits?
 - Can we pay a school that isn't a WAWU user?
 - What exact licence wording should the app use?
-- Are dollar accounts, crypto and the card in the contract?
+- Are dollar accounts, crypto and the card in our contract?
 
-**From you:** Apple Developer, Google Play and Expo accounts (SHELL-03,
-RELEASE-01); the domain behind `wawu/...` links; an SMS route for sign-up
-codes; a BVN and selfie vendor if Fintava doesn't cover it; Redis for live
-chat; rulings D1 to D15 (D1 to D4 on Day 0).
+Until the sandbox arrives, money is built against the mock (MONEY-05) and
+stays behind its flags.
+
+**From you:** Apple Developer, Google Play and Expo accounts; the domain behind
+`wawu/...` links; an SMS route for sign-up codes; a BVN and selfie vendor if
+Fintava doesn't cover them; Redis for live chat.

@@ -1,13 +1,13 @@
 ---
 id: SHELL-02
 title: Signed-in session and API wiring
-owner: DEV2
+owner: DEV
 area: SHELL
-day: 1
+order: 16
+priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: ready
-blocked_by: ""
+status: todo
 depends_on: [SETUP-01]
 decisions: []
 passes: [V1, V9]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 
 ## Goal
 

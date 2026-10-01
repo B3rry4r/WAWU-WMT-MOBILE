@@ -1,13 +1,13 @@
 ---
 id: BILLS-05
 title: Bill reminders and the month view
-owner: DEV1
+owner: YOU
 area: BILLS
-day: later
+order: 184
+priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [BILLS-06]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [S27, S28, S29, S30, S31, S32]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S27 S28 S29 S30 S31 S32` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled after launch.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,14 +33,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| S27 | This month | Bill reminders for October 2026: 'Still to pay this month ₦38,200', 'In your wallet ₦485,250', list: DStv Compact on WAWU ₦15,700 Paid (Oct 05), Ikeja Electric on WAWU ₦10,500 in 3 days (Oct 28), House rent reminder-only ₦25,000, Gym subscription reminder-only ₦2,700; Plus to add. |
-| S28 | New reminder | New reminder, 'Bill on WAWU' tab: what (Ikeja Electric · meter), usual amount ₦10,500, due every month on the 28th, Remind me (on the day / 1 / 3 days / a week before), Save. |
-| S29 | Reminder | Lock-screen push notification 3 days before: 'Ikeja Electric is due in 3 days · ₦10,500 on the 28th. Tap to pay from your wallet.' |
-| S30 | Pay from the reminder | Prefilled pay sheet over S27: Ikeja Electric, meter, due 28 Oct, amount ₦10,500, Pay from wallet; then PIN (S6) and receipt like S7. |
-| S31 | Not on WAWU | 'Anything else' tab: name Gym membership, amount ₦2,700, due the 30th, 'We remind you. You pay it yourself, then tap Mark as paid.' |
-| S32 | No reminders yet | Empty state: 'Plan your month · Add your bills and subscriptions once. We remind you before each one is due.' Add a reminder. |
+- **S27 · This month**: Bill reminders for October 2026: 'Still to pay this month ₦38,200', 'In your wallet ₦485,250', list: DStv Compact on WAWU ₦15,700 Paid (Oct 05), Ikeja Electric on WAWU ₦10,500 in 3 days (Oct 28), House rent reminder-only ₦25,000, Gym subscription reminder-only ₦2,700; Plus to add.
+- **S28 · New reminder**: New reminder, 'Bill on WAWU' tab: what (Ikeja Electric · meter), usual amount ₦10,500, due every month on the 28th, Remind me (on the day / 1 / 3 days / a week before), Save.
+- **S29 · Reminder**: Lock-screen push notification 3 days before: 'Ikeja Electric is due in 3 days · ₦10,500 on the 28th. Tap to pay from your wallet.'
+- **S30 · Pay from the reminder**: Prefilled pay sheet over S27: Ikeja Electric, meter, due 28 Oct, amount ₦10,500, Pay from wallet; then PIN (S6) and receipt like S7.
+- **S31 · Not on WAWU**: 'Anything else' tab: name Gym membership, amount ₦2,700, due the 30th, 'We remind you. You pay it yourself, then tap Mark as paid.'
+- **S32 · No reminders yet**: Empty state: 'Plan your month · Add your bills and subscriptions once. We remind you before each one is due.' Add a reminder.
 
 ## Capability checks
 
@@ -56,16 +54,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| S27 | missing | No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders. |
-| S28 | missing | No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders. Needs BillReminder {userId, kind on_wawu|external, billerCode, itemCode, customerRef, name, amount, dueDay, leadDays, lastPaidPeriod} + CRUD routes. |
-| S29 | missing | No push-notification infrastructure (only in-app Notification rows) and no reminder scheduler job. |
-| S30 | missing | Depends on reminders (missing) and on wallet-funded bill payment (missing). |
-| S31 | missing | No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders. |
-| S32 | missing | No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders. |
+- **S27**: missing. Missing: No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders.
+- **S28**: missing. Missing: No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders. Needs BillReminder {userId, kind on_wawu|external, billerCode, itemCode, customerRef, name, amount, dueDay, leadDays, lastPaidPeriod} + CRUD routes.
+- **S29**: missing. Missing: No push-notification infrastructure (only in-app Notification rows) and no reminder scheduler job.
+- **S30**: missing. Missing: Depends on reminders (missing) and on wallet-funded bill payment (missing).
+- **S31**: missing. Missing: No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders.
+- **S32**: missing. Missing: No bill-reminder capability at all: no model (backend-models.txt has none), no route (backend-routes grep 'reminder' = none for bills), grep -i 'reminder' in src finds only verification-reminder.service.ts and NotificationSettings.dmReminders.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

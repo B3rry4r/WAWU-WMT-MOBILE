@@ -1,19 +1,19 @@
 ---
 id: CHECK-0
-title: Day 0 checkpoint: safe to start building
+title: Checkpoint 0: safe to start building
 owner: YOU
 area: CHECK
-day: 0
+order: 8
+priority: launch
 repo: all
 type: ops
-status: ready
-blocked_by: ""
-depends_on: [SETUP-01, MONEY-01, OPS-01, OPS-02, OPS-03]
+status: todo
+depends_on: [SETUP-01, OPS-02, OPS-03, MONEY-01]
 decisions: []
 passes: []
 artboards: []
 ---
-# CHECK-0 · Day 0 checkpoint: safe to start building
+# CHECK-0 · Checkpoint 0: safe to start building
 
 ## Read first
 
@@ -22,18 +22,18 @@ artboards: []
 
 ## Goal
 
-Nobody builds on a foundation that hasn't been proven. Day 1 starts only when this is signed.
+Nobody builds on a foundation that hasn't been proven.
 
 ## Scope
 
-Read the verifier's report on SETUP-01, the protected-route suite (MONEY-01), and the state of D1 to D4 and Fintava access.
+Read the report on SETUP-01, the protected-route suite (MONEY-01), the decision defaults, and the state of Fintava access.
 
 ## Capability checks
 
-- [ ] SETUP-01 was verified by a different session, with no open defects.
+- [ ] SETUP-01 was verified (it was built by the setup session, so any person's session can verify it) with no open defects.
 - [ ] The protected-route suite (MONEY-01) passes on the live backend's main branch.
-- [ ] D1 to D4 are ruled in DECISIONS.md.
-- [ ] Fintava sandbox keys are in hand, or the owner has recorded that money is built against the mock this week.
+- [ ] The decision defaults in DECISIONS.md have been read, and any you disagree with are changed.
+- [ ] Fintava sandbox keys are in hand, or the owner has recorded that money is built against the mock until access arrives.
 
 ## Builder report
 

@@ -1,13 +1,13 @@
 ---
 id: BILLS-03
 title: Airtime and cable TV
-owner: DEV1
+owner: YOU
 area: BILLS
-day: 4
+order: 148
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [BILLS-04]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -19,13 +19,13 @@ artboards: [S8, S9]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S8 S9` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,10 +33,8 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| S8 | Airtime | Airtime: network MTN/Airtel/Glo/9mobile, phone number with 'Mine', amount presets ₦500/₦1,000/₦2,000/₦5,000, Buy ₦2,000 airtime; then PIN and receipt like S7. |
-| S9 | Cable package | DStv packages with monthly prices; then smartcard, review, PIN, receipt. |
+- **S8 · Airtime**: Airtime: network MTN/Airtel/Glo/9mobile, phone number with 'Mine', amount presets ₦500/₦1,000/₦2,000/₦5,000, Buy ₦2,000 airtime; then PIN and receipt like S7.
+- **S9 · Cable package**: DStv packages with monthly prices; then smartcard, review, PIN, receipt.
 
 ## Capability checks
 
@@ -48,12 +46,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| S8 | partial | Catalogue served; payment is Flutterwave checkout, not wallet (see S5). |
-| S9 | served | served |
+- **S8**: partial. Missing: Catalogue served; payment is Flutterwave checkout, not wallet (see S5).
+- **S9**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

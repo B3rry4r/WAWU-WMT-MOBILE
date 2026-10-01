@@ -1,19 +1,19 @@
 ---
 id: RELEASE-02
-title: Day 6: fix QA defects, re-verify, submit
+title: Fix QA defects, re-verify, submit to the stores
 owner: YOU
 area: RELEASE
-day: 6
+order: 162
+priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [CHECK-3]
 decisions: []
 passes: []
 artboards: []
 ---
-# RELEASE-02 · Day 6: fix QA defects, re-verify, submit
+# RELEASE-02 · Fix QA defects, re-verify, submit to the stores
 
 ## Read first
 
@@ -22,7 +22,7 @@ artboards: []
 
 ## Goal
 
-Day 6 builds nothing new. Each CHECK-3 defect is fixed by the owner of that feature and re-verified by a different session; then both apps are submitted. Review time is the stores' decision, typically one to three days.
+Nothing new is built here. Each CHECK-3 defect is fixed by the owner of that feature and re-verified by a different session; then both apps are submitted. Review time is the stores' decision, typically one to three days.
 
 ## Scope
 

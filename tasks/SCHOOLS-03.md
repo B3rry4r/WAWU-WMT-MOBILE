@@ -3,11 +3,11 @@ id: SCHOOLS-03
 title: Find a school, a school, a course, no results
 owner: YOU
 area: SCHOOLS
-day: 3
+order: 91
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SCHOOLS-04]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -25,7 +25,7 @@ artboards: [SC1, SC2, SC3, SC10]
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| SC1 | Schools | Schools directory: search 'Search schools or courses', category chips All/Tech/Business/Creative/Languages/Vocational, school cards with initials avatar, city, course count, rating and 'from' price (Greenfield Tech Academy, Lagos, 18 courses, 4.8, from ₦45,000; Aba Fashion Institute, Aba, 9 courses, 4.7, from ₦30,000). Entry: Explore (X15) · Find a school. |
-| SC2 | School | School profile: initials avatar, name, 'Yaba, Lagos · Since 2016 · 4.8 (1,240)', expertise chips (Product design, Software, Data, Cloud), blurb with a placement claim, 'Courses 18' list with course name, length/mode and price. |
-| SC3 | Course | Course detail: school name, course title, Length 12 weeks, Classes 'Online, Saturdays in Yaba', Starts Mon 3 November, You get 'Certificate, mentor, portfolio', numbered syllabus, secondary link 'Or apply on Greenfield's website', sticky price '₦150,000 One payment' + Enroll. |
-| SC10 | No results | From SC1 no results: query 'drone piloting', 'No schools for "drone piloting" · Try a shorter search, or browse a category.' |
+- **SC1 · Schools**: Schools directory: search 'Search schools or courses', category chips All/Tech/Business/Creative/Languages/Vocational, school cards with initials avatar, city, course count, rating and 'from' price (Greenfield Tech Academy, Lagos, 18 courses, 4.8, from ₦45,000; Aba Fashion Institute, Aba, 9 courses, 4.7, from ₦30,000). Entry: Explore (X15) · Find a school.
+- **SC2 · School**: School profile: initials avatar, name, 'Yaba, Lagos · Since 2016 · 4.8 (1,240)', expertise chips (Product design, Software, Data, Cloud), blurb with a placement claim, 'Courses 18' list with course name, length/mode and price.
+- **SC3 · Course**: Course detail: school name, course title, Length 12 weeks, Classes 'Online, Saturdays in Yaba', Starts Mon 3 November, You get 'Certificate, mentor, portfolio', numbered syllabus, secondary link 'Or apply on Greenfield's website', sticky price '₦150,000 One payment' + Enroll.
+- **SC10 · No results**: From SC1 no results: query 'drone piloting', 'No schools for "drone piloting" · Try a shorter search, or browse a category.'
 
 ## Capability checks
 
@@ -52,14 +50,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| SC1 | missing | Needs School model + GET /api/hub/schools?category=&q= returning aggregate courseCount and min price; rating requires a review system that does not exist (Product.ratingAvg comment forbids seeded ratings). |
-| SC2 | missing | Needs GET /api/hub/schools/{id} with nested courses. ratingCount 1,240 needs reviews; placement claim is free text the admin enters. |
-| SC3 | missing | Needs GET /api/hub/schools/courses/{id} with intakes[], syllabus[], outcomes[], priceNaira, applyUrl (tracked). 'One payment' implies a payment-plan field (instalments not drawn). |
-| SC10 | missing | Same as SC1: no schools search endpoint. |
+- **SC1**: missing. Missing: Needs School model + GET /api/hub/schools?category=&q= returning aggregate courseCount and min price; rating requires a review system that does not exist (Product.ratingAvg comment forbids seeded ratings).
+- **SC2**: missing. Missing: Needs GET /api/hub/schools/{id} with nested courses. ratingCount 1,240 needs reviews; placement claim is free text the admin enters.
+- **SC3**: missing. Missing: Needs GET /api/hub/schools/courses/{id} with intakes[], syllabus[], outcomes[], priceNaira, applyUrl (tracked). 'One payment' implies a payment-plan field (instalments not drawn).
+- **SC10**: missing. Missing: Same as SC1: no schools search endpoint.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

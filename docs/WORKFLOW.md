@@ -95,8 +95,8 @@ step 2. No step is skipped.
 | 6 | **Review** | Owner | The owner has looked at the screenshots and the evidence pack in the PR |
 | 7 | **Merge and live check** | Owner, then machine | Deployed to staging; a real login sees a value only the server has; flags widened in steps |
 
-Status values in a task file, in order: `queued` (its day hasn't come),
-`blocked` (needs the named fact), `ready`, `building`, `verifying`, `review`,
+Status values in a task file, in order: `todo`, `building`, `verifying`,
+`review`, `done`. A builder starts a task only when every `depends_on` task is
 `done`.
 
 ### Shared files (fenced)
@@ -199,32 +199,38 @@ just a new one.
 
 ---
 
-## 7. The week
+## 7. Order of work
 
-The build is one week. Each task file has a `day`. A day's tasks start when
-their `depends_on` tasks are done, not before. Four checkpoints stop the week
-if something is wrong; each is a task the owner signs (`tasks/CHECK-*.md`).
+There is no calendar here; the owner sets the pace. `tasks/INDEX.md` has one
+list per person, and each person works down theirs top to bottom.
 
-Building happens on Days 0 to 4 only. Days 5 and 6 build nothing new.
+- A task never comes before something it depends on (`order` in each task
+  file; `scripts/tasks/check_tasks.py` refuses anything else).
+- Where a task needs the other person's work first, the list says so.
+- Open decisions never block work: each has a default to build now
+  (`DECISIONS.md`), and its numbers go into config marked provisional.
+- Each person owns whole features: the screens and the backend behind them,
+  including that feature's payment path. The money core (Fintava, PIN, ledger,
+  pay-from-wallet) is one owner's, and every payment path calls it.
 
-| Day | What happens | Checkpoint |
-|-----|-------------|------------|
-| 0 | Repo verified (SETUP-01), protected-route suite, staging, rulings D1 to D4, Fintava sandbox | **CHECK-0**: safe to start building |
-| 1 | App shell and session, design-system components, PIN and pay sheets, wallet contract and mock, feature flags | |
-| 2 | Screens on today's backend (feed, explore, profile, create, events, professionals, settings, sign-in) and the backend gaps behind them; Fintava client, webhooks, PIN, ledger | **CHECK-1**: the app talks to the real backend; screens match the design |
-| 3 | More screens and backend gaps; sign-up with BVN; wallets opened; pay-from-wallet core; wallet home | |
-| 4 | Every payment path, one at a time behind flags; send money; bills; events door; inbox money; schools payment; store listings. The heaviest day | **CHECK-2**: money moves correctly (V8 on every path) |
-| 5 | **Verification and QA only.** An independent audit of everything built (CHECK-3) | **CHECK-3**: full QA |
-| 6 | **Fixes from QA only,** each re-verified by a different session; anything still failing goes behind its flag; store submission (RELEASE-02) | |
-| later | After launch: cards, dollar and crypto (D11), ads (D10), higher account tiers, card top-up, statements, receipt sharing, bill reminders, QR, school tracked links, Flutterwave removal, the web port | |
+Checkpoints sit in the owner's list where they fall. Each is a task the owner
+signs:
 
-**Each developer owns whole features**: the screens and the backend behind
-them, including that feature's payment path. Dev 1 owns the shared money core
-(Fintava, PIN, ledger, pay-from-wallet) that every payment path calls.
+- **CHECK-0**: safe to start building (setup verified, protected routes,
+  staging, Fintava access or the mock)
+- **CHECK-1**: the app talks to the real backend, and the screens built so far
+  match the design
+- **CHECK-2**: every payment path attacked and reconciled (V8)
+- **CHECK-3**: full verification and QA; nothing new is built
+- **RELEASE-02**: QA fixes only, each re-verified; anything still failing goes
+  behind its flag; then store submission
 
-If Fintava sandbox access is not in hand on Day 0, every money task is built
-against the mock (MONEY-03) and stays behind its flag until access arrives. The
-owner records that ruling in CHECK-0.
+"After launch" tasks (`priority: after-launch`) can wait: cards, dollar and
+crypto accounts, higher tiers, card top-up, statements, receipt sharing, bill
+reminders, QR, school tracked links, ads, Flutterwave removal, the web port.
+
+If Fintava sandbox access hasn't arrived, every money task is built against the
+mock (MONEY-05) and stays behind its flag until it does.
 
 ## 8. The evidence pack (every pull request)
 

@@ -1,14 +1,14 @@
 ---
 id: AUTH-09
 title: Sign-up: wallet opened, create and confirm PIN
-owner: DEV2
+owner: DEV
 area: AUTH
-day: 4
+order: 105
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
-depends_on: [AUTH-06, MONEY-12, MONEY-09, MONEY-02]
+status: todo
+depends_on: [MONEY-02, MONEY-09, MONEY-12, AUTH-06]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [A8, A9, A10]
@@ -19,13 +19,13 @@ artboards: [A8, A9, A10]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A8 A9 A10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| A8 | Wallet open | 'Your wallet is open' card: Tier 1 · Fintava MFB, account name, account number 812 345 6789 (Copy), Bank Fintava MFB, Limit ₦300,000 balance; links Raise your limits (-> A17) and Create your transaction PIN (-> A9). |
-| A9 | Create PIN | Step 1 of 2: 'Create your transaction PIN. Four digits. It approves every payment and transfer.' Keypad. |
-| A10 | Confirm PIN | Step 2 of 2: 'Enter it again'. Then PIN set: earn -> A11, discover -> A12. |
+- **A8 · Wallet open**: 'Your wallet is open' card: Tier 1 · Fintava MFB, account name, account number 812 345 6789 (Copy), Bank Fintava MFB, Limit ₦300,000 balance; links Raise your limits (-> A17) and Create your transaction PIN (-> A9).
+- **A9 · Create PIN**: Step 1 of 2: 'Create your transaction PIN. Four digits. It approves every payment and transfer.' Keypad.
+- **A10 · Confirm PIN**: Step 2 of 2: 'Enter it again'. Then PIN set: earn -> A11, discover -> A12.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| A8 | partial | Wallet is Flutterwave (payout subaccount at Flutterwave MFB), opened only for accountType=creator; no tier, no limits, no Fintava integration; a 'discover' user gets no wallet. |
-| A9 | missing | No transaction PIN anywhere: no column, no route, no hashing, no lockout. Wallet withdraw (POST /api/hub/wallet/withdraw) approves on bearer token alone. HIGH PRIORITY: every Wallet flow money movement (W11 etc.) depends on this. |
-| A10 | missing | Same as A9. No mismatch state is drawn. |
+- **A8**: partial. Missing: Wallet is Flutterwave (payout subaccount at Flutterwave MFB), opened only for accountType=creator; no tier, no limits, no Fintava integration; a 'discover' user gets no wallet.
+- **A9**: missing. Missing: No transaction PIN anywhere: no column, no route, no hashing, no lockout. Wallet withdraw (POST /api/hub/wallet/withdraw) approves on bearer token alone. HIGH PRIORITY: every Wallet flow money movement (W11 etc.) depends on this.
+- **A10**: missing. Missing: Same as A9. No mismatch state is drawn.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

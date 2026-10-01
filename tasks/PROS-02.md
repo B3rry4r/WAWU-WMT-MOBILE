@@ -3,11 +3,11 @@ id: PROS-02
 title: Professional fields and card data
 owner: YOU
 area: PROS
-day: 2
+order: 52
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: queued
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]

@@ -1,13 +1,13 @@
 ---
 id: HOME-09
 title: TGIF reader
-owner: DEV3
+owner: DEV
 area: HOME
-day: 3
+order: 80
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [HOME-10]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [H29, H30, H31, H32, H34, H35]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H29 H30 H31 H32 H34 H35` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,14 +33,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| H29 | Verse | Full-screen TGIF card (TODAY'S VERSE) for Friday 26 September, series 'SONS, NOT SLAVES': Psalm 118:24 (KJV) quoted. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'. |
-| H30 | What it means | Full-screen TGIF card (THE REALITY) for Friday 26 September, series 'SONS, NOT SLAVES': 'Today is not a leftover from yesterday…' With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'. |
-| H31 | The line to carry | Full-screen TGIF card (REMEMBER) for Friday 26 September, series 'SONS, NOT SLAVES': 'I don't have to earn today. I get to live it.' With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'. |
-| H32 | Prayer | Full-screen TGIF card (PRAYER) for Friday 26 September, series 'SONS, NOT SLAVES': prayer text with an inline Amen. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'. |
-| H34 | One thing to do | Full-screen TGIF card (TAKEAWAY) for Friday 26 September, series 'SONS, NOT SLAVES': 'Before your first meeting, write down one thing today that you're glad for.' 'No streak to lose.' Done returns to Today. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'. |
-| H35 | Share the verse | From any TGIF card · Share: 'Share today's verse. Posted as an image with a link back to TGIF.' Preview image (TGIF · 26 SEP, verse, Psalm 118:24, wawu/tgif); targets WhatsApp, Story, WAWU chat, Save. |
+- **H29 · Verse**: Full-screen TGIF card (TODAY'S VERSE) for Friday 26 September, series 'SONS, NOT SLAVES': Psalm 118:24 (KJV) quoted. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.
+- **H30 · What it means**: Full-screen TGIF card (THE REALITY) for Friday 26 September, series 'SONS, NOT SLAVES': 'Today is not a leftover from yesterday…' With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.
+- **H31 · The line to carry**: Full-screen TGIF card (REMEMBER) for Friday 26 September, series 'SONS, NOT SLAVES': 'I don't have to earn today. I get to live it.' With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.
+- **H32 · Prayer**: Full-screen TGIF card (PRAYER) for Friday 26 September, series 'SONS, NOT SLAVES': prayer text with an inline Amen. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.
+- **H34 · One thing to do**: Full-screen TGIF card (TAKEAWAY) for Friday 26 September, series 'SONS, NOT SLAVES': 'Before your first meeting, write down one thing today that you're glad for.' 'No streak to lose.' Done returns to Today. With Amen reaction (2.1K), a second count (3.4K), Share, 'Tap to continue'.
+- **H35 · Share the verse**: From any TGIF card · Share: 'Share today's verse. Posted as an image with a link back to TGIF.' Preview image (TGIF · 26 SEP, verse, Psalm 118:24, wawu/tgif); targets WhatsApp, Story, WAWU chat, Save.
 
 ## Capability checks
 
@@ -56,16 +54,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| H29 | missing | The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking. |
-| H30 | missing | The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking. |
-| H31 | missing | The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking. |
-| H32 | missing | The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking. |
-| H34 | missing | The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking. |
-| H35 | missing | No share-image renderer (client canvas or server OG image) and no wawu/tgif link resolver; WAWU chat target depends on free P2P chat. |
+- **H29**: missing. Missing: The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking.
+- **H30**: missing. Missing: The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking.
+- **H31**: missing. Missing: The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking.
+- **H32**: missing. Missing: The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking.
+- **H34**: missing. Missing: The text exists only as a static web bundle (no server copy). No reaction model/route, no counts, no share tracking.
+- **H35**: missing. Missing: No share-image renderer (client canvas or server OG image) and no wawu/tgif link resolver; WAWU chat target depends on free P2P chat.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

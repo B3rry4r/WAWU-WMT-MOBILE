@@ -1,19 +1,19 @@
 ---
 id: CHECK-2
-title: End of Day 4 checkpoint: money moves correctly
+title: Checkpoint 2: money moves correctly
 owner: YOU
 area: CHECK
-day: 4
+order: 104
+priority: launch
 repo: all
 type: ops
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [CHECK-1]
 decisions: []
 passes: [V8, V11]
 artboards: []
 ---
-# CHECK-2 · End of Day 4 checkpoint: money moves correctly
+# CHECK-2 · Checkpoint 2: money moves correctly
 
 ## Read first
 
@@ -32,7 +32,7 @@ An AUDITOR session runs V8 across every payment path built so far, on staging.
 ## Capability checks
 
 - [ ] For every payment path: the same request twice charges once; a wrong PIN five times locks; a failed payment reverses.
-- [ ] The nightly check reports zero differences between our ledger and Fintava (or the mock, if the owner ruled so on Day 0).
+- [ ] The nightly check reports zero differences between our ledger and Fintava (or the mock, if Fintava access hasn't arrived).
 - [ ] Staff have made real small payments on each live path with no mismatch, or the path stays behind its flag.
 
 ## Builder report

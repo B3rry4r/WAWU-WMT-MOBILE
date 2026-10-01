@@ -3,11 +3,11 @@ id: OPS-06
 title: Feature flags
 owner: YOU
 area: OPS
-day: 1
+order: 9
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]

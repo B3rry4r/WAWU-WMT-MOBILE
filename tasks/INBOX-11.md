@@ -1,13 +1,13 @@
 ---
 id: INBOX-11
 title: Paid question: not enough money, refunded, messages off
-owner: DEV3
+owner: DEV
 area: INBOX
-day: 4
+order: 156
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [INBOX-10]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -19,13 +19,13 @@ artboards: [I6, I7, I8]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I6 I7 I8` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| I6 | Not enough in wallet | Ask sheet with an insufficient-balance banner "You need ₦1,500. You have ₦900.00." and "Add ₦600", which opens Add money (W15) with the shortfall prefilled. |
-| I7 | Refunded | Thread after the window passed unanswered: "No reply in 24 hours, so you got ₦200 back. It went back to your Naira wallet on Tuesday at 14:10. Zainab earned nothing." with Try again · ₦200. |
-| I8 | Creator has paid messages off | Profile with "Messages off" and "Tolu isn't taking paid messages right now. You can still follow, tip and buy from Tolu's shop." Designer note: off by choice, or switched off after missing too many. |
+- **I6 · Not enough in wallet**: Ask sheet with an insufficient-balance banner "You need ₦1,500. You have ₦900.00." and "Add ₦600", which opens Add money (W15) with the shortfall prefilled.
+- **I7 · Refunded**: Thread after the window passed unanswered: "No reply in 24 hours, so you got ₦200 back. It went back to your Naira wallet on Tuesday at 14:10. Zainab earned nothing." with Try again · ₦200.
+- **I8 · Creator has paid messages off**: Profile with "Messages off" and "Tolu isn't taking paid messages right now. You can still follow, tip and buy from Tolu's shop." Designer note: off by choice, or switched off after missing too many.
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| I6 | missing | No payer (fan) wallet, no wallet balance check in the DM send path, no add-money/top-up endpoint. Owned jointly with the wallet flow (W15). |
-| I7 | partial | Refund exists end to end but goes back to the payer's CARD through Flutterwave (POST /v3/transactions/:id/refund keyed by flutterwaveTxId), not to a Naira wallet. A wallet refund would replace DmRefundService.refundOne with a wallet credit/release of the hold. |
-| I8 | partial | The "switched off after missing too many" half does not work: nothing computes or writes CreatorNoResponseTracker, sendInit never checks dmDisabledUntil, and the public profile does not expose the penalty state. |
+- **I6**: missing. Missing: No payer (fan) wallet, no wallet balance check in the DM send path, no add-money/top-up endpoint. Owned jointly with the wallet flow (W15).
+- **I7**: partial. Missing: Refund exists end to end but goes back to the payer's CARD through Flutterwave (POST /v3/transactions/:id/refund keyed by flutterwaveTxId), not to a Naira wallet. A wallet refund would replace DmRefundService.refundOne with a wallet credit/release of the hold.
+- **I8**: partial. Missing: The "switched off after missing too many" half does not work: nothing computes or writes CreatorNoResponseTracker, sendInit never checks dmDisabledUntil, and the public profile does not expose the penalty state.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

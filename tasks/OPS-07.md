@@ -3,11 +3,11 @@ id: OPS-07
 title: Rule the web features missing from the canvas (D14)
 owner: YOU
 area: OPS
-day: 1
+order: 10
+priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: []

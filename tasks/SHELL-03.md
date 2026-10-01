@@ -1,13 +1,13 @@
 ---
 id: SHELL-03
 title: Tester builds
-owner: DEV2
+owner: DEV
 area: SHELL
-day: 1
+order: 17
+priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: ready
-blocked_by: ""
+status: todo
 depends_on: [SHELL-01]
 decisions: []
 passes: [V1, V10]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 
 ## Goal
 

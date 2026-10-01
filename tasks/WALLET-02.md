@@ -1,14 +1,14 @@
 ---
 id: WALLET-02
 title: Send to a WAWU user
-owner: DEV1
+owner: YOU
 area: WALLET
-day: 4
+order: 136
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D5 is ruled in DECISIONS.md"
-depends_on: [WALLET-07, WALLET-08, MONEY-02]
+status: todo
+depends_on: [MONEY-02, WALLET-07, WALLET-08]
 decisions: [D5]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W7, W9, W10, W11, W12]
@@ -19,14 +19,14 @@ artboards: [W7, W9, W10, W11, W12]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
-- `DECISIONS.md`: D5 (open: this task is blocked until they are ruled)
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: D5 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py W7 W9 W10 W11 W12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,13 +34,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W7 | Send · to a WAWU user | Recipient picker: search by name, @handle or phone; recent recipients; WAWU user results with purple (creator) or blue (professional) ticks. |
-| W9 | Send · amount | Custom keypad amount entry with balance beneath, quick amounts, optional note. |
-| W10 | Send · review | Review card: recipient, amount, bank, account, fee shown separately, total, note, Pay from wallet; button shows amount received. |
-| W11 | Send · PIN | PIN bottom sheet over review: 4-digit transaction PIN approves every money movement; Face ID can stand in; Forgot PIN. Reused by Home, Inbox, Swap, Withdraw, Cards, Earnings. |
-| W12 | Send · success receipt | Receipt: amount sent, recipient + bank, Completed, reference, date, source, fee; save as beneficiary; share; Done returns to W1 with new row on top. |
+- **W7 · Send · to a WAWU user**: Recipient picker: search by name, @handle or phone; recent recipients; WAWU user results with purple (creator) or blue (professional) ticks.
+- **W9 · Send · amount**: Custom keypad amount entry with balance beneath, quick amounts, optional note.
+- **W10 · Send · review**: Review card: recipient, amount, bank, account, fee shown separately, total, note, Pay from wallet; button shows amount received.
+- **W11 · Send · PIN**: PIN bottom sheet over review: 4-digit transaction PIN approves every money movement; Face ID can stand in; Forgot PIN. Reused by Home, Inbox, Swap, Withdraw, Cards, Earnings.
+- **W12 · Send · success receipt**: Receipt: amount sent, recipient + bank, Completed, reference, date, source, fee; save as beneficiary; share; Done returns to W1 with new row on top.
 
 ## Capability checks
 
@@ -55,15 +53,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W7 | partial | Search covers creators/content/communities only; no buyer or phone lookup, no recents, and no wallet-to-wallet (book) transfer endpoint at all. |
-| W9 | partial | Balance exists (whole naira); no note field on transfers, kobo not supported (amounts are Int naira). |
-| W10 | missing | No fee quote endpoint or fee in the transfer model. |
-| W11 | missing | No transaction PIN anywhere: no storage, verify, lockout, or binding to a debit. |
-| W12 | partial | Withdraw returns a pending stub only; no completed receipt read, no fee, no beneficiary create. WAWU reference format differs (wawu-wd-<uuid> vs WAW-XXXX-XXXX). |
+- **W7**: partial. Missing: Search covers creators/content/communities only; no buyer or phone lookup, no recents, and no wallet-to-wallet (book) transfer endpoint at all.
+- **W9**: partial. Missing: Balance exists (whole naira); no note field on transfers, kobo not supported (amounts are Int naira).
+- **W10**: missing. Missing: No fee quote endpoint or fee in the transfer model.
+- **W11**: missing. Missing: No transaction PIN anywhere: no storage, verify, lockout, or binding to a debit.
+- **W12**: partial. Missing: Withdraw returns a pending stub only; no completed receipt read, no fee, no beneficiary create. WAWU reference format differs (wawu-wd-<uuid> vs WAW-XXXX-XXXX).
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

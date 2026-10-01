@@ -27,7 +27,7 @@ You are the VERIFIER for task AUTH-01. Open tasks/AUTH-01.md and follow it.
 
 The task file lists what to read. `CLAUDE.md` loads by itself.
 
-- `docs/WORKFLOW.md`: the rules, the seven steps of a task, the verification passes, the week
-- `docs/PLAN.md`: who owns what, the week, what's needed from Fintava
-- `tasks/INDEX.md`: every task by person, with status and what it waits on
+- `docs/WORKFLOW.md`: the rules, the seven steps of a task, the verification passes, the order of work
+- `docs/PLAN.md`: who owns what, how the lists work, what's needed from Fintava
+- `tasks/INDEX.md`: each person's list, in build order
 - `DECISIONS.md`: what has been decided and what is still open

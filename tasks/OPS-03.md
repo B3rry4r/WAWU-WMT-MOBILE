@@ -3,11 +3,11 @@ id: OPS-03
 title: Staging backend
 owner: YOU
 area: OPS
-day: 0
+order: 4
+priority: launch
 repo: wawu-backend
 type: setup
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V9]

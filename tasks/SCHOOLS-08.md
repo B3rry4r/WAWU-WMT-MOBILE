@@ -3,11 +3,11 @@ id: SCHOOLS-08
 title: My courses and apply on the school's site
 owner: YOU
 area: SCHOOLS
-day: later
+order: 164
+priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D7 is ruled in DECISIONS.md"
+status: todo
 depends_on: [SCHOOLS-09, SCHOOLS-10]
 decisions: [D7]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -20,13 +20,13 @@ artboards: [SC8, SC9]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D7 (open: this task is blocked until they are ruled)
+- `DECISIONS.md`: D7 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py SC8 SC9` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled after launch.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,10 +34,8 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| SC8 | My courses | My courses with Current/Finished tabs: Product Design Bootcamp · Greenfield · starts 3 Nov · 'School will contact you'; Pattern Cutting Basics · Aba Fashion Institute · week 3 of 6 · 'In progress'. Entry: SC7 My courses or Me menu. |
-| SC9 | Apply on their site | From SC3 'Or apply on their website'. Sheet: 'Apply on Greenfield's site. You finish signing up on their website. Your WAWU link tells them you came from here.' Shows greenfield.ng/apply?ref=wawu-7KQ2, 'Continue to their site', 'Enroll on WAWU instead'. Board note: 'Tracked link, for commission.' Section note: 'Or apply on the school's site through the WAWU link, and the school pays WAWU a commission.' |
+- **SC8 · My courses**: My courses with Current/Finished tabs: Product Design Bootcamp · Greenfield · starts 3 Nov · 'School will contact you'; Pattern Cutting Basics · Aba Fashion Institute · week 3 of 6 · 'In progress'. Entry: SC7 My courses or Me menu.
+- **SC9 · Apply on their site**: From SC3 'Or apply on their website'. Sheet: 'Apply on Greenfield's site. You finish signing up on their website. Your WAWU link tells them you came from here.' Shows greenfield.ng/apply?ref=wawu-7KQ2, 'Continue to their site', 'Enroll on WAWU instead'. Board note: 'Tracked link, for commission.' Section note: 'Or apply on the school's site through the WAWU link, and the school pays WAWU a commission.'
 
 ## Capability checks
 
@@ -49,12 +47,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| SC8 | partial | No list route for my enrollments; CourseEnrollment has no school, intake, payment or status. 'week 3 of 6' needs a progress source (school or admin updates it), none exists. The existing enrol gate references the removed subscription. |
-| SC9 | missing | Needs: SchoolLink(code, schoolId, courseId?) and a redirect endpoint (e.g. GET /api/hub/schools/go/{code} -> 302 + SchoolLinkClick row with userWawuId, courseId, ts); a way to learn conversions (school self-report in dashboard, CSV import, or a postback API the school calls); commission invoicing to the school (off-platform receivable). WAWU can see clicks only; conversions depend on the school. |
+- **SC8**: partial. Missing: No list route for my enrollments; CourseEnrollment has no school, intake, payment or status. 'week 3 of 6' needs a progress source (school or admin updates it), none exists. The existing enrol gate references the removed subscription.
+- **SC9**: missing. Missing: Needs: SchoolLink(code, schoolId, courseId?) and a redirect endpoint (e.g. GET /api/hub/schools/go/{code} -> 302 + SchoolLinkClick row with userWawuId, courseId, ts); a way to learn conversions (school self-report in dashboard, CSV import, or a postback API the school calls); commission invoicing to the school (off-platform receivable). WAWU can see clicks only; conversions depend on the school.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

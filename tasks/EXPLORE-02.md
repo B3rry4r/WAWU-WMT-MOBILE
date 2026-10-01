@@ -1,13 +1,13 @@
 ---
 id: EXPLORE-02
 title: All creators and search
-owner: DEV3
+owner: DEV
 area: EXPLORE
-day: 2
+order: 48
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [EXPLORE-03]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [X4, X5, X6, X7]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py X4 X5 X6 X7` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| X4 | All creators | From X1 Featured creators · See all: 'Creators' with chip row and full creator list (Follow/Following). |
-| X5 | Search | Search landing (from /search): Recent (Clear) with past queries, 'People are searching' chips, 'Creators to know' with Follow. |
-| X6 | Results · All | Results for 'pricing' with tabs All 11 / Content 6 / Creators 3 / Communities 2; sections Content (title, creator, type, price or Free), Creators (Follow / Profile), Communities (Pricing clinic · 380 members · private · Ask). |
-| X7 | Content | Content tab: list of content results with creator, type and price (₦3,000, ₦2,500, Free, ₦1,500, ₦1,000). |
+- **X4 · All creators**: From X1 Featured creators · See all: 'Creators' with chip row and full creator list (Follow/Following).
+- **X5 · Search**: Search landing (from /search): Recent (Clear) with past queries, 'People are searching' chips, 'Creators to know' with Follow.
+- **X6 · Results · All**: Results for 'pricing' with tabs All 11 / Content 6 / Creators 3 / Communities 2; sections Content (title, creator, type, price or Free), Creators (Follow / Profile), Communities (Pricing clinic · 380 members · private · Ask).
+- **X7 · Content**: Content tab: list of content results with creator, type and price (₦3,000, ₦2,500, Free, ₦1,500, ₦1,000).
 
 ## Capability checks
 
@@ -52,14 +50,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| X4 | served | served |
-| X5 | partial | recentSearches is always [] (no SearchHistory model, comment at :151-158); popularSearches is approximated from top content titles by views, not real queries; no clear-history route. |
-| X6 | partial | Content and creators served; communities always [] (search-response.service.ts:77-87 'Returns [] unconditionally' although src/community now exists); creator rows carry no verification tick (web search.ts SEAM note); schools not searchable (Schools flow expects it). |
-| X7 | served | served |
+- **X4**: served.
+- **X5**: partial. Missing: recentSearches is always [] (no SearchHistory model, comment at :151-158); popularSearches is approximated from top content titles by views, not real queries; no clear-history route.
+- **X6**: partial. Missing: Content and creators served; communities always [] (search-response.service.ts:77-87 'Returns [] unconditionally' although src/community now exists); creator rows carry no verification tick (web search.ts SEAM note); schools not searchable (Schools flow expects it).
+- **X7**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

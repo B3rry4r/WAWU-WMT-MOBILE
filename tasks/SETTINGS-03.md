@@ -1,13 +1,13 @@
 ---
 id: SETTINGS-03
 title: Settings: password, sign out everywhere, notification switches
-owner: DEV2
+owner: DEV
 area: SETTINGS
-day: 3
+order: 70
+priority: launch
 repo: wawu-id, wawu-backend
 type: backend-endpoint
-status: queued
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - This task changes `wawu-id, wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

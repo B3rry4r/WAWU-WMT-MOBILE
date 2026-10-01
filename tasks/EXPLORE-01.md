@@ -1,13 +1,13 @@
 ---
 id: EXPLORE-01
 title: Explore: browse, categories, loading, empty
-owner: DEV3
+owner: DEV
 area: EXPLORE
-day: 2
+order: 47
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [EXPLORE-03]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [X1, X15, X2, X3, X13, X14]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py X1 X15 X2 X3 X13 X14` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,14 +33,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| X1 | Explore | Explore ('Approved E4'): search bar, FEATURED EVENT hero (WAWU Creators Summit, Lagos, 12 Oct · Eko Convention Centre), category chips (All + 6 + More), Featured creators rail (@handle, field, Follow), Upcoming events list, then doors: Find a professional, Find a school, List your services. |
-| X15 | Explore · scrolled down | Explore scrolled: Upcoming events, then the doors: Find a professional (Accountants, lawyers, designers), Find a school (Courses from schools and academies), List your services (Get paid to answer questions). |
-| X2 | Categories | Categories screen: chip row (All, Music & Audio, Film & Video, Art & Design, Photography, Fashion & Beauty) above a creator list with Follow/Following. |
-| X3 | One category | Photography selected: chips stay in place; creators @amaka Photographer, @chidi Wedding films, @sade Portraits, @tunde Drone, each with Follow. |
-| X13 | Empty category | From X3 when a category is empty: chips All, Gaming & Esports, Faith & Spirituality; 'Nobody is publishing in Gaming & Esports yet'. |
-| X14 | Explore · loading | From X1 while loading: skeleton with search bar and tab bar. |
+- **X1 · Explore**: Explore ('Approved E4'): search bar, FEATURED EVENT hero (WAWU Creators Summit, Lagos, 12 Oct · Eko Convention Centre), category chips (All + 6 + More), Featured creators rail (@handle, field, Follow), Upcoming events list, then doors: Find a professional, Find a school, List your services.
+- **X15 · Explore · scrolled down**: Explore scrolled: Upcoming events, then the doors: Find a professional (Accountants, lawyers, designers), Find a school (Courses from schools and academies), List your services (Get paid to answer questions).
+- **X2 · Categories**: Categories screen: chip row (All, Music & Audio, Film & Video, Art & Design, Photography, Fashion & Beauty) above a creator list with Follow/Following.
+- **X3 · One category**: Photography selected: chips stay in place; creators @amaka Photographer, @chidi Wedding films, @sade Portraits, @tunde Drone, each with Follow.
+- **X13 · Empty category**: From X3 when a category is empty: chips All, Gaming & Esports, Faith & Spirituality; 'Nobody is publishing in Gaming & Esports yet'.
+- **X14 · Explore · loading**: From X1 while loading: skeleton with search bar and tab bar.
 
 ## Capability checks
 
@@ -54,16 +52,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| X1 | partial | Featured event and event list served. Creators served but 'featured' creators has no featured/paid-featured flag (web FeaturedThisWeek.tsx: 'nothing on the contract marks a creator … as PAID-featured'); creator category filter matches UserProfile.interests strings, not the creator taxonomy categories drawn; no schools backend for the Find a school door. |
-| X15 | partial | Events and professionals served; Schools door target has no backend at all (Schools flow is new). |
-| X2 | partial | Filter is on free-text interests, not the creator taxonomy category ids the chips show; no specialization-based creator filter. |
-| X3 | partial | Same as X2: category semantics differ from the drawn taxonomy. |
-| X13 | partial | Works as an empty list; categories themselves differ (see X2). |
-| X14 | n/a | served |
+- **X1**: partial. Missing: Featured event and event list served. Creators served but 'featured' creators has no featured/paid-featured flag (web FeaturedThisWeek.tsx: 'nothing on the contract marks a creator … as PAID-featured'); creator category filter matches UserProfile.interests strings, not the creator taxonomy categories drawn; no schools backend for the Find a school door.
+- **X15**: partial. Missing: Events and professionals served; Schools door target has no backend at all (Schools flow is new).
+- **X2**: partial. Missing: Filter is on free-text interests, not the creator taxonomy category ids the chips show; no specialization-based creator filter.
+- **X3**: partial. Missing: Same as X2: category semantics differ from the drawn taxonomy.
+- **X13**: partial. Missing: Works as an empty list; categories themselves differ (see X2).
+- **X14**: n/a.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

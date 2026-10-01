@@ -1,13 +1,13 @@
 ---
 id: SETTINGS-02
 title: About, terms and privacy policy
-owner: DEV2
+owner: DEV
 area: SETTINGS
-day: 2
+order: 34
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SHELL-01]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [Z9, Z10, Z11]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py Z9 Z10 Z11` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,11 +33,9 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| Z9 | About | About WAWU: Version 2.4.0; description '...get paid for what they know, with a real bank account built in.'; 'Banking by Fintava MFB · Licensed by the CBN'; Contact support support@wawuafrica.com; Rate the app. |
-| Z10 | Terms | Terms, Updated 1 September 2026: Using WAWU (18 or over, true details, one account per person); Money (payments move through your WAWU wallet, held at Fintava MFB; fees shown before you pay); What you sell (you own your work; WAWU may show it to buyers). |
-| Z11 | Privacy policy | Privacy policy, Updated 1 September 2026: What we collect (details, BVN check result, in-app activity); What we never do (sell data, show BVN/NIN/balance); Your choices (download or delete from Privacy). |
+- **Z9 · About**: About WAWU: Version 2.4.0; description '...get paid for what they know, with a real bank account built in.'; 'Banking by Fintava MFB · Licensed by the CBN'; Contact support support@wawuafrica.com; Rate the app.
+- **Z10 · Terms**: Terms, Updated 1 September 2026: Using WAWU (18 or over, true details, one account per person); Money (payments move through your WAWU wallet, held at Fintava MFB; fees shown before you pay); What you sell (you own your work; WAWU may show it to buyers).
+- **Z11 · Privacy policy**: Privacy policy, Updated 1 September 2026: What we collect (details, BVN check result, in-app activity); What we never do (sell data, show BVN/NIN/balance); Your choices (download or delete from Privacy).
 
 ## Capability checks
 
@@ -50,13 +48,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| Z9 | n/a | served |
-| Z10 | served | Content itself is a legal matter; the board text is a placeholder summary. |
-| Z11 | served | served |
+- **Z9**: n/a.
+- **Z10**: served. Missing: Content itself is a legal matter; the board text is a placeholder summary.
+- **Z11**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

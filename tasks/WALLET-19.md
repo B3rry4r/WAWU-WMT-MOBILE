@@ -1,13 +1,13 @@
 ---
 id: WALLET-19
 title: Raise your limits (Tier 2 and 3)
-owner: DEV1
+owner: YOU
 area: WALLET
-day: later
+order: 169
+priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [WALLET-23, WALLET-24]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [A17, A18, A19, A20]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A17 A18 A19 A20` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled after launch.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| A17 | Account limits | Tier ladder: Tier 1 BVN and a selfie (₦50,000 per deposit · ₦300,000 balance) Done; Tier 2 Your NIN (₦100,000 per deposit · ₦500,000 balance) Upgrade; Tier 3 Proof of address (₦5,000,000 per deposit · no balance cap). 'Limits set by the CBN.' |
-| A18 | Tier 2 · NIN | 'Upgrade to Tier 2. Verify your NIN. Dial *346# from the phone on your NIN to get it.' NIN field. 'Checked with NIMC against your BVN details.' Verify NIN. |
-| A19 | Tier 2 done | A17 with Tier 1 and Tier 2 Done, Tier 3 Upgrade. |
-| A20 | Tier 3 · address | 'Upgrade to Tier 3': Home address, City, State, Proof of address upload (ikeja-electric-aug.pdf, 'Utility bill · last 3 months'). Submit. Then reviewed, Tier 3 shows Done. |
+- **A17 · Account limits**: Tier ladder: Tier 1 BVN and a selfie (₦50,000 per deposit · ₦300,000 balance) Done; Tier 2 Your NIN (₦100,000 per deposit · ₦500,000 balance) Upgrade; Tier 3 Proof of address (₦5,000,000 per deposit · no balance cap). 'Limits set by the CBN.'
+- **A18 · Tier 2 · NIN**: 'Upgrade to Tier 2. Verify your NIN. Dial *346# from the phone on your NIN to get it.' NIN field. 'Checked with NIMC against your BVN details.' Verify NIN.
+- **A19 · Tier 2 done**: A17 with Tier 1 and Tier 2 Done, Tier 3 Upgrade.
+- **A20 · Tier 3 · address**: 'Upgrade to Tier 3': Home address, City, State, Proof of address upload (ikeja-electric-aug.pdf, 'Utility bill · last 3 months'). Submit. Then reviewed, Tier 3 shows Done.
 
 ## Capability checks
 
@@ -52,14 +50,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| A17 | missing | No KYC tier state, no limits source, no upgrade endpoints. |
-| A18 | partial | No standalone NIN check, no NIMC lookup, no cross-check with BVN, no tier change. |
-| A19 | missing | No tier state. |
-| A20 | partial | No address model/fields, no Tier 3 submission type, no review queue for proof of address, no tier change at provider. |
+- **A17**: missing. Missing: No KYC tier state, no limits source, no upgrade endpoints.
+- **A18**: partial. Missing: No standalone NIN check, no NIMC lookup, no cross-check with BVN, no tier change.
+- **A19**: missing. Missing: No tier state.
+- **A20**: partial. Missing: No address model/fields, no Tier 3 submission type, no review queue for proof of address, no tier change at provider.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

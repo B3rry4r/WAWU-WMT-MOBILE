@@ -3,12 +3,12 @@ id: SCHOOLS-06
 title: Enrol and pay, class full
 owner: YOU
 area: SCHOOLS
-day: 4
+order: 130
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D7 is ruled in DECISIONS.md"
-depends_on: [SCHOOLS-07, MONEY-02]
+status: todo
+depends_on: [MONEY-02, SCHOOLS-07]
 decisions: [D7]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [SC4, SC5, SC6, SC7, SC11]
@@ -20,13 +20,13 @@ artboards: [SC4, SC5, SC6, SC7, SC11]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D7 (open: this task is blocked until they are ruled)
+- `DECISIONS.md`: D7 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py SC4 SC5 SC6 SC7 SC11` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,13 +34,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| SC4 | Your details | Enroll step 1: 'Prefilled. Nothing to type.' Name, email, masked phone from the WAWU account; 'Pick a class' radio list of intakes (Starts 3 November · Weekend class · 8 seats left; Starts 12 January · Weekday evenings). Disclosure: 'Greenfield gets these details so they can follow up with you.' Continue. |
-| SC5 | Pay | Enroll payment summary: name, course card, Course fee ₦150,000, Fee 'No fee', Total ₦150,000, source 'Pay from wallet · Naira wallet · ₦485,250.75 available', CTA 'Pay ₦150,000'. |
-| SC6 | PIN | PIN sheet: 'Enter your PIN · Approve ₦150,000 to Greenfield Tech Academy', numeric keypad. (Present on the board but NOT in MANIFEST.json; added so it is not a hole.) |
-| SC7 | Enrolled | Receipt: You're enrolled · course · starts 3 Nov; School; Class 'Weekend · Yaba'; Paid ₦150,000; Reference WAW-SC4K-81PQ; 'Greenfield will contact you within 2 working days. We've sent them your details.' Share receipt / My courses. Then: 'WAWU sends the school a report with your details'. |
-| SC11 | Class full | From SC3 class full: banner 'The November class is full · The next one starts 12 January.' CTA 'Enroll for January'. |
+- **SC4 · Your details**: Enroll step 1: 'Prefilled. Nothing to type.' Name, email, masked phone from the WAWU account; 'Pick a class' radio list of intakes (Starts 3 November · Weekend class · 8 seats left; Starts 12 January · Weekday evenings). Disclosure: 'Greenfield gets these details so they can follow up with you.' Continue.
+- **SC5 · Pay**: Enroll payment summary: name, course card, Course fee ₦150,000, Fee 'No fee', Total ₦150,000, source 'Pay from wallet · Naira wallet · ₦485,250.75 available', CTA 'Pay ₦150,000'.
+- **SC6 · PIN**: PIN sheet: 'Enter your PIN · Approve ₦150,000 to Greenfield Tech Academy', numeric keypad. (Present on the board but NOT in MANIFEST.json; added so it is not a hole.)
+- **SC7 · Enrolled**: Receipt: You're enrolled · course · starts 3 Nov; School; Class 'Weekend · Yaba'; Paid ₦150,000; Reference WAW-SC4K-81PQ; 'Greenfield will contact you within 2 working days. We've sent them your details.' Share receipt / My courses. Then: 'WAWU sends the school a report with your details'.
+- **SC11 · Class full**: From SC3 class full: banner 'The November class is full · The next one starts 12 January.' CTA 'Enroll for January'.
 
 ## Capability checks
 
@@ -55,15 +53,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| SC4 | missing | Needs CourseIntake model (capacity, seatsTaken) and an enrollment draft; needs a consent flag/timestamp for sharing PII with the school (data-protection). |
-| SC5 | missing | No buyer-side wallet, no debit-to-merchant route, no enrollment order model (amount snapshot, commission snapshot, payee). Also no rule for where ₦150,000 goes (school payee) or WAWU's share. |
-| SC6 | missing | No transaction PIN anywhere (set, verify, reset, lockout). Payee is the school, which is not an account in the system. |
-| SC7 | missing | Needs SchoolEnrollment order with reference generator, receipt endpoint, and a school-report delivery (email to school contact or school dashboard), plus a 2-working-day follow-up SLA tracker if WAWU promises it. |
-| SC11 | missing | Needs CourseIntake capacity + seat claim at payment time (not at SC4), with 'full' derived server-side and next-intake lookup. |
+- **SC4**: missing. Missing: Needs CourseIntake model (capacity, seatsTaken) and an enrollment draft; needs a consent flag/timestamp for sharing PII with the school (data-protection).
+- **SC5**: missing. Missing: No buyer-side wallet, no debit-to-merchant route, no enrollment order model (amount snapshot, commission snapshot, payee). Also no rule for where ₦150,000 goes (school payee) or WAWU's share.
+- **SC6**: missing. Missing: No transaction PIN anywhere (set, verify, reset, lockout). Payee is the school, which is not an account in the system.
+- **SC7**: missing. Missing: Needs SchoolEnrollment order with reference generator, receipt endpoint, and a school-report delivery (email to school contact or school dashboard), plus a 2-working-day follow-up SLA tracker if WAWU promises it.
+- **SC11**: missing. Missing: Needs CourseIntake capacity + seat claim at payment time (not at SC4), with 'full' derived server-side and next-intake lookup.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

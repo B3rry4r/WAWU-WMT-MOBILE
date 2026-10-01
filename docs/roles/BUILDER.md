@@ -6,10 +6,11 @@ You build ONE task. Your prompt named it: `tasks/<ID>.md`.
 
 1. Read `docs/WORKFLOW.md` (the rules), your task file, and everything the
    task file lists under **Read first**. Nothing else is required reading.
-2. Check the task's `status`. Work only on `ready`. If it is `blocked` or
-   `queued`, stop and report the `blocked_by` fact.
-3. Check its `depends_on` tasks are `done` (their task files say so). If not,
-   stop and report which one.
+2. Check its `depends_on` tasks are `done` (their task files say so). If one
+   isn't, stop and report which one and who owns it.
+3. If the task lists open decisions, build the default written in
+   `DECISIONS.md`. Put any number it needs in config with a
+   `PROVISIONAL(...)` marker.
 4. Take artboard ids from the task file only. A code comment citing an
    artboard is never a source: canvases get renumbered.
 5. Make a branch: `wmt/<ID>` in each repo you will change. Record the gate

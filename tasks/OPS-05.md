@@ -3,11 +3,11 @@ id: OPS-05
 title: Update the other repos' CLAUDE.md for today's rulings
 owner: YOU
 area: OPS
-day: 0
+order: 6
+priority: launch
 repo: wawuafrica, wawu-backend
 type: ops
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: []

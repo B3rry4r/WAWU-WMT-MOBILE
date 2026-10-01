@@ -4,12 +4,16 @@
     python3 scripts/tasks/check_tasks.py           # check (CI); fails if INDEX.md is stale
     python3 scripts/tasks/check_tasks.py --write   # rewrite tasks/INDEX.md
 
-A task file breaks the workflow if it has no owner or day, misses a
-verification pass its type requires (docs/WORKFLOW.md section 5), depends on a
-task that does not exist or is scheduled for a later day, cites an artboard
-the canvas does not have, or is marked ready while a decision it needs is
-still open. Each of those used to be
-caught (or missed) by a person reading carefully. Now it is an exit code.
+Each person works down their list in `order`. A task can never come before
+something it depends on, so nobody reaches a task whose groundwork is not
+there. That, and the rest of the rules below, used to depend on someone
+reading carefully. Now it is an exit code:
+
+- every field present; owner, priority, type and status are known values
+- `order` is unique, and every dependency has a smaller order
+- the passes include everything the task type requires (docs/WORKFLOW.md section 5)
+- dependencies, artboards and decisions all exist
+- every artboard (except retired Shop) is in exactly one screen task
 """
 from __future__ import annotations
 
@@ -23,9 +27,9 @@ ROOT = Path(__file__).resolve().parents[2]
 TASKS = ROOT / "tasks"
 INDEX = TASKS / "INDEX.md"
 
-OWNERS = {"YOU": "You", "DEV1": "Dev 1 · Money", "DEV2": "Dev 2 · Account, Me, Events",
-          "DEV3": "Dev 3 · Feed and Inbox"}
-DAYS = ["0", "1", "2", "3", "4", "5", "6", "later"]
+OWNERS = {"YOU": "You", "DEV": "Developer"}
+PRIORITIES = {"launch", "after-launch"}
+STATUSES = ["todo", "building", "verifying", "review", "done"]
 MIN_PASSES = {
     "setup": ["V1"], "contract": ["V1"], "ops": [], "component": ["V1", "V5", "V6"],
     "mobile-screen": ["V1", "V4", "V5", "V6", "V9"], "flow": ["V1", "V6", "V7", "V9"],
@@ -35,9 +39,7 @@ MIN_PASSES = {
     "removal": ["V1", "V3", "V4", "V7", "V9"], "admin-screen": ["V1", "V6", "V7", "V9"],
     "web-port": ["V1", "V3", "V4", "V5", "V6", "V7", "V9"],
 }
-STATUSES = ["queued", "blocked", "ready", "building", "verifying", "review", "done"]
-ACTIVE = {"ready", "building", "verifying", "review", "done"}
-REQUIRED = ["id", "title", "owner", "area", "day", "repo", "type", "status", "blocked_by",
+REQUIRED = ["id", "title", "owner", "area", "order", "priority", "repo", "type", "status",
             "depends_on", "decisions", "passes", "artboards"]
 RETIRED_PREFIXES = ("SH",)  # Shop, retired by R-2
 
@@ -59,21 +61,11 @@ def parse(path: Path) -> dict:
     return meta
 
 
-def open_decisions() -> set[str]:
-    text = (ROOT / "DECISIONS.md").read_text()
-    section = text.split("## Open decisions", 1)[-1]
-    return set(re.findall(r"^\| (D\d+) \|", section, re.M))
-
-
-def known_decisions() -> set[str]:
-    text = (ROOT / "DECISIONS.md").read_text()
-    return set(re.findall(r"\b(?:R|D)-?\d+\b", text)) | {d.replace("-", "") for d in re.findall(r"\bR-\d+\b", text)}
-
-
 def main() -> int:
     write = "--write" in sys.argv
     inventory = {x["id"] for x in json.loads((ROOT / "design/canvas-inventory.json").read_text())["items"]}
-    open_d, known_d = open_decisions(), known_decisions()
+    decisions_text = (ROOT / "DECISIONS.md").read_text()
+    known_d = set(re.findall(r"\b(D\d+|R-\d+)\b", decisions_text))
     tasks, errors = {}, []
 
     for f in sorted(TASKS.glob("*.md")):
@@ -90,28 +82,39 @@ def main() -> int:
             continue
         if t["id"] != f.stem:
             errors.append(f"{f.name}: id {t['id']} does not match the file name")
+        try:
+            t["order"] = int(t["order"])
+        except ValueError:
+            errors.append(f"{f.name}: order is not a number")
+            continue
         tasks[t["id"]] = t
+
+    for n, c in Counter(t["order"] for t in tasks.values()).items():
+        if c > 1:
+            errors.append(f"order {n} is used by {c} tasks")
 
     screen_cover: Counter = Counter()
     for tid, t in tasks.items():
         where = f"{tid}.md"
         if t["owner"] not in OWNERS:
-            errors.append(f"{where}: unknown owner {t['owner']}")
-        if t["day"] not in DAYS:
-            errors.append(f"{where}: day must be 0-6 or later, not {t['day']}")
+            errors.append(f"{where}: owner must be YOU or DEV, not {t['owner']}")
+        if t["priority"] not in PRIORITIES:
+            errors.append(f"{where}: priority must be launch or after-launch")
+        if t["status"] not in STATUSES:
+            errors.append(f"{where}: unknown status {t['status']}")
         if t["type"] not in MIN_PASSES:
             errors.append(f"{where}: unknown type {t['type']}")
             continue
-        if t["status"] not in STATUSES:
-            errors.append(f"{where}: unknown status {t['status']}")
         need = [p for p in MIN_PASSES[t["type"]] if p not in t["passes"]]
         if need:
             errors.append(f"{where}: type {t['type']} requires passes {', '.join(need)}")
         for d in t["depends_on"]:
-            if d not in tasks and not (TASKS / f"{d}.md").exists():
+            if d not in tasks:
                 errors.append(f"{where}: depends on {d}, which has no task file")
-            elif d in tasks and DAYS.index(tasks[d]["day"]) > DAYS.index(t["day"]) if tasks[d]["day"] in DAYS and t["day"] in DAYS else False:
-                errors.append(f"{where} (day {t['day']}) depends on {d}, scheduled later (day {tasks[d]['day']})")
+            elif tasks[d]["order"] > t["order"]:
+                errors.append(f"{where} (order {t['order']}) depends on {d}, which comes later (order {tasks[d]['order']})")
+            elif t["priority"] == "launch" and tasks[d]["priority"] == "after-launch":
+                errors.append(f"{where} is needed for launch but depends on {d}, which is after launch")
         for a in t["artboards"]:
             if a not in inventory:
                 errors.append(f"{where}: artboard {a} is not in design/canvas-inventory.json")
@@ -120,11 +123,6 @@ def main() -> int:
         for d in t["decisions"]:
             if d not in known_d:
                 errors.append(f"{where}: decision {d} is not in DECISIONS.md")
-        still_open = [d for d in t["decisions"] if d in open_d]
-        if still_open and t["status"] in ACTIVE:
-            errors.append(f"{where}: status {t['status']} but {', '.join(still_open)} is still open")
-        if t["status"] == "blocked" and not t["blocked_by"].strip():
-            errors.append(f"{where}: blocked with no blocked_by fact")
         if "## Capability checks" not in t["_body"]:
             errors.append(f"{where}: no capability checks")
 
@@ -136,7 +134,7 @@ def main() -> int:
         elif screen_cover[a] > 1:
             errors.append(f"artboard {a} is in {screen_cover[a]} mobile-screen tasks; it must be in exactly one")
 
-    index = render_index(tasks, open_d)
+    index = render_index(tasks)
     if write:
         INDEX.write_text(index)
     elif not INDEX.exists() or INDEX.read_text() != index:
@@ -144,44 +142,33 @@ def main() -> int:
 
     for e in errors:
         print("TASK CHECK FAILED:", e)
-    total = len(tasks)
-    print(f"{total} tasks, {len([a for a in inventory if not a.startswith(RETIRED_PREFIXES)])} artboards covered"
+    by = Counter(t["owner"] for t in tasks.values())
+    print(f"{len(tasks)} tasks ({', '.join(f'{OWNERS[o]} {by[o]}' for o in OWNERS)}), "
+          f"{len([a for a in inventory if not a.startswith(RETIRED_PREFIXES)])} artboards covered"
           + (", INDEX.md written" if write else ""))
     return 1 if errors else 0
 
 
-def render_index(tasks: dict, open_d: set[str]) -> str:
-    def num(i):
-        a, _, n = i.rpartition("-")
-        return (a, int(n))
-
-    out = ["# Task index", "",
-           "Generated by `python3 scripts/tasks/check_tasks.py --write` from the task files. Do not edit by hand.", "",
+def render_index(tasks: dict) -> str:
+    out = ["# Tasks", "",
+           "Generated by `python3 scripts/tasks/check_tasks.py --write`. Do not edit by hand.", "",
+           "Each person works down their own list, top to bottom. A task never comes before something it",
+           "depends on. Where a task needs the other person's work first, it says so.", "",
            "Give a session one line; the task file tells it what to read:", "",
            "```", "You are the BUILDER for task <ID>. Open tasks/<ID>.md and follow it.",
            "You are the VERIFIER for task <ID>. Open tasks/<ID>.md and follow it.", "```", "",
            "Builder and verifier are always different sessions.", ""]
-    blocked_by_d = defaultdict(list)
-    for t in tasks.values():
-        for d in t["decisions"]:
-            if d in open_d:
-                blocked_by_d[d].append(t["id"])
-    out += ["## Waiting on a decision", "", "| decision | tasks |", "|----------|-------|"]
-    for d in sorted(blocked_by_d, key=lambda x: int(x[1:])):
-        out.append(f"| {d} | {', '.join(sorted(blocked_by_d[d], key=num))} |")
-    out.append("")
     for owner, name in OWNERS.items():
-        ts = [t for t in tasks.values() if t["owner"] == owner]
-        out += [f"## {name}", "", f"What you own: `docs/people/{owner}.md`", ""]
-        for day in DAYS:
-            dts = sorted([t for t in ts if t["day"] == day], key=lambda t: num(t["id"]))
-            if not dts:
+        for prio, heading in (("launch", ""), ("after-launch", " · after launch")):
+            ts = sorted([t for t in tasks.values() if t["owner"] == owner and t["priority"] == prio],
+                        key=lambda t: t["order"])
+            if not ts:
                 continue
-            out += [f"### {'After launch' if day == 'later' else 'Day ' + day}", "",
-                    "| task | what | status | needs first |", "|------|------|--------|-------------|"]
-            for t in dts:
-                needs = ", ".join(t["depends_on"] + [d for d in t["decisions"] if d in open_d]) or "-"
-                out.append(f"| [{t['id']}]({t['id']}.md) | {t['title']} | {t['status']} | {needs} |")
+            out += [f"## {name}{heading}", ""]
+            for i, t in enumerate(ts, 1):
+                other = [d for d in t["depends_on"] if d in tasks and tasks[d]["owner"] != owner]
+                note = f" · needs {', '.join(other)} from {OWNERS[tasks[other[0]]['owner']]} first" if other else ""
+                out.append(f"{i}. [{t['id']}]({t['id']}.md) {t['title']}{note}")
             out.append("")
     return "\n".join(out)
 

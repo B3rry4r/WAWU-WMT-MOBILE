@@ -1,13 +1,13 @@
 ---
 id: HOME-02
 title: For you feed: video, photo set, book, locked, audio
-owner: DEV3
+owner: DEV
 area: HOME
-day: 2
+order: 42
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [HOME-04]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [H2, H3, H4, H5, H6]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H2 H3 H4 H5 H6` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,13 +33,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| H2 | For you · video | Full-bleed dark video post in the For you feed with a right rail (avatar, 12.4K, 340, 1.1K, ₦ Tip), tap-to-pause and a scrubber above the caption. |
-| H3 | Photo set | Photo-set post ('Approved F1'): sideways frames with the next frame peeking, 1/6 counter, and a paid offer bar 'Golden Hour presets · Template · 12 presets ₦2,500'. |
-| H4 | PDF / book | PDF post ('Approved F2'): cover, '12 pages free', read in place, offer bar 'Read the full playbook · Yours forever · Pay from wallet ₦3,000'. NOT in MANIFEST.json (regex missed it) but is a real artboard on the board. |
-| H5 | Locked | Locked video ('Approved F3, with Subscribe removed'): frame frosts when the preview ends, 'Preview ended' message, offer bar 'Unlock the full video · 18 min · Pay from wallet ₦2,500'. |
-| H6 | Audio · Following | Audio post ('Approved F6') with a scrubbable waveform; author tagged 'Following'. |
+- **H2 · For you · video**: Full-bleed dark video post in the For you feed with a right rail (avatar, 12.4K, 340, 1.1K, ₦ Tip), tap-to-pause and a scrubber above the caption.
+- **H3 · Photo set**: Photo-set post ('Approved F1'): sideways frames with the next frame peeking, 1/6 counter, and a paid offer bar 'Golden Hour presets · Template · 12 presets ₦2,500'.
+- **H4 · PDF / book**: PDF post ('Approved F2'): cover, '12 pages free', read in place, offer bar 'Read the full playbook · Yours forever · Pay from wallet ₦3,000'. NOT in MANIFEST.json (regex missed it) but is a real artboard on the board.
+- **H5 · Locked**: Locked video ('Approved F3, with Subscribe removed'): frame frosts when the preview ends, 'Preview ended' message, offer bar 'Unlock the full video · 18 min · Pay from wallet ₦2,500'.
+- **H6 · Audio · Following**: Audio post ('Approved F6') with a scrubbable waveform; author tagged 'Following'.
 
 ## Capability checks
 
@@ -54,15 +52,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| H2 | partial | Feed list exists (trending sort). Missing: content like/unlike route and liked-by-me state, share counter, view counting, mixed card kinds; no streaming/transcoding metadata beyond durationLabel. |
-| H3 | partial | No multi-asset (photo set) storage on ContentPiece; no link from a free post to a separate paid offer piece (offer bar). |
-| H4 | partial | No free-page-range field (e.g. freePages) and no paged in-place reader asset; unlock is Flutterwave not wallet. |
-| H5 | partial | Locked state and preview asset exist; preview end time not modelled; unlock path is Flutterwave hosted/inline charge not wallet+PIN. |
-| H6 | partial | No waveform data; follow state per item needs batch lookup (only single GET .../follow status). |
+- **H2**: partial. Missing: Feed list exists (trending sort). Missing: content like/unlike route and liked-by-me state, share counter, view counting, mixed card kinds; no streaming/transcoding metadata beyond durationLabel.
+- **H3**: partial. Missing: No multi-asset (photo set) storage on ContentPiece; no link from a free post to a separate paid offer piece (offer bar).
+- **H4**: partial. Missing: No free-page-range field (e.g. freePages) and no paged in-place reader asset; unlock is Flutterwave not wallet.
+- **H5**: partial. Missing: Locked state and preview asset exist; preview end time not modelled; unlock path is Flutterwave hosted/inline charge not wallet+PIN.
+- **H6**: partial. Missing: No waveform data; follow state per item needs batch lookup (only single GET .../follow status).
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

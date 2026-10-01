@@ -1,13 +1,13 @@
 ---
 id: EVENTS-02
 title: Hosting an event: hybrid, kinds, one-step submit
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 2
+order: 50
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: blocked
-blocked_by: "until D3 is ruled in DECISIONS.md"
+status: todo
 depends_on: []
 decisions: [D3]
 passes: [V1, V2, V3, V4, V9]
@@ -19,8 +19,8 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
-- `DECISIONS.md`: D3 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D3 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

@@ -3,11 +3,11 @@ id: PROS-01
 title: Find a professional
 owner: YOU
 area: PROS
-day: 2
+order: 51
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SHELL-01, SHELL-02]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -25,7 +25,7 @@ artboards: [P1, P2, P3, P4]
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| P1 | Professionals | Directory: 'Vetted practitioners. Pay to send the first message.' Field chips (All, Accounting & Tax, Legal & Compliance, Design & Creative), rows with name, headline incl. years, field, price per message. |
-| P2 | Profile | Professional profile: name, headline, field, 'Ask a question · ₦5,000', 'Funmi replies within 24 hours, or you're refunded automatically.', About, What they take on (Tax filing, CAC annual returns, Bookkeeping, Payroll), Credentials 'Practising licence · Issued by ICAN · checked by WAWU'. Then Ask a question opens the paid DM (I3, Inbox flow). |
-| P3 | Not taking messages | Profile with button replaced: 'Not taking messages · Check back later, or find someone else in this field.' |
-| P4 | Empty field | Empty category: 'Nobody listed in Engineering yet · If you do this work, apply to be listed here.' Offer your services. |
+- **P1 · Professionals**: Directory: 'Vetted practitioners. Pay to send the first message.' Field chips (All, Accounting & Tax, Legal & Compliance, Design & Creative), rows with name, headline incl. years, field, price per message.
+- **P2 · Profile**: Professional profile: name, headline, field, 'Ask a question · ₦5,000', 'Funmi replies within 24 hours, or you're refunded automatically.', About, What they take on (Tax filing, CAC annual returns, Bookkeeping, Payroll), Credentials 'Practising licence · Issued by ICAN · checked by WAWU'. Then Ask a question opens the paid DM (I3, Inbox flow).
+- **P3 · Not taking messages**: Profile with button replaced: 'Not taking messages · Check back later, or find someone else in this field.'
+- **P4 · Empty field**: Empty category: 'Nobody listed in Engineering yet · If you do this work, apply to be listed here.' Offer your services.
 
 ## Capability checks
 
@@ -51,14 +49,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| P1 | partial | Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug. Years of experience is free text inside headline (no field). |
-| P2 | served | Data served. The paid DM it opens is still a Flutterwave charge (direct-message.service.ts initCharge) and its refund is a Flutterwave refund; moving to the wallet is the Inbox flow's change (I3). |
-| P3 | served | served |
-| P4 | partial | 'Engineering' is not in PROFESSIONAL_CATEGORIES, so this exact field cannot exist without adding a slug. |
+- **P1**: partial. Missing: Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug. Years of experience is free text inside headline (no field).
+- **P2**: served. Missing: Data served. The paid DM it opens is still a Flutterwave charge (direct-message.service.ts initCharge) and its refund is a Flutterwave refund; moving to the wallet is the Inbox flow's change (I3).
+- **P3**: served.
+- **P4**: partial. Missing: 'Engineering' is not in PROFESSIONAL_CATEGORIES, so this exact field cannot exist without adding a slug.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

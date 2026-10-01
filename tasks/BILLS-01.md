@@ -1,13 +1,13 @@
 ---
 id: BILLS-01
 title: Pay a bill: choose biller, meter and amount
-owner: DEV1
+owner: YOU
 area: BILLS
-day: 3
+order: 96
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SHELL-02]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -19,13 +19,13 @@ artboards: [S2, S3, S4, S10, S13]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S2 S3 S4 S10 S13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,13 +33,11 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| S2 | Pay a bill | Pay a bill home: Bill reminders banner '3 due in October · ₦38,200', categories Airtime / Data / Electricity / Cable TV, Recent (Ikeja Electric meter ₦10,500, MTN airtime ₦2,000, DStv Compact ₦15,700). Reached from S1 (Start-here: Home Pay bills, balance-card Bills, Wallet bills row). |
-| S3 | Biller | Electricity billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric with prepaid/postpaid notes. |
-| S4 | Meter and amount | Meter number with validated name AND address ('Chidinma Okoro · 14 Admiralty Way'), amount ₦10,000 with presets ₦2,000/₦5,000/₦10,000/₦20,000. |
-| S10 | Meter not found | 'We couldn't find this meter. Check the number.' |
-| S13 | Not live yet | 'Bill payments aren't switched on yet · You'll be able to pay airtime, data, electricity and cable from your wallet here soon.' |
+- **S2 · Pay a bill**: Pay a bill home: Bill reminders banner '3 due in October · ₦38,200', categories Airtime / Data / Electricity / Cable TV, Recent (Ikeja Electric meter ₦10,500, MTN airtime ₦2,000, DStv Compact ₦15,700). Reached from S1 (Start-here: Home Pay bills, balance-card Bills, Wallet bills row).
+- **S3 · Biller**: Electricity billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric with prepaid/postpaid notes.
+- **S4 · Meter and amount**: Meter number with validated name AND address ('Chidinma Okoro · 14 Admiralty Way'), amount ₦10,000 with presets ₦2,000/₦5,000/₦10,000/₦20,000.
+- **S10 · Meter not found**: 'We couldn't find this meter. Check the number.'
+- **S13 · Not live yet**: 'Bill payments aren't switched on yet · You'll be able to pay airtime, data, electricity and cable from your wallet here soon.'
 
 ## Capability checks
 
@@ -52,15 +50,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| S2 | partial | Categories and recents served (Flutterwave top-bill-categories). The reminders banner has no source: no reminder model or route (searched backend-models, backend-routes, grep -i 'reminder' finds only verification-reminder.service.ts and NotificationSettings.dmReminders). |
-| S3 | served | served |
-| S4 | partial | Validation returns name only; the address on the board is not passed through from the provider response. |
-| S10 | served | served |
-| S13 | served | served |
+- **S2**: partial. Missing: Categories and recents served (Flutterwave top-bill-categories). The reminders banner has no source: no reminder model or route (searched backend-models, backend-routes, grep -i 'reminder' finds only verification-reminder.service.ts and NotificationSettings.dmReminders).
+- **S3**: served.
+- **S4**: partial. Missing: Validation returns name only; the address on the board is not passed through from the provider response.
+- **S10**: served.
+- **S13**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

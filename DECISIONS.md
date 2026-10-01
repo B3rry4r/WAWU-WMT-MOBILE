@@ -44,7 +44,7 @@ user can have a wallet and pay from it. Fintava replaces Flutterwave as the
 money rail. Still to confirm with Fintava (task OPS-02): whether dollar accounts,
 crypto through their custody partner, and the Verve card fall under their
 licence and the contract.
-**Carried out by:** the MONEY tasks (Dev 1). Web CLAUDE.md wallet note
+**Carried out by:** the MONEY tasks. Web CLAUDE.md wallet note
 is rewritten in OPS-05.
 
 ### R-2 · Shop is retired; Schools takes its place
@@ -85,29 +85,74 @@ task.
 
 ---
 
-## Open decisions
+## Open decisions, and what to build until you rule
 
-Nothing in a task that depends on one of these is built until it is ruled.
-Rule by replacing the row with an R-entry above. `tasks/INDEX.md` lists the
-tasks each open decision blocks (generated from the task files).
+Nothing waits on these. Each one has a default that work follows now. Any
+number a default needs (a fee, a limit, a split, a price) goes into config with
+a `PROVISIONAL(...)` marker: the gates allow it while building and refuse it in
+a release build, so nothing unconfirmed can ship. Changing a default later
+changes config or a flag, not the screens. Confirm or change them in task
+OPS-01.
 
-| # | Question | Design says | Today |
-|---|----------|-------------|-------|
-| D1 | BVN and a liveness selfie at sign-up for everyone? Can people outside Nigeria join without a wallet? | BVN mandatory, NIBSS check, face match (A3–A7) | Email and password; manual KYC only to earn; product rule "no liveness" |
-| D2 | Do ticks unlock more uploads, storage and reach? What are the real numbers? | 5 uploads and 1 GB free; 25 and 10 GB ticked (M11, "⚠ Limits are placeholders") | Flat 5 items, 2 GB |
-| D3 | Does free content come back? | Paid/Free toggle (M24, M37); ₦0 events (E15) | Every listing has a price |
-| D4 | The creator's own "Shop" tab on a profile (M3): keep, rename "Products", or cut? Do the WAWUBasket and WAWUBeauty links go with Shop? | Shop tab lists the creator's products | Products count toward the 5-item cap |
-| D5 | Which fees exist, and who keeps them? | ₦10 to a WAWU user, ₦25 to a bank, 1.5% card top-up, ₦1,500 card + ₦500 delivery | None |
-| D6 | Do earnings sit apart until the creator taps "Move to wallet"? | Yes (W39, W40), KYC gates the move | Automatic sweep |
-| D7 | Schools: who receives the money, at what split, what commission, and how a school is verified | "Fee: No fee"; money "to Greenfield"; school pays commission on tracked link | One split: 85/15 |
-| D8 | Free chat between any two users, with send and request money? Paid-message penalty thresholds? | Yes; warn at 20%, switch off at 30% | No free chat; spec says 10/30/50 |
-| D9 | Legal: free assistant chat before paying? Consultation fees? | Chat first, free (S14); video ₦15,000, phone ₦10,000, CAC ₦35,000 (placeholders) | Chat after payment; CAC ₦25,000 in code |
-| D10 | How are ads sold and paid for? | Sponsored card on TGIF and Today | No ad product |
-| D11 | Dollar accounts, crypto and the card in the first release? | All three, marked placeholder | Naira only |
-| D12 | Account deletion: 30 days, cancellable? | 30 days, cancel by signing in (Z6–Z8) | 48 hours, not cancellable |
-| D13 | "Trust Score" on the professional card (H10)? | "91 Trust Score" | No such thing exists |
-| D14 | 89 web features not on the canvas (WAWU Learn, health plans, NEPC, partner services, mentors, EVG score, profile stats, community host tools, notifications page, DM reporting, and more) | Absent | Live on the web |
-| D15 | Alan Sans has no ₦ glyph (U+20A6). Every naira sign, in the canvas too, is drawn by a fallback font. Ship a face that has it? | Draws ₦ everywhere | Platform font draws it |
+**D1 · Sign-up identity checks**
+- Design: BVN for everyone, checked with NIBSS, plus a face match (A3 to A7). Today: email and password; ID checks only to earn.
+- Build now: the design's sign-up, behind a flag. People without a BVN can still join; they just can't open a wallet. ID checks go through Fintava, or a vendor if Fintava doesn't offer them.
+
+**D2 · Ticks unlock more uploads**
+- Design: 5 uploads and 1 GB free; 25 uploads and 10 GB with a tick (M11, marked placeholder). Today: a flat 5 and 2 GB.
+- Build now: allowances read from config, set to the design's numbers and marked provisional.
+
+**D3 · Free content**
+- Design: a Paid/Free switch (M24, M37) and ₦0 events (E15). Today: every listing has a price.
+- Build now: the switch, behind a flag that is off until you confirm.
+
+**D4 · The creator's "Shop" tab (M3)**
+- Design: a Shop tab listing the creator's own products. Today: products count toward the 5-item cap. WAWU Shop itself is retired (R-2).
+- Build now: the tab, labelled "Products". The WAWUBasket and WAWUBeauty links stay as they are.
+
+**D5 · Fees**
+- Design: ₦10 to a WAWU user, ₦25 to a bank, 1.5% card top-up, ₦1,500 card plus ₦500 delivery.
+- Build now: every fee comes from the server's fee quote, read from config. The design's numbers go in, marked provisional, until Fintava's schedule (OPS-02) and your ruling replace them.
+
+**D6 · Earnings**
+- Design: earnings sit apart; the creator taps "Move to wallet", and KYC gates that move (W39, W40). Today: automatic sweep.
+- Build now: the design's version.
+
+**D7 · School payments**
+- Design: "No fee"; the money goes to the school; the school pays WAWU a commission on tracked-link sign-ups. Today: one split, 85/15, on everything.
+- Build now: the split and the commission rate read from config, set to the current 85/15 and marked provisional.
+
+**D8 · Free chat and the reply-rate penalty**
+- Design: any two users can chat free and send or request money; creators warned at 20% unanswered paid messages and switched off at 30%. Today: no free chat; the spec says 10/30/50.
+- Build now: the design's version; thresholds read from config, set to 20 and 30 and marked provisional.
+
+**D9 · Legal**
+- Design: free assistant chat before paying; video ₦15,000, phone ₦10,000, business-name registration ₦35,000 (placeholders). Today: chat after paying; ₦25,000 in code.
+- Build now: the design's chat-first flow; every price read from config, marked provisional.
+
+**D10 · Ads**
+- Design: a sponsored card on TGIF that takes TGIF's place on Today when TGIF is off. Nothing about pricing.
+- Build now: the placement, plus admin booking and reporting. Ads are sold and invoiced by hand.
+
+**D11 · Cards, dollar and crypto accounts**
+- Design: all three, marked placeholder until Fintava confirms.
+- Build now: nothing. These need Fintava to confirm their contract and API first (OPS-02). They are in the list as after-launch tasks.
+
+**D12 · Deleting an account**
+- Design: 30 days, cancelled by signing in (Z6 to Z8). Today: 48 hours, can't be cancelled.
+- Build now: the design's version, with a check that the wallet is empty first.
+
+**D13 · "Trust Score" on professional cards (H10)**
+- Design: "91 Trust Score". Today: no such score exists.
+- Build now: the card without it. A number with nothing behind it never ships.
+
+**D14 · Web features missing from the canvas**
+- 89 things on the web don't appear in the design (WAWU Learn, health plans, mentors, the EVG score, community host tools and more).
+- Build now: nothing changes on the web. Rule each one in OPS-07.
+
+**D15 · The ₦ symbol**
+- Alan Sans has no ₦ glyph, so the phone's own font draws it, in the design too.
+- Build now: the fallback. The designer answers in OPS-04.
 
 The full list of what the canvas contradicts, with both sides quoted, is in
 `docs/analysis/ANALYSIS-EVIDENCE.md` ("Conflicts with the current product").

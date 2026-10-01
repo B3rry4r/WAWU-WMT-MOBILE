@@ -3,11 +3,11 @@ id: OPS-08
 title: Retire Shop on the backend
 owner: YOU
 area: OPS
-day: 2
+order: 21
+priority: launch
 repo: wawu-backend
 type: removal
-status: queued
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V3, V4, V7, V9]

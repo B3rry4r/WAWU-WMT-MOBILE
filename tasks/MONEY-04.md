@@ -1,13 +1,13 @@
 ---
 id: MONEY-04
 title: Money conventions and the wallet contract
-owner: DEV1
+owner: YOU
 area: MONEY
-day: 1
+order: 13
+priority: launch
 repo: wawu-backend
 type: contract
-status: ready
-blocked_by: ""
+status: todo
 depends_on: [OPS-02]
 decisions: []
 passes: [V1]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 

@@ -3,11 +3,11 @@ id: ADS-03
 title: Ads data model
 owner: YOU
 area: ADS
-day: later
+order: 185
+priority: after-launch
 repo: wawu-backend
 type: migration
-status: blocked
-blocked_by: "until D10 is ruled in DECISIONS.md"
+status: todo
 depends_on: []
 decisions: [D10]
 passes: [V1, V3, V4, V9]
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D10 (open: this task is blocked until they are ruled)
+- `DECISIONS.md`: D10 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

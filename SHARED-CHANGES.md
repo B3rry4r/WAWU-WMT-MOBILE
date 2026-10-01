@@ -2,8 +2,8 @@
 
 Fenced files (`docs/WORKFLOW.md` section 4) are never edited by a screen or
 feature task. A task that needs one changed adds a row here and builds
-everything else. The owner applies the queue between waves, then the blocked
-task finishes.
+everything else. The owner applies the queue between rounds of work, then the
+task that asked for it finishes.
 
 Four queues, because they have different owners and triggers:
 

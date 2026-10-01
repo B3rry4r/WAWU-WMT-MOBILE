@@ -3,11 +3,11 @@ id: SCHOOLS-05
 title: Admin screens: schools, courses, intakes
 owner: YOU
 area: SCHOOLS
-day: 3
+order: 92
+priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V6, V7, V9]

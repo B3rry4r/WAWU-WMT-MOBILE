@@ -1,13 +1,13 @@
 ---
 id: WALLET-21
 title: Dollar and crypto accounts, swap
-owner: DEV1
+owner: YOU
 area: WALLET
-day: later
+order: 181
+priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D11 is ruled in DECISIONS.md"
+status: todo
 depends_on: [WALLET-32, WALLET-33]
 decisions: [D11]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -19,14 +19,14 @@ artboards: [W2, W3, W20, W21, W22, W23]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
-- `DECISIONS.md`: D11 (open: this task is blocked until they are ruled)
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: D11 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py W2 W3 W20 W21 W22 W23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled after launch.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,14 +34,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| W2 | Wallet · Dollar | USD account: dollar balance, 'USD account · Fintava' masked number, Send / Add dollars, a 'Get paid from abroad' prompt to share US account details, dollar transactions incl. a swap to Naira. |
-| W3 | Wallet · Crypto | Crypto account: total in dollars, Receive / Send, USDT (TRC-20, ERC-20) and BTC holdings with USD value, crypto transactions with truncated addresses. |
-| W20 | Swap | Currency swap NGN to USD with keypad, both balances, rate held 30 seconds with countdown, fee. |
-| W21 | Swap · review | Review sheet for the swap (from, to, rate, fee), then PIN (W11), then a W12-style receipt. |
-| W22 | Crypto · receive | Receive USDT/BTC: pick asset and network, address + QR + Copy, undismissable warning to send only that asset on that network. |
-| W23 | Crypto · send | Send USDT: recipient address, network (must match), amount with Max, balance, network fee deducted, they get, ETA; then review, PIN, receipt. |
+- **W2 · Wallet · Dollar**: USD account: dollar balance, 'USD account · Fintava' masked number, Send / Add dollars, a 'Get paid from abroad' prompt to share US account details, dollar transactions incl. a swap to Naira.
+- **W3 · Wallet · Crypto**: Crypto account: total in dollars, Receive / Send, USDT (TRC-20, ERC-20) and BTC holdings with USD value, crypto transactions with truncated addresses.
+- **W20 · Swap**: Currency swap NGN to USD with keypad, both balances, rate held 30 seconds with countdown, fee.
+- **W21 · Swap · review**: Review sheet for the swap (from, to, rate, fee), then PIN (W11), then a W12-style receipt.
+- **W22 · Crypto · receive**: Receive USDT/BTC: pick asset and network, address + QR + Copy, undismissable warning to send only that asset on that network.
+- **W23 · Crypto · send**: Send USDT: recipient address, network (must match), amount with Max, balance, network fee deducted, they get, ETA; then review, PIN, receipt.
 
 ## Capability checks
 
@@ -57,16 +55,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| W2 | missing | No USD account, balance, receiving details or USD ledger anywhere in the backend. |
-| W3 | missing | No crypto custody, balances, pricing or transactions. |
-| W20 | missing | No FX quote or swap. |
-| W21 | missing | No swap execution. |
-| W22 | missing | No address generation. |
-| W23 | missing | No crypto send. |
+- **W2**: missing. Missing: No USD account, balance, receiving details or USD ledger anywhere in the backend.
+- **W3**: missing. Missing: No crypto custody, balances, pricing or transactions.
+- **W20**: missing. Missing: No FX quote or swap.
+- **W21**: missing. Missing: No swap execution.
+- **W22**: missing. Missing: No address generation.
+- **W23**: missing. Missing: No crypto send.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

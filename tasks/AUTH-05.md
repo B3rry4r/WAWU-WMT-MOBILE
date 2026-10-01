@@ -1,13 +1,13 @@
 ---
 id: AUTH-05
 title: Sign-up: email, phone and BVN
-owner: DEV2
+owner: DEV
 area: AUTH
-day: 3
+order: 64
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D1 is ruled in DECISIONS.md"
+status: todo
 depends_on: [AUTH-02, AUTH-03, AUTH-04]
 decisions: [D1]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,14 +19,14 @@ artboards: [A3, A4, A14, A15]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
-- `DECISIONS.md`: D1 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py A3 A4 A14 A15` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,12 +34,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| A3 | Email, phone, BVN | Create account form: Email, Phone number ('Must be the number on your BVN'), BVN ('Dial *565*0# to get it'), Password ('At least 8 characters'); footer 'Checked with NIBSS. We never see your balances.' Continue. |
-| A4 | Phone code | Verify your phone: 6-digit code 'Sent by SMS to 0803 ••• 4412, the number on your BVN', resend countdown 0:42, numeric keypad. |
-| A14 | Phone doesn't match BVN | A3 with inline error under phone: 'This isn't the number on your BVN. Use that one.' |
-| A15 | Wrong code | A4 with 6 digits entered and 'That code isn't right'. |
+- **A3 · Email, phone, BVN**: Create account form: Email, Phone number ('Must be the number on your BVN'), BVN ('Dial *565*0# to get it'), Password ('At least 8 characters'); footer 'Checked with NIBSS. We never see your balances.' Continue.
+- **A4 · Phone code**: Verify your phone: 6-digit code 'Sent by SMS to 0803 ••• 4412, the number on your BVN', resend countdown 0:42, numeric keypad.
+- **A14 · Phone doesn't match BVN**: A3 with inline error under phone: 'This isn't the number on your BVN. Use that one.'
+- **A15 · Wrong code**: A4 with 6 digits entered and 'That code isn't right'.
 
 ## Capability checks
 
@@ -53,14 +51,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| A3 | partial | No BVN field, no BVN lookup, no phone-vs-BVN match anywhere. Register requires `country` (not on board) and has no place to store BVN or a BVN-verified flag. Names are required for wallet opening (wallet.service.ts openForAccount) but the board collects none; they must come from the BVN response. |
-| A4 | partial | otp/verify is a phone-LOGIN: it find-or-creates a phone-only WawuUser and issues tokens (auth.service.ts:713-748); it does not mark a registering account's phone as verified - WawuUser has no phoneVerified column. Delivery is WhatsApp, not SMS. No resend throttle beyond replacing the previous code. Separately: WAWU ID login refuses accounts with an unverified email (auth.service.ts:206-213 EMAIL_NOT_VERIFIED), and this board path never verifies the email, so a user created this way cannot sign in on A22 later. |
-| A14 | missing | No BVN lookup, so no phone match. |
-| A15 | partial | Error exists, but see A4: the route is a phone login, not registration phone verification; no attempt counter/lockout. |
+- **A3**: partial. Missing: No BVN field, no BVN lookup, no phone-vs-BVN match anywhere. Register requires `country` (not on board) and has no place to store BVN or a BVN-verified flag. Names are required for wallet opening (wallet.service.ts openForAccount) but the board collects none; they must come from the BVN response.
+- **A4**: partial. Missing: otp/verify is a phone-LOGIN: it find-or-creates a phone-only WawuUser and issues tokens (auth.service.ts:713-748); it does not mark a registering account's phone as verified - WawuUser has no phoneVerified column. Delivery is WhatsApp, not SMS. No resend throttle beyond replacing the previous code. Separately: WAWU ID login refuses accounts with an unverified email (auth.service.ts:206-213 EMAIL_NOT_VERIFIED), and this board path never verifies the email, so a user created this way cannot sign in on A22 later.
+- **A14**: missing. Missing: No BVN lookup, so no phone match.
+- **A15**: partial. Missing: Error exists, but see A4: the route is a phone login, not registration phone verification; no attempt counter/lockout.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

@@ -1,13 +1,13 @@
 ---
 id: EVENTS-03
 title: My tickets, ticket QR, called off, checked in
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 3
+order: 84
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [EVENTS-01]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,13 +19,13 @@ artboards: [E6, E7, E11, E12]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E6 E7 E11 E12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| E6 | My tickets | My tickets with Upcoming / Past tabs; rows grouped per order ('1 × Regular', '2 × VIP'). |
-| E7 | Ticket QR | Single ticket with large QR and code; note 'Brightness goes up when this opens.' |
-| E11 | Called off | Ticket view for a cancelled event: 'This event was called off · ₦7,500 is back in your Naira wallet.' |
-| E12 | Checked in | Ticket view: 'Already checked in Sun 12 Oct at 09:52.' |
+- **E6 · My tickets**: My tickets with Upcoming / Past tabs; rows grouped per order ('1 × Regular', '2 × VIP').
+- **E7 · Ticket QR**: Single ticket with large QR and code; note 'Brightness goes up when this opens.'
+- **E11 · Called off**: Ticket view for a cancelled event: 'This event was called off · ₦7,500 is back in your Naira wallet.'
+- **E12 · Checked in**: Ticket view: 'Already checked in Sun 12 Oct at 09:52.'
 
 ## Capability checks
 
@@ -50,14 +48,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| E6 | served | Grouping into '2 × VIP' is client-side from orderId-less ticket rows: the response does not return orderId; group by event+tier works. |
-| E7 | served | Screen-brightness boost is a native-app capability, no backend. |
-| E11 | partial | Refund destination changes: board says money returns to the buyer's Naira wallet. Needs a wallet credit (Fintava transfer from wherever ticket money is held back to the buyer wallet) replacing flutterwave.refundCharge; myTickets response has no refund amount/status (EventOrder.refundedAt/refundReference not exposed). |
-| E12 | served | served |
+- **E6**: served. Missing: Grouping into '2 × VIP' is client-side from orderId-less ticket rows: the response does not return orderId; group by event+tier works.
+- **E7**: served. Missing: Screen-brightness boost is a native-app capability, no backend.
+- **E11**: partial. Missing: Refund destination changes: board says money returns to the buyer's Naira wallet. Needs a wallet credit (Fintava transfer from wherever ticket money is held back to the buyer wallet) replacing flutterwave.refundCharge; myTickets response has no refund amount/status (EventOrder.refundedAt/refundReference not exposed).
+- **E12**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

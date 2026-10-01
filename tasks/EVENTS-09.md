@@ -1,13 +1,13 @@
 ---
 id: EVENTS-09
 title: At the door: scan, let in, already used, not valid
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 4
+order: 123
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [EVENTS-05]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -19,13 +19,13 @@ artboards: [E19, E20, E23, E24]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E19 E20 E23 E24` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -33,12 +33,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| E19 | At the door | Camera scanner: 'Point at the ticket QR', 'Type the code instead'. |
-| E20 | Let them in | Green result: 'LET THEM IN · Regular · Lennox Emmanuel · In the room 23 · Still to arrive 41'. |
-| E23 | Already used | Amber result: 'ALREADY USED · Checked in at 09:52 by Door 1'. |
-| E24 | Not valid | Red result: 'NOT A VALID TICKET · This code isn't for this event'. |
+- **E19 · At the door**: Camera scanner: 'Point at the ticket QR', 'Type the code instead'.
+- **E20 · Let them in**: Green result: 'LET THEM IN · Regular · Lennox Emmanuel · In the room 23 · Still to arrive 41'.
+- **E23 · Already used**: Amber result: 'ALREADY USED · Checked in at 09:52 by Door 1'.
+- **E24 · Not valid**: Red result: 'NOT A VALID TICKET · This code isn't for this event'.
 
 ## Capability checks
 
@@ -49,14 +47,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| E19 | served | Only the host's own account may scan (scan() throws 'Only the organiser can check tickets in.'); no door-staff delegation. |
-| E20 | partial | Returns buyerWawuId, not the holder's display name the board prints; needs a profile join. |
-| E23 | partial | 'by Door 1' needs named scanners/doors: no door-staff model, scan restricted to host, checkedInBy not returned. |
-| E24 | served | served |
+- **E19**: served. Missing: Only the host's own account may scan (scan() throws 'Only the organiser can check tickets in.'); no door-staff delegation.
+- **E20**: partial. Missing: Returns buyerWawuId, not the holder's display name the board prints; needs a profile join.
+- **E23**: partial. Missing: 'by Door 1' needs named scanners/doors: no door-staff model, scan restricted to host, checkedInBy not returned.
+- **E24**: served.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

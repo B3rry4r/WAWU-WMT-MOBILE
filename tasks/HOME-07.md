@@ -1,13 +1,13 @@
 ---
 id: HOME-07
 title: Feed: course, template, creator and professional cards, empty and error
-owner: DEV3
+owner: DEV
 area: HOME
-day: 3
+order: 77
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D13 is ruled in DECISIONS.md"
+status: todo
 depends_on: [HOME-04, HOME-05]
 decisions: [D13]
 passes: [V1, V4, V5, V6, V9]
@@ -19,14 +19,14 @@ artboards: [H7, H8, H9, H10, H12, H13]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
-- `DECISIONS.md`: D13 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D13 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py H7 H8 H9 H10 H12 H13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,14 +34,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| H7 | Course | Course post: lesson 1 free, offer bar 'VFX for Beginners · 12 lessons · Pay from wallet ₦8,000'. |
-| H8 | Template · Following | Template post with offer bar 'Aba Collection · patterns · Template · Pay from wallet ₦3,500'. |
-| H9 | Creator card | Interstitial creator card in the feed ('F4, reworked'): portrait, 18.2K followers, 64 posts, 4.9 rating, 'Followed by Amaka and 12 people you know', swipeable strip of free and locked work, Follow and Profile. |
-| H10 | Professional card | Interstitial professional card ('F5, reworked for paid DMs'): 'Professional near you', portrait, 4.9 rating, 212 reviews, 91 Trust Score, ~3h usual reply, service tags, 'Online now. No reply in 24 hours and your ₦1,500 comes back.', Message · ₦1,500 and Profile. |
-| H12 | Following · empty | From H1 Following tab when the user follows no one: 'You're not following anyone yet', 'Find people to follow' and the creators rail. |
-| H13 | Feed · couldn't load | From H2 when the feed fails: 'The feed didn't load … Anything you've bought is still in My purchases.' Try again. |
+- **H7 · Course**: Course post: lesson 1 free, offer bar 'VFX for Beginners · 12 lessons · Pay from wallet ₦8,000'.
+- **H8 · Template · Following**: Template post with offer bar 'Aba Collection · patterns · Template · Pay from wallet ₦3,500'.
+- **H9 · Creator card**: Interstitial creator card in the feed ('F4, reworked'): portrait, 18.2K followers, 64 posts, 4.9 rating, 'Followed by Amaka and 12 people you know', swipeable strip of free and locked work, Follow and Profile.
+- **H10 · Professional card**: Interstitial professional card ('F5, reworked for paid DMs'): 'Professional near you', portrait, 4.9 rating, 212 reviews, 91 Trust Score, ~3h usual reply, service tags, 'Online now. No reply in 24 hours and your ₦1,500 comes back.', Message · ₦1,500 and Profile.
+- **H12 · Following · empty**: From H1 Following tab when the user follows no one: 'You're not following anyone yet', 'Find people to follow' and the creators rail.
+- **H13 · Feed · couldn't load**: From H2 when the feed fails: 'The feed didn't load … Anything you've bought is still in My purchases.' Try again.
 
 ## Capability checks
 
@@ -57,16 +55,14 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| H7 | partial | CourseLesson has no isFree/preview flag, so 'lesson 1 free' cannot be expressed. |
-| H8 | partial | Offer-bar linkage to a separate paid piece not modelled; wallet payment absent. |
-| H9 | partial | Feed does not return interstitial card kinds; no mutual-follower query ('Followed by … people you know': grep mutual|followedBy src: none); no creator-level aggregate rating. |
-| H10 | partial | No location field on ProfessionalProfile or UserProfile (no 'near you'); no public per-professional reply-time; no presence/lastActiveAt (grep lastSeen|isOnline|presence: none); 'Trust Score' has no defined source (EvgScore is closest); feed does not interleave professional cards. |
-| H12 | missing | No scope=following on GET /content and no 'who I follow' list/count endpoint, so neither the populated Following feed nor this empty state can be decided server-side. |
-| H13 | n/a | served |
+- **H7**: partial. Missing: CourseLesson has no isFree/preview flag, so 'lesson 1 free' cannot be expressed.
+- **H8**: partial. Missing: Offer-bar linkage to a separate paid piece not modelled; wallet payment absent.
+- **H9**: partial. Missing: Feed does not return interstitial card kinds; no mutual-follower query ('Followed by … people you know': grep mutual|followedBy src: none); no creator-level aggregate rating.
+- **H10**: partial. Missing: No location field on ProfessionalProfile or UserProfile (no 'near you'); no public per-professional reply-time; no presence/lastActiveAt (grep lastSeen|isOnline|presence: none); 'Trust Score' has no defined source (EvgScore is closest); feed does not interleave professional cards.
+- **H12**: missing. Missing: No scope=following on GET /content and no 'who I follow' list/count endpoint, so neither the populated Following feed nor this empty state can be decided server-side.
+- **H13**: n/a.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

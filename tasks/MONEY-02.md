@@ -1,13 +1,13 @@
 ---
 id: MONEY-02
 title: The PIN sheet
-owner: DEV1
+owner: YOU
 area: MONEY
-day: 1
+order: 11
+priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -19,7 +19,7 @@ artboards: [W11, H15, M13]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV1.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W11 H15 M13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`, `docs/analysis/evidence/A3.json`, `docs/analysis/evidence/A4.json`
 

@@ -1,13 +1,13 @@
 ---
 id: INBOX-20
 title: Request money and pay a request
-owner: DEV3
+owner: DEV
 area: INBOX
-day: 4
+order: 159
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D8 is ruled in DECISIONS.md"
+status: todo
 depends_on: [INBOX-15]
 decisions: [D8]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -19,14 +19,14 @@ artboards: [I16, I17, I18, I19]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
-- `DECISIONS.md`: D8 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D8 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py I16 I17 I18 I19` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,12 +34,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| I16 | Request sheet | Request from Femi sheet: amount ₦12,000, what it's for, "Nothing moves until they tap Pay", Request ₦12,000. |
-| I17 | Request sent | Chat bubble "You requested ₦12,000 · Logo edits, round 2 · Waiting for Femi". |
-| I18 | Request from someone | Incoming request bubble from Kemi with Decline and Pay ₦12,000 (then PIN W11). |
-| I19 | Request paid | The request bubble flips to Paid and the conversation continues. |
+- **I16 · Request sheet**: Request from Femi sheet: amount ₦12,000, what it's for, "Nothing moves until they tap Pay", Request ₦12,000.
+- **I17 · Request sent**: Chat bubble "You requested ₦12,000 · Logo edits, round 2 · Waiting for Femi".
+- **I18 · Request from someone**: Incoming request bubble from Kemi with Decline and Pay ₦12,000 (then PIN W11).
+- **I19 · Request paid**: The request bubble flips to Paid and the conversation continues.
 
 ## Capability checks
 
@@ -51,14 +49,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| I16 | missing | Needs MoneyRequest(id, conversationId, requesterWawuId, payerWawuId, amount, memo, status pending|paid|declined|cancelled, paidLedgerRef) and POST create. |
-| I17 | missing | Request bubble and status updates need the MoneyRequest model and live delivery. |
-| I18 | missing | Needs POST pay (wallet debit/transfer + status paid, idempotent) and POST decline, plus notification to requester. |
-| I19 | missing | As I18. |
+- **I16**: missing. Missing: Needs MoneyRequest(id, conversationId, requesterWawuId, payerWawuId, amount, memo, status pending|paid|declined|cancelled, paidLedgerRef) and POST create.
+- **I17**: missing. Missing: Request bubble and status updates need the MoneyRequest model and live delivery.
+- **I18**: missing. Missing: Needs POST pay (wallet debit/transfer + status paid, idempotent) and POST decline, plus notification to requester.
+- **I19**: missing. Missing: As I18.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

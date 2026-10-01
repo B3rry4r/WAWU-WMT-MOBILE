@@ -1,19 +1,19 @@
 ---
 id: OPS-01
-title: Rule D1 to D4
+title: Confirm or change the decision defaults
 owner: YOU
 area: OPS
-day: 0
+order: 2
+priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: ready
-blocked_by: ""
+status: todo
 depends_on: []
 decisions: []
 passes: []
 artboards: []
 ---
-# OPS-01 · Rule D1 to D4
+# OPS-01 · Confirm or change the decision defaults
 
 ## Read first
 
@@ -23,16 +23,16 @@ artboards: []
 
 ## Goal
 
-Stage 1 cannot freeze the contract while sign-up, ticks, free content and the products tab are undecided.
+Every open decision in DECISIONS.md already has a default that work follows, so nobody waits. This is where you confirm a default or change it. A change updates settings or a flag, not the build.
 
 ## Scope
 
-DECISIONS.md: replace rows D1-D4 with R-entries, each naming who ruled, when, and the tasks that carry it out.
+DECISIONS.md: for each of D1 to D15, either confirm the default (move it to the rulings with your name and date) or write the change. Fees, limits and prices go into config, so a changed number never means rebuilding a screen.
 
 ## Capability checks
 
-- [ ] DECISIONS.md has an R-entry for each of D1, D2, D3, D4.
-- [ ] Each R-entry names its executing task ids, and `npm run tasks` passes.
+- [ ] Every D-row says "confirmed" or "changed", with who and when.
+- [ ] Every number the defaults put in config (fees, limits, splits, prices) is confirmed, so the release gate stops flagging it.
 
 ## Builder report
 

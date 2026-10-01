@@ -1,13 +1,13 @@
 ---
 id: SETUP-01
 title: Verify the mobile repo setup
-owner: YOU
+owner: DEV
 area: SETUP
-day: 0
+order: 1
+priority: launch
 repo: wawu-wmt-mobile
 type: setup
 status: verifying
-blocked_by: ""
 depends_on: []
 decisions: []
 passes: [V1, V5]
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 
 ## Goal
 

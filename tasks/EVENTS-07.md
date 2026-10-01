@@ -1,13 +1,13 @@
 ---
 id: EVENTS-07
 title: Move event tickets to the wallet
-owner: DEV2
+owner: DEV
 area: EVENTS
-day: 4
+order: 121
+priority: launch
 repo: wawu-backend
 type: money-path
-status: queued
-blocked_by: ""
+status: todo
 depends_on: [MONEY-18]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,17 +19,17 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-Payments move one at a time, safest first (docs/WORKFLOW.md section 6). Staging with the sandbox, then staff with real money, then everyone on mobile.
+Payments move one at a time, safest first (docs/WORKFLOW.md section 6): staging with the sandbox, then staff with real money, then everyone on mobile.
 
 ## Scope
 
-Buying tickets pays from the wallet (E3-E5, E10); the order reference stops being Flutterwave-specific (additive column, old one kept until Stage 9). The web stays on Flutterwave until Stage 9; V3 checks it still works.
+Buying tickets pays from the wallet (E3-E5, E10); the order reference stops being Flutterwave-specific (additive column, old one kept until after launch). The web stays on Flutterwave until after launch; V3 checks it still works.
 
 ## Capability checks
 

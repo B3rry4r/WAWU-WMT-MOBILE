@@ -1,13 +1,13 @@
 ---
 id: AUTH-06
 title: Sign-up: confirm details and selfie
-owner: DEV2
+owner: DEV
 area: AUTH
-day: 3
+order: 69
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D1 is ruled in DECISIONS.md"
+status: todo
 depends_on: [AUTH-05, AUTH-08]
 decisions: [D1]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -19,14 +19,14 @@ artboards: [A5, A6, A7, A16]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
-- `DECISIONS.md`: D1 (open: this task is blocked until they are ruled)
+- `docs/people/DEV.md` (what you own)
+- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py A5 A6 A7 A16` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,12 +34,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| A5 | Confirm your details | Read-only 'From your BVN' card: Name, Date of birth, Gender, State you live in, Occupation; checkbox 'I agree to the terms and privacy policy'; Continue. |
-| A6 | Selfie | Camera oval: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly' (liveness). |
-| A7 | Matched | Success state: 'Matched to your BVN. Opening your account' (spinner while the wallet is provisioned). |
-| A16 | Face doesn't match | Selfie failure: 'We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.' Try again. |
+- **A5 · Confirm your details**: Read-only 'From your BVN' card: Name, Date of birth, Gender, State you live in, Occupation; checkbox 'I agree to the terms and privacy policy'; Continue.
+- **A6 · Selfie**: Camera oval: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly' (liveness).
+- **A7 · Matched**: Success state: 'Matched to your BVN. Opening your account' (spinner while the wallet is provisioned).
+- **A16 · Face doesn't match**: Selfie failure: 'We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.' Try again.
 
 ## Capability checks
 
@@ -53,14 +51,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| A5 | partial | No dateOfBirth column in WAWU ID or Hub. Occupation is silently dropped today. No BVN source to prefill from. Consent route exists but is not called by any client (grep '/policies' wawuafrica/src -> none). |
-| A6 | missing | No liveness or face-match capability or provider anywhere; no place to store the result. |
-| A7 | missing | No face-match result; account opening at Fintava does not exist (see A8). |
-| A16 | missing | No face match; no retry/lockout policy; no fallback to manual review is drawn. |
+- **A5**: partial. Missing: No dateOfBirth column in WAWU ID or Hub. Occupation is silently dropped today. No BVN source to prefill from. Consent route exists but is not called by any client (grep '/policies' wawuafrica/src -> none).
+- **A6**: missing. Missing: No liveness or face-match capability or provider anywhere; no place to store the result.
+- **A7**: missing. Missing: No face-match result; account opening at Fintava does not exist (see A8).
+- **A16**: missing. Missing: No face match; no retry/lockout policy; no fallback to manual review is drawn.
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 

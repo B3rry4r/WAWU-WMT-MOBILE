@@ -3,11 +3,11 @@ id: LEGAL-02
 title: Legal: chat, profiling, brief, consultant joins
 owner: YOU
 area: LEGAL
-day: 3
+order: 88
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: blocked
-blocked_by: "until D9 is ruled in DECISIONS.md"
+status: todo
 depends_on: [LEGAL-01]
 decisions: [D9]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -20,13 +20,13 @@ artboards: [S14, S15, S16, S17]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D9 (open: this task is blocked until they are ruled)
+- `DECISIONS.md`: D9 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
 - The design: `python3 scripts/design/render_design.py S14 S15 S16 S17` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
 
 ## Scope
 
@@ -34,12 +34,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-| id | screen | what it shows |
-|----|--------|---------------|
-| S14 | Legal chat | WAWU Legal Assistant opening chat: 'Tell me what's going on… then a consultant picks it up. Nothing is charged, and no price is quoted until a consultant has read it.' Quick replies: A tenancy problem / Register a business / Check a contract / Something else. |
-| S15 | Profiling | Assistant asks follow-ups about a 60% mid-lease rent rise (lease signed? time left? review clause?) with quick replies. |
-| S16 | Brief | Brief card for confirmation: Matter Tenancy · rent increase, Lease signed 14 months left, Rent review clause Not sure, Location Lekki, Lagos; 'Send to a consultant · Nothing is charged yet.' Add anything else. |
-| S17 | Consultant joins | Handover: 'Adaora joined. The assistant has stopped replying.' Consultant message, 'Book a consultation · Video, phone or in person', Book / Message Adaora. |
+- **S14 · Legal chat**: WAWU Legal Assistant opening chat: 'Tell me what's going on… then a consultant picks it up. Nothing is charged, and no price is quoted until a consultant has read it.' Quick replies: A tenancy problem / Register a business / Check a contract / Something else.
+- **S15 · Profiling**: Assistant asks follow-ups about a 60% mid-lease rent rise (lease signed? time left? review clause?) with quick replies.
+- **S16 · Brief**: Brief card for confirmation: Matter Tenancy · rent increase, Lease signed 14 months left, Rent review clause Not sure, Location Lekki, Lagos; 'Send to a consultant · Nothing is charged yet.' Add anything else.
+- **S17 · Consultant joins**: Handover: 'Adaora joined. The assistant has stopped replying.' Consultant message, 'Book a consultation · Video, phone or in person', Book / Message Adaora.
 
 ## Capability checks
 
@@ -53,14 +51,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## What the backend serves today (from the analysis)
 
-| artboard | backend | what is missing |
-|----------|---------|-----------------|
-| S14 | partial | The backend's assistant chat (legal-chat.service.ts, Gemini) opens ONLY after a consultation is paid (OPEN_FROM = consultation_scheduled…; send() throws 'This conversation opens once your consultation is paid for.'). Free pre-payment profiling is the structured questionnaire legal-intake (matters → answers → complete → brief), not a chat. Board makes chat the intake; needs the assistant reachable on an intake (not a paid LegalRequest) and AI-driven profiling that fills LegalIntake answers. |
-| S15 | partial | Questions exist as a fixed set; no AI that asks them conversationally before payment (see S14). |
-| S16 | served | served |
-| S17 | partial | Handover-stops-AI is implemented, but the thread is keyed by a LegalRequest and opens only after consultation payment; on the board the consultant joins BEFORE any payment. Consultant name/avatar not modelled (replies are authorRole 'consultant', no consultant id). |
+- **S14**: partial. Missing: The backend's assistant chat (legal-chat.service.ts, Gemini) opens ONLY after a consultation is paid (OPEN_FROM = consultation_scheduled…; send() throws 'This conversation opens once your consultation is paid for.'). Free pre-payment profiling is the structured questionnaire legal-intake (matters → answers → complete → brief), not a chat. Board makes chat the intake; needs the assistant reachable on an intake (not a paid LegalRequest) and AI-driven profiling that fills LegalIntake answers.
+- **S15**: partial. Missing: Questions exist as a fixed set; no AI that asks them conversationally before payment (see S14).
+- **S16**: served.
+- **S17**: partial. Missing: Handover-stops-AI is implemented, but the thread is keyed by a LegalRequest and opens only after consultation payment; on the board the consultant joins BEFORE any payment. Consultant name/avatar not modelled (replies are authorRole 'consultant', no consultant id).
 
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
 ## Figures on these artboards are not facts
 
