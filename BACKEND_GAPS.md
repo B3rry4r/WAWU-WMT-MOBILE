@@ -10,4 +10,4 @@ below as screens are built.
 
 | # | artboard | field or behaviour needed | found by | task |
 |---|----------|---------------------------|----------|------|
-| G-1 | all | The backend contract repeats inline response shapes per route (`FlutterwaveConfig` ten times, `Items` four times) instead of named schemas, so clients cannot share one type. Publish named schemas. | setup, 1 Oct 2026 | M-02 |
+| G-1 | all | The backend contract repeats inline response shapes per route (`FlutterwaveConfig` ten times, `Items` four times) instead of named schemas, so clients cannot share one type. Publish named schemas. | setup, 1 Oct 2026 | MONEY-04 |

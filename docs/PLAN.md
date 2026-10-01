@@ -1,71 +1,55 @@
 # WMT plan
 
-Who builds what, in what order, and what is still needed from outside the
-team. How each task is built and checked is in `docs/WORKFLOW.md`. Every task
-is a file in `tasks/`; `tasks/INDEX.md` lists them by person with status.
+A five-day build, then two days of QA. Four people. Each person owns whole
+features: the screens AND the backend behind them.
 
-## The team
+## Who owns what
 
-Four people: the owner plus three developers. The owner also runs the project,
-so their lane has the least building in it.
+| Person | Owns, end to end |
+|--------|------------------|
+| **You** | Running the build (decisions, Fintava, staging, reviews, checkpoints, store submission). Features: Schools, Professionals, Legal |
+| **Dev 1 · Money** | The money core every payment uses (Fintava, accounts, PIN, ledger, pay-from-wallet). Features: Wallet, Bills |
+| **Dev 2 · Account, Me, Events** | App shell and session. Features: sign-up and sign-in, Settings, Me (profile, create, ticks), Events (including tickets) |
+| **Dev 3 · Feed and Inbox** | Design-system components. Features: Home (feed, TGIF, unlock, tips), Explore, Inbox (paid questions, chat, money in chat, communities, credits, push) |
 
-| Lane | Person | Owns | Days |
-|------|--------|------|------|
-| `YOU` | Owner | Decisions, Fintava, the designer, reviews and merges, stage sign-off, store submission. Builds Schools, ads, TGIF server state, admin screens, staging and feature flags | 44.5 |
-| `MONEY` | Dev 1 | Backend: the Fintava connection, sign-up with BVN, wallets, PIN, ledger, every payment path, transfers, earnings; plus paid-DM threads, the reply-rate penalty, communities and live chat updates | 96 |
-| `MOBILE-A` | Dev 2 | Mobile: app shell, session, PIN and pay sheets, sign-up and sign-in, settings, wallet, bills, legal, events, professionals; plus the backend gaps behind those screens | 95.5 |
-| `MOBILE-B` | Dev 3 | Mobile: design-system components, Home, TGIF, Explore, Me and Create, Inbox, Schools; plus the backend gaps behind those screens | 95.5 |
+The payment path for a feature belongs to that feature's owner, built on Dev
+1's money core. Details for each person: `docs/people/`.
 
-Days are planning estimates from the analysis (`docs/analysis/`), not quotes.
+## The week
 
-**Why the owner doesn't take the money lane:** money is the critical path and
-everything waits on it, so it needs someone full-time. The owner's lane is the
-one nothing else waits on.
+| Day | What happens |
+|-----|-------------|
+| 0 | Setup verified, staging, protected routes, D1 to D4 ruled, Fintava sandbox. **CHECK-0** |
+| 1 | App shell, components, PIN and pay sheets, wallet contract and mock, feature flags |
+| 2 | Screens on today's backend and the backend gaps behind them; Fintava core. **CHECK-1** |
+| 3 | More screens; sign-up with BVN; wallets; pay-from-wallet core |
+| 4 | Every payment path; send money; bills; events door; inbox money; schools payment. **CHECK-2** |
+| 5 | Verification and QA only. **CHECK-3** |
+| 6 | QA fixes only, re-verified; store submission. **RELEASE-02** |
 
-## Timeline
+Each developer runs several Claude sessions in parallel: builders on their
+day's tasks, and separate verifier sessions checking yesterday's. Day 4 is the
+heaviest day. Every day's task list is in `tasks/INDEX.md`.
 
-Stages and their exit gates are in `docs/WORKFLOW.md` section 7. With about 96
-days in each developer lane and stages overlapping, store submission lands
-around **week 22**, if the Fintava docs and sandbox arrive in week 1. The web
-port (Stage 9) follows. Every week of delay on Fintava moves Stages 5 and 6.
+**The one outside dependency:** anything that moves real money needs Fintava
+sandbox access on Day 0. Without it, money screens are built against the mock
+and stay off behind their flags until access arrives.
 
 ## Handing out work
 
-One line per session. The task file tells it what to read:
-
 ```
-You are the BUILDER for task M-04. Open tasks/M-04.md and follow it.
-You are the VERIFIER for task M-04. Open tasks/M-04.md and follow it.
+You are the BUILDER for task WALLET-02. Open tasks/WALLET-02.md and follow it.
+You are the VERIFIER for task WALLET-02. Open tasks/WALLET-02.md and follow it.
 ```
 
 Builder and verifier are always different sessions. Backend tasks: start the
-session with both `wawu-backend` (or `wawu-id`) and `wawu-wmt-mobile`
-attached.
+session with the backend repo and this repo both attached.
 
-## What is needed from outside the team
+## Needed from outside the team
 
-### From Fintava (task Y-02)
-
-API docs:
-- **Basics:** authentication and request signing, sandbox URL, IP allow-list,
-  webhook signature check, idempotency rules, error codes, rate limits.
-- **Accounts:** create a customer; open a Naira account at Tier 1 (which
-  fields; is BVN required?); upgrade tiers with NIN and address; read each
-  tier's limits.
-- **ID checks:** do they do BVN, NIN and liveness, or do we need a vendor?
-- **Balance and history,** and stamped statements.
-- **Transfers:** bank list, name check, send to a bank, move money between two
-  Fintava accounts and to and from WAWU's own account, check a transfer's
-  status, webhooks for success, failure and reversal.
-- **Holding money** on an account and releasing it (paid DMs, tickets).
-- **Adding money:** incoming transfer webhook, card top-up with 3-D Secure,
-  USSD.
-- **Bills:** airtime, data, TV, electricity (does the token come back?).
-- **PIN:** do they manage one, or do we?
-- **Only if in the contract:** cards, dollar accounts and FX, crypto, QR.
-
-Sandbox calls to run and save in `docs/fintava/` (request and full response;
-mask keys and BVNs; webhooks with headers):
+**From Fintava (OPS-02), Day 0:** API docs, sandbox keys, and these sandbox
+calls saved in `docs/fintava/` (request and full response, keys and BVNs
+masked, webhooks with headers):
 
 1. Create a customer
 2. Open a Naira account at Tier 1
@@ -73,7 +57,7 @@ mask keys and BVNs; webhooks with headers):
 4. Get transaction history
 5. Bank list
 6. Check an account name
-7. Send to a bank: one that succeeds, one that fails
+7. Send to a bank (one success, one failure)
 8. Check a transfer's status
 9. Move money between two customers
 10. Move money from a customer to WAWU's account
@@ -83,21 +67,14 @@ mask keys and BVNs; webhooks with headers):
 14. Upgrade a tier with NIN
 
 Questions for Fintava:
-- Fee schedule and settlement times
-- Tier limits
-- Can a school that isn't a WAWU user be paid? (KYB)
-- Reconciliation reports
-- The exact licence wording for "Banking by Fintava MFB · Licensed by the CBN" (Z9)
-- Are dollar accounts, crypto and the Verve card covered by their licence and our contract?
+- Do they handle BVN, NIN and liveness checks themselves?
+- Do they manage a transaction PIN, or do we?
+- What are their fees and tier limits?
+- Can we pay a school that isn't a WAWU user?
+- What exact licence wording should the app use?
+- Are dollar accounts, crypto and the card in the contract?
 
-### From the owner
-
-- Apple Developer and Google Play accounts; an Expo account for builds and push
-  (task A-03).
-- The domain behind `wawu/...` links, so links open the app.
-- An SMS route for sign-up codes (the design says SMS; WAWU ID uses WhatsApp
-  today).
-- A BVN, NIN and selfie-check vendor if Fintava doesn't cover them (Smile ID,
-  Prembly and Dojah are common choices).
-- Redis for live chat (task M-54).
-- Rulings D1 to D15 in `DECISIONS.md`. D1 to D4 are needed before Stage 2.
+**From you:** Apple Developer, Google Play and Expo accounts (SHELL-03,
+RELEASE-01); the domain behind `wawu/...` links; an SMS route for sign-up
+codes; a BVN and selfie vendor if Fintava doesn't cover it; Redis for live
+chat; rulings D1 to D15 (D1 to D4 on Day 0).

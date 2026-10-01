@@ -21,7 +21,7 @@ one and the system disagrees, work stops and the owner rules. Neither side is
 adopted silently.
 
 **The mobile app is the product.** The backend changes to fit it; the web
-follows it later (Stage 9).
+follows it after launch.
 
 Artboard ids come from `design/canvas-inventory.json` and task files, never
 from a code comment.
@@ -41,17 +41,17 @@ Each ruling names who made it, when, and the task that carries it out.
 ### R-1 · Fintava holds wallet money
 *Owner, 1 Oct 2026.* Fintava MFB's banking licence covers custody, so every
 user can have a wallet and pay from it. Fintava replaces Flutterwave as the
-money rail. Still to confirm with Fintava (task Y-02): whether dollar accounts,
+money rail. Still to confirm with Fintava (task OPS-02): whether dollar accounts,
 crypto through their custody partner, and the Verve card fall under their
 licence and the contract.
-**Carried out by:** M-04 onward (lane DEV1-MONEY). Web CLAUDE.md wallet note
-is rewritten in Y-24.
+**Carried out by:** the MONEY tasks (Dev 1). Web CLAUDE.md wallet note
+is rewritten in OPS-05.
 
 ### R-2 · Shop is retired; Schools takes its place
 *Owner, 1 Oct 2026.* The canvas still draws Shop (flow SH1–SH15, the fourth
 Home tile, "My purchases → orders" in the Me menu). Those artboards are not
 built. The designer swaps the Home tile and Me menu entry to Schools.
-**Carried out by:** Y-05 (designer), Y-06 (backend removal). The creator's
+**Carried out by:** OPS-04 (designer), OPS-08 (backend removal). The creator's
 own "Shop" tab on a profile (M3) is a separate question: D4.
 
 ### R-3 · The mobile app is Expo (React Native)
@@ -59,7 +59,7 @@ own "Shop" tab on a profile (M3) is a separate question: D4.
 current `latest` stable on npm at setup (57.0.26, published 29 Sep 2026; SDK 58
 was only on the `next` tag). Upgrades follow `npx expo install --fix` and
 `npx expo-doctor`, never hand-picked versions.
-**Carried out by:** S-01.
+**Carried out by:** SETUP-01.
 
 ### R-4 · Setup choices (made by the setup session; the owner can overrule any)
 *Setup session, 1 Oct 2026.*
@@ -74,7 +74,7 @@ was only on the `next` tag). Upgrades follow `npx expo install --fix` and
 - Gates: `scripts/gates` (verification harness), extended to read JSX text.
 - Design renders: `scripts/design/render_design.py`, adapted to this export
   (artboards live in `*.sections.json`, loaded lazily).
-**Carried out by:** S-01 (verified by an independent session).
+**Carried out by:** SETUP-01 (verified by an independent session).
 
 ### R-5 · Credits, splits and naming (carried over from the web product)
 *Owner, 21 Sep 2026.* One revenue split, 85/15, on every stream. "WAWU

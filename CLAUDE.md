@@ -8,14 +8,15 @@ and the web (`wawuafrica`) follows it later.
 ## Start here
 
 You were given a task: `tasks/<ID>.md`. Open it and read what it lists under
-**Read first**. Always read `docs/WORKFLOW.md` and your role file
+**Read first**. Whoever owns a feature owns its screens AND its backend. Always read `docs/WORKFLOW.md` and your role file
 (`docs/roles/BUILDER.md`, `VERIFIER.md` or `AUDITOR.md`). If no task was named,
 ask for one; don't pick work yourself.
 
 ## Rules that are never broken
 
 1. The builder never verifies their own task. The verifier never fixes.
-2. No task bigger than two days. `npm run tasks` enforces it.
+2. Every task is small and scheduled on one day; building happens on Days 0
+   to 4, Days 5 and 6 are QA. `npm run tasks` enforces the task rules.
 3. A check passes by exit code, never by opinion. `npm run check` must exit 0.
 4. Screens are compared picture against picture:
    `python3 scripts/design/render_design.py <ID>` beside a screenshot.
@@ -60,7 +61,8 @@ python3 scripts/design/render_design.py <IDs>    render artboards to build/desig
 | | |
 |---|---|
 | `docs/WORKFLOW.md` | How every task is built and verified |
-| `docs/PLAN.md` | Team, lanes, timeline, what's needed from outside |
+| `docs/PLAN.md` | Who owns what, the week, what's needed from outside |
+| `docs/people/` | One file per person: what they own end to end |
 | `DECISIONS.md` | Rulings and open decisions |
 | `tasks/` | One file per task; `tasks/INDEX.md` lists them |
 | `design/` | The canvas (authoritative for UI) and `canvas-inventory.json` |

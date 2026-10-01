@@ -32,8 +32,9 @@ whoever wrote it.
 1. **Nothing certifies its own work.** The session that builds a task never
    verifies it. Verification is a fresh session, and its output is findings.
    Fixing them is the builder's job.
-2. **No task is bigger than two days.** Anything bigger is split before work
-   starts.
+2. **Every task is small.** One screen group, one endpoint or one payment
+   path: small enough to build and verify in one sitting. Anything bigger is
+   split before work starts.
 3. **A check is an exit code, not an opinion.** Gates, tests, analyze and
    migrations pass or fail on their own. A model reviewing code can find
    problems, but it never decides "pass".
@@ -64,9 +65,9 @@ whoever wrote it.
 The owner gives each session a one-line prompt that names a role and a task:
 
 ```
-You are the BUILDER for task M-04. Open tasks/M-04.md and follow it.
-You are the VERIFIER for task M-04. Open tasks/M-04.md and follow it.
-You are the AUDITOR for Stage 3. Open docs/roles/AUDITOR.md and follow it.
+You are the BUILDER for task MONEY-06. Open tasks/MONEY-06.md and follow it.
+You are the VERIFIER for task MONEY-06. Open tasks/MONEY-06.md and follow it.
+You are the AUDITOR for CHECK-1. Open docs/roles/AUDITOR.md and follow it.
 ```
 
 The task file lists everything to read first. `CLAUDE.md` loads by itself. A
@@ -86,7 +87,7 @@ step 2. No step is skipped.
 
 | # | Step | Who | Done when |
 |---|------|-----|-----------|
-| 1 | **Ticket** | Owner (or lane lead, owner approves) | `tasks/<ID>.md` exists, `python3 scripts/tasks/check_tasks.py` passes, status `ready` |
+| 1 | **Ticket** | Owner, or the feature owner with the owner's approval | `tasks/<ID>.md` exists, `python3 scripts/tasks/check_tasks.py` passes, status `ready` |
 | 2 | **Build** | Builder session, on branch `wmt/<ID>` | Code and tests written inside the ticket's scope. Builder report written into the task file |
 | 3 | **Gates** | Machine | `npm run check` (or the repo's equivalent) exits 0 and no gate count went up (counts recorded before and after) |
 | 4 | **Verify** | Verifier session, fresh, never the builder | Every pass in the ticket's `passes` list is run and reported |
@@ -94,7 +95,7 @@ step 2. No step is skipped.
 | 6 | **Review** | Owner | The owner has looked at the screenshots and the evidence pack in the PR |
 | 7 | **Merge and live check** | Owner, then machine | Deployed to staging; a real login sees a value only the server has; flags widened in steps |
 
-Status values in a task file, in order: `queued` (its stage hasn't started),
+Status values in a task file, in order: `queued` (its day hasn't come),
 `blocked` (needs the named fact), `ready`, `building`, `verifying`, `review`,
 `done`.
 
@@ -133,7 +134,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 |------|--------|-----|
 | **V1 Gates** | No placeholders, fake data, copied components, raw colours, dead buttons, unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
 | **V2 Contract** | The endpoint does what its contract says, including refusing the wrong user | Contract tests from the registry entry, including one input in an unexpected format (a phone written `080...` instead of `+234...`) |
-| **V3 Regression** | Everything live still behaves the same | The protected route suite (task M-01), before and after |
+| **V3 Regression** | Everything live still behaves the same | The protected route suite (task MONEY-01), before and after |
 | **V4 Field trace** | Data one person writes reaches every screen that reads it | For each field: writer, storage, every reader. Data that crosses between users (a creator's price shown to a buyer) is checked on both sides |
 | **V5 Picture** | The screen looks like the design | `python3 scripts/design/render_design.py <ID>` beside a screenshot of the built screen (web export or simulator) at 390 px wide, light and dark |
 | **V6 States** | Every state can actually be reached | Trigger each drawn state, plus loading, empty and error, through its real cause. A capture showing the app's generic error screen is a failed capture |
@@ -141,7 +142,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 | **V8 Money attack** | Money cannot be lost, doubled or stolen | Same request twice (one debit only); double-tap; wrong PIN 5 times (locks); insufficient funds (clear shortfall); webhook replayed (no double credit) and forged (rejected); a failed transfer reverses; ledger equals Fintava balance |
 | **V9 Live seam** | The app really talks to the real backend | On staging: sign in through the real login (no injected token), see a value only the server has, create something and read it back through the API |
 | **V10 Device** | The release build works, not just debug | A signed release build on a real Android phone and a real iPhone: network, camera, push, deep links |
-| **V11 Stage audit** | Nothing was missed across a stage | `docs/roles/AUDITOR.md`, at every stage exit |
+| **V11 Checkpoint audit** | Nothing was missed so far | `docs/roles/AUDITOR.md`, at CHECK-1, CHECK-2 and CHECK-3 |
 
 ### Which passes each task type needs
 
@@ -165,7 +166,7 @@ any of these.
 | `web-port` | V1 V3 V4 V5 V6 V7 V9 |
 
 A mobile screen that takes money also lists V7 and V8. V10 runs once per
-stage on the tester build, and on any task touching permissions, push, the
+checkpoint on the tester build, and on any task touching permissions, push, the
 camera or deep links.
 
 ---
@@ -176,48 +177,54 @@ camera or deep links.
 
 1. **Add.** Only new tables, new nullable columns and new routes. Nothing the
    web uses today is renamed, retyped or widened. V3 proves it.
-2. **Move.** Clients switch one at a time, behind a feature flag (task Y-04).
+2. **Move.** Clients switch one at a time, behind a feature flag (task OPS-06).
    The old way keeps working.
 3. **Remove.** Only after the logs show no calls to the old way for two weeks,
    in a `removal` task.
 
-**Before any money work:** staging exists (task Y-03), feature flags exist
-(task Y-04), and the nightly ledger check against Fintava runs (task M-18).
+**Before any money work:** staging exists (task OPS-03), feature flags exist
+(task OPS-06), and the nightly ledger check against Fintava runs (task MONEY-16).
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.
 
 **Payments move one at a time, safest first:** credits, tips, unlocks, ticks,
 paid DMs, event tickets, bills, legal, school fees. Each one: staging with the
 sandbox, then real money for staff only, then everyone on mobile. The web stays
-on Flutterwave until Stage 9.
+on Flutterwave until after launch.
 
 **People who already have accounts** have no BVN and no wallet. Every money
 screen handles "this user has no wallet yet" and sends them through "open your
-wallet" (task M-12). Test every money flow with an existing-user account, not
+wallet" (task MONEY-13). Test every money flow with an existing-user account, not
 just a new one.
 
 ---
 
-## 7. Stages
+## 7. The week
 
-A stage ends when its exit gate is green, the stage audit (V11) has run, and
-the owner has signed off (tasks `G-0` to `G-9`). Tasks of the next stage stay
-`queued` until then.
+The build is one week. Each task file has a `day`. A day's tasks start when
+their `depends_on` tasks are done, not before. Four checkpoints stop the week
+if something is wrong; each is a task the owner signs (`tasks/CHECK-*.md`).
 
-| Stage | Weeks | What | Exit gate |
-|-------|-------|------|-----------|
-| 0 Safety nets | 1 | Repo, canvas, renderer, gates, CI, protected routes, staging, flags, Fintava sandbox | Every artboard renders with Alan Sans; regression suite green on production code; gates pass in all repos; staging deploys from its own branch |
-| 1 Contracts | 1-2 | Conventions, contract entries for every new endpoint, field trace, D1-D4 ruled | Conflict list empty; contract frozen; every decision for the next two stages has its task |
-| 2 Frame | 2-3 | App shell, design-system components, PIN and pay sheets | Every component compared against its render (V5) in both themes |
-| 3 Screens on today's backend | 3-6 | Feed, explore, profiles, events browse, professionals, settings, sign-in; Shop retired | V9 with the seeded creator; stage audit; first tester build on real phones (V10) |
-| 4 Backend additions, no money | 4-8 | Likes, following, search, profile fields, settings, push, realtime, chat, inbox, schools browse | Regression green after every merge; every new field has writer and reader |
-| 5 Identity and wallets (sandbox) | 5-9 | Fintava connection, BVN sign-up, accounts, PIN, ledger, existing-user wallet | New and existing user each have wallet, PIN and a balance matching Fintava on staging; three clean nightly checks; owner approves staff-live |
-| 6 Payments move | 8-15 | Pay-from-wallet, then each payment path, wallet screens | Per path: one debit under replay, refunds land, ledger matches, a week of staff real-money use with no mismatch |
-| 7 New products | 12-18 | School enrolment, tracked links, ads, TGIF social, receipts, statements, QR, admin screens | V7 on every flow and user type; stage audit |
-| 8 Release | 18-22 | Full audit, release builds on devices, store submission, staged rollout | Every artboard compared or ruled; no open defects; release builds checked on devices |
-| 9 Web follows, Flutterwave goes | 19+ | Web ports, Flutterwave removal, creator balance cutover | No Flutterwave calls in the logs; regression suite rebuilt; final web audit |
+Building happens on Days 0 to 4 only. Days 5 and 6 build nothing new.
 
----
+| Day | What happens | Checkpoint |
+|-----|-------------|------------|
+| 0 | Repo verified (SETUP-01), protected-route suite, staging, rulings D1 to D4, Fintava sandbox | **CHECK-0**: safe to start building |
+| 1 | App shell and session, design-system components, PIN and pay sheets, wallet contract and mock, feature flags | |
+| 2 | Screens on today's backend (feed, explore, profile, create, events, professionals, settings, sign-in) and the backend gaps behind them; Fintava client, webhooks, PIN, ledger | **CHECK-1**: the app talks to the real backend; screens match the design |
+| 3 | More screens and backend gaps; sign-up with BVN; wallets opened; pay-from-wallet core; wallet home | |
+| 4 | Every payment path, one at a time behind flags; send money; bills; events door; inbox money; schools payment; store listings. The heaviest day | **CHECK-2**: money moves correctly (V8 on every path) |
+| 5 | **Verification and QA only.** An independent audit of everything built (CHECK-3) | **CHECK-3**: full QA |
+| 6 | **Fixes from QA only,** each re-verified by a different session; anything still failing goes behind its flag; store submission (RELEASE-02) | |
+| later | After launch: cards, dollar and crypto (D11), ads (D10), higher account tiers, card top-up, statements, receipt sharing, bill reminders, QR, school tracked links, Flutterwave removal, the web port | |
+
+**Each developer owns whole features**: the screens and the backend behind
+them, including that feature's payment path. Dev 1 owns the shared money core
+(Fintava, PIN, ledger, pay-from-wallet) that every payment path calls.
+
+If Fintava sandbox access is not in hand on Day 0, every money task is built
+against the mock (MONEY-03) and stays behind its flag until access arrives. The
+owner records that ruling in CHECK-0.
 
 ## 8. The evidence pack (every pull request)
 

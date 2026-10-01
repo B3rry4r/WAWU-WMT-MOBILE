@@ -1,0 +1,87 @@
+---
+id: AUTH-09
+title: Sign-up: wallet opened, create and confirm PIN
+owner: DEV2
+area: AUTH
+day: 4
+repo: wawu-wmt-mobile
+type: mobile-screen
+status: queued
+blocked_by: ""
+depends_on: [AUTH-06, MONEY-12, MONEY-09, MONEY-02]
+decisions: []
+passes: [V1, V4, V5, V6, V7, V8, V9]
+artboards: [A8, A9, A10]
+---
+# AUTH-09 · Sign-up: wallet opened, create and confirm PIN
+
+## Read first
+
+- `docs/WORKFLOW.md` (the rules every task follows)
+- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
+- `docs/people/DEV2.md` (what you own)
+- The design: `python3 scripts/design/render_design.py A8 A9 A10` then open `build/design_shots/`
+- What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+
+## Goal
+
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 4.
+
+## Scope
+
+New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+## Artboards
+
+| id | screen | what it shows |
+|----|--------|---------------|
+| A8 | Wallet open | 'Your wallet is open' card: Tier 1 · Fintava MFB, account name, account number 812 345 6789 (Copy), Bank Fintava MFB, Limit ₦300,000 balance; links Raise your limits (-> A17) and Create your transaction PIN (-> A9). |
+| A9 | Create PIN | Step 1 of 2: 'Create your transaction PIN. Four digits. It approves every payment and transfer.' Keypad. |
+| A10 | Confirm PIN | Step 2 of 2: 'Enter it again'. Then PIN set: earn -> A11, discover -> A12. |
+
+## Capability checks
+
+- [ ] **A8**: a user can copy account number; tap Raise your limits; tap Create your transaction PIN.
+- [ ] **A9**: a user can enter 4 digits.
+- [ ] **A10**: a user can re-enter 4 digits; mismatch handling (no state drawn).
+- [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
+- [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
+- [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+
+## What the backend serves today (from the analysis)
+
+| artboard | backend | what is missing |
+|----------|---------|-----------------|
+| A8 | partial | Wallet is Flutterwave (payout subaccount at Flutterwave MFB), opened only for accountType=creator; no tier, no limits, no Fintava integration; a 'discover' user gets no wallet. |
+| A9 | missing | No transaction PIN anywhere: no column, no route, no hashing, no lockout. Wallet withdraw (POST /api/hub/wallet/withdraw) approves on bearer token alone. HIGH PRIORITY: every Wallet flow money movement (W11 etc.) depends on this. |
+| A10 | missing | Same as A9. No mismatch state is drawn. |
+
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+
+## Figures on these artboards are not facts
+
+Do not hard-code any of these. Show what the API returns, or leave the figure out and file it.
+
+- A8: 'Tier 1 · Fintava MFB'
+- A8: 'Bank Fintava MFB'
+- A8: 'Limit ₦300,000 balance'
+- A8: sample NUBAN 812 345 6789
+- A9: PIN is 'Four digits'
+- A9: 'It approves every payment and transfer.'
+- A10: 'Four digits'
+
+## Designer notes (⚠, unresolved)
+
+- None.
+
+## Builder report
+
+_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Owner sign-off
+
+_Owner: date, and "screenshots and evidence pack reviewed"._

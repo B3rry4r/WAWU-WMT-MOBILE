@@ -1,0 +1,93 @@
+---
+id: PROS-03
+title: Get listed as a professional
+owner: YOU
+area: PROS
+day: 3
+repo: wawu-wmt-mobile
+type: mobile-screen
+status: queued
+blocked_by: ""
+depends_on: [PROS-02]
+decisions: []
+passes: [V1, V4, V5, V6, V7, V9]
+artboards: [P5, P6, P7, P8, P9, P10]
+---
+# PROS-03 · Get listed as a professional
+
+## Read first
+
+- `docs/WORKFLOW.md` (the rules every task follows)
+- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
+- `docs/people/YOU.md` (what you own)
+- The design: `python3 scripts/design/render_design.py P5 P6 P7 P8 P9 P10` then open `build/design_shots/`
+- What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+
+## Goal
+
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+
+## Scope
+
+New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+## Artboards
+
+| id | screen | what it shows |
+|----|--------|---------------|
+| P5 | Offer your services | Application step 1: 'People find you here and pay to send the first message.' Which fields? (Accounting & Tax, Add), one-line headline, about, what you take on (chips). |
+| P6 | Credentials | Step 2 for a regulated field: 'This field is regulated · We check your licence with the body that issued it.' Kind (Practising licence / Qualification / Work samples), Licence number ICAN/2016/40921, Who issued it ICAN, uploaded ican-licence.pdf, Send for review. |
+| P7 | Under review | 'Under review · Accounting & Tax · A person checks it. You'll see the outcome in your listings.' My listings / Done. |
+| P8 | Your listings | Listings per field: Listed (Hide), Under review, Turned down with reason 'This field needs a practising licence.' + Apply again; Apply in another field; note 'People reach you through paid messages · Set your price and reply time in Inbox settings (I21).' |
+| P9 | Hidden | Listing hidden: 'Hidden. Nobody can find you' with Show. |
+| P10 | Needs a creator account | Gate: 'This needs a creator account · Setting one up is free.' Become a creator. |
+
+## Capability checks
+
+- [ ] **P5**: a user can pick one or more fields; enter headline/about/services; Continue (P6).
+- [ ] **P6**: a user can pick credential kind; enter licence number + issuer; upload document; Send for review (P7).
+- [ ] **P7**: a user can My listings (P8); Done.
+- [ ] **P8**: a user can Hide a listing (P9); Apply again; Apply in another field; go to Inbox settings (I21).
+- [ ] **P9**: a user can Show.
+- [ ] **P10**: a user can Become a creator.
+- [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
+- [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
+- [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states P9, P10.
+
+## What the backend serves today (from the analysis)
+
+| artboard | backend | what is missing |
+|----------|---------|-----------------|
+| P5 | partial | Board lets the user Add several fields in one pass; backend takes one category per application (unique wawuUserId+category), so the client must post once per field. Board fields 'Accounting & Tax', 'Legal & Compliance', 'Design & Creative', 'Technology & IT', 'Engineering', 'Healthcare', 'Business & Consulting' do not match PROFESSIONAL_CATEGORIES slugs (finance, legal_services, entertainment_creative, technology, healthcare, business_entrepreneurship, professional_services …, 25 total); there is no 'engineering' slug. |
+| P6 | served | served |
+| P7 | served | served |
+| P8 | served | served |
+| P9 | served | served |
+| P10 | served | served |
+
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+
+## Figures on these artboards are not facts
+
+Do not hard-code any of these. Show what the API returns, or leave the figure out and file it.
+
+- P5: 'pay to send the first message'
+- P6: 'We check your licence with the body that issued it' (verification claim)
+- P6: Licence number ICAN/2016/40921, issuer ICAN
+- P10: Creator account setup is free
+
+## Designer notes (⚠, unresolved)
+
+- None.
+
+## Builder report
+
+_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Owner sign-off
+
+_Owner: date, and "screenshots and evidence pack reviewed"._

@@ -1,0 +1,86 @@
+---
+id: AUTH-06
+title: Sign-up: confirm details and selfie
+owner: DEV2
+area: AUTH
+day: 3
+repo: wawu-wmt-mobile
+type: mobile-screen
+status: blocked
+blocked_by: "until D1 is ruled in DECISIONS.md"
+depends_on: [AUTH-05, AUTH-08]
+decisions: [D1]
+passes: [V1, V4, V5, V6, V7, V9, V10]
+artboards: [A5, A6, A7, A16]
+---
+# AUTH-06 · Sign-up: confirm details and selfie
+
+## Read first
+
+- `docs/WORKFLOW.md` (the rules every task follows)
+- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
+- `docs/people/DEV2.md` (what you own)
+- `DECISIONS.md`: D1 (open: this task is blocked until they are ruled)
+- The design: `python3 scripts/design/render_design.py A5 A6 A7 A16` then open `build/design_shots/`
+- What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+
+## Goal
+
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 3.
+
+## Scope
+
+New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+## Artboards
+
+| id | screen | what it shows |
+|----|--------|---------------|
+| A5 | Confirm your details | Read-only 'From your BVN' card: Name, Date of birth, Gender, State you live in, Occupation; checkbox 'I agree to the terms and privacy policy'; Continue. |
+| A6 | Selfie | Camera oval: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly' (liveness). |
+| A7 | Matched | Success state: 'Matched to your BVN. Opening your account' (spinner while the wallet is provisioned). |
+| A16 | Face doesn't match | Selfie failure: 'We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.' Try again. |
+
+## Capability checks
+
+- [ ] **A5**: a user can review prefilled details; tick terms/privacy consent; tap Continue (-> A6).
+- [ ] **A6**: a user can position face; blink (liveness); auto-capture.
+- [ ] **A7**: a user can wait.
+- [ ] **A16**: a user can retry.
+- [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
+- [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
+- [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states A7, A16.
+
+## What the backend serves today (from the analysis)
+
+| artboard | backend | what is missing |
+|----------|---------|-----------------|
+| A5 | partial | No dateOfBirth column in WAWU ID or Hub. Occupation is silently dropped today. No BVN source to prefill from. Consent route exists but is not called by any client (grep '/policies' wawuafrica/src -> none). |
+| A6 | missing | No liveness or face-match capability or provider anywhere; no place to store the result. |
+| A7 | missing | No face-match result; account opening at Fintava does not exist (see A8). |
+| A16 | missing | No face match; no retry/lockout policy; no fallback to manual review is drawn. |
+
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+
+## Figures on these artboards are not facts
+
+Do not hard-code any of these. Show what the API returns, or leave the figure out and file it.
+
+- A5: 'From your BVN' includes 'State you live in' and 'Occupation' (claim that a BVN record carries these is unverified)
+- A6: 'It must match your BVN photo'
+
+## Designer notes (⚠, unresolved)
+
+- None.
+
+## Builder report
+
+_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Owner sign-off
+
+_Owner: date, and "screenshots and evidence pack reviewed"._

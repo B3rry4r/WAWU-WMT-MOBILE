@@ -1,0 +1,93 @@
+---
+id: EVENTS-01
+title: Events: list, filters, detail, sold out
+owner: DEV2
+area: EVENTS
+day: 2
+repo: wawu-wmt-mobile
+type: mobile-screen
+status: queued
+blocked_by: ""
+depends_on: [SHELL-01, SHELL-02]
+decisions: []
+passes: [V1, V4, V5, V6, V9]
+artboards: [E1, E2, E8, E9]
+---
+# EVENTS-01 · Events: list, filters, detail, sold out
+
+## Read first
+
+- `docs/WORKFLOW.md` (the rules every task follows)
+- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
+- `docs/people/DEV2.md` (what you own)
+- The design: `python3 scripts/design/render_design.py E1 E2 E8 E9` then open `build/design_shots/`
+- What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+
+## Goal
+
+You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API. Scheduled for Day 2.
+
+## Scope
+
+New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+## Artboards
+
+| id | screen | what it shows |
+|----|--------|---------------|
+| E1 | Events | Events home with Discover / My events / Host event tabs, a FEATURED hero (WAWU Creators Summit, from ₦7,500), a 'This week' list with per-row Going/Going? state and 'from' prices, and a 'Host your event' banner (verified accounts only). |
+| E2 | Event | Event detail: date/time WAT, venue, host (WAWU Africa), Going toggle, ticket tiers with per-tier quantity steppers (Regular ₦7,500 ×1, VIP ₦12,000 ×0, Early bird 'Ended 30 Sep · Sold out'), running total and Get tickets. |
+| E8 | Filters | Filter sheet over E1: 'Browse the calendar' When (Upcoming/Past), Kind (All/Conference/Workshop/Concert/Meetup), Category (Every category), 'Show 24 events'. |
+| E9 | Sold out | Event detail with every tier marked Sold out and 'Every ticket for this event has sold.' |
+
+## Capability checks
+
+- [ ] **E1**: a user can switch tab Discover/My events/Host event; open filter sheet (E8); tap an event (E2); toggle Going on a row; tap Host your event → Start (E13 or E21).
+- [ ] **E2**: a user can toggle Going; set quantity per tier; tap Get tickets (E3).
+- [ ] **E8**: a user can pick when; pick kind; pick category; apply.
+- [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
+- [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
+- [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states E8, E9.
+
+## What the backend serves today (from the analysis)
+
+| artboard | backend | what is missing |
+|----------|---------|-----------------|
+| E1 | served | served |
+| E2 | partial | Board draws a stepper on every tier (a basket). BuyTicketsDto takes a single ticketTypeId; EventOrder has a single ticketTypeId column. Buying Regular + VIP in one payment needs order lines (EventOrderLine or ticketTypeId per EventTicket only) and one wallet debit for the total. |
+| E8 | partial | Board 'Kind' values Conference and Concert are not EventType values (Conference exists only as an EventCategory; Concert exists nowhere). Either remap Kind to EventCategory or extend EventType. |
+| E9 | served | served |
+
+A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, which is also yours unless it says otherwise). Never change the screen to fit the API.
+
+## Figures on these artboards are not facts
+
+Do not hard-code any of these. Show what the API returns, or leave the figure out and file it.
+
+- E1: WAWU Creators Summit from ₦7,500
+- E1: Gospel Night Live from ₦5,000
+- E1: Monetise Your Content Online: Free
+- E1: Aba Fashion Market from ₦3,500
+- E1: Host your event: 'Sell tickets. Verified accounts only.'
+- E2: Regular · General admission ₦7,500
+- E2: VIP · Front rows, lunch ₦12,000
+- E2: Early bird · Ended 30 Sep · Sold out
+- E2: 1 ticket ₦7,500
+- E2: Sun 12 Oct · 10:00 WAT, Eko Convention Centre, Victoria Island
+- E8: Show 24 events
+
+## Designer notes (⚠, unresolved)
+
+- None.
+
+## Builder report
+
+_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Owner sign-off
+
+_Owner: date, and "screenshots and evidence pack reviewed"._

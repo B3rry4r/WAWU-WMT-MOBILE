@@ -16,18 +16,18 @@ Every piece of work is a task file in `tasks/`. To hand one to a developer, or
 to their Claude session, send one line:
 
 ```
-You are the BUILDER for task A-06. Open tasks/A-06.md and follow it.
+You are the BUILDER for task AUTH-01. Open tasks/AUTH-01.md and follow it.
 ```
 
 and later, to a different session:
 
 ```
-You are the VERIFIER for task A-06. Open tasks/A-06.md and follow it.
+You are the VERIFIER for task AUTH-01. Open tasks/AUTH-01.md and follow it.
 ```
 
 The task file lists what to read. `CLAUDE.md` loads by itself.
 
-- `docs/WORKFLOW.md`: the rules, the seven steps of a task, the verification passes, the stages
-- `docs/PLAN.md`: who does what, the timeline, what's needed from Fintava
+- `docs/WORKFLOW.md`: the rules, the seven steps of a task, the verification passes, the week
+- `docs/PLAN.md`: who owns what, the week, what's needed from Fintava
 - `tasks/INDEX.md`: every task by person, with status and what it waits on
 - `DECISIONS.md`: what has been decided and what is still open

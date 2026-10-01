@@ -1,0 +1,49 @@
+---
+id: ADS-04
+title: Serve a sponsored card
+owner: YOU
+area: ADS
+day: later
+repo: wawu-backend
+type: backend-endpoint
+status: blocked
+blocked_by: "until D10 is ruled in DECISIONS.md"
+depends_on: [ADS-03]
+decisions: [D10]
+passes: [V1, V2, V3, V4, V9]
+artboards: []
+---
+# ADS-04 · Serve a sponsored card
+
+## Read first
+
+- `docs/WORKFLOW.md` (the rules every task follows)
+- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: D10 (open: this task is blocked until they are ruled)
+- This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
+
+## Goal
+
+Show at most one live sponsored card for today's placement.
+
+## Scope
+
+GET ads for a placement.
+
+## Capability checks
+
+- [ ] With TGIF on, the card appears in TGIF; with TGIF off, it takes TGIF's place on Today (H36).
+- [ ] With no live campaign, nothing is returned and the screen shows no empty frame.
+
+## Builder report
+
+_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Owner sign-off
+
+_Owner: date, and "screenshots and evidence pack reviewed"._
