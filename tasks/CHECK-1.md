@@ -34,7 +34,7 @@ Dispatch an AUDITOR session over everything marked done so far.
 
 - [ ] A tester signs in against the backend running locally from wawu-backend's `scripts/local/up.sh` (OPS-03) with seeded data, through the web build or an emulator, with the real login, and sees a seeded creator's real content (V9).
 - [ ] Every screen built so far is compared picture against picture in the audit, or listed as not reachable with a reason.
-- [ ] A preview build runs on the owner's Android phone and signs in against the live services (`https://api.wawuafrica.com`, `https://id.wawuafrica.com`), as every tester build does (V10, Android only; R-24, R-25). Phones can't reach the local backend; money paths wait for OPS-10.
+- [ ] A preview build runs on the owner's Android phone and signs in against the live services (`https://api.wawuafrica.com`, `https://id.wawuafrica.com`), as every tester build does (V10, Android only; R-24, R-25). Tester builds are not pointed at the local backend; money paths wait for OPS-10.
 
 ## Builder report
 

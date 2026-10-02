@@ -190,10 +190,10 @@ local `.env` holding the Fintava sandbox keys (wawu-backend `scripts/local/up.sh
 the live server isn't touched. There is no staging and no "test backend" (DECISIONS R-25): production is the
 DigitalOcean droplet, deployed by GitHub Actions. Checks run through the web
 build or an emulator; tester builds on phones talk to the live services
-(phones can't reach a local backend, and there is no tunnel), so money paths
+(tester builds are not pointed at a local backend, and there is no standing tunnel), so money paths
 run on a phone only once OPS-10 has put the live Fintava setup on the
 droplet. Fintava's webhooks can't reach `localhost`: locally they are
-replayed from recorded, signed payloads (MONEY-07). The nightly ledger check
+sent to the local endpoint as payloads built from Fintava's documented format and signed with the local secret (MONEY-07); real payloads are recorded once OPS-10 registers the production webhook URL. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava before OPS-10. The nightly ledger check
 (MONEY-16) runs before money goes live.
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.

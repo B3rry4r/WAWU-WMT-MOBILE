@@ -197,8 +197,8 @@ RELEASE-01). iOS ships when an iPhone tester exists, in one after-launch task, R
 **R-25 · No staging and no test backend.** Every check and verification runs against the backend running locally
 (wawu-backend `scripts/local/up.sh`, OPS-03) with seeded data and the Fintava sandbox, through the web build or an
 emulator. Tester builds on phones talk to the live services, `https://api.wawuafrica.com` and
-`https://id.wawuafrica.com`, as `eas.json` and `src/api/env.ts` do: phones can't reach a local backend, and there
-is no tunnel. Money paths are exercised on a phone only once OPS-10 has put the live Fintava setup on the
+`https://id.wawuafrica.com`, as `eas.json` and `src/api/env.ts` do; tester builds are not pointed at a local backend, and there is no
+standing tunnel. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava before OPS-10. Money paths are exercised on a phone only once OPS-10 has put the live Fintava setup on the
 production droplet (DigitalOcean, deployed by GitHub Actions; secrets in `/etc/wawu/hub-api.env`). Where a check
 used to say "a copy of production", it means the local backend with seeded data.
 
