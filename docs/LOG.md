@@ -91,3 +91,4 @@ Newest first. One line per thing that happened, written when it happens.
 - 2 Oct 2026 · R-37: the app is now Who Made This. New logo (BrandMark, Avatar brand), launcher and adaptive icons, splash, app name; 37 tasks carry R-37; people files notified.
 - 2 Oct 2026 · MONEY-11 wallet balance merged (backend PR #28, ac2a057; mobile money.ts). Balance is Fintava's, never 0 on error; the server boots without Fintava config.
 - 2 Oct 2026 · MONEY-07 Fintava webhooks merged (backend PR #29, 2b407e7): signed, recorded once, never throttled, NUL-safe. G-20 (Flutterwave webhook throttle, trust proxy) is the Lead's follow-up.
+- 2 Oct 2026 · OPS-11 added (G-20): Flutterwave webhook throttle gap and trust proxy behind nginx; live production rate limits.
