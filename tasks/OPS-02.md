@@ -7,7 +7,7 @@ order: 3
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: review
+status: verifying
 depends_on: []
 decisions: []
 passes: []
@@ -47,6 +47,18 @@ Builder, 2 Oct 2026, branch `wmt/OPS-02`. About 100 sandbox calls (`dev.fintavap
 - Gates (`npm run check`): before (clean HEAD copy) typecheck 0 errors, lint clean, tests 4/4, gates 9 run, 5 files scanned, 0 fail/0 warn/0 accepted, task check 187 tasks. After: identical (exit 0; tests 4/4, gates 9 run, 5 scanned, 0/0/0, 187 tasks). Docs-only change, so no count moved.
 - No shared-change requests. Nothing filed in `BACKEND_GAPS.md` (no code changed).
 - Round 2 (verifier findings 1 and 2): wrong key documented as 400 without `live_` and 404 with it (confirmed with two fake keys, both saved in `sandbox/24-`), MONEY-06 told to treat both as auth failure (`naira-api.md`, `sandbox/24-`, `sandbox/README.md`); the 4th phone check (08:31:59, charge row `fc163c4e-...`) and the `Airtel`, `9mobile` and `T2` bundle attempts are now saved (`sandbox/06-`, `20-`, `25-`). Gates unchanged.
+
+### Re-run (merchant active)
+
+Builder, 2 Oct 2026, branch `wmt/OPS-02-rerun`. 86 calls to `dev.fintavapay.com/api/dev` only (09:39 to 09:47 UTC, re-check 10:18), ₦20 spent, 2 test customers.
+- **Blocker resolved:** merchant `active` since 09:22 UTC. **New narrower blocker:** bank sends and airtime, data, electricity purchases answer `400 "Unable to find customers"`, cable `201 "service not currently available"`. Unblocked when a ₦100 `POST /bank/credit/merchant` to `0123456789`/`000013` stops answering that (question 16).
+- Files: all 25 `docs/fintava/sandbox/` files (re-run on top, first run kept under "First run (merchant inactive)"), sandbox `README.md` (results, 9 contradictions, questions 16 to 21), `naira-api.md`, `fees.md`, `limits.md`, `BACKEND_GAPS.md` G-7, `docs/LOG.md`, this file.
+- Check 1 (every PLAN call saved): **partly**. Now run to a result: create customer and reads, BVN check, wallet balance and history, wallet-to-wallet (3 directions, duplicate, insufficient funds), freeze/unfreeze, lookups. Run but refused by Fintava: bank send (success, failure, reversal NOT RUN to a result), all four bill purchases. Webhooks NOT RUN: no public URL and no dashboard access.
+- Check 2 (every question answered or 'unknown'): `naira-api.md` questions 1 and 10 answered, 3, 4 and 6 partly, the rest open with evidence; 16 to 21 added.
+- Check 3 (no secret or real BVN committed): staged diff grepped for the key (`grep -F` and every 8-character window: 0) and for unmasked 11-digit runs (0); admin identity masked; test values last 4 only.
+- Findings that change plans: create opens `TIER_2`, returns 201 and `nin: null`, checks nothing; `/bank/credit` takes `CustomerReference` and refuses a repeat; transfer-response reference names swapped; history lists debits only; frozen wallet blocks both ways; refused bank sends leave `PENDING` records and burn the reference; a 2xx is not proof of payment; a 500 can be transient; airtime minimum ₦100; BVN check ₦5 even on failure; wallet-to-wallet ₦0 in the sandbox (owner: dashboard rates stand).
+- Gates (`npm run check`, exit 0): before (branch from e657ad5) tests 32/32, gates 9 run, 23 files scanned, 0/0/0, 187 tasks; after merging main 39365dc: tests 70/70, gates 9 run, 34 files scanned, 0/0/0, 187 tasks (the increase is main's). Docs only.
+- No shared-change requests. Not verified by me.
 
 ## Verifier report
 

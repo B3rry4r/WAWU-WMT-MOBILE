@@ -115,9 +115,10 @@ transaction ids are listed in `13-` and `14-`.
 ## Contradictions
 
 Results that disagree with `../naira-api.md`, `../fees.md`, `../limits.md`
-or what `DECISIONS.md` assumes. Only `limits.md` was corrected by this run
-(its tier questions); `naira-api.md` and `fees.md` are left as they were,
-and `DECISIONS.md` is the owner's.
+or what `DECISIONS.md` assumes. Each is now corrected where it was wrong:
+`naira-api.md` (3, 4, 6, 7, 9 and the questions), `fees.md` (2), `limits.md`
+(5); 1 was settled by the owner; 8 is filed as `BACKEND_GAPS.md` G-7 for the
+tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
 
 1. **Wallet-to-wallet was free.** `fees.md` lists ₦23.25 below ₦5,000 and
    R-10 has the buyer pay "Fintava's balance-transfer charge" on every
@@ -169,7 +170,8 @@ and `DECISIONS.md` is the owner's.
    wallet refuses incoming transfers too (`15-`), so R-11 ("earnings land
    in the wallet automatically") and R-19 refunds cannot pay into it: that
    money has to wait in WAWU's merchant wallet until the wallet is
-   unfrozen.
+   unfrozen. Filed as `BACKEND_GAPS.md` G-7 (MONEY-18, WALLET-16,
+   SETTINGS-06); no ruling changed.
 9. **A refused bank send can still leave a record.** Nothing in the docs or
    `naira-api.md` says so: a `400 "Unable to find customers"` wrote a
    `PENDING` debit record with our reference, moved no money, and used the
