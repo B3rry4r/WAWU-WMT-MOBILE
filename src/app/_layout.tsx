@@ -13,7 +13,7 @@ const queryClient = new QueryClient();
 
 /**
  * Root of the route graph. Fenced: only a flow-pass task edits routing
- * (docs/WORKFLOW.md, "Shared files"). The tab shell arrives in task A-01.
+ * (docs/WORKFLOW.md, "Shared files"). Cold start opens (tabs), which opens Home.
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
@@ -28,7 +28,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
     </QueryClientProvider>
   );
 }
