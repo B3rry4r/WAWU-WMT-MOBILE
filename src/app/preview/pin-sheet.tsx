@@ -2,7 +2,7 @@ import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { PinSheet, type BiometricResult, type PinCheckResult } from '@/components/pin-sheet';
+import { PinSheet, type BiometricKind, type BiometricResult, type PinCheckResult } from '@/components/pin-sheet';
 import { layout, space, text, useWawu } from '@/theme';
 
 /*
@@ -15,8 +15,10 @@ import { layout, space, text, useWawu } from '@/theme';
  *   tries=<n>       triesLeft on a wrong answer
  *   lockMinutes=<n> lockedUntil is now plus n minutes (locked answer or `opensLocked`)
  *   opensLocked=1   the sheet opens already locked (GET /money/pin lockedUntil)
- *   faceId=1        shows the Face ID key; it answers `approved` on answer=ok,
- *                   never on answer=hold, and `declined` otherwise
+ *   biometric=fingerprint | face
+ *                   shows that biometric key (a browser has none to read); it
+ *                   answers `approved` on answer=ok, never on answer=hold,
+ *                   and `failed` otherwise
  *   forgot=1        shows "Forgot PIN?"
  */
 
@@ -25,7 +27,7 @@ type Params = {
   tries?: string;
   lockMinutes?: string;
   opensLocked?: string;
-  faceId?: string;
+  biometric?: string;
   forgot?: string;
 };
 
@@ -51,8 +53,11 @@ function answerFor(p: Params): Promise<PinCheckResult> {
 
 function biometricAnswerFor(p: Params): Promise<BiometricResult> {
   if (p.answer === 'hold') return never<BiometricResult>();
-  return Promise.resolve({ code: p.answer === 'ok' ? 'approved' : 'declined' });
+  return Promise.resolve(p.answer === 'ok' ? { code: 'approved' } : { code: 'failed' });
 }
+
+const kinds: readonly BiometricKind[] = ['fingerprint', 'face'];
+const kindOf = (p: Params) => kinds.find((k) => k === p.biometric);
 
 export default function PinSheetPreview() {
   const params = useLocalSearchParams<Params>();
@@ -73,7 +78,7 @@ export default function PinSheetPreview() {
         onClose={() => setOpen(false)}
         approval={{ totalKobo: 2_506_500, payee: 'Chidinma Okoro' }}
         onSubmit={() => answerFor(params)}
-        biometric={params.faceId === '1' ? { label: 'Face ID', onPress: () => biometricAnswerFor(params) } : undefined}
+        biometric={kindOf(params) ? { kind: kindOf(params), onPress: () => biometricAnswerFor(params) } : undefined}
         onForgotPin={params.forgot === '1' ? () => setOpen(false) : undefined}
         lockedUntil={lockedUntil}
       />

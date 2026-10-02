@@ -39,13 +39,21 @@ export type PinRefusal =
  */
 export type PinCheckResult = { code: 'approved' } | PinRefusal | { code: 'unanswered' };
 
+/** The biometric the phone approves with (see `biometric.ts`). */
+export type BiometricKind = 'fingerprint' | 'face';
+
 /**
- * What became of a Face ID approval. Face ID approval is MONEY-14's
- * (`X-Device-Approval`, not declared yet). `declined` covers every way it
- * did not approve (cancelled, not recognised, refused): the sheet goes back
- * to the keypad, the fallback W11 draws, with no message.
+ * What became of a biometric approval (fingerprint or face). The server side
+ * is MONEY-14's (`X-Device-Approval`, not declared yet; BACKEND_GAPS G-9).
+ *
+ * - `approved`: the request went through.
+ * - `failed`: not recognised, refused, or it went wrong. The sheet shows
+ *   "<Name> failed. Use your PIN." (owner, 2 Oct 2026) and the keypad. It
+ *   uses up no PIN try: the sheet counts nothing, and the owner's ruling is
+ *   that the server must not either.
+ * - `cancelled`: the person closed the prompt. Back to the keypad, no message.
  */
-export type BiometricResult = { code: 'approved' } | { code: 'declined' };
+export type BiometricResult = { code: 'approved' } | { code: 'failed' } | { code: 'cancelled' };
 
 /**
  * The line under "Enter your PIN". `totalKobo` is the TOTAL the payer pays,
@@ -59,12 +67,15 @@ export type PinApproval =
   | { totalKobo: number; payee: string; purpose?: never }
   | { totalKobo: number; purpose: string; payee?: never };
 
-/** Face ID (or the platform's biometric) standing in for the PIN. */
+/**
+ * The phone's biometric standing in for the PIN. The sheet reads which one the
+ * phone has (`expo-local-authentication`) and shows no key when there is none.
+ */
 export type PinBiometric = {
-  /** What the platform calls it, read by screen readers: "Face ID", "Fingerprint". */
-  label: string;
-  /** Runs the biometric prompt and the approved request. */
-  onPress: () => Promise<BiometricResult>;
+  /** Runs the biometric prompt and the approved request for that kind. */
+  onPress: (kind: BiometricKind) => Promise<BiometricResult>;
+  /** Already known (for example from wallet settings, W35): skips reading the phone. */
+  kind?: BiometricKind;
 };
 
 export type PinSheetProps = {
@@ -76,7 +87,7 @@ export type PinSheetProps = {
   onSubmit: (pin: string) => Promise<PinCheckResult>;
   /** Number of digits. The contract's PIN is 4 digits, `^[0-9]{4}$` (W11, W36). */
   pinLength?: number;
-  /** Shows the Face ID key. Leave out when Face ID is not set up. */
+  /** Offers the biometric key when the phone has one. Leave out when biometric approval is not set up. */
   biometric?: PinBiometric;
   /** Shows "Forgot PIN?" (W11, opens W37). */
   onForgotPin?: () => void;

@@ -1,3 +1,5 @@
+import { formatMoney } from '@/components/Money';
+
 import type { PinApproval } from './types';
 
 const KOBO_PER_NAIRA = 100;
@@ -5,25 +7,17 @@ const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_HOUR = 3600;
 
-function groupThousands(whole: number): string {
-  return String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
 /**
- * Kobo (integer) to naira as the canvas writes it on the PIN sheet:
- * "₦25,065" for whole naira, "₦2,523.25" when there are kobo.
+ * Kobo (R-21) to naira as the PIN sheet writes it, through the shared
+ * formatter: "₦25,065" for whole naira (W11), "₦2,523.25" when there are kobo.
  */
-export function formatNaira(kobo: number): string {
-  const safe = Math.max(0, Math.round(kobo));
-  const naira = Math.floor(safe / KOBO_PER_NAIRA);
-  const rest = safe % KOBO_PER_NAIRA;
-  const whole = `₦${groupThousands(naira)}`;
-  return rest === 0 ? whole : `${whole}.${String(rest).padStart(2, '0')}`;
+export function sheetAmount(kobo: number): string {
+  return formatMoney(kobo, { decimals: Math.round(kobo) % KOBO_PER_NAIRA !== 0 });
 }
 
 /** The line under the title: the total the payer pays, fees included. */
 export function approvalLine(approval: PinApproval): string {
-  const amount = formatNaira(approval.totalKobo);
+  const amount = sheetAmount(approval.totalKobo);
   if (approval.payee !== undefined) return `Approve ${amount} to ${approval.payee}`;
   return `${amount} for ${approval.purpose}`;
 }

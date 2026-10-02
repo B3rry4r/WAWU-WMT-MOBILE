@@ -1,15 +1,18 @@
 import { act, render, screen, userEvent } from '@testing-library/react-native';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { ActivityIndicator, Modal, Platform, Pressable, Text, View } from 'react-native';
 import Svg from 'react-native-svg';
 
 import {
   PinEntry,
   PinSheet,
+  detectBiometric,
+  type BiometricKind,
   type BiometricResult,
   type PinCheckResult,
   type PinSheetProps,
 } from '@/components/pin-sheet';
-import { formatNaira, lockedLine, waitClock } from '@/components/pin-sheet/format';
+import { lockedLine, sheetAmount, waitClock } from '@/components/pin-sheet/format';
 
 /*
  * Nothing here depends on how fast the machine is or how warm Jest's cache is.
@@ -28,15 +31,39 @@ void [ActivityIndicator, Modal, Pressable, Text, View, Svg];
  * of waiting 130 ms each, and the lock countdown is moved by hand.
  */
 
+jest.mock('expo-local-authentication', () => ({
+  AuthenticationType: { FINGERPRINT: 1, FACIAL_RECOGNITION: 2, IRIS: 3 },
+  hasHardwareAsync: jest.fn(),
+  isEnrolledAsync: jest.fn(),
+  supportedAuthenticationTypesAsync: jest.fn(),
+}));
+
+const auth = jest.mocked(LocalAuthentication);
+const { FINGERPRINT, FACIAL_RECOGNITION } = LocalAuthentication.AuthenticationType;
+
+/** What the phone has, as expo-local-authentication reports it. */
+function phone(hardware: boolean, enrolled: boolean, types: LocalAuthentication.AuthenticationType[]) {
+  auth.hasHardwareAsync.mockResolvedValue(hardware);
+  auth.isEnrolledAsync.mockResolvedValue(enrolled);
+  auth.supportedAuthenticationTypesAsync.mockResolvedValue(types);
+}
+
+/** Runs the test as if on `os`. */
+function on(os: 'ios' | 'android') {
+  jest.replaceProperty(Platform, 'OS', os);
+}
+
 const NOW = new Date('2026-10-02T10:00:00Z');
 const MINUTE = 60_000;
 
 beforeEach(() => {
+  jest.clearAllMocks();
   jest.useFakeTimers({ now: NOW });
 });
 
 afterEach(() => {
   jest.useRealTimers();
+  jest.restoreAllMocks();
 });
 
 const press = () => userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
@@ -209,30 +236,6 @@ describe('PinSheet', () => {
     expect(onBusyChange).toHaveBeenCalledTimes(2);
   });
 
-  it('offers Face ID only when it is set up; a decline goes back to the keypad without a message', async () => {
-    const user = press();
-    const view = await render(<PinSheet {...setup()} />);
-    expect(screen.queryByRole('button', { name: 'Use Face ID' })).not.toBeOnTheScreen();
-
-    const onPress = jest.fn(() => Promise.resolve<BiometricResult>({ code: 'declined' }));
-    await view.rerender(<PinSheet {...setup({ biometric: { label: 'Face ID', onPress } })} />);
-    await user.press(screen.getByRole('button', { name: 'Use Face ID' }));
-    await flush();
-    expect(onPress).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('header', { name: 'Enter your PIN' })).toBeOnTheScreen();
-    expect(screen.queryByRole('alert')).not.toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: '1' })).toBeEnabled();
-  });
-
-  it('keeps the keys off once Face ID approves', async () => {
-    const user = press();
-    const onPress = jest.fn(() => Promise.resolve<BiometricResult>({ code: 'approved' }));
-    await render(<PinSheet {...setup({ biometric: { label: 'Face ID', onPress } })} />);
-    await user.press(screen.getByRole('button', { name: 'Use Face ID' }));
-    await flush();
-    expect(screen.getByRole('button', { name: '1' })).toBeDisabled();
-  });
-
   it('lets a user reach Forgot PIN when the payment offers it', async () => {
     const user = press();
     const onForgotPin = jest.fn();
@@ -255,11 +258,122 @@ describe('PinSheet', () => {
   });
 });
 
+describe('PinSheet biometric key (owner, 2 Oct 2026: whatever the phone has)', () => {
+  const approvesWith = (result: BiometricResult) =>
+    jest.fn((_kind: BiometricKind) => Promise.resolve(result));
+
+  it('shows a fingerprint key on an Android phone with a fingerprint reader', async () => {
+    on('android');
+    phone(true, true, [FINGERPRINT]);
+    await render(<PinSheet {...setup({ biometric: { onPress: approvesWith({ code: 'approved' }) } })} />);
+    await flush();
+    expect(screen.getByRole('button', { name: 'Use fingerprint' })).toBeOnTheScreen();
+    expect(screen.getByTestId('icon-Fingerprint', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('shows Face ID on an iPhone with Face ID', async () => {
+    on('ios');
+    phone(true, true, [FACIAL_RECOGNITION]);
+    await render(<PinSheet {...setup({ biometric: { onPress: approvesWith({ code: 'approved' }) } })} />);
+    await flush();
+    expect(screen.getByRole('button', { name: 'Use Face ID' })).toBeOnTheScreen();
+    expect(screen.getByTestId('icon-ScanFace', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('shows face unlock on an Android phone with only a face scanner', async () => {
+    on('android');
+    phone(true, true, [FACIAL_RECOGNITION]);
+    await render(<PinSheet {...setup({ biometric: { onPress: approvesWith({ code: 'approved' }) } })} />);
+    await flush();
+    expect(screen.getByRole('button', { name: 'Use face unlock' })).toBeOnTheScreen();
+    expect(screen.getByTestId('icon-ScanFace', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('prefers the fingerprint on an Android phone with both, and the face on an iPhone', async () => {
+    phone(true, true, [FINGERPRINT, FACIAL_RECOGNITION]);
+    await expect(detectBiometric('android')).resolves.toBe('fingerprint');
+    await expect(detectBiometric('ios')).resolves.toBe('face');
+  });
+
+  it.each([
+    ['no biometric hardware', false, true, [FINGERPRINT]],
+    ['nothing enrolled', true, false, [FINGERPRINT]],
+    ['no fingerprint or face type', true, true, []],
+  ])('shows no biometric key with %s', async (_why, hardware, enrolled, types) => {
+    on('android');
+    phone(hardware as boolean, enrolled as boolean, types as LocalAuthentication.AuthenticationType[]);
+    const onPress = approvesWith({ code: 'approved' });
+    await render(<PinSheet {...setup({ biometric: { onPress } })} />);
+    await flush();
+    expect(screen.queryByRole('button', { name: /^Use / })).not.toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: '1' })).toBeEnabled();
+  });
+
+  it('shows no biometric key when the payment does not offer one, whatever the phone has', async () => {
+    phone(true, true, [FINGERPRINT]);
+    await render(<PinSheet {...setup()} />);
+    await flush();
+    expect(screen.queryByRole('button', { name: /^Use / })).not.toBeOnTheScreen();
+    expect(auth.hasHardwareAsync).not.toHaveBeenCalled();
+  });
+
+  it('tells a user "Fingerprint failed. Use your PIN." and gives the keypad back, using no PIN try', async () => {
+    on('android');
+    phone(true, true, [FINGERPRINT]);
+    const user = press();
+    const onPress = approvesWith({ code: 'failed' });
+    const props = setup({ biometric: { onPress } });
+    await render(<PinSheet {...props} />);
+    await flush();
+
+    await user.press(screen.getByRole('button', { name: 'Use fingerprint' }));
+    await flush();
+    expect(onPress).toHaveBeenCalledWith('fingerprint');
+    expect(screen.getByRole('alert')).toHaveTextContent('Fingerprint failed. Use your PIN.');
+    expect(screen.getByRole('button', { name: '1' })).toBeEnabled();
+    expect(props.onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('tells a user "Face ID failed. Use your PIN." when the approval request itself fails', async () => {
+    on('ios');
+    phone(true, true, [FACIAL_RECOGNITION]);
+    const user = press();
+    const onPress = jest.fn((_kind: BiometricKind) => Promise.reject(new Error('network')));
+    await render(<PinSheet {...setup({ biometric: { onPress } })} />);
+    await flush();
+
+    await user.press(screen.getByRole('button', { name: 'Use Face ID' }));
+    await flush();
+    expect(screen.getByRole('alert')).toHaveTextContent('Face ID failed. Use your PIN.');
+  });
+
+  it('goes back to the keypad without a message when the user cancels the prompt', async () => {
+    const user = press();
+    const onPress = approvesWith({ code: 'cancelled' });
+    await render(<PinSheet {...setup({ biometric: { kind: 'fingerprint', onPress } })} />);
+
+    await user.press(screen.getByRole('button', { name: 'Use fingerprint' }));
+    await flush();
+    expect(screen.queryByRole('alert')).not.toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: '1' })).toBeEnabled();
+    expect(auth.hasHardwareAsync).not.toHaveBeenCalled();
+  });
+
+  it('keeps the keys off once the biometric approves', async () => {
+    const user = press();
+    const onPress = approvesWith({ code: 'approved' });
+    await render(<PinSheet {...setup({ biometric: { kind: 'fingerprint', onPress } })} />);
+    await user.press(screen.getByRole('button', { name: 'Use fingerprint' }));
+    await flush();
+    expect(screen.getByRole('button', { name: '1' })).toBeDisabled();
+  });
+});
+
 describe('PIN sheet copy', () => {
   it('formats kobo as naira the way the canvas writes it', () => {
-    expect(formatNaira(2_506_500)).toBe('₦25,065');
-    expect(formatNaira(252_325)).toBe('₦2,523.25');
-    expect(formatNaira(5)).toBe('₦0.05');
+    expect(sheetAmount(2_506_500)).toBe('₦25,065');
+    expect(sheetAmount(252_325)).toBe('₦2,523.25');
+    expect(sheetAmount(5)).toBe('₦0.05');
   });
 
   it('counts the wait like the canvas clock and rounds seconds up, never to 0:00 while locked', () => {

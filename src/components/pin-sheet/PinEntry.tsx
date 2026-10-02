@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ICON_STROKE, Icon } from '@/components/icon';
-import { font, radius, space, text, useWawu } from '@/theme';
+import { Icon } from '@/components/icon';
+import { font, radius, space, useWawu } from '@/theme';
 
 import { approvalLine, lockedLine, msUntil, wrongPinLine } from './format';
+import { ALERT, DOTS, FORGOT, HEADING, SHEET } from './kit';
 import { Keypad } from './Keypad';
-import type { BiometricResult, PinCheckResult, PinSheetProps } from './types';
+import { biometricFailedLine, biometricLook, useBiometricKind } from './biometric';
+import type { BiometricKind, BiometricResult, PinCheckResult, PinSheetProps } from './types';
 
 /** The transaction PIN is 4 digits (W11 draws four dots; the contract's `^[0-9]{4}$`). */
 export const PIN_LENGTH = 4;
 /** How often the locked countdown refreshes. */
 const TICK_MS = 1000;
-/** The canvas's inline error line (design/_gen/auth.js): CircleAlert 15, danger, stroke 2.2. */
-const ALERT_ICON = { name: 'CircleAlert', size: 15, stroke: ICON_STROKE.button } as const;
+const ALERT_ICON = ALERT.icon;
 const UNANSWERED_LINE = "We couldn't check your PIN. Try again.";
 
 /**
@@ -23,7 +24,7 @@ const UNANSWERED_LINE = "We couldn't check your PIN. Try again.";
  * - locked: keys are off until `until`
  */
 type Phase =
-  | { kind: 'entering'; message?: { tone: 'danger'; text: string } }
+  | { kind: 'entering'; message?: { text: string; wrongPin: boolean } }
   | { kind: 'submitting' }
   | { kind: 'approved' }
   | { kind: 'locked'; until: string };
@@ -98,8 +99,9 @@ export function PinEntry({
     return () => clearInterval(id);
   }, [lockedUntilValue, expired]);
 
-  const say = (line: string) => {
-    setPhase({ kind: 'entering', message: { tone: 'danger', text: line } });
+  /** `wrongPin` also rings the empty dots in danger: only a refused PIN does. */
+  const say = (line: string, wrongPin = false) => {
+    setPhase({ kind: 'entering', message: { text: line, wrongPin } });
     AccessibilityInfo.announceForAccessibility(line);
   };
 
@@ -120,7 +122,7 @@ export function PinEntry({
         setPhase({ kind: 'approved' });
         return;
       case 'pin_incorrect':
-        say(wrongPinLine(result.triesLeft));
+        say(wrongPinLine(result.triesLeft), true);
         return;
       case 'pin_locked': {
         const at = Date.now();
@@ -139,9 +141,11 @@ export function PinEntry({
     }
   };
 
-  const settleBiometric = (result: BiometricResult) => {
+  const settleBiometric = (kind: BiometricKind, result: BiometricResult) => {
     if (!finish()) return;
-    setPhase(result.code === 'approved' ? { kind: 'approved' } : { kind: 'entering' });
+    if (result.code === 'approved') setPhase({ kind: 'approved' });
+    else if (result.code === 'failed') say(biometricFailedLine(kind));
+    else setPhase({ kind: 'entering' });
   };
 
   const start = () => {
@@ -157,10 +161,15 @@ export function PinEntry({
     onSubmit(entered).then(settlePin, () => settlePin({ code: 'unanswered' }));
   };
 
-  const approveWithBiometric = () => {
+  const biometricKind = useBiometricKind(biometric !== undefined, biometric?.kind);
+  const approveWithBiometric = (kind: BiometricKind) => {
     if (!biometric || !start()) return;
-    biometric.onPress().then(settleBiometric, () => settleBiometric({ code: 'declined' }));
+    biometric.onPress(kind).then(
+      (result) => settleBiometric(kind, result),
+      () => settleBiometric(kind, { code: 'failed' }),
+    );
   };
+  const look = biometricKind ? biometricLook(biometricKind) : null;
 
   const keysOff = phase.kind !== 'entering';
 
@@ -180,7 +189,7 @@ export function PinEntry({
   const locked = phase.kind === 'locked';
   const submitting = phase.kind === 'submitting';
   const filled = submitting || phase.kind === 'approved' ? pinLength : pin.length;
-  const missed = phase.kind === 'entering' && phase.message !== undefined && pin.length === 0;
+  const missed = phase.kind === 'entering' && phase.message?.wrongPin === true && pin.length === 0;
   const ring = missed ? colors.danger : colors.borderStrong;
 
   let status: React.ReactNode = null;
@@ -192,9 +201,9 @@ export function PinEntry({
     );
   } else if (phase.kind === 'entering' && phase.message) {
     status = (
-      <View style={styles.alert} accessibilityRole="alert" accessibilityLiveRegion="polite">
+      <View style={styles.alert} accessible accessibilityRole="alert" accessibilityLiveRegion="polite">
         <Icon name={ALERT_ICON.name} size={ALERT_ICON.size} strokeWidth={ALERT_ICON.stroke} color={colors.danger} />
-        <Text style={[text.secondary, font(600), { color: colors.danger }]}>{phase.message.text}</Text>
+        <Text style={[styles.alertText, { color: colors.danger }]}>{phase.message.text}</Text>
       </View>
     );
   }
@@ -202,10 +211,10 @@ export function PinEntry({
   return (
     <View style={styles.body} accessibilityState={{ busy: submitting }}>
       <View style={styles.heading}>
-        <Text accessibilityRole="header" style={[text.h1, styles.center, { color: colors.textPrimary }]}>
+        <Text accessibilityRole="header" style={[styles.title, { color: colors.textPrimary }]}>
           {locked ? 'PIN locked' : 'Enter your PIN'}
         </Text>
-        <Text style={[text.secondary, styles.center, { color: colors.textSecondary }]}>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           {locked ? lockedLine(msUntil(phase.until, now)) : approvalLine(approval)}
         </Text>
       </View>
@@ -222,7 +231,7 @@ export function PinEntry({
               styles.dot,
               i < filled
                 ? { backgroundColor: locked ? colors.textDisabled : colors.textPrimary }
-                : { borderColor: locked ? colors.borderHairline : ring, borderWidth: RING },
+                : { borderColor: locked ? colors.borderHairline : ring, borderWidth: DOTS.ring },
             ]}
           />
         ))}
@@ -235,8 +244,11 @@ export function PinEntry({
         onDigit={onDigit}
         onDelete={onDelete}
         onClear={onClear}
-        biometricLabel={biometric?.label}
-        onBiometric={biometric ? approveWithBiometric : undefined}
+        biometric={
+          biometricKind && look
+            ? { icon: look.icon, label: look.label, onPress: () => approveWithBiometric(biometricKind) }
+            : undefined
+        }
       />
 
       {onForgotPin ? (
@@ -247,7 +259,7 @@ export function PinEntry({
           hitSlop={space.md}
           style={styles.forgot}
         >
-          <Text style={[text.secondary, font(600), styles.center, { color: submitting ? colors.textDisabled : colors.accentFg }]}>
+          <Text style={[styles.forgotText, { color: submitting ? colors.textDisabled : colors.accentFg }]}>
             Forgot PIN?
           </Text>
         </Pressable>
@@ -256,16 +268,29 @@ export function PinEntry({
   );
 }
 
-/** The empty dot's ring on W11 (inset 1.5px). */
-const RING = 1.5;
+const lineHeight = (size: number, leading: number) => Math.round(size * leading);
 
 const styles = StyleSheet.create({
-  body: { gap: space.md },
-  heading: { gap: space.xs },
-  center: { textAlign: 'center' },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: space.lg, paddingVertical: space.sm },
-  dot: { width: space.lg, height: space.lg, borderRadius: radius.chip },
+  body: { gap: SHEET.stack },
+  heading: { gap: HEADING.stack },
+  title: {
+    ...font(700),
+    fontSize: HEADING.titleSize,
+    letterSpacing: HEADING.titleTracking * HEADING.titleSize,
+    lineHeight: lineHeight(HEADING.titleSize, HEADING.titleLeading),
+    textAlign: 'center',
+  },
+  subtitle: {
+    ...font(400),
+    fontSize: HEADING.subtitleSize,
+    lineHeight: lineHeight(HEADING.subtitleSize, HEADING.subtitleLeading),
+    textAlign: 'center',
+  },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: DOTS.apart, paddingVertical: DOTS.padY },
+  dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
   status: { alignItems: 'center' },
-  alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs },
+  alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ALERT.apart },
+  alertText: { ...font(600), fontSize: ALERT.size },
+  forgotText: { ...font(600), fontSize: FORGOT.size, textAlign: 'center' },
   forgot: { alignSelf: 'center' },
 });

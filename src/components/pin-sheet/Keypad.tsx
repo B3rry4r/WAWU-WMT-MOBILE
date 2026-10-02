@@ -1,28 +1,31 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ICON_STROKE, Icon } from '@/components/icon';
-import { font, layout, radius, space, type, useWawu } from '@/theme';
+import { Icon, type IconName } from '@/components/icon';
+import { font, radius, useWawu } from '@/theme';
 
-/** One key row on W11 is 58 high plus a 2 gap: one control height plus space.md. */
-const KEY_PITCH = layout.controlH + space.md;
-/** The keypad's glyphs as the kit draws them (design/_gen/kit.js `keypad`). */
-const FACE_ICON = { name: 'ScanFace', size: 26, stroke: ICON_STROKE.default } as const;
-const DELETE_ICON = { name: 'Delete', size: 24, stroke: ICON_STROKE.default } as const;
+import { KEYPAD } from './kit';
+
+const BIOMETRIC_ICON = KEYPAD.biometric;
+const DELETE_ICON = KEYPAD.delete;
 const ROWS = [
   ['1', '2', '3'],
   ['4', '5', '6'],
   ['7', '8', '9'],
 ] as const;
 
+/*
+ * The keys are keypad cells, not buttons: kit.js `keypad()` draws bare digits
+ * in a grid, never `Btn` or `IconBtn`, so the shared Button and IconButton
+ * (pills and round chips) are not used here.
+ */
 type KeypadProps = {
   /** Keys can't be pressed (submitting, locked, approved). */
   inactive: boolean;
   onDigit: (digit: string) => void;
   onDelete: () => void;
   onClear: () => void;
-  /** Shown bottom left when Face ID is set up; empty otherwise. */
-  biometricLabel?: string;
-  onBiometric?: () => void;
+  /** The biometric key, bottom left, when the phone has one; empty otherwise. */
+  biometric?: { icon: IconName; label: string; onPress: () => void };
 };
 
 type KeyProps = {
@@ -51,7 +54,7 @@ function Key({ label, inactive, onPress, onLongPress, children }: KeyProps) {
   );
 }
 
-export function Keypad({ inactive, onDigit, onDelete, onClear, biometricLabel, onBiometric }: KeypadProps) {
+export function Keypad({ inactive, onDigit, onDelete, onClear, biometric }: KeypadProps) {
   const { colors } = useWawu();
   const ink = inactive ? colors.textDisabled : colors.textPrimary;
   const digit = (d: string) => (
@@ -61,16 +64,16 @@ export function Keypad({ inactive, onDigit, onDelete, onClear, biometricLabel, o
   );
 
   return (
-    <View>
+    <View style={styles.grid}>
       {ROWS.map((row) => (
         <View key={row[0]} style={styles.row}>
           {row.map(digit)}
         </View>
       ))}
       <View style={styles.row}>
-        {biometricLabel && onBiometric ? (
-          <Key label={`Use ${biometricLabel}`} inactive={inactive} onPress={onBiometric}>
-            <Icon name={FACE_ICON.name} size={FACE_ICON.size} strokeWidth={FACE_ICON.stroke} color={ink} />
+        {biometric ? (
+          <Key label={biometric.label} inactive={inactive} onPress={biometric.onPress}>
+            <Icon name={biometric.icon} size={BIOMETRIC_ICON.size} strokeWidth={BIOMETRIC_ICON.stroke} color={ink} />
           </Key>
         ) : (
           <View style={styles.cell} />
@@ -85,19 +88,20 @@ export function Keypad({ inactive, onDigit, onDelete, onClear, biometricLabel, o
 }
 
 const styles = StyleSheet.create({
+  grid: { rowGap: KEYPAD.rowApart },
   row: { flexDirection: 'row' },
-  cell: { flex: 1, height: KEY_PITCH, alignItems: 'center', justifyContent: 'center' },
+  cell: { flex: 1, height: KEYPAD.keyH, alignItems: 'center', justifyContent: 'center' },
   face: {
-    width: KEY_PITCH,
-    height: KEY_PITCH,
+    width: KEYPAD.keyH,
+    height: KEYPAD.keyH,
     borderRadius: radius.chip,
     alignItems: 'center',
     justifyContent: 'center',
   },
   digit: {
     ...font(500),
-    fontSize: type.size.h1,
-    letterSpacing: type.tracking.heading * type.size.h1,
+    fontSize: KEYPAD.digitSize,
+    letterSpacing: KEYPAD.digitTracking * KEYPAD.digitSize,
     fontVariant: ['tabular-nums'],
   },
 });

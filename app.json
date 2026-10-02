@@ -38,7 +38,13 @@
         }
       ],
       "expo-image",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID to approve payments."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

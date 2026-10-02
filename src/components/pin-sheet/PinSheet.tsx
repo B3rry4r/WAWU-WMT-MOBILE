@@ -2,16 +2,11 @@ import { useContext, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
-import { layout, radius, space, useWawu } from '@/theme';
+import { layout, radius, useWawu } from '@/theme';
 
+import { SHEET } from './kit';
 import { PinEntry } from './PinEntry';
 import type { PinSheetProps } from './types';
-
-/** The grab handle on W11: 40 by 5. */
-const HANDLE_W = space.s3xl + space.sm;
-const HANDLE_H = 5;
-/** The sheet's top edge on W11 (inset 0 1px 0 border-hairline). */
-const EDGE = 1;
 
 /**
  * The transaction PIN sheet (W11). Every payment opens this same sheet: send
@@ -27,7 +22,7 @@ const EDGE = 1;
 export function PinSheet({ visible, onClose, ...entry }: PinSheetProps) {
   const { colors } = useWawu();
   const insets = useContext(SafeAreaInsetsContext);
-  const bottom = Math.max(space.s3xl, insets?.bottom ?? 0);
+  const bottom = Math.max(SHEET.padBottom, insets?.bottom ?? 0);
   // While a PIN is being checked the payment is in flight: the sheet stays
   // open so the person sees how it ended.
   const [busy, setBusy] = useState(false);
@@ -75,16 +70,16 @@ const styles = StyleSheet.create({
   panel: {
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
-    borderTopWidth: EDGE,
-    paddingTop: space.sm,
+    borderTopWidth: SHEET.edge,
+    paddingTop: SHEET.padTop,
     paddingHorizontal: layout.gutter,
-    gap: space.md,
+    gap: SHEET.stack,
   },
   handle: {
     alignSelf: 'center',
-    width: HANDLE_W,
-    height: HANDLE_H,
-    borderRadius: radius.chip,
-    marginBottom: space.xs,
+    width: SHEET.handleW,
+    height: SHEET.handleH,
+    borderRadius: SHEET.handleRound,
+    marginBottom: SHEET.handleBelow,
   },
 });
