@@ -7,7 +7,7 @@ order: 6
 priority: launch
 repo: wawuafrica, wawu-backend
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: []
@@ -54,7 +54,41 @@ Fintava's examples put customer accounts at Loma Bank (Iyin Ekiti MFB), not "Fin
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier session, fresh (did not build this task). Branches read: web `wmt/OPS-05` (66c5a33), backend `wmt/OPS-05` (e3e67d4), mobile `wmt/OPS-05` (12eb05a). Gates and the sync script were run in scratch copies (`git archive` of each branch and of origin/main), never in the worktrees.
+
+`passes: []` (type `ops`); the rows below are the task's capability check plus the checks the verifier prompt named.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Diff against the report | passed | Web: `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, nothing else. Backend: `CLAUDE.md` only (new file). Mobile: this task file only. Matches the builder's list |
+| Capability: both files describe Fintava on Loma Bank's licence and mobile-first, with date and ruling id | passed (see finding 3) | Web `CLAUDE.md:74-78`, backend `CLAUDE.md:40-44`: "Wallets run on Fintava, under Loma Bank's licence (R-1, owner, 1 and 2 Oct 2026)", "Iyin Ekiti MFB". Mobile-first: web `CLAUDE.md:8-12`, backend `CLAUDE.md:6-11`, citing DECISIONS "Authority" |
+| Ruling claims match DECISIONS.md | failed (finding 1) | R-1, R-3, R-5, R-6, R-10 (₦40 + ₦25 = ₦65, matches `docs/fintava/fees.md:28`), R-11, R-16, R-19, R-20: ids, dates and wording match. R-7, R-8, R-9 wording matches the ruling but is stated as current web behaviour, which it is not |
+| Nothing outside the rulings changed (web diff read line by line) | passed | Every removed line (custody paragraph, "Never dollars", wallet note, KYC gate, 5-item cap, KYC line) is replaced by a note citing R-1, R-6, R-7, R-8, R-11, R-16 or the Authority section. Added "Current phase" lead and the "mobile-width layout" clarification follow Authority. All other notes byte-identical to origin/main |
+| Agent rules files produced by `scripts/sync-agent-rules.sh` | passed | Re-ran the script on a scratch copy of `wmt/OPS-05`: all four files byte-identical to the committed ones; each equals `CLAUDE.md` except line 1 (`# WAWUAfrica Web — agent rules`, the script's own header). The extra lines in their diff (163 vs 99) are because origin/main's copies were already stale: 84 lines behind origin/main's own `CLAUDE.md` ("No wallet. Ever.", "90/10 for Pro-tier") |
+| No em-dashes in added lines | passed | Added lines with `—`: web `CLAUDE.md` 0, backend 0. The rules files' 5 added `—` lines are pre-existing `CLAUDE.md` lines carried over by the sync (code-rule text and the script's header), not new copy |
+| Web `CLAUDE.md` code boundaries intact | passed | No em-dashes, Tailwind not `style={{}}`, tokens only, `src/lib/api/`, `src/components/ui/` barrel, mocks with SEAM tags, `creatorGates()`, one branch per flow, task-beats-spec: all present and unchanged (`CLAUDE.md:163-183`) |
+| Backend `CLAUDE.md` commands exist | passed | `build`, `start:dev`, `lint` (has `--fix`), `test:contract`, `contract:build` are in `package.json`; `typescript` is a devDependency; `scripts/gates/run.py`, `scripts/gates/check_baseline.py` exist; NestJS 11 / Prisma 7 match `package.json`; `/api/hub` prefix is `src/main.ts:28` |
+| Backend `CLAUDE.md` paths exist | passed, one wrong description (finding 2) | `.pipeline/protected-registry.json`, `.pipeline/REVIEW.md`, `.pipeline/decisions.json` (startedAt 2026-08-22), `contract/openapi.json`, `prisma/schema.prisma`, `src/common`, `src/app.module.ts`, README "Payments" (README:142), `POST /webhooks/flutterwave`, the `.../verify` routes; mobile `docs/fintava/`, `SHARED-CHANGES.md`, `npm run api` (reads `wawu-backend/contract/openapi.json`) |
+| Web gates `python3 scripts/gates/run.py` | passed (no change) | origin/main and branch both: 10 gates, 350 files scanned, 15 fail, 8 warn, 42 accepted, exit 1; outputs identical line for line |
+| Web `node scripts/check-copy.mjs` | passed | "copy rules: clean", exit 0, main and branch |
+| Backend gates `run.py` + `check_baseline.py` | passed (no change) | origin/main and branch both: 9 gates, 523 files scanned, 16 fail, 0 warn, 76 accepted, exit 1; outputs identical; baseline 108 entries, exit 0 both |
+| Mobile gates + `npm run tasks` | passed | main and branch both: 9 gates, 5 files scanned, 0/0/0, exit 0; baseline exit 0; 187 tasks, 280 artboards covered, exit 0 |
+| Typecheck, lint, tests (all three repos) | NOT RUN | No `node_modules` in any worktree; the diff is Markdown only, so none of them reads a changed file |
+
+### Findings
+
+1. **defect** · web `CLAUDE.md:120-131`. The R-7, R-8 and R-9 notes sit under "Product notes" ("These are how the product currently works, so code matches itself", line 56) and state the mobile rulings as how the web works today, with no line saying what the web does until it follows. The builder report says "Each note says what the web does until it follows"; that holds for R-1, R-6/R-11 and KYC, not for these. The caveat at lines 62-64 ("Some of those describe the mobile app first") does not say which. What is false of the web and backend today:
+   - Line 121-122, "With a tick: 25 uploads, 10 GB and more reach. Enforced server-side.": the backend enforces a flat 5 (`wawu-backend/src/common/creator-allowance.ts:25`, `MAX_ITEMS_PER_ACCOUNT = 5`), with no tick tier and no storage limit. "Enforced server-side" is a system claim nothing backs.
+   - Line 123, "Free content is allowed ... ₦0 events": the web refuses ₦0 (`src/lib/api/creator-content.ts:192`, "Set a price above ₦0 before publishing.") and `scripts/check-copy.mjs` bans "free". A web agent reading the note would treat both as bugs.
+   - Lines 127-128, "Profile tabs are Content, Services and About": the web's profile tabs are overview, content, events, services (`src/components/profile/ProfileScreen.tsx:487-491`).
+   - Lines 129-131 drop the still-true "Maximum 5 items per account ... Hard cap, enforced server-side", and the text in quotes there is a paraphrase, not the removed line.
+   Closed when each of these notes says what the web does today (5 items, hard cap; every listing priced; current tabs) until it follows after launch, as the wallet and KYC notes already do.
+2. **defect** · backend `CLAUDE.md:26-28`, "`.pipeline/protected-registry.json` lists the routes the web and dashboard call (frozen 22 Aug 2026)". The file's `consumerApp` is the web only; it holds 129 endpoints and none under `admin/` (it is the "Phase 1" registry, frozen before the admin surface). A backend session would believe the dashboard's routes are covered by it and by V3. They are not yet: MONEY-01 (status `todo`) is the task that makes it cover both. Closed when the line says it lists the web's routes and that MONEY-01 adds the dashboard's.
+3. **unclear** · web `CLAUDE.md:8-12`, backend `CLAUDE.md:8-11`, task Scope ("R-3, DECISIONS authority"). The capability check asks for mobile-first "with the date and the ruling id", but "The mobile app is the product" in `DECISIONS.md` (section "Authority") has neither; R-3 is "The mobile app is Expo". Both files are accurate as written: R-3 sits beside "it is an Expo app", and mobile-first cites the Authority section. The builder report's wording ("'The mobile app is the product' with '(R-3, owner, 1 Oct 2026)'") reads as if R-3 backed mobile-first. Owner: give the Authority statement an id and date, or accept the section citation.
+
+Checked and not a finding: "There is no Shop" (web `CLAUDE.md:126`) matches the web as users see it, since Shop is closed by `SHOP_LIVE = false` (`src/app/(app)/shop/layout.tsx:18`); its code removal on the backend is OPS-08.
+
+Status set back to `building` (findings 1 and 2 open).
 
 ## Owner sign-off
 
