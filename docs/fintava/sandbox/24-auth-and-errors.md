@@ -1,16 +1,78 @@
 # Authentication and error shapes
 
-Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`, 2 Oct 2026.
-Plan item: all calls (error handling for MONEY-06). Result: **ran**.
+Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`. Plan item: all calls (error handling for MONEY-06).
+Re-run 2 Oct 2026, 09:39 to 10:19 UTC, merchant active: **ran**.
+First run 2 Oct 2026, 08:28 to 08:38 UTC, merchant inactive: **ran** (kept below).
 
 Masking: the API key is `Bearer ***`; every 11-digit number (BVN, NIN,
-phone) shows its last 4 digits only; emails show the domain only; the
-merchant administrator's name, address and date of birth, which Fintava
-returns inside transaction records, are masked, and that person's BVN and
-NIN are masked completely. Account numbers are kept: they are sandbox
-account numbers.
+phone) shows its last 4 digits only, including the two test customers'
+test values; emails show the domain only; the merchant administrator's
+name, address and date of birth, which Fintava returns inside transaction
+records, are masked, and that person's BVN and NIN are masked completely.
+Account numbers are kept: they are sandbox account numbers (WAWU's sandbox
+merchant and the two test customers this task created).
 
-## What this tells us
+## Re-run (merchant active)
+
+### What this tells us
+
+- No key: still `401 ["API Key is required"]`.
+- New codes and shapes seen now that calls get past the merchant gate:
+  - **201** for a created customer (`07-`) and for the cable purchase
+    attempt, whose body was `{ status: 200, message: "service not currently
+    available" }` with no `data`: a failure inside a 2xx (`21-`).
+  - **403** with `["This NIN is blacklisted", "please contact support for
+    assistance."]` (`07-`): 403 is not only "merchant inactive".
+  - **404** `["No wallet exists for the customer"]` (`14-`).
+  - **400** business errors: `"Unable to find customers"` (`14-`, `18-` to
+    `20-`), `"customerReference already exists"` and `"CustomerReference
+    Already Exists"` (`13-`, `14-`), `"Insufficient balance on source wallet
+    to complete this transfer."`, `"Kindly confirm both customer accounts
+    are active"` (frozen, `15-`), `"Airtime amount is less than 100"`,
+    `"Invalid BVN or BVN does not exist"`, and a leaked JavaScript error
+    `"Cannot read properties of undefined (reading 'accountName')"` (`03-`).
+  - **500** `["read ECONNRESET"]` on a wallet-to-wallet send that a retry
+    showed was "insufficient balance" (`13-`).
+- So MONEY-06 reads the message as well as the code, takes a 2xx as success
+  only when the body has the expected `data`, and treats a 5xx on a money
+  call as "unknown" until a lookup by our reference settles it.
+- 82 calls in this run between 09:39:45 and 09:47:10 UTC (plus 4 at the
+  re-check):
+  no `x-ratelimit-*` or `retry-after` header, no 429. The headers seen were
+  only `date`, `content-type`, `content-length`, `server`, `nel`,
+  `report-to`, `x-powered-by`, `access-control-allow-origin`,
+  `access-control-allow-methods`, `etag`, `cf-cache-status`, `cf-ray`.
+
+### Requests and responses
+
+#### No Authorization header
+
+Sent 2026-10-02 09:44:28 UTC.
+
+```http
+GET /api/dev/merchant/balance
+Host: dev.fintavapay.com
+Accept: application/json
+```
+
+**Response: HTTP 401**
+
+```json
+{
+  "status": 401,
+  "timestamp": "2026-10-02T09:44:28.386Z",
+  "message": [
+    "API Key is required"
+  ],
+  "path": "/api/dev/merchant/balance"
+}
+```
+
+## First run (merchant inactive)
+
+2 Oct 2026, 08:28 to 08:38 UTC, while WAWU's sandbox merchant was `inactive`. Kept as recorded.
+
+### What this tells us
 
 - **No key: `401 ["API Key is required"]`. A wrong key is 400 or 404,
   depending on its shape**, never the documented 401:
@@ -41,9 +103,9 @@ account numbers.
 - Responses come through Cloudflare from an Express app
   (`x-powered-by: Express`); `access-control-allow-origin: *`.
 
-## Requests and responses
+### Requests and responses
 
-### No Authorization header
+#### No Authorization header
 
 Sent 2026-10-02 08:30:43 UTC.
 
@@ -77,7 +139,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Wrong key without the live_ prefix (08:30)
+#### Wrong key without the live_ prefix (08:30)
 
 Sent 2026-10-02 08:30:43 UTC.
 
@@ -112,7 +174,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Wrong key without the live_ prefix (08:51, confirmation)
+#### Wrong key without the live_ prefix (08:51, confirmation)
 
 Sent 2026-10-02 08:51:41 UTC.
 
@@ -147,7 +209,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Wrong key with the live_ prefix: 404
+#### Wrong key with the live_ prefix: 404
 
 Sent 2026-10-02 08:51:41 UTC.
 
@@ -182,7 +244,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### A validation error (nested shape)
+#### A validation error (nested shape)
 
 Sent 2026-10-02 08:30:05 UTC, answered in 0.28 s.
 
@@ -228,7 +290,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### A business error (flat shape)
+#### A business error (flat shape)
 
 Sent 2026-10-02 08:28:33 UTC, answered in 0.20 s.
 
