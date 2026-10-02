@@ -27,7 +27,7 @@ const boards = fs
   .map((f) => fs.readFileSync(path.join(gen, f), 'utf8'))
   .join('\n');
 const names = new Set();
-for (const hit of boards.matchAll(/['"]([A-Z][A-Za-z0-9]+)['"]/g)) if (canvasIcons[hit[1]]) names.add(hit[1]);
+for (const hit of boards.matchAll(/['"]([A-Z][A-Za-z0-9]*)['"]/g)) if (canvasIcons[hit[1]]) names.add(hit[1]);
 const sorted = [...names].sort();
 const have = sorted.filter((n) => exported.has(n));
 const si = require(path.join(root, 'node_modules/simple-icons'));

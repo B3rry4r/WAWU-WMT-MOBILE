@@ -162,6 +162,7 @@ import {
   Watch,
   Wifi,
   WifiOff,
+  X,
   Zap,
 } from 'lucide-react-native';
 
@@ -328,6 +329,7 @@ export const icons = {
   Watch,
   Wifi,
   WifiOff,
+  X,
   Zap,
 };
 
