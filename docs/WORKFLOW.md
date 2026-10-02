@@ -318,6 +318,14 @@ No evidence pack, no merge. The owner's own tasks are verified the same way.
 
 ## 10. When work stops and goes to the owner
 
+**How it reaches the owner.** Only through the task file on the branch. NOT
+RUN items (with the fact that unblocks each), owner questions and findings
+are written there; the lead reads every branch, does what the lead can do
+(live reachability checks, merges, builds) and puts the rest on the progress
+page under the owner's items. Agents never message the owner, and a
+developer never needs to forward an agent's NOT RUN list: if it is in the
+task file, the lead has it.
+
 **Almost never.** The owner answers money, legal and live-data questions only.
 Everything else is decided by the agent doing the work, using the docs and the
 rulings in DECISIONS.md, and recorded in the task file as

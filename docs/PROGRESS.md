@@ -3,15 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 25 of 177.**
+**Launch tasks done: 26 of 177.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 60 | 49 | 33 | 32 |
+| todo | 60 | 48 | 32 | 32 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
-| done | 16 | 9 | 1 | 0 |
+| review | 0 | 0 | 1 | 0 |
+| done | 16 | 10 | 1 | 0 |
+
+## Built and verified, waiting for the owner's sign-off
+
+- [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 
 ## Being built (or fixing verifier findings)
 
@@ -37,6 +41,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
+- [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
@@ -49,8 +54,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-10](../tasks/MONEY-10.md) The ledger
-- **Developer:** [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content
-- **Developer 2:** [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying
+- **Developer:** [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content
+- **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
 
 ## Latest
@@ -61,6 +66,10 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · OPS-11 · Round 2: the verifier's 2 defects fixed (backend `wmt/OPS-11` 954ef8f, main d27ad37 merged). The rate-limit spec expects KYC-01's `@Throttle` on the BVN check beside admin auth; the Flutterwave burst is timed by arrival at the app (the window the throttler counts), after a warm-up, so receipt writes on a busy machine no longer fail it (10 of 10 under load). `bvnCheckTracker`'s comment updated. Contract 107/107 suites, 2066 passed; protected 253/253; gates as main. Back to verifying.
 - 2 Oct 2026 · OPS-11 · Verified: 2 defects (backend 70db9f0, mobile 2c20e01; main moved to backend d27ad37 and mobile bfdd584 during verification). The trust rule holds through a real nginx (two callers get their own buckets; a forged X-Forwarded-For, through nginx or straight to the port, picks no bucket; every case killed by a mutant), both webhooks take bursts past 20/s and 200/min, every other limit is unchanged, KYC-01's BVN tracker stays correct. Defects: with main merged the branch's own @Throttle list test fails (KYC-01 added one), and the Flutterwave burst test times its cold start and fails under load. Protected 253/253; main's 16 gates; mobile check exits 0. Status building.
 - 2 Oct 2026 · OPS-11 · Rate limits behind nginx built in wawu-backend (`wmt/OPS-11` 70db9f0): the Flutterwave webhook skips every named throttler (30 signed deliveries in a second, 30 x 200; the old bare decorator gives 10 x 429), and `trust proxy` trusts one hop from a loopback peer only (nginx), so each caller has its own 20/s and 200/min and a direct connection's `X-Forwarded-For` is ignored. Port 3001 is closed by ufw per `deploy/provision.sh`; the app still listens on every interface (kept for local Wi-Fi testing). Protected 253/253; the same 16 gates as main. G-20 to verifying. Status verifying.
+- 2 Oct 2026 · AUTH-01 · Fix round 1: dev routes leave for Home or sign in in a release build (F1), tests for the held splash on a slow vault read (F6), keyboard handling and A23 autofocus (F5, F9), gaps G-26 to G-30; verifying.
+- 2 Oct 2026 · AUTH-01 · Sign in, wrong password, forgot password and check your email built (A22 to A25) behind a signed-in/signed-out route guard; wawu-id's reset-link answer now carries the link's real lifetime (additive); 41 tests, 20 revert proofs, real login and reset run on the local stack; verifying.
+- 2 Oct 2026 · INBOX-01 · Round 2: approvals and declines that race now give one outcome and one notification (conditional on the request still pending; parallel tests added); main merged into both branches, gaps renumbered G-31, G-32; contract suite 106 suites, 0 failed. Back to verifying.
+- 2 Oct 2026 · INBOX-01 · Communities backend built (`wmt/INBOX-01`): `GET /communities/mine` with last message and unread, `POST /communities/:id/read`, share links `wawu/c/<slug>` (`GET /communities/:id/link`, `GET /communities/links/:slug`), `POST /communities/rooms` (private needs a cover), and a notification to the requester when a host approves or declines. Two new tables, nothing the web calls changes. G-31, G-32 filed. To verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
 - 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
 - 2 Oct 2026 · INBOX-06 · Verified round 2: no defects (backend 8077ee9, mobile e012709). Chat media is held to 512 MB; the branch includes main `ac2a057` and its migrations apply cleanly on a fresh database; read marks hold for two messages in the same millisecond. Contract 99 suites 1964 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 2 unclear items for the owner (pending upload keys, CHAT-LIMITS). Status review.
@@ -68,7 +77,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · INBOX-06 · Free chat between two users in wawu-backend: new `/chats` routes (open, list, messages with photos, videos and PDFs, read marks, upload links), a block either way refuses opening and sending (403 `chat_blocked`), sent messages show `sent` then `read`. Additive migration, three new tables. To verifying.
 - 2 Oct 2026 · KYC-01 · Verified: PASS, no defects (backend 7a64a51, mobile 5776ac3, checked with backend main 14a7fb2 and mobile main ca6d6cb merged). Full BVN and NIN in 0 of 823 columns and 0 log lines across six real boots; keyed HMAC confirmed; 14 of 14 mutants killed; 10 parallel checks never passed 3; production boots without settings (BVN check 503); protected 253/253; contract 105 suites, 2054 passed. One sandbox BVN lookup (docs example, refused, 422). Merge note: renumber this branch's BACKEND_GAPS G-21 (main now has G-21 to G-24).
 - 2 Oct 2026 · KYC-01 · BVN check served in wawu-backend (`wmt/KYC-01`): `POST /money/identity/bvn` gives A5's prefill once, A14 as `422 bvn_phone_mismatch`, stores only keyed hashes and last 4 digits (log capture and a whole-database scan prove it), 3 checks a day per person plus a per-caller throttle; production boots with no Fintava settings (503). App calls in `src/api/walletIdentity.ts`. Sandbox: 2 lookups, both refused (no sandbox BVN known). Status verifying.
-- 2 Oct 2026 · MONEY-07 · Round 2: the verifier's 2 defects fixed. The webhook skips every named rate limit (`short`, `medium`; a bare `@SkipThrottle()` skipped none), tested through the real global guard (30 deliveries in a second, 30 stored); a delivery with a NUL is stored once (raw body as bytes, NUL as U+FFFD in the parsed copy and the key). Backend and mobile main merged in. G-20 filed (Flutterwave webhook throttle, `trust proxy`). Back to verifying.
-- 2 Oct 2026 · MONEY-07 · Fintava webhooks built in wawu-backend (`wmt/MONEY-07` 9941aa0): `POST /api/hub/webhooks/fintava`, HMAC-SHA512 of the raw body checked in constant time (fails closed), each delivery stored once in `FintavaWebhookEvent` keyed on event, transaction reference and Fintava status (`ON CONFLICT DO NOTHING`), pending for MONEY-10 and MONEY-08; nothing moves money. Tested with documented payloads signed locally (no tunnel, R-25); no secret or personal data in logs. Gap G-19 (which field holds which reference). To verifying.
-- 2 Oct 2026 · MONEY-11 · Verified: PASS, no defects (backend 03a1503, mobile 3d7a04e). Balance equals Fintava after a ₦10 round trip in the sandbox; unreachable, unknown wallet and unconfigured production all answer 503, never 0; contract 89 suites 1852 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 9 suites on :4001 NOT RUN. One unclear item for the owner (the `src/api` fence). Status review.
-- 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
