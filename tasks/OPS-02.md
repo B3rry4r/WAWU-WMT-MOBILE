@@ -7,7 +7,7 @@ order: 3
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: []
@@ -49,7 +49,27 @@ Builder, 2 Oct 2026, branch `wmt/OPS-02`. About 100 sandbox calls (`dev.fintavap
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier, 2 Oct 2026, fresh session, branch `wmt/OPS-02` at 2dac4f7. I did not build any of this. Type `ops`, `passes: []`, so the evidence is the capability checks below plus the gates.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Gates (`npm run check`) | passed | My own run, exit 0: typecheck clean, lint clean, tests 4/4, gates 9 run, **5 files scanned**, 0 fail / 0 warn / 0 accepted, baseline 0, 187 tasks, 280 artboards. Same as the builder's counts. The gates scan source, not `docs/`, so they prove nothing about secrets in the sandbox files; the manual read below does. |
+| Capability 3: no secret or real BVN committed | passed | Whole diff `main...wmt/OPS-02` (6218 lines) and every file on the branch under `docs/` and `tasks/`. API key: every 8-character window of the key compared against the diff and tree, 0 hits; no `live_`, `$2b$`, `jFeVBM`, `eyJ`, JWT, password hash or token. 10+ digit runs: `1102038668` (WAWU's sandbox merchant account, allowed), `1100000000` (made-up receiver), `0123456789` (sandbox stub account), `1212121212` (made-up smartcard), `1111111111111` (made-up meter), `000000000000` (zero UUIDs), and four fragments of bank/bundle UUIDs; **no 11-digit run at all**. Identity: the admin's BVN and NIN are `<masked: a real person ...>`, date of birth and address `***`, phone `*******1201` (last 4), email `***@grr.la`, name `V*** A***` (`sandbox/12-transaction-by-id.md:114-124`, same in `10-merchant-history.md`). Only full DOB / street address in the diff is the made-up create-customer body (`Ada Sandbox`, `1992-10-04`, `1 Test Street`, `sandbox/07-create-customer.md:42-50`). `SIMI MICHELLE` is Fintava's sandbox stub name. Commit message clean. |
+| Capability 1: every PLAN call has a file | NOT RUN to a result (external blocker), recorded correctly | PLAN items 1 to 13 each map to a file. Ran: 01, 02, 03, 05, 06, 08, 09, 10, 11, 12, 16, 17, 20/21 lists, 22, 24, 25. Saved as refused 403 with request and response: 04, 07, 13, 14 (3 attempts), 15, 18, 19, 20/21 purchases. 23 webhooks NOT RUN with reason and steps. Blocker and its unblocking fact are written down (`sandbox/README.md:25-28`: `POST /create/customer` stops answering `403 Merchant is not active`). |
+| Capability 2: every question answered or 'unknown' | passed | Questions 1 to 9 each answered unknown / partly with evidence (`naira-api.md` questions section, `sandbox/README.md:87-116`). Questions 10 to 15 are new questions for Fintava raised by this run, each tied to a file. |
+| Re-run of key facts (my own calls, sandbox host only) | passed | `GET /banks` 200, 358 banks, `090620 LOMA BANK`. `GET /merchant/balance` 200, `Test Account4`, `1102038668`, 49960 / 49960, `"tier": "TIER_3"`. `POST /create/customer` with `{}`: `403 ["Merchant is not active"]`. Two `GET /merchant/balance` calls with obviously fake keys (see defect 1). No money moved. |
+| Claims match saved responses | passed except defect 1 | Sampled 01, 05, 08, 09, 10, 11, 12, 16, 20, 21, 22, 24, 25: bank count and 5 duplicate names, 5 non-6-digit codes; 22 discos, minimums 0/500/900/1000, postpaid present, two Ikeja prepaid codes; selfie 400 in 5.2 to 5.6 s and ₦10; wallet 400 "Wallet not found"; `/txn` 404; reference 404, id 200 `data: null`; bundle counts MTN 53, AIRTEL 38, GLO 55, ETISALAT 14, `9MOBILE` 404; cable GOTV/DSTV, lower case 404; balance shape and `TIER_3`; 8 BVNCHARGE rows, ₦40. |
+
+### Findings
+
+1. **defect: "a wrong key is 400" is only half true.** `docs/fintava/naira-api.md:37`, `docs/fintava/sandbox/24-auth-and-errors.md:15-18` and `:27`, `docs/fintava/sandbox/README.md:62`. The sandbox gives two different answers. A key without the `live_` prefix (`Bearer not-a-real-key`) is `400 ["Invalid API key"]`, as saved. A key **with** the `live_` prefix that Fintava does not recognise is **`404 ["Invalid API Key"]`** (capital K), reproduced 2 Oct 2026 08:48 UTC on `GET /merchant/balance`. A revoked or rotated real key is the second case, so a MONEY-06 client written from these lines would read a dead key as "not found". Fix: save the 404 response in `24-` and say in `naira-api.md` that a bad key is 400 or 404 (match on the message, case-insensitive, not the code).
+2. **defect (minor): one charged call is not saved.** `sandbox/25-compliance-charges.md:33` says 4 phone checks and 2 selfies; the files hold 3 phone checks (`06-phone-check.md:26`, `:62`; `25-compliance-charges.md:84`) and 2 selfies. The eighth ₦5 `BVNCHARGE` row, created 08:32:00.050 (transaction `fc163c4e-...`, the one shown in `12-transaction-by-id.md:70-71`), has no saved request or response. The task asks for one file per call, and this one cost money. Fix: add the call if the builder still has it, or say in `06-` which call it was and that its response was not kept. Smaller gap of the same kind, not counted as a defect: `20-bills-data.md:15-17` says mixed-case `Airtel` and lower-case `9mobile` were tried; neither request is saved.
+3. **note:** `docs/PROGRESS.md` changed but is missing from the builder's file list. It is regenerated by `check_tasks.py --write`, so the change is expected.
+4. **note:** the masking line says the admin's name is masked; the first initials (`V*** A***`) and the phone's last 4 remain. Inside the "last 4 at most" rule, so not a defect.
+
+What I ran: `git diff main...wmt/OPS-02` saved to my scratchpad and scanned (key windows, digit runs, emails, dates, addresses, field names); `git grep` on the branch; read README and sandbox files 05, 07, 10, 12, 13, 22, 23, 24, 25 and the doc diffs; parsed 01, 16, 20, 10 with Python; 3 sandbox calls with the real key (`GET /banks`, `GET /merchant/balance`, `POST /create/customer {}`) and 2 `GET /merchant/balance` with fake keys, all to `https://dev.fintavapay.com/api/dev`; and `npm run check` with a temporary `node_modules` symlink (removed afterwards). One mistake on my side: my first attempt sourced the env file in the shell, which expanded `$` inside the key. That sent a mangled key (404 "Invalid API Key", which is what led to finding 1), and one malformed curl that never reached `/create/customer`. Nothing was written to Fintava and the key was never printed or saved.
+
+Status: back to `building` for findings 1 and 2. The inactive merchant is an external blocker, not a defect.
 
 ## Owner sign-off
 
