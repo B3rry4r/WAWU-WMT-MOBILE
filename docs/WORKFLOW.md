@@ -318,15 +318,35 @@ No evidence pack, no merge. The owner's own tasks are verified the same way.
 
 ## 10. When work stops and goes to the owner
 
-- The design states a fee, limit, rate, legal line or system behaviour the
-  system doesn't match.
-- A task would change something live: a rename, a type change, a widened
-  response, anything in the login path.
-- The regression suite goes red, or any suite is flaky.
-- Any mismatch between our ledger and Fintava, of any size.
-- Something on the web isn't in the design: the app doesn't build it, and the web keeps it until its own
-  port after launch (R-34). Only a web feature holding user money or user data needing migration goes to the
-  owner.
-- A verifier cannot run a required pass (no device, backend not running).
-- A task needs a third fix round.
-- Anyone believes they need a destructive git command or migration.
+**Almost never.** The owner answers money, legal and live-data questions only.
+Everything else is decided by the agent doing the work, using the docs and the
+rulings in DECISIONS.md, and recorded in the task file as
+"Default (agent), owner may override", then the work carries on. A question
+with a sensible default is never a stop.
+
+Stop and ask the owner only when:
+
+- A fee, price, rate, limit or legal line would be invented: the design or
+  docs don't give it and no ruling covers it.
+- Our ledger and Fintava disagree, by any amount.
+- A change would lose or rewrite real user money or real user data (a
+  destructive migration, deleting accounts, moving balances).
+- Anyone believes they need a destructive git command.
+
+Not stops (decide, record, continue):
+
+- **Login path or a live response.** Allowed when the verifier's V3 pass shows
+  existing accounts get byte-identical responses, and any new field is
+  additive. The web keeps working; that is the test.
+- **Provisional numbers** (lock times, resend gaps, rate limits): pick a safe
+  default, mark it `PROVISIONAL(...)` in config, list it in the task file.
+- **Fix rounds.** There is no round limit. A builder fixes until the verifier
+  passes; a defect that keeps coming back means fix the root cause.
+- **A flaky suite.** Fix it (make it deterministic); never skip or retry it
+  to green.
+- **A pass that can't run** (no device, no backend deployed yet): record it
+  NOT RUN with the reason and the fact that unblocks it, and continue.
+- **Copy the design doesn't draw.** Write it in the canvas's tone, no
+  em-dashes, and list it in the task file for the owner to read later.
+- **A gap in another task's area.** File a BACKEND_GAPS or SHARED-CHANGES row
+  naming the task that owns it, and continue.

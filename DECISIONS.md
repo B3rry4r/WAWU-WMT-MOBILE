@@ -243,6 +243,27 @@ follows after launch (Authority, above). This closes D14: OPS-07 lists the 89 fo
 
 **R-35 · The ₦ symbol is drawn by the phone's font,** as the design does (Alan Sans has no ₦). This closes D15.
 
+**R-36 · Sign-up defaults (AUTH-03).** *Lead, 2 Oct 2026. Default until the
+owner rules.*
+- The PIN-style code lockout (900 s) and resend gap (60 s), and the sign-up
+  rate limits per address, per phone and per day, stand as PROVISIONAL
+  config values.
+- Sign-up by phone is Nigerian numbers (+234) only at launch; international
+  numbers come after launch, once text costs abroad are known.
+- Phone codes only sign in an account that was created through the new
+  sign-up; they never give a session to an existing account with a password.
+- A wrong-code counter is never reset by a resend.
+- An unconfirmed sign-up releases its email and phone after 24 hours.
+- New, additive fields on the login response (occupation, account type) are
+  allowed; existing accounts' responses stay identical.
+- The app's sign-up issues a session only after the phone code is confirmed.
+  The web's existing register path is left as it is until the web adapts
+  (CLAUDE.md rule 6).
+- A4's copy uses "your phone number", never "the number on your BVN": there
+  is no BVN at sign-up (R-6).
+- A phone number already on two web accounts is a data gap, not a sign-up
+  defect: BACKEND_GAPS row, owned by AUTH-05.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in

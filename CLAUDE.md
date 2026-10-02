@@ -24,9 +24,11 @@ ask for one; don't pick work yourself.
 5. Checks are written as "a user can ...", never "the screen renders".
 6. The live product keeps working: backend changes are additive until the old
    path has no callers.
-7. The design decides the UI, never the facts. Fees, limits, rates, legal text
-   and system behaviour come from the system or the owner. If the canvas
-   disagrees, stop and report.
+7. The design decides the UI, never the facts. Fees, prices, rates and legal
+   text come from the system, the docs or the owner; never invent one. Any
+   other question with a sensible default is decided, recorded in the task
+   file and the work carries on (`docs/WORKFLOW.md` section 10 lists the few
+   real stops).
 8. Every blocker names the fact that unblocks it. Adding something also
    removes what it replaces.
 9. Report what ran and what didn't. NOT RUN is a valid result; leaving it out
