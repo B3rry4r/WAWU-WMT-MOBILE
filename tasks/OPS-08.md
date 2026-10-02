@@ -7,7 +7,7 @@ order: 37
 priority: launch
 repo: wawu-backend
 type: removal
-status: verifying
+status: review
 depends_on: [MONEY-01]
 decisions: [R-2]
 passes: [V1, V3, V4, V7, V9]
@@ -117,6 +117,28 @@ Verifier session, 2 Oct 2026, fresh (wrote none of this task's code). Backend `w
 NOT RUN: capability check 1 (droplet logs, see check 8 and finding 1); capability check 5 (the first deploy after merge); a browser walk of the web (static check only). V10 is not in `passes`.
 
 Verdict: 2 open defects. Status `building`.
+
+### Verifier report, round 2
+
+Same verifier session, 2 Oct 2026 (wrote none of this task's code). Backend `wmt/OPS-08` at 4f57d62 (on a37e95f, main 5c07568); mobile `wmt/OPS-08` at 1af37b4. Fresh detached worktrees (round 2, round 1 and main), `node_modules` symlinked (lockfiles identical), own databases (`ops08v2_wawu_hub_test`, `v8b_ci{0,1}_protected_test`, dropped afterwards), my own mock WAWU ID on :4611 and the suite's on :4612 (4001 is another session's). Evidence in the verifier scratchpad (`ops08r2/`).
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Defect 2 (hosted link) | fixed | Booted the round 2 build: the owner's pending Shop order (dated 20 days back) gets 410 `{statusCode: 410, message: "Shop has closed. Orders you already paid for are not affected.", data: null, reason: {code: "shop_retired", ...}}`; the owner's paid Shop order 410; another user with the same txRef 404 "No matching payment attempt was found."; unknown txRef 404; no token 401. Flutterwave's `/v3/payments` never called (the fake's log has no `payments` line), and the order stays `pending` with no `paidAt`. An in-flight charge on that order still settles through verify (201 paid). New spec `payment-link-shop.contract.spec.ts` 4/4 on round 2. **Against round 1:** the same spec copied into an a37e95f worktree fails 1 of 4, "Expected: 410, Received: 200" on the owner case; the 404s and the credits control pass there too, as they should. |
+| Defect 1 (dashboard) | fixed (follow-up filed) | SHARED-CHANGES section 3, row "OPS-08 #1", owned by SCHOOLS-05 (DEV3, `todo`) or the owner. Checked against wawu-dashboard origin/main c1dfca6: `src/app/(app)/shop/page.tsx:128` is the button to `/shop/new`; `src/lib/api/admin-shop.ts:114,118` are `createProduct` / `updateProduct` (`adminShopCreate`, `adminShopUpdate`); `/shop/new`, `/shop/[id]` and `src/components/shop/ProductForm.tsx` exist; `src/components/layout/nav.ts:154` is `/shop/orders`. The grep widening covers the admin writes (below). Notes for whoever applies it, not defects here: the button reads "Add a product", not "New product"; `/shop/[id]` is the only product detail page (it renders `ProductForm`), and the list opens it on row click (`shop/page.tsx:89`), so "keep the detail as read-only" means turning that page read-only rather than deleting it; `src/lib/api/index.ts:214-215` re-exports the two functions. |
+| Log grep (all 10 routes) | correct | Ran the exact pipeline on synthetic nginx `combined` lines, plain and gzipped: it reports each of the 10 retired routes from the lock diff (GET /shop/products incl. `?search=`, GET /shop/:slug, GET subcategories, GET/POST cart, PATCH/DELETE cart/:id, POST checkout, POST /admin/shop/products, PUT /admin/shop/products/:id) and drops the routes that stay (/shop/orders, /shop/orders/:id, verify, admin product reads, admin orders, fulfilment), curl user agents and /health. One corner: a product slug starting with `orders` (`GET /api/hub/shop/orders-gift-box`) is also dropped by the `shop/orders` exclusion; `shop/orders(/|\?| )` would be exact. Not a defect. |
+| Copy | passed | Buyer: "Shop has closed. Orders you already paid for are not affected." Admin: "Shop has closed, so products can no longer be added or changed. Orders already paid for can still be read and dispatched." No em-dash in either; the two em-dashes in the branch's added lines are in a code comment (`admin-shop.controller.ts` role matrix). The "purchases" promise is gone (finding 3 of round 1 answered). |
+| No other path to a Shop charge | passed | Outside tests nothing writes a new ShopOrder: the only writes are `shop.service.ts:80` (pending to failed), `:107` (to paid, in verify) and `shop-admin.service.ts:130` (fulfilment). No cart or product writes except verify's stock claim. `initCharge` is called only by verification, credits, service applications, purchases, DMs, content and event tickets; none has a shop purpose. `pendingCharge.create` is DM only, so a Shop txRef cannot reach the hosted link through the PendingCharge branch ahead of the Shop check. |
+| Residual: inline modal on an old checkout response | accepted | Ruling: acceptable under the in-flight default. The modal runs at Flutterwave with a txRef and amount the server issued before the cutover; the server cannot stop it, and once money is taken, refusing verify would leave the buyer charged with no order, which is worse. It is bounded to the payer's own pre-cutover pending orders, settles at the price snapshotted then, and the web has not rendered a checkout since 12 Sep. Cancelling stale pending orders would be a live-data change for the owner, not this task. |
+| V3, CI behaviour (mock on :4612) | passed | `ci-check.sh 5c07568 4f57d62 0`: base checker and lock, 230 of 244, exit 1; the 14 failures are the same Shop entries as round 1 (the 10 relocked plus GET /admin/shop/products/:id, verify, GET /shop/orders/:orderId, fulfilment); `POST /payments/hosted-link` passes. `... 1`: the PR's lock, 244/244, exit 0. Lock diff still exactly the 10 Shop entries, hash `1916cf7aa5b8482d254ff67e6bb1811798d229a7683ac217d77072766fe92321` (no lock, suite or checker file changed since a37e95f). |
+| V1 | passed (same as main) | tsc 0. eslint on the round 2 changed files: `payment-link.controller.ts`, `payment-link.service.ts`, `campaign-destination.ts` give 15 prettier errors, the same set as main; `shop-retired.ts`, the shop spec and the new spec are clean. Gates: 9 run, 544 files scanned (+1, the new spec), 16 fail / 1 warn / 76 accepted, as main. Contract: `contract:emit` + `contract:enrich` reproduce `contract/openapi.json` byte for byte; hosted-link lists 200 and 410. Mobile `npm run check` on 1af37b4: exit 0, 13 suites / 250 tests, gates 9 run, 69 files scanned, 0/0/0, task check passes. |
+| Specs | passed | `shop.contract.spec.ts` 16/16 and `payment-link-shop.contract.spec.ts` 4/4 (20/20), on my own `*_wawu_hub_test` database. Correction to round 1: the shop spec forces any database whose name lacks `wawu_hub_test` back to the shared `wawu_hub_test`, so round 1's 16/16 ran there, not on `v_ops08_contract_test`; this round's ran on my own. |
+
+NOT RUN (recorded default, not defects): the two-week droplet log check (per the coordinator's recorded default it is skipped; the widened grep above is ready if the owner runs it) and the green deploy after merge (runs on the first deploy).
+
+Findings: none open. Round 1's defects 1 and 2 are fixed; finding 3 (unclear) is answered by the new copy, and where a buyer sees a past Shop order stays the owner's call.
+
+Verdict: PASS. Status `review`.
 
 ## Owner sign-off
 
