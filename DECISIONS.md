@@ -168,6 +168,14 @@ Fintava wallet, then on to the payee or back to the payer. It ships like any
 other payment path, under Loma Bank's licence (R-1). Tasks: MONEY-18,
 BILLS-02.
 
+**R-21 · Two or more fee parts get one "Fees" row.** Wherever a payment is
+reviewed, each fee part has its own row (Fintava's charge, WAWU's fee), and
+when there are two or more parts a single "Fees" row adds them up, before
+Total (₦40 + ₦25 shows "Fees ₦65", then "Total ₦25,065"). With one part
+there is no Fees row: that part is the fee. This is how brief rule 3's
+"total fee" is drawn. Owner, 2 Oct 2026, ruling on the MONEY-03 verifier's
+finding 3. Built in the pay sheet (MONEY-03); every fee screen follows it.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in

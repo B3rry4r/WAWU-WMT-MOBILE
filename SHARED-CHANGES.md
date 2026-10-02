@@ -16,14 +16,13 @@ Four queues, because they have different owners and triggers:
 | 3 | SHELL-02 | `docs/BUILDS.md` | Line 90: name `EXPO_PUBLIC_ID_URL` next to `EXPO_PUBLIC_API_URL`. | applied by SHELL-03 |
 | 4 | SHELL-03 | `package.json`, `app.json` | Add `expo-updates` with `npx expo install expo-updates`, then `app.json` gets `runtimeVersion: { "policy": "appVersion" }` and `updates.url` (the owner's EAS project URL). `npx eas-cli update:configure` writes the app.json part. Without it `eas update --channel preview` has nothing to receive it. Also after `eas init`: `owner` and `extra.eas.projectId` in `app.json` (owner runs it, docs/BUILDS.md step 2). | open |
 | 5 | SHELL-03 | `eas.json` | The `.invalid` addresses for `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_ID_URL` in each profile are replaced with the real test and production addresses (owner inputs, docs/BUILDS.md). `EXPO_PUBLIC_ID_URL` is already present in every profile, which covers the request SHELL-02 made. | open |
-| 6 | MONEY-03 | `src/components/TabIcon.tsx` (SHELL-01), or a general `Icon` grown from it | Add the Lucide shapes the pay sheet draws: `circle-check`, `plus`, `wallet`, `clock`, `circle-x` (same paths as H14, H17, H18 on the canvas). The pay sheet draws these from Views today (`src/components/pay-sheet/glyphs.tsx`) because TabIcon's shape list is fenced and was tab-only; once the shapes exist, the pay sheet uses them and `glyphs.tsx` is deleted. | open |
+| 6 | MONEY-03 | `scripts/design/gen_icons.js` (then `npm run icons`) | The name scan `/['"]([A-Z][A-Za-z0-9]+)['"]/g` needs two or more letters, so the canvas's one-letter Lucide name `X` (`I('X', ...)`, 10 calls in `design/_gen/*.js`, e.g. W14's result mark and sheet close buttons) never reaches `icons.generated.ts`. Change `+` to `*` so `X` is generated. The pay sheet does not wait on this: its failed state (not drawn on the canvas) uses `CircleX`. | open |
 
 ## 2. Follow-ups in another task's screen
 
 | # | raised by | target file | change needed, and what forced it | status |
 |---|-----------|-------------|-----------------------------------|--------|
 | 1 | MONEY-03 | `src/components/pay-sheet/PaySheet.tsx` | When UI-02's sheet lands, present the pay sheet in it (scrim, slide, drag to dismiss) and drop the panel's own handle and top corners; when UI-01's buttons, text and money display land, replace the local `PillButton`, the row text styles and `Balance` with them. Built locally only because UI-01 and UI-02 were in progress at the same time (owned by the developer). | open |
-| 2 | MONEY-03 (owner, round 2) | `src/components/pay-sheet/PaySheet.tsx`, when WALLET-02 builds W10 | The sheet follows H14: whole-naira amounts ("₦25,065") and detail rows before the fees. W10 draws Fee and Total with faded kobo ("₦25,065.00") and Note after Total. If WALLET-02 reuses the sheet for the send review, it may need a send variant (a prop for always-kobo amounts and for detail rows after Total); add it then, as a prop, not a fork. | open |
 
 ## 3. Removals (deleting or hiding something)
 

@@ -1,12 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
+import { motion } from '@/theme';
+
 import { PaySheet, type PaySheetProps } from '..';
 
 const charge = { label: "Fintava's charge", amountKobo: 2325 };
 
 function props(overrides: Partial<PaySheetProps> = {}): PaySheetProps {
   return {
-    item: { title: 'How I built a ₦2M a month agency', by: 'Chidi Eze', verified: true, subtitle: 'Video · 18 min' },
+    item: { title: 'How I built a ₦2M a month agency', by: 'Chidi Eze', verified: 'pro', subtitle: 'Video · 18 min' },
     amountKobo: 250000,
     details: [{ label: 'Yours', value: 'Forever, in My purchases' }],
     fees: [charge],
@@ -38,13 +40,14 @@ describe('PaySheet', () => {
   it("shows the seller's verified tick after their name", async () => {
     await render(<PaySheet {...props()} />);
     expect(screen.getByText('Chidi Eze')).toBeTruthy();
-    expect(screen.getByLabelText('Verified')).toBeTruthy();
+    expect(screen.getByTestId('tick-pro')).toBeTruthy();
     expect(screen.getByText('· Video · 18 min')).toBeTruthy();
   });
 
   it('draws no tick for a seller who is not verified', async () => {
     await render(<PaySheet {...props({ item: { title: 'A talk', by: 'Ada', subtitle: 'Audio' } })} />);
-    expect(screen.queryByLabelText('Verified')).toBeNull();
+    expect(screen.queryByTestId('tick-pro')).toBeNull();
+    expect(screen.queryByTestId('tick-creator')).toBeNull();
   });
 
   it('shows a Fees subtotal when the fee has two parts, and none for one part', async () => {
@@ -152,23 +155,65 @@ describe('PaySheet', () => {
     expect(p.onAddMoney).toHaveBeenCalledWith(6500);
   });
 
-  it('says what the other person gets when a send has a set amount', async () => {
-    await render(
-      <PaySheet
-        {...props({
-          amountLabel: 'Amount',
-          amountKobo: 2500000,
-          fees: [
-            { label: "Fintava's charge", amountKobo: 4000 },
-            { label: "WAWU's fee", amountKobo: 2500 },
-          ],
-          recipientGetsKobo: 2500000,
-          actionLabel: 'Send',
-        })}
-      />,
-    );
+  const send = (): Partial<PaySheetProps> => ({
+    variant: 'send',
+    item: { title: 'Chidinma Adaeze Okoro', avatar: { initials: 'CO', hue: 'coral' } },
+    amountKobo: 2500000,
+    details: [
+      { label: 'Bank', value: 'Guaranty Trust Bank' },
+      { label: 'Account', value: '0123456789' },
+    ],
+    fees: [
+      { label: "Fintava's charge", amountKobo: 4000 },
+      { label: "WAWU's fee", amountKobo: 2500 },
+    ],
+    notes: [{ label: 'Note', value: 'Rent contribution' }],
+    recipientGetsKobo: 2500000,
+    actionLabel: 'Send',
+  });
+
+  it('lets a sender review W10: who, how much, what they get, and the total on the button', async () => {
+    const p = props(send());
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('CO')).toBeTruthy();
+    expect(screen.getByText('Sending to Chidinma Adaeze Okoro')).toBeTruthy();
+    expect(screen.getByText('₦25,000.00')).toBeTruthy();
     expect(screen.getByText('They get ₦25,000')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send · ₦25,065' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Send ₦25,065' }));
+    expect(p.onPay).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows every send amount with its kobo faded, as W10 draws it', async () => {
+    await render(<PaySheet {...props(send())} />);
+    for (const whole of ['₦40.00', '₦25.00', '₦65.00', '₦25,065.00']) expect(screen.getByText(whole)).toBeTruthy();
+    const kobo = screen.getAllByText('.00');
+    expect(kobo.length).toBeGreaterThanOrEqual(5);
+    for (const k of kobo) expect(k).toHaveStyle({ opacity: 0.5 });
+  });
+
+  it('puts the Note after Total on a send, as W10 does', async () => {
+    await render(<PaySheet {...props(send())} />);
+    const labels = screen
+      .getAllByText(/^(Bank|Account|Fintava's charge|WAWU's fee|Fees|Total|Note)$/)
+      .map((n) => n.props.children);
+    expect(labels).toEqual(['Bank', 'Account', "Fintava's charge", "WAWU's fee", 'Fees', 'Total', 'Note']);
+    expect(screen.queryByText('Price')).toBeNull();
+  });
+
+  it('clears the double-tap guard when the sheet closes', async () => {
+    const set = jest.spyOn(global, 'setTimeout');
+    const clear = jest.spyOn(global, 'clearTimeout');
+    try {
+      await render(<PaySheet {...props()} />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' }));
+      const guard = set.mock.results[set.mock.calls.findIndex((c) => c[1] === motion.slow)];
+      expect(guard).toBeDefined();
+      await screen.unmount();
+      expect(clear).toHaveBeenCalledWith(guard.value);
+    } finally {
+      set.mockRestore();
+      clear.mockRestore();
+    }
   });
 
   it('hands a user with no wallet to "Open your wallet"', async () => {

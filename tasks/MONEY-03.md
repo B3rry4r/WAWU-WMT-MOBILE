@@ -7,7 +7,7 @@ order: 12
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: review
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -39,7 +39,7 @@ src/components/pay-sheet/ with states: enough, not enough (top-up path), paying,
 ## Builder report
 
 Builder session, 2 Oct 2026, branch `wmt/MONEY-03`, origin/main ab2df44 (SHELL-01) merged in.
-- Files: `src/components/pay-sheet/` (`PaySheet.tsx`, `money.ts`, `glyphs.tsx`, `index.ts`, `__tests__/PaySheet.test.tsx`, `__tests__/money.test.ts`); `src/app/preview/pay-sheet.tsx` (dev-only state gallery, `?state=enough|short|paying|confirming|failed|no-wallet|loading|zero-fee|send`, redirects home when `__DEV__` is false); `SHARED-CHANGES.md` (2 rows).
+- Files: `src/components/pay-sheet/` (`PaySheet.tsx`, `money.ts`, `glyphs.tsx` (deleted in round 3), `index.ts`, `__tests__/PaySheet.test.tsx`, `__tests__/money.test.ts`); `src/app/preview/pay-sheet.tsx` (dev-only state gallery, `?state=enough|short|paying|confirming|failed|no-wallet|loading|zero-fee|send`, redirects home when `__DEV__` is false); `SHARED-CHANGES.md` (2 rows).
 - Props in, UI out: item, price (kobo), detail rows, fee lines (label + kobo, any can be 0), wallet (`loading` / `none` / `open` with Fintava's balance), status (`review` / `paying` / `confirming` / `failed`), callbacks. The total is price + fee lines added in integer kobo inside the sheet, so the Total row, the pay button, "This costs" and the shortfall can't disagree (brief rule 5). Enough vs not enough comes from balance against that total.
 - Check "with too little money, the sheet shows the shortfall and a way to add money": jest `PaySheet.test.tsx` (₦1,200.00 balance against ₦2,523.25 shows "Top up at least ₦1,323.25", the Unlock button is gone, and "Add ₦1,323.25" calls `onAddMoney(132325)`; a bank-send case adds ₦40 + ₦25 to the shortfall). Screenshot `pay-sheet-short-*`.
 - Total = amount + fees in kobo, ₦0 fee included: `money.test.ts` and `PaySheet.test.tsx` (₦0 fee line shows "₦0", Total and button show ₦2,500). Non-integer, negative and unsafe amounts throw.
@@ -49,6 +49,7 @@ Builder session, 2 Oct 2026, branch `wmt/MONEY-03`, origin/main ab2df44 (SHELL-0
 - Gates before: tests 5 passed (2 suites); gates 9 run, 6 files, 0 fail, 0 warn, 0 accepted; tsc and lint clean. After (with main merged): tests 22 passed (5 suites); gates 9 run, 23 files, 0 fail, 0 warn, 0 accepted; tsc and lint clean; `npm run check` exit 0.
 - Shared-change requests: icon shapes added to TabIcon or a general Icon; adopt UI-02's sheet and UI-01's buttons, text and money display once they land. No backend gap: the fee quote and balance are inputs, served by MONEY-core tasks.
 - Round 2 (origin/main e657ad5 merged): defect 1 fixed, `PayItem.by` + `verified` draws the tick after the seller's name (test). Defect 2 fixed, rules, card edges, sheet top edge and Cancel outline are 1 px (`LINE = 1`; no border-width token exists). Owner ruling 3: a "Fees" subtotal row before Total when the fee has two or more parts (₦40 + ₦25 shows Fees ₦65; test). Ruling 4: W10 send variant filed for WALLET-02 (SHARED-CHANGES section 2 row 2). Ruling 5: View icons stay (row 6). Pay ignores a second tap until `status` changes or `onPay`'s promise settles (a short guard for a void callback); 3 tests. The preview drives the tick from the URL (`&tick=off`), not a literal. After: `npm run check` exit 0, jest 6 suites, 54 tests (29 in pay-sheet); gates 9 run, 30 files, 0 fail, 0 warn, 0 accepted; screenshots re-shot in `build/screens/MONEY-03/`.
+- Round 3 (origin/main 5d4208f merged). **Owner overruled two deferrals on 2 Oct 2026**: the View-drawn icons (SHARED-CHANGES section 1 row 6) and leaving W10's send styling to WALLET-02 (section 2 row 2). Both rows are removed and both are built here. Icons: `glyphs.tsx` deleted; the sheet uses `Icon` and `VerifiedTick` from `@/components/icon` with the canvas's names, sizes and strokes (CircleCheck 20/2.2, Wallet 19/2.2, Plus and RotateCcw 19/2.2 in buttons, Clock 32/2.4 as H18; `item.verified` is now `'creator' | 'pro'`). The failed mark (not drawn on the canvas) is `CircleX` because `X` is missing from the generated set; the generator bug is filed as section 1 row 6. W10: `variant: 'send'` renders W10's body (avatar, "Sending to", the amount at 40, then Bank, Account, fee parts, Fees, Total and `notes` after Total; every amount with faded kobo as the kit's `Amt`), "They get" and "Send ₦25,065"; compared with `render_design.py W10` light and dark (`side-W10-send-*`). The 360 ms double-tap timer is cleared on unmount (test). Fees-row ruling recorded as DECISIONS R-21. `npm run check` exit 0: jest 7 suites, 63 tests (25 pay-sheet); gates 9 run, 32 files, 0 fail, 0 warn, 0 accepted.
 
 ## Verifier report
 

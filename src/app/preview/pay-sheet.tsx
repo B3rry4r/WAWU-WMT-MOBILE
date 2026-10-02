@@ -1,13 +1,16 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { PaySheet, type PaySheetProps } from '@/components/pay-sheet';
-import { useWawu } from '@/theme';
+import { font, layout, radius, space, type, useWawu } from '@/theme';
 
 /**
  * Development-only gallery of the pay sheet's states, for screenshots beside
  * the H14, H17 and W10 artboards: /preview/pay-sheet?state=<name>. The seller
- * shows as verified unless the URL adds &tick=off.
+ * carries a professional tick, as H14 draws it; &tick=creator or &tick=off
+ * changes it. The send states draw W10's nav bar above the sheet, as the
+ * WALLET-02 screen will.
  * The amounts are the brief's example values (docs/designer/BRIEF.md), not
  * prices. A release build redirects home.
  */
@@ -43,18 +46,35 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onOpen
     status: { kind: 'review' },
   },
   send: {
-    item: { title: 'Chidinma Adaeze Okoro', subtitle: 'Guaranty Trust Bank · 0123456789' },
-    amountLabel: 'Amount',
+    variant: 'send',
+    item: { title: 'Chidinma Adaeze Okoro', avatar: { initials: 'CO', hue: 'coral' } },
     amountKobo: 2500000,
-    details: [{ label: 'Note', value: 'Rent contribution' }],
+    details: [
+      { label: 'Bank', value: 'Guaranty Trust Bank' },
+      { label: 'Account', value: '0123456789' },
+    ],
+    fees: [
+      { label: "Fintava's charge", amountKobo: 4000 },
+      { label: "WAWU's fee", amountKobo: 2500 },
+    ],
+    notes: [{ label: 'Note', value: 'Rent contribution' }],
+    walletName: 'Naira wallet',
+    actionLabel: 'Send',
+    recipientGetsKobo: 2500000,
+    wallet: open(48525075),
+    status: { kind: 'review' },
+  },
+  'send-short': {
+    variant: 'send',
+    item: { title: 'Chidinma Adaeze Okoro', avatar: { initials: 'CO', hue: 'coral' } },
+    amountKobo: 2500000,
     fees: [
       { label: "Fintava's charge", amountKobo: 4000 },
       { label: "WAWU's fee", amountKobo: 2500 },
     ],
     walletName: 'Naira wallet',
     actionLabel: 'Send',
-    recipientGetsKobo: 2500000,
-    wallet: open(48525075),
+    wallet: open(2500000),
     status: { kind: 'review' },
   },
 };
@@ -67,24 +87,64 @@ export default function PaySheetPreview() {
   const shown = cases[state ?? 'enough'] ?? cases.enough;
   const go = (next: string) => router.setParams({ state: next });
 
+  const tickKind = tick === 'off' ? undefined : tick === 'creator' ? 'creator' : 'pro';
+  const sheet = (
+    <PaySheet
+      {...shown}
+      item={{ ...shown.item, verified: shown.item.by !== undefined ? tickKind : undefined }}
+      onPay={() => go('paying')}
+      onAddMoney={() => go('enough')}
+      onOpenWallet={() => go('enough')}
+      onCancel={() => go('enough')}
+      onRetry={() => go('paying')}
+      onRefresh={() => go('enough')}
+      onContactSupport={() => go('enough')}
+    />
+  );
+
+  if (shown.variant === 'send') {
+    return (
+      <View style={[styles.page, { backgroundColor: colors.surfacePage }]}>
+        <View style={styles.nav}>
+          <View style={[styles.back, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
+            <Icon name="ChevronLeft" size={Math.round(BACK * 0.46)} color={colors.textPrimary} />
+          </View>
+          <Text style={[styles.navTitle, { color: colors.textPrimary }]}>Review</Text>
+          <View style={styles.backSpace} />
+        </View>
+        {sheet}
+      </View>
+    );
+  }
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceScrim }]} />
-      <PaySheet
-        {...shown}
-        item={{ ...shown.item, verified: shown.item.by !== undefined && tick !== 'off' }}
-        onPay={() => go('paying')}
-        onAddMoney={() => go('enough')}
-        onOpenWallet={() => go('enough')}
-        onCancel={() => go('enough')}
-        onRetry={() => go('paying')}
-        onRefresh={() => go('enough')}
-        onContactSupport={() => go('enough')}
-      />
+      {sheet}
     </View>
   );
 }
 
+/** W10's nav: a 42 px back button and the title, 56 px tall (kit `nav`). */
+const BACK = layout.tapMin - space.xs / 2;
+
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
+  page: { flex: 1, paddingTop: layout.tapMin },
+  nav: {
+    height: layout.controlH + space.sm,
+    paddingHorizontal: layout.gutter,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+  },
+  back: {
+    width: BACK,
+    height: BACK,
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backSpace: { width: BACK },
+  navTitle: { ...font(700), flex: 1, textAlign: 'center', fontSize: type.size.h3 + 1, letterSpacing: -0.02 * (type.size.h3 + 1) },
 });
