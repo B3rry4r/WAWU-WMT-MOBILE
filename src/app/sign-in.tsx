@@ -11,6 +11,7 @@ export default function SignInRoute() {
     <SignInScreen
       onSignIn={signIn}
       onForgot={(email) => router.push({ pathname: '/forgot-password', params: email ? { email } : {} })}
+      onCreateAccount={() => router.push('/account-type')}
       onBack={router.canGoBack() ? () => router.back() : undefined}
     />
   );

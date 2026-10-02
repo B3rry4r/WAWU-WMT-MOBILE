@@ -15,8 +15,8 @@ const queryClient = new QueryClient();
 /**
  * Root of the route graph. Fenced: only a flow-pass task edits routing
  * (docs/WORKFLOW.md, "Shared files"). Signed in, cold start opens (tabs), which
- * opens Home. Signed out, the tabs do not exist and the sign-in screens are the
- * only way in; signing in or out swaps one set for the other at once. Nothing
+ * opens Home. Signed out, the tabs do not exist and the signed-out screens (the
+ * welcome screen first, then sign-up and sign-in) are the only way in; signing in or out swaps one set for the other at once. Nothing
  * is drawn until the stored session has been read, so a signed-in user never
  * sees sign-in flash by (AUTH-01, SHARED-CHANGES.md).
  */
@@ -40,6 +40,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="account-type" />
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>

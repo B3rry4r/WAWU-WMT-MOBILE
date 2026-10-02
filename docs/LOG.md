@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · AUTH-02 · Welcome (A1) and why you're here (A2) built, the app opens on A1 signed out, 'New here? Create an account' on A22 opens A2 and A22 gets its Back; gaps G-33, G-34; verifying.
 - 2 Oct 2026 · AUTH-01 · Fix round 1: dev routes leave for Home or sign in in a release build (F1), tests for the held splash on a slow vault read (F6), keyboard handling and A23 autofocus (F5, F9), gaps G-26 to G-30; verifying.
 - 2 Oct 2026 · AUTH-01 · Sign in, wrong password, forgot password and check your email built (A22 to A25) behind a signed-in/signed-out route guard; wawu-id's reset-link answer now carries the link's real lifetime (additive); 41 tests, 20 revert proofs, real login and reset run on the local stack; verifying.
 - 2 Oct 2026 · INBOX-01 · Round 2: approvals and declines that race now give one outcome and one notification (conditional on the request still pending; parallel tests added); main merged into both branches, gaps renumbered G-31, G-32; contract suite 106 suites, 0 failed. Back to verifying.

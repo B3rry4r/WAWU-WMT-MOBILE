@@ -1,8 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ApiError } from '@/api/errors';
+import { AccountTypeScreen } from '@/features/auth/AccountTypeScreen';
+import type { AccountType } from '@/features/auth/accountType';
 import { ForgotPasswordScreen } from '@/features/auth/ForgotPasswordScreen';
 import { SignInScreen } from '@/features/auth/SignInScreen';
+import { WelcomeScreen } from '@/features/auth/WelcomeScreen';
 import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 
 /*
@@ -11,7 +14,11 @@ import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
  * screens run against the real servers at /sign-in and /forgot-password; this
  * route answers in their place, so a state can be shown without a server.
  *
- *   screen=sign-in | forgot | sent        A22 and A25, A23, A24 (default sign-in)
+ *   screen=welcome | account-type | sign-in | forgot | sent
+ *                                         A1, A2, A22 and A25, A23, A24 (default sign-in)
+ *   pick=discover | earn                  A2: which card is picked (none when left out)
+ *   continue=1                            A2: draw the Continue button (the app draws it
+ *                                         once AUTH-04 adds A3; here it opens nothing)
  *   email=<text>                          what the Email field holds
  *   password=<text>                       what the Password field holds (sign-in)
  *   answer=wrong | unconfirmed | offline | busy | server | hold | ok
@@ -21,7 +28,7 @@ import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
  *                                         (leave out for a server that sends none)
  */
 
-type Params = { screen?: string; email?: string; password?: string; answer?: string; expires?: string };
+type Params = { screen?: string; pick?: string; continue?: string; email?: string; password?: string; answer?: string; expires?: string };
 
 const never = <T,>() => new Promise<T>(() => undefined);
 
@@ -55,6 +62,18 @@ export default function AuthPreviewRoute() {
   const expires = p.expires ? Number(p.expires) : null;
   const email = p.email ?? '';
 
+  if (p.screen === 'welcome') {
+    return (
+      <WelcomeScreen
+        onCreateAccount={() => router.push({ pathname: '/preview/auth', params: { screen: 'account-type' } })}
+        onSignIn={() => router.push({ pathname: '/preview/auth', params: { screen: 'sign-in' } })}
+      />
+    );
+  }
+  if (p.screen === 'account-type') {
+    const pick: AccountType | undefined = p.pick === 'discover' || p.pick === 'earn' ? p.pick : undefined;
+    return <AccountTypeScreen initialPick={pick} onContinue={p.continue ? () => undefined : undefined} onBack={() => router.back()} />;
+  }
   if (p.screen === 'forgot' || p.screen === 'sent') {
     return (
       <ForgotPasswordScreen
@@ -70,6 +89,7 @@ export default function AuthPreviewRoute() {
       initialEmail={email}
       initialPassword={p.password ?? ''}
       onSignIn={answer}
+      onCreateAccount={() => router.push({ pathname: '/preview/auth', params: { screen: 'account-type' } })}
       onForgot={(typed) => router.push({ pathname: '/preview/auth', params: { screen: 'forgot', email: typed } })}
       onBack={() => router.back()}
     />

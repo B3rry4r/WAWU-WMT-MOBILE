@@ -5,6 +5,8 @@ import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testi
 import RootLayout from '@/app/_layout';
 import ForgotPasswordRoute from '@/app/forgot-password';
 import SignInRoute from '@/app/sign-in';
+import WelcomeRoute from '@/app/welcome';
+import AccountTypeRoute from '@/app/account-type';
 import TabsLayout from '@/app/(tabs)/_layout';
 import Home from '@/app/(tabs)/index';
 import Explore from '@/app/(tabs)/explore';
@@ -29,6 +31,8 @@ jest.mock('expo-secure-store', () => ({
 
 const routes = {
   _layout: RootLayout,
+  welcome: WelcomeRoute,
+  'account-type': AccountTypeRoute,
   'sign-in': SignInRoute,
   'forgot-password': ForgotPasswordRoute,
   '(tabs)/_layout': TabsLayout,
@@ -93,10 +97,10 @@ beforeEach(() => {
 });
 
 describe('signed out, cold start', () => {
-  it('a user who is not signed in lands on sign in, never on Home', async () => {
+  it('a user who is not signed in lands on the welcome screen, never on Home or sign in', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
-    expect(screen.getByText('Sign in with your email.')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    expect(screen.queryByText('Welcome back')).toBeNull();
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
   });
@@ -117,12 +121,12 @@ describe('signed out, cold start', () => {
     await act(async () => {
       await signOut();
     });
-    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
     expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
   });
 
   it('has no back button on sign in when there is no screen behind it', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
@@ -130,7 +134,7 @@ describe('signed out, cold start', () => {
 
 describe('A22: sign in', () => {
   it('a user can enter email and password, sign in, and land on Home', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('  lennox@wawu.africa ', 'a-long-password');
     await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
@@ -141,7 +145,7 @@ describe('A22: sign in', () => {
   });
 
   it('a user can sign in by pressing enter on the password', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-in-password'), 'a-long-password');
@@ -151,7 +155,7 @@ describe('A22: sign in', () => {
   });
 
   it('a user can sign in with the phone number they signed up with, sent exactly as typed', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('08031234412', 'a-long-password');
     await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
@@ -159,7 +163,7 @@ describe('A22: sign in', () => {
   });
 
   it('a user can tap Forgot password? and reach A23, with the email already typed', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
     await fireEvent.press(screen.getByRole('link', { name: 'Forgot password?' }));
@@ -169,7 +173,7 @@ describe('A22: sign in', () => {
   });
 
   it('a user who leaves a field empty is told which, and nothing is sent', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     expect(screen.getByText('Enter your email.')).toBeTruthy();
@@ -179,7 +183,7 @@ describe('A22: sign in', () => {
 
   it('a user who taps Sign in twice sends one request', async () => {
     answers['/auth/login'] = 'hold';
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-in-password'), 'a-long-password');
@@ -197,7 +201,7 @@ describe('A22: sign in', () => {
 describe('A25: sign in refused', () => {
   it('a user with a wrong password sees A25, keeps what they typed, and stays signed out', async () => {
     answers['/auth/login'] = wrongPassword;
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('lennox@wawu.africa', 'not-the-password');
     await waitFor(() => expect(screen.getByText(A25_TITLE)).toBeTruthy());
@@ -215,7 +219,7 @@ describe('A25: sign in refused', () => {
 
   it('a user with an email nobody has gets the same message as a wrong password', async () => {
     answers['/auth/login'] = unknownEmail;
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('nobody@wawu.africa', 'whatever-it-is');
     await waitFor(() => expect(screen.getByText(A25_TITLE)).toBeTruthy());
@@ -225,7 +229,7 @@ describe('A25: sign in refused', () => {
 
   it('a user can retry from A25 and get in', async () => {
     answers['/auth/login'] = wrongPassword;
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('lennox@wawu.africa', 'typo-password');
     await waitFor(() => expect(screen.getByText(A25_TITLE)).toBeTruthy());
@@ -239,7 +243,7 @@ describe('A25: sign in refused', () => {
 
   it('a user can reach reset from A25 and the address they typed comes with them', async () => {
     answers['/auth/login'] = wrongPassword;
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('lennox@wawu.africa', 'typo-password');
     await waitFor(() => expect(screen.getByText(A25_TITLE)).toBeTruthy());
@@ -260,7 +264,7 @@ describe('sign in refused for other real causes', () => {
 
   it.each(cases)('a user is told the real cause: %s, never A25', async (_name, answer, title, body) => {
     answers['/auth/login'] = answer;
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await signInWith('lennox@wawu.africa', 'a-long-password');
     await waitFor(() => expect(screen.getByText(title)).toBeTruthy());
@@ -273,7 +277,7 @@ describe('sign in refused for other real causes', () => {
 
 describe('A23 and A24: reset link', () => {
   async function openForgot(typed = '') {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     if (typed) await fireEvent.changeText(screen.getByTestId('sign-in-email'), typed);
     await fireEvent.press(screen.getByRole('link', { name: 'Forgot password?' }));

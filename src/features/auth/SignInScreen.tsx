@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
-import { layout, space } from '@/theme';
+import { font, layout, space } from '@/theme';
 
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
@@ -23,6 +23,8 @@ export type SignInScreenProps = {
   onSignIn: (identifier: string, password: string) => Promise<void>;
   /** Opens A23, handing over what was typed in Email. */
   onForgot: (typedEmail: string) => void;
+  /** 'New here? Create an account': opens A2. Absent in a preview with nothing to open. */
+  onCreateAccount?: () => void;
   /** The round back button. Absent when there is no screen behind this one. */
   onBack?: () => void;
   /** What the fields start with (a preview, never the app). */
@@ -39,7 +41,7 @@ type Missing = { email?: string; password?: string };
  * the cause. A successful one changes the session; the route graph then moves
  * the user to Home, so this screen navigates nowhere itself.
  */
-export function SignInScreen({ onSignIn, onForgot, onBack, initialEmail = '', initialPassword = '' }: SignInScreenProps) {
+export function SignInScreen({ onSignIn, onForgot, onCreateAccount, onBack, initialEmail = '', initialPassword = '' }: SignInScreenProps) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState(initialPassword);
   const [busy, setBusy] = useState(false);
@@ -85,7 +87,28 @@ export function SignInScreen({ onSignIn, onForgot, onBack, initialEmail = '', in
       testID="sign-in"
       scrollRef={scrollRef}
       onBack={onBack}
-      footer={<Button label="Sign in" full loading={busy} onPress={() => void submit()} testID="sign-in-submit" />}
+      footer={
+        <>
+          <Button label="Sign in" full loading={busy} onPress={() => void submit()} testID="sign-in-submit" />
+          {onCreateAccount ? (
+            <Pressable
+              testID="sign-in-create"
+              accessibilityRole="link"
+              accessibilityLabel="Create an account"
+              hitSlop={layout.tapMin / 4}
+              onPress={onCreateAccount}
+              style={styles.create}
+            >
+              <Text variant="kvLabel">
+                {'New here? '}
+                <Text variant="kvLabel" tone="accentFg" style={font(700)}>
+                  Create an account
+                </Text>
+              </Text>
+            </Pressable>
+          ) : null}
+        </>
+      }
     >
       <View style={styles.body}>
         <View style={styles.titleBlock}>
@@ -150,4 +173,5 @@ const styles = StyleSheet.create({
   body: { gap: BODY_GAP },
   titleBlock: { gap: TITLE_GAP, paddingTop: TITLE_TOP },
   forgot: { alignSelf: 'flex-end' },
+  create: { alignSelf: 'center' },
 });
