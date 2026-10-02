@@ -3,19 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 23 of 177.**
+**Launch tasks done: 24 of 177.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 62 | 49 | 33 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 1 | 0 | 0 |
-| done | 15 | 8 | 1 | 0 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
+| review | 0 | 0 | 0 | 0 |
+| done | 15 | 9 | 1 | 0 |
 
 ## Done
 
@@ -36,6 +32,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
+- [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)

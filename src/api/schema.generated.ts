@@ -3815,6 +3815,12 @@ export interface components {
             refunds?: boolean;
             promotions?: boolean;
             communityDigest?: boolean;
+            /** @description Tips and sales (SETTINGS-07). Optional; absent leaves it as it is. */
+            moneyIn?: boolean;
+            /** @description An upload approved or sent back (SETTINGS-07). Optional; absent leaves it as it is. */
+            contentReviews?: boolean;
+            /** @description Community messages (SETTINGS-07). Optional; absent leaves it as it is. Stored only: nothing sends that kind yet. */
+            communityMessages?: boolean;
         };
         UpdatePrivacySettingsDto: {
             showPurchases?: boolean;
@@ -5646,6 +5652,18 @@ export interface components {
             freeCoursesTotal: number;
             freeCoursesUsed: number;
             enrolledCourseIds: string[];
+        };
+        NotificationSettingsWire: {
+            userWawuId: string;
+            newReplies: boolean;
+            newFollowers: boolean;
+            dmReminders: boolean;
+            refunds: boolean;
+            promotions: boolean;
+            communityDigest: boolean;
+            moneyIn?: boolean | null;
+            contentReviews?: boolean | null;
+            communityMessages?: boolean | null;
         };
         ProfileExperienceView: {
             id: string;
@@ -10456,15 +10474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        userWawuId: string;
-                        newReplies: boolean;
-                        newFollowers: boolean;
-                        dmReminders: boolean;
-                        refunds: boolean;
-                        promotions: boolean;
-                        communityDigest: boolean;
-                    };
+                    "application/json": components["schemas"]["NotificationSettingsWire"];
                 };
             };
         };
@@ -10487,15 +10497,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        userWawuId: string;
-                        newReplies: boolean;
-                        newFollowers: boolean;
-                        dmReminders: boolean;
-                        refunds: boolean;
-                        promotions: boolean;
-                        communityDigest: boolean;
-                    };
+                    "application/json": components["schemas"]["NotificationSettingsWire"];
                 };
             };
         };
