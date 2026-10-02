@@ -3,7 +3,7 @@ id: HOME-10
 title: TGIF reactions, readers and shares
 owner: DEV
 area: HOME
-order: 146
+order: 147
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

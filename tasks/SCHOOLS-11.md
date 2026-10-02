@@ -3,7 +3,7 @@ id: SCHOOLS-11
 title: Pay schools their share of course fees
 owner: DEV3
 area: SCHOOLS
-order: 141
+order: 142
 priority: launch
 repo: wawu-backend
 type: money-path

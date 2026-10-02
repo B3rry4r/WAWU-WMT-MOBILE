@@ -3,7 +3,7 @@ id: SETTINGS-04
 title: Data export and blocking that actually hides people
 owner: DEV
 area: SETTINGS
-order: 84
+order: 85
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

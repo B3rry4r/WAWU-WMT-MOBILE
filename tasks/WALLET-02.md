@@ -3,7 +3,7 @@ id: WALLET-02
 title: Send to a WAWU user
 owner: YOU
 area: WALLET
-order: 135
+order: 136
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

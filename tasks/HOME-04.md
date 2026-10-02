@@ -3,7 +3,7 @@ id: HOME-04
 title: Feed: following, likes, views, shares
 owner: DEV
 area: HOME
-order: 76
+order: 77
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

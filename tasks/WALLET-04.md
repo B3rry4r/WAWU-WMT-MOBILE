@@ -3,7 +3,7 @@ id: WALLET-04
 title: Transaction history and detail
 owner: YOU
 area: WALLET
-order: 109
+order: 110
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

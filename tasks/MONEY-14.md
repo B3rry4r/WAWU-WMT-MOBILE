@@ -3,7 +3,7 @@ id: MONEY-14
 title: Reset the PIN, and approve with fingerprint or face
 owner: YOU
 area: MONEY
-order: 101
+order: 102
 priority: launch
 repo: wawu-backend
 type: money-path

@@ -3,7 +3,7 @@ id: LEGAL-07
 title: Admin screens: legal prices
 owner: DEV3
 area: LEGAL
-order: 71
+order: 72
 priority: launch
 repo: wawu-dashboard
 type: admin-screen

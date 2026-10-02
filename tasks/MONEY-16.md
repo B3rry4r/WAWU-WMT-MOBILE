@@ -3,7 +3,7 @@ id: MONEY-16
 title: Nightly check against Fintava
 owner: YOU
 area: MONEY
-order: 97
+order: 98
 priority: launch
 repo: wawu-backend
 type: money-path

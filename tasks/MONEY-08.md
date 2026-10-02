@@ -3,7 +3,7 @@ id: MONEY-08
 title: Status checks and the pending sweep
 owner: YOU
 area: MONEY
-order: 65
+order: 66
 priority: launch
 repo: wawu-backend
 type: third-party

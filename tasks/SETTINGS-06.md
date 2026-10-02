@@ -3,7 +3,7 @@ id: SETTINGS-06
 title: Delete account in the Hub: empty wallet first, freeze, restore on cancel
 owner: DEV
 area: SETTINGS
-order: 170
+order: 171
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

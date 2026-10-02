@@ -3,7 +3,7 @@ id: LEGAL-02
 title: Legal: chat, profiling, brief, consultant joins
 owner: DEV3
 area: LEGAL
-order: 64
+order: 65
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
