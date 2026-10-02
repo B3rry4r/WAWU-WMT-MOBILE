@@ -46,7 +46,10 @@ export type PayDetailRow = { label: string; value: string };
  */
 export type PayWallet =
   | { kind: 'loading' }
-  /** No wallet opened yet (R-6). The sheet hands over to "Open your wallet". */
+  /**
+   * No wallet opened yet (R-6): the sheet shows no balance and no Pay. KYC-05 builds
+   * Open your wallet and adds its entry here (DECISIONS R-27).
+   */
   | { kind: 'none' }
   | { kind: 'open'; balanceKobo: number };
 
@@ -99,8 +102,6 @@ export type PaySheetProps = {
   onPay: () => void | Promise<unknown>;
   /** Top up by at least the shortfall (kobo), then come back. */
   onAddMoney: (shortfallKobo: number) => void;
-  /** No wallet yet: start "Open your wallet" (MONEY-13). */
-  onOpenWallet: () => void;
   onCancel: () => void;
   /** Failed: try the same payment again. */
   onRetry?: () => void;
@@ -145,8 +146,9 @@ export function PaySheet(props: PaySheetProps) {
       onClose={props.onCancel}
       label={props.actionLabel}
       dismissible={status.kind !== 'paying'}
+      gap={SHEET_GAP}
     >
-      <View style={styles.sheetBody}>{body}</View>
+      {body}
     </BottomSheet>
   );
 }
@@ -209,9 +211,7 @@ function Review(p: Inner) {
     </GroupedList>
   );
   const action =
-    p.wallet.kind === 'none' ? (
-      <Button label="Open your wallet" onPress={p.onOpenWallet} full />
-    ) : (
+    p.wallet.kind === 'none' ? null : (
       <Button
         label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
         onPress={pay}
@@ -453,16 +453,20 @@ const STATUS_STROKE = ICON_STROKE.fab;
 const ROW_VALUE = text.kvValue.fontSize;
 
 /**
- * W10 draws "Sending to" at 13.5 with the browser's normal leading (1.3 for
- * Alan Sans) and a 6 px top margin; `secondary` leads at 1.4. Half the
- * difference comes off each side, so the line takes the canvas's height.
+ * W10 draws "Sending to" at 13.5 with `line-height: normal` and a 6 px top
+ * margin. The browser that drew the canvas makes `normal` the font's ascent
+ * and descent (Alan Sans hhea 990 and 310 per 1000), each rounded to a whole
+ * pixel: 13 + 4 = 17 px at 13.5. `secondary` leads at 1.4 (19 px); half the
+ * difference comes off each side, so the line takes the canvas's 17.
  */
-const SENDING_TRIM = (Number(text.secondary.lineHeight) - type.size.sec * type.leading.snug) / 2;
-/** H14 and H17 space the sheet's parts 16 px apart (home.js passes `sheet()` a 16 px gap); `BottomSheet` has no gap prop yet (SHARED-CHANGES.md section 1 row 9). */
+const ALAN_ASCENT = 0.99;
+const ALAN_DESCENT = 0.31;
+const SENDING_LINE = Math.round(type.size.sec * ALAN_ASCENT) + Math.round(type.size.sec * ALAN_DESCENT);
+const SENDING_TRIM = (Number(text.secondary.lineHeight) - SENDING_LINE) / 2;
+/** H14 and H17 space the sheet's parts 16 px apart: home.js passes `sheet()` a 16 px gap. */
 const SHEET_GAP = space.lg;
 
 const styles = StyleSheet.create({
-  sheetBody: { gap: SHEET_GAP },
   page: { flex: 1, paddingHorizontal: layout.gutter, paddingTop: space.sm, paddingBottom: space.s3xl + NUDGE },
   sendBody: { gap: space.lg + NUDGE },
   foot: { marginTop: 'auto', paddingTop: space.md, gap: space.sm + NUDGE },

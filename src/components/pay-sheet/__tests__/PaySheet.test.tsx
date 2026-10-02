@@ -18,7 +18,6 @@ function props(overrides: Partial<PaySheetProps> = {}): PaySheetProps {
     status: { kind: 'review' },
     onPay: jest.fn(),
     onAddMoney: jest.fn(),
-    onOpenWallet: jest.fn(),
     onCancel: jest.fn(),
     ...overrides,
   };
@@ -217,13 +216,24 @@ describe('PaySheet', () => {
     }
   });
 
-  it('hands a user with no wallet to "Open your wallet"', async () => {
+  it('shows a user with no wallet no balance and no Pay button', async () => {
     const p = props({ wallet: { kind: 'none' } });
     await render(<PaySheet {...p} />);
     expect(screen.getByText("You don't have a wallet yet")).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Open your wallet' }));
-    expect(p.onOpenWallet).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/available/)).toBeNull();
+    expect(screen.queryByText(/485,250/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Unlock|Pay|Open your wallet/ })).toBeNull();
     expect(p.onPay).not.toHaveBeenCalled();
+  });
+
+  it('lets a user with ₦5,000 unlock a ₦2,500 piece for ₦2,523.25 (BRIEF H14)', async () => {
+    const p = props({ wallet: { kind: 'open', balanceKobo: 500000 } });
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('₦2,500')).toBeTruthy();
+    expect(screen.getByText('₦23.25')).toBeTruthy();
+    expect(screen.getByText('₦2,523.25')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' }));
+    expect(p.onPay).toHaveBeenCalledTimes(1);
   });
 
   it('does not let a user pay twice while the payment is going through', async () => {

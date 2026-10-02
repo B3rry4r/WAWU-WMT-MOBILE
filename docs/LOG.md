@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · MONEY-03 · Round 6: the pay sheet passes `gap={16}` to BottomSheet (H14/H17 grabber to header 20 = 20); W10 matches the canvas (160 = 160) after trimming "Sending to" to the browser's normal line height; no-wallet state has no Pay (R-27).
 - 2 Oct 2026 · MONEY-03 · Round 5: the pay sheet uses the shared BottomSheet, GroupedList, KeyValueRow, Card, Avatar, CurrencyFlag and Text variants; every local copy deleted; W10 avatar-to-card 161 px against 160; BottomSheet `gap` prop requested.
 - 2 Oct 2026 · MONEY-03 · Round 4: the pay sheet uses UI-01's `Button`, `Money` and `Text` (local copies deleted); requests filed for the kit's missing `Text` sizes, `Money`'s kobo line height (W10 is 4 px taller until then) and shared `Avatar`/`CurrencyFlag`; back to verifying.
 - 2 Oct 2026 · MONEY-03 · Round 3 follow-up: main 6b7eaff merged; the Fees-row ruling renumbered to R-23; the pay sheet's failed mark is `X` (as W14) now that the icon set has it; the X generator request row removed.

@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 65 | 52 | 34 | 32 |
+| todo | 64 | 52 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 10 | 6 | 0 | 0 |
+
+## Being verified
+
+- [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 
 ## Done
 
@@ -34,7 +38,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-06](../tasks/MONEY-06.md) Fintava client
 - **Developer:** [UI-03](../tasks/UI-03.md) Avatars, ticks and chips, [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap, [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours
 - **Developer 2:** [INBOX-06](../tasks/INBOX-06.md) Free chat between users, [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
@@ -43,6 +47,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-03 · Round 6: the pay sheet passes `gap={16}` to BottomSheet (H14/H17 grabber to header 20 = 20); W10 matches the canvas (160 = 160) after trimming "Sending to" to the browser's normal line height; no-wallet state has no Pay (R-27).
+- 2 Oct 2026 · MONEY-03 · Round 5: the pay sheet uses the shared BottomSheet, GroupedList, KeyValueRow, Card, Avatar, CurrencyFlag and Text variants; every local copy deleted; W10 avatar-to-card 161 px against 160; BottomSheet `gap` prop requested.
+- 2 Oct 2026 · MONEY-03 · Round 4: the pay sheet uses UI-01's `Button`, `Money` and `Text` (local copies deleted); requests filed for the kit's missing `Text` sizes, `Money`'s kobo line height (W10 is 4 px taller until then) and shared `Avatar`/`CurrencyFlag`; back to verifying.
+- 2 Oct 2026 · MONEY-03 · Round 3 follow-up: main 6b7eaff merged; the Fees-row ruling renumbered to R-23; the pay sheet's failed mark is `X` (as W14) now that the icon set has it; the X generator request row removed.
+- 2 Oct 2026 · MONEY-03 · Round 3: owner overruled two deferrals; the pay sheet now uses the shared Lucide `Icon` and `VerifiedTick` (View-drawn icons deleted) and has a W10 `send` variant (faded kobo, Note after Total). Fees-row ruling recorded as R-23. Back to verifying.
+- 2 Oct 2026 · MONEY-03 · Round 2: verified tick in the pay sheet header, 1 px lines, Fees subtotal for two-part fees, double-tap guard on Pay; back to verifying.
+- 2 Oct 2026 · MONEY-03 · Pay-from-wallet sheet built (`src/components/pay-sheet/`): price, fee breakdown and total in kobo, enough / not enough with shortfall and Add top-up / paying / still confirming / failed / no wallet; to verifying.
 - 2 Oct 2026 · MONEY-02 merged: the PIN sheet every payment reuses. Fingerprint or face (whatever the phone has), "<Name> failed. Use your PIN.", lock countdown, the shared BottomSheet (new `gap` prop) and Text (`errorLine`, `linkStrong`), matching W11 exactly. Adds expo-local-authentication: the next Android build carries it.
 - 2 Oct 2026 · MONEY-09 merged (transaction PIN on the server: 4 digits, argon2id, locks after 5 wrong tries for PIN_LOCK_MINUTES, X-Transaction-Pin guard; verified with no defects). Backend PR #25.
 - 2 Oct 2026 · Task backlog reviewed and fixed (199 tasks): order and dependencies, Android first, no staging (tester builds use the live services; checks run locally with the sandbox), biometric not Face ID, the designer brief in every screen task, links between screens, duplicates removed, Lead rulings R-24 to R-35. Each person's first tasks are startable now.
@@ -51,10 +62,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-02 · The PIN sheet now uses the shared `Text` (`sheetTitleSm`, `muted`) and UI-02's `BottomSheet`; its own frame and the matching kit constants are gone. SHARED-CHANGES 1.7 applied by SHARED-01; request 10 asks `BottomSheet` for a `gap` prop. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · Fix round 2: kit sizes (R-22) and shared `formatMoney`; the biometric key is whatever the phone has (fingerprint or face, `expo-local-authentication`, owner ruling) with "<Name> failed. Use your PIN."; `Fingerprint` added to the icon set; Face ID gap renumbered G-9. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · Fix round 1: the PIN sheet uses the shared `Icon`, answers follow MONEY-04's contract (403 `pin_incorrect.triesLeft`, 423 `pin_locked.lockedUntil`), the lock shows a running clock, the busy flag resets when the sheet hides mid-check, and the tests no longer time out on a cold cache. Face ID refusal copy is an open question for the owner. Back to verifying.
-- 2 Oct 2026 · MONEY-02 · The PIN sheet built in `src/components/pin-sheet/` (entering, wrong PIN with tries left, locked with a countdown, Face ID key, submitting, error); tries and lock time come from the server's answer. Dev-only preview at `/preview/pin-sheet`. Waiting for verification.
-- 2 Oct 2026 · UI-02 follow-up merged: media-card gradient caption (expo-linear-gradient), sheet shadow at the 0.5 scrim token, the selected segment's soft shadow. First Android preview build is out; an over-the-air update carries main to it.
-- 2 Oct 2026 · UI-02 follow-up: shelf media card draws its caption over the design's `scrimCard` gradient (expo-linear-gradient); bottom sheet shadow is 0.5 black and the selected segment has the kit's soft shadow, both themes; theme shadow tokens requested (SHARED-CHANGES row 7).
-- 2 Oct 2026 · SHARED-01 merged: shared `Avatar` (one, UI-02's API with the kit drawing), `CurrencyFlag`, Text variants (kvLabel, kvValue, meta, muted, bannerBody, cardTitle, sheetTitle, sheetTitleSm) and Money at exactly its size (per-run line heights on web only). Phone check (V10) waits on the Android build.
-- 2 Oct 2026 · MONEY-09 built: the transaction PIN is served on backend branch `wmt/MONEY-09` (set, change, verify, state; argon2id; 5 wrong tries lock it for `PIN_LOCK_MINUTES`, provisional 30; `X-Transaction-Pin` guard for every debit); gaps G-11, G-12; status verifying.
-- 2 Oct 2026 · Each developer's file (docs/people/DEV*.md) now says to keep working through the list without waiting to be prompted: pull main, take the next startable task, build, verify, push, repeat; ask only when everything left is blocked.
-- 2 Oct 2026 · The app now points at the live services the web uses, `https://api.wawuafrica.com` and `https://id.wawuafrica.com` (eas.json, `src/api/env.ts` fallbacks, BUILDS.md). The `.invalid` placeholders and the stale Railway address are gone.

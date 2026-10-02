@@ -31,7 +31,7 @@ const unlock = {
 
 const open = (balanceKobo: number) => ({ kind: 'open', balanceKobo }) as const;
 
-const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onOpenWallet' | 'onCancel'>> = {
+const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onCancel'>> = {
   enough: { ...unlock, wallet: open(48525075), status: { kind: 'review' } },
   short: { ...unlock, wallet: open(120000), status: { kind: 'review' } },
   paying: { ...unlock, wallet: open(48525075), status: { kind: 'paying' } },
@@ -94,7 +94,6 @@ export default function PaySheetPreview() {
       item={{ ...shown.item, verified: shown.item.by !== undefined ? tickKind : undefined }}
       onPay={() => go('paying')}
       onAddMoney={() => go('enough')}
-      onOpenWallet={() => go('enough')}
       onCancel={() => go('enough')}
       onRetry={() => go('paying')}
       onRefresh={() => go('enough')}
