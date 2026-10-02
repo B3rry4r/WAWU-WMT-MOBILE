@@ -7,7 +7,7 @@ order: 13
 priority: launch
 repo: wawu-backend
 type: contract
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1]
@@ -105,6 +105,33 @@ Verifier: fresh session, 2 Oct 2026; wrote none of this task's code. Own detache
 1. **The ₦10,000,000 cap on every money route.** `MAX_AMOUNT_KOBO` (`src/money/dto/money-request.dto.ts:55`) takes `limits.md`'s figure for WAWU's **merchant** account and applies it as a hard validation bound to every amount, including customer-to-customer sends and payments, as a constant rather than config. `limits.md` says amounts above it are "split or refused"; the contract picks refused. Above it the caller gets a plain ValidationPipe 400 "amountKobo must not be greater than 1000000000" with no `reason`, not `400 amount_out_of_range` with `maximumKobo` as CONVENTIONS section 3 suggests (checked with class-validator against the built DTO). Does this cap stand for customer wallets, should it be config, and should an over-cap amount answer `amount_out_of_range`?
 2. **Daily limit on purchases.** `POST /money/payments` and `GET /money/payments/quote` carry neither `daily_limit_exceeded` nor `withinDailyLimit`, while both transfers do. Whether Fintava's tier daily limit counts a wallet-to-wallet purchase is not in `limits.md`. If it does, a purchase over the limit has no declared refusal.
 3. **W26's grouped earnings row.** The render shows "Unlock · Lighting night sho... · 3 buyers · +₦7,500.00", one row for three unlocks. `TransactionView` is one movement per row with no count, and WALLET.md does not say whether history groups earnings. The analysis evidence (A1.json, W26) does not list grouping, so this is not a mapping miss; it needs a ruling before MONEY-15 builds history.
+
+### Round 2 (verifier, 2 Oct 2026): backend `b864994`, mobile `500f2af`
+
+Fresh detached worktrees: wawu-backend `b864994` (own `npm ci`) and `b7d4e63` (= origin/main, the base checker); wawu-wmt-mobile `500f2af` (own `npm ci`), then the same with the newest origin/main `39365dc` merged in. Own database `money04_verifier2_protected_test` (dropped afterwards), Postgres left running. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money04-r2/`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates, backend | passed | `tsc --noEmit` 0 errors. eslint (no `--fix`) on the 12 changed `src/` files: exit 0. `npx jest src/money`: 9/9. `scripts/gates/run.py`: 16 fail / 0 warn / 76 accepted, files scanned 536; the findings list is identical line for line to main's (only the files-scanned line differs, 525 -> 536). `check_baseline.py` exit 0 (`gates-b.txt`) |
+| V1 Gates, mobile | passed | `npm run check` exit 0 on `500f2af` and on `500f2af` + `39365dc`: jest 70/70, gates 0 fail on 34 files, lint 0 errors and 2 warnings (both `src/components/Button.tsx`, from main), task check 187 tasks (`check-branch.log`, `check-merged.log`) |
+| V3 Regression | passed | `run.sh --fresh` with the lock from origin/main: `b7d4e63` 244/244 required (253 tests), `b864994` 244/244 required (253 tests), both exit 0 (`protected-b7d4e63.log`, `protected-b864994.log`) |
+| Capability: data needs mapped | passed | W26 re-rendered light and dark (`W26-*.png`); the new group row and the payment-limit row are mapped in WALLET.md section 3 |
+| Capability: conflicts listed, not resolved | passed | Section 4 changes only cite the Lead rulings and add Fintava question 16; nothing resolves a fact on its own authority |
+
+1. **Defect 1: fixed.** Recounted in the regenerated contract: exactly 11 `{ $ref, nullable: true }` properties, the same 11 now named in `WALLET.md` section 5, `scripts/enrich-contract.js:307` ("eleven") and `BACKEND_GAPS.md` G-1 ("11").
+2. **Defect 2: fixed.** All 53 `*Kobo` fields and parameters in `contract/openapi.json` are `"type": "integer"`; none is anything else. Mutations in my worktree: (a) `WalletBalanceView.availableKobo` and the `fees/quote` `amountKobo` parameter set to `number` in the contract: the new spec test fails and names both; (b) the `koboAsInteger` call disabled in `enrich-contract.js` and `contract:enrich` re-run: the spec fails. Both restored from copies, tree clean, 9/9 again.
+   - Side effect on served schemas, all three claims true: the only non-money changes since round 1 are 12 `type` values (`number` -> `integer`) in `AdminFinanceMoneyView`, `AdminFinanceStreamTotalsView`, `AdminFinanceCreditsAttributionView`, `AdminFinanceTransactionView` (3 each), plus the new `TransactionGroupView`; no served path changed. Responses unchanged: no file outside `src/money` changed, and the values are already integers on the wire (Prisma `_sum` of integer kobo columns, `nairaToKobo` = `Math.round(naira) * 100`, `splitKoboByBps` floors). openapi-typescript 7.13.0 on the round 1 and round 2 contracts: the diff touches no `AdminFinance*` type, only money types. Protected suite 244/244 (above).
+3. **Lead rulings: applied as ruled.**
+   - Cap: `MAX_AMOUNT_KOBO` is gone; `1000000000` is no longer anywhere in the contract or `src/`; it lives only as `MERCHANT_MAX_PER_TXN_KOBO=1000000000` in `.env.example`. Request DTOs now bound amounts only at `Number.MAX_SAFE_INTEGER`, so a customer send has no cap. `POST /money/payments` and `GET /money/payments/quote` declare `400 amount_out_of_range`, and CONVENTIONS, WALLET.md and both handlers' descriptions say above the cap is `amount_out_of_range` with `maximumKobo`, never split. Payouts from WAWU (WALLET-17) and hold release or refund (MONEY-18) are named as the other places the cap applies; neither is declared here. Nothing reads the config yet (no route is served); MONEY-17 is named as the first reader.
+   - Daily limit: `POST /money/payments` declares `403 daily_limit_exceeded`; `PaymentQuoteView` has `withinDailyLimit: boolean` and `remainingTodayKobo: integer | null`, both required. Fintava question 16 added to `naira-api.md`.
+   - W26 grouping: `TransactionView.group` (`TransactionGroupView | null`: `key`, `count`, `firstAt`, `lastAt`) and `?group=` on `GET /money/transactions`. The render matches the rule: one row "Unlock · Lighting night shoots" (the canvas source text; the render truncates it), "3 buyers", +₦7,500.00, the latest time 09:02, under the "Today" label, while the tip, airtime, electricity and transfer rows stay single.
+4. **Contract regenerates byte for byte.** `npm run contract:build` on `b864994`: `git status` clean; 261 paths, 29 operations `x-wawu-served: false`, 286 schemas.
+5. **Mobile types.** Branch contract through `sync_contract.py` (regenerate only), then `tsc --noEmit`: both exit 0. `group`, `hold`, `reversal`, `account`, `limits`, `counterparty`, `link` keep `| null`; `remainingTodayKobo` is `number | null` on both quotes.
+6. **Also checked.** Round 2 diffs (backend `b00e4c3..b864994`, mobile `6b7eaff..500f2af`) contain no secret, key or personal data. The changed files match the builder's round 2 bullets; `docs/fintava/naira-api.md` (question 16) is named under "Lead rulings" rather than in the bullet list. Main's new verifier step "no stand-ins for what main has": this task changes no mobile code, so there is nothing to check.
+7. **Notes, not defects.** `POST /money/transfers/*` and `GET /money/fees/quote` still list `amount_out_of_range` (from `DEBIT_GATE_ERRORS`). CONVENTIONS limits that code to "below the minimum" for them, and no minimum is defined anywhere yet, so it can't fire until one is. `TransactionGroupView.count` is `number`, not `integer` (it is not a kobo field). Mobile origin/main moved again to `39365dc` after the builder merged `6b7eaff`; the merge conflicts only in generated `docs/PROGRESS.md`, and `npm run check` passes on the merged result.
+8. **Not run:** full backend jest (`test:contract`), which is not claimed and not in `passes`. `npm run api` as written (it copies origin/main; regenerate-only with the branch contract was used instead). V2 and V4 to V9, which are not in this task's `passes`.
+
+**Round 2 verdict: no open defects; status `review`.** Round 1's three unclear items are answered by the Lead rulings recorded above.
 
 ## Owner sign-off
 
