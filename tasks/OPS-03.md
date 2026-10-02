@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: setup
-status: review
+status: done
 depends_on: []
 decisions: [R-20]
 passes: [V1, V9]
@@ -201,4 +201,4 @@ Round 3 verdict: no open defects. Every round 1 and round 2 finding is closed or
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: signed off by approving the merge (wawu-backend #23).

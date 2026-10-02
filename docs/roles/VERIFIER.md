@@ -57,5 +57,6 @@ Then each finding, labelled:
 - `unclear`: needs the owner
 
 Set `status: review` if there are no open defects, otherwise back to
-`building`. A pass you could not run is **NOT RUN** with the reason. It is
+`building`. Then run `npm run tasks -- --write` and commit the regenerated
+`tasks/INDEX.md` and `docs/PROGRESS.md` together with the task file. A pass you could not run is **NOT RUN** with the reason. It is
 never left out and never counted as passed.

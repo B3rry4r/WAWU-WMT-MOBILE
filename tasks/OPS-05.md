@@ -7,7 +7,7 @@ order: 6
 priority: launch
 repo: wawuafrica, wawu-backend
 type: ops
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: []
@@ -137,4 +137,4 @@ Findings 1 to 4 are closed; no open defects. Status set to `review`.
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: signed off by approving the merges (wawu-backend #23, wawuafrica #23).

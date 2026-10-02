@@ -41,7 +41,10 @@ whoever wrote it.
 4. **Compare pictures with pictures.** Render the artboard
    (`python3 scripts/design/render_design.py <ID>`) and screenshot the built
    screen at the same width, in both themes, and look at both images. Reading
-   design markup while looking at the app is not a comparison.
+   design markup while looking at the app is not a comparison. The renderer
+   needs `pip install -r scripts/design/requirements.txt` (playwright, Pillow)
+   and a Chromium; it needs no network (React and Alan Sans are vendored in
+   `scripts/design/vendor/`).
 5. **Prove what a user can do, not that nothing crashed.** Write checks as "a
    user can ...", never "the screen renders" or "no error appears".
 6. **The live product keeps working at every step.** Backend changes only add
@@ -132,7 +135,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 
 | Pass | Proves | How |
 |------|--------|-----|
-| **V1 Gates** | No placeholders, fake data, copied components, raw colours, dead buttons, unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
+| **V1 Gates** | No placeholders, fake data, copied components, raw colours (any hex, rgb/hsl, named colour), literal spacing and radii, dead buttons, unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
 | **V2 Contract** | The endpoint does what its contract says, including refusing the wrong user | Contract tests from the registry entry, including one input in an unexpected format (a phone written `080...` instead of `+234...`) |
 | **V3 Regression** | Everything live still behaves the same | The protected route suite (task MONEY-01), before and after |
 | **V4 Field trace** | Data one person writes reaches every screen that reads it | For each field: writer, storage, every reader. Data that crosses between users (a creator's price shown to a buyer) is checked on both sides |
@@ -234,7 +237,44 @@ reminders, QR, school tracked links, ads, Flutterwave removal, the web port.
 Every money task is built against the real Fintava sandbox. No mocks. Money
 launches with the app (R-20).
 
-## 8. The evidence pack (every pull request)
+## 8. Branches, pulling and merging
+
+Two people and many AI sessions work at once. These rules keep branches from
+colliding.
+
+1. **Start from the newest main.** `git pull origin main`, then
+   `git checkout -b wmt/<ID>`. One task, one branch, one session at a time.
+2. **Stay inside your task's files.** Shared files (theme, components, API
+   client, layouts, route graph; section 4) are fenced: ask in
+   `SHARED-CHANGES.md` instead of editing. This is what prevents most
+   conflicts.
+3. **Before handing over for verification,** bring main in:
+   `git fetch origin && git merge origin/main` (a merge, never a rebase or a
+   force-push), then `npm run tasks -- --write` and `npm run check`. Push the
+   branch.
+4. **The verifier checks the branch as it will land:** the branch with the
+   newest main merged in. If main moved during verification, merge it in again
+   and re-run `npm run check` before the pull request.
+5. **Generated files are never fixed by hand.** `tasks/INDEX.md`,
+   `docs/PROGRESS.md`, `src/api/schema.generated.ts`,
+   `src/theme/tokens.generated.ts`: on a conflict take either side, then run
+   `npm run tasks -- --write`, `npm run api` or `npm run tokens`. Anyone who
+   changes a task's `status` (builder or verifier) also runs
+   `npm run tasks -- --write` and commits the regenerated files with it.
+6. **`docs/LOG.md` can't conflict:** `.gitattributes` merges it as a union, so
+   both sides' lines are kept.
+7. **Merging is the owner's (or the orchestrating session's) job:** one pull
+   request at a time into main, with a merge commit, only when CI is green and
+   the branch is up to date with main. After each merge, every other open
+   branch merges main in again before its own merge (step 3).
+8. **Backend merges deploy the live server.** Batch backend pull requests
+   where you can, so it restarts once.
+
+Recommended GitHub settings on `main` in each repo: require a pull request,
+require the CI checks, and require branches to be up to date before merging.
+Then GitHub enforces steps 3 and 7.
+
+## 9. The evidence pack (every pull request)
 
 - The ticket's capability checks, each with passed, failed or NOT RUN and where
   the proof is
@@ -247,7 +287,7 @@ No evidence pack, no merge. The owner's own tasks are verified the same way.
 
 ---
 
-## 9. When work stops and goes to the owner
+## 10. When work stops and goes to the owner
 
 - The design states a fee, limit, rate, legal line or system behaviour the
   system doesn't match.
