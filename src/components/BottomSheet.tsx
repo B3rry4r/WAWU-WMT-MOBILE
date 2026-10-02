@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { layout, radius, space, useWawu } from '@/theme';
 
 import { useFocusRing } from './focusRing';
+import { blackAt } from './shadow';
 
 /** design/_gen/kit.js `sheet`: a 40 by 5 grabber, 10 above it and 34 below the content (the home indicator). */
 export const sheetMetrics = {
@@ -13,9 +14,10 @@ export const sheetMetrics = {
   padTop: 10,
   padBottom: 34,
   between: 18,
-  /** `--shadow-sheet`: 0 -12px 40px. */
+  /** `--shadow-sheet`: 0 -12px 40px at 50% black, the same in both themes. */
   shadowY: -12,
   shadowBlur: 40,
+  shadowAlpha: 0.5,
 } as const;
 
 export type BottomSheetProps = {
@@ -61,7 +63,7 @@ export function BottomSheet({ visible, onClose, label, dismissible = true, close
             {
               backgroundColor: colors.surfaceElevated,
               borderTopColor: colors.borderHairline,
-              boxShadow: [{ offsetX: 0, offsetY: sheetMetrics.shadowY, blurRadius: sheetMetrics.shadowBlur, color: colors.surfaceScrim }],
+              boxShadow: [{ offsetX: 0, offsetY: sheetMetrics.shadowY, blurRadius: sheetMetrics.shadowBlur, color: blackAt(sheetMetrics.shadowAlpha) }],
             },
           ]}
         >

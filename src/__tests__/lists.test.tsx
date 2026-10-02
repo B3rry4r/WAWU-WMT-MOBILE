@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, userEvent, within } from '@testing-library/react-native';
 import { useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, processColor } from 'react-native';
 
 import { Avatar, initialsOf } from '@/components/Avatar';
 import { BottomSheet, sheetMetrics } from '@/components/BottomSheet';
@@ -15,7 +15,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TransactionRow } from '@/components/TransactionRow';
 import { Showcase } from '@/features/showcase/Showcase';
-import { darkColors, lightColors, radius } from '@/theme/tokens.generated';
+import { darkColors, darkGradients, lightColors, radius } from '@/theme/tokens.generated';
 
 let mockScheme: 'light' | 'dark' = 'dark';
 jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
@@ -117,6 +117,38 @@ describe('segmented tabs', () => {
     expect(track.backgroundColor).toBe(darkColors.surfaceSunken);
     expect(track.padding).toBe(4);
     expect(flat(screen.getByRole('tab', { name: 'Today' }).props.style).height).toBe(segmentMetrics.height - 8);
+  });
+});
+
+describe('segment and sheet shadows', () => {
+  it.each(['dark', 'light'] as const)('lifts only the chosen segment, 0 1px 3px at 8% black, in %s', async (scheme) => {
+    mockScheme = scheme;
+    await render(
+      <SegmentedTabs
+        label="Feed"
+        items={[
+          { value: 'today', label: 'Today' },
+          { value: 'foryou', label: 'For you' },
+        ]}
+        value="today"
+        onChange={() => undefined}
+      />,
+    );
+    const lift = within(screen.getByRole('tab', { name: 'Today' })).getByTestId('segment-lift', hiddenOk);
+    expect(flat(lift.props.style).boxShadow).toEqual([{ offsetX: 0, offsetY: 1, blurRadius: 3, color: 'rgba(0, 0, 0, 0.08)' }]);
+    expect(within(screen.getByRole('tab', { name: 'For you' })).queryByTestId('segment-lift', hiddenOk)).toBeNull();
+  });
+
+  it.each(['dark', 'light'] as const)('casts the sheet shadow, 0 -12px 40px at 50% black, in %s', async (scheme) => {
+    mockScheme = scheme;
+    await render(
+      <BottomSheet visible onClose={() => undefined} label="Unlock" testID="sheet">
+        <Text>Price</Text>
+      </BottomSheet>,
+    );
+    expect(flat(screen.getByTestId('sheet').props.style).boxShadow).toEqual([
+      { offsetX: 0, offsetY: -12, blurRadius: 40, color: 'rgba(0, 0, 0, 0.5)' },
+    ]);
   });
 });
 
@@ -339,6 +371,26 @@ describe('media cards', () => {
     await render(<MediaCard layout="stacked" title="Lighting night shoots" testID="stacked" />);
     const cover = flat((screen.getByTestId('stacked').children[0] as unknown as { props: { style: unknown } }).props.style);
     expect(cover).toMatchObject({ width: 150, height: 200, borderRadius: radius.media });
+  });
+
+  it.each(['dark', 'light'] as const)('lays the design scrim under a shelf card caption, and the caption over it in white, in %s', async (scheme) => {
+    mockScheme = scheme;
+    await render(<MediaCard layout="stacked" title="Lighting night shoots" subtitle="Video · 18 min" testID="stacked" />);
+    const scrim = screen.getByTestId('media-scrim', hiddenOk);
+    expect(scrim.props.colors).toEqual(darkGradients.scrimCard.colors.map((c) => processColor(c)));
+    expect(scrim.props.startPoint[1]).toBeCloseTo(0);
+    expect(scrim.props.endPoint[1]).toBeCloseTo(1);
+    expect(scrim.props.locations).toEqual([...darkGradients.scrimCard.locations]);
+    const title = screen.getByText('Lighting night shoots');
+    expect(flat(title.props.style).color).toBe(darkColors.textOnAccent);
+    expect(flat(title.props.style).fontSize).toBe(mediaMetrics.stackedTitle);
+    const picture = screen.getByTestId('stacked').children[0] as unknown as { children: unknown[] };
+    expect(picture.children.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('keeps the row card free of a scrim and its words beside the thumbnail', async () => {
+    await render(<MediaCard title="How I built a ₦2M a month agency" subtitle="Chidi Eze" />);
+    expect(screen.queryByTestId('media-scrim', hiddenOk)).toBeNull();
   });
 
   it('lets a user open a card, and reads its title and maker', async () => {
