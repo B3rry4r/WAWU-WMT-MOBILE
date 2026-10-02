@@ -7,7 +7,7 @@ order: 45
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: review
+status: done
 depends_on: [UI-02, MONEY-02, MONEY-04]
 decisions: [R-6, R-10]
 passes: [V1, V5, V6]
