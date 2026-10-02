@@ -2692,6 +2692,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where the person's identity step stands: last 4 digits only, and checks left today. */
+        get: operations["MoneyIdentityController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/bvn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Checks the BVN with Fintava (charged per check) and keeps the NIN given
+         *     with it for account opening. The BVN's phone must be the account's phone
+         *     (A14: `bvn_phone_mismatch`). On a pass, answers A5's prefill once; it is
+         *     not stored. Limited per person per day (`identity_checks_exhausted`) and
+         *     per address by the app's throttler.
+         */
+        post: operations["MoneyIdentityController_checkBvn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/occupation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A5: stores the occupation the person typed. Needs a passed BVN check first. */
+        put: operations["MoneyIdentityController_setOccupation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -4107,7 +4164,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -4135,8 +4192,10 @@ export interface components {
             triesLeft?: number;
             /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
             lockedUntil?: string;
-            /** @description provider_unreachable, idempotency_in_progress: seconds to wait before trying again. */
+            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted: seconds to wait before trying again. */
             retryAfterSeconds?: number;
+            /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. */
+            checksLeft?: number;
         };
         MoneyErrorEnvelope: {
             /**
@@ -4158,6 +4217,16 @@ export interface components {
         ChangePinDto: {
             newPin: string;
             newPinConfirmation: string;
+        };
+        BvnCheckDto: {
+            /** @description The Bank Verification Number: 11 digits, no spaces. */
+            bvn: string;
+            /** @description The National Identification Number: 11 digits, no spaces. Fintava needs it to open the account. */
+            nin: string;
+        };
+        IdentityOccupationDto: {
+            /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
+            occupation: string;
         };
         OpenChatDto: {
             /**
@@ -5973,6 +6042,28 @@ export interface components {
         WalletBalanceView: {
             availableKobo: number;
             asOf: string;
+        };
+        CheckedBvnView: {
+            last4: string;
+            verifiedAt: string;
+        };
+        WalletIdentityView: {
+            bvn: components["schemas"]["CheckedBvnView"] | null;
+            ninLast4: string | null;
+            occupation: string | null;
+            checksLeft: number;
+        };
+        BvnPrefillView: {
+            firstName: string | null;
+            middleName: string | null;
+            lastName: string | null;
+            dateOfBirth: string | null;
+            /** @enum {string|null} */
+            gender: "male" | "female" | null;
+        };
+        BvnCheckView: {
+            identity: components["schemas"]["WalletIdentityView"];
+            prefill: components["schemas"]["BvnPrefillView"];
         };
         PinStateView: {
             isSet: boolean;
@@ -11704,6 +11795,116 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletIdentityView"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_checkBvn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BvnCheckDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BvnCheckView"];
+                };
+            };
+            /** @description reason.code: wallet_already_open */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: bvn_not_confirmed, bvn_phone_mismatch, phone_not_nigerian */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_checks_exhausted */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_setOccupation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityOccupationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletIdentityView"];
+                };
+            };
+            /** @description reason.code: bvn_not_checked */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

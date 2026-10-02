@@ -7,7 +7,7 @@ order: 54
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -51,7 +51,13 @@ webhook is ever turned away with a 429.
 
 ## Builder report
 
-Backend `wmt/OPS-11` a0eb924, main fdd9716 merged as 0067351, then main 14a7fb2 as 70db9f0. Files: `src/payment-webhook/payment-webhook.controller.ts` (`@SkipThrottle(SKIP_EVERY_HUB_THROTTLER)`), `src/hub-app-options.ts` (`hubTrustProxy`, `applyHubHttpSettings`), `src/main.ts` (applies it), `deploy/README.md`, new specs `src/payment-webhook/tests/payment-webhook-throttle.contract.spec.ts` and `src/tests/hub-rate-limits.contract.spec.ts`. Mobile: this file, G-20.
+**Round 2** (backend 954ef8f, main d27ad37 merged as 38f5c1f; mobile main bfdd584 merged).
+- Defect 1 fixed: main's `money/identity/money-identity.controller.ts` (`@Throttle(BVN_CHECK_THROTTLE)`, KYC-01) joins admin auth in the spec's expected per-route overrides (both only tighten the limits), title updated. `bvnCheckTracker`'s comment (`src/money/identity/identity-config.ts`) no longer says the app sets no `trust proxy`: with `hubTrustProxy` it returns `req.ip` in every case, kept as a fallback, not removed.
+- Defect 2 fixed at the root: each burst is timed by when its deliveries reach the app (a pass-through middleware ahead of the guard notes arrival times), the window `short` counts, not by the last response, which includes every delivery's receipt writes. The app is warmed first (10 deliveries from another sender, its own bucket). Same for the bare-decorator control. Warm-up alone was not enough: 2 of 10 runs still failed (1075 and 1082 ms, load 3.6 and 7.2). With arrival timing, 10 of 10 consecutive runs pass beside a full `test:contract` on another database, load 4.9 to 6.8 on 4 cores.
+- Checks: tsc 0; eslint clean on the 6 changed .ts files; full `test:contract` on fresh seeded `o11_contract_test`, mock on :4001 (free per `lsof`, stopped straight after): 107/107 suites, 2066 passed, 3 skipped, 0 failed (main 2054 per the verifier, plus this branch's 12). Protected `run.sh --fresh` 253/253 (244 required), lock and checker identical to main. Gates 16 fail / 6 warn / 76 accepted, every finding line identical to main d27ad37. Build boots with no FINTAVA_* or IDENTITY_HASH_KEY on :4751: health 200, per-caller counts 19, 18 / 19 / forged 19 / direct 19. Mobile with main bfdd584: `npm run check` exit 0 (17 suites, 289 tests, gates 0 fail on 77 files, 201 tasks).
+- Mobile merge: G-20 keeps main's KYC-01 tracker sentence and this task's built text; `docs/PROGRESS.md` regenerated.
+
+**Round 1:** Backend `wmt/OPS-11` a0eb924, main fdd9716 merged as 0067351, then main 14a7fb2 as 70db9f0. Files: `src/payment-webhook/payment-webhook.controller.ts` (`@SkipThrottle(SKIP_EVERY_HUB_THROTTLER)`), `src/hub-app-options.ts` (`hubTrustProxy`, `applyHubHttpSettings`), `src/main.ts` (applies it), `deploy/README.md`, new specs `src/payment-webhook/tests/payment-webhook-throttle.contract.spec.ts` and `src/tests/hub-rate-limits.contract.spec.ts`. Mobile: this file, G-20.
 - Proxy evidence (repo, not the droplet): `deploy/provision.sh:102-106` enables ufw with only OpenSSH and 'Nginx Full' (22, 80, 443) allowed, 3001 not opened; `deploy/install-services.sh:97,101` nginx `proxy_pass http://127.0.0.1:3001` and `X-Forwarded-For $proxy_add_x_forwarded_for`; `src/main.ts` `app.listen(port)` has no host, so the app listens on every interface (the boot shows `*:4751`). So the port is closed to the internet by ufw alone.
 - Default (agent), owner may override: `trust proxy` is the function `hubTrustProxy`: exactly one hop, and only when the TCP peer is loopback (nginx). Through nginx `req.ip` is the address nginx appended; any non-loopback connection's `X-Forwarded-For` is ignored, so a forged header cannot pick a bucket even if ufw were off. The app is NOT rebound to 127.0.0.1: the evidence says nginx-only, and a 127.0.0.1 bind would break a phone on the same Wi-Fi reaching a local backend (`scripts/local/up.sh` prints the LAN URL). A CDN in front of nginx would add a hop (noted in `deploy/README.md`).
 - Check 1: 30 signed Flutterwave deliveries in under 1 s from one sender, through the real global ThrottlerGuard: 30 x 200, 30 receipts. With main's bare `@SkipThrottle()` on the same controller the same burst gets 20 x 200 and 10 x 429 (a test asserts this, and swapping the decorator in the file makes 2 tests fail).
