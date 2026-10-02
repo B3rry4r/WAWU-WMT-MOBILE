@@ -7,7 +7,7 @@ order: 54
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -120,6 +120,35 @@ Verifier, 2 Oct 2026, a fresh session that wrote none of this task's code. Check
 Files checked against the report: backend 6 files (`deploy/README.md`, `src/hub-app-options.ts`, `src/main.ts`, the Flutterwave controller, the two new specs) and mobile 4 (`BACKEND_GAPS.md`, `docs/LOG.md`, `docs/PROGRESS.md`, this file) match the builder's list; nothing missing or extra. No secrets in either diff (the specs' `test-webhook-secret-hash-o11` is a fixture).
 
 NOT RUN: the droplet's `ufw status` and live nginx config (no droplet access; OPS-10, list above); real IPv6 sockets and an nginx `[::]` listener (no IPv6 in this container; covered by injected peer addresses through the real guard); V10 (not in this task's passes, no app screen).
+
+### Round 2 (verifier, 2 Oct 2026)
+
+Same verifier session as round 1, which wrote none of this task's code. Checked backend `wmt/OPS-11` `954ef8f` (main `d27ad37` merged as `38f5c1f`, then the fixes) and mobile `f9d9b12`. **Main moved again during verification**: backend `d27ad37` -> `368fab0` (INBOX-01, #33) and mobile `bfdd584` -> `66bdcff`. Both were merged locally to check the branches as they will land: backend `f43c3fd` (clean merge, not pushed); mobile in a scratch worktree (only the generated `docs/PROGRESS.md` conflicts; regenerated). Same ports (4781, 4782), my own `vo11_*` databases (dropped), :4001 only after `lsof` showed it free (my mock, stopped straight after). **Verdict: defect 1 fixed; defect 2 reduced but still open (it failed the load test as set). Status building.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | As it will land (`f43c3fd`): `tsc --noEmit` 0; eslint (no `--fix`) on the 6 changed `.ts` files 0; gates 9 run / 591 files scanned / 16 fail / 6 warn / 76 accepted against main `368fab0` 16 / 6 / 76 on 589: every FAIL and WARN line identical. Mobile `f9d9b12`: `npm run check` exit 0 (17 suites, 289 tests, gates 0 fail on 77 files, 201 tasks); with main `66bdcff` merged: exit 0 (340 tests, 90 files scanned). |
+| V2 Contract | failed (defect 2) | Full `test:contract` on `f43c3fd`, fresh migrated and seeded `vo11_contract_test`, mock on :4001: **108/108 suites, 2095 passed, 0 failed, 3 skipped** (load average 10 falling to 3.5 during the run). The burst spec under load: below. |
+| V3 Regression | passed | `run.sh --fresh f43c3fd`, lock `368fab0`: **253/253, all 244 required**; lock files 0 diff lines against main. Production build of `f43c3fd` (`NODE_ENV=production`, no `FINTAVA_*`, no `IDENTITY_HASH_KEY`) boots; `/api/hub/health` 200 through nginx. |
+| V4 Field trace | passed | Unchanged from round 1: no production file changed in round 2 except a comment (below). |
+| V9 Live seam | passed (no sign-in) | Real nginx in front of the merged production build: the 9 trust cases 9/9 again; 30 signed Flutterwave deliveries from one sender in 548 ms, 30 x 200. |
+
+**Defect 1 (override list): fixed.** `hub-rate-limits.contract.spec.ts` expects `admin/auth/admin-auth.controller.ts` and `money/identity/money-identity.controller.ts` for `@Throttle`, the two webhooks for `@SkipThrottle`. Passes on `954ef8f` and on the merge with `368fab0` (INBOX-01 adds no override). Mutation check, the test alone: an unexpected class-level `@SkipThrottle()` on the legal controller fails it (`+ "legal/legal.controller.ts"`); a method-level `@SkipThrottle({ short: true })` on the events controller fails it; a looser `@Throttle({ short: { limit: 999 } })` on the events controller fails it. Note, not a defect: the test lists FILES, so a second override added inside one of the four listed files, or a looser value in one of them, would not be caught, and its title's "which only tighten them" is not asserted (true today: 5 and 20 a minute, 3 a minute and 20 an hour, against 20 a second and 200 a minute). `bvnCheckTracker`: only its comment changed (0 non-comment lines in the diff); the code is unchanged.
+
+**Defect 2 (flaky burst): reduced, still open.** The middleware is test-only: it is registered inside the spec's `buildApp()`; `src/main.ts`, `src/hub-app-options.ts` and the Flutterwave controller are byte-identical to round 1, nothing outside `*.spec.ts` mentions `arrivals`, and the compiled `dist/src/main.js` has no such middleware. Load test: my own looping full contract suite on a second database plus two CPU-bound processes, on 4 cores, beside other sessions' suites; the real spec run back to back, every run's three tests recorded:
+- Block 1, 12 runs, load 7.3 to 10.1: **2 failed** (runs 1 and 6, load 7.3 and 9.3): "30 different signed deliveries in the same second", `expect(span).toBeLessThan(1000)`, received **1003** both times. The other two tests passed in all 12.
+- Block 2, 20 runs, load 11.7 at its start: 20 passed. Block 3, 20 runs, load 10.3 to 7.4: 20 passed. Block 4, 16 runs right after restarting the load suite, load 8.2 to 14.8: 16 passed.
+- A copy of the spec that printed the arrival times (30 runs, load about 9.5): spans 268 to 733 ms, the burst's gaps between arrivals all under 200 ms.
+- In all: **2 of 68 runs failed at load 7 or more** (round 1: 6 of 6 at 7.5), so the first set of 10 or more in a row did not pass. Both failures are a single late arrival pushing the span to just over the window, which is the test's premise not being met rather than a real 429; the test fails instead of passing vacuously, which is right, but the run is still red.
+- The control detects the bare decorator under load: it passed in all 68 runs, each time asserting exactly 20 x 200 and 10 x 429. The main burst test is not vacuous under load either: with the controller mutated to a bare `@SkipThrottle()`, it failed 10 of 10 runs at load 6.6 to 8.8, each with 10 x 429.
+Unblocks with: when a burst's arrival span is 1 s or more, its premise was not met: send a fresh burst (new tx_refs, a fresh sender, a few attempts at most) and assert only on a burst whose arrivals fit one window; the same in the control. Then 10 runs in a row at load 7 or more.
+
+**Findings (round 2)**
+1. `defect` (defect 2, still open): the Flutterwave burst spec failed 2 of 68 runs at load average 7 or more (arrival span 1003 ms against the 1000 ms bound), including 2 of the first 12. Details and the fix above.
+2. Merge note: backend main is now `368fab0` (INBOX-01); it merges cleanly and everything above passes on the merge. Mobile main is `66bdcff`; only `docs/PROGRESS.md` conflicts (regenerate). Merge both on the next round.
+3. Note: the override-list test checks files, not occurrences or values (above).
+
+Round 1 findings 5 to 7 (IPv6 per address, `X-Forwarded-Host`, admin login per caller) and the OPS-10 list stand. NOT RUN, as in round 1: the droplet's `ufw` and nginx config, real IPv6 sockets, V10.
 
 ## Owner sign-off
 

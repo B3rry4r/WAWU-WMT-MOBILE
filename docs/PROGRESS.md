@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 60 | 49 | 33 | 32 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 16 | 9 | 1 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 
@@ -57,6 +57,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · OPS-11 · Verified round 2: 1 defect (backend 954ef8f, mobile f9d9b12; checked merged with backend main 368fab0 and mobile 66bdcff). The override-list test now expects KYC-01's @Throttle and catches an unexpected skip or override (mutants). The burst test is timed by arrivals now and no longer fails on a cold start, but it still failed 2 of 68 runs at load 7 or more (span 1003 ms); retry a burst that misses the window instead of failing. Contract 108/108 suites, 2095 passed; protected 253/253; main's 16 gates; mobile check exits 0. Status building.
 - 2 Oct 2026 · OPS-11 · Round 2: the verifier's 2 defects fixed (backend `wmt/OPS-11` 954ef8f, main d27ad37 merged). The rate-limit spec expects KYC-01's `@Throttle` on the BVN check beside admin auth; the Flutterwave burst is timed by arrival at the app (the window the throttler counts), after a warm-up, so receipt writes on a busy machine no longer fail it (10 of 10 under load). `bvnCheckTracker`'s comment updated. Contract 107/107 suites, 2066 passed; protected 253/253; gates as main. Back to verifying.
 - 2 Oct 2026 · OPS-11 · Verified: 2 defects (backend 70db9f0, mobile 2c20e01; main moved to backend d27ad37 and mobile bfdd584 during verification). The trust rule holds through a real nginx (two callers get their own buckets; a forged X-Forwarded-For, through nginx or straight to the port, picks no bucket; every case killed by a mutant), both webhooks take bursts past 20/s and 200/min, every other limit is unchanged, KYC-01's BVN tracker stays correct. Defects: with main merged the branch's own @Throttle list test fails (KYC-01 added one), and the Flutterwave burst test times its cold start and fails under load. Protected 253/253; main's 16 gates; mobile check exits 0. Status building.
 - 2 Oct 2026 · OPS-11 · Rate limits behind nginx built in wawu-backend (`wmt/OPS-11` 70db9f0): the Flutterwave webhook skips every named throttler (30 signed deliveries in a second, 30 x 200; the old bare decorator gives 10 x 429), and `trust proxy` trusts one hop from a loopback peer only (nginx), so each caller has its own 20/s and 200/min and a direct connection's `X-Forwarded-For` is ignored. Port 3001 is closed by ufw per `deploy/provision.sh`; the app still listens on every interface (kept for local Wi-Fi testing). Protected 253/253; the same 16 gates as main. G-20 to verifying. Status verifying.
@@ -71,4 +72,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-07 · Fintava webhooks built in wawu-backend (`wmt/MONEY-07` 9941aa0): `POST /api/hub/webhooks/fintava`, HMAC-SHA512 of the raw body checked in constant time (fails closed), each delivery stored once in `FintavaWebhookEvent` keyed on event, transaction reference and Fintava status (`ON CONFLICT DO NOTHING`), pending for MONEY-10 and MONEY-08; nothing moves money. Tested with documented payloads signed locally (no tunnel, R-25); no secret or personal data in logs. Gap G-19 (which field holds which reference). To verifying.
 - 2 Oct 2026 · MONEY-11 · Verified: PASS, no defects (backend 03a1503, mobile 3d7a04e). Balance equals Fintava after a ₦10 round trip in the sandbox; unreachable, unknown wallet and unconfigured production all answer 503, never 0; contract 89 suites 1852 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 9 suites on :4001 NOT RUN. One unclear item for the owner (the `src/api` fence). Status review.
 - 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
-- 2 Oct 2026 · MONEY-11 · `GET /money/wallet/balance` served in wawu-backend (`wmt/MONEY-11`): Fintava's availableBalance in kobo on every call, `503 provider_unreachable` (W6) never 0, `423 wallet_frozen`, `409 wallet_not_open`; new `FintavaWallet` table; app call `src/api/money.ts`; sandbox: route equals Fintava after two ₦10 sends. Status verifying.
