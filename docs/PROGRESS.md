@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 61 | 49 | 32 | 32 |
-| building | 0 | 0 | 1 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 1 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 16 | 9 | 1 | 0 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 
@@ -57,7 +57,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 2 Oct 2026 · INBOX-01 · Communities backend built (`wmt/INBOX-01`): `GET /communities/mine` with last message and unread, `POST /communities/:id/read`, share links `wawu/c/<slug>` (`GET /communities/:id/link`, `GET /communities/links/:slug`), `POST /communities/rooms` (private needs a cover), and a notification to the requester when a host approves or declines. Two new tables, nothing the web calls changes. G-25, G-26 filed. To verifying.
+- 2 Oct 2026 · INBOX-01 · Round 2: approvals and declines that race now give one outcome and one notification (conditional on the request still pending; parallel tests added); main merged into both branches, gaps renumbered G-26, G-27; contract suite 106 suites, 0 failed. Back to verifying.
+- 2 Oct 2026 · INBOX-01 · Communities backend built (`wmt/INBOX-01`): `GET /communities/mine` with last message and unread, `POST /communities/:id/read`, share links `wawu/c/<slug>` (`GET /communities/:id/link`, `GET /communities/links/:slug`), `POST /communities/rooms` (private needs a cover), and a notification to the requester when a host approves or declines. Two new tables, nothing the web calls changes. G-26, G-27 filed. To verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
 - 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
 - 2 Oct 2026 · INBOX-06 · Verified round 2: no defects (backend 8077ee9, mobile e012709). Chat media is held to 512 MB; the branch includes main `ac2a057` and its migrations apply cleanly on a fresh database; read marks hold for two messages in the same millisecond. Contract 99 suites 1964 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 2 unclear items for the owner (pending upload keys, CHAT-LIMITS). Status review.
@@ -71,4 +72,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
 - 2 Oct 2026 · MONEY-11 · `GET /money/wallet/balance` served in wawu-backend (`wmt/MONEY-11`): Fintava's availableBalance in kobo on every call, `503 provider_unreachable` (W6) never 0, `423 wallet_frozen`, `409 wallet_not_open`; new `FintavaWallet` table; app call `src/api/money.ts`; sandbox: route equals Fintava after two ₦10 sends. Status verifying.
 - 2 Oct 2026 · MONEY-06 · Round 2: the verifier's 5 defects fixed (exact Fintava hosts only; only Fintava's own `404 "Transaction not found!"` counts as absent; no resend before the money timeout plus a 10-minute safety window and only when history also lacks the send; a repeated reference is an unknown outcome; the `{}` timing in the docs matches the evidence); key fragments masked in logs. Back to verifying.
-- 2 Oct 2026 · MONEY-06 · Fintava client built in wawu-backend `src/fintava/` beside Flutterwave (no route served): every plan call typed in kobo, our reference on every send, reconcile before any resend, no secret in logs; sandbox run 25 passed, 5 NOT RUN (charged checks, no new customers, payouts blocked by question 17, webhooks are MONEY-07's); new fact: lookups answer `200 {}` for SUCCESS records too. To verifying.

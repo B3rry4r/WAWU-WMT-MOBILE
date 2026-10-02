@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -42,8 +42,14 @@ My communities with last message and unread; share links by slug; private rooms 
 - **Check, open wawu/c/<slug> and land in the room:** API side tested in the spec and live (link resolves, capitals accepted, unknown 404; after approval the room's messages read). The app's route for the link and the phone check are INBOX-14 ("A user who opens wawu/c/aba-tailors ... lands in that room", V10).
 - **Gates before (main 2b407e7) / after (merged with main 14a7fb2):** tsc 0 / 0; eslint 3642 errors 850 warnings / 3640 and 850 (current main also 3640/850); gates 16 fail 3 warn 76 accepted / 16 fail 4 warn 76 accepted (current main identical); baseline 108 entries OK / OK; contract 113 failed 1865 passed / 62 failed 1983 passed, the same 9 suites both times (tests that need a fresh identity from the shared :4001 mock, 401s), no test fails that passed before; protected routes and route shadowing pass. Mobile `npm run check` exit 0 before and after (285 tests, gates 0).
 - **Defaults (agent), owner may override:** unread counts messages from others after the last read, else after joining; a host who never opened counts all. Slugs come from the name, fixed after, `-2` for a repeat. Join decisions are not muted by the `communityMessages` switch (an answer to the person's own request, like `kyc_verified`). Approval opens `/communities/<id>`.
-- **Filed:** SHARED-CHANGES `INBOX-01 #1` (schema, migration, contract); BACKEND_GAPS G-25 (web routes still allow a private room with no cover), G-26 (the web was not checked for the two new kinds).
+- **Filed:** SHARED-CHANGES `INBOX-01 #1` (schema, migration, contract); BACKEND_GAPS G-26 (web routes still allow a private room with no cover), G-27 (the web was not checked for the two new kinds; no switch mutes them, owner question). Renumbered from G-25 and G-26 in round 2: main's KYC-01 took G-25.
 - **Not done:** mobile types not regenerated (`src/api` is fenced; `npm run api` runs after the backend merges).
+
+**Round 2 (builder, 2 Oct 2026), after the verifier's findings 1 and 2:**
+- Finding 1 fixed (backend `ddad519`): approve is `updateMany` on `status: 'pending'`, decline is `deleteMany` on `status: 'pending'`; only the request that changed the row notifies. A losing approve answers 200 with the joined row (as for a member already in) or 404 "No join request..." if a decline won; a losing decline answers 409 with main's existing message (now one shared constant) if an approval won, or 200 `{ declined: true }` if another decline won. Sequential answers are unchanged. New tests, 5 rounds each: three approves at once, three declines at once, approve against decline. Run against the old service code, approve against decline failed (the triple approve did not trigger that run; it is timing-dependent).
+- Finding 2: main merged into both branches; gaps renumbered G-26, G-27. G-27 now also records the switch question (G-22, finding 3). `notification-event.ts` header no longer says the kinds are exactly the web's.
+- Gates, backend merged with main `d27ad37`, fresh seeded database, own mock on :4001: tsc 0; eslint 3640 errors 850 warnings (as main); gates 16 fail 6 warn 76 accepted, 589 files (as main per the verifier); baseline OK; contract 106 suites, 2083 passed, 0 failed, 3 skipped (protected routes and route shadowing pass). Mobile `npm run check` exit 0.
+- Owner questions: unread after leaving and rejoining counts messages sent while away (the old read marker wins; the later of marker and `joinedAt` would match a first join), finding 5; the slug is the whole name (`aba-tailors-circle`), not I33's `aba-tailors`, and the host cannot choose it, finding 6.
 
 ## Verifier report
 
