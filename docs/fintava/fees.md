@@ -4,6 +4,10 @@ From the Fintava dashboard, shared by the owner on 2 Oct 2026. "Platform"
 is what Fintava charges. "Merchant" is the extra WAWU can set in the same
 dashboard; it is ₦0 for everything today.
 
+**These dashboard rates are the ones we use.** The sandbox charged ₦0 for
+wallet to wallet in the OPS-02 re-run; that is a sandbox setting and does not
+change these figures (owner, 2 Oct 2026).
+
 - Bank transfer ("transfer fee"): ₦40
 - Wallet to wallet ("balance transfer"):
   - below ₦5,000: ₦23.25

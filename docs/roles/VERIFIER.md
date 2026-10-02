@@ -17,10 +17,14 @@ code, stop and say so. A builder cannot verify their own work.
 
 1. **Diff against the report.** Compare the builder's file list with
    `git diff --stat main...wmt/<ID>`. Anything missing or extra is a finding.
-2. **Re-run every gate yourself** (`npm run check` here; the backend's own
+2. **No stand-ins for what main has.** Search the branch for local copies of
+   anything that exists on main (`src/components/`, `@/components/icon`,
+   `Money`, `Button`, `Text`). A copy, or a SHARED-CHANGES row deferring the
+   swap, is a defect.
+3. **Re-run every gate yourself** (`npm run check` here; the backend's own
    checks there). Note "files scanned". Record the counts. Never trust the
    builder's numbers.
-3. **Run every pass in the task's `passes` list** (definitions in
+4. **Run every pass in the task's `passes` list** (definitions in
    `docs/WORKFLOW.md` section 5):
    - **V5 Picture:** render the artboard
      (`python3 scripts/design/render_design.py <ID>`) and screenshot the built
@@ -37,8 +41,8 @@ code, stop and say so. A builder cannot verify their own work.
      reverses); our ledger equals Fintava's balance.
    - **V9 Live seam:** against the local backend, sign in through the real login (no injected
      token) and see a value only the server could have.
-4. **Test each capability check in the task, as written.**
-5. **Check the facts.** Any fee, limit, rate, hold, notification or promise on
+5. **Test each capability check in the task, as written.**
+6. **Check the facts.** Any fee, limit, rate, hold, notification or promise on
    screen: name what in the system backs it. Nothing backs it = finding.
 
 ## Report

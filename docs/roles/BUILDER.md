@@ -56,6 +56,11 @@ verified.
 1. Merge the newest main into your branch (`git fetch origin && git merge
    origin/main`, never a rebase), then run the checks again and record the
    counts after.
+   **Then use what main now has.** If main brought a shared component, icon
+   or helper your task copied or stood in for (a local button, amount, icon,
+   sheet), replace your copy with it now and delete the copy. A stand-in
+   never survives past the merge that made it unnecessary, and is never
+   written up as a follow-up.
 2. Fill in **Builder report** in the task file (max 20 lines): files changed;
    each capability check and how you tested it; gate counts before and after;
    gaps and shared-change requests filed; anything you could not do and why.

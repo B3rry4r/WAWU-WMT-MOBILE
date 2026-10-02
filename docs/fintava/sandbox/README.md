@@ -124,8 +124,11 @@ and `DECISIONS.md` is the owner's.
    purchase. The sandbox took ₦0 in all three directions:
    `transaction_fee: 0`, `platformComm`/`merchantComm`/`lomaCharge` null,
    balances moved by the exact amount (`13-`, `12-`, `22-`). Possibly the
-   merchant setting `WalletToWalletDebit: false`. Until Fintava confirms the
-   live charge (question 17), the fee figures in config stay provisional.
+   merchant setting `WalletToWalletDebit: false`. **Settled by the owner**
+   (merged from main while this run was being written up, `fees.md`): the
+   dashboard rates are final and the sandbox's ₦0 does not change them. So
+   this is a sandbox difference to remember when reconciling sandbox
+   balances, not a fee change.
 2. **Opening a wallet runs no identity check and costs nothing.**
    `fees.md` says opening a wallet "runs a BVN check (₦60) and a NIN check
    (₦70)". In the sandbox `POST /create/customer` cost ₦0, accepted a BVN
@@ -225,8 +228,9 @@ and `DECISIONS.md` is the owner's.
     purchases answer `400 "Unable to find customers"`, and the cable
     purchase `201 "service not currently available"`? What is missing on
     WAWU's sandbox merchant?
-17. **New.** Is wallet-to-wallet free in live too, or only because
-    `WalletToWalletDebit` is false? `fees.md` says ₦15.75 to ₦23.25.
+17. **New.** Why does the sandbox charge ₦0 for wallet-to-wallet (is it
+    `WalletToWalletDebit: false`)? The owner has ruled the dashboard rates
+    (₦15.75 to ₦23.25) final, so this only affects sandbox reconciliation.
 18. **New.** Why do `/txn` and `/txn/merchant` list only debits? How do we
     list money a wallet received?
 19. **New.** How does a customer wallet move from `TIER_2` to `TIER_3`

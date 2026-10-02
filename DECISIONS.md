@@ -168,6 +168,23 @@ Fintava wallet, then on to the payee or back to the payer. It ships like any
 other payment path, under Loma Bank's licence (R-1). Tasks: MONEY-18,
 BILLS-02.
 
+**R-21 · Money on screen is always kobo; naira from older routes is converted
+in one place.** *Lead, 2 Oct 2026, settling UI-01's open question.* The
+`Money` component takes integer kobo, the unit the wallet contract (MONEY-04)
+uses. A screen never multiplies or divides. Where a route that is already live
+still sends whole naira (listing prices, for example), its hook in `src/api/`
+converts it with the one helper `nairaToKobo()` and the route gets a
+`BACKEND_GAPS.md` row to serve kobo; the helper call is deleted when the route
+does. Tasks: whoever first shows a price from such a route.
+
+**R-22 · Component sizes come from the canvas's own kit, not from a ruling.**
+*Lead, 2 Oct 2026.* The board kit (`design/_gen/kit.js`) is the design's
+source for button heights, paddings, label and icon sizes, icon strokes and
+field metrics. A component copies them as named constants that cite the kit
+line, and must match it exactly (for example, button side padding 14 / 18 / 24
+for sm / md / lg). Moving them into theme tokens is housekeeping, never a
+question for the owner.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in

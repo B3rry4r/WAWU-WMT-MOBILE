@@ -24,8 +24,9 @@ merchant and the two test customers this task created).
   (`08-wallet-balance.md`, `22-merchant-balance.md`); the full record has
   `platformComm`, `merchantComm` and `lomaCharge` all null
   (`12-transaction-by-id.md`). `fees.md` says ₦23.25 below ₦5,000. The
-  merchant setting `WalletToWalletDebit: false` may be why; a question for
-  Fintava (README.md, Contradictions).
+  merchant setting `WalletToWalletDebit: false` may be why. The owner has
+  ruled the dashboard rates final (`fees.md`), so this is a sandbox
+  difference, not a fee change (README.md, Contradictions).
 - **A repeated `CustomerReference` is refused**: `400 ["customerReference
   already exists"]`, nothing moved. A refused transfer does **not** use up
   its reference: `OPS02R-W2W-004` was refused twice and `OPS02R-W2W-005`
