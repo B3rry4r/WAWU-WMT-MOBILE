@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 61 | 50 | 32 | 30 |
+| todo | 61 | 49 | 32 | 30 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 8 | 6 | 0 | 0 |
+
+## Built and verified, waiting for the owner's sign-off
+
+- [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
 
 ## Done
 
@@ -33,7 +37,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet, [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet
-- **Developer:** [UI-03](../tasks/UI-03.md) Avatars, ticks and chips, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here
+- **Developer:** [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here, [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap
 - **Developer 2:** [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
 - **Developer 3:** [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [EVENTS-02](../tasks/EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit, [PROS-01](../tasks/PROS-01.md) Find a professional
 
@@ -41,6 +45,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · UI-03 built (chips only): new `StatusPill` (the kit's `pill`: six tones, optional Lucide icon, not pressable) and `FilterChips` gains `variant="option"` (the kit's `optChip`: 38 high, wraps in a sheet); both in the dev showcase. Avatar and ticks on main checked against M1 and W7, no mismatch.
 - 2 Oct 2026 · SHARED-01 merged: shared `Avatar` (one, UI-02's API with the kit drawing), `CurrencyFlag`, Text variants (kvLabel, kvValue, meta, muted, bannerBody, cardTitle, sheetTitle, sheetTitleSm) and Money at exactly its size (per-run line heights on web only). Phone check (V10) waits on the Android build.
 - 2 Oct 2026 · Each developer's file (docs/people/DEV*.md) now says to keep working through the list without waiting to be prompted: pull main, take the next startable task, build, verify, push, repeat; ask only when everything left is blocked.
 - 2 Oct 2026 · The app now points at the live services the web uses, `https://api.wawuafrica.com` and `https://id.wawuafrica.com` (eas.json, `src/api/env.ts` fallbacks, BUILDS.md). The `.invalid` placeholders and the stale Railway address are gone.
@@ -55,4 +60,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · Builders now replace any stand-in for a shared component as soon as main has it, and verifiers fail a branch that keeps one (BUILDER.md, VERIFIER.md). Fintava fees: the dashboard rates in `docs/fintava/fees.md` are final; the sandbox's ₦0 doesn't change them.
 - 2 Oct 2026 · MONEY-04 round 2: kobo fields are `integer` in the contract, the never-null list corrected to 11, and three Lead rulings applied and recorded (merchant cap from config on merchant-wallet money only, purchases count toward the daily limit, W26 grouped unlock rows); status verifying.
 - 2 Oct 2026 · MONEY-04 built: money conventions (kobo, +234, one error shape, Idempotency-Key, PIN in `X-Transaction-Pin`, cursor pages) and the Naira wallet contract, 29 routes declared in wawu-backend `src/money/` and in the contract marked not served yet; artboard mapping and 11 canvas-versus-Fintava conflicts for the owner in wawu-backend `docs/contract/WALLET.md`; status verifying.
-- 2 Oct 2026 · UI-01's open questions settled: Money takes kobo and older naira routes are converted once in `src/api` (R-21); component sizes are the board kit's own, no owner ruling needed (R-22, SHARED-CHANGES row 6 closed). Developer 1 fixes the rest in UI-02's first commit: button side padding 14/18/24, focus ring visible on accent buttons, no browser outline on web, duplicate import in Button.tsx.

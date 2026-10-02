@@ -14,6 +14,7 @@ import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, ListRow, ListSection } from '@/components/ListRow';
 import { MediaCard } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
+import { StatusPill, type PillTone } from '@/components/StatusPill';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Skeleton, SkeletonRows, LoadingView } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -48,6 +49,28 @@ const inboxFilters = [
   { value: 'communities', label: 'Communities' },
   { value: 'money', label: 'Money' },
 ] as const;
+const eventKinds = [
+  { value: 'all', label: 'All' },
+  { value: 'conference', label: 'Conference' },
+  { value: 'workshop', label: 'Workshop' },
+  { value: 'concert', label: 'Concert' },
+  { value: 'meetup', label: 'Meetup' },
+] as const;
+const eventWhen = [
+  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'past', label: 'Past' },
+] as const;
+/** The kit's pills: wallet.js `StatusPill` (Completed, Pending, Failed, Frozen) plus the tones the other boards use. */
+const pills: { label: string; tone: PillTone; icon?: IconName }[] = [
+  { label: 'Completed', tone: 'positive', icon: 'Check' },
+  { label: 'Pending', tone: 'warning', icon: 'Clock' },
+  { label: 'Failed', tone: 'danger', icon: 'X' },
+  { label: 'Frozen', tone: 'info', icon: 'Snowflake' },
+  { label: 'WAWU pick', tone: 'accent' },
+  { label: 'Removed', tone: 'neutral' },
+  { label: 'Live', tone: 'positive' },
+  { label: 'Reversed to your wallet', tone: 'positive', icon: 'RotateCcw' },
+];
 const statePicks = [
   { value: 'content', label: 'Content' },
   { value: 'loading', label: 'Loading' },
@@ -92,6 +115,8 @@ export function Showcase() {
   const [email, setEmail] = useState('');
   const [txFilter, setTxFilter] = useState<(typeof transactionFilters)[number]['value']>('all');
   const [inboxFilter, setInboxFilter] = useState<(typeof inboxFilters)[number]['value']>('all');
+  const [when, setWhen] = useState<(typeof eventWhen)[number]['value']>('upcoming');
+  const [kind, setKind] = useState<(typeof eventKinds)[number]['value']>('all');
   const [view, setView] = useState<(typeof viewPicks)[number]['value']>('foryou');
   const [listState, setListState] = useState<(typeof statePicks)[number]['value']>('content');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -244,6 +269,21 @@ export function Showcase() {
         </View>
       </Section>
 
+      <Section title="Option chips, as a filter sheet draws them">
+        <Text variant="label">When</Text>
+        <FilterChips variant="option" label="When" items={eventWhen} value={when} onChange={setWhen} testID="showcase-option-chips" />
+        <Text variant="label">Kind</Text>
+        <FilterChips variant="option" label="Kind of event" items={eventKinds} value={kind} onChange={setKind} />
+      </Section>
+
+      <Section title="Status pills and tags">
+        <View style={styles.row}>
+          {pills.map((pill) => (
+            <StatusPill key={pill.label} label={pill.label} tone={pill.tone} icon={pill.icon} />
+          ))}
+        </View>
+      </Section>
+
       <Section title="Grouped list cards">
         <GroupedList>
           <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
@@ -253,7 +293,7 @@ export function Showcase() {
         </GroupedList>
         <GroupedList>
           <ListRow lead={<IconTile icon="Lock" />} title="Transaction PIN" subtitle="Change or reset it" onPress={mark('PIN')} />
-          <ListRow lead={<Avatar name="Chidi Eze" hue="sky" size={44} decorative />} title="Chidi Eze" titleAccessory={<VerifiedTick kind="pro" size={14} />} subtitle="Video creator" onPress={mark('Chidi')} />
+          <ListRow lead={<Avatar name="Chidi Eze" hue="sky" size={44} decorative />} title="Chidi Eze" titleAccessory={<VerifiedTick kind="pro" size={15} />} subtitle="Video creator" onPress={mark('Chidi')} />
           <ListRow lead={<IconTile icon="Clock" tone="warn" />} title="Not pressable" subtitle="No chevron, no press" />
         </GroupedList>
         <Card padded>
