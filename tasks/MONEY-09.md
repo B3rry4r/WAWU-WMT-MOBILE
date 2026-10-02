@@ -3,7 +3,7 @@ id: MONEY-09
 title: Transaction PIN
 owner: YOU
 area: MONEY
-order: 57
+order: 58
 priority: launch
 repo: wawu-backend
 type: money-path

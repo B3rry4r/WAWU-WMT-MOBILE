@@ -3,7 +3,7 @@ id: WALLET-01
 title: Wallet home: Naira account and its states
 owner: YOU
 area: WALLET
-order: 150
+order: 151
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

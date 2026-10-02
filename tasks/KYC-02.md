@@ -3,7 +3,7 @@ id: KYC-02
 title: Selfie match to the BVN photo
 owner: YOU
 area: KYC
-order: 75
+order: 76
 priority: launch
 repo: wawu-backend
 type: third-party

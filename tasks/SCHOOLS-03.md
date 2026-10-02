@@ -3,7 +3,7 @@ id: SCHOOLS-03
 title: Schools: directory, school page, course page, no results
 owner: DEV3
 area: SCHOOLS
-order: 60
+order: 61
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

@@ -3,7 +3,7 @@ id: LEGAL-03
 title: Legal consultations and deliverables
 owner: DEV3
 area: LEGAL
-order: 68
+order: 69
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

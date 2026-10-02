@@ -3,7 +3,7 @@ id: EXPLORE-05
 title: Search: communities, recent and popular searches, ticks
 owner: DEV
 area: EXPLORE
-order: 96
+order: 97
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

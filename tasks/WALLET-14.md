@@ -3,7 +3,7 @@ id: WALLET-14
 title: Saved recipients and payout account
 owner: YOU
 area: WALLET
-order: 113
+order: 114
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

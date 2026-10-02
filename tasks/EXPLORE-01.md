@@ -3,7 +3,7 @@ id: EXPLORE-01
 title: Explore: browse, categories, loading, empty
 owner: DEV
 area: EXPLORE
-order: 106
+order: 107
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

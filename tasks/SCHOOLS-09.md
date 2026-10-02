@@ -3,7 +3,7 @@ id: SCHOOLS-09
 title: Enrolment report to the school, and My courses
 owner: DEV3
 area: SCHOOLS
-order: 128
+order: 129
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

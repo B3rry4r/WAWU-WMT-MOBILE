@@ -3,7 +3,7 @@ id: SCHOOLS-07
 title: Enrol in a course and pay from the wallet (backend)
 owner: DEV3
 area: SCHOOLS
-order: 120
+order: 121
 priority: launch
 repo: wawu-backend
 type: money-path

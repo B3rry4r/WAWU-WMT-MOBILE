@@ -3,7 +3,7 @@ id: INBOX-19
 title: Chat and send money in a chat
 owner: DEV2
 area: INBOX
-order: 137
+order: 138
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

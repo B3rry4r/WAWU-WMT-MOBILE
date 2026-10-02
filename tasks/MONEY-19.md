@@ -3,7 +3,7 @@ id: MONEY-19
 title: Not enough money, and still confirming
 owner: YOU
 area: MONEY
-order: 93
+order: 94
 priority: launch
 repo: wawu-backend
 type: money-path
