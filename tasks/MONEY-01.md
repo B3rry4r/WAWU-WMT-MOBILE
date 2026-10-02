@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -239,6 +239,24 @@ Runner DB checksums were identical before and after.
 - Note: the full jest numbers above come from my second branch run. My first run had no generated Prisma client in my clone (my setup), so I discarded it.
 
 Status back to `building`: R3-1 is an open defect. This was a third fix round, so under WORKFLOW section 4 (step 5) and section 9 it now goes to the owner: fix it, or accept it as outside the threat model.
+
+### Round 4 (backend 5832830, mobile c568dd1)
+
+Scope: round 4's changes only. The owner ruled deliberate in-PR tampering (R3-1's class) out of scope. Fresh clone, `money01v_ci_test` (dropped), mock :4601 (stopped by pid). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money01-r4/` (`attacks.txt`, `atk_*.log`, `run_main.log`).
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Suite on main | passed | `PROTECTED_LOCK_REF=wmt/MONEY-01 run.sh --fresh 231cb64`: "all 244 required tests passed", exit 0 |
+| Wording | passed | README, workflow header, ci-check.sh, run.sh and registry.ts now state the scope: accidental breakage and casual edits are caught; deliberate tampering is left to review. The old "cannot loosen the checker / its own lock" sentences are gone (grep finds none) |
+| Tripwire catches A1b, A2, A3 (rebuilt on 5832830) | passed | all three exit 1 with "Code outside the protected route checker refers to it ... Refused", naming `scripts/postseed.js`, `prisma.config.ts` and `src/bill-payment/bill-payment.controller.ts` |
+| Tripwire stays quiet on a plain shape change | passed | bills wrap alone: no tripwire message, base suite red (243 of 244), exit 1 |
+| Tripwire stays quiet on Markdown | passed | a new `docs/*.md` naming `test/protected-routes`, `compareShape` and the registry: no tripwire message, 244/244, exit 0 |
+| Merge-base diff | passed | A PR branched from 9d93ed3 (one harmless comment) against base 5832830 gives "No change" and exit 0. The old base-tip diff reports round 4's 4 checker files as its own (lock-diff exit 1). A PR branched from main 231cb64 gives "branched off before the suite existed: checked with the base's suite and lock", exit 0 |
+| YAML | passed | parses; triggers `pull_request` only (`workflow_dispatch` gone, no `github.sha` fallback); `permissions: contents: read`; both checkouts (base at `base.sha`, PR at `head.sha`) have `persist-credentials: false`; the PR commits are fetched locally from `../pr` and checked against `head.sha`. Never run on GitHub: NOT RUN there |
+
+Nit, not a defect: `lock-diff.py` still prints "A change lands only through this reviewed diff". Read within the owner's scope (review being the control) it holds, but it is the one sentence left that sounds absolute.
+
+**Status: `review`.** No open defects. R3-2 is fixed (`workflow_dispatch` removed) and R3-4's credentials and merge-base points are fixed. R3-3 (CODEOWNERS and the required check are repository settings) is still the owner's.
 
 ## Owner sign-off
 
