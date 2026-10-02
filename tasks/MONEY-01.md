@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -67,6 +67,11 @@ wawu-backend `wmt/MONEY-01` @ 5f2658a (one commit on origin/main 231cb64). Files
 - Proof: I ran the workflow's run step locally. Attack deca03e (dangling) changes the bills shape, rewrites and rehashes its own lock, makes run.sh use its own lock, and adds `testPathIgnorePatterns` to package.json. With no label: exit 1 on GET /bills/categories, 243 of 244 passed, and the lock diff lists the entry and run.sh. With the label: exit 0. An unchanged PR passes; the first PR (base = origin/main) is checked against its own lock and passes. The README now lists the two repository settings for the owner (required check; CODEOWNERS).
 - New entry `GET /admin/finance/wallets [withBalances]` (`balance.ngn` is a number). The receipt fixture now carries a real `charge.completed` payload, so the `charge` block is locked on GET receipts/:id and reverify. Totals: 242 entries; null/[]/unknown leaves 631 of 4475.
 - Main: `run.sh --fresh origin/main` -> 253/253, all 244 required passed. Full jest 1625 pass / 40 fail (the same 4 :4001 suites). tsc 0, eslint 4497, gates 16/76 (all unchanged).
+
+### Round 4 (backend 5832830)
+- Scope corrected per the owner: the README and comments now say the suite catches accidental shape, auth and status changes and accidental or casual lock and checker edits. Deliberate tampering in PR code (seed scripts, prisma.config.ts, app code patching the checker) is not blocked; it is caught by review.
+- `ci-check.sh` fails when a line a PR adds outside the checker (Markdown aside) names `test/protected-routes`, `src/protected-routes`, `compareShape` or `protected-registry`, unless the owner approved. Lock and checker changes are now measured from `git merge-base`. The workflow drops `workflow_dispatch` and checks out base and head separately with `persist-credentials: false`.
+- Proof (the workflow's run step run locally, base 5832830, verifier's attack.py): A1b (28cd3ea) exit 1 naming scripts/postseed.js; A3 (6aae754) exit 1 naming the controller's compareShape patch; A2 (8fb1ae0) exit 1 naming prisma.config.ts. Control A0 (2afbab6, plain shape change) does not trip the tripwire and fails in the suite, 243 of 244. Main: `run.sh --fresh origin/main` -> 253/253, all 244 required passed.
 
 ## Verifier report
 
