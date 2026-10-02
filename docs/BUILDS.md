@@ -14,6 +14,11 @@ for when an iPhone tester joins; skip them until then.
 
 - **Done:** the project is linked to Expo as `@moxnafrica/wawu-wmt`
   (project id in `app.json`), 2 Oct 2026.
+- **Updates only reach a build that can run them.** `runtimeVersion` uses
+  the `fingerprint` policy: a change to native code (a new `expo-*` package,
+  `app.json` plugins) changes the fingerprint, so the next update waits for a
+  new build instead of crashing the old one. After merging such a change, run
+  a new preview build.
 - **Addresses:** every profile points at the live services the web uses,
   `https://api.wawuafrica.com` and `https://id.wawuafrica.com`. There is no
   staging server, and nothing runs on Railway.
