@@ -48,11 +48,16 @@ blocker").
   10:27:45, 10:27:46 and 10:28:11 UTC (OPS-02 verifier) `GET /transaction/reference/{ours}` answered
   **HTTP 200 with the body `{}`**, while `/txn/merchant` still listed the same
   send as `PENDING`. **`{}` is not only for refused sends** (MONEY-06,
-  `sandbox/26-money06-client.md`): from about 15:34 UTC the same lookup
-  answered `{}` for records of every status, SUCCESS included, about a
-  minute after each was found, while a reference that never existed still
-  answered 404; records that were `{}` at 10:27 came back at 15:33. So `{}`
-  comes and goes and looks like "a record exists, its body was not served".
+  `sandbox/26-money06-client.md`): the lookup answered `{}` for records
+  that exist, of every status, SUCCESS included. It was seen from about a
+  minute after a send to at least 18.5 minutes after (and on OPS-02's
+  records, hours old), and it flips: the same reference was served in full
+  and then answered `{}` 1.2 s later (MONEY-06 verifier, 16:00 UTC), and
+  records that were `{}` at 10:27 were served in full again at 15:33. A
+  reference that never existed answered `404 "Transaction not found!"` every
+  time. So `{}` can come back for an existing reference at any time, even
+  a second after it was served; it looks like "a record exists, its body
+  was not served".
   The client (MONEY-06) never reads `{}` as "not found, safe to retry with
   the same reference": it reconciles from the history (where the row still
   sits), retries a refused bank send only under a **new** reference, and
@@ -86,8 +91,10 @@ blocker").
   (`sandbox/24-auth-and-errors.md`).
 - **Not found is not one code.** Unknown wallet on the balance call: 400
   "Wallet not found". Unknown customer on `/txn`: 404. Unknown transaction
-  reference: 404. **Unknown transaction id: 200 with `data: null`**, and
-  later `200 {}` (`sandbox/26-`). A
+  reference: 404. **Unknown transaction id: 200 with `data: null`**
+  (OPS-02, and again at 16:00:20 UTC); in two MONEY-06 runs (15:40 and
+  15:41 UTC) the same call came back without `data`, which the client reads
+  as unknown (`sandbox/26-`). A
   refused bank send looked up by our reference some time later: **200 with
   `{}`** (no `data`, no `status`), though the history still lists it
   (`sandbox/14-bank-transfer.md`).
@@ -423,8 +430,8 @@ app (R-20). What the sandbox showed on each, with evidence, is in
 20. Open. How does a wallet move from `TIER_2` to `TIER_3`?
 21. Open. Will the `PENDING` records left by refused bank sends ever resolve,
     and why does the lookup by our reference turn into `200 {}` while
-    `/txn/merchant` still lists the row? It now happens to SUCCESS records
-    too, about a minute after they are made, and comes and goes; the lookup
-    by id does it as well. How should we retry? (`sandbox/14-bank-transfer.md`,
+    `/txn/merchant` still lists the row? It happens to SUCCESS records too,
+    from about a minute after a send to at least 18.5 minutes after, and
+    flips between the full record and `{}` within 1 to 2 seconds. How should we retry? (`sandbox/14-bank-transfer.md`,
     `sandbox/26-money06-client.md`.)
 22. Open. Create returns `nin: null`: is the NIN stored?

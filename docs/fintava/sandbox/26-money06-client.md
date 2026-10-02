@@ -18,21 +18,35 @@ A or B, each sent back, so every balance ended where it started.
 
 ## What this adds to what OPS-02 found
 
-- **`200 {}` is not only for refused bank sends.** From about 15:34 UTC,
+- **`200 {}` is not only for refused bank sends.**
   `GET /transaction/reference/{ours}` answered `200` with the body `{}`
-  (2 bytes) for records of every status, SUCCESS included (`OPS02R-W2W-001`
-  and this task's own ₦10 sends, about a minute after each was found), while
-  a reference that never existed still answered `404 "Transaction not
-  found!"`. It stayed `{}` for every reference probed at 15:34 to 15:39
-  UTC, spaced 20 s apart. Meanwhile `OPS02R-BC-001` and `OPS02R-MT-002`,
-  `{}` for the OPS-02 verifier at 10:27, answered with their PENDING records
-  again at 15:33. So `{}` comes and goes: it looks like "a record exists but
-  its body was not served". A fresh send was found by our reference straight
-  after it was made in every run.
-- **`GET /transaction/id/{id}` can answer `{}` too.** The unknown id
-  `00000000-...` answered `200 { data: null }` in the first run and `200
-  {}` in the later two. The client reads `data: null` as absent and `{}`
-  as unknown.
+  (2 bytes) for records that exist, of every status, SUCCESS included
+  (`OPS02R-W2W-001` and this task's own ₦10 sends). What was seen:
+  - A fresh send was found in full by our reference straight after it was
+    made, in every run.
+  - `MONEY06-SBX-20261002153323-3` (sent during run 1, 15:33:23 to
+    15:33:37) was served in full at 15:34:20.9 and answered `{}` at
+    15:34:22.8; `OPS02R-W2W-001` was served in full at 15:34:21.1 and
+    answered `{}` at 15:34:22.9.
+  - From 15:34:22 to 15:39:10 every reference probed answered `{}`, singly
+    and spaced 20 s apart.
+  - `OPS02R-BC-001` and `OPS02R-MT-002`, `{}` for the OPS-02 verifier at
+    10:27, were served in full again at 15:33.
+  - The MONEY-06 verifier, at 16:00 UTC: `MONEY06-SBX-20261002154144-1`,
+    18.5 minutes after its send, was served in full and answered `{}` 1.2 s
+    later; `OPS02R-MT-001` the same, 1.1 s apart.
+  - A reference that never existed answered `404 "Transaction not found!"`
+    every time.
+  So `{}` can come back for an existing reference at any time, from about a
+  minute to at least 18.5 minutes after the send (and on hours-old OPS-02
+  records), flipping with the full record within about 1 to 2 seconds. It looks
+  like "a record exists but its body was not served".
+- **The unknown id answers `data: null`.** `GET /transaction/id/00000000-...`
+  answered `200 { data: null }` in run 1 and for the MONEY-06 verifier at
+  16:00:20 UTC. In runs 2 and 3 (15:40 and 15:41 UTC) the same call came
+  back without `data`, which the client read as unknown. The client reads
+  `data: null` as absent and a body without `data` as unknown, and never
+  decides a resend from this call.
 - **A timed-out send landed.** In run 2 the script's client waited 3 s for
   `A to WAWU ₦10` (`MONEY06-SBX-20261002153955-2`) and gave up
   (`outcome_unknown`). The money moved anyway: the balances ended at their
