@@ -7,7 +7,7 @@ order: 45
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [UI-02, MONEY-02, MONEY-04]
 decisions: [R-6, R-10]
 passes: [V1, V5, V6]
@@ -261,6 +261,78 @@ Notes (not defects):
 - The `lists.test.tsx` filter-chips timeout is flaky under load.
 
 Final round verdict: 1 open defect (F1). Status back to `building`.
+
+### Round 10
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked 4bc29d1, which contains main 8f0d90c, in a fresh detached worktree with `node_modules` symlinked; I removed it afterwards. I exported the branch and main 8f0d90c with `expo export --platform web --dev --clear` and served each on 8793 in turn. I shot them with Playwright + Chromium 1194 at 390 px, 2x, light and dark: all 10 pay-sheet states, the PIN sheet (`?answer=hold&biometric=face&forgot=1`) and the Showcase (`/dev/components`, every scroll page, and with the unlock sheet open). Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/`: `shots5/` (branch, `MAIN-` for main, `v844-` for the 844 px frame), `design_shots5/`, `side5-*.png`, `grid5-*.png`, `showcase-cmp-*.png`, `showcase-sheet-cmp.png`, `check5.log` and `edge-tests5.log`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 on the first run: tsc and lint clean; jest 13 suites, 250 tests passed; gates 9 run, **69 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 199 OK (`check5.log`) |
+| V5 Picture | passed | H14, H17, H18, W10 and W11 beside the build, light and dark (`side5-*.png`); measurements below |
+| V6 States | passed | All 10 states in light and dark, with no page errors (`shots5/`, `grid5-*.png`) |
+
+Checks:
+1. **F1 closed.**
+   - `Header` now renders `MediaCard` (with `byline`, `image` and the `VerifiedTick` accessory), and the status mark is `IconTile` (`warn` with Clock, `danger` with X, 72 px, stroke 2.4).
+   - Nothing in `src/components/pay-sheet/` is a copy of a main component. The one local layout left is the warning banner, and main has no banner component.
+   - The only local line height is W10's "Sending to" (`canvasNormalLineHeight(13.5)`), because no variant is 13.5 px on the normal line.
+2. **Pictures, measured. The 397/398 question is settled.**
+   - The kit's `phone` is 844 px tall (`design/_gen/kit.js`, `height:844px`), while the renderer's PNG and my earlier 390 × 845 viewport are 845. A bottom-anchored sheet therefore sits 1 px lower at 845 than on the canvas.
+   - At a 390 × 844 viewport (`v844-*`), the build matches the canvas:
+     - W11 edge 397 = 397 and grabber 407 = 407.
+     - H18 edge 485 = 485 and grabber 495 = 495.
+     - H14 and H17 sit exactly 50 px higher, which is the brief's one extra row.
+   - At 845, the W11 edge is 398, which is why I reported "398 vs 397" in the final round. The builder's "W11 edge 397" is right at the canvas's 844. The older Applied row "MONEY-03 #11" still says "398 = 398 (was 397)" (note below).
+   - Measured from the grabber, light and dark (all in px):
+
+     | | Canvas | Build |
+     |---|---|---|
+     | H14 and H17: edge to grabber, below the hairline | 9 | 9 |
+     | H14 and H17: grabber to header | 25 | 25 |
+     | H14: card top | 100 | 100 |
+     | H14: wallet card | 270 to 330.5 | 320 to 380.5 |
+     | H14: button | 355.5 | 405.5 |
+     | H17: banner | 98.5 to 163 | 98.5 to 163 |
+     | H17: card top | 184 | 184 |
+     | H17: buttons | 356.5 / 420.5 | 406.5 / 470.5 |
+     | H18: mark, title, line, Refresh, Contact support | 46 / 110.5 to 111 / 146 / 197 / 282.5 | the same |
+     | W10: avatar top to card top | 157 | 157 |
+     | W10: text block | 58 | 58 |
+     | W10: card-row label ink | 22.5 / 72.5 / 122.5 | 22.5 / 72.5 / 122.5 |
+     | W11 at 844: title / line / dots | 434 / 464.5 / 502 | 434 / 464.5 / 502 |
+
+     Every H14 and H17 offset after the extra row is exactly +50. W11's key rows sit 0.5 px lower than the canvas (560 against 559.5), the same on main, so that belongs to MONEY-02's keypad.
+   - Differences with a recorded reason: one extra row (BRIEF H14 and H17, R-10, R-23), faded kobo on fractional amounts (R-21), H18's copy (round 1), and the preview's thumbnail and backdrop.
+3. **Shared changes are safe for their other callers.**
+   - **BottomSheet:** the PIN sheet's content is pixel-identical on main and on this branch at every band. Its edge is now drawn as the kit draws it. The Showcase unlock sheet moves 1 px, as recorded.
+   - **Card** (inset edge, no border): the Showcase's grouped lists, list rows, transaction rows and cards look the same as on main, a pixel or two shorter each, and the page is 11 px shorter overall (`showcase-cmp-*.png`).
+   - **MediaCard:** `byline` and `image` are optional, so a card without them takes the old path. The Showcase's media cards look the same.
+   - **IconTile:** the stroke defaults to 2, unchanged for TransactionRow and StateViews.
+   - **Theme:** fractional line heights, and `normalStyle` for six variants. PIN sheet, Showcase and pay sheet all match.
+   - **Tests:** every changed test is exact or stricter.
+     - The sheet and card shadows are asserted with exact `toEqual`, plus `borderTopWidth` / `borderWidth` undefined.
+     - The theme line heights are exact products and pinned values. `meta`, `errorLine` and `linkStrong` are 17 / 17 / 18, the same numbers as before.
+     - New tests cover the byline order, the screen-reader label, bundled and URL images, and the IconTile stroke.
+
+     UI-02's tests, the PinSheet suite and the Showcase test pass.
+4. **States and fees: pass.**
+   - All 10 states render correctly. No wallet leaves only the sheet's Close control. Loading disables Unlock. Paying disables both Paying and Close.
+   - My 7 tests pass again (`edge-tests5.log`): ₦2,500 + ₦23.25 = "Unlock · ₦2,523.25"; Fees ₦65 and Total ₦25,065; "Send ₦25,025.75"; one Fees row with three parts; "Add ₦0.01"; the double-tap guard; `clearTimeout` on unmount.
+5. **Scope: pass.**
+   - Against main 8f0d90c the branch touches only `src/components/pay-sheet/`, `src/app/preview/pay-sheet.tsx` and the authorised shared changes: BottomSheet, Card, IconTile, MediaCard, `src/theme/index.ts`, and the tests in `src/__tests__/lists.test.tsx` and `kit-components.test.tsx`. Each is recorded in SHARED-CHANGES Applied ("MONEY-03 #11", "round 8 a/b/c", "round 9", "round 10").
+   - The other files are DECISIONS.md (R-23, once), SHARED-CHANGES, LOG, PROGRESS and this file.
+   - Row ids are unique in every table, sections 2 to 4 are empty, and `git grep` finds no conflict markers.
+6. **`npm run check`: exit 0** (counts above).
+
+Findings: none open. F1 is closed.
+
+Notes (not defects):
+- The Applied row "MONEY-03 #11" still reads "panel top at 398 = 398 (was 397)". The canvas is 397, and so is the build at the canvas's 844 px frame. The round-10 row has the right figure. Worth correcting the older row so nobody re-measures it.
+- W11's keypad digits sit 0.5 px below the canvas at 844 (MONEY-02, unchanged here).
+- When comparing bottom-anchored sheets, shoot at 390 × 844, the kit's phone height, not 845.
+
+Round 10 verdict: no open defects. Status `review`.
 
 ## Owner sign-off
 
