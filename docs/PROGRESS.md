@@ -38,6 +38,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-09 (transaction PIN) now depends on MONEY-04 (the contract that says how the PIN is sent) instead of the Fintava client: Fintava has no wallet PIN. MONEY-04 started; MONEY-02 and MONEY-03 being built.
 - 2 Oct 2026 · Rebalanced by screens, not just task count: Developer 2 takes Inbox, Bills and Ads (30 tasks, 50 screens); Developer 3 takes Events, Schools, Legal and Professionals (28 tasks, 57 screens).
 - 2 Oct 2026 · Two more developers join. Developer 2 takes Inbox and Events (30 launch tasks); Developer 3 takes Schools, Professionals, Legal, Bills and Ads (28). You and the first developer keep 107 of 165 launch tasks (65%).
 - 2 Oct 2026 · OPS-02 · First Fintava sandbox calls saved in `docs/fintava/sandbox/`; the sandbox merchant is inactive, so customer, transfer and bill calls are refused (403) until Fintava activates it. `naira-api.md`, `limits.md`, `fees.md` corrected.
@@ -52,4 +53,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · Developer verified SETUP-01 in their own session; push blocked by GitHub access to MOXN-AFRICA.
 - 2 Oct 2026 · Owner: designs are final; the 112 brief changes are made in code. OPS-04 closed.
 - 2 Oct 2026 · OPS-04 designer brief passed verification (4 rounds, 112 changes).
-- 2 Oct 2026 · Fintava's dashboard charges recorded (`docs/fintava/fees.md`): user pays Fintava's charge plus WAWU's fee.
