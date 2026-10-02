@@ -2632,6 +2632,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Is a PIN set, when it last changed, tries left, and the lock if any. */
+        get: operations["MoneyPinController_state"];
+        /** Change the PIN. The current PIN is X-Transaction-Pin. */
+        put: operations["MoneyPinController_change"];
+        /** Set the first PIN (A9, A10, W36). Both entries in one request; a difference is pin_mismatch. */
+        post: operations["MoneyPinController_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/pin/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check the PIN without moving money, for a screen that must confirm the
+         *     person before it changes something. A wrong PIN counts toward the lock
+         *     exactly as it does on a debit.
+         */
+        post: operations["MoneyPinController_verify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/wallet": {
         parameters: {
             query?: never;
@@ -2675,56 +2715,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/pin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Is a PIN set, when it last changed, tries left, and the lock if any.
-         * @description Declared by MONEY-04, not served yet: MONEY-09 serves it.
-         */
-        get: operations["MoneyPinController_state"];
-        /**
-         * Change the PIN. The current PIN is X-Transaction-Pin.
-         * @description Declared by MONEY-04, not served yet: MONEY-09 serves it.
-         */
-        put: operations["MoneyPinController_change"];
-        /**
-         * Set the first PIN (A9, A10, W36). Both entries in one request; a difference is pin_mismatch.
-         * @description Declared by MONEY-04, not served yet: MONEY-09 serves it.
-         */
-        post: operations["MoneyPinController_set"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/pin/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check the PIN without moving money, for a screen that must confirm the
-         *     person before it changes something. A wrong PIN counts toward the lock
-         *     exactly as it does on a debit.
-         * @description Declared by MONEY-04, not served yet: MONEY-09 serves it.
-         */
-        post: operations["MoneyPinController_verify"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/money/pin/reset": {
         parameters: {
             query?: never;
@@ -2738,7 +2728,7 @@ export interface paths {
          * Forgot PIN (W37): send a code to the phone on file. Answers again with a new code once resendAvailableAt has passed.
          * @description Declared by MONEY-04, not served yet: MONEY-14 serves it.
          */
-        post: operations["MoneyPinController_startReset"];
+        post: operations["MoneyPinResetController_startReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2758,7 +2748,7 @@ export interface paths {
          * The code and the new PIN. Clears the lock and the wrong-try count.
          * @description Declared by MONEY-04, not served yet: MONEY-14 serves it.
          */
-        post: operations["MoneyPinController_confirmReset"];
+        post: operations["MoneyPinResetController_confirmReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5840,6 +5830,12 @@ export interface components {
             completedAt: string | null;
             legalRequestId: string | null;
         };
+        PinStateView: {
+            isSet: boolean;
+            changedAt: string | null;
+            triesLeft: number;
+            lockedUntil: string | null;
+        };
         FeeBreakdown: {
             providerFeeKobo: number;
             wawuFeeKobo: number;
@@ -6048,12 +6044,6 @@ export interface components {
             usedTodayKobo: number;
             remainingTodayKobo: number;
             resetsAt: string;
-        };
-        PinStateView: {
-            isSet: boolean;
-            changedAt: string | null;
-            triesLeft: number;
-            lockedUntil: string | null;
         };
         BankTransferAccessView: {
             allowed: boolean;
@@ -11294,71 +11284,6 @@ export interface operations {
             };
         };
     };
-    MoneyWalletController_wallet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletView"];
-                };
-            };
-        };
-    };
-    MoneyWalletController_balance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletBalanceView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
     MoneyPinController_state: {
         parameters: {
             query?: never;
@@ -11557,7 +11482,72 @@ export interface operations {
             };
         };
     };
-    MoneyPinController_startReset: {
+    MoneyWalletController_wallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
+                };
+            };
+        };
+    };
+    MoneyWalletController_balance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletBalanceView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPinResetController_startReset: {
         parameters: {
             query?: never;
             header?: never;
@@ -11594,7 +11584,7 @@ export interface operations {
             };
         };
     };
-    MoneyPinController_confirmReset: {
+    MoneyPinResetController_confirmReset: {
         parameters: {
             query?: never;
             header?: never;
