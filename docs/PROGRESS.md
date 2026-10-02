@@ -3,19 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 20 of 176.**
+**Launch tasks done: 21 of 176.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 62 | 50 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
-| done | 13 | 8 | 0 | 0 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [MONEY-11](../tasks/MONEY-11.md) Balance (You)
+| review | 0 | 0 | 0 | 0 |
+| done | 14 | 8 | 0 | 0 |
 
 ## Done
 
@@ -39,6 +35,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
+- [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
 
 ## Next up

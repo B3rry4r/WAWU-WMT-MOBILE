@@ -7,7 +7,7 @@ order: 69
 priority: launch
 repo: wawu-backend
 type: money-path
-status: review
+status: done
 depends_on: [MONEY-06]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -162,3 +162,5 @@ Verifier, 2 Oct 2026. I wrote none of this code. Checked: backend `wmt/MONEY-11`
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+**Lead at merge (2 Oct 2026):** the verifier's finding 1 (`src/api/money.ts` and `src/api/errors.ts` are fenced files changed without a SHARED-CHANGES row) is accepted as part of this ticket: the typed W6 error is the ticket's own scope, and nothing live reads `ApiError.code` yet. Finding 3 (no retry before W6) goes to WALLET-01 with SHARED-CHANGES row 1. Backend PR #28 merged as ac2a057; contract re-synced from it.
