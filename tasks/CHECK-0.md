@@ -7,7 +7,7 @@ order: 8
 priority: launch
 repo: all
 type: ops
-status: todo
+status: done
 depends_on: [SETUP-01, OPS-03, MONEY-01]
 decisions: []
 passes: []
@@ -51,4 +51,4 @@ _The AUDITOR session report (docs/roles/AUDITOR.md), where this checkpoint calls
 
 ## Owner sign-off
 
-_Owner: date, and "go" or what blocks it._
+Owner, 2 Oct 2026: go. SETUP-01, OPS-03 and MONEY-01 are done; building has started.

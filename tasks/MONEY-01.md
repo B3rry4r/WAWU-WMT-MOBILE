@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -260,4 +260,4 @@ Nit, not a defect: `lock-diff.py` still prints "A change lands only through this
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: signed off by approving the merge (wawu-backend #23); CI and deploy green.

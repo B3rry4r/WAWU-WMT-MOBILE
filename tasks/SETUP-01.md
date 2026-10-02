@@ -7,7 +7,7 @@ order: 1
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V5]
@@ -145,4 +145,4 @@ _Verifier session, 2 Oct 2026, branch wmt/SETUP-01 (uncommitted working tree). R
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: signed off ("carry on with SHELL-01"); merged from wmt/SETUP-01.

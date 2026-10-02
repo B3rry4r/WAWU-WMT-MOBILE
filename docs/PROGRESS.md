@@ -3,40 +3,36 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 2 of 165.**
+**Launch tasks done: 7 of 165.**
 
 | | You | Developer |
 |---|---|---|
-| todo | 96 | 85 |
+| todo | 95 | 85 |
 | building | 0 | 0 |
-| verifying | 0 | 1 |
-| review | 3 | 0 |
-| done | 2 | 0 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
-- [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
-- [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
-
-## Being verified
-
-- [SETUP-01](../tasks/SETUP-01.md) Verify the mobile repo setup (Developer)
+| verifying | 0 | 0 |
+| review | 0 | 0 |
+| done | 6 | 1 |
 
 ## Done
 
+- [SETUP-01](../tasks/SETUP-01.md) Verify the mobile repo setup (Developer)
 - [OPS-01](../tasks/OPS-01.md) Record the owner's rulings (You)
+- [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
 - [OPS-04](../tasks/OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers (You)
+- [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
+- [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
+- [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
 
 ## Next up
 
 - **You:** [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls, [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet
-- **Developer:** [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap, [ME-05](../tasks/ME-05.md) Profile fields, [HOME-04](../tasks/HOME-04.md) Feed: following, likes, views, shares
+- **Developer:** [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs, [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring, [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · SETUP-01 merged from the developer's branch (renderer runs offline, colour/spacing gate catches rgb/hsl/named colours and literal spacing); SETUP-01, OPS-03, OPS-05, MONEY-01 and CHECK-0 signed off by the owner.
 - 2 Oct 2026 · Fintava test key works on the sandbox (refused by the live API); tier limits recorded in `docs/fintava/limits.md`.
 - 2 Oct 2026 · Backend deploy after wawu-backend #23 succeeded; the full test suite, including the new route suite, passed in it.
 - 2 Oct 2026 · wawu-backend #23 merged: OPS-03 (run the backend locally), MONEY-01 (235 routes locked), OPS-05 (backend CLAUDE.md).
