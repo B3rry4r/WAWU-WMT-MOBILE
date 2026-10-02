@@ -7,7 +7,7 @@ order: 62
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-07]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -57,6 +57,86 @@ Transaction store: amount in kobo, direction, counterparty, category, note, Fint
 - NOT RUN: bank sends, their reversals and bills in the sandbox (question 17); `account_funded` in the sandbox (needs a bank and a tunnel); real deliveries (OPS-10); V10 (no screen).
 
 ## Verifier report
+
+### Verifier report (round 2)
+
+Verifier, 2 Oct 2026 (a session that wrote none of this code and did not verify round 1). **Verdict: PASS, no open defect; status `review`.** Round 1's defects 1 to 3 are fixed and none reopened under attack.
+
+Checked at backend `wmt/MONEY-10` 11c6602 and mobile `wmt/MONEY-10` f2c3a27, and as it will land: backend main moved to 368fab0 (INBOX-01), so the branch was merged into a detached local copy (7e302e4, never pushed). That merge is clean (no conflict, `prisma validate` passes). Evidence files are in the verifier session's scratchpad `v10r2/` (named below). The verifier's attack suite `vm10r2-attack.contract.spec.ts` (14 tests) is kept out of the branch.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | On the merged copy: `tsc --noEmit` 0; eslint on the 11 changed `.ts` files exit 0. Gates: main 368fab0 16 fail / 6 warn / 76 accepted on 589 files; merged 16 / 7 / 76 on 597 files, with the same 16 fails line for line (`gates-main.list` = `gates-merged.list`). The extra warn is `PROVISIONAL(LEDGER-CONFIRM-WINDOW)`. `check_baseline.py`: 108 entries, clean. CI tripwire: 0 added lines (merged copy vs main) match `test/protected-routes`, `src/protected-routes`, `compareShape` or `protected-registry`. Mobile `npm run check` at f2c3a27: exit 0, 17 suites / 289 tests, gates 0 fail on 77 files, 201 tasks (`mobile-check-before.txt`). |
+| V2 Contract | passed | No route; contract unchanged. Ledger specs 38/38 on the branch and on the merged copy. Unexpected input formats: 32 bad amounts on a wallet-to-wallet delivery (`0`, `-0`, `"-0"`, `"0.00"`, `"-0.00"`, `-1`, `"-0.01"`, `"NaN"`, `"Infinity"`, `"-Infinity"`, `"1e3"`, `"1E3"`, `1e21`, `"0x10"`, `""`, `" "`, `null`, `true`, `false`, `[10]`, `{v:10}`, `"10.001"`, 20 nines, `Number.MAX_VALUE`, `"+10"`, `"1,000"`, `".5"`, `"10."`, Arabic-Indic and full-width digits, `"10 00"`, `"10.0.0"`) all end `failed`, with a reason and 0 Fintava calls. Nothing is written. |
+| V3 Regression | passed | `run.sh --fresh` with lock origin/main 368fab0: merged copy 7e302e4 253/253 (244 required); branch 11c6602 253/253 (244 required). Lock files differ from main by 0 lines. Full `test:contract` on fresh seeded `v10r2_contract_test`, mock WAWU ID on :4832: 108 suites, 104 passed, 2,081 tests passed, 3 skipped, 40 failed. All 40 are in the 4 suites that hardcode `localhost:4001` (`account`, `credits-state`, `kyc-submission`, `privacy-settings`; 80 `ECONNREFUSED 127.0.0.1:4001` lines). Those 4 were then run on fresh `v10r2_p4001_test` with a mock on :4001 (`lsof` free before and after; stopped after): 4/4 suites, 40/40. |
+| V4 Field trace | passed | Which wallet a row lands on now follows the bank (below). amountKobo, feeKobo, totalKobo: still BIGINT and exact, including at 2^53-1. Example: amount `90071992547409.90` with fee `0.01` is stored as 9007199254740990 + 1 = 9007199254740991. Counterparty of an `in` from another bank: `bank_account`, with the sender's number and bank code and no WAWU user id. |
+| V6 States | passed | Every bad figure reaches `failed` at once. `processed` with nothing written for a party at another bank or an unknown customerId. Waiting / failed / unrecognised are unchanged from round 1 (ledger specs). |
+| V7 Flow walk | passed (backend paths) | Bank send to a WAWU number at 090620 is money in for that person. The same send at any other bank code writes nothing on them. Money in from another bank lands on the receiver only. No screen (MONEY-15). |
+| V8 Money attack | passed | Below. |
+| V9 Live seam | passed (partial) | The real server, `dist/src/main.js` built from the merged copy, ran on :4831 against migrated `v10r2_live_test`. It had a webhook secret and no Fintava key. It ran with `NODE_ENV=development` because production refuses to boot without a Flutterwave key, which is unrelated to this task. An unsigned and a forged post each got 401. 4 signed deliveries were each posted twice: 4 stored, and the route refused the duplicates. The real 30-second sweep then settled all 4. A3 shape (GTBank destination = victim's number, sender not ours): `processed`, "no WAWU wallet on either side". A4 shape (Access sender = victim's number): one `in` row of 10,000 kobo on A only, counterparty `bank_account` at 000014. A negative `account_funded`: `failed`, "the amount is not above 0". A zero reversal: `failed`. No Fintava call was attempted (`live-db.txt`, `live-server.log`). Sign-in leg NOT RUN: the ledger has no route until MONEY-15. |
+| V10 | NOT RUN | No screen; unblocked by MONEY-15 and OPS-10. |
+
+**V8, pass by pass**
+
+1. Defect 1, who the parties are: passed (attack suite `D1 party matching`, 9 tests).
+   - A bank send from a WAWU sender to X's number at `000013`, `000014`, `999999`, `90620`, `0906200`, `090621`, `100004` and `000`: nothing on X. All 8 out rows are on the sender.
+   - A destination with no bank, an empty half (`X/`, `/X`), or the bank only in other fields (`beneficiaryAccountNumber` + `bankCode: 090620`): nothing on X.
+   - ` X / 090620 ` with spaces: lands on X (positive control).
+   - customerId not ours with a WAWU `senderAccountNumber` beside it: nothing on that sender, "no WAWU wallet on either side".
+   - customerId X with sender number Y: out on X only.
+   - `account_funded` from a WAWU number with `senderBankSortcode` `000014`, missing, `""`, numeric `90620`, `"90620"`, `"0090620"` or `"LOMA"`: nothing on that number; one `in` per delivery on the receiver.
+   - No `userId`: the receiver is found by `beneficiaryAccountNumber`, and the sender at another bank is never matched.
+   - `userId` A with `beneficiaryAccountNumber` B: in on A only.
+   - An unknown `customerId` key with B's number beside it: nothing.
+2. Defect 2, bad figures: passed (`D2 bad amounts`, 3 tests).
+   - Wallet-to-wallet: the 32 amounts in V2.
+   - Bank send: amount `0` and `-100.00`, charges `-0.01`, `NaN` and `1e2`, total `0`, `-130.75` and `Infinity`. Amount plus fee at 2^53 (`90071992547409.91` + `0.01`, `90071992547409.90` + `0.02`).
+   - `account_funded`: `0`, `-1`, `1e5`, `90071992547409.92`.
+   - `virtual_wallet_payment`: `0`, `-5`, `NaN`.
+   - Reversal: amount `0`, `-1`, `NaN` and `1e3`; charges `-0.01` and `x`; total `0`, `-1.00` and `10.001`; 20 nines.
+   - Every one is `failed` with a reason, 0 Fintava calls and nothing written.
+   - Exactly 2^53-1 (amount alone, and amount + fee) is accepted and stored exactly.
+   - RangeError backstop: the reader's amount and total guards were reverted together, then a zero amount was sent. The event ends `failed`, "ledger: amountKobo must be a positive whole number of kobo." (after 2 Fintava calls, so the reader is what saves the calls). With the backstop also reverted, the RangeError escapes `consume` again (round 1's stuck state). The backstop works but is unreachable from a delivery while the reader guards stand.
+3. Mutation checks: 16 one-line reverts, each applied alone. sha1 was recorded before, mutated and after, and every file was restored by copy to its original sha1 (`ledger.service.ts` b146d62f, `ledger-consumer.service.ts` 01c267a8, `ledger-webhook.ts` ed9e4cd1; `mutants-result.txt`). The builder's 38 specs then killed 15 of 16:
+   - The three round-1 survivors, each killed by its new test: the fold re-check (`const now = ownerIds`), the `direction: 'out'` filter in `debitsFor`, and `AND "processingStatus" = 'pending'` in the delivery lock.
+   - Defect 1: the bank check (`false &&`), customerId-only (fall through to the number), `account_funded`'s sender as a Fintava wallet, and the bank send's destination as a Fintava wallet.
+   - Defect 2: each of the 4 movement guards and the 3 reversal guards.
+   - U-3: the unchanged-note guard in `wait()`.
+   - Survived: removing the RangeError backstop (see 2; a test gap, not a defect).
+4. Exactly once under races: passed. 5 iterations of one wallet-to-wallet movement in 4 shapes with distinct delivery keys and overlapping references, each posted twice to the real route. That is 8 posts, 4 stored. They were consumed by two consumer instances (two Nest apps on one database), each consuming every delivery, plus two sweeps, all at once. Each iteration ended with one `out` row (725 kobo) and one `in` row, every delivery `processed`. `account_funded` posted 6 times in 3 keys sharing one sessionID and raced the same way: 3 stored, one `in` row. The attack suite was green 3 times on the branch and once on the merged copy.
+5. Never a balance: passed. No `_sum`, `SUM(`, `aggregate(`, `groupBy(` or `.reduce(` in `src/money` or `src/fintava` outside tests. Nothing outside `src/money/ledger` reads `FintavaLedgerEntry` except account purge. MONEY-11's balance is `fintava.getWalletBalance` (`wallet-balance.service.ts`).
+6. Migrations, both landing orders, fresh databases (`mig/`):
+   - Order A: main + MONEY-10, then KYC-02's `20261002210000_selfie_match`.
+   - Order B: main + KYC-02, then MONEY-10. `20261002210000_fintava_ledger` is applied after `selfie_match`, out of name order, and `migrate deploy` accepts it.
+   - C: all at once.
+   - Every run applies 75 migrations. The sorted `pg_dump -s` of A, B and C are identical. `migrate status`: up to date. `migrate diff` against the merged schema shows only the old `ContentPiece_specializations_idx` (and `SelfieMatchAttempt`, whose model is not in this schema).
+   - Note for the lead: three migrations now share the timestamp `20261002210000` (INBOX-01's `community_links_and_reads`, this one, KYC-02's `selfie_match`). They touch no common table, so order does not matter, and Prisma keys on the full name.
+7. Sandbox: no call this round (none needed). The Fintava key was not read.
+
+**Findings**
+
+No defect.
+
+- Test gap (not a defect): no test reaches the RangeError backstop. Removing it leaves all 38 green; it is proven only by the combined mutant above.
+- U-4 `unclear`: an `account_funded` that carries a `userId` is matched by it alone (the builder's default, recorded as owner may override). If `userId` turns out not to be the receiver's Fintava customerId, every such delivery is `processed` with nothing written. That is the safe side: no wrong person is credited, the balance stays Fintava's, and the payload stays stored. But top-ups would be missing from history and from WALLET-10's notices. Unblocked by one real `account_funded` delivery whose `userId` is compared with `FintavaWallet.customerId` (OPS-10), or by Fintava saying what `userId` is.
+- Recorded behaviour, not defects:
+  - `account_funded` whose sender is at `090620` with a WAWU number writes an `out` on that sender, as the rule says. A WAWU-to-WAWU transfer through the bank rail would also arrive as `customer_bank_transfer`; the two merge only if they share a reference such as the sessionID, which is unseen until real deliveries (OPS-10).
+  - A wallet-to-wallet delivery whose `source_customer_accno` is not ours but whose `source_customer_wallet` is takes the second field (both are Fintava wallets by definition).
+  - A total below the amount (positive) is stored as reported with no discrepancy note (MONEY-16's reconciliation).
+  - The Fintava bank is one code, `090620`. If WAWU wallets ever sat at another partner bank, sends to them would be unrecorded (safe side).
+- Diff against the report: round 2 changes the 5 files named (`ledger-config.ts`, `ledger-consumer.service.ts`, `ledger-webhook.ts`, both specs); the numbers reported (38/38, 253/253, 16 fails) reproduce.
+- Landing (not failed, per the lead):
+  - Mobile f2c3a27 does not merge cleanly onto main 2ccaab7. There are conflicts in `BACKEND_GAPS.md`, where this branch's G-28 row collides with main's G-26 to G-32 (AUTH-01 took G-28), and in the generated `docs/PROGRESS.md`. The lead renumbers MONEY-10's row to G-33.
+  - Every place that names it on the branch: `BACKEND_GAPS.md` line 38 (the row itself); `tasks/MONEY-10.md` lines 47 and 56 (builder report); `tasks/MONEY-08.md` line 37; `tasks/WALLET-10.md` line 36; `docs/LOG.md` lines 6 and 8; `docs/PROGRESS.md` lines 60 and 62 (generated from LOG). The round-1 report's "G-25" and "G-26" mentions are history.
+  - No backend file names the gap.
+  - Sandbox file `30-money10-ledger.md` does not collide: main has up to 28, and 29 is KYC-02's.
+
+NOT RUN:
+- Bank sends, their reversals, bills, `account_funded` and `virtual_wallet_payment` against the sandbox. Sandbox payouts are refused (question 17) and there is no tunnel; unblocked by a sandbox that accepts a bank payout, and a public URL for deliveries.
+- Real deliveries (OPS-10).
+- V9 sign-in leg and V10: no route or screen until MONEY-15.
+
+### Verifier report (round 1)
 
 Verifier, 2 Oct 2026 (a session that wrote none of this code). **Verdict: 3 defects, back to `building`.**
 

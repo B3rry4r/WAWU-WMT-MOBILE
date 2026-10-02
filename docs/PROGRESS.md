@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 60 | 49 | 33 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 16 | 9 | 1 | 0 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 
@@ -57,6 +57,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-10 · Verified round 2: PASS, no open defect, status review (backend 11c6602 checked also merged with main 368fab0 locally, mobile f2c3a27). Defects 1 to 3 fixed: a WAWU number at any bank but 090620 or an unknown customerId writes nothing, every bad figure fails at once with no Fintava call, 15 of 16 one-line reverts killed by the builder's specs (the RangeError backstop is untested). Protected 253/253, contract 108/108 suites, gates the same 16 fails as main, migrations identical in both landing orders with INBOX-01 and KYC-02. The G-28 row conflicts with main's G-28 (renumber at merge).
 - 2 Oct 2026 · MONEY-10 · Round 2 (backend 11c6602): the verifier's 3 defects fixed. A wallet is never matched by account number alone (Fintava customerId first; an account at another bank is never a WAWU user, only Fintava's bank 090620 counts); bad figures (non-positive amount or total, negative fee, past 2^53) fail at once with no Fintava call; both mains merged, gap row now G-28, sandbox file 30. Three race guards and the quiet waiting note have tests. To verifying.
 - 2 Oct 2026 · MONEY-10 · Verified: 3 defects, back to building (backend da74274, mobile 35eb611, checked with backend main d27ad37 and mobile main bfdd584 merged locally). Exactly once held across every path in 36 raced movements, two processes sweeping one database applied 180 deliveries once each, and a ₦10 sandbox round trip wrote one row per side. Defects: a wallet matched by account number alone puts another bank's money on an unrelated user; a negative or zero amount never settles; main moved (G-25 and sandbox file 28 now taken by KYC-01).
 - 2 Oct 2026 · MONEY-10 · The ledger built in wawu-backend (`wmt/MONEY-10` da74274): `FintavaLedgerEntry` in BIGINT kobo, one row per wallet side, recorded once by a reference key (any of ours, Fintava's, tagapay, id: G-19), fed from MONEY-07's stored deliveries by a 30-second sweep, confirmed with Fintava when no side is held; a reversal marks the debit reversed, never a second row. Sandbox: two ₦10 round trips, 8 rows for 4 movements, balances back. Never a balance, no route. Gap filed (now G-28). To verifying.
@@ -71,4 +72,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-07 · Fintava webhooks built in wawu-backend (`wmt/MONEY-07` 9941aa0): `POST /api/hub/webhooks/fintava`, HMAC-SHA512 of the raw body checked in constant time (fails closed), each delivery stored once in `FintavaWebhookEvent` keyed on event, transaction reference and Fintava status (`ON CONFLICT DO NOTHING`), pending for MONEY-10 and MONEY-08; nothing moves money. Tested with documented payloads signed locally (no tunnel, R-25); no secret or personal data in logs. Gap G-19 (which field holds which reference). To verifying.
 - 2 Oct 2026 · MONEY-11 · Verified: PASS, no defects (backend 03a1503, mobile 3d7a04e). Balance equals Fintava after a ₦10 round trip in the sandbox; unreachable, unknown wallet and unconfigured production all answer 503, never 0; contract 89 suites 1852 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 9 suites on :4001 NOT RUN. One unclear item for the owner (the `src/api` fence). Status review.
 - 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
-- 2 Oct 2026 · MONEY-11 · `GET /money/wallet/balance` served in wawu-backend (`wmt/MONEY-11`): Fintava's availableBalance in kobo on every call, `503 provider_unreachable` (W6) never 0, `423 wallet_frozen`, `409 wallet_not_open`; new `FintavaWallet` table; app call `src/api/money.ts`; sandbox: route equals Fintava after two ₦10 sends. Status verifying.
