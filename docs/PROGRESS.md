@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 62 | 50 | 34 | 32 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 13 | 8 | 0 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 
