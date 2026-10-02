@@ -1,9 +1,9 @@
 ---
 id: INBOX-09
-title: The reply-rate penalty
+title: Pause paid questions for creators who stop replying
 owner: DEV2
 area: INBOX
-order: 103
+order: 15
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -13,7 +13,7 @@ decisions: [R-13]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# INBOX-09 · The reply-rate penalty
+# INBOX-09 · Pause paid questions for creators who stop replying
 
 ## Read first
 
@@ -22,11 +22,10 @@ artboards: []
 - `docs/people/DEV2.md` (what you own)
 - `DECISIONS.md`: R-13 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+Creators who leave too many paid questions unanswered are warned, then paused for 7 days (R-13). Additive only.
 
 ## Scope
 
@@ -34,7 +33,7 @@ Rolling 30-day unanswered rate, warning and switch-off per R-13, enforced when s
 
 ## Capability checks
 
-- [ ] A creator over the threshold is warned once and switched off at the second threshold.
+- [ ] A creator at 21% unanswered over 30 days is warned once; at 31% paid questions switch off for 7 days and a fan sees I8. The thresholds (20% and 30%) come from config.
 
 ## Builder report
 

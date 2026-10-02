@@ -3,7 +3,7 @@ id: AUTH-05
 title: The sign-up sequence end to end
 owner: DEV
 area: AUTH
-order: 65
+order: 46
 priority: launch
 repo: wawu-id
 type: backend-endpoint
@@ -31,10 +31,13 @@ Sign-up (A2 to A4, then A11 to A13) is one sequence the server enforces, with no
 
 The registration state machine and its endpoints; each step refuses to run before the previous one completed.
 
+BACKEND_GAPS G-5 is this task's: wawu-id publishes its OpenAPI contract, so the app's sign-in calls are generated (`npm run api`) instead of read by hand.
+
 ## Capability checks
 
 - [ ] Quitting halfway through sign-up and coming back resumes at the next step.
-- [ ] A new account can browse, follow and buy nothing yet: anything with money leads to Open your wallet (KYC-03).
+- [ ] A new account has no wallet, and no identity check was run during sign-up.
+- [ ] The app's sign-in calls use types generated from wawu-id's published contract (G-5).
 
 ## Builder report
 

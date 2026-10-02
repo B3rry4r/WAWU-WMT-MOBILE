@@ -3,12 +3,12 @@ id: HOME-03
 title: Content detail: preview, unlocked, comments, share, rate
 owner: DEV
 area: HOME
-order: 45
+order: 136
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [HOME-06]
+depends_on: [HOME-04, HOME-06, INBOX-06, UI-02, HOME-02, HOME-12, HOME-13, EXPLORE-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [H19, H20, H21, H22, H23]
@@ -22,6 +22,7 @@ artboards: [H19, H20, H21, H22, H23]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H19 H20 H21 H22 H23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md`: its entries for H19 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -39,6 +40,10 @@ New files under `src/features/` for these screens and their route files under `s
 - **H22 · Share sheet**: Share sheet: WAWU chat, Copy link, WhatsApp, More; link wawu/c/pricing-playbook; 'Send to' recent people (Amaka, Chidi, Bisi, Tolu).
 - **H23 · Rate**: Rate this piece, 1–5 stars, 'only after buying' (from the code), Submit rating -> 'Thanks for rating' -> H20.
 
+## Brief changes (build these, not the canvas)
+
+- **H19**: if this button opens the H14 sheet, it keeps the price ("Unlock · ₦3,000") and the sheet shows the total. If you mean it to go straight to the PIN, it shows the total instead: "Unlock · ₦3,023.25" (₦3,000 + Fintava's ₦23.25). (Why: rule 5 and the purchases default.)
+
 ## Capability checks
 
 - [ ] **H19**: a user can Unlock (H14–H16); Follow; Share (H22); Save; Rate (H23); open comments (H21).
@@ -49,6 +54,7 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] From H2's caption (HOME-02) and a content result on X6 (EXPLORE-02), a user can reach H19 (this task adds both links, as drawn).
 
 ## What the backend serves today (from the analysis)
 

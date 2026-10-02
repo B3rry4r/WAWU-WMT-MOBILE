@@ -3,14 +3,14 @@ id: EVENTS-04
 title: Host an event: basics, when and where, tickets, review
 owner: DEV3
 area: EVENTS
-order: 85
+order: 52
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [EVENTS-02]
+depends_on: [EVENTS-02, UI-02, EVENTS-01]
 decisions: [R-8]
-passes: [V1, V4, V5, V6, V7, V9]
+passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [E13, E14, E15, E16, E21, E22]
 ---
 # EVENTS-04 · Host an event: basics, when and where, tickets, review
@@ -23,6 +23,7 @@ artboards: [E13, E14, E15, E16, E21, E22]
 - `DECISIONS.md`: R-8 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py E13 E14 E15 E16 E21 E22` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for E13, E14, E15, E16, E21, E22, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -31,6 +32,12 @@ You own these screens AND the backend work behind them. Build the screens as the
 ## Scope
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+My events (E16) is added by EVENTS-08 and Get verified (E21) by ME-12 (docs/WORKFLOW.md section 7).
+
+V10 runs on a real Android phone only (DECISIONS R-24).
+
+Native modules: `expo-image-picker` (E14 banner). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 
@@ -41,17 +48,27 @@ New files under `src/features/` for these screens and their route files under `s
 - **E21 · Needs a tick**: Gate: 'Hosting needs a verified tick · A creator or professional tick, ₦2,000 a year.' Get verified.
 - **E22 · Sent back**: Rejected event: 'Sent back · Add the street address, then send it again.' with the address field flagged 'Needed before it can go live' and Send again.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- E16: My events (opens E17): added by EVENTS-08
+- E21: Get verified (opens M11): added by ME-12
+
 ## Capability checks
 
 - [ ] **E13**: a user can enter name, description, organiser; pick format; Continue (E14).
 - [ ] **E14**: a user can set start/end; enter street address; upload banner; pick category; Continue (E15).
 - [ ] **E15**: a user can edit tier name/price/quantity; add a tier; Send for review (E16).
-- [ ] **E16**: a user can go to My events (E17); Done.
-- [ ] **E21**: a user can Get verified.
+- [ ] **E16**: a user can tap Done.
+- [ ] **E21**: a user without a tick sees the gate when they try to host.
 - [ ] **E22**: a user can fix field; Send again.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states E21, E22.
+- [ ] From E1's Host your event (EVENTS-01), a verified user reaches E13 and an unverified one E21 (this task adds it, as drawn).
 
 ## What the backend serves today (from the analysis)
 

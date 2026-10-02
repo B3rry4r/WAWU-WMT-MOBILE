@@ -3,9 +3,9 @@ id: KYC-02
 title: Selfie match to the BVN photo
 owner: YOU
 area: KYC
-order: 66
+order: 75
 priority: launch
-repo: wawu-id
+repo: wawu-backend
 type: third-party
 status: todo
 depends_on: [KYC-01]
@@ -23,6 +23,7 @@ artboards: []
 - `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal
 
@@ -30,17 +31,19 @@ A6, A7, A16: a selfie must match the BVN photo.
 
 ## Scope
 
-Fintava's face match (`/compliance/verify/bvn/selfie`), retries, result stored.
+Fintava's face match (`/compliance/verify/bvn/selfie`) through the backend's Fintava client (MONEY-06),
+retries limited to 3 a day per user because each attempt costs WAWU even when it fails (`docs/fintava/fees.md`),
+result stored.
 
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-`POST /compliance/verify/bvn/selfie` (base64 image and BVN) is a face match. Fintava offers no liveness check, so nothing claims one: the selfie is captured and matched, and the "blink" instruction is left out until a liveness provider exists.
+`POST /compliance/verify/bvn/selfie` (base64 image and BVN) is a face match. Fintava offers no liveness check, so nothing claims one: the selfie is captured and matched, and nothing on A6, A7 or A16 says or suggests a liveness check (BRIEF A6).
 
 ## Capability checks
 
-- [ ] A matching selfie passes; a photo of a photo fails liveness; three failures show A16 and the retry rule.
+- [ ] A matching selfie passes; a selfie of a different person fails the match; three failures show A16 and the retry rule.
 
 ## Builder report
 

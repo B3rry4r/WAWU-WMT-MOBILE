@@ -3,7 +3,7 @@ id: ADS-04
 title: Serve a sponsored card
 owner: DEV2
 area: ADS
-order: 185
+order: 31
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -33,7 +33,7 @@ GET ads for a placement.
 
 ## Capability checks
 
-- [ ] With TGIF on, the card appears in TGIF; with TGIF off, it takes TGIF's place on Today (H36).
+- [ ] `GET ads?placement=tgif_card` and `?placement=today_slot` each return at most one live card, and none outside its dates.
 - [ ] With no live campaign, nothing is returned and the screen shows no empty frame.
 
 ## Builder report

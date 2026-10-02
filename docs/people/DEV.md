@@ -41,6 +41,11 @@ Inbox moved to Developer 2 and Events to Developer 3 on 2 Oct 2026.
   or existing (R-6). Every payment screen you build checks for a wallet and,
   if there isn't one, hands over to "Open your wallet" (MONEY-13). Earnings
   still accrue without one and land when it opens (R-11).
+- **Designs are final; changes come from the brief.** Check
+  `docs/designer/BRIEF.md` for every artboard you build (R-29).
+- **Links between screens:** a hub builds only the rows whose screen exists;
+  the task that builds a screen adds its own way in, as drawn (R-27,
+  `docs/WORKFLOW.md` section 7).
 - **Compare pictures with pictures:** render the artboard, screenshot your
   screen at 390 px in both themes, open both.
 

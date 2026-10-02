@@ -3,13 +3,13 @@ id: INBOX-12
 title: Paid message settings, warning, switched off
 owner: DEV2
 area: INBOX
-order: 148
+order: 63
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [INBOX-09]
-decisions: [R-13]
+depends_on: [INBOX-09, UI-02, INBOX-04, PROS-03]
+decisions: [R-13, R-2, R-9]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I21, I22, I23]
 ---
@@ -23,6 +23,7 @@ artboards: [I21, I22, I23]
 - `DECISIONS.md`: R-13 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py I21 I22 I23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
+- `docs/designer/BRIEF.md`: its entries for I21, I22, I23 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -34,9 +35,15 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **I21 · Settings**: Paid messages settings: toggle, price per message with presets, reply window, "You earn per message ₦1,275 · Your share 85%", "Unanswered, last 30 days 4%", Save.
+- **I21 · Settings**: Paid messages settings: toggle ("On · ₦1,500 a message", BRIEF I21), price per message with presets, reply window, "You earn per message ₦1,275 · Your share 85%", "Unanswered, last 30 days 4%", Save.
 - **I22 · Warning**: Settings in the "warned" state: "You missed 4 of your last 18. Past 30% and paid messages switch off for 7 days." with Raise to ₦2,500. Board says the state triggers over 20% unanswered.
-- **I23 · Switched off for 7 days**: Settings locked: "Paid messages are off for 7 days. Back on 3 October." toggle locked until the date; publishing, communities, tips and shop keep working.
+- **I23 · Switched off for 7 days**: Settings locked: "Paid messages are off for 7 days. Back on 3 October." toggle locked until the date; publishing, communities and tips keep working (BRIEF I23).
+
+## Brief changes (build these, not the canvas)
+
+- **I21**: "On · ₦1,500 a message". Fans pay the price plus Fintava's charge, so the line names the price, not what fans pay. (Why: R-10 and the purchases default.)
+- **I22**: "₦1,500 a message", as I21. (Why: as I21.)
+- **I23**: "Back on 3 October. Publishing, communities and tips all keep working." (Why: R-2 and R-9.)
 
 ## Capability checks
 
@@ -45,6 +52,7 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states I22, I23.
+- [ ] From I1 (INBOX-04) a creator can tap paid-message settings, and from P8 (PROS-03) a professional can tap Inbox settings, and reach I21 (this task adds both, as drawn).
 
 ## What the backend serves today (from the analysis)
 

@@ -1,9 +1,9 @@
 ---
 id: PROS-02
-title: Professional fields and card data
+title: Professionals backend: the design's fields, city, reply time and price
 owner: DEV3
 area: PROS
-order: 52
+order: 8
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# PROS-02 · Professional fields and card data
+# PROS-02 · Professionals backend: the design's fields, city, reply time and price
 
 ## Read first
 

@@ -3,12 +3,12 @@ id: WALLET-14
 title: Saved recipients and payout account
 owner: YOU
 area: WALLET
-order: 140
+order: 113
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
+depends_on: [MONEY-06, KYC-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
@@ -29,7 +29,9 @@ A21, W17: a saved payout bank with a real bank code, checked against the BVN nam
 
 ## Scope
 
-Beneficiaries; payout account with bank code and resolved name.
+Beneficiaries; payout account with bank code and resolved name (through the Fintava client, MONEY-06), checked against the BVN name (KYC-01).
+
+Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
 
 ## Capability checks
 

@@ -3,13 +3,13 @@ id: RELEASE-01
 title: Store listings and production builds
 owner: YOU
 area: RELEASE
-order: 159
+order: 167
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
 status: todo
-depends_on: [SHELL-03]
-decisions: []
+depends_on: [SHELL-03, KYC-04]
+decisions: [R-24]
 passes: [V1, V10]
 artboards: []
 ---
@@ -26,12 +26,15 @@ The stores need listings, screenshots and privacy answers before they will revie
 
 ## Scope
 
-App Store Connect and Google Play listings, privacy and data-safety forms (BVN, selfie, payments), screenshots from the real app, an EAS production profile pointing at production. Submission is the owner's alone, from their own machine, with the store keys kept off Expo (`docs/BUILDS.md`).
+The Google Play listing, its data-safety form (BVN, NIN, selfie, payments), screenshots from the real app, and an
+EAS production profile pointing at production. Testing and the first release are Android (R-24); the App Store
+listing waits for RELEASE-03. Submission is the owner's alone, from their own machine, with the store keys kept
+off Expo (`docs/BUILDS.md`).
 
 ## Capability checks
 
-- [ ] A production build installs from TestFlight and Play internal testing.
-- [ ] Both listings are complete and pass the stores' own pre-submission checks.
+- [ ] A production build installs from Play internal testing on the owner's Android phone and reaches the production backend.
+- [ ] The Play listing is complete and passes Google's own pre-submission checks.
 
 ## Builder report
 

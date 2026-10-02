@@ -1,19 +1,19 @@
 ---
 id: INBOX-16
-title: Move WAWU Credits purchases to the wallet
+title: Buy WAWU Credits from the wallet (backend)
 owner: DEV2
 area: INBOX
-order: 151
+order: 99
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
-decisions: []
+depends_on: [MONEY-17, MONEY-13, MONEY-16, WALLET-15]
+decisions: [R-5, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# INBOX-16 · Move WAWU Credits purchases to the wallet
+# INBOX-16 · Buy WAWU Credits from the wallet (backend)
 
 ## Read first
 
@@ -22,18 +22,21 @@ artboards: []
 - `docs/people/DEV2.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
+A user buys WAWU Credits from their wallet with the PIN; credits are a count, never naira (R-5). The web keeps Flutterwave until after launch.
 
 ## Scope
 
 Credits purchase pays from the wallet (I28); credit lots and the 85/15 split unchanged; the web's Flutterwave purchase keeps working. The web stays on Flutterwave until after launch; V3 checks it still works.
 
+Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
+
 ## Capability checks
 
-- [ ] A user pays from their wallet with their PIN and gets what they paid for.
+- [ ] A user buys 120 credits for ₦1,000: their wallet drops by ₦1,023.25 once and their credits go up by 120, shown as a count (R-5).
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 

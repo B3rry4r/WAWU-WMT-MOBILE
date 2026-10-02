@@ -3,12 +3,12 @@ id: WALLET-08
 title: Find a recipient, and recent recipients
 owner: YOU
 area: WALLET
-order: 134
+order: 129
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
+depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
@@ -29,7 +29,7 @@ W7: search by name, @handle or phone, and show recent recipients.
 
 ## Scope
 
-Recipient search across all accounts that have wallets, block-aware; recent recipients from the ledger.
+Recipient search across all accounts that have wallets, block-aware (SETTINGS-04: a blocked user never appears); recent recipients from the ledger.
 
 ## Capability checks
 

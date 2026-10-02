@@ -3,12 +3,12 @@ id: EXPLORE-02
 title: All creators and search
 owner: DEV
 area: EXPLORE
-order: 48
+order: 98
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [EXPLORE-03]
+depends_on: [EXPLORE-03, EXPLORE-05, SETTINGS-04, UI-02, UI-03, INBOX-05]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [X4, X5, X6, X7]
@@ -22,6 +22,7 @@ artboards: [X4, X5, X6, X7]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py X4 X5 X6 X7` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for X4, X5, X6, X7, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -38,12 +39,21 @@ New files under `src/features/` for these screens and their route files under `s
 - **X6 · Results · All**: Results for 'pricing' with tabs All 11 / Content 6 / Creators 3 / Communities 2; sections Content (title, creator, type, price or Free), Creators (Follow / Profile), Communities (Pricing clinic · 380 members · private · Ask).
 - **X7 · Content**: Content tab: list of content results with creator, type and price (₦3,000, ₦2,500, Free, ₦1,500, ₦1,000).
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- X6: a content result (opens H19): added by HOME-03
+- X4: a creator (opens M5): added by ME-02
+
 ## Capability checks
 
-- [ ] **X4**: a user can filter by chip; Follow in place; open profile (M5).
+- [ ] **X4**: a user can filter by chip; Follow in place.
 - [ ] **X5**: a user can type a query (X6); tap a recent or popular query; Clear recent; Follow a creator; Cancel.
-- [ ] **X6**: a user can switch tab; open content (H19); Follow / open creator (M5); Ask to join a private community / Join open (I25).
-- [ ] **X7**: a user can open content (H19).
+- [ ] **X6**: a user can switch tab; Follow; Ask to join a private community or Join an open one (I25).
+- [ ] **X7**: a user sees content results with creator, type and price.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).

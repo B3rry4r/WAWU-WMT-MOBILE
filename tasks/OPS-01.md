@@ -3,7 +3,7 @@ id: OPS-01
 title: Record the owner's rulings
 owner: YOU
 area: OPS
-order: 2
+order: 1
 priority: launch
 repo: wawu-wmt-mobile
 type: ops

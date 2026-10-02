@@ -67,7 +67,7 @@ the check failed**, both taken from WAWU's merchant wallet as `BVNCHARGE`
 debits. Name enquiries and the meter preview were free. These are sandbox
 prices; the live price of the selfie and phone checks is still Fintava's to
 confirm, and the BVN and NIN checks could not run (merchant inactive). So
-each failed selfie or retry costs WAWU money: KYC-04 limits retries.
+each failed selfie or retry costs WAWU money: KYC-02 limits retries (3 a day per user).
 
 No transfer or bill has run in the sandbox yet, so how a merchant charge
 shows up is unconfirmed. The full transaction record has `platformComm`,

@@ -3,7 +3,7 @@ id: INBOX-02
 title: Live updates for chat
 owner: DEV2
 area: INBOX
-order: 57
+order: 19
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -21,19 +21,22 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV2.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- wawu-backend's `docs/LOCAL.md` and `scripts/local/up.sh` (OPS-03: the local backend)
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+Chats, rooms and money requests update on both phones without a refresh. Additive only.
 
 ## Scope
 
-WebSocket gateway with Redis fan-out for messages, read receipts and money-request updates; polling as fallback.
+WebSocket gateway with Redis fan-out for messages, read receipts and money-request updates. On reconnect, or when
+the app returns to the foreground, the app fetches what it missed with a since-cursor (the I25 gap "no incremental
+fetch"): a catch-up, not a fallback. Redis runs in Docker locally (OPS-03); Redis on the droplet is an owner input.
+The app-side connection is built once in INBOX-04 (`src/features/inbox/live.ts`) and reused by every chat screen.
 
 ## Capability checks
 
-- [ ] A message appears on the other phone within two seconds while both are open.
+- [ ] Two signed-in socket clients: a message sent by one reaches the other within two seconds; a blocked user's socket receives nothing.
 
 ## Builder report
 

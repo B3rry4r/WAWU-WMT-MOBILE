@@ -1,7 +1,11 @@
 # WAWU mobile: changes to the design canvas
 
-For the designer of the WAWU mobile canvas. Written 2 Oct 2026 from the
-export you last sent (297 artboards). Each item below names one artboard by
+Written 2 Oct 2026 for the designer of the WAWU mobile canvas, from the export
+last sent (297 artboards). The designs are final as exported (DECISIONS,
+Authority): nothing here is redrawn. Every change below is made in code by the
+task that builds the artboard, and every screen task lists this file under Read
+first (R-29). Section 12 adds the changes the build makes itself, and "Not built
+at launch" lists the entries that wait for after-launch tasks. Each item below names one artboard by
 its id and name, exactly as printed in the artboard's header (for example
 "W10 Send · review"). Where the text sits outside a numbered artboard (a
 flow's "Start here" map, a flow note, a components sheet), the item names
@@ -111,17 +115,12 @@ Who is who, so the reasons make sense:
 
 ## 1. Everywhere
 
-### The ₦ symbol (open question D15), about 143 artboards
+### The ₦ symbol, about 143 artboards (closed: R-35)
 - **Now:** Alan Sans has no ₦ character (U+20A6), so every ₦ on the canvas is
-  drawn by the phone's own fallback font, at a different weight and width
-  from the digits beside it. Look at any balance, for example W1's
-  "₦485,250.75".
-- **Instead:** tell us which one you want, and supply it:
-  (a) a ₦ glyph drawn to match Alan Sans in every weight we use (Light to
-  Black), delivered as an updated font file; or (b) a named fallback font
-  for the ₦ only; or (c) confirmation that the system fallback is acceptable.
-  No artboard needs redrawing for this; only the font or the decision.
-- **Why:** open decision D15. The app keeps the fallback until you answer.
+  drawn by the phone's own fallback font.
+- **Instead:** nothing changes. The ₦ is drawn by the phone's font, as the
+  export does; that is the design.
+- **Why:** R-35 (Lead, 2 Oct 2026), which closes D15.
 
 ## 2. Home
 
@@ -723,7 +722,10 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
 
 Bills are not free. Fintava charges ₦100 for electricity and for cable TV,
 and ₦0 for airtime and data; WAWU's bill fee is added on top if the owner
-sets one (none today). Legal services are purchases (the default above).
+sets one (none today). The payer also pays Fintava's balance-transfer charge
+for moving the money into WAWU's wallet, as on any purchase (R-31, default
+until the owner rules); the samples below leave it out, and the app shows it
+from the fee quote. Legal services are purchases (the default above).
 
 ### Services flow, "Start here" map (no artboard id)
 - **Now:** the Home phone shows the Shop tile, and hotspot 5 reads "Shop ·
@@ -734,8 +736,12 @@ sets one (none today). Legal services are purchases (the default above).
 
 ### S3 · Biller
 - **Now:** several electricity billers say "Prepaid and postpaid".
-- **Instead:** every biller says "Prepaid".
-- **Why:** Fintava fact: electricity is prepaid only (and never below ₦500).
+- **Instead:** the billers Fintava lists, with their prepaid and postpaid
+  codes as listed, each with its own minimum and maximum. (This item first
+  said "Prepaid only, never below ₦500"; the sandbox corrected it.)
+- **Why:** Fintava fact from the sandbox (`docs/fintava/sandbox/16-bills-discos.md`):
+  postpaid is listed, minimums run from ₦0 to ₦1,000, and some billers are
+  unavailable and are hidden.
 
 ### S5 · Review
 - **Now:** Ikeja Electric ₦10,000.00, "Fee: No fee", Total ₦10,000.00, "Pay
@@ -971,9 +977,152 @@ sets one (none today). Legal services are purchases (the default above).
 
 ---
 
-## What happens next
+## 12. Changes the build makes in code (2 Oct 2026)
 
-The owner sends you this brief. When your new export comes back, we replace
-the whole design folder with it, regenerate the list of artboards, and record
-which artboards changed. Please send the whole export (all flows), not only
-the changed ones, and keep the ids as they are.
+Made by the task that builds each artboard, in the canvas's own style. Nothing
+here is redrawn.
+
+### W11 · Send · PIN
+- **Now:** "Face ID can stand in once it's set up".
+- **Instead:** the phone's own fingerprint or face unlock, whichever it has;
+  the label names it ("Use fingerprint" on most Android phones). When it
+  fails: "<Name> failed. Use your PIN." (for example "Fingerprint failed. Use
+  your PIN."), and no PIN try is used up. The same on H15, M13 and every PIN
+  sheet.
+- **Why:** R-26. Testing is Android first (R-24); Face ID is Apple's.
+
+### W35 · Wallet settings
+- **Now:** "Face ID for payments"; rows Cards and Statements; "Help with a
+  payment".
+- **Instead:** "Fingerprint or face for payments" (what the phone has). Cards
+  and Statements are not built at launch (below). Help with a payment opens
+  the support chat (SUPPORT-01).
+- **Why:** R-26, R-16, R-30.
+
+### W36 · Transaction PIN · create
+- **Now:** "create" a PIN.
+- **Instead:** "change" the PIN: a wallet holder already set one on A9.
+- **Why:** R-6: the PIN is created when the wallet opens.
+
+### A4 · Phone code
+- **Now:** "Sent by SMS to 0803 ••• 4412, the number on your BVN".
+- **Instead:** "Sent by SMS to 0803 ••• 4412". No BVN at sign-up.
+- **Why:** R-6.
+
+### A10 · Confirm PIN
+- **Now:** no mismatch state drawn.
+- **Instead:** a mismatch uses the PIN sheet's wrong-PIN line in W11's style;
+  KYC-04 records its wording here.
+- **Why:** every state needs a real look; the canvas's own style is used.
+
+### A11 · Creator setup
+- **Now:** "Uploading is open. Getting paid needs your ID checked."
+- **Instead:** "Uploading is open. Your earnings wait until you open your
+  wallet." Verify your identity opens Open your wallet (A26).
+- **Why:** R-11 and R-6: earning isn't gated; the money lands when the wallet
+  opens.
+
+### M7 · Menu
+- **Now:** Verification "Creator tick · ID check in review".
+- **Instead:** the tick state only; no "ID check in review".
+- **Why:** R-6: there is no manual ID review at launch.
+
+### M11 · Verification
+- **Now:** "Getting paid": Identity check, "Usually 1–3 days", In review.
+- **Instead:** the wallet state (Not opened / Open), opening Open your wallet.
+  No "In review", no "1–3 days".
+- **Why:** R-6.
+
+### M14 · Tick live
+- **Now:** Identity check "Payouts go to your bank · Approved".
+- **Instead:** the Getting paid row shows the wallet state.
+- **Why:** R-6 and R-11.
+
+### M16 · KYC not started
+- **Now:** "Needed to get paid · Not started".
+- **Instead:** kept; its cause is "no wallet yet", and the row opens Open your
+  wallet.
+- **Why:** R-6.
+
+### M17 · KYC not approved
+- **Now:** "Send your ID again · Not approved".
+- **Instead:** kept; its cause is Open your wallet stopping after three failed
+  selfie matches.
+- **Why:** R-6, KYC-02's retry rule.
+
+### M18 · Creator dashboard
+- **Now:** "Identity check (KYC) In review · unlocks payouts".
+- **Instead:** "Open your wallet: Not opened / Open", opening Open your wallet.
+- **Why:** R-6 and R-11.
+
+### Z2 · Settings
+- **Now:** a Password row with no screen drawn behind it.
+- **Instead:** Password opens a change-password screen in A22's field style
+  (current password, new password, Save).
+- **Why:** the row is drawn; its screen is built in the canvas's own style.
+
+### Z6 · Delete account
+- **Now:** "wallet and cards" in what goes.
+- **Instead:** "wallet". No cards at launch.
+- **Why:** R-16.
+
+### W12 · Send · success receipt
+- **Now:** Share receipt opens W41.
+- **Instead:** at launch, Share receipt opens the phone's share sheet with the
+  receipt's text and reference. The same on W19, W27, S7 and SC7. The W41
+  image and PDF come after launch (WALLET-12).
+- **Why:** R-33.
+
+### SC1 · Schools
+- **Now:** ratings "4.8" and "4.7" (and SC2 "4.8 (1,240)").
+- **Instead:** no rating at launch; the card keeps its layout without it.
+- **Why:** R-32: nothing writes a school rating.
+
+### S13 · Not live yet
+- **Now:** shown when bill payments are switched off.
+- **Instead:** shown only on a real cause: Fintava refuses bills with
+  `403 Merchant is not active`, or every biller in the category is
+  unavailable. No switch.
+- **Why:** R-20: no feature flags.
+
+### S2 · Pay a bill
+- **Now:** a Data tile with no screen drawn behind it.
+- **Instead:** Data is built on S8's layout with the bundle list in place of
+  the amount presets (BILLS-03).
+- **Why:** the tile is drawn; its screen is built in the canvas's own style.
+
+### E18 · Organiser dashboard
+- **Now:** Edit event, Ticket types and Shared links with no screens drawn.
+- **Instead:** Edit event and Ticket types reuse E13 to E15; Shared links lists
+  the host's referral links.
+- **Why:** the rows are drawn; their screens reuse the canvas's own.
+
+### W18 · Withdraw · waiting on KYC
+- **Now:** drawn.
+- **Instead:** not built until Fintava names an account status that blocks
+  withdrawals.
+- **Why:** R-28: it has no real cause today.
+
+## Not built at launch
+
+Entries drawn on launch screens whose screens come after launch. Each is added,
+as drawn, by the task that builds its screen (R-27); CHECK-3 allows only these
+to be missing.
+
+| Where | Entry | Added by |
+|---|---|---|
+| W1 | Dollar and Crypto tabs, Swap | WALLET-21 |
+| W1, H1 | Scan | WALLET-20 |
+| M1 | QR code | WALLET-20 |
+| W1 | WAWU card row | WALLET-22 |
+| W35 | Cards | WALLET-22 |
+| W35 | Statements | WALLET-35 |
+| W15 | Debit card | WALLET-36 |
+| W15 | USSD | WALLET-26 |
+| W15 | From your Dollar account | the dollar-account task, once Fintava sends that API (WALLET-32) |
+| W12, W19, W27, S7, SC7 | Share as image or PDF (W41 to W43); the share sheet ships at launch | WALLET-12 |
+
+## How these changes are made
+
+Each change is made in code by the task that builds the artboard. The export
+stays as it is; nothing is sent back for redrawing.

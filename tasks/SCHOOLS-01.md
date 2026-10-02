@@ -3,13 +3,13 @@ id: SCHOOLS-01
 title: Schools data model
 owner: DEV3
 area: SCHOOLS
-order: 54
+order: 12
 priority: launch
 repo: wawu-backend
 type: migration
 status: todo
 depends_on: []
-decisions: []
+decisions: [R-32]
 passes: [V1, V3, V4, V9]
 artboards: []
 ---
@@ -30,9 +30,11 @@ Schools is a new product (SC1-SC11). It needs schools, courses and dated intakes
 
 Additive migration: School (name, location, foundedYear, expertise, about, logo, applyUrl, reportEmail), SchoolCourse (title, weeks, mode, syllabus, outcomes, priceKobo), CourseIntake (startDate, schedule, location, capacity, seatsTaken).
 
+Also `category` on School (SC1's chips: Tech, Business, Creative, Languages, Vocational). No rating field: school ratings are left off at launch until the owner rules (R-32). Payee details for SCHOOLS-11 can be added there, additively.
+
 ## Capability checks
 
-- [ ] Migration applies cleanly to a copy of production.
+- [ ] The migration applies on a fresh local database built from every existing migration (`prisma migrate deploy`) and on the OPS-03 seeded database, and adds only new tables or nullable columns.
 - [ ] V3 regression suite unchanged.
 - [ ] Every field has a planned writer (SCHOOLS-02) and reader (SCHOOLS-04).
 

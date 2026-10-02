@@ -3,7 +3,7 @@ id: MONEY-09
 title: Transaction PIN
 owner: YOU
 area: MONEY
-order: 26
+order: 57
 priority: launch
 repo: wawu-backend
 type: money-path
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 

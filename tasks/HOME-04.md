@@ -3,7 +3,7 @@ id: HOME-04
 title: Feed: following, likes, views, shares
 owner: DEV
 area: HOME
-order: 41
+order: 76
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -24,7 +24,7 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+The Following tab, likes, views and shares are recorded per viewer (H2, H12, H19). Additive only.
 
 ## Scope
 

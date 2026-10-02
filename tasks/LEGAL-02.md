@@ -3,12 +3,12 @@ id: LEGAL-02
 title: Legal: chat, profiling, brief, consultant joins
 owner: DEV3
 area: LEGAL
-order: 88
+order: 64
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [LEGAL-01]
+depends_on: [LEGAL-01, INBOX-02, UI-02]
 decisions: [R-14]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [S14, S15, S16, S17]
@@ -23,6 +23,7 @@ artboards: [S14, S15, S16, S17]
 - `DECISIONS.md`: R-14 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py S14 S15 S16 S17` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for S14, S15, S16, S17, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -32,6 +33,8 @@ You own these screens AND the backend work behind them. Build the screens as the
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
 
+Book (S17) is added by LEGAL-04 (docs/WORKFLOW.md section 7).
+
 ## Artboards
 
 - **S14 · Legal chat**: WAWU Legal Assistant opening chat: 'Tell me what's going on… then a consultant picks it up. Nothing is charged, and no price is quoted until a consultant has read it.' Quick replies: A tenancy problem / Register a business / Check a contract / Something else.
@@ -39,12 +42,20 @@ New files under `src/features/` for these screens and their route files under `s
 - **S16 · Brief**: Brief card for confirmation: Matter Tenancy · rent increase, Lease signed 14 months left, Rent review clause Not sure, Location Lekki, Lagos; 'Send to a consultant · Nothing is charged yet.' Add anything else.
 - **S17 · Consultant joins**: Handover: 'Adaora joined. The assistant has stopped replying.' Consultant message, 'Book a consultation · Video, phone or in person', Book / Message Adaora.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- S17: Book (opens S18): added by LEGAL-04
+
 ## Capability checks
 
 - [ ] **S14**: a user can type the problem; pick a quick reply.
 - [ ] **S15**: a user can answer in free text; tap quick replies.
 - [ ] **S16**: a user can Send to a consultant; Add anything else.
-- [ ] **S17**: a user can Book (S18); Message Adaora.
+- [ ] **S17**: a user can Message Adaora, and the consultant's messages arrive without a refresh (INBOX-02).
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
@@ -67,7 +78,7 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Designer notes (⚠, unresolved)
 
-- S14: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.”
+- S14: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 
 ## Builder report
 

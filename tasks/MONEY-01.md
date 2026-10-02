@@ -3,7 +3,7 @@ id: MONEY-01
 title: Protected route list and regression suite
 owner: YOU
 area: MONEY
-order: 7
+order: 21
 priority: launch
 repo: wawu-backend
 type: setup

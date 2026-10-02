@@ -3,7 +3,7 @@ id: SHELL-03
 title: Tester builds
 owner: DEV
 area: SHELL
-order: 17
+order: 14
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
@@ -27,12 +27,12 @@ Testers and the owner install real builds, not Expo Go.
 
 ## Scope
 
-Follow `docs/BUILDS.md`. `npx expo install expo-dev-client`; `eas.json` with the three profiles it lists; the owner runs `eas init` and the first iOS build (only they have Apple). Android preview is an APK anyone can install. iPhones get builds through TestFlight, submitted by the owner. Updates from this task go to the `preview` channel only.
+Follow `docs/BUILDS.md`. `npx expo install expo-dev-client`; `eas.json` with the three profiles it lists; the owner runs `eas init`. Android preview is an APK anyone can install. iPhone builds come later, with RELEASE-03 (R-24). Updates from this task go to the `preview` channel only.
 
 ## Capability checks
 
-- [ ] A preview build installs on a real Android phone and a real iPhone and reaches the test backend.
-- [ ] The developer can run `eas build --profile preview` for both platforms without an Apple or Google login.
+- [ ] A preview build installs on the owner's Android phone and reaches the local backend through the tunnel (R-24, R-25; CHECK-1 carries this check).
+- [ ] The developer can run `eas build -p android --profile preview` without an Apple or Google login (iOS waits for RELEASE-03).
 - [ ] `eas update --channel preview` reaches an installed preview build without a rebuild.
 
 ## Builder report

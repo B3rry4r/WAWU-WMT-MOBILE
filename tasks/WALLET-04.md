@@ -3,13 +3,13 @@ id: WALLET-04
 title: Transaction history and detail
 owner: YOU
 area: WALLET
-order: 94
+order: 109
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-15]
-decisions: []
+depends_on: [MONEY-15, UI-02, BILLS-01]
+decisions: [R-10, R-33]
 passes: [V1, V4, V5, V6, V9]
 artboards: [W26, W27, W28]
 ---
@@ -22,6 +22,7 @@ artboards: [W26, W27, W28]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W26 W27 W28` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/designer/BRIEF.md`: its entries for W26, W27 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -34,13 +35,26 @@ New files under `src/features/` for these screens and their route files under `s
 ## Artboards
 
 - **W26 · Transaction history**: Full ledger with search, filter chips (All, Money in, Money out, Bills, Content), a monthly In/Out summary, rows grouped by day, tap to open a receipt.
-- **W27 · Transaction detail**: Receipt for one transaction: type, source content, from, to, date, reference, Completed; Share receipt; Report a problem opens support chat with reference.
+- **W27 · Transaction detail**: Receipt for one transaction: type, source content, from, to, date, reference, Completed; Share receipt (the phone's share sheet at launch, R-33); Report a problem opens support chat with the reference (added by SUPPORT-01).
 - **W28 · History · no results**: Empty filter result (Bills in September) with 'Pay a bill' CTA.
+
+## Brief changes (build these, not the canvas)
+
+- **W26**: each debit row shows the total that left the wallet: Ikeja Electric −₦10,600.00, the GTBank transfer −₦25,065.00, MTN airtime −₦2,000.00 (its charge is ₦0). "Out · September" is the sum of those totals (keep it an obvious sample). (Why: rule 5 and R-10: the money that left the wallet includes the charges.)
+- **W27**: keep it. For a debit, the detail shows the amount, Fintava's charge, WAWU's fee (if any) and the total, so the charge behind each W26 row is visible here. If you draw a debit example, use the GTBank send: ₦25,000 + (₦40 + ₦25) = ₦25,065.00. (Why: R-10: the charges must be visible somewhere the person can check.)
+
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- W27: Report a problem (opens the support chat): added by SUPPORT-01
 
 ## Capability checks
 
 - [ ] **W26**: a user can search transactions; filter by All/Money in/Money out/Bills/Content; tap a row to open W27.
-- [ ] **W27**: a user can Share receipt (W41); Report a problem.
+- [ ] **W27**: a user can see each debit's parts (amount, Fintava's charge, WAWU's fee, total; BRIEF W27) and Share receipt through the phone's share sheet (the receipt's text and reference; the W41 image and PDF come after launch, WALLET-12).
 - [ ] **W28**: a user can Pay a bill.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.

@@ -3,13 +3,13 @@ id: BILLS-06
 title: Bill reminders
 owner: DEV2
 area: BILLS
-order: 182
-priority: after-launch
+order: 123
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
-decisions: []
+depends_on: [INBOX-03, BILLS-04]
+decisions: [R-33]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -29,6 +29,8 @@ S27-S32: reminders for bills on and off WAWU, with a month view.
 ## Scope
 
 BillReminder with create, edit, delete; paid state from real bill payments; a daily job that sends reminders.
+
+Built at launch (R-33). Reminders go out as pushes through INBOX-03.
 
 ## Capability checks
 

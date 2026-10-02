@@ -3,7 +3,7 @@ id: SCHOOLS-02
 title: Admin: create and edit schools, courses and intakes
 owner: DEV3
 area: SCHOOLS
-order: 55
+order: 16
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -32,7 +32,7 @@ Admin namespace only, admin auth only. Create, edit, hide schools, courses and i
 
 ## Capability checks
 
-- [ ] An admin can add a school with a course and an intake, and it appears in SCHOOLS-04's list.
+- [ ] An admin can add a school with a course and an intake and read it back from the admin route.
 - [ ] A user token is refused on every admin school route.
 
 ## Builder report

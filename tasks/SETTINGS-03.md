@@ -1,11 +1,11 @@
 ---
 id: SETTINGS-03
-title: Settings: password, sign out everywhere, notification switches
+title: Change password and sign out for real (WAWU ID)
 owner: DEV
 area: SETTINGS
-order: 70
+order: 86
 priority: launch
-repo: wawu-id, wawu-backend
+repo: wawu-id
 type: backend-endpoint
 status: todo
 depends_on: []
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# SETTINGS-03 · Settings: password, sign out everywhere, notification switches
+# SETTINGS-03 · Change password and sign out for real (WAWU ID)
 
 ## Read first
 
@@ -21,19 +21,20 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
 - This task changes `wawu-id, wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
+- This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal
 
-Z2 and Z3 need change password, a real sign-out, and three new notification switches.
+Z2 needs a password change that signs other devices out, and a sign-out that really ends the session. The notification switches moved to SETTINGS-07, so each task touches one repo.
 
 ## Scope
 
-Change password (WAWU ID) revoking other sessions; server-side sign-out; notification keys moneyIn, communityMessages, contentReviews honoured when notifications are sent.
+Change password (current and new) in WAWU ID, revoking other sessions; `POST /auth/logout` revoking the presented refresh token (BACKEND_GAPS G-6, additive), which the app calls before clearing its tokens.
 
 ## Capability checks
 
 - [ ] After changing the password, other devices are signed out.
-- [ ] Turning off 'money in' stops those notifications and nothing else.
+- [ ] After a user signs out, their old refresh token is refused (G-6).
 
 ## Builder report
 

@@ -76,7 +76,12 @@ Crypto runs through Cardex, their partner: `docs/fintava/cardex.md`.
 
 Money is built on the sandbox, no mocks, and launches with the app (R-20).
 
-**From you:** the Apple, Google Play and Expo accounts exist; you invite the
+**From you:** the Google Play and Expo accounts exist (Apple waits for RELEASE-03, R-24); you invite the
 developer to Expo only and do the store steps in `docs/BUILDS.md`. Also: the domain behind
-`wawu/...` links; an SMS route for sign-up codes (Fintava sells SMS); a liveness
-provider if you want one (Fintava only matches the face); Redis for live chat.
+`wawu/...` links; Redis for live chat on the droplet (INBOX-02); the FCM credentials for Android push,
+uploaded to Expo (INBOX-03, INBOX-21); a tunnel with a fixed hostname so preview builds reach your local
+backend (`docs/BUILDS.md`); Fintava activating WAWU's sandbox merchant (every customer, transfer and bill call
+answers `403 Merchant is not active` until then, OPS-02); WAWU's fees set as merchant charges in the sandbox
+dashboard (OPS-09) and the live one (OPS-10); the Terms and Privacy text and the licence lines, served from
+config (SETTINGS-02, R-1). Sign-up codes go by Fintava's SMS (AUTH-03). There is no liveness check: Fintava
+only matches the face, and nothing in the app claims one.

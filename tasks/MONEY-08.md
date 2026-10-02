@@ -3,12 +3,12 @@ id: MONEY-08
 title: Status checks and the pending sweep
 owner: YOU
 area: MONEY
-order: 25
+order: 65
 priority: launch
 repo: wawu-backend
 type: third-party
 status: todo
-depends_on: [MONEY-06]
+depends_on: [MONEY-07, MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
 artboards: []
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -30,6 +31,8 @@ A transfer stuck 'pending' because a webhook never came gets settled anyway.
 ## Scope
 
 Port the existing reconcile-pending pattern to Fintava's status endpoint, on a schedule.
+
+Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
 
 ## Capability checks
 

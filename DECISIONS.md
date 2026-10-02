@@ -185,28 +185,76 @@ line, and must match it exactly (for example, button side padding 14 / 18 / 24
 for sm / md / lg). Moving them into theme tokens is housekeeping, never a
 question for the owner.
 
+### Lead rulings of 2 Oct 2026
+
+Settled by the Lead while applying the two task reviews of 2 Oct 2026. The owner can change any of them; those
+marked "default until the owner rules" are the ones most likely to change.
+
+**R-24 · Android first.** Testing and the first store release are Android: nobody on the team has an iPhone
+yet. Every launch check that needs a phone runs on the owner's Android phone (V10, CHECK-1, CHECK-3,
+RELEASE-01). iOS ships when an iPhone tester exists, in one after-launch task, RELEASE-03.
+
+**R-25 · No staging and no test backend.** Checks run against the backend running locally (wawu-backend
+`scripts/local/up.sh`, OPS-03) with seeded data and the Fintava sandbox. Production is the DigitalOcean droplet,
+deployed by GitHub Actions; its secrets live in `/etc/wawu/hub-api.env` there (OPS-10). Where a check used to say
+"a copy of production", it means the local backend with seeded data.
+
+**R-26 · Biometric approval, not Face ID.** Phones approve with a fingerprint or a face, whichever they have
+(`expo-local-authentication`), and the label names what the phone has. When it fails, the copy is "<Name> failed.
+Use your PIN." (for example "Fingerprint failed. Use your PIN."). A failed biometric never uses up a PIN try.
+Tasks: MONEY-02, MONEY-14, WALLET-02, WALLET-06.
+
+**R-27 · Links between screens.** No placeholders, no dead buttons, no feature flags. A hub or menu task builds
+only the rows whose destination screen already exists. The task that builds a destination screen also adds its
+entry row or button to the hub, exactly as the artboard draws it, and owns the check "a user can reach X from
+Y". Where the owner is the same and money doesn't block, the destination comes first. CHECK-3 confirms every hub
+matches its artboard in full. `docs/WORKFLOW.md` section 7 has the rule.
+
+**R-28 · W18 is not built** until Fintava names an account status that blocks withdrawals. A wallet only exists
+after the BVN and selfie checks pass, so "Withdraw · waiting on KYC" has no real cause today.
+
+**R-29 · The designer brief is part of the design.** Every screen task lists `docs/designer/BRIEF.md` under Read
+first, and its text and checks use the brief's version. The brief is applied in code; nothing is redrawn.
+
+**R-30 · Support chat is SUPPORT-01, owned by Developer 2.** H18 "Contact support", W27 "Report a problem" and
+W35 "Help with a payment" open it with the reference already attached.
+
+**R-31 · Fintava's charge on WAWU's own movements is WAWU's.** WAWU pays Fintava's fee on the money it moves
+itself (releases to a payee, refunds, payouts to hosts and schools) from its 15%. On a bill, the payer's move
+into WAWU's wallet is the payer's, like any purchase: the quote shows the bill charge and that balance-transfer
+charge. Default until the owner rules.
+
+**R-32 · School ratings are left off at launch** until the owner rules. Nothing writes a school rating and no
+screen collects one, so the rating element on SC1 and SC2 is not built.
+
+**R-33 · After-launch features drawn on launch screens are built at launch,** because the canvas decides: bill
+reminders (the S2 banner; BILLS-05, BILLS-06), My courses (SC8, SCHOOLS-08), applying on the school's site (SC9,
+the link half of SCHOOLS-10), and Share receipt, which at launch opens the phone's share sheet with the receipt's
+text and reference (the W41 image and PDF stay after launch, WALLET-12).
+
+**R-34 · Web features absent from the canvas are not built in the app.** The canvas decides the app; the web
+follows after launch (Authority, above). This closes D14: OPS-07 lists the 89 for the web team, after launch.
+
+**R-35 · The ₦ symbol is drawn by the phone's font,** as the design does (Alan Sans has no ₦). This closes D15.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
 exactly one screen task.
 
-<!-- not-built: SH M3 W40 -->
+<!-- not-built: SH M3 W40 W18 -->
 - `SH1` to `SH15`: WAWU Shop, retired (R-2)
 - `M3`: the profile Shop tab (R-9)
 - `W40`: move earnings to wallet (R-11)
+- `W18`: withdraw waiting on KYC (R-28). Unblocked when Fintava names an account status that blocks withdrawals.
+
+Elements, not whole artboards, also left out at launch:
+- The school rating on `SC1` and `SC2` (R-32). Unblocked when the owner rules where a school's rating comes from.
 
 ## Still open
 
-Nothing waits on these.
-
-**D14 · Web features missing from the canvas.** 89 things on the web don't
-appear in the design (WAWU Learn, health plans, mentors, the EVG score,
-community host tools and more). Until ruled, nothing changes on the web. Rule
-each one in OPS-07.
-
-**D15 · The ₦ symbol.** Alan Sans has no ₦ glyph, so the phone's own font
-draws it, in the design too. Until the designer answers (OPS-04), the
-fallback stays.
+Nothing is open. D14 (web features missing from the canvas) was closed by R-34 and D15 (the ₦ symbol) by R-35,
+both 2 Oct 2026.
 
 The full list of what the canvas contradicts, with both sides quoted, is in
 `docs/analysis/ANALYSIS-EVIDENCE.md` ("Conflicts with the current product").

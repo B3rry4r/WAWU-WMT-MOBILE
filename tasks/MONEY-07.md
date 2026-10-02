@@ -3,7 +3,7 @@ id: MONEY-07
 title: Fintava webhooks
 owner: YOU
 area: MONEY
-order: 24
+order: 53
 priority: launch
 repo: wawu-backend
 type: third-party
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -30,6 +31,10 @@ Money that arrives or settles while nobody is looking is still recorded once.
 ## Scope
 
 Webhook endpoint with signature check, an event store keyed by the transaction reference (Fintava sends no event id), safe to replay.
+
+Webhooks reach the local backend through the tunnel (docs/WORKFLOW.md section 6); the production webhook URL is registered by OPS-10.
+
+Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
 
 ## Fintava facts
 

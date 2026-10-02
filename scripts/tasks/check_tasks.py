@@ -14,6 +14,8 @@ reading carefully. Now it is an exit code:
 - the passes include everything the task type requires (docs/WORKFLOW.md section 5)
 - dependencies, artboards and decisions all exist
 - every artboard (except retired Shop) is in exactly one screen task
+- every launch task comes before CHECK-3 (full QA, nothing new is built), RELEASE-02 comes after it,
+  and every after-launch task comes after RELEASE-02
 """
 from __future__ import annotations
 
@@ -98,6 +100,19 @@ def main() -> int:
     for n, c in Counter(t["order"] for t in tasks.values()).items():
         if c > 1:
             errors.append(f"order {n} is used by {c} tasks")
+
+    # Checkpoints: nothing launch-bound may be ordered after CHECK-3, and after-launch work follows the release.
+    if "CHECK-3" in tasks and "RELEASE-02" in tasks:
+        qa, release = tasks["CHECK-3"]["order"], tasks["RELEASE-02"]["order"]
+        if release < qa:
+            errors.append(f"RELEASE-02 (order {release}) must come after CHECK-3 (order {qa})")
+        for tid, t in tasks.items():
+            if tid in ("CHECK-3", "RELEASE-02"):
+                continue
+            if t["priority"] == "launch" and t["order"] > qa:
+                errors.append(f"{tid}.md is a launch task ordered after CHECK-3 (order {t['order']} > {qa}); launch work comes before full QA")
+            if t["priority"] == "after-launch" and t["order"] < release:
+                errors.append(f"{tid}.md is after launch but ordered before RELEASE-02 (order {t['order']} < {release})")
 
     screen_cover: Counter = Counter()
     for tid, t in tasks.items():

@@ -3,7 +3,7 @@ id: OPS-05
 title: Update the other repos' CLAUDE.md for today's rulings
 owner: YOU
 area: OPS
-order: 6
+order: 17
 priority: launch
 repo: wawuafrica, wawu-backend
 type: ops

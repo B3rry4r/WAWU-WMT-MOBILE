@@ -3,7 +3,7 @@ id: OPS-02
 title: Fintava test keys: the first real calls
 owner: YOU
 area: OPS
-order: 3
+order: 5
 priority: launch
 repo: wawu-wmt-mobile
 type: ops

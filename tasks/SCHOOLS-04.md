@@ -3,7 +3,7 @@ id: SCHOOLS-04
 title: Schools: browse, search, course detail
 owner: DEV3
 area: SCHOOLS
-order: 90
+order: 20
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -29,6 +29,8 @@ SC1-SC3 and SC10 need a public list, search, a school page and a course page wit
 ## Scope
 
 GET schools (category, q), school by id, course by id with intakes; a 'schools' tab in the existing search.
+
+The schools tab in search is this task's; EXPLORE-05 depends on it.
 
 ## Capability checks
 

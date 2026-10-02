@@ -3,7 +3,7 @@ id: LEGAL-01
 title: Legal starts as a chat
 owner: DEV3
 area: LEGAL
-order: 53
+order: 28
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -29,12 +29,12 @@ S14-S17: the assistant chat comes first and writes the brief; today it only open
 
 ## Scope
 
-Assistant on an unpaid intake, brief written into the intake, consultant can join before payment (per R-14). The legal option lists published as named schemas.
+Assistant on an unpaid intake, brief written into the intake, consultant can join before payment (per R-14). The matter options the assistant offers come from the API, as a named schema (BACKEND_GAPS G-1).
 
 ## Capability checks
 
 - [ ] A user can describe a problem and receive a brief without paying.
-- [ ] A consultant who joins sees the brief.
+- [ ] A consultant who joins from today's legal admin tooling in wawu-dashboard (the builder names the screen in the report) sees the brief before any payment.
 
 ## Builder report
 

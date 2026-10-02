@@ -3,7 +3,7 @@ id: SHELL-01
 title: App shell: the five tabs
 owner: DEV
 area: SHELL
-order: 15
+order: 6
 priority: launch
 repo: wawu-wmt-mobile
 type: flow

@@ -3,14 +3,14 @@ id: PROS-03
 title: Get listed as a professional
 owner: DEV3
 area: PROS
-order: 87
+order: 40
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [PROS-02]
+depends_on: [PROS-02, UI-02]
 decisions: []
-passes: [V1, V4, V5, V6, V7, V9]
+passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [P5, P6, P7, P8, P9, P10]
 ---
 # PROS-03 · Get listed as a professional
@@ -22,6 +22,7 @@ artboards: [P5, P6, P7, P8, P9, P10]
 - `docs/people/DEV3.md` (what you own)
 - The design: `python3 scripts/design/render_design.py P5 P6 P7 P8 P9 P10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for P5, P6, P7, P8, P9, P10, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -30,6 +31,12 @@ You own these screens AND the backend work behind them. Build the screens as the
 ## Scope
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+Inbox settings (P8) is added by INBOX-12 and Become a creator (P10) by AUTH-06 (docs/WORKFLOW.md section 7).
+
+V10 runs on a real Android phone only (DECISIONS R-24).
+
+Native modules: `expo-document-picker` (P6 licence upload). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 
@@ -40,14 +47,23 @@ New files under `src/features/` for these screens and their route files under `s
 - **P9 · Hidden**: Listing hidden: 'Hidden. Nobody can find you' with Show.
 - **P10 · Needs a creator account**: Gate: 'This needs a creator account · Setting one up is free.' Become a creator.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- P8: Inbox settings (opens I21): added by INBOX-12
+- P10: Become a creator (opens A11): added by AUTH-06
+
 ## Capability checks
 
 - [ ] **P5**: a user can pick one or more fields; enter headline/about/services; Continue (P6).
 - [ ] **P6**: a user can pick credential kind; enter licence number + issuer; upload document; Send for review (P7).
 - [ ] **P7**: a user can My listings (P8); Done.
-- [ ] **P8**: a user can Hide a listing (P9); Apply again; Apply in another field; go to Inbox settings (I21).
+- [ ] **P8**: a user can Hide a listing (P9); Apply again; Apply in another field.
 - [ ] **P9**: a user can Show.
-- [ ] **P10**: a user can Become a creator.
+- [ ] **P10**: a user without a creator account sees the gate.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states P9, P10.

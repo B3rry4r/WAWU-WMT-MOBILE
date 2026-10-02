@@ -3,12 +3,12 @@ id: INBOX-07
 title: One inbox list with unread counts
 owner: DEV2
 area: INBOX
-order: 100
+order: 23
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
+depends_on: [INBOX-01, INBOX-06, INBOX-08]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
@@ -24,15 +24,17 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+One inbox list: chats, paid DMs, communities, money and WAWU messages in one feed with unread counts (I1). Additive only.
 
 ## Scope
 
 A single inbox feed mixing chats, paid DMs, communities, money and WAWU messages, with unread counts and the tab badge total.
 
+Money requests join the feed in INBOX-15.
+
 ## Capability checks
 
-- [ ] The tab badge equals the sum of unread items.
+- [ ] A user with two unread chats and one unanswered paid question sees 3 on the Inbox tab, and 2 after opening one chat.
 
 ## Builder report
 

@@ -1,9 +1,9 @@
 ---
 id: WALLET-19
-title: Raise your limits (Tier 2 and 3)
+title: Account limits screens (A17 to A20)
 owner: YOU
 area: WALLET
-order: 168
+order: 185
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [A17, A18, A19, A20]
 ---
-# WALLET-19 · Raise your limits (Tier 2 and 3)
+# WALLET-19 · Account limits screens (A17 to A20)
 
 ## Read first
 
@@ -22,6 +22,7 @@ artboards: [A17, A18, A19, A20]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A17 A18 A19 A20` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for A17, A18, A19, A20, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -37,6 +38,10 @@ New files under `src/features/` for these screens and their route files under `s
 - **A18 · Tier 2 · NIN**: 'Upgrade to Tier 2. Verify your NIN. Dial *346# from the phone on your NIN to get it.' NIN field. 'Checked with NIMC against your BVN details.' Verify NIN.
 - **A19 · Tier 2 done**: A17 with Tier 1 and Tier 2 Done, Tier 3 Upgrade.
 - **A20 · Tier 3 · address**: 'Upgrade to Tier 3': Home address, City, State, Proof of address upload (ikeja-electric-aug.pdf, 'Utility bill · last 3 months'). Submit. Then reviewed, Tier 3 shows Done.
+
+## Waiting on
+
+This waits for the owner's ruling on what A17 to A20 become (BRIEF, "A17 to A20"; after launch). Fintava's API has no tiers.
 
 ## Capability checks
 

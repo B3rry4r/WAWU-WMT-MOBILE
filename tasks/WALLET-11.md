@@ -3,12 +3,12 @@ id: WALLET-11
 title: Payout bank account
 owner: YOU
 area: WALLET
-order: 141
+order: 117
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [WALLET-14]
+depends_on: [WALLET-14, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [A21]
@@ -22,6 +22,7 @@ artboards: [A21]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A21` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for A21, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 

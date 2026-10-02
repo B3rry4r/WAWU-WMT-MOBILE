@@ -3,7 +3,7 @@ id: CHECK-0
 title: Checkpoint 0: safe to start building
 owner: YOU
 area: CHECK
-order: 8
+order: 25
 priority: launch
 repo: all
 type: ops

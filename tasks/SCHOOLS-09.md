@@ -3,7 +3,7 @@ id: SCHOOLS-09
 title: Enrolment report to the school, and My courses
 owner: DEV3
 area: SCHOOLS
-order: 130
+order: 128
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -30,6 +30,8 @@ SC7 says the school gets the student's details; SC8 lists courses with their sta
 ## Scope
 
 On enrolment, email the school the student's name, email, phone, course and intake, with the consent time recorded. GET my school enrolments with status.
+
+The email goes through the backend's existing mailer.
 
 ## Capability checks
 

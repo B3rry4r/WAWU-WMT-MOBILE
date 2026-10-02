@@ -3,13 +3,13 @@ id: MONEY-04
 title: Money conventions and the wallet contract
 owner: YOU
 area: MONEY
-order: 13
+order: 29
 priority: launch
 repo: wawu-backend
 type: contract
 status: todo
-depends_on: []
-decisions: []
+depends_on: [OPS-02]
+decisions: [R-10, R-19, R-20, R-21]
 passes: [V1]
 artboards: []
 ---
@@ -29,7 +29,7 @@ Mobile builds wallet screens against an agreed contract before Fintava is connec
 
 ## Scope
 
-docs/contract/CONVENTIONS.md (money in kobo, phone in +234 normalised by the server, one error shape, Idempotency-Key header, how the PIN is sent, cursor pages). Contract entries for wallet, PIN, transfers, pay-from-wallet, holds and history in the backend's registry, from Fintava's docs (OPS-02). Also: named schemas instead of the duplicated inline response shapes (BACKEND_GAPS G-1).
+docs/contract/CONVENTIONS.md (money in kobo, phone in +234 normalised by the server, one error shape, Idempotency-Key header, how the PIN is sent, cursor pages). Contract entries for wallet, PIN, transfers, pay-from-wallet, holds (a transfer into WAWU's merchant wallet, R-19; Fintava cannot reserve a balance) and history in the backend's registry, from Fintava's docs (OPS-02). Also: named schemas instead of the duplicated inline response shapes (BACKEND_GAPS G-1).
 
 ## Fintava facts
 
@@ -40,7 +40,7 @@ Fintava amounts are naira decimals (`2.75`, `"100.00"`), not kobo. The contract 
 ## Capability checks
 
 - [ ] Every wallet artboard's data needs (docs/analysis evidence, flow wallet) maps to a contract entry.
-- [ ] Conflicts between the canvas and Fintava's real behaviour are listed for the owner, not resolved.
+- [ ] Conflicts between the canvas and Fintava's real behaviour are listed in `docs/designer/BRIEF.md` and resolved there; only a conflict about money behaviour that `DECISIONS.md` doesn't cover goes to the owner.
 
 ## Builder report
 

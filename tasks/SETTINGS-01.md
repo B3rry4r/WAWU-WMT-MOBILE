@@ -3,12 +3,12 @@ id: SETTINGS-01
 title: Settings, notifications, privacy and blocked
 owner: DEV
 area: SETTINGS
-order: 33
+order: 92
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [SHELL-01, SHELL-02]
+depends_on: [SHELL-01, SHELL-02, UI-02, SETTINGS-03, SETTINGS-04, SETTINGS-07, HOME-11, SETTINGS-02]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [Z2, Z3, Z4, Z5, Z12]
@@ -22,6 +22,7 @@ artboards: [Z2, Z3, Z4, Z5, Z12]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py Z2 Z3 Z4 Z5 Z12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/designer/BRIEF.md`: its entries for Z2 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -33,22 +34,38 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **Z2 · Settings**: Header card (initials LE, name, lennox@wawu.africa · 0803 ••• 4412). Rows: Notifications; Privacy; Password; Wallet and PIN (Tier 2 · W35); TGIF on Home (Daily verse and prayer, toggle); Sound (Taps and alerts); Theme (System); About WAWU; Terms; Privacy policy; Sign out; Delete account.
+- **Z2 · Settings**: Header card (initials LE, name, lennox@wawu.africa · 0803 ••• 4412). Rows: Notifications; Privacy; Password; Wallet and PIN (no tier: a subtitle such as 'PIN, statements, limits', BRIEF Z2); TGIF on Home (Daily verse and prayer, toggle); Sound (Taps and alerts); Theme (System); About WAWU; Terms; Privacy policy; Sign out; Delete account.
 - **Z3 · Notifications**: Toggle groups: Money (Money in: tips, sales, transfers; Refunds), Messages (Paid questions incl. reply deadlines; Community messages), Content (Reviews: approved or sent back; New followers), From WAWU (News and offers).
 - **Z4 · Privacy**: Your profile: Show what I have bought (Off, nobody sees your purchases), Show my saved items, Show who I follow; Communities: Show me in member lists (Your messages are visible either way); Blocked accounts (2); Download my data (Sent to your email); Privacy policy.
 - **Z5 · Blocked**: Blocked accounts list (Spam Account, Tunde K.) each with Unblock; caption 'They can't message you, see your profile or find you in search.'
 - **Z12 · Nobody blocked**: Empty state: 'Nobody blocked. Block someone from their profile menu.'
+- **Change password** (not drawn): the screen Z2's Password row opens, built in A22's field style (current password, new password, Save); recorded in BRIEF.
+
+## Brief changes (build these, not the canvas)
+
+- **Z2**: no tier, for example "PIN, statements, limits". (Why: Fintava fact: no tiers in the API.)
+- **Z2**: Password opens a change-password screen in A22's field style (current password, new password, Save). (Why: the row is drawn; its screen is built in the canvas's own style.)
+
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- Z2: Wallet and PIN (opens W35): added by WALLET-06
+- Z2: Delete account (opens Z6): added by SETTINGS-05
 
 ## Capability checks
 
-- [ ] **Z2**: a user can open each row; toggle TGIF; toggle sound; pick theme; sign out; delete account.
+- [ ] **Z2**: a user can open Notifications (Z3), Privacy (Z4) and Password (change password); open About WAWU, Terms and Privacy policy (Z9 to Z11); toggle TGIF; toggle sound; pick theme; sign out.
 - [ ] **Z3**: a user can toggle each category.
 - [ ] **Z4**: a user can toggle each; open Blocked accounts; request data download; open privacy policy.
 - [ ] **Z5**: a user can unblock.
-- [ ] **Z12**: a user can none.
+- [ ] **Z12**: a user with nobody blocked sees "Nobody blocked" and how to block someone.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states Z12.
+- [ ] A user can change their password from Z2 (current and new), and their other devices are signed out (SETTINGS-03).
 
 ## What the backend serves today (from the analysis)
 

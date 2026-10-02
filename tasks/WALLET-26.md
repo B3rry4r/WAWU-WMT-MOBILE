@@ -3,7 +3,7 @@ id: WALLET-26
 title: Add money by USSD
 owner: YOU
 area: WALLET
-order: 170
+order: 189
 priority: after-launch
 repo: wawu-backend
 type: third-party
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -29,11 +30,11 @@ W15: a USSD option.
 
 ## Scope
 
-USSD funding if Fintava supports it; otherwise the owner removes it from the design.
+USSD funding if Fintava supports it; otherwise the USSD option stays not built and `docs/designer/BRIEF.md` records it. This task adds the USSD option to W15 when it lands.
 
 ## Capability checks
 
-- [ ] A sandbox USSD payment credits the wallet once, or the owner has ruled it out.
+- [ ] A sandbox USSD payment credits the wallet once, or Fintava has confirmed it has no USSD funding and the brief records it.
 
 ## Builder report
 

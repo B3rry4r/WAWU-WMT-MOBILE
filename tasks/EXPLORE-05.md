@@ -1,19 +1,19 @@
 ---
 id: EXPLORE-05
-title: Search: communities, recent and popular searches, schools
+title: Search: communities, recent and popular searches, ticks
 owner: DEV
 area: EXPLORE
-order: 82
+order: 96
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
+depends_on: [SCHOOLS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# EXPLORE-05 · Search: communities, recent and popular searches, schools
+# EXPLORE-05 · Search: communities, recent and popular searches, ticks
 
 ## Read first
 
@@ -24,11 +24,11 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+Search finds communities, remembers a user's recent searches with Clear, shows popular searches from real queries, and marks ticked creators (X5, X6, X8, X9, X11). Schools come from SCHOOLS-04, which builds the schools search. Additive only.
 
 ## Scope
 
-Communities in search, saved recent searches with clear, popular searches from real queries, ticks on creator rows, schools tab (after SCHOOLS-04).
+Communities in search, saved recent searches with clear, popular searches from real queries, ticks on creator rows. The schools tab is SCHOOLS-04's; this task depends on it so search covers schools.
 
 ## Capability checks
 

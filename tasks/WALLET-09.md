@@ -3,12 +3,12 @@ id: WALLET-09
 title: Send money to a bank
 owner: YOU
 area: WALLET
-order: 136
+order: 138
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
+depends_on: [MONEY-17, MONEY-07, MONEY-08, WALLET-15]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
@@ -23,20 +23,26 @@ artboards: []
 - `DECISIONS.md`: R-10 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-W8, W10-W14, W17-W19: send to any Nigerian bank account, replacing today's creator-only withdraw.
+W8, W10-W14, W17-W19: send to any Nigerian bank account, beside today's Flutterwave withdraw, which the web
+keeps until WALLET-30.
 
 ## Scope
 
-Bank list and name check, NIP transfer with fee, note, PIN, Idempotency-Key; reversal on failure; KYC rule per W18.
+Bank list and name check, NIP transfer with the quoted fee (WALLET-15), note, PIN, Idempotency-Key. A timed-out
+send is checked with Fintava's status endpoint before any retry (MONEY-08); a failed send arrives as
+`debit_transfer_reversal` (MONEY-07) and is reversed once.
+
+Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
 
 ## Capability checks
 
 - [ ] The account name is confirmed before the user can send.
-- [ ] A failed transfer reverses once and the user sees W14.
-- [ ] The fee shown is the fee charged.
+- [ ] A failed transfer reverses once.
+- [ ] A ₦25,000 bank send shows ₦40 + ₦25 = ₦65 and debits ₦25,065; Fintava's record matches.
 
 ## Builder report
 

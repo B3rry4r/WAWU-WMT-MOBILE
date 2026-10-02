@@ -3,13 +3,13 @@ id: MONEY-19
 title: Not enough money, and still confirming
 owner: YOU
 area: MONEY
-order: 63
+order: 93
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
-decisions: []
+depends_on: [MONEY-17, MONEY-08]
+decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -31,9 +32,11 @@ H17, I6, S11, W13: tell the user exactly how much they are short. H18, E10: say 
 
 An insufficient-funds error carrying balance and shortfall; a 'pending' result the app can poll.
 
+Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
+
 ## Capability checks
 
-- [ ] With ₦500 in the wallet, a ₦1,000 payment fails showing a ₦500 shortfall.
+- [ ] With ₦500 in the wallet, a ₦1,000 purchase fails with a ₦523.25 shortfall (₦1,023.25 total, BRIEF rule 5).
 - [ ] A pending payment resolves to paid or reversed, never stays pending past the sweep.
 
 ## Builder report
