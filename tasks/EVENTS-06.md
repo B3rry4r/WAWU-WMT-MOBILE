@@ -1,7 +1,7 @@
 ---
 id: EVENTS-06
 title: Buy a ticket: pay, PIN, ticket, still confirming
-owner: DEV
+owner: DEV2
 area: EVENTS
 order: 121
 priority: launch
@@ -19,7 +19,7 @@ artboards: [E3, E4, E5, E10]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E3 E4 E5 E10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 

@@ -1,7 +1,7 @@
 ---
 id: LEGAL-04
 title: Legal: book and pay a consultation
-owner: YOU
+owner: DEV3
 area: LEGAL
 order: 126
 priority: launch
@@ -19,7 +19,7 @@ artboards: [S18, S19, S20, S25]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - `DECISIONS.md`: R-14 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py S18 S19 S20 S25` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`

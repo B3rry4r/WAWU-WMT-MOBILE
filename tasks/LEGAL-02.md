@@ -1,7 +1,7 @@
 ---
 id: LEGAL-02
 title: Legal: chat, profiling, brief, consultant joins
-owner: YOU
+owner: DEV3
 area: LEGAL
 order: 88
 priority: launch
@@ -19,7 +19,7 @@ artboards: [S14, S15, S16, S17]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - `DECISIONS.md`: R-14 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py S14 S15 S16 S17` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`

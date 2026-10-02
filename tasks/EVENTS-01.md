@@ -1,7 +1,7 @@
 ---
 id: EVENTS-01
 title: Events: list, filters, detail, sold out
-owner: DEV
+owner: DEV2
 area: EVENTS
 order: 49
 priority: launch
@@ -19,7 +19,7 @@ artboards: [E1, E2, E8, E9]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E1 E2 E8 E9` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 

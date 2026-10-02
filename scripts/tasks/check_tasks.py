@@ -29,7 +29,7 @@ INDEX = TASKS / "INDEX.md"
 PROGRESS = ROOT / "docs" / "PROGRESS.md"
 LOG = ROOT / "docs" / "LOG.md"
 
-OWNERS = {"YOU": "You", "DEV": "Developer"}
+OWNERS = {"YOU": "You", "DEV": "Developer", "DEV2": "Developer 2", "DEV3": "Developer 3"}
 PRIORITIES = {"launch", "after-launch"}
 STATUSES = ["todo", "building", "verifying", "review", "done"]
 MIN_PASSES = {
@@ -103,7 +103,7 @@ def main() -> int:
     for tid, t in tasks.items():
         where = f"{tid}.md"
         if t["owner"] not in OWNERS:
-            errors.append(f"{where}: owner must be YOU or DEV, not {t['owner']}")
+            errors.append(f"{where}: owner must be one of {', '.join(OWNERS)}, not {t['owner']}")
         if t["priority"] not in PRIORITIES:
             errors.append(f"{where}: priority must be launch or after-launch")
         if t["status"] not in STATUSES:
@@ -179,10 +179,10 @@ def render_progress(tasks: dict) -> str:
     launch = [t for t in tasks.values() if t["priority"] == "launch"]
     done = sum(1 for t in launch if t["status"] == "done")
     out += [f"**Launch tasks done: {done} of {len(launch)}.**", ""]
-    out += ["| | You | Developer |", "|---|---|---|"]
+    out += ["| | " + " | ".join(OWNERS.values()) + " |", "|---" * (len(OWNERS) + 1) + "|"]
     for st in STATUSES:
         row = [sum(1 for t in tasks.values() if t["owner"] == o and t["status"] == st) for o in OWNERS]
-        out.append(f"| {st} | {row[0]} | {row[1]} |")
+        out.append(f"| {st} | " + " | ".join(str(n) for n in row) + " |")
     out.append("")
     for st in ["review", "verifying", "building", "done"]:
         ts = sorted([t for t in tasks.values() if t["status"] == st], key=lambda t: t["order"])

@@ -1,7 +1,7 @@
 ---
 id: PROS-03
 title: Get listed as a professional
-owner: YOU
+owner: DEV3
 area: PROS
 order: 87
 priority: launch
@@ -19,7 +19,7 @@ artboards: [P5, P6, P7, P8, P9, P10]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - The design: `python3 scripts/design/render_design.py P5 P6 P7 P8 P9 P10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 

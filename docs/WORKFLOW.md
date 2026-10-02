@@ -239,7 +239,7 @@ launches with the app (R-20).
 
 ## 8. Branches, pulling and merging
 
-Two people and many AI sessions work at once. These rules keep branches from
+Four people and many AI sessions work at once. These rules keep branches from
 colliding.
 
 1. **Start from the newest main.** `git pull origin main`, then

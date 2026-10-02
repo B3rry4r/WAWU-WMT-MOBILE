@@ -1,18 +1,25 @@
 # WMT plan
 
-Two people, you and one developer. Each owns whole features: the screens AND
-the backend behind them. You set the pace; the order of each person's list is
+Four people: you and three developers. Each owns whole features: the screens
+AND the backend behind them. You and the first developer carry about two
+thirds of the launch work. You set the pace; the order of each person's list is
 the only schedule.
 
 ## Who owns what
 
-**You:** running the build (Fintava, the designer, reviews,
-checkpoints, store submission). Features: the money core, Wallet, Bills,
-Schools, Professionals, Legal, Ads. Details: `docs/people/YOU.md`.
+**You:** running the build (Fintava, reviews, checkpoints, merging, store
+submission). Features: the money core, Open your wallet, Wallet. Details:
+`docs/people/YOU.md`.
 
-**Developer:** verifying the setup, the app shell, the shared components.
-Features: sign-up and sign-in, Settings, Me, Home, Explore, Events, Inbox.
-Details: `docs/people/DEV.md`.
+**Developer:** the app shell, the shared components and the route graph.
+Features: sign-up and sign-in, Settings, Me, Home, Explore. Details:
+`docs/people/DEV.md`.
+
+**Developer 2:** Inbox (chat, paid DMs, communities, credits) and Events.
+Details: `docs/people/DEV2.md`.
+
+**Developer 3:** Schools, Professionals, Legal, Bills and Ads. Details:
+`docs/people/DEV3.md`.
 
 A feature's payment (tickets, unlocks, tips, credits, ticks) belongs to that
 feature's owner, built on the money core.
@@ -22,7 +29,7 @@ feature's owner, built on the money core.
 `tasks/INDEX.md` has one list per person. Work down it top to bottom:
 
 - A task never comes before something it depends on. The checker enforces it.
-- If a task needs the other person's work first, the list says so.
+- If a task needs someone else's work first, the list says so and names them.
 - Open decisions never block anything. Each has a default to build now
   (`DECISIONS.md`); numbers go into config, marked provisional.
 - "After launch" tasks sit at the end of your list. They can wait.

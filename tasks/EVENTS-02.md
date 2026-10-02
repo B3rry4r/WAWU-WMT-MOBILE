@@ -1,7 +1,7 @@
 ---
 id: EVENTS-02
 title: Hosting an event: hybrid, kinds, one-step submit
-owner: DEV
+owner: DEV2
 area: EVENTS
 order: 50
 priority: launch
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - `DECISIONS.md`: R-8 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 

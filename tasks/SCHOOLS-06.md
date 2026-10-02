@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-06
 title: Enrol and pay, class full
-owner: YOU
+owner: DEV3
 area: SCHOOLS
 order: 129
 priority: launch
@@ -19,7 +19,7 @@ artboards: [SC4, SC5, SC6, SC7, SC11]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - `DECISIONS.md`: R-12 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py SC4 SC5 SC6 SC7 SC11` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`

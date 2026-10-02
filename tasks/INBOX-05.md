@@ -1,7 +1,7 @@
 ---
 id: INBOX-05
 title: Communities: list, room, sending
-owner: DEV
+owner: DEV2
 area: INBOX
 order: 98
 priority: launch
@@ -19,7 +19,7 @@ artboards: [I24, I25, I26]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I24 I25 I26` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 
