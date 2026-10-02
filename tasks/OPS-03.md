@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-20]
 passes: [V1, V9]
@@ -153,6 +153,51 @@ New findings:
 8. **unclear (doc nit).** LOCAL.md lines 317-323 say a regenerated `.env` copies "the shared service key, both ports" from the surviving one. Not the Postgres server, though: a deleted `wawu-id/.env` comes back with the default `postgres:postgres@localhost:5432` (up.sh line 159). Someone using a custom `LOCAL_PG_URL` would hit P1000. The printed hint (rerun with `LOCAL_PG_URL`) recovers it, so this is a sentence for the page, not a blocker.
 
 Round 2 verdict: round 1's defects 1-4 and nits are closed and every check passes, but finding 7 is an open defect in the same safety guard, so the status stays `building`. If the owner rules a `DOTENV_CONFIG_PATH` leftover out of scope, nothing else blocks `review`.
+
+### Round 3
+
+Verifier, 2 Oct 2026. Checked wawu-backend `wmt/OPS-03` @ edf2d3e (vs 341201f: `up.sh` and `docs/LOCAL.md` only) with wawu-id origin/main @ 76d8b46, from a fresh clone pair in `…/scratchpad/verify-ops03/r3/`, databases `ops03v_hub`/`ops03v_id`, ports 3501/4501. Every run was stopped by pid and confirmed gone. The `ops03v_*` databases were dropped.
+
+| Pass / check | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | Backend gates: 523 files scanned, 16 fail / 0 warn / 76 accepted, identical to origin/main 231cb64. `tsc --noEmit` 0. `bash -n` and `node --check` ok. Mobile `npm run check` exit 0 at 8023296 (5 files scanned, 0 fail, jest 4/4). `r3/gates-r3.txt`, `r3/mobile-check.txt` |
+| V9 Live seam | passed | `smoke.sh` exit 0 on every run below. By hand with curl: seeded `user@test.wawu.dev` signed in through wawu-id `/auth/login`, PATCHed the bio, and read it back from the Hub with the server's `createdAt`. The same bio was read directly from `ops03v_hub`. `/users/me` without a token: 401 |
+| 1. Fresh clone starts, health answers | passed | First run on the fresh clone with a pile of decoys exported. Started, both healthy |
+| 2. V9 locally | passed | as V9 |
+| 3. Mobile web reaches it | passed in round 1 (scratch probe), not re-run | Round 3 touches no CORS, port or client code |
+| 4. `.env.example` | passed | unchanged |
+| 5. deploy/.github unchanged | passed | `git diff 231cb64 -- deploy .github` empty |
+
+The first run had these decoys exported:
+
+- a remote `DATABASE_URL` and `PORT=9999`;
+- `DOTENV_CONFIG_PATH` pointing at a file with `DATABASE_URL` on `db.example.invalid`, plus `DOTENV_CONFIG_OVERRIDE=true`, `DOTENV_CONFIG_DEBUG=true` and a `DOTENV_KEY`;
+- `PGHOST=db.example.invalid`, `PGPORT=6543`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` and `PGSERVICE`, all decoys.
+
+Round 2 finding 7 (`DOTENV_CONFIG_PATH` redirect): **closed.**
+
+- On the decoy run, both migrate logs read `Datasource "db": … "ops03v_*" … at "localhost:5432"`. No log mentions the decoy host, database or port.
+- Both running services have the checked local `DATABASE_URL` and no `DOTENV_*` in their environment.
+- `smoke.sh` passed. The rows it wrote (a new wawu-id user, its Hub profile and bio) are in the local `ops03v_id`/`ops03v_hub`, so the seed, migrate and both services used the checked URL.
+- The exact round 2 reproduction (only `DOTENV_CONFIG_PATH`, existing setup) now migrates `localhost:5432`, and `smoke.sh` passed.
+
+Other leftover-variable vectors tried:
+
+- **`PG*` variables:** they still reach both services' environments, but the explicit URL wins. Every write landed locally (above). Not a way in.
+- **`PRISMA_*` variables:** Prisma 7.9.1's CLI reads none that change the datasource. `PRISMA_SCHEMA_ENGINE_BINARY`/`PRISMA_MIGRATION_ENGINE_BINARY` swap the engine binary, which is deliberate code substitution, not a leftover redirect, and the binary still gets the checked URL.
+- **`NODE_OPTIONS=--env-file`:** Node 22 refuses it (round 2).
+- **A remote `LOCAL_PG_URL` left in the shell:** it is applied as a setting (both `.env` files rewritten), then refused by the guard before any database is touched.
+
+Regenerated `.env` (LOCAL.md lines 320-328): **matches.**
+
+- Moved the server to `127.0.0.1` with `LOCAL_PG_URL`. Deleting only `wawu-id/.env` and rerunning with `ID_DB` regenerated it on `127.0.0.1` with the survivor's credentials. Deleting only `wawu-backend/.env` and rerunning with `HUB_DB` did the same, with ports 3501/4501 and the JWKS URL carried over. `smoke.sh` passed each time.
+- Deleting `wawu-id/.env` with `LOCAL_PG_URL=…localhost…` given: the given URL won for both files, and `smoke.sh` passed.
+- `url_server` keeps percent-encoded credentials intact (`p%40ss%3Aw`) and IPv6 hosts.
+- LOCAL.md lines 136-142 accurately describe what `up.sh` does: it clears every `DOTENV_*`, a superset of the `DOTENV_CONFIG_*`/`DOTENV_KEY` the page names.
+
+Round 2 finding 8 (doc nit on the Postgres server): closed by the same change.
+
+Round 3 verdict: no open defects. Every round 1 and round 2 finding is closed or filed (G-2, G-3). V1 and V9 pass. Capability checks 1, 2, 4 and 5 pass. Check 3 passes through a scratch probe only, until the app has a screen that calls the API. Status `review`.
 
 ## Owner sign-off
 
