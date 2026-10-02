@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -176,6 +176,64 @@ Fresh clone of `wmt/MONEY-01` @ ddb5727, origin/main = 231cb64. Own databases `m
 - Informational, pre-existing on main: under jest `NODE_ENV=test` makes five modules pick their in-src Mock Flutterwave adapter, so the real adapters' parsing is not exercised by this suite for those modules. The README says so.
 
 **Status: `review`.** No open defects. Points 4 and 5 are left to the owner.
+
+### Round 3 (backend 9d93ed3, mobile 2b8cc6b)
+
+Fresh clone of `wmt/MONEY-01` @ 9d93ed3, main = 231cb64. Own `money01v_*_test` databases, all dropped. Mock on :4601, stopped by pid. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money01-r3/` (`attacks.txt`, `atk_*.log`, `mutations.txt`, `mut_*.log`, `run_main.log`, `jest_*.json`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed (nothing went up) | tsc 0 errors. eslint 3646 + 851 = 4497 (main 4497); new files 0. gates 16 fail / 76 accepted, identical to main; baseline exit 0. Full jest: main 1372 pass / 40 fail of 1415; branch 1625 pass / 40 fail of 1668. Same 40 by name (the four `:4001` suites); protected spec 244 + 9 pass inside the full run |
+| V3 Regression (suite on main) | passed | `PROTECTED_LOCK_REF=wmt/MONEY-01 run.sh --fresh 231cb64` -> 253/253, "all 244 required tests passed", exit 0 |
+| Capability: a shape change in a scratch branch fails | passed with `run.sh`; **failed** through the CI check when the branch's code also tampers | 16 of 16 plain breakages red, but 2 tampering PRs green (finding R3-1) |
+| Capability: README explains running it against any branch | passed, except one claim | README: "a pull request cannot loosen the checker or its own lock" is not true (R3-1) |
+
+**Plain breakages** (dangling commits on 231cb64, `run.sh <sha>` with the lock from `wmt/MONEY-01`): all 16 exit 1. That is the 14 from round 2, plus the two new locks:
+- receipt `charge.chargedAmount` to a string fails GET /admin/payments/receipts/:id and POST .../reverify ("locked as number, now string");
+- the withBalances `balance.ngn` to a string fails `GET /admin/finance/wallets [withBalances]` and GET /admin/finance/wallets/:wawuId.
+
+Runner DB checksums were identical before and after.
+
+**Attacks on the CI run step.** Each is a dangling PR commit on base 9d93ed3 that also wraps the GET /bills/categories result, so an honest checker must go red. I ran each exactly as the workflow's run step does: `git show $BASE:scripts/protected-routes/ci-check.sh` executed from the base checkout with `<base> <pr> 0`.
+
+| Attack | Result |
+|---|---|
+| A0, the bills wrap alone (control) | exit 1 |
+| A4, `package.json` jest config: `testPathIgnorePatterns: [protected-routes]`, `passWithNoTests` | exit 1 (run.sh's own config and count hold) |
+| A5, PR edits `test/protected-routes/shape.ts` (compareShape returns `[]`) and `describe.skip`s the spec | exit 1, flagged as a checker change and checked with the base's suite |
+| A6, c26400a reproduced on 9d93ed3: route deleted, entry dropped, hash recomputed, run.sh changed to use its own lock | exit 1 (2 failed), flagged as a lock change |
+| A8, PR deletes run.sh, ci-check.sh and lock-diff.py, to try for the first-PR exception | exit 1, base checker used |
+| A9, PR edits the workflow file and run.sh | base checker red, exit 1 (but on GitHub the PR's own workflow file would run, see R3-3) |
+| **A1b**, PR's `db:seed` script runs a new `scripts/postseed.js` that rewrites the overlaid `test/protected-routes/shape.ts` and deletes `shape.spec.ts` | **exit 0**: "Checked with the base's suite and lock", "all 244 required tests passed", while the bills shape is broken. lock-diff says "No change" |
+| A2, same rewrite done from the PR's `prisma.config.ts`, which `npx prisma generate` loads in the work dir | the rewrite takes effect (244 of 244 regression tests pass). Only the 7 `shape.spec.ts` unit tests catch it; deleting that file as in A1b would make it green too |
+| **A3**, two lines at the top of `src/bill-payment/bill-payment.controller.ts`: `require('../../test/protected-routes/shape').compareShape = () => []` | **exit 0**, 253/253, lock-diff "No change". The app is loaded into the checker's own jest process, so the code under test can patch the checker's module exports |
+
+**First-PR exception:** it cannot be abused once main has the suite. The workflow uses the PR's `ci-check.sh` only when the base commit has none, and `ci-check.sh` uses the PR's checker only when the base has no `run.sh` or no `protectedRoutes` section. Both are read from `BASE_SHA`, which the PR does not control (A8).
+
+**Relock label:** `RELOCK_APPROVED` is 1 only when the event is `labeled` with `relock-approved`, so a later push (`synchronize`) gets 0. The labeled run checks that `refs/pull/N/head` still equals the event's `head.sha`, so a push between labelling and the run fails the check rather than riding on the label. A "Re-run jobs" of an old labeled run fails the same way.
+
+**YAML:**
+- Parses. `permissions: contents: read`, and no `secrets.*` anywhere.
+- The base is checked out at `pull_request.base.sha` into `./base`, and the PR head is fetched only as an object (`refs/pull/N/head`).
+- Inlined expressions are a number or hex shas only. The DB is the localhost service container, and run.sh refuses anything non-local.
+- It has never run on GitHub: NOT RUN there.
+
+**Findings:**
+- **R3-1 defect: the code under test can still loosen the checker, so the README and workflow claim "a pull request cannot loosen the checker or its own lock" is false.** Proven green with the bills shape broken: A1b (the PR's `db:seed`) and A3 (an in-process monkeypatch from `src/`). A2 (`prisma.config.ts`) shows the same route. Both work because `run.sh` overlays the base's suite into the PR's tree and then runs PR-controlled code in that tree: `npx prisma generate` with its `prisma.config.ts`, `npm ci` lifecycle scripts when the lockfile differs, `npm run db:seed`, and the PR's whole `AppModule` inside the jest process. Every one of these needs deliberate tampering, visible in the PR diff, and none touches a checker path, so lock-diff reports "No change". Possible fixes:
+  - run PR-controlled setup before the overlay and check the overlaid files against `$LOCK_REF` right before jest;
+  - run the PR's app as a separate server process that the suite calls over HTTP;
+  - or at least have ci-check fail when files outside the checker paths reference `test/protected-routes` or `src/protected-routes`.
+
+  If deliberate tampering is outside the threat model, the owner can accept this instead, and the README sentence should say so.
+- **R3-2 unclear (owner): `workflow_dispatch`.** On dispatch, base and code under test are both the dispatched ref, so a branch is checked against its own lock. The check run has the same name on that sha, which may satisfy a required check on the PR's head. Suggest dropping `workflow_dispatch` or pinning the base to `main` for it.
+- **R3-3 unclear (owner): settings the README asks for.** The workflow file itself still comes from the PR (A9 would pass on GitHub by replacing the run step). Only a required check plus CODEOWNERS protect it, and there is no CODEOWNERS file in the repo; the README asks the owner to add both.
+- **R3-4 minor, unclear (owner):**
+  - `actions/checkout` keeps its default `persist-credentials: true`, so the read-only token sits in `base/.git/config` where the code under test runs; `persist-credentials: false` would remove it.
+  - Any later `labeled` event for another label re-runs with approval 0, and `cancel-in-progress` lets it supersede the approved run, so the owner has to re-apply the label.
+  - lock-diff compares base..head, not the merge base. A PR behind the base therefore reports the base's later changes as its own relock (this errs on the safe side, but with the label it would be checked against its older lock).
+- Note: the full jest numbers above come from my second branch run. My first run had no generated Prisma client in my clone (my setup), so I discarded it.
+
+Status back to `building`: R3-1 is an open defect. This was a third fix round, so under WORKFLOW section 4 (step 5) and section 9 it now goes to the owner: fix it, or accept it as outside the threat model.
 
 ## Owner sign-off
 
