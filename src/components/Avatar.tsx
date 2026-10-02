@@ -3,6 +3,8 @@ import { StyleSheet, Text as NativeText, View, type StyleProp, type ViewStyle } 
 
 import { font, useWawu, type ColorToken } from '@/theme';
 
+import { APP_NAME, BrandMark } from './BrandMark';
+
 type HueToken = Extract<ColorToken, `hue${string}`>;
 /** The design's avatar palette, read from the `--hue-*` tokens: 'lilac', 'coral', ... */
 export type AvatarHue = HueToken extends `hue${infer Name}` ? Uncapitalize<Name> : never;
@@ -18,6 +20,11 @@ const initialsScale = 0.36;
 const initialsTracking = -0.02;
 /** kit.js line 17: an avatar with no name shows "W". */
 const fallbackInitials = 'W';
+/**
+ * inbox.js line 8, `wawuAv`: the app's own avatar is its mark on the sunken surface,
+ * 30 wide in a 52 circle. R-37 swaps the WAWU icon for the Who Made This submark.
+ */
+const brandScale = 30 / 52;
 
 /** Up to two initials, "AN" for "Amaka Nwosu"; "W" when there is no name. */
 export function initialsOf(name?: string): string {
@@ -39,25 +46,29 @@ export type AvatarProps = {
   source?: string | number;
   /** Inside a row that already says the name, the avatar adds nothing for a screen reader. */
   decorative?: boolean;
+  /** The app's own avatar (system messages, R-37): the submark on the sunken surface, no hue or initials. */
+  brand?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
 
 /** A person's circle: their photo, or their initials on a hue (kit `Av`). */
-export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decorative = false, style, testID }: AvatarProps) {
+export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decorative = false, brand = false, style, testID }: AvatarProps) {
   const { colors } = useWawu();
   const fontSize = Math.round(size * initialsScale);
   const a11y = decorative
     ? ({ accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const)
-    : ({ accessible: true, accessibilityRole: 'image', accessibilityLabel: name ?? 'WAWU' } as const);
+    : ({ accessible: true, accessibilityRole: 'image', accessibilityLabel: name ?? APP_NAME } as const);
 
   return (
     <View
       testID={testID}
       {...a11y}
-      style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors[hueToken(hue)] }, style]}
+      style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: brand ? colors.surfaceSunken : colors[hueToken(hue)] }, style]}
     >
-      {source ? (
+      {brand ? (
+        <BrandMark width={Math.round(size * brandScale)} decorative testID={testID ? `${testID}-brand` : undefined} />
+      ) : source ? (
         <Image
           testID={testID ? `${testID}-image` : undefined}
           source={typeof source === 'string' ? { uri: source } : source}

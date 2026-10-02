@@ -2672,6 +2672,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/wallet/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fintava's available balance, asked for on every call (W1, W9, W13).
+         *     503 provider_unreachable when the bank does not answer (W6): never a 0.
+         */
+        get: operations["MoneyBalanceController_balance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/wallet": {
         parameters: {
             query?: never;
@@ -2686,27 +2706,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: MONEY-12 serves it.
          */
         get: operations["MoneyWalletController_wallet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/wallet/balance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Fintava's available balance, asked for on every call (W1, W9, W13).
-         *     503 provider_unreachable when the bank does not answer (W6): never a 0.
-         * @description Declared by MONEY-04, not served yet: MONEY-11 serves it.
-         */
-        get: operations["MoneyWalletController_balance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5830,6 +5829,10 @@ export interface components {
             completedAt: string | null;
             legalRequestId: string | null;
         };
+        WalletBalanceView: {
+            availableKobo: number;
+            asOf: string;
+        };
         PinStateView: {
             isSet: boolean;
             changedAt: string | null;
@@ -6058,10 +6061,6 @@ export interface components {
             pin: components["schemas"]["PinStateView"];
             bankTransfers: components["schemas"]["BankTransferAccessView"];
             beneficiaryCount: number;
-        };
-        WalletBalanceView: {
-            availableKobo: number;
-            asOf: string;
         };
         PinResetView: {
             resetId: string;
@@ -11482,26 +11481,7 @@ export interface operations {
             };
         };
     };
-    MoneyWalletController_wallet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletView"];
-                };
-            };
-        };
-    };
-    MoneyWalletController_balance: {
+    MoneyBalanceController_balance: {
         parameters: {
             query?: never;
             header?: never;
@@ -11543,6 +11523,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyWalletController_wallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
                 };
             };
         };

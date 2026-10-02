@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [SCHOOLS-03, SCHOOLS-09, SCHOOLS-10, UI-02, SCHOOLS-06]
-decisions: [R-12, R-33]
+decisions: [R-12, R-33, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [SC8, SC9]
 ---

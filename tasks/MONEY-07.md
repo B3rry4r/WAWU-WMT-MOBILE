@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-backend
 type: third-party
-status: building
+status: verifying
 depends_on: [MONEY-06]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
@@ -47,6 +47,13 @@ Signature: HMAC-SHA512 of the raw body with the dashboard webhook secret, hex, i
 
 ## Builder report
 
+**Round 2** (backend 4ba22f0, then main ac2a057 merged as 688593d; mobile main 246f395 merged).
+- Defect 1 fixed: the throttler list moves unchanged to `src/hub-throttlers.ts` (`HUB_THROTTLERS`, registered by AppModule as `[...HUB_THROTTLERS]`), and the webhook has `@SkipThrottle(SKIP_EVERY_HUB_THROTTLER)`, built from those names, so a throttler added later is skipped too. The spec app now has the real limits behind the global `ThrottlerGuard`: 30 signed deliveries in one second, 30 x 200, 30 rows. With the old bare `@SkipThrottle()` (or none) that test fails, along with 11 others. A second test pins the skip map to every registered name and AppModule to `HUB_THROTTLERS`. Controller comment corrected (never 429). G-20 filed for the Flutterwave webhook and `trust proxy` (Lead follow-up).
+- Defect 2 fixed. Default (agent), owner may override: `rawBody` is `bytea` (the exact bytes, any byte; the migration is not on main, so it is corrected in place), and the parsed `payload` plus every text column (references, event name, status) carry NUL as U+FFFD, the same way every time, so a replay still dedupes. Test: NUL in a narration, a key and the keyed reference, stored once, raw bytes exact (re-signing them gives the same signature), two replays duplicate. Undoing the payload or the reference sanitising fails it (P2039).
+- Checks after the merges: tsc 0; eslint clean on changed files; webhook specs 40/40; full `test:contract` on fresh seeded `m07_full_test`, mock on :4001 (free per `lsof`, stopped after): 100/100 suites, 1978 passed, 3 skipped, 0 failed; both same-timestamp Fintava migrations apply on a fresh database, the diff shows only the pre-existing `ContentPiece_specializations_idx` drift; protected `run.sh --fresh` 253/253 (code 688593d, lock ac2a057); gates 16 fail / 3 warn / 76 accepted, identical to main ac2a057 (568 files against 557). Mobile with main 246f395 merged: `npm run api` (backend main ac2a057, contract equal to main's), `npm run check` exit 0 (16 suites / 285 tests, gates 0 fail on 75 files, 200 tasks).
+- Merge: `prisma/schema.prisma` and `deploy/README.md` were two appends (MONEY-11's `FintavaWallet` and note kept beside this task's); `contract/openapi.json` regenerated, +42 lines vs main, additive.
+
+**Round 1** (9941aa0):
 Backend `wmt/MONEY-07` 9941aa0 (from main 433a826): `POST /api/hub/webhooks/fintava` in `src/fintava/webhook/` (guard, service, controller, module, event reader), `src/hub-app-options.ts` (`rawBody: true`, used by `main.ts`), `FintavaWebhookEvent` + migration `20261002180000_fintava_webhook_event`, `FINTAVA_CONFIG_KEYS.webhookSecret`, `app.module.ts` mount, contract (one op, tag `PaymentWebhook`, excluded from the app), docs (`.env.example`, `deploy/README.md`, `docs/LOCAL.md`, `README.md`). Mobile: this file, G-19, SHARED-CHANGES MONEY-07 #1 and #2.
 - No tunnel (R-25): every delivery tested was built from Fintava's documented format (`test/fintava/fintava-webhook-payloads.ts`), signed locally with a local secret and sent to the local endpoint. No sandbox call made.
 - Forged signature refused: other secret, none, another body's, truncated, malformed, `sha512=` prefix: all 401, `createMany` never called, no row; no secret set: 401 (fails closed).

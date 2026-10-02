@@ -1,7 +1,8 @@
-# WAWU WMT mobile app
+# Who Made This: the mobile app
 
-WMT ("Who Made This") is WAWU's mobile app: a Nigerian creator marketplace
-with a Fintava wallet. Expo SDK 57, Expo Router, TypeScript. **The mobile app
+Who Made This is a Nigerian creator marketplace with a Fintava wallet (built
+by WAWU; the app's name and logo carry no WAWU since R-37). Repo and package
+ids keep `wawu-wmt`. Expo SDK 57, Expo Router, TypeScript. **The mobile app
 is the product**: the backend (`wawu-backend`, `wawu-id`) changes to fit it,
 and the web (`wawuafrica`) follows it later.
 
@@ -42,6 +43,8 @@ ask for one; don't pick work yourself.
   contract (`npm run api`). Never hand-write a response type.
 - Shared files are fenced (`docs/WORKFLOW.md` section 4): request changes in
   `SHARED-CHANGES.md`.
+- The app is "Who Made This" (R-37). Its logo is drawn only with
+  `<BrandMark>`; the canvas's WAWU logo images are never used.
 - No em-dashes in anything a user reads. No "Flutterwave" in the app. Links
   are written `wawu/...`. WAWU Credits are a count, never naira.
 - Never `git stash`, `git reset --hard`, `git checkout -- .`, or force-push.

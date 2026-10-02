@@ -272,6 +272,61 @@ owner rules.*
 - A phone number already on two web accounts is a data gap, not a sign-up
   defect: BACKEND_GAPS row, owned by AUTH-05.
 
+### R-37 · The app is "Who Made This", with its own logo
+*Owner, 2 Oct 2026 ("we've removed wawu"; brand pack WHO_MADE_THIS.zip).*
+The app's name is **Who Made This**. WAWU is not in the app's name or logo.
+
+**The logo**
+- The owner's pack is in `assets/brand/`. The source SVGs are in `assets/brand/source/`.
+- In the app, the logo is only ever drawn with `<BrandMark>` (`src/components/BrandMark.tsx`). It picks the ink or white artwork from the theme; `surface` forces one.
+- The launcher icon is the pack's purple tile. The Android adaptive icon is the submark on `#9411C9` (the accent), and the monochrome icon has the letters knocked out.
+- The splash screen is the sticker submark.
+
+**Where the canvas still draws WAWU's logo**
+The canvas predates this ruling, so it still draws WAWU's logo in places. Build each one as follows, at the canvas's width:
+
+| Canvas draws | Build |
+|---|---|
+| `wawu-icon-purple` or `wawu-icon-white` | `<BrandMark layout="submark">` |
+| `wawu-logo-white` | `<BrandMark layout="horizontal">` |
+| `wawuAv` (the app's avatar in Inbox) | `<Avatar brand>` |
+
+Choose `surface` from what the mark sits on: the white receipt is light; the purple TGIF tile, the card and A1's photo are dark.
+
+A verifier treats a difference here as "differs for a recorded reason (R-37)", never as a defect. The affected artboards are:
+- A1;
+- X1, X14, X15;
+- E5, E7, E11, E12;
+- I1, S29, Z9;
+- W1, W22, W25, W29, W31, W32, W41 to W43.
+
+**Copy: where the app's name changes** *(Default (agent), owner may override any line.)*
+Where WAWU names this app, its users or its accounts, the copy says **Who Made This**. For example:
+- "About Who Made This", "Search Who Made This", "Using Who Made This";
+- "on Who Made This", "On Who Made This since 2025";
+- "a Who Made This user", "your Who Made This account";
+- the sender name on the app's own inbox messages.
+
+**Copy: where WAWU stays**
+WAWU stays where it names the company, or an instrument that already carries its name:
+- WAWU Credits (its name is a ruling, 21 Sep 2026) and WAWU ID (the account service);
+- WAWU Africa in legal text, and "WAWU's fee";
+- the WAWU card, WAWU pick and the WAWU Legal Assistant;
+- the admin dashboard;
+- seeded content such as the "WAWU Creators Summit".
+
+**What is unchanged**
+These are identifiers, not names a user reads. Changing them would break the Expo project, store listings and links:
+- the Android package `africa.wawu.wmt`;
+- the Expo slug `wawu-wmt`;
+- the URL scheme;
+- the repos.
+
+**Carried out by**
+- Lead: the shared files (BrandMark, the Avatar `brand` prop, `app.json`, icons and splash) on 2 Oct 2026, in a new Android build.
+- Each task that builds an affected screen: every task listed above carries R-37 in its `decisions`.
+- The web follows after launch.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in

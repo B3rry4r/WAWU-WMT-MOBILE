@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-04, WALLET-18]
-decisions: []
+decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
 artboards: [W41, W42, W43]
 ---

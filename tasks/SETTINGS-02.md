@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [SHELL-01, UI-02]
-decisions: [R-1]
+decisions: [R-1, R-37]
 passes: [V1, V4, V5, V6, V9]
 artboards: [Z9, Z10, Z11]
 ---
