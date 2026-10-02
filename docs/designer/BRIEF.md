@@ -928,14 +928,14 @@ sets one (none today). Legal services are purchases (the default above).
 - **Now:** "₦7,500 is back in your Naira wallet."
 - **Instead:** keep the sentence; the amount is the ticket price (sample
   ₦7,500), filled by the app. Don't add "in full" or "everything you paid".
-- **Why:** the refund default: a refund returns the ticket price, not
+- **Why:** the refund default (R-10): a refund returns the ticket price, not
   Fintava's charge.
 
 ### E25 · Call it off
 - **Now:** "This refunds real money. All 64 buyers get their money back."
 - **Instead:** "This refunds real money. All 64 buyers get the ticket price
   back."
-- **Why:** the refund default: Fintava's charge on each ticket isn't
+- **Why:** the refund default (R-10): Fintava's charge on each ticket isn't
   returned, so "their money back" promises more than the buyer gets.
 
 ## 11. Settings
