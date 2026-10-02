@@ -16,7 +16,8 @@ ask for one; don't pick work yourself.
 
 1. The builder never verifies their own task. The verifier never fixes.
 2. Every task is small, and nobody starts one before its `depends_on` tasks
-   are done. `npm run tasks` enforces the task rules.
+   are built and verified (`review` or `done`; the owner's sign-off happens at
+   merge and never blocks the next task). `npm run tasks` enforces the rules.
 3. A check passes by exit code, never by opinion. `npm run check` must exit 0.
 4. Screens are compared picture against picture:
    `python3 scripts/design/render_design.py <ID>` beside a screenshot.

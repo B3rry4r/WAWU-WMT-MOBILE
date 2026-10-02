@@ -6,8 +6,10 @@ You build ONE task. Your prompt named it: `tasks/<ID>.md`.
 
 1. Read `docs/WORKFLOW.md` (the rules), your task file, and everything the
    task file lists under **Read first**. Nothing else is required reading.
-2. Check its `depends_on` tasks are `done` (their task files say so). If one
-   isn't, stop and report which one and who owns it.
+2. Check its `depends_on` tasks are `review` or `done` (built and verified;
+   the owner's sign-off is not needed to start). If one isn't, stop and report
+   which one and who owns it. Pull main first: a dependency verified on someone
+   else's branch counts once it is merged or pushed.
 3. If the task lists open decisions, build the default written in
    `DECISIONS.md`. Put any number it needs in config with a
    `PROVISIONAL(...)` marker.
