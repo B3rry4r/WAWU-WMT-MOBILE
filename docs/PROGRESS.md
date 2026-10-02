@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 18 of 176.**
+**Launch tasks done: 19 of 176.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 63 | 51 | 34 | 32 |
+| todo | 63 | 50 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 12 | 7 | 0 | 0 |
+| done | 12 | 8 | 0 | 0 |
 
 ## Being verified
 
@@ -32,6 +32,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
+- [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
@@ -42,7 +43,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face
-- **Developer:** [UI-03](../tasks/UI-03.md) Avatars, ticks and chips, [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset
+- **Developer:** [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end
 - **Developer 2:** [INBOX-06](../tasks/INBOX-06.md) Free chat between users, [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
 

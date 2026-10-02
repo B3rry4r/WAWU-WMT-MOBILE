@@ -34,6 +34,8 @@ Newest first. One line per thing that happened, written when it happens.
 - 2 Oct 2026 · MONEY-02 · Fix round 2: kit sizes (R-22) and shared `formatMoney`; the biometric key is whatever the phone has (fingerprint or face, `expo-local-authentication`, owner ruling) with "<Name> failed. Use your PIN."; `Fingerprint` added to the icon set; Face ID gap renumbered G-9. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · Fix round 1: the PIN sheet uses the shared `Icon`, answers follow MONEY-04's contract (403 `pin_incorrect.triesLeft`, 423 `pin_locked.lockedUntil`), the lock shows a running clock, the busy flag resets when the sheet hides mid-check, and the tests no longer time out on a cold cache. Face ID refusal copy is an open question for the owner. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · The PIN sheet built in `src/components/pin-sheet/` (entering, wrong PIN with tries left, locked with a countdown, Face ID key, submitting, error); tries and lock time come from the server's answer. Dev-only preview at `/preview/pin-sheet`. Waiting for verification.
+- 2 Oct 2026 · UI-03 built (chips only): new `StatusPill` (the kit's `pill`: six tones, optional Lucide icon, not pressable) and `FilterChips` gains `variant="option"` (the kit's `optChip`: 38 high, wraps in a sheet); both in the dev showcase. Avatar and ticks on main checked against M1 and W7, no mismatch.
+
 - 2 Oct 2026 · UI-02 follow-up merged: media-card gradient caption (expo-linear-gradient), sheet shadow at the 0.5 scrim token, the selected segment's soft shadow. First Android preview build is out; an over-the-air update carries main to it.
 - 2 Oct 2026 · UI-02 follow-up: shelf media card draws its caption over the design's `scrimCard` gradient (expo-linear-gradient); bottom sheet shadow is 0.5 black and the selected segment has the kit's soft shadow, both themes; theme shadow tokens requested (SHARED-CHANGES row 7).
 - 2 Oct 2026 · SHARED-01 merged: shared `Avatar` (one, UI-02's API with the kit drawing), `CurrencyFlag`, Text variants (kvLabel, kvValue, meta, muted, bannerBody, cardTitle, sheetTitle, sheetTitleSm) and Money at exactly its size (per-run line heights on web only). Phone check (V10) waits on the Android build.
@@ -79,3 +81,4 @@ Newest first. One line per thing that happened, written when it happens.
 - 2 Oct 2026 · Fintava's dashboard charges recorded (`docs/fintava/fees.md`): user pays Fintava's charge plus WAWU's fee.
 - 2 Oct 2026 · No mocks, no feature flags: money is built on the real Fintava sandbox.
 - 2 Oct 2026 · Owner's rulings R-6 to R-20 applied to every task.
+- 2 Oct 2026 · UI-03 status pills and option chips merged to main (second verifier passed, no open defect). Showcase fitted into TEST-01's per-section layout.
