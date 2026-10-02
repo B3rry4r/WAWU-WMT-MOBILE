@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: review
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -61,6 +61,12 @@ wawu-backend `wmt/MONEY-01` @ 5f2658a (one commit on origin/main 231cb64). Files
   - search `communities`.
 - Main still passes: `run.sh --fresh origin/main` -> 252/252. `npm run test:protected` x2 on money01_hub_test -> 252/252; DB checksums identical. All scratch commits are dangling (`git branch -a --contains` empty).
 - Gates: tsc 0; eslint 4497 (unchanged); gates 16 fail / 76 accepted (unchanged); full jest 1624 pass / 40 fail (the same 4 :4001 suites). Round 1's "1609" was wrong; the correct figure was 1618.
+
+### Round 3 (backend 9d93ed3)
+- CI: `.github/workflows/protected-routes.yml` (`permissions: contents: read`) checks out the BASE branch and runs the base's `ci-check.sh`, `run.sh`, `lock-diff.py` and suite against the PR's head commit. `run.sh` now uses its own jest config and fails unless every locked entry ran and passed. Any change under src/, test/ or scripts/protected-routes, or to the workflow, counts as a relock. `relock-approved` counts only on the run its own `labeled` event triggers, so a later push needs it again. The first-PR exception is kept.
+- Proof: I ran the workflow's run step locally. Attack deca03e (dangling) changes the bills shape, rewrites and rehashes its own lock, makes run.sh use its own lock, and adds `testPathIgnorePatterns` to package.json. With no label: exit 1 on GET /bills/categories, 243 of 244 passed, and the lock diff lists the entry and run.sh. With the label: exit 0. An unchanged PR passes; the first PR (base = origin/main) is checked against its own lock and passes. The README now lists the two repository settings for the owner (required check; CODEOWNERS).
+- New entry `GET /admin/finance/wallets [withBalances]` (`balance.ngn` is a number). The receipt fixture now carries a real `charge.completed` payload, so the `charge` block is locked on GET receipts/:id and reverify. Totals: 242 entries; null/[]/unknown leaves 631 of 4475.
+- Main: `run.sh --fresh origin/main` -> 253/253, all 244 required passed. Full jest 1625 pass / 40 fail (the same 4 :4001 suites). tsc 0, eslint 4497, gates 16/76 (all unchanged).
 
 ## Verifier report
 
