@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 63 | 52 | 34 | 32 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 12 | 6 | 0 | 0 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 
@@ -49,6 +49,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · OPS-08 · Round 2 (backend 4f57d62): POST /payments/hosted-link refuses a Shop order's txRef with 410 `shop_retired`; the 410 copy no longer promises past orders in purchases; dashboard follow-up filed (SHARED-CHANGES section 3, OPS-08 #1); the merge-gating log grep covers all 10 retired routes; back to verifying.
 - 2 Oct 2026 · OPS-08 · Shop retired on the backend (wmt/OPS-08): browse, cart, checkout and admin product writes answer 410 `shop_retired`; past orders, verify and fulfilment stay; the deploy smoke test probes /api/hub/health; the protected lock is re-recorded for the 10 Shop entries only (needs the owner's `relock-approved`); the two-week log check is NOT RUN (droplet grep in the task); to verifying.
 - 2 Oct 2026 · TEST-01 merged: the first-render test timeouts are fixed (preloads, warm-up renders, a fake clock, and the developer Showcase split into sections). 10 of 10 cold runs pass under heavy load.
 - 2 Oct 2026 · MONEY-03 merged: the pay-from-wallet sheet (purchase H14/H17/H18 and the send variant W10) matching the canvas to the pixel on shared parts only. Shared changes with it: MediaCard byline and image, IconTile strokeWidth, Card and BottomSheet inset hairlines, exact fractional line heights, and the kit's `normal` leading on kvLabel/kvValue/meta/cardTitle/errorLine/linkStrong.
@@ -63,4 +64,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-03 · Round 3: owner overruled two deferrals; the pay sheet now uses the shared Lucide `Icon` and `VerifiedTick` (View-drawn icons deleted) and has a W10 `send` variant (faded kobo, Note after Total). Fees-row ruling recorded as R-23. Back to verifying.
 - 2 Oct 2026 · MONEY-03 · Round 2: verified tick in the pay sheet header, 1 px lines, Fees subtotal for two-part fees, double-tap guard on Pay; back to verifying.
 - 2 Oct 2026 · MONEY-03 · Pay-from-wallet sheet built (`src/components/pay-sheet/`): price, fee breakdown and total in kobo, enough / not enough with shortfall and Add top-up / paying / still confirming / failed / no wallet; to verifying.
-- 2 Oct 2026 · TEST-01 · Showcase state split per section (a press re-renders one section, not the page; same tree, Lead authorised) and router warm-up in `shell` and `focus`: 10 of 10 cold runs under load pass. Task file written, status verifying.

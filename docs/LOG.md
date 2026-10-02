@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · OPS-08 · Round 2 (backend 4f57d62): POST /payments/hosted-link refuses a Shop order's txRef with 410 `shop_retired`; the 410 copy no longer promises past orders in purchases; dashboard follow-up filed (SHARED-CHANGES section 3, OPS-08 #1); the merge-gating log grep covers all 10 retired routes; back to verifying.
 - 2 Oct 2026 · OPS-08 · Shop retired on the backend (wmt/OPS-08): browse, cart, checkout and admin product writes answer 410 `shop_retired`; past orders, verify and fulfilment stay; the deploy smoke test probes /api/hub/health; the protected lock is re-recorded for the 10 Shop entries only (needs the owner's `relock-approved`); the two-week log check is NOT RUN (droplet grep in the task); to verifying.
 - 2 Oct 2026 · TEST-01 merged: the first-render test timeouts are fixed (preloads, warm-up renders, a fake clock, and the developer Showcase split into sections). 10 of 10 cold runs pass under heavy load.
 - 2 Oct 2026 · MONEY-03 merged: the pay-from-wallet sheet (purchase H14/H17/H18 and the send variant W10) matching the canvas to the pixel on shared parts only. Shared changes with it: MediaCard byline and image, IconTile strokeWidth, Card and BottomSheet inset hairlines, exact fractional line heights, and the kit's `normal` leading on kvLabel/kvValue/meta/cardTitle/errorLine/linkStrong.

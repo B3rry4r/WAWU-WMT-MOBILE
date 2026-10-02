@@ -29,6 +29,7 @@ did that must survive in the same change.
 
 | # | decision | what to remove, and what must move with it | status |
 |---|----------|--------------------------------------------|--------|
+| OPS-08 #1 | R-2 (OPS-08 Lead default, 2 Oct 2026) | **wawu-dashboard** (origin/main c1dfca6): hide Shop product create and edit, because `POST` and `PUT /api/hub/admin/shop/products` answer 410 `shop_retired` since OPS-08 and an admin who saves the form gets that message. Remove the "New product" button (`src/app/(app)/shop/page.tsx:128`), the `/shop/new` and `/shop/[id]` edit pages, `src/components/shop/ProductForm.tsx`, and `createProduct` / `updateProduct` in `src/lib/api/admin-shop.ts:114,118` (`adminShopCreate`, `adminShopUpdate`). **Keep:** the product list and detail as read-only (`adminShopList`, `adminShopGet`; order lines point at those rows), the orders queue (`/shop/orders`, `src/components/layout/nav.ts:154`) and fulfilment (`PATCH /admin/shop/orders/:id/fulfilment`), because a paid order is still owed. Then regenerate the dashboard's contract, which drops `/shop` from `CAMPAIGN_DESTINATIONS`. Applied by SCHOOLS-05 (DEV3, the dashboard task for what replaces Shop), or by the owner first. | open |
 
 ## 4. Route-graph changes (the order screens appear in)
 
