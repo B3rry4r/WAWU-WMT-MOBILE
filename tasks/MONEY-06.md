@@ -7,7 +7,7 @@ order: 49
 priority: launch
 repo: wawu-backend
 type: third-party
-status: review
+status: done
 depends_on: [MONEY-04, OPS-02]
 decisions: [R-25]
 passes: [V1, V2, V3, V6, V8, V9]
