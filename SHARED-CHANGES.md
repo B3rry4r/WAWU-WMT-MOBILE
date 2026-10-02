@@ -11,11 +11,13 @@ Four queues, because they have different owners and triggers:
 
 | # | from task | file | exact change, and why | status |
 |---|-----------|------|-----------------------|--------|
+| 1 | MONEY-02 | `src/components/TabIcon.tsx` (or the shared icon UI-01 adds) | Add lucide `scan-face` and `delete` outlines so the PIN keypad uses the shared SVG renderer. Why: no shared icon set existed, so `src/components/pin-sheet/icons.tsx` draws both glyphs from Views; that file is deleted once the shared icons exist. | open |
 
 ## 2. Follow-ups in another task's screen
 
 | # | raised by | target file | change needed, and what forced it | status |
 |---|-----------|-------------|-----------------------------------|--------|
+| 1 | MONEY-02 | `src/components/pin-sheet/PinSheet.tsx`, `Keypad.tsx`, `format.ts` | The PIN sheet adopts UI-02's sheet (scrim, panel, handle, slide in) and UI-01's buttons, link and money formatting when those land, deleting its own frame, `Pressable` keys and `formatNaira`. Forced by: UI-01 and UI-02 were in progress while MONEY-02 was built, so the sheet is built from React Native primitives and `@/theme` inside its own folder. | open |
 
 ## 3. Removals (deleting or hiding something)
 
