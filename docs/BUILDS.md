@@ -5,6 +5,18 @@ belong to the company, not to a person on the team. **Only the owner has
 them, and only the owner submits to the stores.** The developer has Expo
 access only.
 
+## Now: Android only
+
+The owner tests on Android; nobody on the team has an iPhone yet. Until that
+changes, every test build is Android (`eas build -p android --profile
+preview`, an APK anyone installs from Expo's link). The iOS steps below stay
+for when an iPhone tester joins; skip them until then.
+
+- **Done:** the project is linked to Expo as `@moxnafrica/wawu-wmt`
+  (project id in `app.json`), 2 Oct 2026.
+- **Before the first preview build:** `eas.json` needs the real API and WAWU
+  ID addresses in place of the `.invalid` placeholders (owner).
+
 ## Who has what
 
 - **Owner:** Expo organization Owner, Apple (App Store Connect), Google Play
@@ -22,13 +34,11 @@ team rule: the developer publishes to `preview` only.
 
 1. **Invite the developer:** expo.dev, your organization, Members, Invite,
    role **Developer**.
-2. **Link the project** (SHELL-03): `npx eas-cli init` in this repo, under the
-   organization. It writes `owner` and the project id into `app.json`;
-   commit that.
+2. **Link the project** (SHELL-03): done 2 Oct 2026 (`@moxnafrica/wawu-wmt`).
 3. **Create the store records:**
    - App Store Connect: a new app with bundle id `africa.wawu.wmt`.
    - Play Console: a new app with package `africa.wawu.wmt`.
-4. **Create the iOS signing credentials once:** run the first
+4. **Later, when an iPhone tester joins. Create the iOS signing credentials once:** run the first
    `eas build -p ios --profile preview` yourself, interactively, and sign in
    to Apple when asked. Expo generates and stores the certificate and
    profile. After that, the developer's iOS builds reuse them without Apple

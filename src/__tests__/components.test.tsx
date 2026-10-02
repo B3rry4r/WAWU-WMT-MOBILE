@@ -69,7 +69,7 @@ describe('buttons', () => {
 
   it('lets a user press an icon button that a screen reader can name', async () => {
     const onPress = jest.fn();
-    await render(<IconButton icon="back" label="Back" onPress={onPress} />);
+    await render(<IconButton icon="ChevronLeft" label="Back" onPress={onPress} />);
     await userEvent.press(screen.getByRole('button', { name: 'Back' }));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
@@ -226,27 +226,11 @@ describe('showcase', () => {
   });
 });
 
-/** The SVG each Icon draws, decoded from the image source in the rendered tree. */
-function drawnSvg(node: unknown): string[] {
-  const found: string[] = [];
-  const walk = (n: unknown) => {
-    if (!n || typeof n !== 'object') return;
-    const item = n as { props?: { source?: { uri?: string } | { uri?: string }[] }; children?: unknown[] };
-    const source = [item.props?.source].flat()[0];
-    const uri = source?.uri;
-    if (uri?.startsWith('data:image/svg+xml;utf8,')) found.push(decodeURIComponent(uri.slice('data:image/svg+xml;utf8,'.length)));
-    item.children?.forEach(walk);
-  };
-  [node].flat().forEach(walk);
-  return found;
-}
-
 describe('back icon', () => {
   it('shows a user a chevron on the back button, not an arrow with a tail', async () => {
-    await render(<IconButton icon="back" label="Back" onPress={() => undefined} />);
-    const [svg] = drawnSvg(screen.toJSON());
-    expect(svg).toContain('d="m15 18-6-6 6-6"');
-    expect(svg).not.toContain('M19 12H5');
+    await render(<IconButton icon="ChevronLeft" label="Back" onPress={() => undefined} />);
+    expect(screen.getByTestId('icon-ChevronLeft', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('icon-ArrowLeft', { includeHiddenElements: true })).toBeNull();
   });
 });
 

@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View, ty
 
 import { font, layout, radius, space, text, useWawu } from '@/theme';
 
-import { Icon, type IconName } from './Icon';
+import { Icon, type IconName } from './icon';
 import { Text } from './Text';
 
 /**
@@ -104,13 +104,13 @@ export function TextField({
             disabled={disabled}
             onPress={() => setShown((v) => !v)}
           >
-            <Icon name={shown ? 'eyeOff' : 'eye'} size={space.xl} color={colors.textMuted} />
+            <Icon name={shown ? 'EyeOff' : 'Eye'} size={space.xl} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
       {message ? (
         <View style={styles.message}>
-          {error ? <Icon name="alert" size={space.lg} color={colors.danger} stroke={2} /> : null}
+          {error ? <Icon name="CircleAlert" size={space.lg} color={colors.danger} strokeWidth={2} /> : null}
           <Text
             variant="caption"
             tone={error ? 'danger' : 'textMuted'}

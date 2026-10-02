@@ -4,7 +4,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as NativeText,
 
 import { font, layout, radius, space, useWawu, type ColorToken } from '@/theme';
 
-import { Icon, type IconName } from './Icon';
+import { Icon, type IconName } from './icon';
 
 /** design/_ds/wawu/tokens/elevation.css `--press-scale`. */
 export const pressScale = 0.98;
@@ -112,12 +112,12 @@ export function Button({
         {loading ? (
           <ActivityIndicator testID="button-spinner" size="small" color={fg} />
         ) : icon ? (
-          <Icon name={icon} size={dims.icon} color={fg} stroke={2.2} />
+          <Icon name={icon} size={dims.icon} color={fg} strokeWidth={2.2} />
         ) : null}
         <NativeText numberOfLines={1} style={[font(700), { color: fg, fontSize: dims.fontSize, letterSpacing: -labelTracking * dims.fontSize }]}>
           {label}
         </NativeText>
-        {iconRight && !loading ? <Icon name={iconRight} size={dims.icon} color={fg} stroke={2.2} /> : null}
+        {iconRight && !loading ? <Icon name={iconRight} size={dims.icon} color={fg} strokeWidth={2.2} /> : null}
       </View>
     </Pressable>
   );
@@ -161,7 +161,7 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
         },
       ]}
     >
-      <Icon name={icon} size={Math.round(size * 0.46)} color={fg} stroke={1.8} />
+      <Icon name={icon} size={Math.round(size * 0.46)} color={fg} strokeWidth={1.8} />
     </Pressable>
   );
 }
