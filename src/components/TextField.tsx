@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View, ty
 
 import { font, layout, radius, space, text, useWawu } from '@/theme';
 
+import { browserOutlineOff, useFocusRing } from './focusRing';
 import { Icon, type IconName } from './icon';
 import { Text } from './Text';
 
@@ -19,9 +20,6 @@ export const fieldMetrics = {
   label: 13,
   value: 15.5,
 } as const;
-
-/** The browser draws its own outline on a focused input; the designed ring replaces it. */
-const browserOutlineOff = { outlineStyle: 'none', outlineWidth: 0 } as object;
 
 export type TextFieldProps = Omit<TextInputProps, 'style' | 'editable' | 'secureTextEntry'> & {
   label: string;
@@ -54,6 +52,7 @@ export function TextField({
   const { colors } = useWawu();
   const [focused, setFocused] = useState(false);
   const [shown, setShown] = useState(false);
+  const eyeRing = useFocusRing();
 
   const border = error ? colors.danger : focused ? colors.accent : colors.borderHairline;
   const message = error ?? hint;
@@ -103,6 +102,8 @@ export function TextField({
             hitSlop={layout.tapMin / 4}
             disabled={disabled}
             onPress={() => setShown((v) => !v)}
+            {...eyeRing.handlers}
+            style={eyeRing.style}
           >
             <Icon name={shown ? 'EyeOff' : 'Eye'} size={space.xl} color={colors.textMuted} />
           </Pressable>
