@@ -7,7 +7,7 @@ order: 12
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -117,6 +117,70 @@ Notes (not defects):
 - `setTimeout(release, motion.slow)` is not cleared on unmount. That is harmless because it only writes a ref.
 
 Round 2 verdict: no open defects. Status `review`.
+
+### Round 3
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked 8b079e4, which sits on main 6b7eaff, in a fresh detached worktree that I removed afterwards. I exported with `expo export --platform web --dev --clear`, served it on 8793, and shot it with Playwright + Chromium 1194 at 390 px in light and dark. All 10 preview states rendered, including `send` and `send-short`. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/`: `shots3/`, `design_shots3/`, `side3-W10-send-*.png`, `icons3-*.png`, `plus-and-sendshort.png`, `check3.log`, `edge-tests3.log` and `zz-verifier3.test.tsx`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0: tsc and lint clean; jest 8 suites, 95 tests passed; gates 9 run, **40 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 187 OK (`check3.log`) |
+| V5 Picture | failed (defect R3-2) | W10 beside the send state in light and dark (`side3-W10-send-*.png`); H14 and H17 icons and ticks (`icons3-*.png`) |
+| V6 States | passed | All 10 preview states in light and dark, with no page errors (`shots3/`) |
+
+Checks:
+1. **Send variant against W10, light and dark.**
+   - Matches: the avatar (CO, coral, 64), "Sending to Chidinma Adaeze Okoro", the amount at 40 with faded kobo, and the card rows in the order Bank, Account, fee parts, Fees, Total, Note. Every card amount shows its kobo at 0.72 size and 50% opacity (`Amount`, `KOBO_SCALE`, `styles.kobo`). The wallet card, the 54 px button and the 50 px row pitch also match.
+   - Differences with a recorded reason:
+     - The Fee row became "Fintava's charge ₦40.00", "WAWU's fee ₦25.00" and "Fees ₦65.00" (BRIEF rule 3, W10 entry, DECISIONS R-23).
+     - Total ₦25,065.00 (BRIEF W10).
+     - "They get ₦25,000" above the button, and "Send ₦25,065" (BRIEF rule 5, W10 entry).
+     - The ₦ sign comes from the platform fallback font (D15).
+     - The status bar and the exact top offset belong to the preview route, not the component.
+   - One difference without a recorded reason: defect R3-2.
+2. **Icons.**
+   - Every mark comes from `@/components/icon`, matching the generator's `I()` calls:
+     - Wallet 19 / 2.2 (kit `banner`)
+     - CircleCheck 20 / 2.2 (kit `fromWallet`)
+     - Plus and RotateCcw 19 / 2.2 (kit `Btn` lg)
+     - Clock 32 / 2.4 (H18)
+     - `VerifiedTick` 'pro' at 13 (H14 and H17: `tick('pro', 13)`)
+   - The failed state's X takes W14's icon name at H18's 32 / 2.4 inside H18's 72 px disc. No pay-sheet artboard draws a failed state; the coordinator recorded this, and I accept it.
+   - `glyphs.tsx` is gone, and no hand-drawn mark is left in `src/components/pay-sheet/`. The ₦ coin is text, as on the canvas.
+   - I checked the tick again: blue, after "Chidi Eze", in H14 and H17, light and dark.
+3. **SHARED-CHANGES: failed (defect R3-1).** There are no conflict markers, and row numbers are unique in every table (section 1: 1 to 5; section 2: 1; Applied: 6). But section 2 row 1 is still a MONEY-03 deferral row.
+4. **Rulings: passed.** R-21, R-22 and R-23 appear once each in DECISIONS.md, and `git grep '^<<<<<<<\|^>>>>>>>'` finds nothing.
+5. **Round 2 behaviour: passed** (`edge-tests3.log`, all passed).
+   - Three taps in one batch: one `onPay`.
+   - A void caller is held for 360 ms, then released.
+   - A promise caller is held until it settles; a rejected promise releases too.
+   - The cycle review, paying, failed, review re-arms the button.
+   - The Fees row is right.
+   - Unmounting with the release timer pending calls `clearTimeout` once (`usePayOnce`'s cleanup effect).
+   - A browser double-click on Unlock gave one navigation.
+   - Send with ₦15.75 + ₦10 shows "Send ₦25,025.75".
+6. **Branch against main: passed.** It changes only `src/components/pay-sheet/`, `src/app/preview/pay-sheet.tsx`, DECISIONS.md (R-23), SHARED-CHANGES.md, LOG, PROGRESS and this file.
+7. **`npm run check`: exit 0** (above).
+
+Findings:
+
+- **R3-1, defect (forked shared components, and a deferral row left).** UI-01 is `done` and on main: `src/components/Button.tsx` (lg 54 / 24 / 16 / icon 19, `primary`, `secondary`, `loading`), `src/components/Money.tsx` (kobo at 0.72 and 0.5) and `src/components/Text.tsx`. The pay sheet still carries its own copies:
+  - `PillButton` (`PaySheet.tsx:498-540`). Its comment still says "Local to this sheet until UI-01's Button lands".
+  - `Amount` (`PaySheet.tsx:417-447`), a copy of `Money`.
+  - Local row text styles.
+
+  `SHARED-CHANGES.md` section 2 row 1 (MONEY-03) still defers swapping them in, and the UI-01 half of that row is already due. Adopt `Button` and `Money` (add a prop to them if the sheet needs one, never a fork), then either remove the row or cut it down to the UI-02 sheet host. UI-02 is still `todo`, so that half can't be done yet.
+- **R3-2, defect (V5, W10, minor).** The W10 amount block is about 14 CSS px taller than the canvas, so the card and everything below it sit lower.
+  - Measured from the avatar's top: the caption is in place (+1 px), the amount's ink is +8 CSS px, and the card's top edge is +14 CSS px (`side3-W10-send-*.png`).
+  - Cause: `Amount` (`PaySheet.tsx:421-447`), used at 40 in `SendHeader` (`PaySheet.tsx:377-390`), sets no `lineHeight`. The kit's `Amt` uses `line-height:1`.
+  - The row amounts are not affected, because the 50 px row minimum height absorbs it.
+  - Adopting `Money` for R3-1 may fix this too, if `Money` sets the kit's line height.
+
+Notes (not defects):
+- The send-short state mixes styles: the banner says "This costs ₦25,065. You have ₦25,000.00." and the button says "Add ₦65", while the card shows faded kobo. This follows H17's purchase convention, and no artboard draws a send that is short.
+- The 360 ms release for a void `onPay` is unchanged from round 2 and still judged safe: no money moves in `onPay`, and the money path's idempotency is its V8.
+
+Round 3 verdict: 2 open defects (R3-1, R3-2). Status back to `building`.
 
 ## Owner sign-off
 
