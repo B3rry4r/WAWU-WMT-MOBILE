@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: ops
 status: todo
-depends_on: [OPS-09, MONEY-07]
+depends_on: [OPS-09, MONEY-07, MONEY-16, WALLET-15, WALLET-09]
 decisions: [R-10, R-20, R-25]
 passes: []
 artboards: []

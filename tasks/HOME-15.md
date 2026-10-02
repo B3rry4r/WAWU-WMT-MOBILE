@@ -32,8 +32,6 @@ A piece is unlocked from the buyer's wallet with the PIN, and the creator's 85% 
 
 Unlock pays from the wallet (H14-H18); access is granted once the debit settles; a debited-but-not-granted state fixes itself. The web stays on Flutterwave until after launch; V3 checks it still works.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A user unlocking a ₦2,500 piece is debited ₦2,523.25 once and gets access; if access fails after the debit, the sweep grants it or refunds the price.

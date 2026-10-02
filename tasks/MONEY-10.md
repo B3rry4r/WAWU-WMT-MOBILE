@@ -32,8 +32,6 @@ Our record of every movement of money, mirrored from Fintava, in kobo.
 
 Transaction store: amount in kobo, direction, counterparty, category, note, Fintava reference, status.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] Every sandbox movement in MONEY-06 to MONEY-08 appears once in the ledger with the right sign.

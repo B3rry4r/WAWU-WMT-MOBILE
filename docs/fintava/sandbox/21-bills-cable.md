@@ -1,16 +1,122 @@
 # Cable TV: providers, plans, purchase
 
-Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`, 2 Oct 2026.
-Plan item: 11 (bills; cable listed in the OPS-02 prompt). Result: **lists ran (HTTP 200); purchase NOT RUN (HTTP 403)**.
+Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`. Plan item: 11 (bills; cable listed in the OPS-02 prompt).
+Re-run 2 Oct 2026, 09:39 to 10:19 UTC, merchant active: **list ran (HTTP 200, unchanged); purchase HTTP 201 with "service not currently available"**.
+First run 2 Oct 2026, 08:28 to 08:38 UTC, merchant inactive: **lists ran (HTTP 200); purchase NOT RUN (HTTP 403)** (kept below).
 
 Masking: the API key is `Bearer ***`; every 11-digit number (BVN, NIN,
-phone) shows its last 4 digits only; emails show the domain only; the
-merchant administrator's name, address and date of birth, which Fintava
-returns inside transaction records, are masked, and that person's BVN and
-NIN are masked completely. Account numbers are kept: they are sandbox
-account numbers.
+phone) shows its last 4 digits only, including the two test customers'
+test values; emails show the domain only; the merchant administrator's
+name, address and date of birth, which Fintava returns inside transaction
+records, are masked, and that person's BVN and NIN are masked completely.
+Account numbers are kept: they are sandbox account numbers (WAWU's sandbox
+merchant and the two test customers this task created).
 
-## What this tells us
+## Re-run (merchant active)
+
+### What this tells us
+
+- Providers unchanged: `GOTV`, `DSTV`.
+- **A failed cable purchase comes back as HTTP 201**, with a body of only
+  `{ "status": 200, "message": "service not currently available" }`: no
+  `data`, no reference, nothing debited. MONEY-06 and BILLS-* must never
+  take a 2xx as "paid": a purchase is paid only when the body carries a
+  transaction (and the merchant balance or lookup confirms it).
+- Whether cable is unavailable in the sandbox in general, or for the
+  made-up smartcard, is unknown.
+
+### Requests and responses
+
+#### GET /cable-service-name
+
+Sent 2026-10-02 09:43:15 UTC, answered in 0.17 s.
+
+```http
+GET /api/dev/cable-service-name
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+```
+
+**Response: HTTP 200**
+
+```http
+HTTP/2 200 
+date: Fri, 02 Oct 2026 09:43:15 GMT
+content-type: application/json; charset=utf-8
+content-length: 322
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"142-pLYrSZlJIlw4A01+e5mtZkJD37c"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "06f3e9a5-cfd0-4bae-8210-02a97e8b5ae6",
+      "createdAt": "2023-10-10T11:43:03.796Z",
+      "updatedAt": "2023-10-10T11:43:03.796Z",
+      "name": "GOTV"
+    },
+    {
+      "id": "e34e8d3e-8df7-4e53-9582-67529ba82632",
+      "createdAt": "2023-10-10T11:43:03.796Z",
+      "updatedAt": "2023-10-10T11:43:03.796Z",
+      "name": "DSTV"
+    }
+  ],
+  "status": 200,
+  "message": "successful"
+}
+```
+
+#### POST /billing/cable-subscription, DStv Box Office, made-up smartcard
+
+Sent 2026-10-02 09:43:03 UTC, answered in 0.17 s.
+
+```http
+POST /api/dev/billing/cable-subscription
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+Content-Type: application/json
+
+{
+  "smartcard_number": "1212121212",
+  "tv_network": "DSTV",
+  "service_code": "97"
+}
+```
+
+**Response: HTTP 201**
+
+```http
+HTTP/2 201 
+date: Fri, 02 Oct 2026 09:43:03 GMT
+content-type: application/json; charset=utf-8
+content-length: 58
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: POST, OPTIONS
+etag: W/"3a-ANL4C4vjHzQML84CMpQXknspNWE"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "status": 200,
+  "message": "service not currently available"
+}
+```
+
+## First run (merchant inactive)
+
+2 Oct 2026, 08:28 to 08:38 UTC, while WAWU's sandbox merchant was `inactive`. Kept as recorded.
+
+### What this tells us
 
 - Providers: **only `GOTV` and `DSTV`** (`name` field). No StarTimes.
 - Plans: GOTV 7, DSTV 35. Fields: `id`, `createdAt`, `updatedAt`, `title`,
@@ -24,9 +130,9 @@ account numbers.
   smartcard is validated before payment, and how, is unknown (no preview
   endpoint is documented for cable).
 
-## Requests and responses
+### Requests and responses
 
-### GET /cable-service-name
+#### GET /cable-service-name
 
 Sent 2026-10-02 08:28:48 UTC, answered in 0.22 s.
 
@@ -72,7 +178,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### GET /cable-service-name/GOTV
+#### GET /cable-service-name/GOTV
 
 Sent 2026-10-02 08:29:34 UTC, answered in 0.58 s.
 
@@ -183,7 +289,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### GET /cable-service-name/DSTV
+#### GET /cable-service-name/DSTV
 
 Sent 2026-10-02 08:29:34 UTC, answered in 0.50 s.
 
@@ -259,7 +365,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### Lower case: gotv
+#### Lower case: gotv
 
 Sent 2026-10-02 08:38:10 UTC, answered in 0.19 s.
 
@@ -295,7 +401,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### POST /billing/cable-subscription, DStv Box Office
+#### POST /billing/cable-subscription, DStv Box Office
 
 Sent 2026-10-02 08:30:17 UTC, answered in 0.22 s.
 

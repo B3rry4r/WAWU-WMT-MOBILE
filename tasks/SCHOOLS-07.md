@@ -35,8 +35,6 @@ Enrolment order with amount and commission snapshot, race-safe seat claim (the P
 
 The fee waits in WAWU's merchant wallet until it is paid to the school (MONEY-18, R-19). School enrolments never read the old LearnCourse enrolment gate, which references the removed subscription.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] Two users racing for the last seat: one enrols, the other is told the class is full and offered the next intake.

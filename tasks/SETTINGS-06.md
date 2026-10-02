@@ -34,6 +34,8 @@ Refuse to schedule deletion while the wallet holds money (balance from Fintava, 
 earnings are waiting (R-11). Freeze the Fintava wallet when deletion is scheduled and unfreeze it on cancel (a cancel
 route SETTINGS-08 calls). Content stays restorable for the 30 days.
 
+BACKEND_GAPS G-10: a frozen Fintava wallet can neither send nor receive, so money due to a frozen wallet (earnings, refunds) waits in WAWU's merchant wallet and is paid on unfreeze.
+
 ## Capability checks
 
 - [ ] A user with money in their wallet, an open hold or waiting earnings is told to move it first.

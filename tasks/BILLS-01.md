@@ -41,7 +41,7 @@ Bill payments move to Fintava. The catalogue (categories, billers, bundles, plan
 - **S3 · Biller**: Electricity billers: Ikeja Electric, Eko Electricity, Abuja Electric, Ibadan Electric, Port Harcourt Electric with prepaid/postpaid notes.
 - **S4 · Meter and amount**: Meter number with validated name AND address ('Chidinma Okoro · 14 Admiralty Way'), amount ₦10,000 with presets ₦2,000/₦5,000/₦10,000/₦20,000.
 - **S10 · Meter not found**: 'We couldn't find this meter. Check the number.'
-- **S13 · Not live yet**: 'Bill payments aren't switched on yet · You'll be able to pay airtime, data, electricity and cable from your wallet here soon.' Entered only by a real cause: Fintava refuses bills with `403 Merchant is not active`, or every biller in the category is `is_available: "No"`. No feature flag (R-20).
+- **S13 · Not live yet**: 'Bill payments aren't switched on yet · You'll be able to pay airtime, data, electricity and cable from your wallet here soon.' Entered only by a real cause: the biller or Fintava's bills service reports unavailable (a biller listed `is_available: "No"`, or a purchase answered "service not currently available", as cable does today). No feature flag (R-20).
 
 ## Fintava facts
 
@@ -56,13 +56,13 @@ From the sandbox (`docs/fintava/sandbox/16-21`); a newer real response overrides
   `17-bills-preview-meter.md`).
 - Data bundles: `GET /billing/data-bundles/{network}`; 9mobile is `ETISALAT`; titles need cleaning; a bundle is
   network plus code (`20-bills-data.md`). Cable: `GOTV` and `DSTV` only (`21-bills-cable.md`).
-- Every purchase answers `403 Merchant is not active` until Fintava activates WAWU's sandbox merchant (OPS-02).
+- Purchases don't complete in the sandbox yet: airtime, data and electricity answer `400 "Unable to find customers"` and cable answers "service not currently available" (question 17 in `docs/fintava/naira-api.md`). The lists and the meter preview work.
 
 ## Brief changes (build these, not the canvas)
 
 - **S2**: Data is built on S8's layout with the bundle list in place of the amount presets (BILLS-03). (Why: the tile is drawn; its screen is built in the canvas's own style.)
 - **S3**: the billers Fintava lists, with their prepaid and postpaid codes as listed, each with its own minimum and maximum. (This item first said "Prepaid only, never below ₦500"; the sandbox corrected it.) (Why: Fintava fact from the sandbox (`docs/fintava/sandbox/16-bills-discos.md`): postpaid is listed, minimums run from ₦0 to ₦1,000, and some billers are unavailable and are hidden.)
-- **S13**: shown only on a real cause: Fintava refuses bills with `403 Merchant is not active`, or every biller in the category is unavailable. No switch. (Why: R-20: no feature flags.)
+- **S13**: shown only on a real cause: the biller or Fintava's bills service reports unavailable (a biller listed as unavailable, or a purchase answered "service not currently available", as cable does today). No switch. (Why: R-20: no feature flags.)
 
 ## Added by later tasks
 
@@ -82,15 +82,15 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states S10, S13.
-- [ ] A user sees S13 only when Fintava refuses bills with `403 Merchant is not active` or every biller in the category is unavailable.
+- [ ] A user sees S13 only when the biller or Fintava's bills service reports unavailable (cable's "service not currently available" reaches it today), never from a switch.
 
 ## What the backend serves today (from the analysis)
 
-- **S2**: partial. Missing: Categories and recents served (Flutterwave top-bill-categories). The reminders banner has no source: no reminder model or route (searched backend-models, backend-routes, grep -i 'reminder' finds only verification-reminder.service.ts and NotificationSettings.dmReminders).
-- **S3**: served.
-- **S4**: partial. Missing: Validation returns name only; the address on the board is not passed through from the provider response.
-- **S10**: served.
-- **S13**: served.
+- **S2**: missing: Fintava catalogue and meter preview behind the Hub. Today's data comes from Flutterwave; this app reads Fintava only (R-20), through MONEY-06. The reminders banner has no source until BILLS-06.
+- **S3**: missing: Fintava catalogue and meter preview behind the Hub. Today's data comes from Flutterwave; this app reads Fintava only (R-20), through MONEY-06.
+- **S4**: missing: Fintava catalogue and meter preview behind the Hub. Today's data comes from Flutterwave; this app reads Fintava only (R-20), through MONEY-06.
+- **S10**: missing: Fintava catalogue and meter preview behind the Hub. Today's data comes from Flutterwave; this app reads Fintava only (R-20), through MONEY-06.
+- **S13**: missing: S13's cause is Fintava's (a biller or the bills service reporting unavailable), served by the Hub in this task.
 
 A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 

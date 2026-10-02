@@ -32,8 +32,6 @@ A8: when a user finishes Open your wallet, they get their own Fintava account (R
 
 Account opening after BVN, NIN and address, safe to retry, a visible 'still opening' state, the account number shown on W1.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.

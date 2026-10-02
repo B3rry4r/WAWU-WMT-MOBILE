@@ -15,10 +15,20 @@ RELEASE-03, after launch.
 
 - **Done:** the project is linked to Expo as `@moxnafrica/wawu-wmt`
   (project id in `app.json`), 2 Oct 2026.
-- **Before the first preview build:** `eas.json` needs real addresses in place
-  of the `.invalid` placeholders (owner): the tunnel hostname that reaches the
-  lead's local backend for `development` and `preview`, and production's for
-  `production`. There is no staging (R-25).
+- **Updates only reach a build that can run them.** `runtimeVersion` uses
+  the `fingerprint` policy: a change to native code (a new `expo-*` package,
+  `app.json` plugins) changes the fingerprint, so the next update waits for a
+  new build instead of crashing the old one. After merging such a change, run
+  a new preview build.
+- **Addresses:** every profile points at the live services the web uses,
+  `https://api.wawuafrica.com` and `https://id.wawuafrica.com`. There is no
+  staging server, and nothing runs on Railway.
+- **What runs where (DECISIONS R-25):** tester builds on phones talk to the
+  live services. Phones can't reach a local backend and there is no tunnel.
+  Every check and verification runs against the local backend (wawu-backend
+  `scripts/local/up.sh`) with the Fintava sandbox, through `npm run web` or an
+  emulator. Money paths are exercised on a phone only once OPS-10 has put the
+  live Fintava setup on the droplet.
 
 ## Who has what
 
@@ -75,36 +85,28 @@ team rule: the developer publishes to `preview` only.
 
 ## The profiles (`eas.json`, written in SHELL-03)
 
-- `development`: `developmentClient: true`, internal distribution, the
-  local backend's address (through the tunnel).
-- `preview`: internal distribution, Android APK, channel `preview`, the
-  local backend's address (through the tunnel).
+- `development`: `developmentClient: true`, internal distribution, the live
+  services.
+- `preview`: internal distribution, Android APK, channel `preview`, the live
+  services.
 - `production`: store builds (AAB now; App Store with RELEASE-03), channel
-  `production`, the production API on the DigitalOcean droplet, and the build
-  number managed by Expo (`appVersionSource: remote`, `autoIncrement`).
+  `production`, the live services, and the build number managed by Expo
+  (`appVersionSource: remote`, `autoIncrement`).
 
 The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`, and the
 WAWU ID address as `EXPO_PUBLIC_ID_URL`. Secrets never go into the app at all.
 
-`eas.json` is written. Its addresses are reserved placeholders ending in
-`.invalid` until the owner supplies the real ones, which are owner inputs:
-
-| Input | Where it goes |
-|-------|---------------|
-| The lead's local Hub API, through a tunnel with a fixed hostname | `EXPO_PUBLIC_API_URL` in `development` and `preview` |
-| The lead's local WAWU ID, through the same tunnel | `EXPO_PUBLIC_ID_URL` in `development` and `preview` |
-| Production Hub API address | `EXPO_PUBLIC_API_URL` in `production` |
-| Production WAWU ID address | `EXPO_PUBLIC_ID_URL` in `production` |
-
-A `preview` build made before the placeholders are replaced cannot reach any
-backend. The `EXPO_PUBLIC_` values are baked in at build time, so changing one
+`eas.json` points every profile at the live services:
+`https://api.wawuafrica.com` (Hub API) and `https://id.wawuafrica.com` (WAWU
+ID), the same ones the web calls. There is no staging server; local work
+uses the local backend through `.env`. The `EXPO_PUBLIC_` values are baked in
+at build time, so changing one
 needs a new build; `eas update` takes the same variables from its own
 environment when it publishes.
 
 Over-the-air updates need `expo-updates`, an `updates.url` and a
-`runtimeVersion` in `app.json`. `app.json` is fenced, so those are queued in
-`SHARED-CHANGES.md`; `npx eas-cli update:configure` (run once by the owner or
-developer, signed in to Expo) writes them.
+`runtimeVersion` in `app.json`; they are in place (SHARED-CHANGES.md, Applied
+row 4).
 
 ## Later: iPhone (RELEASE-03)
 

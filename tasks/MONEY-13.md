@@ -34,8 +34,6 @@ A consistent `no_wallet` error on every wallet and payment endpoint, in the cont
 that lead to Open your wallet are wired by KYC-05 (the pay sheet) and by each screen task that draws a way in
 (docs/WORKFLOW.md section 7, "Links between screens").
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A signed-in user with no wallet gets the same `no_wallet` answer from every wallet and payment endpoint (no 500s).

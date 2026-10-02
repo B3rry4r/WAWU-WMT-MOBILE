@@ -32,8 +32,6 @@ Calling an event off (E25) returns each buyer's ticket price to their wallet (E1
 
 Refunds from WAWU's merchant wallet, where ticket money waits (R-19): the ticket price comes back, not Fintava's charge (R-10), and Fintava's charge on the refund is WAWU's (R-31). The web stays on Flutterwave until after launch; V3 checks it still works.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] Calling an event off returns each buyer's ticket price to their wallet once (R-10).

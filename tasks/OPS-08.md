@@ -3,7 +3,7 @@ id: OPS-08
 title: Retire Shop on the backend
 owner: YOU
 area: OPS
-order: 45
+order: 37
 priority: launch
 repo: wawu-backend
 type: removal

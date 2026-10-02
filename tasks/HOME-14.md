@@ -32,8 +32,6 @@ A tip is paid from the buyer's wallet with the PIN, and the creator's 85% lands 
 
 Tips pay from the wallet (H26-H28) with an optional note, and land in the creator's wallet. The web stays on Flutterwave until after launch; V3 checks it still works.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A user tips ₦2,000: their wallet drops by ₦2,023.25 once; the creator's wallet rises by ₦1,700 and WAWU keeps ₦300 (85/15, R-5).

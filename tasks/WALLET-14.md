@@ -31,8 +31,6 @@ A21, W17: a saved payout bank with a real bank code, checked against the BVN nam
 
 Beneficiaries; payout account with bank code and resolved name (through the Fintava client, MONEY-06), checked against the BVN name (KYC-01).
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A payout account whose name doesn't match the BVN name is flagged.

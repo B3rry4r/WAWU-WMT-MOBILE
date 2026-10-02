@@ -32,8 +32,6 @@ H17, I6, S11, W13: tell the user exactly how much they are short. H18, E10: say 
 
 An insufficient-funds error carrying balance and shortfall; a 'pending' result the app can poll.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] With ₦500 in the wallet, a ₦1,000 purchase fails with a ₦523.25 shortfall (₦1,023.25 total, BRIEF rule 5).

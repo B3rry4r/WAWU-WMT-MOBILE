@@ -36,8 +36,6 @@ host 85% of the ticket price for the tickets sold, from WAWU's merchant wallet o
 (EVENTS-07 holds the ticket money there, R-19). A host without a wallet keeps the share, which lands when they
 open one (R-11, WALLET-16). Fintava's charge on each payout is WAWU's (R-31).
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] After members spend credits in a community, the host's wallet grows by their share.

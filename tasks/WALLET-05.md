@@ -35,6 +35,8 @@ You own these screens AND the backend work behind them. Build the screens as the
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
 
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
+
 ## Artboards
 
 - **W15 · Add money**: Bank transfer details first (account name, number, the bank name from the API (Loma Bank), share). The other ways (Debit card, USSD, From your Dollar account) are not built at launch (BRIEF W15, R-16).

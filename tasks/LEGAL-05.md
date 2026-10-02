@@ -32,8 +32,6 @@ Consultation and service fees are paid from the wallet with the PIN, at the pric
 
 Consultation and service fees, and business-name registration, pay from the wallet (S19, S22, S26) at the prices WAWU sets in admin (R-14). The web stays on Flutterwave until after launch; V3 checks it still works.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] The price charged equals the price set in admin at the time of the quote (R-14), plus Fintava's charge from the fee quote.

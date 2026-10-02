@@ -34,7 +34,9 @@ You own these screens AND the backend work behind them. Build the screens as the
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
 
-Native modules: `expo-clipboard` (S7 Copy token). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
+Native modules: `expo-clipboard` (S7 Copy token). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
+
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Artboards
 

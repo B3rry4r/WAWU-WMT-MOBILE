@@ -37,7 +37,7 @@ timeouts. The Fintava variables are added to the `hub-api.env` list in wawu-back
 Local values live in the backend's `.env`; production values are put in `/etc/wawu/hub-api.env` on the
 DigitalOcean droplet by OPS-10 (deploys go through GitHub Actions; there is no staging, R-25).
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Fintava facts
 
@@ -47,7 +47,7 @@ Base URLs: sandbox `https://dev.fintavapay.com/api/dev`, live `https://live.fint
 
 ## Capability checks
 
-- [ ] Against the sandbox, each call in `docs/PLAN.md` items 1 to 13 returns a typed result through the client, and a bad key gives a clear typed error. Calls refused with `403 Merchant is not active` are reported NOT RUN with that reason.
+- [ ] Against the sandbox, each call in `docs/PLAN.md` items 1 to 13 returns a typed result through the client, and a bad key gives a clear typed error. Bank sends and bill purchases that the sandbox refuses (the blocker below) are reported NOT RUN with that reason.
 - [ ] No Fintava secret appears in logs.
 
 ## Builder report

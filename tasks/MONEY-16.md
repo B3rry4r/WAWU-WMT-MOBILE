@@ -35,8 +35,6 @@ backend's existing mailer) on any mismatch. It also checks that held money in WA
 open holds in our ledger (R-19), and that WAWU's merchant charge landed in WAWU's wallet for each fee-bearing
 transaction (R-10, OPS-09).
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.

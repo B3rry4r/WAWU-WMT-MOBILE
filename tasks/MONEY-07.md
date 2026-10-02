@@ -32,9 +32,7 @@ Money that arrives or settles while nobody is looking is still recorded once.
 
 Webhook endpoint with signature check, an event store keyed by the transaction reference (Fintava sends no event id), safe to replay.
 
-Webhooks reach the local backend through the tunnel (docs/WORKFLOW.md section 6); the production webhook URL is registered by OPS-10.
-
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
+There is no standing tunnel (R-25): locally, webhook checks replay recorded, signed sandbox payloads to the local endpoint, or use a throwaway tunnel as `docs/fintava/sandbox/23-webhooks.md` describes. The production webhook URL is registered by OPS-10.
 
 ## Fintava facts
 

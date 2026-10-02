@@ -32,7 +32,7 @@ A bill is paid from the user's wallet with the PIN: the money moves into WAWU's 
 
 Bills pay from the wallet into WAWU's merchant wallet, then the biller (no 85/15 on bills: the full amount goes to the biller); the electricity token and units come back (S7); a biller failure reverses the debit automatically (S12). The web stays on Flutterwave until after launch; V3 checks it still works.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Capability checks
 

@@ -36,8 +36,6 @@ and an Idempotency-Key. The buyer pays the price plus Fintava's balance-transfer
 (MONEY-13). Fintava's charge on WAWU's own later movements (releases, refunds, payouts) is paid by WAWU from its
 15% (R-31).
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A buyer paying for a ₦1,000 item is debited ₦1,023.25 once (₦1,000 + Fintava's ₦23.25 from the fee quote); the ledger shows the creator's ₦850 and WAWU's ₦150.

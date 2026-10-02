@@ -32,8 +32,6 @@ W7, W9-W12, I13-I15: send to another WAWU user by name, @handle or phone.
 
 Transfer between two Fintava accounts with a note, PIN and Idempotency-Key; a receipt.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A user with ₦10,000 sends ₦2,000 to @amaka: their balance drops by ₦2,033.25 (₦2,000 + Fintava's ₦23.25 + WAWU's ₦10, the quoted total); Amaka's rises by exactly ₦2,000.

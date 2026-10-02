@@ -36,6 +36,8 @@ Built at launch: S2 draws the reminders banner on a launch screen (R-33). The lo
 
 V10 runs on a real Android phone only (DECISIONS R-24).
 
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
+
 ## Artboards
 
 - **S27 · This month**: Bill reminders for October 2026: 'Still to pay this month ₦38,200', 'In your wallet ₦485,250', list: DStv Compact on WAWU ₦15,700 Paid (Oct 05), Ikeja Electric on WAWU ₦10,500 in 3 days (Oct 28), House rent reminder-only ₦25,000, Gym subscription reminder-only ₦2,700; Plus to add.

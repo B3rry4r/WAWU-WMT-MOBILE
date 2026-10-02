@@ -53,3 +53,24 @@ Inbox moved to Developer 2 and Events to Developer 3 on 2 Oct 2026.
   `preview` channel; the owner submits to the stores (`docs/BUILDS.md`).
 
 Your list: `tasks/INDEX.md`, section "Developer".
+
+## Keep going: you don't wait to be prompted
+
+You are given one prompt, once. After that you work through your list on your
+own until it is finished or every remaining task is blocked:
+
+1. `git fetch origin && git merge origin/main` (or branch from the newest
+   main). Read `tasks/INDEX.md` from main every time: the order can change.
+2. Take your first task that isn't `done`, `review` or in progress and whose
+   `depends_on` are all `review` or `done`.
+3. Build it in a builder agent (`docs/roles/BUILDER.md`), then verify it in a
+   separate verifier agent (`docs/roles/VERIFIER.md`). Fix and re-verify
+   until it passes.
+4. Merge the newest main in, run `npm run check`, push `wmt/<ID>`. The lead
+   merges it; you don't wait for that.
+5. Go back to step 1 straight away.
+
+Only a real blocker stops a task, never a question you can answer from the
+docs. Write the blocker and the fact that unblocks it in the task file, push,
+and move on to your next startable task. Ask the owner only when every
+remaining task is blocked, and ask once, listing them all.

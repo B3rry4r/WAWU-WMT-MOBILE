@@ -3,14 +3,14 @@ id: MONEY-02
 title: The PIN sheet
 owner: YOU
 area: MONEY
-order: 33
+order: 41
 priority: launch
 repo: wawu-wmt-mobile
 type: component
 status: todo
 depends_on: [UI-01, UI-02]
 decisions: [R-22, R-26]
-passes: [V1, V5, V6]
+passes: [V1, V5, V6, V10]
 artboards: [W11, H15, M13]
 ---
 # MONEY-02 · The PIN sheet
@@ -40,6 +40,8 @@ R-26). Its label names what the phone has ("Use fingerprint" on most Android pho
 prompt shows "<Name> failed. Use your PIN." (for example "Fingerprint failed. Use your PIN.") and never uses up a
 PIN try. Copy for states the canvas doesn't draw is written by the builder in the canvas's voice and listed in
 `docs/designer/BRIEF.md`; it is not a question for the owner.
+
+V10 runs on a real Android phone only (R-24): the fingerprint prompt only exists on a device.
 
 ## Brief changes (build these, not the canvas)
 

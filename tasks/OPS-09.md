@@ -3,7 +3,7 @@ id: OPS-09
 title: Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 owner: YOU
 area: OPS
-order: 41
+order: 33
 priority: launch
 repo: fintava-dashboard
 type: ops
@@ -42,7 +42,7 @@ If it can't, set the bank charge only and stop: that question goes to the owner 
 
 - [ ] The sandbox dashboard shows WAWU's merchant charges (₦25 on bank transfers, ₦10 on sends between customers), with a screenshot saved under `docs/fintava/sandbox/`.
 - [ ] It is recorded whether the wallet to wallet charge can leave transfers into WAWU's merchant wallet (purchases) untouched.
-- [ ] A sandbox bank send shows the ₦25 merchant charge in `merchantComm` and it lands in WAWU's merchant wallet. Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
+- [ ] A sandbox bank send shows the ₦25 merchant charge in `merchantComm` and it lands in WAWU's merchant wallet. Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Builder report
 

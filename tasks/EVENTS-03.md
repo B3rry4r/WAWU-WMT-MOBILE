@@ -34,7 +34,7 @@ New files under `src/features/` for these screens and their route files under `s
 
 Before EVENTS-06, tickets exist only as ₦0 tickets (R-8): the verifier reaches E6, E7 and E12 with a free ticket. E11 (called off) moved to EVENTS-08, where its cause (E25) is built.
 
-Native modules: a QR renderer (E7), `expo-brightness` ("Brightness goes up when this opens"). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
+Native modules: a QR renderer (E7), `expo-brightness` ("Brightness goes up when this opens"). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 

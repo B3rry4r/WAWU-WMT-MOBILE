@@ -3,7 +3,7 @@ id: MONEY-03
 title: The pay-from-wallet sheet
 owner: YOU
 area: MONEY
-order: 37
+order: 45
 priority: launch
 repo: wawu-wmt-mobile
 type: component

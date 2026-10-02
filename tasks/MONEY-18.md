@@ -34,8 +34,6 @@ Hold (a transfer into WAWU's merchant wallet, R-19), release to the payee, refun
 
 Fintava's charge on a release or a refund is WAWU's to pay (R-31).
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.

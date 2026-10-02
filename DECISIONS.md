@@ -194,10 +194,13 @@ marked "default until the owner rules" are the ones most likely to change.
 yet. Every launch check that needs a phone runs on the owner's Android phone (V10, CHECK-1, CHECK-3,
 RELEASE-01). iOS ships when an iPhone tester exists, in one after-launch task, RELEASE-03.
 
-**R-25 · No staging and no test backend.** Checks run against the backend running locally (wawu-backend
-`scripts/local/up.sh`, OPS-03) with seeded data and the Fintava sandbox. Production is the DigitalOcean droplet,
-deployed by GitHub Actions; its secrets live in `/etc/wawu/hub-api.env` there (OPS-10). Where a check used to say
-"a copy of production", it means the local backend with seeded data.
+**R-25 · No staging and no test backend.** Every check and verification runs against the backend running locally
+(wawu-backend `scripts/local/up.sh`, OPS-03) with seeded data and the Fintava sandbox, through the web build or an
+emulator. Tester builds on phones talk to the live services, `https://api.wawuafrica.com` and
+`https://id.wawuafrica.com`, as `eas.json` and `src/api/env.ts` do: phones can't reach a local backend, and there
+is no tunnel. Money paths are exercised on a phone only once OPS-10 has put the live Fintava setup on the
+production droplet (DigitalOcean, deployed by GitHub Actions; secrets in `/etc/wawu/hub-api.env`). Where a check
+used to say "a copy of production", it means the local backend with seeded data.
 
 **R-26 · Biometric approval, not Face ID.** Phones approve with a fingerprint or a face, whichever they have
 (`expo-local-authentication`), and the label names what the phone has. When it fails, the copy is "<Name> failed.
@@ -207,8 +210,9 @@ Tasks: MONEY-02, MONEY-14, WALLET-02, WALLET-06.
 **R-27 · Links between screens.** No placeholders, no dead buttons, no feature flags. A hub or menu task builds
 only the rows whose destination screen already exists. The task that builds a destination screen also adds its
 entry row or button to the hub, exactly as the artboard draws it, and owns the check "a user can reach X from
-Y". Where the owner is the same and money doesn't block, the destination comes first. CHECK-3 confirms every hub
-matches its artboard in full. `docs/WORKFLOW.md` section 7 has the rule.
+Y". CHECK-3 confirms every hub matches its artboard in full. Lead default for ordering, not a rule of the
+pattern: where the hub and the destination have the same owner and money doesn't block, the destination is
+listed first. `docs/WORKFLOW.md` section 7 has the rule.
 
 **R-28 · W18 is not built** until Fintava names an account status that blocks withdrawals. A wallet only exists
 after the BVN and selfie checks pass, so "Withdraw · waiting on KYC" has no real cause today.
@@ -225,12 +229,14 @@ into WAWU's wallet is the payer's, like any purchase: the quote shows the bill c
 charge. Default until the owner rules.
 
 **R-32 · School ratings are left off at launch** until the owner rules. Nothing writes a school rating and no
-screen collects one, so the rating element on SC1 and SC2 is not built.
+screen collects one, so the rating element on SC1 and SC2 is not built. Default until the owner rules.
 
-**R-33 · After-launch features drawn on launch screens are built at launch,** because the canvas decides: bill
-reminders (the S2 banner; BILLS-05, BILLS-06), My courses (SC8, SCHOOLS-08), applying on the school's site (SC9,
-the link half of SCHOOLS-10), and Share receipt, which at launch opens the phone's share sheet with the receipt's
-text and reference (the W41 image and PDF stay after launch, WALLET-12).
+**R-33 · Four features drawn on launch screens are built at launch,** because the canvas decides: bill reminders
+(the S2 banner; BILLS-05, BILLS-06), My courses (SC8, SCHOOLS-08), applying on the school's site (SC9, the link
+half of SCHOOLS-10), and Share receipt, which at launch opens the phone's share sheet with the receipt's text and
+reference (the W41 image and PDF stay after launch, WALLET-12). Only these four. Everything R-16 puts after launch
+(dollar, crypto, cards) stays after launch, and its entries on launch screens are not built until then (R-27;
+BRIEF, "Not built at launch").
 
 **R-34 · Web features absent from the canvas are not built in the app.** The canvas decides the app; the web
 follows after launch (Authority, above). This closes D14: OPS-07 lists the 89 for the web team, after launch.

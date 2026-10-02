@@ -34,7 +34,7 @@ New files under `src/features/` for these screens and their route files under `s
 
 V10 runs on a real Android phone only (DECISIONS R-24).
 
-Native modules: `expo-camera` (E19 scanner). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
+Native modules: `expo-camera` (E19 scanner). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 

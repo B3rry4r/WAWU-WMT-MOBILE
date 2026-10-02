@@ -188,9 +188,12 @@ camera or deep links.
 **Testing runs locally.** The backend runs on the builder's machine with a
 local `.env` holding the Fintava sandbox keys (wawu-backend `scripts/local/up.sh`, OPS-03), with seeded data;
 the live server isn't touched. There is no staging and no "test backend" (DECISIONS R-25): production is the
-DigitalOcean droplet, deployed by GitHub Actions.
-The phone reaches it over the same Wi-Fi or a tunnel, and Fintava's webhooks
-need the tunnel too (they can't reach `localhost`). The nightly ledger check
+DigitalOcean droplet, deployed by GitHub Actions. Checks run through the web
+build or an emulator; tester builds on phones talk to the live services
+(phones can't reach a local backend, and there is no tunnel), so money paths
+run on a phone only once OPS-10 has put the live Fintava setup on the
+droplet. Fintava's webhooks can't reach `localhost`: locally they are
+replayed from recorded, signed payloads (MONEY-07). The nightly ledger check
 (MONEY-16) runs before money goes live.
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.
@@ -248,8 +251,8 @@ No placeholders, no dead buttons, no feature flags (DECISIONS R-27).
 - The task that builds a destination screen also adds its entry row or button to the hub, exactly as the
   artboard draws it, and owns the check "a user can reach X from Y". Its task file says so ("this task adds
   it, as drawn") and depends on the hub's task.
-- Where the hub and the destination have the same owner and money doesn't block, the destination comes first
-  in the list, so the hub wires it.
+- Lead default for ordering (not part of the rule): where the hub and the destination have the same owner and
+  money doesn't block, the destination is listed first, so the hub wires it.
 - An entry whose destination is an after-launch task is not built at launch; that task adds it, and
   `docs/designer/BRIEF.md` lists it under "Not built at launch".
 - CHECK-3 confirms every hub matches its artboard in full.

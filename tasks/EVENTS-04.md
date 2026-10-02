@@ -37,7 +37,7 @@ My events (E16) is added by EVENTS-08 and Get verified (E21) by ME-12 (docs/WORK
 
 V10 runs on a real Android phone only (DECISIONS R-24).
 
-Native modules: `expo-image-picker` (E14 banner). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
+Native modules: `expo-image-picker` (E14 banner). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 

@@ -36,6 +36,8 @@ New files under `src/features/` for these screens and their route files under `s
 
 The PIN step, the receipt and the failure states reuse BILLS-02's screens; never a fork.
 
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
+
 ## Artboards
 
 - **S8 · Airtime**: Airtime: network MTN/Airtel/Glo/9mobile, phone number with 'Mine', amount presets ₦500/₦1,000/₦2,000/₦5,000, a fee line before the PIN (₦0 + ₦0 today, BRIEF S8), Buy with the total; then PIN and the receipt like S7.

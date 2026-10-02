@@ -34,8 +34,6 @@ Buying tickets pays from the wallet (E3-E5, E10); the order reference stops bein
 
 Also: basket order lines, so Regular and VIP are bought in one payment (E2); ₦0 orders issue tickets without a debit.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A user buys a Regular and a VIP ticket in one payment (E2 basket) and is debited the quoted total once.

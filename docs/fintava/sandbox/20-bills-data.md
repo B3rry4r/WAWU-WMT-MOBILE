@@ -1,16 +1,204 @@
 # GET /billing/data-bundles/{network} and POST /billing/data-bundle
 
-Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`, 2 Oct 2026.
-Plan item: 11 (bills; data listed in the OPS-02 prompt). Result: **lists ran (HTTP 200); purchase NOT RUN (HTTP 403)**.
+Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`. Plan item: 11 (bills; data listed in the OPS-02 prompt).
+Re-run 2 Oct 2026, 09:39 to 10:19 UTC, merchant active: **list ran (HTTP 200, unchanged); purchase HTTP 400 "Unable to find customers"**.
+First run 2 Oct 2026, 08:28 to 08:38 UTC, merchant inactive: **lists ran (HTTP 200); purchase NOT RUN (HTTP 403)** (kept below).
 
 Masking: the API key is `Bearer ***`; every 11-digit number (BVN, NIN,
-phone) shows its last 4 digits only; emails show the domain only; the
-merchant administrator's name, address and date of birth, which Fintava
-returns inside transaction records, are masked, and that person's BVN and
-NIN are masked completely. Account numbers are kept: they are sandbox
-account numbers.
+phone) shows its last 4 digits only, including the two test customers'
+test values; emails show the domain only; the merchant administrator's
+name, address and date of birth, which Fintava returns inside transaction
+records, are masked, and that person's BVN and NIN are masked completely.
+Account numbers are kept: they are sandbox account numbers (WAWU's sandbox
+merchant and the two test customers this task created).
 
-## What this tells us
+## Re-run (merchant active)
+
+### What this tells us
+
+- The MTN list is unchanged (the same 53 bundle ids as the first run).
+- Purchase of MTN code `30` (₦100, 100MB daily) answers `400 ["Unable to
+  find customers"]`, like the bank sends (`14-bank-transfer.md`). Nothing
+  was debited.
+
+### Requests and responses
+
+#### GET /billing/data-bundles/MTN
+
+Sent 2026-10-02 09:43:15 UTC, answered in 0.16 s.
+
+```http
+GET /api/dev/billing/data-bundles/MTN
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+```
+
+**Response: HTTP 200**
+
+```http
+HTTP/2 200 
+date: Fri, 02 Oct 2026 09:43:15 GMT
+content-type: application/json; charset=utf-8
+content-length: 13814
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"35f6-LG15cO2TF5j2D7kyKZ6aTrFNvXU"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "data": [
+{"id": "9b1a9eec-44cd-46b5-9410-19652a676086", "createdAt": "2024-07-11T13:48:12.064Z", "updatedAt": "2024-07-11T13:48:12.064Z", "code": "1", "title": "MTN D-MFIN-5-Combo-97 for Xtradata 20000 Monthly Bundle", "price": "20000", "validity": "Xtradata 20000 Monthly Bundle"},
+{"id": "7d1246b0-c643-4829-933d-94625580a3a0", "createdAt": "2024-07-11T13:48:12.335Z", "updatedAt": "2024-07-11T13:48:12.335Z", "code": "2", "title": "MTN D-MFIN-5-Combo-96 for Xtradata 15000 Monthly Bundle", "price": "15000", "validity": "Xtradata 15000 Monthly Bundle"},
+{"id": "86e599a4-c4c1-44f5-a13f-*******8451a", "createdAt": "2024-07-11T13:48:12.637Z", "updatedAt": "2024-07-11T13:48:12.637Z", "code": "3", "title": "MTN D-MFIN-5-Combo-95 for Xtradata 10000 Monthly Bundle", "price": "10000", "validity": "Xtradata 10000 Monthly Bundle"},
+{"id": "e77becd0-e481-4459-92a2-e6ea4ade7b09", "createdAt": "2024-07-11T13:48:13.420Z", "updatedAt": "2024-07-11T13:48:13.420Z", "code": "4", "title": "MTN D-MFIN-5-Combo-94 for Xtradata 5000 Monthly Bundle", "price": "5000", "validity": "Xtradata 5000 Monthly Bundle"},
+{"id": "fab54f43-ceba-4603-af90-531dc119a511", "createdAt": "2024-07-11T13:48:13.704Z", "updatedAt": "2024-07-11T13:48:13.704Z", "code": "5", "title": "MTN D-MFIN-5-Combo-93 for Xtradata 2000 Monthly Bundle", "price": "2000", "validity": "Xtradata 2000 Monthly Bundle"},
+{"id": "92e797be-e7ad-4ba1-be08-e175be6faf67", "createdAt": "2024-07-11T13:48:13.983Z", "updatedAt": "2024-07-11T13:48:13.983Z", "code": "6", "title": "MTN D-MFIN-5-Combo-92 for Xtradata 1000 Monthly Bundle", "price": "1000", "validity": "Xtradata 1000 Monthly Bundle"},
+{"id": "5e11118c-d7b1-462e-b514-50b90ccc7bc7", "createdAt": "2024-07-11T13:48:14.383Z", "updatedAt": "2024-07-11T13:48:14.383Z", "code": "7", "title": "MTN D-MFIN-5-Combo-91 for Xtradata 500 Weekly Bundle", "price": "500", "validity": "Xtradata 500 Weekly Bundle"},
+{"id": "fa0fb1e3-79bb-4cc4-a2f6-38d1685058a1", "createdAt": "2024-07-11T13:48:14.669Z", "updatedAt": "2024-07-11T13:48:14.669Z", "code": "8", "title": "MTN D-MFIN-5-Combo-89 for Xtratalk 20000 Monthly Bundle", "price": "20000", "validity": "Xtratalk 20000 Monthly Bundle"},
+{"id": "60894222-204c-48ae-9196-f33395f55b6a", "createdAt": "2024-07-11T13:48:14.943Z", "updatedAt": "2024-07-11T13:48:14.943Z", "code": "9", "title": "MTN D-MFIN-5-Combo-88 for Xtratalk 15000 Monthly Bundle", "price": "15000", "validity": "Xtratalk 15000 Monthly Bundle"},
+{"id": "39855624-dc72-44e2-855f-f001f730b6ff", "createdAt": "2024-07-11T13:48:15.324Z", "updatedAt": "2024-07-11T13:48:15.324Z", "code": "10", "title": "MTN D-MFIN-5-Combo-87 for Xtratalk 10000 Monthly Bundle", "price": "10000", "validity": "Xtratalk 10000 Monthly Bundle"},
+{"id": "cf04e5a4-d7fa-4afe-9ed4-3b4b39930ab1", "createdAt": "2024-07-11T13:48:15.739Z", "updatedAt": "2024-07-11T13:48:15.739Z", "code": "11", "title": "MTN D-MFIN-5-Combo-86 for Xtratalk 5000 Monthly Bundle", "price": "5000", "validity": "Xtratalk 5000 Monthly Bundle"},
+{"id": "aaa3e385-8270-4f11-b54d-0696b8d8b927", "createdAt": "2024-07-11T13:48:16.037Z", "updatedAt": "2024-07-11T13:48:16.037Z", "code": "12", "title": "MTN D-MFIN-5-Combo-85 for Xtratalk 2000 Monthly Bundle", "price": "2000", "validity": "Xtratalk 2000 Monthly Bundle"},
+{"id": "625e30d9-292e-4368-8ee9-6075e70c1cbc", "createdAt": "2024-07-11T13:48:16.331Z", "updatedAt": "2024-07-11T13:48:16.331Z", "code": "13", "title": "MTN D-MFIN-5-Combo-84 for Xtratalk 1000 Monthly Bundle", "price": "1000", "validity": "Xtratalk 1000 Monthly Bundle"},
+{"id": "3387fe31-38c7-4359-a943-b3b31e4aeff3", "createdAt": "2024-07-11T13:48:16.622Z", "updatedAt": "2024-07-11T13:48:16.622Z", "code": "14", "title": "MTN D-MFIN-5-Combo-83 for Xtratalk 500 Weekly Bundle", "price": "500", "validity": "Xtratalk 500 Weekly Bundle"},
+{"id": "61560c5c-75f0-4a80-ab65-4f803ea3835d", "createdAt": "2024-07-11T13:48:17.039Z", "updatedAt": "2024-07-11T13:48:17.039Z", "code": "15", "title": "MTN D-MFIN-5-Combo-73 for Xtratalk 300 Weekly Bundle\r\nXtratalk 300 Weekly Bundle", "price": "300", "validity": "Xtratalk 300 Weekly Bundle\r\nXtratalk 300 Weekly Bundle"},
+{"id": "4a9aedb1-c9d3-4551-8916-d3bfd2d819df", "createdAt": "2024-07-11T13:48:17.318Z", "updatedAt": "2024-07-11T13:48:17.318Z", "code": "16", "title": "MTN D-MFIN-5-Combo-1588 for Xtradata 300 Weekly Bundle", "price": "300", "validity": "Xtradata 300 Weekly Bundle"},
+{"id": "8f392769-81ae-4005-b60b-4d67401054c8", "createdAt": "2024-07-11T13:48:17.616Z", "updatedAt": "2024-07-11T13:48:17.616Z", "code": "17", "title": "MTN D-MFIN-5-Combo-1587 for Xtratalk 200 3days Bundle\r\nXtratalk 200 3days Bundle", "price": "200", "validity": "Xtratalk 200 3days Bundle\r\nXtratalk 200 3days Bundle"},
+{"id": "b8fa09ea-190c-4f8d-a7e8-3c87a8b8f246", "createdAt": "2024-07-11T13:48:17.904Z", "updatedAt": "2024-07-11T13:48:17.904Z", "code": "18", "title": "MTN D-MFIN-5-7GB-A for 7GB Weekly Bundle", "price": "2000", "validity": "7GB Weekly Bundle"},
+{"id": "4ce34519-4bcb-4d3e-982d-6685a7f6ac51", "createdAt": "2024-07-11T13:48:18.197Z", "updatedAt": "2024-07-11T13:48:18.197Z", "code": "19", "title": "MTN D-MFIN-5-774 for 1TB SME 3-Months Plan", "price": "350000", "validity": "1TB SME 3-Months Plan"},
+{"id": "f353e29c-8d02-4f08-8131-e4da5d31904c", "createdAt": "2024-07-11T13:48:18.485Z", "updatedAt": "2024-07-11T13:48:18.485Z", "code": "20", "title": "MTN D-MFIN-5-773 for 165GB SME 2-Months Plan", "price": "50000", "validity": "165GB SME 2-Months Plan"},
+{"id": "99dfe0ac-b67b-4982-a531-363fb5ab48a9", "createdAt": "2024-07-11T13:48:18.891Z", "updatedAt": "2024-07-11T13:48:18.891Z", "code": "21", "title": "MTN D-MFIN-5-755 for 400GB Yearly Plan", "price": "120000", "validity": "400GB Yearly Plan"},
+{"id": "f17135cf-02a0-4d05-84cc-a673d400e362", "createdAt": "2024-07-11T13:48:19.166Z", "updatedAt": "2024-07-11T13:48:19.166Z", "code": "22", "title": "MTN D-MFIN-5-746 for 120GB Monthly Plan + 80mins.", "price": "22000", "validity": "120GB Monthly Plan + 80mins."},
+{"id": "9b72a77b-b035-47c5-8d1a-fa220383cf1b", "createdAt": "2024-07-11T13:48:19.565Z", "updatedAt": "2024-07-11T13:48:19.565Z", "code": "23", "title": "MTN D-MFIN-5-745 for 10GB+2GB YouTube Night+300MB YouTube Music + 20mins.", "price": "3500", "validity": "10GB+2GB YouTube Night+300MB YouTube Music + 20mins."},
+{"id": "1171a742-ed27-4e5a-97a7-01713785d350", "createdAt": "2024-07-11T13:48:19.974Z", "updatedAt": "2024-07-11T13:48:19.974Z", "code": "24", "title": "MTN D-MFIN-5-744 for 8GB+2GB YouTube Night+200MB YouTube Music + 15mins.", "price": "3000", "validity": "8GB+2GB YouTube Night+200MB YouTube Music + 15mins."},
+{"id": "4bc5adfe-a06b-4170-b64d-7ada62d9c0a7", "createdAt": "2024-07-11T13:48:20.264Z", "updatedAt": "2024-07-11T13:48:20.264Z", "code": "25", "title": "MTN D-MFIN-5-743 for 5GB Weekly Plan", "price": "1500", "validity": "5GB Weekly Plan"},
+{"id": "b1729302-920f-4b0b-ad5e-333d1d6e6d35", "createdAt": "2024-07-11T13:48:20.547Z", "updatedAt": "2024-07-11T13:48:20.547Z", "code": "26", "title": "MTN D-MFIN-5-742 for 1GB Weekly Plan + FREE 1GB for YouTube and 100MB for YouTube Music + 5mins.", "price": "600", "validity": "1GB Weekly Plan + FREE 1GB for YouTube and 100MB for YouTube Music + 5mins."},
+{"id": "8d230d39-4aeb-47f2-86ea-717f44d8e289", "createdAt": "2024-07-11T13:48:20.967Z", "updatedAt": "2024-07-11T13:48:20.967Z", "code": "27", "title": "MTN D-MFIN-5-600 for 2.5GB 2-Day Plan", "price": "600", "validity": "2.5GB 2-Day Plan"},
+{"id": "7a9276ac-71da-49df-a8b1-f*******2780", "createdAt": "2024-07-11T13:48:21.243Z", "updatedAt": "2024-07-11T13:48:21.243Z", "code": "28", "title": "MTN D-MFIN-5-3GB-A for 3GB 2-Days Bundle", "price": "800", "validity": "3GB 2-Days Bundle"},
+{"id": "37ce1462-7317-4e0b-a9ef-1193ea9c825a", "createdAt": "2024-07-11T13:48:21.543Z", "updatedAt": "2024-07-11T13:48:21.543Z", "code": "29", "title": "MTN D-MFIN-5-360GB for 360GB SME 3-Months Plan", "price": "100000", "validity": "360GB SME 3-Months Plan"},
+{"id": "5433abc6-567a-4be7-ad5f-5f498be05452", "createdAt": "2024-07-11T13:48:21.944Z", "updatedAt": "2024-07-11T13:48:21.944Z", "code": "30", "title": "MTN D-MFIN-5-307 for DataPlan 100MB Daily", "price": "100", "validity": "DataPlan 100MB Daily"},
+{"id": "f664412c-7870-499b-a3aa-49849e499291", "createdAt": "2024-07-11T13:48:22.223Z", "updatedAt": "2024-07-11T13:48:22.223Z", "code": "31", "title": "MTN D-MFIN-5-278 for 75GB Monthly Plan + 40mins.", "price": "16000", "validity": "75GB Monthly Plan + 40mins."},
+{"id": "f64b1f18-ac81-49dd-b7dc-0f282a784859", "createdAt": "2024-07-11T13:48:22.613Z", "updatedAt": "2024-07-11T13:48:22.613Z", "code": "32", "title": "MTN D-MFIN-5-276 for 1GB Daily Plan + 3mins.", "price": "350", "validity": "1GB Daily Plan + 3mins."},
+{"id": "07d370de-07e4-4d3b-8e9e-05d451ea406d", "createdAt": "2024-07-11T13:48:22.902Z", "updatedAt": "2024-07-11T13:48:22.902Z", "code": "33", "title": "MTN D-MFIN-5-212 for 25GB+2GB YouTube Night + 25mins.", "price": "6500", "validity": "25GB+2GB YouTube Night + 25mins."},
+{"id": "0aba8f21-b6ba-478f-9e47-9ca764243a8f", "createdAt": "2024-07-11T13:48:23.185Z", "updatedAt": "2024-07-11T13:48:23.185Z", "code": "34", "title": "MTN D-MFIN-5-211 for 3GB+2GB YouTube Night+200MB YouTube Music + 5mins.", "price": "1600", "validity": "3GB+2GB YouTube Night+200MB YouTube Music + 5mins."},
+{"id": "7aae67b5-f243-4425-a99f-19d04e427be5", "createdAt": "2024-07-11T13:48:23.465Z", "updatedAt": "2024-07-11T13:48:23.465Z", "code": "35", "title": "MTN D-MFIN-5-210 for 160GB 2-Month Plan", "price": "30000", "validity": "160GB 2-Month Plan"},
+{"id": "83fd358c-0a05-40db-b0fe-efe63676e161", "createdAt": "2024-07-11T13:48:23.876Z", "updatedAt": "2024-07-11T13:48:23.876Z", "code": "36", "title": "MTN D-MFIN-5-204 for 1-Year Plan", "price": "450000", "validity": "1-Year Plan"},
+{"id": "581859eb-e14c-49b4-8be8-c22d103d157a", "createdAt": "2024-07-11T13:48:24.167Z", "updatedAt": "2024-07-11T13:48:24.167Z", "code": "37", "title": "MTN D-MFIN-5-203 for 2.5TB Yearly Plan", "price": "250000", "validity": "2.5TB Yearly Plan"},
+{"id": "1d4fd70a-12d5-460d-9255-7b39389a4953", "createdAt": "2024-07-11T13:48:24.444Z", "updatedAt": "2024-07-11T13:48:24.444Z", "code": "38", "title": "MTN D-MFIN-5-202 for 1 year Plan", "price": "100000", "validity": "1 year Plan"},
+{"id": "faa71781-8dd9-4430-b53a-1e1601e02d5d", "createdAt": "2024-07-11T13:48:24.851Z", "updatedAt": "2024-07-11T13:48:24.851Z", "code": "39", "title": "MTN D-MFIN-5-201 for 600GB 3-Month Plan", "price": "75000", "validity": "600GB 3-Month Plan"},
+{"id": "e3ef6808-2b0d-4523-8aec-17a950ece231", "createdAt": "2024-07-11T13:48:25.131Z", "updatedAt": "2024-07-11T13:48:25.131Z", "code": "40", "title": "MTN D-MFIN-5-200 for 400GB 3-Month Plan", "price": "50000", "validity": "400GB 3-Month Plan"},
+{"id": "9f95017b-fd9d-4f59-8ab3-e638ef8d2fe5", "createdAt": "2024-07-11T13:48:25.414Z", "updatedAt": "2024-07-11T13:48:25.414Z", "code": "41", "title": "MTN D-MFIN-5-199 for 100GB 2-Month Plan", "price": "20000", "validity": "100GB 2-Month Plan"},
+{"id": "b7163189-c8fb-464e-b80b-cee5f334a176", "createdAt": "2024-07-11T13:48:25.685Z", "updatedAt": "2024-07-11T13:48:25.685Z", "code": "42", "title": "MTN D-MFIN-5-198 for 40GB Monthly Plan + 40mins.", "price": "11000", "validity": "40GB Monthly Plan + 40mins."},
+{"id": "926223d1-f284-470c-a10b-c238510d9747", "createdAt": "2024-07-11T13:48:26.097Z", "updatedAt": "2024-07-11T13:48:26.097Z", "code": "43", "title": "MTN D-MFIN-5-197 for 20GB+2GB YouTube Night+300MB YouTube Music + 25mins.", "price": "5500", "validity": "20GB+2GB YouTube Night+300MB YouTube Music + 25mins."},
+{"id": "1fe248b2-6583-454b-83ec-9360d704402e", "createdAt": "2024-07-11T13:48:26.364Z", "updatedAt": "2024-07-11T13:48:26.364Z", "code": "44", "title": "MTN D-MFIN-5-196 for 12GB+2GB YouTube Night + 25mins.", "price": "4000", "validity": "12GB+2GB YouTube Night + 25mins."},
+{"id": "e193bfdc-e684-4c49-8d25-00a850a39e40", "createdAt": "2024-07-11T13:48:26.655Z", "updatedAt": "2024-07-11T13:48:26.655Z", "code": "45", "title": "MTN D-MFIN-5-195 for 4GB+2GB YouTube Night+200MB YouTube Music + 10mins.", "price": "2000", "validity": "4GB+2GB YouTube Night+200MB YouTube Music + 10mins."},
+{"id": "902fc977-7872-4b8f-b2a1-0b78f7fd23a0", "createdAt": "2024-07-11T13:48:26.934Z", "updatedAt": "2024-07-11T13:48:26.934Z", "code": "46", "title": "MTN D-MFIN-5-192 for Data Plan 200MB 3-Day Plan", "price": "200", "validity": "Data Plan 200MB 3-Day Plan"},
+{"id": "e7b5d942-aebb-4519-924f-2a3104cb7c37", "createdAt": "2024-07-11T13:48:27.352Z", "updatedAt": "2024-07-11T13:48:27.352Z", "code": "47", "title": "MTN D-MFIN-5-15AD for 1.2GB Monthly Plan + FREE 2GB for YouTube and 200MB for YouTube Music + 5mins.", "price": "1000", "validity": "1.2GB Monthly Plan + FREE 2GB for YouTube and 200MB for YouTube Music + 5mins."},
+{"id": "fe82f10a-4d86-4bd1-9193-9c2c85463d5a", "createdAt": "2024-07-11T13:48:27.638Z", "updatedAt": "2024-07-11T13:48:27.638Z", "code": "48", "title": "MTN D-MFIN-5-1596 for 27GB Monthly Plan + 25mins.", "price": "6500", "validity": "27GB Monthly Plan + 25mins."},
+{"id": "61c77afc-729d-4224-8845-57b765934662", "createdAt": "2024-07-11T13:48:27.923Z", "updatedAt": "2024-07-11T13:48:27.923Z", "code": "49", "title": "MTN D-MFIN-5-1595 for 22GB Monthly Plan + 25mins.", "price": "5500", "validity": "22GB Monthly Plan + 25mins."},
+{"id": "e57aaf69-c1ed-4e5a-9b00-58915a43f70e", "createdAt": "2024-07-11T13:48:28.383Z", "updatedAt": "2024-07-11T13:48:28.383Z", "code": "50", "title": "MTN D-MFIN-5-1594 for 13GB Monthly Plan + 25mins.", "price": "4000", "validity": "13GB Monthly Plan + 25mins."},
+{"id": "043abe5a-97d3-4474-9ad6-f63f4e359095", "createdAt": "2024-07-11T13:48:28.790Z", "updatedAt": "2024-07-11T13:48:28.790Z", "code": "51", "title": "MTN D-MFIN-5-1593 for 11GB Monthly Plan + 20mins.", "price": "3500", "validity": "11GB Monthly Plan + 20mins."},
+{"id": "1373a4f8-2b96-4657-80e3-df5e4ed45e6b", "createdAt": "2024-07-11T13:48:29.077Z", "updatedAt": "2024-07-11T13:48:29.077Z", "code": "52", "title": "MTN D-MFIN-5-153 for 1.5GB+2.4GB YouTube Night+3hr-200MB-YouTube Weekly + 5mins.", "price": "1200", "validity": "1.5GB+2.4GB YouTube Night+3hr-200MB-YouTube Weekly + 5mins."},
+{"id": "749c03cb-844d-46b5-8ef0-567436e0b151", "createdAt": "2024-07-11T13:48:29.359Z", "updatedAt": "2024-07-11T13:48:29.359Z", "code": "53", "title": "MTN D-MFIN-5-13500 for 35GB SME Monthly Plan", "price": "13500", "validity": "35GB SME Monthly Plan"}
+],
+  "status": 200,
+  "message": "Provider bundles fetched"
+}
+```
+
+#### POST /billing/data-bundle, MTN code 30
+
+Sent 2026-10-02 09:42:49 UTC, answered in 0.28 s.
+
+```http
+POST /api/dev/billing/data-bundle
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+Content-Type: application/json
+
+{
+  "vtu_network": "MTN",
+  "data_code": "30",
+  "vtu_number": "*******0101"
+}
+```
+
+**Response: HTTP 400**
+
+```http
+HTTP/2 400 
+date: Fri, 02 Oct 2026 09:42:50 GMT
+content-type: application/json; charset=utf-8
+content-length: 130
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: POST, OPTIONS
+etag: W/"82-xAFab0/hc0GtGdqYMcf7lNB4k4c"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "status": 400,
+  "timestamp": "2026-10-02T09:42:50.296Z",
+  "message": [
+    "Unable to find customers"
+  ],
+  "path": "/api/dev/billing/data-bundle"
+}
+```
+
+#### Merchant balance after: unchanged
+
+Sent 2026-10-02 09:42:50 UTC, answered in 0.24 s.
+
+```http
+GET /api/dev/merchant/balance
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+```
+
+**Response: HTTP 200**
+
+```http
+HTTP/2 200 
+date: Fri, 02 Oct 2026 09:42:50 GMT
+content-type: application/json; charset=utf-8
+content-length: 180
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"b4-IxjeQ8xow0/xNoXWICalzGWIIzg"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "data": {
+    "accountName": "Test Account4",
+    "accountNumber": "1102038668",
+    "balance": {
+      "bookedBalance": 49665,
+      "availableBalance": 49665
+    },
+    "tier": "TIER_3"
+  },
+  "status": 200,
+  "message": "successful"
+}
+```
+
+## First run (merchant inactive)
+
+2 Oct 2026, 08:28 to 08:38 UTC, while WAWU's sandbox merchant was `inactive`. Kept as recorded.
+
+### What this tells us
 
 - Bundle lists work. The network name is **case-insensitive** (`MTN`, `mtn`,
   `Airtel` all work). **9mobile is `ETISALAT`**: `9MOBILE` and `9mobile` are
@@ -25,9 +213,9 @@ account numbers.
   a bundle is identified by network plus code.
 - Purchase: Fintava refused it with `403 Merchant is not active` before reading the body, because WAWU's sandbox merchant is `inactive` on Fintava's side (README.md, "The blocker"). Nothing was debited. Tried MTN code `30` (₦100) to a test number.
 
-## Requests and responses
+### Requests and responses
 
-### GET /billing/data-bundles/MTN
+#### GET /billing/data-bundles/MTN
 
 Sent 2026-10-02 08:28:49 UTC, answered in 0.20 s.
 
@@ -121,7 +309,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### GET /billing/data-bundles/AIRTEL
+#### GET /billing/data-bundles/AIRTEL
 
 Sent 2026-10-02 08:29:35 UTC, answered in 0.24 s.
 
@@ -200,7 +388,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### GET /billing/data-bundles/GLO
+#### GET /billing/data-bundles/GLO
 
 Sent 2026-10-02 08:29:35 UTC, answered in 0.20 s.
 
@@ -296,7 +484,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### GET /billing/data-bundles/ETISALAT
+#### GET /billing/data-bundles/ETISALAT
 
 Sent 2026-10-02 08:38:10 UTC, answered in 0.20 s.
 
@@ -351,7 +539,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### GET /billing/data-bundles/9MOBILE
+#### GET /billing/data-bundles/9MOBILE
 
 Sent 2026-10-02 08:29:35 UTC, answered in 0.22 s.
 
@@ -387,7 +575,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Lower case: mtn
+#### Lower case: mtn
 
 Sent 2026-10-02 08:38:09 UTC, answered in 0.46 s.
 
@@ -481,7 +669,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### Mixed case: Airtel
+#### Mixed case: Airtel
 
 Sent 2026-10-02 08:38:09 UTC, answered in 0.46 s.
 
@@ -560,7 +748,7 @@ cf-cache-status: DYNAMIC
 
 </details>
 
-### Lower case: 9mobile
+#### Lower case: 9mobile
 
 Sent 2026-10-02 08:38:10 UTC, answered in 0.23 s.
 
@@ -596,7 +784,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### A guess that is not a provider: T2
+#### A guess that is not a provider: T2
 
 Sent 2026-10-02 08:38:10 UTC, answered in 0.21 s.
 
@@ -632,7 +820,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### POST /billing/data-bundle, ₦100 bundle
+#### POST /billing/data-bundle, ₦100 bundle
 
 Sent 2026-10-02 08:29:57 UTC, answered in 0.20 s.
 

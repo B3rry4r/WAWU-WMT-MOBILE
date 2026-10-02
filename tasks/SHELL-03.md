@@ -31,7 +31,7 @@ Follow `docs/BUILDS.md`. `npx expo install expo-dev-client`; `eas.json` with the
 
 ## Capability checks
 
-- [ ] A preview build installs on the owner's Android phone and reaches the local backend through the tunnel (R-24, R-25; CHECK-1 carries this check).
+- [ ] A preview build installs on the owner's Android phone and reaches the live services, `https://api.wawuafrica.com` and `https://id.wawuafrica.com` (R-24, R-25; CHECK-1 carries this check).
 - [ ] The developer can run `eas build -p android --profile preview` without an Apple or Google login (iOS waits for RELEASE-03).
 - [ ] `eas update --channel preview` reaches an installed preview build without a rebuild.
 

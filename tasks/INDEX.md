@@ -24,10 +24,10 @@ Builder and verifier are always different sessions.
 6. [MONEY-01](MONEY-01.md) Protected route list and regression suite
 7. [CHECK-0](CHECK-0.md) Checkpoint 0: safe to start building · needs SETUP-01 from Developer first
 8. [MONEY-04](MONEY-04.md) Money conventions and the wallet contract
-9. [MONEY-02](MONEY-02.md) The PIN sheet · needs UI-01, UI-02 from Developer first
-10. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet · needs UI-02 from Developer first
-11. [OPS-09](OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
-12. [OPS-08](OPS-08.md) Retire Shop on the backend
+9. [OPS-09](OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
+10. [OPS-08](OPS-08.md) Retire Shop on the backend
+11. [MONEY-02](MONEY-02.md) The PIN sheet · needs UI-01, UI-02 from Developer first
+12. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet · needs UI-02 from Developer first
 13. [MONEY-06](MONEY-06.md) Fintava client
 14. [MONEY-07](MONEY-07.md) Fintava webhooks
 15. [MONEY-09](MONEY-09.md) Transaction PIN

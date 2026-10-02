@@ -1080,9 +1080,10 @@ here is redrawn.
 
 ### S13 · Not live yet
 - **Now:** shown when bill payments are switched off.
-- **Instead:** shown only on a real cause: Fintava refuses bills with
-  `403 Merchant is not active`, or every biller in the category is
-  unavailable. No switch.
+- **Instead:** shown only on a real cause: the biller or Fintava's bills
+  service reports unavailable (a biller listed as unavailable, or a purchase
+  answered "service not currently available", as cable does today). No
+  switch.
 - **Why:** R-20: no feature flags.
 
 ### S2 · Pay a bill

@@ -36,7 +36,7 @@ I32's "You keep 85% of every credit spent in your room" is backed by WALLET-17, 
 
 V10 runs on a real Android phone only (DECISIONS R-24).
 
-Native modules: `expo-image-picker` (I32 picture), `expo-clipboard` (I33 Copy link). They are in `SHARED-CHANGES.md` row 7 (one batch for Developers 2 and 3, one new development build); if row 7 is not applied when this task starts, say so in the report and build everything else.
+Native modules: `expo-image-picker` (I32 picture), `expo-clipboard` (I33 Copy link). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 

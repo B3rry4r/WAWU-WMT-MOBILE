@@ -40,6 +40,8 @@ GET a fee quote, from configuration set per R-10 (Fintava's charge plus WAWU's f
 Card top-up and card order are added by WALLET-25 and WALLET-31 after launch. The rates are the dashboard ones in
 `docs/fintava/fees.md` (final).
 
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
+
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.

@@ -32,8 +32,6 @@ A user buys WAWU Credits from their wallet with the PIN; credits are a count, ne
 
 Credits purchase pays from the wallet (I28); credit lots and the 85/15 split unchanged; the web's Flutterwave purchase keeps working. The web stays on Flutterwave until after launch; V3 checks it still works.
 
-Sandbox checks need Fintava to activate WAWU's sandbox merchant: unblocked when `POST /create/customer` stops answering `403 Merchant is not active` (OPS-02, `docs/fintava/sandbox/README.md`). Build and unit-test meanwhile; report each sandbox check NOT RUN with that reason until then.
-
 ## Capability checks
 
 - [ ] A user buys 120 credits for ₦1,000: their wallet drops by ₦1,023.25 once and their credits go up by 120, shown as a count (R-5).
