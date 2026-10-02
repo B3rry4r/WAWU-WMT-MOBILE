@@ -1,18 +1,68 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
+import { BottomSheet } from '@/components/BottomSheet';
 import { Button, IconButton } from '@/components/Button';
+import { Card, GroupedList } from '@/components/Card';
+import { ConversationRow } from '@/components/ConversationRow';
 import { Credits } from '@/components/Credits';
-import { Icon, type IconName } from '@/components/icon';
+import { FilterChips } from '@/components/FilterChips';
+import { Icon, VerifiedTick, type IconName } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
+import { KeyValueRow, ListRow, ListSection } from '@/components/ListRow';
+import { MediaCard } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
+import { Skeleton, SkeletonRows, LoadingView } from '@/components/Skeleton';
+import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text, type TextVariant } from '@/components/Text';
 import { TextField } from '@/components/TextField';
-import { layout, space, text, useWawu } from '@/theme';
+import { TransactionRow } from '@/components/TransactionRow';
+import { layout, radius, space, text, useWawu } from '@/theme';
 
 const textVariants = Object.keys(text) as TextVariant[];
 const icons: IconName[] = [
   'ChevronLeft', 'ChevronRight', 'ArrowUpRight', 'Plus', 'Check', 'X', 'Search', 'Eye', 'EyeOff', 'Lock', 'Copy', 'Edit', 'Delete', 'CircleAlert',
+  'LockOpen', 'Smartphone', 'Zap', 'ArrowDownLeft', 'Clock', 'HandCoins', 'FileDown', 'Settings2', 'SquarePen', 'CircleCheck', 'WifiOff',
+  'RotateCw', 'SearchX',
 ];
+
+const transactionFilters = [
+  { value: 'all', label: 'All' },
+  { value: 'in', label: 'Money in' },
+  { value: 'out', label: 'Money out' },
+  { value: 'bills', label: 'Bills' },
+  { value: 'content', label: 'Content' },
+] as const;
+const inboxFilters = [
+  { value: 'all', label: 'All' },
+  { value: 'dm', label: 'Paid DMs · 1' },
+  { value: 'communities', label: 'Communities' },
+  { value: 'money', label: 'Money' },
+] as const;
+const statePicks = [
+  { value: 'content', label: 'Content' },
+  { value: 'loading', label: 'Loading' },
+  { value: 'empty', label: 'Empty' },
+  { value: 'error', label: 'Error' },
+] as const;
+const viewPicks = [
+  { value: 'today', label: 'Today' },
+  { value: 'following', label: 'Following' },
+  { value: 'foryou', label: 'For you' },
+] as const;
+
+/** The Explore loading view draws its hero 24 round; the theme has 22 (card) and 26 (money). Source: design/_gen/explore.js line 56 (`loading`). */
+const loadingHeroRadius = 24;
+const loadingHeroHeight = 196;
+const loadingTile = 80;
+const loadingBar = 20;
+const loadingBarRadius = 8;
+const stateBoxHeight = 260;
+/** Space between the loading cards (design/_gen/explore.js, `loading`: gap 10). */
+const cardGap = 10;
+const loadingCard = { width: 150, height: 200 } as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -33,6 +83,12 @@ export function Showcase() {
   const mark = (name: string) => () => setLast(name);
   const [saving, setSaving] = useState(false);
   const [email, setEmail] = useState('');
+  const [txFilter, setTxFilter] = useState<(typeof transactionFilters)[number]['value']>('all');
+  const [inboxFilter, setInboxFilter] = useState<(typeof inboxFilters)[number]['value']>('all');
+  const [view, setView] = useState<(typeof viewPicks)[number]['value']>('foryou');
+  const [listState, setListState] = useState<(typeof statePicks)[number]['value']>('content');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [retries, setRetries] = useState(0);
 
   return (
     <ScrollView
@@ -119,6 +175,135 @@ export function Showcase() {
         <Credits count={1} />
       </Section>
 
+      <Section title="Segmented tabs">
+        <SegmentedTabs label="Feed" items={viewPicks} value={view} onChange={setView} testID="showcase-tabs" />
+        <Text variant="caption">Selected: {view}</Text>
+      </Section>
+
+      <Section title="Filter chips">
+        <View style={styles.bleed}>
+          <FilterChips label="Filter transactions" items={transactionFilters} value={txFilter} onChange={setTxFilter} testID="showcase-chips" />
+          <FilterChips label="Filter inbox" items={inboxFilters} value={inboxFilter} onChange={setInboxFilter} />
+        </View>
+      </Section>
+
+      <Section title="Grouped list cards">
+        <GroupedList>
+          <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
+          <KeyValueRow label="Fintava's charge" value={<Money minorUnits={2325} size={14.5} />} />
+          <KeyValueRow label="Total" value={<Money minorUnits={252325} size={14.5} />} />
+          <KeyValueRow label="Yours" value="Forever, in My purchases" />
+        </GroupedList>
+        <GroupedList>
+          <ListRow lead={<IconTile icon="Lock" />} title="Transaction PIN" subtitle="Change or reset it" onPress={mark('PIN')} />
+          <ListRow lead={<Avatar name="Chidi Eze" hue="sky" size={44} decorative />} title="Chidi Eze" titleAccessory={<VerifiedTick kind="pro" size={14} />} subtitle="Video creator" onPress={mark('Chidi')} />
+          <ListRow lead={<IconTile icon="Clock" tone="warn" />} title="Not pressable" subtitle="No chevron, no press" />
+        </GroupedList>
+        <Card padded>
+          <View style={styles.summary}>
+            <View style={styles.summaryHalf}>
+              <Text variant="caption">In · September</Text>
+              <Money minorUnits={21240000} size={18} tone="positive" />
+            </View>
+            <View style={styles.summaryHalf}>
+              <Text variant="caption">Out · September</Text>
+              <Money minorUnits={9682050} size={18} />
+            </View>
+          </View>
+        </Card>
+      </Section>
+
+      <Section title="Transaction rows">
+        <ListSection title="Today">
+          <TransactionRow title="Amaka Nwosu" subtitle="Tip on your video" amountMinor={200000} time="10:24" lead={<Avatar name="Amaka Nwosu" hue="green" decorative />} onPress={mark('Amaka')} />
+          <TransactionRow title="Unlock · Lighting night shoots" subtitle="3 buyers" amountMinor={750000} time="09:02" icon="LockOpen" />
+          <TransactionRow title="MTN airtime" subtitle="0803 ••• 4412" amountMinor={-200000} time="08:15" icon="Smartphone" />
+        </ListSection>
+        <ListSection title="Yesterday">
+          <TransactionRow title="Ikeja Electric" subtitle="Prepaid · 45.2 kWh" amountMinor={-1060000} time="18:40" icon="Zap" />
+          <TransactionRow title="Chidinma Okoro" subtitle="Transfer · GTBank" amountMinor={-2506500} time="11:02" icon="ArrowUpRight" />
+        </ListSection>
+      </Section>
+
+      <Section title="Conversation rows">
+        <View>
+          <ConversationRow name="Amaka Nwosu" hue="green" preview="Sent you ₦5,000" time="10:24" kind="money" unread={2} onPress={mark('Amaka chat')} />
+          <ConversationRow name="Chidi Eze" hue="sky" tick="pro" preview="Paid DM · 18h left to reply" time="09:51" kind="dm" unread={1} />
+          <ConversationRow name="Lagos Freelancers" hue="lilac" preview="Tolu: who’s at the meetup Sat?" time="09:12" />
+          <ConversationRow name="Kemi Okafor" hue="pink" preview="Requested ₦12,000 · Logo edits" time="Yest." kind="req" />
+          <ConversationRow name="Dami Ade" hue="lemon" preview="Hundreds of messages" time="Mon" unread={140} />
+          <ConversationRow name="Femi Bankole" hue="coral" preview="You: Thanks, got it" time="Yest." />
+        </View>
+      </Section>
+
+      <Section title="Media cards">
+        <MediaCard title="How I built a ₦2M a month agency" subtitle="Chidi Eze" subtitleAccessory={<VerifiedTick kind="pro" size={13} />} />
+        <View style={styles.row}>
+          <MediaCard layout="stacked" title="Lighting night shoots" subtitle="Video · 18 min" />
+          <MediaCard layout="stacked" title="Pricing a wedding film" subtitle="Course" />
+        </View>
+      </Section>
+
+      <Section title="Bottom sheet">
+        <Button label="Open the unlock sheet" variant="secondary" onPress={() => setSheetOpen(true)} full />
+        <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} label="Unlock" testID="showcase-sheet">
+          <MediaCard title="How I built a ₦2M a month agency" subtitle="Chidi Eze" subtitleAccessory={<VerifiedTick kind="pro" size={13} />} />
+          <GroupedList>
+            <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
+            <KeyValueRow label="Yours" value="Forever, in My purchases" />
+            <KeyValueRow label="Fintava's charge" value={<Money minorUnits={2325} size={14.5} />} />
+            <KeyValueRow label="Total" value={<Money minorUnits={252325} size={14.5} />} />
+          </GroupedList>
+          <Button label="Unlock · ₦2,523.25" onPress={() => setSheetOpen(false)} full />
+        </BottomSheet>
+      </Section>
+
+      <Section title="Loading, empty and error">
+        <SegmentedTabs label="State" items={statePicks} value={listState} onChange={setListState} testID="showcase-state" />
+        <View testID="showcase-state-view" style={styles.stateBox}>
+          {listState === 'content' ? (
+            <ListSection title="Today">
+              <TransactionRow title="MTN airtime" subtitle="0803 ••• 4412" amountMinor={-200000} time="08:15" icon="Smartphone" />
+            </ListSection>
+          ) : listState === 'loading' ? (
+            <SkeletonRows />
+          ) : listState === 'empty' ? (
+            <EmptyState
+              title="No messages yet"
+              message="Message a creator from their profile, or join a community to talk with people like you."
+              action={{ label: 'Browse communities', onPress: mark('Browse communities') }}
+            />
+          ) : (
+            <ErrorState
+              title="Search isn't working right now"
+              message="Check your connection and try again."
+              onRetry={() => {
+                setRetries((n) => n + 1);
+                setListState('loading');
+              }}
+            />
+          )}
+        </View>
+        <Text variant="caption">Tried again {retries} times</Text>
+        <Text variant="label">Explore, while it loads</Text>
+        <LoadingView label="Loading Explore" testID="showcase-explore-loading">
+          <View style={styles.loadingPage}>
+            <Skeleton height={loadingHeroHeight} radius={loadingHeroRadius} />
+            <View style={styles.skeletonTiles}>
+              {[0, 1, 2, 3].map((i) => (
+                <Skeleton key={i} width={loadingTile} height={loadingTile} />
+              ))}
+            </View>
+            <Skeleton width="50%" height={loadingBar} radius={loadingBarRadius} />
+            <View style={styles.skeletonCards}>
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} width={loadingCard.width} height={loadingCard.height} radius={radius.media} />
+              ))}
+            </View>
+          </View>
+        </LoadingView>
+      </Section>
+
       <Section title="Icons">
         <View style={styles.row}>
           {icons.map((name) => (
@@ -141,4 +326,11 @@ const styles = StyleSheet.create({
   },
   section: { gap: space.md },
   row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.md },
+  bleed: { marginHorizontal: -layout.gutter, gap: space.md },
+  summary: { flexDirection: 'row', gap: space.lg },
+  summaryHalf: { flex: 1, gap: space.xs },
+  stateBox: { minHeight: stateBoxHeight },
+  skeletonTiles: { flexDirection: 'row', gap: space.sm },
+  skeletonCards: { flexDirection: 'row', gap: cardGap, overflow: 'hidden', marginRight: -layout.gutter },
+  loadingPage: { gap: space.xl },
 });

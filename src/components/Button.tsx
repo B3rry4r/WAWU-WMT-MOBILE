@@ -1,27 +1,12 @@
-import { useState } from 'react';
-import type { NativeSyntheticEvent, TargetedEvent } from 'react-native';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as NativeText, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text as NativeText, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { font, layout, radius, space, useWawu, type ColorToken } from '@/theme';
+import { font, layout, radius, useWawu, type ColorToken } from '@/theme';
 
+import { useFocusRing } from './focusRing';
 import { Icon, type IconName } from './icon';
 
 /** design/_ds/wawu/tokens/elevation.css `--press-scale`. */
 export const pressScale = 0.98;
-
-/** The keyboard focus outline. */
-const ringWidth = 1.5;
-
-/**
- * On the web a click also focuses the element, but the ring is for the keyboard:
- * only `:focus-visible` shows it. Native focus only comes from a keyboard or
- * switch device, so it always shows.
- */
-function showsFocusRing(e: NativeSyntheticEvent<TargetedEvent>): boolean {
-  if (Platform.OS !== 'web') return true;
-  const target = e.target as unknown as { matches?: (selector: string) => boolean } | undefined;
-  return typeof target?.matches === 'function' ? target.matches(':focus-visible') : true;
-}
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'white' | 'glass';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -39,11 +24,15 @@ const looks: Record<ButtonVariant, Look> = {
 /** `letter-spacing: -0.01em` on the design's button label. */
 const labelTracking = 0.01;
 
+/** design/_gen/kit.js line 15 (`Btn`, `S`): [height, side padding, label size, icon size] per size (DECISIONS R-22). */
 const sizes = {
-  sm: { height: 34, padding: space.lg, fontSize: 13.5, icon: 15 },
-  md: { height: 44, padding: space.xl, fontSize: 14.5, icon: 17 },
-  lg: { height: 54, padding: space.s2xl, fontSize: 16, icon: 19 },
+  sm: { height: 34, padX: 14, fontSize: 13.5, icon: 15 },
+  md: { height: 44, padX: 18, fontSize: 14.5, icon: 17 },
+  lg: { height: 54, padX: 24, fontSize: 16, icon: 19 },
 } as const;
+
+/** The kit's `gap:7px` between a button's icon and its label. */
+const iconGap = 7;
 
 export type ButtonProps = {
   label: string;
@@ -76,7 +65,7 @@ export function Button({
   testID,
 }: ButtonProps) {
   const { colors } = useWawu();
-  const [focused, setFocused] = useState(false);
+  const ring = useFocusRing();
   const look = looks[variant];
   const dims = sizes[size];
   const inactive = Boolean(disabled);
@@ -91,19 +80,19 @@ export function Button({
       accessibilityState={{ disabled: blocked, busy: Boolean(loading) }}
       disabled={blocked}
       onPress={onPress}
-      onFocus={(e) => setFocused(showsFocusRing(e))}
-      onBlur={() => setFocused(false)}
+      {...ring.handlers}
       hitSlop={Math.max(0, (layout.tapMin - dims.height) / 2)}
       style={({ pressed }) => [
         styles.base,
         {
           height: dims.height,
-          paddingHorizontal: dims.padding,
+          paddingHorizontal: dims.padX,
           backgroundColor: inactive ? colors.surfaceSunken : pressed ? colors[look.pressed] : look.bg ? colors[look.bg] : 'transparent',
-          borderColor: focused ? colors.accentFg : look.ring ? colors[look.ring] : 'transparent',
-          borderWidth: focused ? ringWidth : look.ring ? StyleSheet.hairlineWidth : 0,
+          borderColor: look.ring ? colors[look.ring] : 'transparent',
+          borderWidth: look.ring ? StyleSheet.hairlineWidth : 0,
           transform: [{ scale: pressed && !blocked ? pressScale : 1 }],
         },
+        ring.style,
         full && styles.full,
         style,
       ]}
@@ -138,6 +127,7 @@ export type IconButtonProps = {
 /** Round icon-only control: back, scan, settings. */
 export function IconButton({ icon, label, onPress, tone = 'card', size = 42, disabled, testID }: IconButtonProps) {
   const { colors } = useWawu();
+  const ring = useFocusRing();
   const glass = tone === 'glass';
   const fg = colors[disabled ? 'textDisabled' : glass ? 'textOnAccent' : 'textPrimary'];
   return (
@@ -148,6 +138,7 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
       accessibilityState={{ disabled: Boolean(disabled) }}
       disabled={disabled}
       onPress={onPress}
+      {...ring.handlers}
       hitSlop={Math.max(0, (layout.tapMin - size) / 2)}
       style={({ pressed }) => [
         styles.round,
@@ -159,6 +150,7 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
           borderWidth: glass ? 0 : StyleSheet.hairlineWidth,
           transform: [{ scale: pressed && !disabled ? pressScale : 1 }],
         },
+        ring.style,
       ]}
     >
       <Icon name={icon} size={Math.round(size * 0.46)} color={fg} strokeWidth={1.8} />
@@ -169,6 +161,6 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
 const styles = StyleSheet.create({
   base: { borderRadius: radius.button, alignItems: 'center', justifyContent: 'center' },
   full: { alignSelf: 'stretch' },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: iconGap },
   round: { borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
 });

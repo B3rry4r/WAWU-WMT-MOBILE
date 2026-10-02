@@ -1,0 +1,40 @@
+import { StyleSheet, View } from 'react-native';
+
+import { useWawu, type ColorToken } from '@/theme';
+
+import { Icon, type IconName } from './icon';
+
+export type IconTileTone = 'neutral' | 'in' | 'accent' | 'danger' | 'warn';
+
+const tones: Record<IconTileTone, { bg: ColorToken; fg: ColorToken }> = {
+  neutral: { bg: 'surfaceSunken', fg: 'textPrimary' },
+  in: { bg: 'positiveTint', fg: 'positive' },
+  accent: { bg: 'accentTint', fg: 'accentFg' },
+  danger: { bg: 'dangerTint', fg: 'danger' },
+  warn: { bg: 'warningTint', fg: 'warning' },
+};
+
+/** The glyph is 45% of the circle (design/_gen/kit.js `txIcon`). */
+const glyphScale = 0.45;
+const glyphStroke = 2;
+
+export type IconTileProps = { icon: IconName; tone?: IconTileTone; size?: number };
+
+/** A round tinted icon: the lead of a transaction row, the top of an empty view. Decorative, so a row's own words speak for it. */
+export function IconTile({ icon, tone = 'neutral', size = 44 }: IconTileProps) {
+  const { colors } = useWawu();
+  const look = tones[tone];
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors[look.bg] }]}
+    >
+      <Icon name={icon} size={Math.round(size * glyphScale)} color={colors[look.fg]} strokeWidth={glyphStroke} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  circle: { alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+});
