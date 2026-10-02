@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { Text } from '@/components/Text';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { approvalLine, lockedLine, msUntil, wrongPinLine } from './format';
@@ -203,7 +204,7 @@ export function PinEntry({
     status = (
       <View style={styles.alert} accessible accessibilityRole="alert" accessibilityLiveRegion="polite">
         <Icon name={ALERT_ICON.name} size={ALERT_ICON.size} strokeWidth={ALERT_ICON.stroke} color={colors.danger} />
-        <Text style={[styles.alertText, { color: colors.danger }]}>{phase.message.text}</Text>
+        <NativeText style={[styles.alertText, { color: colors.danger }]}>{phase.message.text}</NativeText>
       </View>
     );
   }
@@ -211,10 +212,10 @@ export function PinEntry({
   return (
     <View style={styles.body} accessibilityState={{ busy: submitting }}>
       <View style={styles.heading}>
-        <Text accessibilityRole="header" style={[styles.title, { color: colors.textPrimary }]}>
+        <Text variant="sheetTitleSm" style={styles.center}>
           {locked ? 'PIN locked' : 'Enter your PIN'}
         </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Text variant="muted" style={styles.center}>
           {locked ? lockedLine(msUntil(phase.until, now)) : approvalLine(approval)}
         </Text>
       </View>
@@ -259,33 +260,19 @@ export function PinEntry({
           hitSlop={space.md}
           style={styles.forgot}
         >
-          <Text style={[styles.forgotText, { color: submitting ? colors.textDisabled : colors.accentFg }]}>
+          <NativeText style={[styles.forgotText, { color: submitting ? colors.textDisabled : colors.accentFg }]}>
             Forgot PIN?
-          </Text>
+          </NativeText>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const lineHeight = (size: number, leading: number) => Math.round(size * leading);
-
 const styles = StyleSheet.create({
   body: { gap: SHEET.stack },
   heading: { gap: HEADING.stack },
-  title: {
-    ...font(700),
-    fontSize: HEADING.titleSize,
-    letterSpacing: HEADING.titleTracking * HEADING.titleSize,
-    lineHeight: lineHeight(HEADING.titleSize, HEADING.titleLeading),
-    textAlign: 'center',
-  },
-  subtitle: {
-    ...font(400),
-    fontSize: HEADING.subtitleSize,
-    lineHeight: lineHeight(HEADING.subtitleSize, HEADING.subtitleLeading),
-    textAlign: 'center',
-  },
+  center: { textAlign: 'center' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: DOTS.apart, paddingVertical: DOTS.padY },
   dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
   status: { alignItems: 'center' },

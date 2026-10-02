@@ -21,13 +21,11 @@ export const SHEET = {
   edge: 1,
 } as const;
 
-/** kit.js `h1(s, { size: 21 })` and `muted()`, in the column W11 draws with gap 6. */
+/**
+ * The title and muted line come from the shared `Text` (`sheetTitleSm`,
+ * `muted`); W11 stacks them in a column with gap 6.
+ */
 export const HEADING = {
-  titleSize: 21,
-  titleTracking: -0.03,
-  titleLeading: 1.15,
-  subtitleSize: 13.5,
-  subtitleLeading: 1.45,
   stack: 6,
 } as const;
 
