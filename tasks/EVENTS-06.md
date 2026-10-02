@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, EVENTS-01, EVENTS-03, EVENTS-07, UI-02]
-decisions: [R-6, R-8, R-10]
+decisions: [R-6, R-8, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [E3, E4, E5, E10]
 ---

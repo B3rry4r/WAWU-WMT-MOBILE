@@ -1,5 +1,12 @@
 # Developer 3
 
+> **2 Oct 2026 · R-37: the app is now "Who Made This", with a new logo.** WAWU is
+> out of the app's name and logo. Draw the logo only with `<BrandMark>`
+> (`src/components/BrandMark.tsx`), never the canvas's `wawu-icon`/`wawu-logo`
+> images. Copy that names the app says "Who Made This"; WAWU Credits, WAWU ID,
+> "WAWU's fee" and the other names listed in DECISIONS.md R-37 stay. Your tasks
+> that carry R-37: EVENTS-01, EVENTS-03 (header mark), EVENTS-06, EVENTS-08, LEGAL-02, LEGAL-06, PROS-01, SCHOOLS-06, SCHOOLS-08. Read R-37 before you build any of them.
+
 You own these features end to end: the screens AND the backend behind them.
 If a screen needs something the backend doesn't serve, fixing the backend is
 part of your task.

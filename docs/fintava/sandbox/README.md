@@ -70,6 +70,7 @@ before validation, because the merchant record said `status: "inactive"`.
 | `23-webhooks.md` | webhooks | none | none | NOT RUN: no public URL and no dashboard access |
 | `24-auth-and-errors.md` | no key, error shapes | 401, 400, 404 | 401 | new codes: 201, 403 (NIN blacklisted), 404, 500 ECONNRESET |
 | `25-compliance-charges.md` | charges | 200 | (table) | BVN ₦5, phone ₦5, selfie ₦10, create ₦0, transfers ₦0 |
+| `26-money06-client.md` | the MONEY-06 client, end to end | | 200, 400, 404 | every read call and ₦10 wallet-to-wallet both ways; lookups answer `200 {}` for SUCCESS records too; a timed-out send landed and reconciled as settled |
 
 ## Money moved in the re-run
 
