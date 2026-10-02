@@ -18,7 +18,7 @@ export class ApiError extends Error {
   readonly kind: ApiErrorKind;
   /** HTTP status, or 0 when the request never got an answer. */
   readonly status: number;
-  /** Machine code from the server (for example EMAIL_NOT_VERIFIED), when sent. */
+  /** Machine code from the server (for example EMAIL_NOT_VERIFIED, or a money route's `reason.code` such as provider_unreachable), when sent. */
   readonly code?: string;
 
   constructor(kind: ApiErrorKind, status: number, message: string, code?: string) {
@@ -50,8 +50,21 @@ function kindOf(status: number): ApiErrorKind {
 }
 
 /**
+ * A money route's refusal carries its code in `reason.code` (wawu-backend
+ * docs/contract/CONVENTIONS.md section 3: `wallet_not_open`,
+ * `provider_unreachable`, `pin_incorrect` and the rest).
+ */
+function reasonCode(reason: unknown): string | undefined {
+  if (typeof reason !== 'object' || reason === null) return undefined;
+  const code = (reason as Record<string, unknown>).code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+/**
  * Both backends answer errors as `{ statusCode, message, code? }`; the Hub adds
  * `data: null`, and validation failures send `message` as a list of sentences.
+ * Money routes put their code in `reason.code` instead, which becomes `code`
+ * here, so every screen branches on the one field.
  * `status` is the HTTP status of the response (it wins over `statusCode`, which
  * WAWU ID sets to 404 on a 401 for a missing account).
  */
@@ -63,7 +76,7 @@ export function toApiError(status: number, body: unknown): ApiError {
     : typeof raw === 'string'
       ? raw
       : '';
-  const code = typeof record.code === 'string' ? record.code : undefined;
+  const code = typeof record.code === 'string' ? record.code : reasonCode(record.reason);
   return new ApiError(kindOf(status), status, message || 'Something went wrong. Try again.', code);
 }
 
