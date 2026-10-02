@@ -3,7 +3,7 @@ id: EVENTS-06
 title: Buy a ticket: pay, PIN, ticket, still confirming
 owner: DEV3
 area: EVENTS
-order: 104
+order: 105
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

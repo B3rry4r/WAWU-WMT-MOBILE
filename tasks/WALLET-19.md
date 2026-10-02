@@ -3,7 +3,7 @@ id: WALLET-19
 title: Account limits screens (A17 to A20)
 owner: YOU
 area: WALLET
-order: 185
+order: 186
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen

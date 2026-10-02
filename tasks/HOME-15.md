@@ -3,7 +3,7 @@ id: HOME-15
 title: Pay for unlocks from the wallet (backend)
 owner: DEV
 area: HOME
-order: 118
+order: 119
 priority: launch
 repo: wawu-backend
 type: money-path

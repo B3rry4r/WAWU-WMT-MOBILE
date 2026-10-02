@@ -3,7 +3,7 @@ id: SUPPORT-01
 title: Support chat that opens with the payment or piece it is about
 owner: DEV2
 area: SUPPORT
-order: 169
+order: 170
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: flow

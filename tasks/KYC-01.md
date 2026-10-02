@@ -3,7 +3,7 @@ id: KYC-01
 title: BVN check when someone opens a wallet
 owner: YOU
 area: KYC
-order: 72
+order: 73
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

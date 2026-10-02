@@ -5839,6 +5839,11 @@ export interface components {
             triesLeft: number;
             lockedUntil: string | null;
         };
+        FintavaWebhookAck: {
+            /** @enum {string} */
+            outcome: "duplicate" | "recorded";
+            event: string | null;
+        };
         FeeBreakdown: {
             providerFeeKobo: number;
             wawuFeeKobo: number;

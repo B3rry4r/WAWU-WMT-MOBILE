@@ -3,7 +3,7 @@ id: WALLET-16
 title: Earnings land in the wallet automatically
 owner: YOU
 area: WALLET
-order: 95
+order: 96
 priority: launch
 repo: wawu-backend
 type: money-path

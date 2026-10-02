@@ -3,7 +3,7 @@ id: HOME-11
 title: TGIF on Today, saved to the account
 owner: DEV
 area: HOME
-order: 88
+order: 89
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

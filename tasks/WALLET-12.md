@@ -3,7 +3,7 @@ id: WALLET-12
 title: Share a receipt as image or PDF
 owner: YOU
 area: WALLET
-order: 180
+order: 181
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen

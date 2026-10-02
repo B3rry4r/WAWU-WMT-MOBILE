@@ -3,7 +3,7 @@ id: INBOX-05
 title: Communities: list, room, sending
 owner: DEV2
 area: INBOX
-order: 59
+order: 60
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

@@ -3,7 +3,7 @@ id: MONEY-12
 title: Open a Fintava account when someone opens a wallet
 owner: YOU
 area: MONEY
-order: 77
+order: 78
 priority: launch
 repo: wawu-backend
 type: money-path
