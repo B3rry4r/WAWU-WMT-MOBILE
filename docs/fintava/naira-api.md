@@ -164,7 +164,9 @@ Store customerId, walletId and accountNumber when an account opens.
   base64 image and the BVN. The success response is still unseen. A failed
   match came back `400 ["Request failed with status code 404"]` after 5 to
   6 s, and **was still charged ₦10** (`sandbox/05-bvn-selfie.md`). Every
-  retry costs money, so the app checks the photo before sending it.
+  retry costs money, so the app checks the photo before sending it. The
+  backend's route (KYC-02, `sandbox/29-kyc02-selfie.md`) allows 3 a day per
+  person and keeps only the outcome, the time and any confidence score.
 - **Check a phone number:** `GET /compliance/verify/phone-number?phone_number=`
   (local format). ₦5 per call, charged even for "Phone Number not Found"
   (`sandbox/06-phone-check.md`).
