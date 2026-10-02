@@ -7,7 +7,7 @@ order: 5
 priority: launch
 repo: design
 type: ops
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: []
@@ -157,6 +157,36 @@ One wording item for the owner:
 - **unclear:** E25 · Call it off tells the organiser "This refunds real money. All 64 buyers get their money back." That avoids rule 6's banned phrases. It still implies each buyer gets back everything they paid (₦7,515.75 with Fintava's charge), which is the same unconfirmed question rule 6 and E11 leave as a slot.
 
 **Round-3 verdict:** R3-1 and R3-2 are open, so status stays `building`. Both are one-line wording fixes in the brief, not missing coverage. This is past the two fix rounds `docs/WORKFLOW.md` allows (step 5 and section 9), so the owner decides whether to accept them as known or have the builder fix them before the brief is sent. Checks 2 and 3 stay NOT RUN until the designer's export arrives.
+
+### Round 4
+
+Verifier, 2 Oct 2026, same session, redone from the start after a container restart, against fe41d62. No partial Round 4 was in the file. The brief has 112 entries (114 `###` headings, counting "Three defaults" and the example table). `git diff main...wmt/OPS-04` still touches only `docs/designer/BRIEF.md` and `tasks/OPS-04.md`, and `design/` is unchanged. The refund default was read from mobile `main` (`git -C /home/user/wawu-wmt-mobile show main:DECISIONS.md`, commit 22d95dc, R-10: "A refund returns the price; Fintava's charge isn't returned").
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates (`npm run check`, re-run) | passed | Exit 0. tsc and lint clean, jest 4 of 4, gates 9 run / **5 files scanned** / 0 findings, baseline 0, tasks 187 / 280 artboards. `node_modules` was symlinked in for the run and removed afterwards; it is not committed. |
+| Capability check 1 | passed | R3-1 and R3-2 are closed, and the refund wording is consistent everywhere it appears. No open defects. |
+| Capability checks 2 and 3 | NOT RUN | The designer's new export doesn't exist yet. Run both when it arrives (replace `design/`, `render_design.py --inventory`, record changed hashes). |
+| Accuracy, round-4 entries | passed | Rendered W1 W26 W27 S26 E11 E25 into `build/design_shots/` and opened the light renders. Each "Now" matches its picture: W1 and W26 debit rows "−₦25,000.00" (Chidinma, GTBank), "−₦10,500.00" (Ikeja Electric), "−₦2,000.00" (MTN airtime) and "Out · September ₦96,820.50"; W27 a tip received, +₦2,000.00; S26 "Fee ₦35,000", "Continue · ₦35,000"; E11 "₦7,500 is back in your Naira wallet."; E25 "All 64 buyers get their money back." |
+| Figures | passed | W1 and W26: ₦25,000 + ₦40 + ₦25 = ₦25,065.00; ₦10,500 + ₦100 = ₦10,600.00; airtime ₦2,000 + ₦0 (fees.md: airtime ₦0). W27: ₦25,065.00. S26: ₦35,000 + ₦15.75 = ₦35,015.75. E11 and E25 use the canvas's ticket price ₦7,500. Every figure traces to fees.md, R-10 or the canvas. |
+| Em-dashes, `design/` | passed | 0 U+2014; `design/` unchanged. |
+
+**Round-3 findings:**
+- **R3-1 closed.** The W1 entry now covers the recent-transaction debit rows. New W26 entry: debits show the total, and Out is the sum of those totals. New W27 entry: a debit's detail shows the amount, Fintava's charge, WAWU's fee and the total.
+- **R3-2 closed.** S26 now puts the breakdown on S26 itself, and "Continue · ₦35,015.75" leads to the PIN. That matches rule 5 (the canvas's own flow is "Pay · PIN").
+- **E25 unclear closed** by the refund default: "All 64 buyers get the ticket price back."
+
+**Refund rule consistency.** The brief has three refund cases, and they don't conflict:
+- **Refunds of a purchase.** The refund default says the price comes back. It covers I3, I6, I10, the "Paid DMs" note, E11 and E25. Each names the price ("your ₦1,500 comes back", "her ₦1,500 back", "the price of the message comes back", "the ticket price back"), and none says "in full" or "everything you paid".
+- **Failed sends and bills.** W14 and S12 stay under rule 6: the returned amount is a slot, because it isn't confirmed whether Fintava returns its charge on a reversal. The default bullet says this carve-out in so many words.
+- **Canvas lines not in the brief.** These already name only the price: I4 ("Your ₦1,500 ... comes back to your wallet"), I7 ("you got ₦200 back"), H10 ("your ₦1,500 comes back"), M31 ("her ₦1,500 is refunded"), I20 ("Refunded ₦200") and P2 ("you're refunded automatically").
+
+**Housekeeping (not a designer defect):**
+- **unclear:** this branch's DECISIONS.md predates 22d95dc, so it doesn't carry the refund default. The brief's "refund default" also doesn't name R-10, unlike the other two defaults. Merge `main` into the branch again before the PR so the evidence pack's DECISIONS.md backs E11 and E25.
+
+No open defects.
+
+**Round-4 verdict:** capability check 1 passes, V1 passes, and checks 2 and 3 stay NOT RUN until the designer's export arrives. Status set to `review`. The owner now reviews the brief, sends it to the designer, and does checks 2 and 3 when the export comes back.
 
 ## Owner sign-off
 
