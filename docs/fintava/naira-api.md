@@ -294,3 +294,7 @@ app (R-20). What the sandbox showed on each, with evidence, is in
 14. Is the 5-minute cache on `/txn/merchant` deliberate, and does `/txn` do
     the same?
 15. Ikeja has two prepaid codes: which one?
+16. Does a wallet to wallet payment from a customer into WAWU's merchant
+    wallet (a purchase on WAWU) count toward the customer's tier daily limit,
+    the same as a send to another customer? WAWU counts it (Lead ruling, 2 Oct
+    2026, MONEY-04) until you say otherwise.
