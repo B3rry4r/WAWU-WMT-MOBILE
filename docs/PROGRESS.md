@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 61 | 49 | 33 | 32 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 15 | 9 | 1 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 
@@ -56,6 +56,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · OPS-11 · Verified: 2 defects (backend 70db9f0, mobile 2c20e01; main moved to backend d27ad37 and mobile bfdd584 during verification). The trust rule holds through a real nginx (two callers get their own buckets; a forged X-Forwarded-For, through nginx or straight to the port, picks no bucket; every case killed by a mutant), both webhooks take bursts past 20/s and 200/min, every other limit is unchanged, KYC-01's BVN tracker stays correct. Defects: with main merged the branch's own @Throttle list test fails (KYC-01 added one), and the Flutterwave burst test times its cold start and fails under load. Protected 253/253; main's 16 gates; mobile check exits 0. Status building.
 - 2 Oct 2026 · OPS-11 · Rate limits behind nginx built in wawu-backend (`wmt/OPS-11` 70db9f0): the Flutterwave webhook skips every named throttler (30 signed deliveries in a second, 30 x 200; the old bare decorator gives 10 x 429), and `trust proxy` trusts one hop from a loopback peer only (nginx), so each caller has its own 20/s and 200/min and a direct connection's `X-Forwarded-For` is ignored. Port 3001 is closed by ufw per `deploy/provision.sh`; the app still listens on every interface (kept for local Wi-Fi testing). Protected 253/253; the same 16 gates as main. G-20 to verifying. Status verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
 - 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
@@ -70,4 +71,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-06 · Round 2: the verifier's 5 defects fixed (exact Fintava hosts only; only Fintava's own `404 "Transaction not found!"` counts as absent; no resend before the money timeout plus a 10-minute safety window and only when history also lacks the send; a repeated reference is an unknown outcome; the `{}` timing in the docs matches the evidence); key fragments masked in logs. Back to verifying.
 - 2 Oct 2026 · MONEY-06 · Fintava client built in wawu-backend `src/fintava/` beside Flutterwave (no route served): every plan call typed in kobo, our reference on every send, reconcile before any resend, no secret in logs; sandbox run 25 passed, 5 NOT RUN (charged checks, no new customers, payouts blocked by question 17, webhooks are MONEY-07's); new fact: lookups answer `200 {}` for SUCCESS records too. To verifying.
 - 2 Oct 2026 · AUTH-03 merged (Developer 1): phone check at sign-up in WAWU ID (wawu-id PR #3), phone-verified sign-in for new sign-ups only, PROVISIONAL limits, Nigerian numbers at launch (R-36). Existing accounts unchanged.
-- 2 Oct 2026 · AUTH-03 fix round 2: sign-up returns an `attempt` secret that the phone routes need (a later sign-up can no longer capture someone else's code), no session by any route before the phone code, a held email moves only with a mailbox code, strangers spend nothing of a number's budget, the daily text budget is exact, IPv6 /64 counted as one, expired sign-ups release web `register`. AUTH-04 must send `attempt` (BACKEND_GAPS G-13).
