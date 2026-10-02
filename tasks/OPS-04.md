@@ -7,7 +7,7 @@ order: 5
 priority: launch
 repo: design
 type: ops
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: []
@@ -47,6 +47,7 @@ Builder, 2 Oct 2026. Status `verifying` covers the brief only; checks 2 and 3 wa
 - **Can't be placed on one artboard:** the Home, Me, Schools, Shop and Settings "Start here" maps (no ids); D15 (₦ glyph) is the font, not an artboard.
 - **For the owner, not ruled:** (1) whether a buyer pays Fintava's wallet-to-wallet charge on unlocks, tickets and school fees (H14, E3, SC5 draw a breakdown that must also work at ₦0); (2) what A17 to A20 become, now NIN and address are taken when the wallet opens and Fintava has no tiers; (3) if the designer deletes SH1-SH15, M3 or W40, the `not-built` list in DECISIONS.md needs updating with the new inventory.
 - **No gaps or shared-change requests filed.**
+- **Round 2 (after verifier, 58a6f8f):** brief now 95 entries (Everywhere 1, Home 9, Me 12, Shop 2, Schools 4, Open your wallet 10, Wallet 29, Bills and Legal 13, Inbox 6, Events 4, Settings 5). Fixed defects 1 to 7 and 10: Z1, Z2, I8, I23, Services and Events maps, the Wallet components sheet, flow notes and map, totals carried through H15-H17, E4, E11, SC6, SC7, S7, S12; A8 link, Auth notes and map, W33 tier note; rule 3 labels, W14, A6. Applied the coordinator's defaults for 8 and 9 as stated rules the owner can change (dollar hidden at launch, W2 provider line from config; purchases pay Fintava's charge, no WAWU fee: H26, H27, I3, I14, I28, I29, M12, M13, S19, S22, S26). Also found by a case-insensitive re-sweep: the cards flow note "Virtual cards are free". `npm run check` after: same counts as before.
 
 ## Verifier report
 

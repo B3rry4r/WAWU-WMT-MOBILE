@@ -3,9 +3,11 @@
 For the designer of the WAWU mobile canvas. Written 2 Oct 2026 from the
 export you last sent (297 artboards). Each item below names one artboard by
 its id and name, exactly as printed in the artboard's header (for example
-"W10 Send · review"), says what is drawn there now, what it must show
-instead, and why. Nothing here changes the look of the app. It changes what
-the screens say and which screens exist, because the owner has ruled on the
+"W10 Send · review"). Where the text sits outside a numbered artboard (a
+flow's "Start here" map, a flow note, a components sheet), the item names
+that instead. Every item says what is drawn now, what it must show instead,
+and why. Nothing here changes the look of the app. It changes what the
+screens say and which screens exist, because the owner has ruled on the
 product, or because the banking provider's system works differently from
 what the canvas assumes.
 
@@ -29,23 +31,49 @@ Who is who, so the reasons make sense:
    and totals are filled in by the app from the real system. Where this brief
    gives example values, use them so the samples add up, but treat them as
    samples, not as prices.
-3. **The fee row is a breakdown, never one number.** Wherever the canvas shows
-   a "Fee" row today, draw it as three parts:
+3. **The fee row is a breakdown, never one number.** Wherever a payment is
+   reviewed, draw the fee as its parts and then the total:
 
-   > Fintava's charge + WAWU's fee = total fee
+   > Fintava's charge + WAWU's fee = total fee, then the Total for the whole
+   > payment
 
-   then the Total for the whole payment under it. How you lay it out (two
-   rows plus a total, or one row with a small "₦40 + ₦25" line beneath) is
-   your call; the three parts must all be visible before the person pays.
-   Row labels are your call too: the owner decides whether the first part
-   says "Fintava" or something like "Bank charge". Either part can be ₦0, so
-   the row must also look right when it reads "₦0 + ₦0".
+   Layout and row labels are your call (two rows plus a total, or one row
+   with a small "₦40 + ₦25" line beneath; "Fintava's charge" or something
+   like "Bank charge"). What matters is that every part and the total are
+   visible before the person pays. Where WAWU adds no fee (purchases, below),
+   the breakdown is just Fintava's charge and the total. Any part can be ₦0,
+   so the row must also look right when it reads ₦0.
    Why: the person pays Fintava's charge plus WAWU's fee on top (R-10), and
    the real figures come from config, never from the canvas.
 4. **"No fee" is never drawn as a fact.** Every "No fee" on the canvas becomes
    the breakdown in rule 3.
-5. **No em-dashes in any copy.** Use a full stop, a comma, a colon or brackets.
+5. **Carry the total through the whole flow.** Once a review shows a total,
+   the button, the PIN sheet's "Approve" line, the success screen and any
+   "not enough in your wallet" shortfall all use that total.
+6. **Refunds and reversals never promise more than came back.** Show the
+   amount actually returned as a slot the app fills. Don't write "Nothing was
+   taken", "in full" or "the full amount" about a payment that carried a
+   charge: whether Fintava returns its own charge on a reversal is not
+   confirmed yet.
+7. **Licence, bank and deposit-insurance lines come from config.** Draw them
+   as slots (keep room for a line about as long as today's) and don't write
+   your own wording; the owner fills them in (R-1).
+8. **No em-dashes in any copy.** Use a full stop, a comma, a colon or brackets.
    (Owner instruction, 1 Sep 2026.)
+
+### Two defaults the owner may still change
+
+- **Purchases carry Fintava's charge, and no WAWU fee.** Paying from your
+  wallet for anything on WAWU (an unlock, a tip, a paid message, credits, a
+  tick, a ticket, a course, a legal service) is a wallet to wallet move.
+  The buyer pays Fintava's balance-transfer charge for it (R-10), and WAWU
+  adds nothing on top, because WAWU's share is already the 15% split.
+  Sending money to another WAWU user (from Wallet or in a chat) is different:
+  WAWU's ₦10 is added on top (R-10).
+- **The Dollar account is for later, not launch** (R-16). W2 and the Dollar
+  tab on W1, W3 and W5 stay drawn as they are; at launch the app hides them,
+  and hides W15's "From your Dollar account" option too. The only Dollar
+  change now is W2's provider line (see W2).
 
 ### Example values to use (Fintava's price list, 2 Oct 2026)
 
@@ -54,6 +82,8 @@ Who is who, so the reasons make sense:
 | Send to a bank, or withdraw to a bank | ₦40 | ₦25 | ₦65 |
 | Send to a WAWU user, under ₦5,000 | ₦23.25 | ₦10 | ₦33.25 |
 | Send to a WAWU user, ₦5,000 and over | ₦15.75 | ₦10 | ₦25.75 |
+| A purchase on WAWU, under ₦5,000 | ₦23.25 | none (15% split) | ₦23.25 |
+| A purchase on WAWU, ₦5,000 and over | ₦15.75 | none (15% split) | ₦15.75 |
 | Electricity | ₦100 | none set today (₦0) | ₦100 |
 | Cable TV | ₦100 | none set today (₦0) | ₦100 |
 | Airtime or data | ₦0 | none set today (₦0) | ₦0 |
@@ -92,20 +122,49 @@ Who is who, so the reasons make sense:
 - **Why:** R-2.
 
 ### Home flow, "Start here" map (no artboard id)
-- **Now:** row 8 reads "Four services · Pay bills, Events, Legal, Shop ·
-  Flows S, E, SH".
-- **Instead:** "Pay bills, Events, Legal, Schools · Flows S, E, SC".
+- **Now:** the Home phone shows the Shop tile, and row 8 reads "Four services
+  · Pay bills, Events, Legal, Shop · Flows S, E, SH".
+- **Instead:** the phone shows the Schools tile; row 8 reads "Pay bills,
+  Events, Legal, Schools · Flows S, E, SC".
 - **Why:** R-2.
 
 ### H14 · Unlock sheet
-- **Now:** Price ₦2,500, then "Fee: No fee".
-- **Instead:** the fee breakdown (rule 3). Sample: Fintava's charge ₦23.25 +
-  WAWU's fee ₦0 = ₦23.25, Total ₦2,523.25. The app fills the real figures;
-  if the owner decides WAWU absorbs Fintava's charge on purchases, the row
-  reads ₦0 + ₦0 and Total equals the price, so it must look right that way
-  too.
-- **Why:** R-10, and a Fintava fact: paying from a wallet is a wallet to
-  wallet move, which Fintava charges ₦15.75 to ₦23.25 for.
+- **Now:** Price ₦2,500, "Fee: No fee", button "Unlock · ₦2,500".
+- **Instead:** the breakdown (rule 3): Price ₦2,500, Fintava's charge ₦23.25,
+  Total ₦2,523.25; button "Unlock · ₦2,523.25".
+- **Why:** R-10 and the purchases default: an unlock is a wallet to wallet
+  move, which Fintava charges ₦23.25 for under ₦5,000.
+
+### H15 · PIN
+- **Now:** "Approve ₦2,500 to Chidi Eze".
+- **Instead:** "Approve ₦2,523.25 to Chidi Eze".
+- **Why:** rule 5, following H14.
+
+### H16 · Unlocked
+- **Now:** "Paid ₦2,500.00".
+- **Instead:** "Paid ₦2,523.25" (or the price and Fintava's charge as two
+  rows, your call).
+- **Why:** rule 5.
+
+### H17 · Not enough in wallet
+- **Now:** "This costs ₦2,500. You have ₦1,200.00.", Price ₦2,500, "Top up
+  at least ₦1,300", "Add ₦1,300".
+- **Instead:** "This costs ₦2,523.25. You have ₦1,200.00." Show Fintava's
+  charge under the price, then "Top up at least ₦1,323.25" and "Add
+  ₦1,323.25".
+- **Why:** rule 5: the shortfall includes the charge.
+
+### H26 · Tip sheet
+- **Now:** amounts, note, Pay from wallet, "Tip ₦2,000". No fee shown.
+- **Instead:** add the breakdown above Pay from wallet: Fintava's charge
+  ₦23.25, Total ₦2,023.25; button "Tip ₦2,023.25" (or keep "Tip ₦2,000" if
+  you show the total clearly beside it; the total must be visible).
+- **Why:** R-10 and the purchases default.
+
+### H27 · PIN
+- **Now:** "Approve ₦2,000 to Tife Adeola".
+- **Instead:** "Approve ₦2,023.25 to Tife Adeola".
+- **Why:** rule 5, following H26.
 
 ## 3. Me (profile and menu)
 
@@ -164,9 +223,23 @@ Who is who, so the reasons make sense:
   courses.
 
 ### Me flow, "Start here" map (no artboard id)
-- **Now:** hotspot 9 "Shop tab · Your products · Opens M3".
-- **Instead:** remove hotspot 9 and renumber the hotspots after it.
-- **Why:** R-9 (no Shop tab).
+- **Now:** the phone shows the Shop tab, and hotspot 9 reads "Shop tab · Your
+  products · Opens M3".
+- **Instead:** the phone shows three tabs; remove hotspot 9 and renumber the
+  hotspots after it.
+- **Why:** R-9.
+
+### M12 · Pay
+- **Now:** Professional tick ₦2,000, Pay from wallet, "Pay ₦2,000". No fee
+  shown.
+- **Instead:** add the breakdown: Fintava's charge ₦23.25, Total ₦2,023.25;
+  button "Pay ₦2,023.25".
+- **Why:** R-10 and the purchases default.
+
+### M13 · PIN
+- **Now:** "₦2,000 for the professional tick".
+- **Instead:** "₦2,023.25 for the professional tick".
+- **Why:** rule 5, following M12.
 
 ## 4. Shop
 
@@ -195,12 +268,22 @@ Who is who, so the reasons make sense:
 - **Why:** R-2.
 
 ### SC5 · Pay
-- **Now:** Course fee ₦150,000, "Fee: No fee", Total ₦150,000.
-- **Instead:** the fee breakdown (rule 3). Sample: Fintava's charge ₦15.75 +
-  WAWU's fee ₦0 = ₦15.75, Total ₦150,015.75. The app fills the real figures,
-  and the row must also look right at ₦0 + ₦0.
-- **Why:** R-10, and a Fintava fact: a wallet to wallet move costs ₦15.75 to
-  ₦23.25.
+- **Now:** Course fee ₦150,000, "Fee: No fee", Total ₦150,000, button "Pay
+  ₦150,000".
+- **Instead:** the breakdown: Course fee ₦150,000, Fintava's charge ₦15.75,
+  Total ₦150,015.75; button "Pay ₦150,015.75".
+- **Why:** R-10 and the purchases default (₦15.75 from ₦5,000).
+
+### SC6 · PIN
+- **Now:** "Approve ₦150,000 to Greenfield Tech Academy".
+- **Instead:** "Approve ₦150,015.75 to Greenfield Tech Academy".
+- **Why:** rule 5, following SC5.
+
+### SC7 · Enrolled
+- **Now:** "Paid ₦150,000".
+- **Instead:** "Paid ₦150,015.75" (or the course fee and Fintava's charge as
+  two rows).
+- **Why:** rule 5.
 
 ## 6. Open your wallet (the Auth flow)
 
@@ -210,7 +293,31 @@ phone only. The BVN step, details, selfie, account opening and PIN screens
 time someone taps Wallet or anything that moves money. Keep their look; only
 where they sit changes. Fintava will not open an account without a **NIN**
 and a **full address**, and its BVN check returns name, date of birth,
-gender, phone and photo only.
+gender, phone and photo only. Fintava's API has **no account tiers**.
+
+### Auth flow, "Start here" map (no artboard id)
+- **Now:** a row "Wallet settings · Tier · Raise your limits · Opens A17".
+- **Instead:** remove the row.
+- **Why:** Fintava fact: the API has no tiers, so there is no tier to raise
+  (A17 to A20 are on hold, below).
+
+### Auth flow note, "Sign up · A1–A16" (no artboard id)
+- **Now:** "One path, left to right. Email, phone and BVN first. The phone
+  and the face must match the BVN. BVN fills the rest. Tier 1 opens the
+  wallet."
+- **Instead:** split it to match the new order. Sign up (A1, A2, A3, A4):
+  email and phone. Open your wallet (A26, A14, A5, A6, A7, A16, A8, A9,
+  A10): BVN and NIN, details and address, selfie, then the wallet opens. No
+  "Tier 1".
+- **Why:** R-6, and no tiers in Fintava's API.
+
+### Auth flow note, "Tiers · A17–A21" (no artboard id)
+- **Now:** "Raise your limits. CBN tiers. Tier 1 is done at sign-up.",
+  starting from "A8 · Raise your limits, or Wallet settings".
+- **Instead:** drop "CBN tiers. Tier 1 is done at sign-up." and the A8 start.
+  A21 Payout bank stays as drawn; A17 to A20 are on hold (below).
+- **Why:** R-6 (nothing about the wallet happens at sign-up) and no tiers in
+  Fintava's API.
 
 ### A3 · Email, phone, BVN
 - **Now:** "Let's open your account. Your BVN fills in the rest." Email,
@@ -254,44 +361,89 @@ gender, phone and photo only.
 - **Instead:** drop "Then blink slowly". For example: "Fit your face in the
   oval. It must match your BVN photo." Nothing on this screen, or on A7 and
   A16, may say or suggest a liveness check.
-- **Why:** Fintava fact: the selfie is matched against the BVN photo; Fintava
-  has no liveness check, so the app cannot claim one.
+- **Why:** Fintava fact: Fintava's API matches the selfie against the BVN
+  photo and has no liveness check, so the app cannot claim one.
 
 ### A8 · Wallet open
 - **Now:** "Tier 1 · Fintava MFB", Bank "Fintava MFB", Limit "₦300,000
-  balance", link "Raise your limits".
+  balance", and a "Raise your limits" link.
 - **Instead:** the subtitle and the Bank row show the bank name as a slot the
   app fills. Sample: "Loma Bank", and make sure the long legal name "Iyin
   Ekiti Microfinance Bank Limited (Loma Bank)" also fits (wrap or truncate).
-  No "Tier 1": draw the Limit row as a slot that can be hidden.
+  No "Tier 1". Draw the Limit row as a slot that can be hidden. Remove the
+  "Raise your limits" link; "Create your transaction PIN" stays.
 - **Why:** R-1 and a Fintava fact: the bank is Loma Bank and its name comes
-  from the API. Fintava's API has no tiers; limits are still a question for
-  Fintava.
+  from the API. Fintava's API has no tiers, so there is nothing to raise;
+  limits are still a question for Fintava.
 
 ### A17 to A20 · Account limits, Tier 2 · NIN, Tier 2 done, Tier 3 · address (hold, owner to rule)
 - **Now:** a three-tier ladder: Tier 1 (BVN and selfie), Tier 2 (upgrade with
   your NIN, A18), Tier 3 (upgrade with proof of address, A20), with limits and
   "Limits set by the CBN. ⚠ Final numbers from Fintava."
-- **Instead:** don't redraw these yet; just be aware. Every wallet now gives
-  its NIN and address when it opens (A26 and A5), so A18's "upgrade with NIN"
-  repeats a step everyone has done, and A20's address fields do the same
-  (the proof-of-address upload may still be needed). Fintava's API has no
-  tiers, and the limits are a question the owner has put to Fintava. The
-  owner will rule on what these four screens become.
-- **Why:** Fintava facts (NIN and address required to open; no tiers in the
-  API).
+- **Instead:** don't redraw these yet; nothing links to them now (A8's link
+  and the Auth map row go). Every wallet now gives its NIN and address when it
+  opens (A26 and A5), so A18's "upgrade with NIN" repeats a step everyone has
+  done, and A20's address fields do the same (the proof-of-address upload may
+  still be needed). The owner will rule on what these four screens become.
+- **Why:** Fintava facts: NIN and address are required to open; the API has
+  no tiers; limits are a question put to Fintava.
 
 ## 7. Wallet
 
+### Wallet flow, "Start here" map (no artboard id)
+- **Now:** the phone's balance card reads "WAWU · Fintava MFB". Hotspot 5
+  reads "Crypto tab · Receive and send USDT, BTC". A row reads "Me → Creator
+  dashboard → Earnings · Creator earnings, move to wallet · Opens W39".
+  Hotspots 3 and 4 offer "Swap · Naira, dollars and crypto" and "Dollar tab ·
+  Dollar account · Opens W2".
+- **Instead:** the card reads "WAWU · Loma Bank" (bank name slot). Hotspot 5:
+  "Receive and send USDT, USDC". The earnings row: "Creator earnings · Opens
+  W39", no "move to wallet". Hotspots 3 and 4 can stay, marked "after
+  launch" for the Dollar parts.
+- **Why:** R-1 (bank name); Cardex fact (no BTC); R-11 (earnings land in the
+  wallet by themselves); R-16 (dollar account after launch).
+
+### Wallet flow note, "Wallet · W1–W6" (no artboard id)
+- **Now:** "'Wallet' is the label, but these are full bank accounts at
+  Fintava MFB."
+- **Instead:** "... full bank accounts at Loma Bank", or drop the bank name.
+- **Why:** R-1.
+
+### Wallet flow note, "Cards · W29–W34 · WAWU Verve card" (no artboard id)
+- **Now:** "Virtual cards are free and ready instantly."
+- **Instead:** drop "are free". Virtual cards cost Fintava's ₦2,000 (see
+  W29).
+- **Why:** R-10, Fintava's price list.
+
+### Wallet "For approval · New components in this flow" sheet (no artboard id)
+- **Now:** the Banner sample reads "Your money is held at Fintava MFB ·
+  Licensed by the CBN. Deposits insured by NDIC." The "KeyValue rows (review,
+  receipt)" sample shows "Fee ₦10.00".
+- **Instead:** the Banner's bank name is a slot (sample "Loma Bank"), and the
+  licence line and the deposit-insurance line are slots filled from config by
+  the owner (rule 7); don't state NDIC cover yourself. The KeyValue sample
+  shows the fee breakdown (rule 3), for example ₦40 + ₦25 = ₦65.
+- **Why:** R-1: bank, licence and insurance claims come from config. R-10:
+  the fee is a breakdown.
+
 ### W1 · Wallet · Naira
-- **Now:** the balance card reads "WAWU · Fintava MFB".
+- **Now:** the balance card reads "WAWU · Fintava MFB". Tabs Naira, Dollar,
+  Crypto.
 - **Instead:** "WAWU · " followed by the bank name as a slot the app fills.
-  Sample "Loma Bank".
+  Sample "Loma Bank". Keep the Dollar tab drawn; the app hides it at launch.
 - **Why:** R-1 and a Fintava fact: the bank is Loma Bank, named by the API.
+  R-16 for the Dollar tab.
+
+### W2 · Wallet · Dollar
+- **Now:** "USD account · Fintava".
+- **Instead:** keep the screen as drawn for after launch. The provider line
+  is a slot filled from config (sample "USD account").
+- **Why:** R-16 (dollar account after launch) and R-1 (provider and bank
+  lines come from config).
 
 ### W5 · Wallet · new account
 - **Now:** "WAWU · Fintava MFB".
-- **Instead:** "WAWU · Loma Bank" (bank name slot, as W1).
+- **Instead:** "WAWU · Loma Bank" (bank name slot, as W1). Dollar tab as W1.
 - **Why:** R-1.
 
 ### W10 · Send · review
@@ -316,24 +468,26 @@ gender, phone and photo only.
 - **Why:** R-10.
 
 ### W14 · Send · failed
-- **Now:** "Amount ₦25,010.00" and "Nothing was taken. The full ₦25,010 is
-  back in your Naira wallet."
-- **Instead:** the amount is a slot (with the new fee, the sample total is
-  ₦25,065.00). Word the note so it says the amount was returned without
-  promising that every charge came back, for example "₦25,065 is back in
-  your Naira wallet." The app fills the amount actually reversed.
-- **Why:** R-10 (the total now includes Fintava's charge). Whether Fintava
-  returns its own charge on a reversal is not confirmed yet.
+- **Now:** "Reversed to your wallet", "Amount ₦25,010.00", and a note headed
+  "Nothing was taken" saying "The full ₦25,010 is back in your Naira wallet."
+- **Instead:** the Amount row is "Returned to your wallet" with a slot the
+  app fills (sample ₦25,000.00); if a charge was kept, a second row shows it.
+  Replace the note's heading "Nothing was taken" with a plain one such as
+  "Your money is back", and the line with "₦25,000 is back in your Naira
+  wallet." No "full", no "nothing was taken".
+- **Why:** rule 6. The total now includes Fintava's charge (R-10), and
+  whether Fintava returns its charge on a reversal is not confirmed.
 
 ### W15 · Add money
 - **Now:** Bank "Fintava MFB". Under Other ways, "Debit card · Instant ·
-  1.5% fee".
+  1.5% fee", and "From your Dollar account · $1 = ₦1,580.00".
 - **Instead:** Bank shows the bank name slot (sample "Loma Bank", long name
   must fit). The card row's fee reads as a breakdown hint, for example
-  "Card provider's charge + 1.5%".
+  "Card provider's charge + 1.5%". Keep the Dollar option drawn; the app
+  hides it at launch.
 - **Why:** R-1 for the bank. R-10 for the card: WAWU's 1.5% is added to the
   card provider's own charge (Fintava doesn't take cards, so it is another
-  provider; card top-up comes after launch).
+  provider; card top-up comes after launch). R-16 for the Dollar option.
 
 ### W16 · Add money · card
 - **Now:** "Card fee ₦150.00", You pay ₦10,150.00, Wallet gets ₦10,000.00.
@@ -369,6 +523,13 @@ gender, phone and photo only.
   (sample left obvious; Fintava hasn't published it).
 - **Why:** R-10.
 
+### W33 · Card · limits and controls
+- **Now:** your note "⚠ These are CBN-style default limits. The real caps
+  depend on your KYC tier."
+- **Instead:** "Card limits come from Fintava when cards are built." No
+  tier.
+- **Why:** Fintava fact: no tiers in the API.
+
 ### W35 · Wallet settings
 - **Now:** "Tier 2 account · ₦5,000,000 daily · BVN + NIN verified" and
   "Account details · Fintava MFB · 812 345 6789".
@@ -398,9 +559,8 @@ gender, phone and photo only.
 - **Now:** Bank "Fintava MFB", footer "Check it at wawu/r/T1P9 · Fintava MFB,
   licensed by the CBN".
 - **Instead:** Bank shows the bank name slot (sample "Loma Bank"). The footer's
-  licence wording is a slot filled from config by the owner; keep room for a
-  line about as long as today's. Don't write your own wording for it.
-- **Why:** R-1: licence wording comes from config, filled in by the owner.
+  licence wording is a slot filled from config by the owner (rule 7).
+- **Why:** R-1.
 
 ### W42 · Image
 - **Now:** same receipt: Bank "Fintava MFB", "Fintava MFB, licensed by the
@@ -421,7 +581,7 @@ gender, phone and photo only.
 - **Instead:** two holdings: **USDT** and **USDC**, nothing else. Replace the
   BTC transaction with a USDC one. USDT networks: TRC-20, ERC-20, BEP-20.
   USDC networks: TRC-20, ERC-20, BEP-20, Base, Solana. Any line saying who
-  holds the coins is a slot filled from config.
+  holds the coins is a slot filled from config. The Dollar tab as W1.
 - **Why:** Cardex fact: only USDT and USDC. Cardex holds the coins in WAWU's
   own treasury, so the wording is the owner's.
 
@@ -448,10 +608,11 @@ gender, phone and photo only.
   is **90 seconds** today (sample "Holds 1:28"). The fee row is a breakdown
   slot (Cardex's charge + WAWU's fee); the amounts aren't known yet, so keep
   them obvious samples. A swap into crypto shows **USDT** or **USDC** as the
-  "You get" side, never "Dollar" or "Dollar account".
+  "You get" side, never "Dollar" or "Dollar account"; a swap with the real
+  Dollar account comes later with W2.
 - **Why:** Cardex facts: a quote is held 90 seconds and used once; conversion
   fees are still to come from Fintava; a stablecoin balance is not a dollar
-  account. (A real dollar account comes only when Fintava provides it, R-16.)
+  account. R-16: the dollar account comes after launch.
 
 ### W21 · Swap · review
 - **Now:** "To: Dollar account", "Fee: No fee", the same 0:28 hold.
@@ -459,11 +620,18 @@ gender, phone and photo only.
   breakdown slot, and the hold matches W20 (90 seconds).
 - **Why:** as W20.
 
-## 8. Bills (the Services flow)
+## 8. Bills and Legal (the Services flow)
 
 Bills are not free. Fintava charges ₦100 for electricity and for cable TV,
 and ₦0 for airtime and data; WAWU's bill fee is added on top if the owner
-sets one (none today).
+sets one (none today). Legal services are purchases (the default above).
+
+### Services flow, "Start here" map (no artboard id)
+- **Now:** the Home phone shows the Shop tile, and hotspot 5 reads "Shop ·
+  Shop flow · Flow SH".
+- **Instead:** the phone shows the Schools tile, and hotspot 5 reads "Schools
+  · Schools flow · Flow SC".
+- **Why:** R-2.
 
 ### S3 · Biller
 - **Now:** several electricity billers say "Prepaid and postpaid".
@@ -482,14 +650,26 @@ sets one (none today).
   ₦10,000 to Ikeja Electric".
 - **Instead:** S5's new rows behind it, and "Approve ₦10,100 to Ikeja
   Electric".
-- **Why:** R-10.
+- **Why:** rule 5.
+
+### S7 · Token
+- **Now:** "₦10,000 paid".
+- **Instead:** "₦10,100 paid", or "₦10,000 paid" with a row showing the
+  ₦100 charge; the total paid must be visible.
+- **Why:** rule 5.
 
 ### S11 · Not enough in wallet
 - **Now:** S5's rows with "No fee", and "You have ₦6,200.00. Add ₦3,800 to
   pay this." / "Add ₦3,800".
 - **Instead:** S5's new rows (Total ₦10,100.00), and the shortfall that
   follows: "Add ₦3,900".
-- **Why:** R-10: the total includes the fee, so the shortfall does too.
+- **Why:** rule 5: the total includes the fee, so the shortfall does too.
+
+### S12 · Failed
+- **Now:** "Reversed to your wallet", "Amount ₦10,000.00".
+- **Instead:** the Amount row is "Returned to your wallet" with a slot the
+  app fills (sample ₦10,000.00); if a charge was kept, a second row shows it.
+- **Why:** rule 6.
 
 ### S8 · Airtime
 - **Now:** network, number, amount, then "Buy ₦2,000 airtime" straight to the
@@ -513,27 +693,117 @@ sets one (none today).
   Total ₦10,600, button "Pay ₦10,600".
 - **Why:** R-10: bills carry Fintava's ₦100 for electricity.
 
-## 9. Events
+### S19 · Pay (legal consultation)
+- **Now:** Video consultation ₦15,000, Pay from wallet, "Pay ₦15,000". No fee
+  shown.
+- **Instead:** add the breakdown: Fintava's charge ₦15.75, Total ₦15,015.75;
+  button "Pay ₦15,015.75".
+- **Why:** R-10 and the purchases default.
+
+### S22 · Pay to start
+- **Now:** a row "Fee ₦45,000" (the legal price), "Pay ₦45,000 to start".
+- **Instead:** call the price row "Price" (so it isn't mistaken for the fee
+  breakdown), add Fintava's charge ₦15.75, Total ₦45,015.75; button "Pay
+  ₦45,015.75 to start".
+- **Why:** R-10 and the purchases default.
+
+### S26 · Fixed-price request
+- **Now:** a row "Fee ₦35,000" (the price), "Continue · ₦35,000", then Pay
+  and PIN.
+- **Instead:** call the price row "Price", add Fintava's charge ₦15.75 and
+  Total ₦35,015.75 (here or on the pay step that follows); button "Continue ·
+  ₦35,015.75".
+- **Why:** R-10 and the purchases default.
+
+## 9. Inbox
+
+### I3 · Write the question
+- **Now:** ₦1,500, "No reply in time, your ₦1,500 comes back in full", Pay
+  from wallet, "Send · ₦1,500". No fee shown.
+- **Instead:** add the breakdown: Fintava's charge ₦23.25, Total ₦1,523.25;
+  button "Send · ₦1,523.25". The refund line names the amount that comes back
+  without "in full": "No reply in time, your ₦1,500 comes back."
+- **Why:** R-10 and the purchases default; rule 6 for the refund.
+
+### I8 · Creator has paid messages off
+- **Now:** "You can still follow, tip and buy from Tolu's shop."
+- **Instead:** "You can still follow, tip and buy Tolu's work."
+- **Why:** R-2 and R-9: there is no shop.
+
+### I14 · Amount (send money in a chat)
+- **Now:** ₦25,000 to Femi, "Send ₦25,000", then the PIN. No fee shown.
+- **Instead:** add a fee line above the button: Fintava's charge ₦15.75 +
+  WAWU's fee ₦10 = ₦25.75, Total ₦25,025.75. The button still shows what
+  Femi receives, as on W10.
+- **Why:** R-10: sending to a WAWU user carries Fintava's charge plus WAWU's
+  ₦10.
+
+### I23 · Switched off for 7 days
+- **Now:** "Back on 3 October. Publishing, communities, tips and your shop
+  all keep working."
+- **Instead:** "Back on 3 October. Publishing, communities and tips all keep
+  working."
+- **Why:** R-2 and R-9.
+
+### I28 · Buy credits
+- **Now:** 120 credits for ₦1,000, "Buy 120 credits · ₦1,000". No fee shown.
+- **Instead:** add the breakdown: Fintava's charge ₦23.25, Total ₦1,023.25;
+  button "Buy 120 credits · ₦1,023.25". Credits stay a count.
+- **Why:** R-10 and the purchases default.
+
+### I29 · Credits added
+- **Now:** "Paid ₦1,000 from your Naira wallet."
+- **Instead:** "Paid ₦1,023.25 from your Naira wallet."
+- **Why:** rule 5.
+
+## 10. Events
+
+### Events flow, "Start here" map (no artboard id)
+- **Now:** the Home phone shows the Shop tile.
+- **Instead:** the Schools tile.
+- **Why:** R-2.
 
 ### E3 · Pay
-- **Now:** Tickets ₦7,500, "Fee: No fee", Total ₦7,500.
-- **Instead:** the fee breakdown: Fintava's charge ₦15.75 + WAWU's fee ₦0 =
-  ₦15.75, Total ₦7,515.75. As on H14, it must also look right at ₦0 + ₦0.
-- **Why:** R-10, and a Fintava fact: a wallet to wallet move costs ₦15.75 to
-  ₦23.25 (ticket money is held in WAWU's own wallet until the event, R-19).
+- **Now:** Tickets ₦7,500, "Fee: No fee", Total ₦7,500, button "Pay ₦7,500".
+- **Instead:** the breakdown: Tickets ₦7,500, Fintava's charge ₦15.75, Total
+  ₦7,515.75; button "Pay ₦7,515.75".
+- **Why:** R-10 and the purchases default (ticket money is held in WAWU's own
+  wallet until the event, R-19).
 
-## 10. Settings
+### E4 · PIN
+- **Now:** "Approve ₦7,500 to WAWU Creators Summit".
+- **Instead:** "Approve ₦7,515.75 to WAWU Creators Summit".
+- **Why:** rule 5.
+
+### E11 · Called off
+- **Now:** "₦7,500 is back in your Naira wallet."
+- **Instead:** keep the sentence, with the amount as a slot showing what was
+  actually refunded (sample ₦7,500). Don't add "in full" or "everything you
+  paid".
+- **Why:** rule 6.
+
+## 11. Settings
 
 ### Settings flow, "Start here" map (no artboard id)
-- **Now:** the Me menu phone on this map shows "My content · 4 of 7 slots".
-- **Instead:** match M7: "My content · 4 of 5 uploads".
+- **Now:** the Me menu phone shows "My content · 4 of 7 slots".
+- **Instead:** "My content · 4 of 5 uploads", as on M7.
+- **Why:** R-7.
+
+### Z1 · Me menu
+- **Now:** "My content · 4 of 7 slots".
+- **Instead:** "My content · 4 of 5 uploads", as on M7.
 - **Why:** R-7: free accounts get 5 uploads (25 with a tick); there are no
   "7 slots".
+
+### Z2 · Settings
+- **Now:** the "Wallet and PIN" row's subtitle is "Tier 2 · W35".
+- **Instead:** no tier, for example "PIN, statements, limits".
+- **Why:** Fintava fact: no tiers in the API.
 
 ### Z9 · About
 - **Now:** "Banking by Fintava MFB · Licensed by the CBN".
 - **Instead:** "Banking by" + the bank name slot (sample "Loma Bank"), and the
-  licence line as a slot filled from config by the owner.
+  licence line as a slot filled from config by the owner (rule 7).
 - **Why:** R-1.
 
 ### Z10 · Terms
