@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · MONEY-11 · `GET /money/wallet/balance` served in wawu-backend (`wmt/MONEY-11`): Fintava's availableBalance in kobo on every call, `503 provider_unreachable` (W6) never 0, `423 wallet_frozen`, `409 wallet_not_open`; new `FintavaWallet` table; app call `src/api/money.ts`; sandbox: route equals Fintava after two ₦10 sends. Status verifying.
 - 2 Oct 2026 · MONEY-06 · Round 2: the verifier's 5 defects fixed (exact Fintava hosts only; only Fintava's own `404 "Transaction not found!"` counts as absent; no resend before the money timeout plus a 10-minute safety window and only when history also lacks the send; a repeated reference is an unknown outcome; the `{}` timing in the docs matches the evidence); key fragments masked in logs. Back to verifying.
 - 2 Oct 2026 · MONEY-06 · Fintava client built in wawu-backend `src/fintava/` beside Flutterwave (no route served): every plan call typed in kobo, our reference on every send, reconcile before any resend, no secret in logs; sandbox run 25 passed, 5 NOT RUN (charged checks, no new customers, payouts blocked by question 17, webhooks are MONEY-07's); new fact: lookups answer `200 {}` for SUCCESS records too. To verifying.
 - 2 Oct 2026 · AUTH-03 merged (Developer 1): phone check at sign-up in WAWU ID (wawu-id PR #3), phone-verified sign-in for new sign-ups only, PROVISIONAL limits, Nigerian numbers at launch (R-36). Existing accounts unchanged.
