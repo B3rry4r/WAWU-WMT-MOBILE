@@ -7,7 +7,7 @@ order: 12
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -48,6 +48,7 @@ Builder session, 2 Oct 2026, branch `wmt/MONEY-03`, origin/main ab2df44 (SHELL-0
 - Known differences: icons are drawn from Views (no icon shapes outside TabIcon yet); the thumbnail in the preview is the app icon; the verified tick in the subtitle isn't drawn; type sizes use the nearest `@/theme` sizes (e.g. 13.5 for the canvas's 13). The "still confirming" and "failed" copy is my own, following H18, and makes no promise about refunds (rule 6).
 - Gates before: tests 5 passed (2 suites); gates 9 run, 6 files, 0 fail, 0 warn, 0 accepted; tsc and lint clean. After (with main merged): tests 22 passed (5 suites); gates 9 run, 23 files, 0 fail, 0 warn, 0 accepted; tsc and lint clean; `npm run check` exit 0.
 - Shared-change requests: icon shapes added to TabIcon or a general Icon; adopt UI-02's sheet and UI-01's buttons, text and money display once they land. No backend gap: the fee quote and balance are inputs, served by MONEY-core tasks.
+- Round 2 (origin/main e657ad5 merged): defect 1 fixed, `PayItem.by` + `verified` draws the tick after the seller's name (test). Defect 2 fixed, rules, card edges, sheet top edge and Cancel outline are 1 px (`LINE = 1`; no border-width token exists). Owner ruling 3: a "Fees" subtotal row before Total when the fee has two or more parts (₦40 + ₦25 shows Fees ₦65; test). Ruling 4: W10 send variant filed for WALLET-02 (SHARED-CHANGES section 2 row 2). Ruling 5: View icons stay (row 6). Pay ignores a second tap until `status` changes or `onPay`'s promise settles (a short guard for a void callback); 3 tests. The preview drives the tick from the URL (`&tick=off`), not a literal. After: `npm run check` exit 0, jest 6 suites, 54 tests (29 in pay-sheet); gates 9 run, 30 files, 0 fail, 0 warn, 0 accepted; screenshots re-shot in `build/screens/MONEY-03/`.
 
 ## Verifier report
 

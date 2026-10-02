@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · MONEY-03 · Round 2: verified tick in the pay sheet header, 1 px lines, Fees subtotal for two-part fees, double-tap guard on Pay; back to verifying.
 - 2 Oct 2026 · MONEY-03 · Pay-from-wallet sheet built (`src/components/pay-sheet/`): price, fee breakdown and total in kobo, enough / not enough with shortfall and Add top-up / paying / still confirming / failed / no wallet; to verifying.
 - 2 Oct 2026 · SHELL-02 (signed-in session and API wiring, 3 verification rounds; fixed a sign-out race) and SHELL-03 (tester build config, eas.json, expo-dev-client) merged. Screen tasks for Developers 2 and 3 are now unblocked. Builds wait on the owner's `eas init` and real addresses.
 - 2 Oct 2026 · SHELL-02 built: signed-in session in `src/api/` (tokens in secure storage, one silent refresh on 401, one error shape, query defaults), proven live against the local backend and wawu-id; status verifying.

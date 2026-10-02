@@ -6,7 +6,8 @@ import { useWawu } from '@/theme';
 
 /**
  * Development-only gallery of the pay sheet's states, for screenshots beside
- * the H14, H17 and W10 artboards: /preview/pay-sheet?state=<name>.
+ * the H14, H17 and W10 artboards: /preview/pay-sheet?state=<name>. The seller
+ * shows as verified unless the URL adds &tick=off.
  * The amounts are the brief's example values (docs/designer/BRIEF.md), not
  * prices. A release build redirects home.
  */
@@ -15,7 +16,6 @@ const unlock = {
   item: {
     title: 'How I built a ₦2M a month agency',
     by: 'Chidi Eze',
-    verified: true,
     subtitle: 'Video · 18 min',
     image: require('../../../assets/images/icon.png'),
   },
@@ -61,7 +61,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onOpen
 
 export default function PaySheetPreview() {
   const { colors } = useWawu();
-  const { state } = useLocalSearchParams<{ state?: string }>();
+  const { state, tick } = useLocalSearchParams<{ state?: string; tick?: string }>();
   if (!__DEV__) return <Redirect href="/" />;
 
   const shown = cases[state ?? 'enough'] ?? cases.enough;
@@ -72,6 +72,7 @@ export default function PaySheetPreview() {
       <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceScrim }]} />
       <PaySheet
         {...shown}
+        item={{ ...shown.item, verified: shown.item.by !== undefined && tick !== 'off' }}
         onPay={() => go('paying')}
         onAddMoney={() => go('enough')}
         onOpenWallet={() => go('enough')}
