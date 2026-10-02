@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 61 | 51 | 32 | 30 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 7 | 5 | 0 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 
