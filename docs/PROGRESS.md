@@ -43,6 +43,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · TEST-01 · Tests no longer time out on a cold cache or a loaded machine: `lists`, `components` and `kit-components` load React Native's primitives (Modal alone was about 5 s cold) when the file loads and render the showcase once in a `beforeAll` with its own budget, and the showcase walk in `lists` runs on Jest's fake clock (the PinSheet.test.tsx pattern). No timeout raised, no test skipped.
 - 2 Oct 2026 · MONEY-02 merged: the PIN sheet every payment reuses. Fingerprint or face (whatever the phone has), "<Name> failed. Use your PIN.", lock countdown, the shared BottomSheet (new `gap` prop) and Text (`errorLine`, `linkStrong`), matching W11 exactly. Adds expo-local-authentication: the next Android build carries it.
 - 2 Oct 2026 · MONEY-09 merged (transaction PIN on the server: 4 digits, argon2id, locks after 5 wrong tries for PIN_LOCK_MINUTES, X-Transaction-Pin guard; verified with no defects). Backend PR #25.
 - 2 Oct 2026 · Task backlog reviewed and fixed (199 tasks): order and dependencies, Android first, no staging (tester builds use the live services; checks run locally with the sandbox), biometric not Face ID, the designer brief in every screen task, links between screens, duplicates removed, Lead rulings R-24 to R-35. Each person's first tasks are startable now.
@@ -57,4 +58,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · SHARED-01 merged: shared `Avatar` (one, UI-02's API with the kit drawing), `CurrencyFlag`, Text variants (kvLabel, kvValue, meta, muted, bannerBody, cardTitle, sheetTitle, sheetTitleSm) and Money at exactly its size (per-run line heights on web only). Phone check (V10) waits on the Android build.
 - 2 Oct 2026 · MONEY-09 built: the transaction PIN is served on backend branch `wmt/MONEY-09` (set, change, verify, state; argon2id; 5 wrong tries lock it for `PIN_LOCK_MINUTES`, provisional 30; `X-Transaction-Pin` guard for every debit); gaps G-11, G-12; status verifying.
 - 2 Oct 2026 · Each developer's file (docs/people/DEV*.md) now says to keep working through the list without waiting to be prompted: pull main, take the next startable task, build, verify, push, repeat; ask only when everything left is blocked.
-- 2 Oct 2026 · The app now points at the live services the web uses, `https://api.wawuafrica.com` and `https://id.wawuafrica.com` (eas.json, `src/api/env.ts` fallbacks, BUILDS.md). The `.invalid` placeholders and the stale Railway address are gone.

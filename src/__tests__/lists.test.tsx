@@ -1,6 +1,17 @@
 import { fireEvent, render, screen, userEvent, within } from '@testing-library/react-native';
 import { useState } from 'react';
-import { Platform, processColor } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text as NativeText,
+  TextInput,
+  View,
+  processColor,
+} from 'react-native';
 
 import { Avatar, initialsOf } from '@/components/Avatar';
 import { BottomSheet, sheetMetrics } from '@/components/BottomSheet';
@@ -17,11 +28,33 @@ import { TransactionRow } from '@/components/TransactionRow';
 import { Showcase } from '@/features/showcase/Showcase';
 import { darkColors, darkGradients, lightColors, radius } from '@/theme/tokens.generated';
 
+/*
+ * Nothing here depends on how fast the machine is or how warm Jest's cache is.
+ *
+ * React Native's components load on first use (babel-preset-expo makes the
+ * `react-native` import lazy), so the first render in this file used to pay
+ * for transforming them: Modal alone takes about 5 s with a cold cache, all
+ * inside one test's 5 s budget. Touching every primitive the components and
+ * the showcase draw moves that one-off cost to file load, where no test
+ * timeout applies (the same fix as PinSheet.test.tsx).
+ */
+void [AccessibilityInfo, ActivityIndicator, Modal, Pressable, ScrollView, NativeText, TextInput, View];
+
 let mockScheme: 'light' | 'dark' = 'dark';
 jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
   __esModule: true,
   default: () => mockScheme,
 }));
+
+/*
+ * The showcase draws every kit component, so rendering it once before the
+ * first test pays whatever React Native still does on a component's first
+ * render (beyond loading its module) with a 60 s budget of its own.
+ */
+beforeAll(async () => {
+  const { unmount } = await render(<Showcase />);
+  await unmount();
+}, 60_000);
 
 beforeEach(() => {
   mockScheme = 'dark';
@@ -486,15 +519,30 @@ describe('loading, empty and error views', () => {
 });
 
 describe('showcase of lists, sheets and states', () => {
+  /*
+   * These walk the whole showcase page, five presses in one test. Each press
+   * holds the finger down for 130 ms, so on a real clock the waiting alone ate
+   * a tenth of the 5 s budget before a loaded machine slowed the renders. On
+   * Jest's fake clock a press advances the clock instead of waiting.
+   */
+  let user: ReturnType<typeof userEvent.setup>;
+  beforeEach(() => {
+    jest.useFakeTimers();
+    user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('lets a developer reach the loading, empty and error views, and retry from the error', async () => {
     await render(<Showcase />);
     const states = screen.getByLabelText('State');
-    await userEvent.press(within(states).getByRole('tab', { name: 'Loading' }));
+    await user.press(within(states).getByRole('tab', { name: 'Loading' }));
     expect(within(screen.getByTestId('showcase-state-view')).getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
-    await userEvent.press(within(states).getByRole('tab', { name: 'Empty' }));
+    await user.press(within(states).getByRole('tab', { name: 'Empty' }));
     expect(within(screen.getByTestId('showcase-state-view')).getByText('No messages yet')).toBeTruthy();
-    await userEvent.press(within(states).getByRole('tab', { name: 'Error' }));
-    await userEvent.press(within(screen.getByTestId('showcase-state-view')).getByRole('button', { name: 'Try again' }));
+    await user.press(within(states).getByRole('tab', { name: 'Error' }));
+    await user.press(within(screen.getByTestId('showcase-state-view')).getByRole('button', { name: 'Try again' }));
     expect(within(screen.getByTestId('showcase-state-view')).getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
     expect(screen.getByText('Tried again 1 times')).toBeTruthy();
   });
@@ -502,9 +550,9 @@ describe('showcase of lists, sheets and states', () => {
   it('lets a developer open the unlock sheet and close it again', async () => {
     await render(<Showcase />);
     expect(screen.queryByLabelText('Unlock')).toBeNull();
-    await userEvent.press(screen.getByRole('button', { name: 'Open the unlock sheet' }));
+    await user.press(screen.getByRole('button', { name: 'Open the unlock sheet' }));
     expect(screen.getByLabelText('Unlock').props.role).toBe('dialog');
-    await userEvent.press(screen.getByTestId('showcase-sheet-close'));
+    await user.press(screen.getByTestId('showcase-sheet-close'));
     expect(screen.queryByLabelText('Unlock')).toBeNull();
   });
 });

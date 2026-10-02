@@ -1,7 +1,17 @@
 import { render, screen } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { Platform } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text as NativeText,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Avatar, hues, initialsOf } from '@/components/Avatar';
 import { CurrencyFlag } from '@/components/CurrencyFlag';
@@ -11,11 +21,33 @@ import { Showcase } from '@/features/showcase/Showcase';
 import { text } from '@/theme';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
 
+/*
+ * Nothing here depends on how fast the machine is or how warm Jest's cache is.
+ *
+ * React Native's components load on first use (babel-preset-expo makes the
+ * `react-native` import lazy), so the first render in this file used to pay
+ * for transforming them: Modal alone takes about 5 s with a cold cache, all
+ * inside one test's 5 s budget. Touching every primitive the components and
+ * the showcase draw moves that one-off cost to file load, where no test
+ * timeout applies (the same fix as PinSheet.test.tsx).
+ */
+void [AccessibilityInfo, ActivityIndicator, Modal, Pressable, ScrollView, NativeText, TextInput, View];
+
 let mockScheme: 'light' | 'dark' = 'dark';
 jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
   __esModule: true,
   default: () => mockScheme,
 }));
+
+/*
+ * The showcase draws every kit component, so rendering it once before the
+ * first test pays whatever React Native still does on a component's first
+ * render (beyond loading its module) with a 60 s budget of its own.
+ */
+beforeAll(async () => {
+  const { unmount } = await render(<Showcase />);
+  await unmount();
+}, 60_000);
 
 const flat = (style: unknown): Record<string, unknown> => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
 
