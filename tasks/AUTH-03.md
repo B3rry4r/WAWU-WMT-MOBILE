@@ -7,7 +7,7 @@ order: 30
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: [R-6]
 passes: [V1, V2, V3, V4, V9]

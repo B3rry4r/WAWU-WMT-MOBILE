@@ -3,19 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 17 of 176.**
+**Launch tasks done: 18 of 176.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 64 | 51 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 1 | 0 | 0 |
-| done | 12 | 6 | 0 | 0 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
+| review | 0 | 0 | 0 | 0 |
+| done | 12 | 7 | 0 | 0 |
 
 ## Done
 
@@ -33,6 +29,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
+- [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
@@ -49,6 +46,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · AUTH-03 merged (Developer 1): phone check at sign-up in WAWU ID (wawu-id PR #3), phone-verified sign-in for new sign-ups only, PROVISIONAL limits, Nigerian numbers at launch (R-36). Existing accounts unchanged.
 - 2 Oct 2026 · AUTH-03 fix round 2: sign-up returns an `attempt` secret that the phone routes need (a later sign-up can no longer capture someone else's code), no session by any route before the phone code, a held email moves only with a mailbox code, strangers spend nothing of a number's budget, the daily text budget is exact, IPv6 /64 counted as one, expired sign-ups release web `register`. AUTH-04 must send `attempt` (BACKEND_GAPS G-13).
 - 2 Oct 2026 · AUTH-03 fix round 1: the phone routes act only on a pending sign-up, wrong codes count per number and are never reset by a resend (12 a day), every kind of number gets the same answer, unconfirmed sign-ups expire after 24 h and release their email, parallel requests no longer 500, Nigerian numbers only, limits per address, number and day in the database; the sign-in answer carries `accountType` when the account has one (R-36). All limits PROVISIONAL.
 - 2 Oct 2026 · AUTH-03: wawu-id texts a 6-digit sign-up code (`POST /auth/signup`, `/auth/phone/verify/start`, `/auth/phone/verify/confirm`) through Fintava's SMS route; the fourth wrong code makes the user wait (provisional 900 s); a phone-verified account can sign in without a verified email; occupation and account type are stored. Additive migration; real SMS send NOT RUN (needs Fintava sandbox keys).
@@ -63,4 +61,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-03 · Round 4: the pay sheet uses UI-01's `Button`, `Money` and `Text` (local copies deleted); requests filed for the kit's missing `Text` sizes, `Money`'s kobo line height (W10 is 4 px taller until then) and shared `Avatar`/`CurrencyFlag`; back to verifying.
 - 2 Oct 2026 · MONEY-03 · Round 3 follow-up: main 6b7eaff merged; the Fees-row ruling renumbered to R-23; the pay sheet's failed mark is `X` (as W14) now that the icon set has it; the X generator request row removed.
 - 2 Oct 2026 · MONEY-03 · Round 3: owner overruled two deferrals; the pay sheet now uses the shared Lucide `Icon` and `VerifiedTick` (View-drawn icons deleted) and has a W10 `send` variant (faded kobo, Note after Total). Fees-row ruling recorded as R-23. Back to verifying.
-- 2 Oct 2026 · MONEY-03 · Round 2: verified tick in the pay sheet header, 1 px lines, Fees subtotal for two-part fees, double-tap guard on Pay; back to verifying.
