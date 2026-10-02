@@ -23,6 +23,8 @@ const defaultTone: Record<TextVariant, ColorToken> = {
   cardTitle: 'textPrimary',
   sheetTitle: 'textPrimary',
   sheetTitleSm: 'textPrimary',
+  errorLine: 'danger',
+  linkStrong: 'accentFg',
 };
 
 /** Headings announce themselves to screen readers, so a screen never has to say so. */

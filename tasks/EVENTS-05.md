@@ -3,7 +3,7 @@ id: EVENTS-05
 title: Running an event: organiser numbers and door staff
 owner: DEV3
 area: EVENTS
-order: 86
+order: 24
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -32,7 +32,7 @@ Sold count on my events, per-referral ticket counts, door staff a host can add, 
 
 ## Capability checks
 
-- [ ] The organiser dashboard's sold count equals real tickets.
+- [ ] A host sees the same sold count on E17 and E18 as tickets actually issued, and a referral link's sales count goes up by one per ticket bought through it.
 - [ ] Door staff can check people in; the same ticket twice shows 'already used'.
 
 ## Builder report

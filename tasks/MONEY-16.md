@@ -3,13 +3,13 @@ id: MONEY-16
 title: Nightly check against Fintava
 owner: YOU
 area: MONEY
-order: 60
+order: 97
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-10, MONEY-11]
-decisions: []
+depends_on: [MONEY-10, MONEY-11, MONEY-17, MONEY-18]
+decisions: [R-10, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -29,7 +30,10 @@ Any difference between our ledger and Fintava is found the same night.
 
 ## Scope
 
-A nightly job that compares every wallet's movements and balance with Fintava's and alerts the owner on any mismatch.
+A nightly job that compares every wallet's movements and balance with Fintava's, and emails the owner (the
+backend's existing mailer) on any mismatch. It also checks that held money in WAWU's merchant wallet equals the
+open holds in our ledger (R-19), and that WAWU's merchant charge landed in WAWU's wallet for each fee-bearing
+transaction (R-10, OPS-09).
 
 ## Fintava facts
 
@@ -41,6 +45,8 @@ Compare against `GET /txn?customerId=` per customer, `GET /txn/merchant` for WAW
 
 - [ ] A deliberately altered test row is reported the next run.
 - [ ] A clean night reports zero mismatches and says how many wallets it checked.
+- [ ] A hold that is not in the ledger is reported.
+- [ ] A transfer whose merchant charge didn't land in WAWU's wallet is reported.
 
 ## Builder report
 

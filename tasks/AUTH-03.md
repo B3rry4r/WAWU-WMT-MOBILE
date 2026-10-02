@@ -3,7 +3,7 @@ id: AUTH-03
 title: Phone check at sign-up, and the email trap
 owner: DEV
 area: AUTH
-order: 32
+order: 30
 priority: launch
 repo: wawu-id
 type: backend-endpoint
@@ -30,18 +30,21 @@ A4 verifies the phone. The canvas never verifies email, but login refuses unveri
 
 ## Scope
 
-Phone code at registration; fix the login rule so a phone-verified account can sign in even without a verified email (the design never verifies email, but login refuses it today); store occupation and account type. No BVN here (R-6).
+Phone code at registration; fix the login rule so a phone-verified account can sign in even without a verified email (the design never verifies email, but login refuses it today); store account type (A2). No BVN here (R-6); occupation is asked on A5, inside Open your wallet, and stored by KYC-01.
+
+BACKEND_GAPS G-2 (register issues tokens before anything is confirmed) is this task's to settle: tokens are issued once the sign-up proof the design draws, the phone code on A4, is done.
 
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-Fintava has `GET /compliance/verify/phone-number` and `POST /sms/send`. If the price is right, that is the SMS route for sign-up codes `docs/PLAN.md` asks for.
+Fintava has `GET /compliance/verify/phone-number` and `POST /sms/send`. Codes go by SMS through `POST /sms/send` (₦7 each, `docs/fintava/fees.md`); MONEY-14 reuses the same route for PIN resets.
 
 ## Capability checks
 
 - [ ] A user who signs up on mobile can sign out and sign back in.
 - [ ] A wrong code shows A15 and a fourth wrong code waits before retrying.
+- [ ] A user who registers but never enters the phone code holds no token that the Hub accepts (G-2).
 
 ## Builder report
 

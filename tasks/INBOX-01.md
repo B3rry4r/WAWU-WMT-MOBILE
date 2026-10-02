@@ -3,7 +3,7 @@ id: INBOX-01
 title: Communities: my communities, links, join decisions
 owner: DEV2
 area: INBOX
-order: 56
+order: 7
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -21,11 +21,10 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV2.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+A member sees their own communities with the last message and unread count, can share a room by a wawu/c/ link, and hears when a host answers their join request. Additive only.
 
 ## Scope
 
@@ -33,7 +32,7 @@ My communities with last message and unread; share links by slug; private rooms 
 
 ## Capability checks
 
-- [ ] A requester is notified when approved or declined.
+- [ ] A user who asked to join a private room gets a notification when the host approves or declines; a user can open wawu/c/<slug> and land in that room.
 
 ## Builder report
 

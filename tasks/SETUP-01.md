@@ -3,7 +3,7 @@ id: SETUP-01
 title: Verify the mobile repo setup
 owner: DEV
 area: SETUP
-order: 1
+order: 2
 priority: launch
 repo: wawu-wmt-mobile
 type: setup

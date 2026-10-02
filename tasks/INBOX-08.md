@@ -3,7 +3,7 @@ id: INBOX-08
 title: Paid DM threads and the creator's queue
 owner: DEV2
 area: INBOX
-order: 102
+order: 11
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -21,11 +21,10 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV2.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+A fan sees one thread per creator with every reply; a creator sees questions waiting, soonest deadline first, with the total. Additive only.
 
 ## Scope
 

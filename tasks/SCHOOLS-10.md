@@ -1,19 +1,19 @@
 ---
 id: SCHOOLS-10
-title: Tracked link to a school's own site
+title: Link to a school's own site, with the click recorded
 owner: DEV3
 area: SCHOOLS
-order: 162
-priority: after-launch
+order: 74
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: [SCHOOLS-04]
-decisions: [R-12]
+decisions: [R-12, R-33]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# SCHOOLS-10 · Tracked link to a school's own site
+# SCHOOLS-10 · Link to a school's own site, with the click recorded
 
 ## Read first
 
@@ -25,16 +25,15 @@ artboards: []
 
 ## Goal
 
-SC9: apply on the school's site through a WAWU link, and the school pays WAWU a commission.
+SC9: a user can apply on the school's own site through a WAWU link, and the click is recorded. Built at launch (R-33); the school's sign-ups and the commission are SCHOOLS-12, after launch.
 
 ## Scope
 
-Per-school link code, redirect endpoint that logs the click (user, course, time), admin upload of the school's conversions, commission ledger.
+Per-school link code and a redirect endpoint that logs the click (user, course, time).
 
 ## Capability checks
 
 - [ ] Tapping 'Apply on their site' records one click and lands on the school's URL with the WAWU code.
-- [ ] An uploaded conversion is matched to its click and creates a commission row at the ruled rate.
 
 ## Builder report
 

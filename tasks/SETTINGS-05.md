@@ -3,12 +3,12 @@ id: SETTINGS-05
 title: Delete account
 owner: DEV
 area: SETTINGS
-order: 108
+order: 174
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [SETTINGS-06]
+depends_on: [SETTINGS-06, SETTINGS-08, MONEY-11, MONEY-13, UI-02, SETTINGS-01, WALLET-05]
 decisions: [R-17]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [Z6, Z7, Z8]
@@ -23,6 +23,7 @@ artboards: [Z6, Z7, Z8]
 - `DECISIONS.md`: R-17 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py Z6 Z7 Z8` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/designer/BRIEF.md`: its entries for Z6 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -34,9 +35,13 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **Z6 · Delete account**: 'Delete your account? This can't be undone after 30 days.' Warning card 'Empty your wallet first. You have ₦485,250.75. Withdraw it to your bank before deleting.' Withdraw. Lists what goes: profile, content and communities; purchases and tickets; wallet and cards. Continue (enabled when wallet empty).
+- **Z6 · Delete account**: 'Delete your account? This can't be undone after 30 days.' Warning card 'Empty your wallet first. You have ₦485,250.75. Withdraw it to your bank before deleting.' Withdraw. Lists what goes: profile, content and communities; purchases and tickets; wallet (no cards at launch; recorded in BRIEF). Continue (enabled when wallet empty).
 - **Z7 · Confirm**: 'Why are you leaving? (optional)' select (I don't use it enough); 'Type DELETE to confirm'; Delete my account.
 - **Z8 · Scheduled**: 'Scheduled for deletion. On 26 October. Sign in before then to cancel.' Done.
+
+## Brief changes (build these, not the canvas)
+
+- **Z6**: "wallet". No cards at launch. (Why: R-16.)
 
 ## Capability checks
 
@@ -46,6 +51,8 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states Z8.
+- [ ] From Z2 (SETTINGS-01), a user can tap Delete account and reach Z6 (this task adds the row, as Z2 draws it).
+- [ ] A user without a wallet sees no wallet warning and can continue.
 
 ## What the backend serves today (from the analysis)
 

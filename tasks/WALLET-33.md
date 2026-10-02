@@ -3,7 +3,7 @@ id: WALLET-33
 title: Crypto through Cardex (first slice)
 owner: YOU
 area: WALLET
-order: 179
+order: 197
 priority: after-launch
 repo: wawu-backend
 type: money-path
@@ -23,6 +23,7 @@ artboards: []
 - `DECISIONS.md`: R-16 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/cardex.md` (what Cardex does and where the canvas differs)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 

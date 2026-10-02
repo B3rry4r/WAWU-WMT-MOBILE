@@ -1,19 +1,19 @@
 ---
 id: HOME-14
-title: Move tips to the wallet
+title: Pay tips from the wallet (backend)
 owner: DEV
 area: HOME
-order: 116
+order: 110
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
-decisions: []
+depends_on: [MONEY-17, MONEY-13, MONEY-16, WALLET-15, WALLET-16]
+decisions: [R-5, R-10, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# HOME-14 · Move tips to the wallet
+# HOME-14 · Pay tips from the wallet (backend)
 
 ## Read first
 
@@ -22,10 +22,11 @@ artboards: []
 - `docs/people/DEV.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs)
 
 ## Goal
 
-Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
+A tip is paid from the buyer's wallet with the PIN, and the creator's 85% lands in their wallet (R-11). The web keeps Flutterwave until after launch.
 
 ## Scope
 
@@ -33,7 +34,7 @@ Tips pay from the wallet (H26-H28) with an optional note, and land in the creato
 
 ## Capability checks
 
-- [ ] A user pays from their wallet with their PIN and gets what they paid for.
+- [ ] A user tips ₦2,000: their wallet drops by ₦2,023.25 once; the creator's wallet rises by ₦1,700 and WAWU keeps ₦300 (85/15, R-5).
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 

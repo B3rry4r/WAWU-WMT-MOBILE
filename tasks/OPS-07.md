@@ -1,19 +1,19 @@
 ---
 id: OPS-07
-title: Rule the web features missing from the canvas (D14)
+title: List the web features the app doesn't have, for the web team
 owner: YOU
 area: OPS
-order: 10
-priority: launch
+order: 177
+priority: after-launch
 repo: wawu-wmt-mobile
 type: ops
 status: todo
 depends_on: []
-decisions: []
+decisions: [R-34]
 passes: []
 artboards: []
 ---
-# OPS-07 · Rule the web features missing from the canvas (D14)
+# OPS-07 · List the web features the app doesn't have, for the web team
 
 ## Read first
 
@@ -23,15 +23,20 @@ artboards: []
 
 ## Goal
 
-89 things on the web don't appear on the canvas. Missing from the design is not the same as removed.
+Web features absent from the canvas are not built in the app (DECISIONS.md, Authority: the canvas decides
+the app; the web follows after launch; R-34). This list hands the 89 of them to the web team for its own port
+after launch. Nothing here is an owner ruling.
 
 ## Scope
 
-docs/analysis/ANALYSIS-EVIDENCE.md, 'On the web today, absent from the canvas'. Mark each keep, cut or later, with the task that carries it out.
+`docs/analysis/ANALYSIS-EVIDENCE.md`, "On the web today, absent from the canvas". Mark each row "not in the
+app" and name the web-port task that carries it. List separately the rows that hold user money or user data
+needing migration.
 
 ## Capability checks
 
-- [ ] Every one of the 89 rows has a ruling and a task id (or 'no work').
+- [ ] Each of the 89 rows is marked "not in the app" and assigned to the web-port task.
+- [ ] Rows that hold user money or user data needing migration are listed separately for the web team.
 
 ## Builder report
 

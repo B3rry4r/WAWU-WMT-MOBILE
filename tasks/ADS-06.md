@@ -3,7 +3,7 @@ id: ADS-06
 title: Admin ad endpoints
 owner: DEV2
 area: ADS
-order: 188
+order: 35
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

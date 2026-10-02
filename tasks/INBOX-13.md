@@ -3,13 +3,13 @@ id: INBOX-13
 title: Out of credits, buy credits, credits added
 owner: DEV2
 area: INBOX
-order: 152
+order: 103
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-02, INBOX-16]
-decisions: []
+depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-05, INBOX-16, UI-02]
+decisions: [R-5, R-6, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I27, I28, I29]
 ---
@@ -22,6 +22,8 @@ artboards: [I27, I28, I29]
 - `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I27 I28 I29` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
+- `docs/designer/BRIEF.md`: its entries for I28, I29 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -34,17 +36,24 @@ New files under `src/features/` for these screens and their route files under `s
 ## Artboards
 
 - **I27 · Out of credits**: Room with 0 credits: "You're out of credits. Reading stays free. Buy credits to send messages here." with Buy credits.
-- **I28 · Buy credits**: Buy WAWU Credits sheet: packs 50/₦500, 120/₦1,000 (Popular), 300/₦2,000 (Best value), "Credits don't expire and can't be cashed out", Pay from wallet, Buy 120 credits · ₦1,000 then PIN.
-- **I29 · Credits added**: "120 credits added. Paid ₦1,000 from your Naira wallet. You have 120 credits." Back to chat.
+- **I28 · Buy credits**: Buy WAWU Credits sheet: packs 50/₦500, 120/₦1,000 (Popular), 300/₦2,000 (Best value), "Credits don't expire and can't be cashed out", the breakdown (₦1,000 + Fintava's ₦23.25), Pay from wallet, "Buy 120 credits · ₦1,023.25" then PIN (BRIEF I28).
+- **I29 · Credits added**: "120 credits added. Paid ₦1,023.25 from your Naira wallet (BRIEF I29). You have 120 credits." Back to chat.
+
+## Brief changes (build these, not the canvas)
+
+- **I28**: add the breakdown: Fintava's charge ₦23.25, Total ₦1,023.25; button "Buy 120 credits · ₦1,023.25". Credits stay a count. (Why: R-10 and the purchases default.)
+- **I29**: "Paid ₦1,023.25 from your Naira wallet." (Why: rule 5.)
 
 ## Capability checks
 
 - [ ] **I27**: a user can Buy credits.
-- [ ] **I28**: a user can pick a pack; Buy; enter PIN.
-- [ ] **I29**: a user can Back to chat.
+- [ ] **I28**: a user can pick a pack; see ₦1,000 + ₦23.25 = ₦1,023.25; tap "Buy 120 credits · ₦1,023.25"; enter their PIN.
+- [ ] **I29**: a user sees "Paid ₦1,023.25" and their credits as a count, and can go Back to chat (I25).
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states I27.
+- [ ] From I24 (INBOX-05), a user can tap Buy and reach I28 (this task adds it, as drawn).
+- [ ] A user with no wallet who taps Buy lands in Open your wallet (A26).
 
 ## What the backend serves today (from the analysis)
 

@@ -3,13 +3,13 @@ id: MONEY-17
 title: Pay from wallet
 owner: YOU
 area: MONEY
-order: 61
+order: 89
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-09, MONEY-10]
-decisions: []
+depends_on: [MONEY-09, MONEY-10, MONEY-13, WALLET-15]
+decisions: [R-5, R-10, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -29,11 +30,15 @@ One shared way to take a payment from a user's wallet for anything WAWU sells.
 
 ## Scope
 
-Debit to WAWU's collection account with the 85/15 split on the ledger, an Idempotency-Key.
+A debit from the buyer's wallet to WAWU's Fintava merchant wallet (R-19), with the 85/15 split on the ledger
+and an Idempotency-Key. The buyer pays the price plus Fintava's balance-transfer charge from the fee quote
+(WALLET-15), and the seller's 85% is of the price (R-10). A user with no wallet gets the `no_wallet` answer
+(MONEY-13). Fintava's charge on WAWU's own later movements (releases, refunds, payouts) is paid by WAWU from its
+15% (R-31).
 
 ## Capability checks
 
-- [ ] Paying ₦1,000 moves ₦1,000 once, and the ledger shows the creator's ₦850 and WAWU's ₦150.
+- [ ] A buyer paying for a ₦1,000 item is debited ₦1,023.25 once (₦1,000 + Fintava's ₦23.25 from the fee quote); the ledger shows the creator's ₦850 and WAWU's ₦150.
 - [ ] The same request sent twice debits once.
 
 ## Builder report

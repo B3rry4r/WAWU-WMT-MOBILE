@@ -3,7 +3,7 @@ id: HOME-06
 title: Content detail: previews, fair ratings, counts
 owner: DEV
 area: HOME
-order: 44
+order: 80
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -24,7 +24,7 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+Content detail shows free preview pages or seconds, ratings only from buyers, and real counts (H19, H23, H25). Additive only.
 
 ## Scope
 

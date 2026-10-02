@@ -75,7 +75,7 @@ as `BVNCHARGE` debits. Name enquiries, the meter preview and creating a
 customer were free. These are sandbox prices; the dashboard list above is
 what we use, and the live price of the selfie and phone checks is still
 Fintava's to confirm. So each failed check or retry costs WAWU money:
-KYC-02 (the selfie match) limits retries.
+KYC-02 (the selfie match) limits retries to 3 a day per user.
 
 Wallet-to-wallet sends ran in the sandbox with `transaction_fee: 0` and
 `platformComm`, `merchantComm` and `lomaCharge` all null

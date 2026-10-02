@@ -3,7 +3,7 @@ id: SETTINGS-04
 title: Data export and blocking that actually hides people
 owner: DEV
 area: SETTINGS
-order: 71
+order: 84
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -28,7 +28,7 @@ Z4, Z5: an export that arrives, and blocked people hidden everywhere.
 
 ## Scope
 
-Fulfil data-export requests by email link; enforce blocks in search and public profiles.
+Fulfil data-export requests by email link; enforce blocks in search, public profiles and wallet recipient search (WALLET-08); chat enforces them in INBOX-06.
 
 ## Capability checks
 

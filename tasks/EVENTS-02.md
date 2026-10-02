@@ -1,9 +1,9 @@
 ---
 id: EVENTS-02
-title: Hosting an event: hybrid, kinds, one-step submit
+title: Event hosting backend: hybrid events, more event types, tickets sent with the event
 owner: DEV3
 area: EVENTS
-order: 50
+order: 4
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -13,7 +13,7 @@ decisions: [R-8]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# EVENTS-02 · Hosting an event: hybrid, kinds, one-step submit
+# EVENTS-02 · Event hosting backend: hybrid events, more event types, tickets sent with the event
 
 ## Read first
 
@@ -30,6 +30,8 @@ E13-E16 ask for things the event model lacks and submit in one go.
 ## Scope
 
 Additive: hybrid format, Conference and Concert kinds, ticket types in the same submit, ₦0 tickets per R-8.
+
+Also: E14's category labels map to EventCategory (for example 'Business & Finance' to business), and the required `location` that no step collects becomes optional (additive), so EVENTS-04 doesn't have to work around it.
 
 ## Capability checks
 

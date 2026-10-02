@@ -3,12 +3,12 @@ id: WALLET-20
 title: Scan to pay and my QR code
 owner: YOU
 area: WALLET
-order: 173
+order: 191
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [WALLET-28]
+depends_on: [WALLET-28, ME-01, HOME-01, WALLET-01]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [W24, W25]
@@ -22,6 +22,8 @@ artboards: [W24, W25]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W24 W25` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for W24, W25, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -43,6 +45,7 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] From W1 and H1, a user can tap Scan and reach W24, and from M1 tap the QR button and reach W25 (this task adds them, as drawn).
 
 ## What the backend serves today (from the analysis)
 

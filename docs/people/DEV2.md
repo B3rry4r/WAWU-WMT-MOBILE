@@ -38,7 +38,10 @@ part of your task.
 - **Fees:** the buyer pays Fintava's charge (R-10, `docs/fintava/fees.md`);
   screens show the breakdown and the total, never a literal.
 - **Designs are final; changes come from the brief.** Check
-  `docs/designer/BRIEF.md` for every artboard you build.
+  `docs/designer/BRIEF.md` for every artboard you build (R-29).
+- **Links between screens:** a hub builds only the rows whose screen exists;
+  the task that builds a screen adds its own way in, as drawn (R-27,
+  `docs/WORKFLOW.md` section 7).
 - **Branches:** `docs/WORKFLOW.md` section 8. Branch from the newest main,
   merge main in before verification, never rebase or force-push.
 - **Compare pictures with pictures:** render the artboard, screenshot your

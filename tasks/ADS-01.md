@@ -3,12 +3,12 @@ id: ADS-01
 title: TGIF sponsored card
 owner: DEV2
 area: ADS
-order: 186
+order: 173
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [HOME-09, ADS-04]
+depends_on: [HOME-09, HOME-01, ADS-04, ADS-05, EVENTS-01]
 decisions: [R-15]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H33]
@@ -23,6 +23,7 @@ artboards: [H33]
 - `DECISIONS.md`: R-15 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py H33` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for H33, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -31,6 +32,8 @@ You own these screens AND the backend work behind them. Build the screens as the
 ## Scope
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+This task adds the sponsored card to both placements: in the TGIF reader (H33) and in TGIF's place on Today when TGIF is off (H36, built by HOME-01). Each view, tap and skip is sent to ADS-05.
 
 ## Artboards
 
@@ -42,6 +45,8 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] With a live campaign and TGIF off, a user sees the sponsored card on Today (H36, this task adds it, as drawn) and can open the event (E2).
+- [ ] Each view, tap and skip is counted once (ADS-05).
 
 ## What the backend serves today (from the analysis)
 

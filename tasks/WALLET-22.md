@@ -3,12 +3,12 @@ id: WALLET-22
 title: WAWU card
 owner: YOU
 area: WALLET
-order: 177
+order: 195
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [WALLET-31]
+depends_on: [WALLET-31, WALLET-01, WALLET-06]
 decisions: [R-16]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W29, W30, W31, W32, W33, W34]
@@ -24,6 +24,8 @@ artboards: [W29, W30, W31, W32, W33, W34]
 - The design: `python3 scripts/design/render_design.py W29 W30 W31 W32 W33 W34` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 - `docs/fintava/naira-api.md` (section "Cards")
+- `docs/designer/BRIEF.md`: its entries for W29, W30, W33 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -46,6 +48,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 Fintava issues physical Verve, Visa and Mastercard cards tied to the wallet account number (`POST /cards/physical/request`, `cardType: STATIC_WITH_ACCOUNT`), with activate, deactivate, reissue, link, PIN change and status. Fee, delivery and card webhook payloads are not documented: get them from Fintava.
 
+## Brief changes (build these, not the canvas)
+
+- **W29**: neither price is a single fixed number. Physical: WAWU's ₦1,500 card + ₦500 delivery, plus Fintava's card charge (not published yet). Virtual: not free; Fintava charges ₦2,000 (+ WAWU's fee, none set). Show each as "from" a sample, with the breakdown on the next screen. (Why: R-10 and Fintava's price list. Cards come after launch and are still undecided (R-16), so this can wait for the rest of this list.)
+- **W30**: add Fintava's card charge as its own row before the total (sample left obvious; Fintava hasn't published it). The button "Order card · ₦2,000" shows that new total. (Why: R-10 and rule 5.)
+- **W33**: "Card limits come from Fintava when cards are built." No tier. (Why: Fintava fact: no tiers in the API.)
+
 ## Capability checks
 
 - [ ] **W29**: a user can pick Physical or Virtual; Order physical card (W30); get virtual card.
@@ -57,6 +65,7 @@ Fintava issues physical Verve, Visa and Mastercard cards tied to the wallet acco
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states W32.
+- [ ] From W1, a user can tap the WAWU card row, and from W35 tap Cards (this task adds them, as drawn).
 
 ## What the backend serves today (from the analysis)
 

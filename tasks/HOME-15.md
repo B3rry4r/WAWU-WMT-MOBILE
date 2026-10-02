@@ -1,6 +1,6 @@
 ---
 id: HOME-15
-title: Move content unlocks to the wallet
+title: Pay for unlocks from the wallet (backend)
 owner: DEV
 area: HOME
 order: 118
@@ -8,12 +8,12 @@ priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17, MONEY-19]
-decisions: []
+depends_on: [MONEY-17, MONEY-19, MONEY-13, MONEY-16, WALLET-15, WALLET-16]
+decisions: [R-5, R-10, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# HOME-15 · Move content unlocks to the wallet
+# HOME-15 · Pay for unlocks from the wallet (backend)
 
 ## Read first
 
@@ -22,10 +22,11 @@ artboards: []
 - `docs/people/DEV.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs)
 
 ## Goal
 
-Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
+A piece is unlocked from the buyer's wallet with the PIN, and the creator's 85% lands in their wallet (R-11). The web keeps Flutterwave until after launch.
 
 ## Scope
 
@@ -33,7 +34,7 @@ Unlock pays from the wallet (H14-H18); access is granted once the debit settles;
 
 ## Capability checks
 
-- [ ] A user pays from their wallet with their PIN and gets what they paid for.
+- [ ] A user unlocking a ₦2,500 piece is debited ₦2,523.25 once and gets access; if access fails after the debit, the sweep grants it or refunds the price.
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 

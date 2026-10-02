@@ -3,12 +3,12 @@ id: HOME-09
 title: TGIF reader
 owner: DEV
 area: HOME
-order: 80
+order: 149
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [HOME-10]
+depends_on: [HOME-10, INBOX-06, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [H29, H30, H31, H32, H34, H35]
@@ -22,6 +22,7 @@ artboards: [H29, H30, H31, H32, H34, H35]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H29 H30 H31 H32 H34 H35` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for H29, H30, H31, H32, H34, H35, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 

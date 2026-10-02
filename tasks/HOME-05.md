@@ -3,7 +3,7 @@ id: HOME-05
 title: Feed: creator and professional cards, media details
 owner: DEV
 area: HOME
-order: 43
+order: 78
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -24,7 +24,7 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+The feed mixes in creator and professional cards and returns photo-set frames, durations and page counts (H3, H4, H9, H10). Additive only.
 
 ## Scope
 

@@ -3,7 +3,7 @@ id: EXPLORE-03
 title: Explore: categories and featured creators
 owner: DEV
 area: EXPLORE
-order: 46
+order: 94
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -24,7 +24,7 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+Explore filters creators by the creator taxonomy the chips show, and shows admin-featured creators (X1 to X4). Additive only.
 
 ## Scope
 

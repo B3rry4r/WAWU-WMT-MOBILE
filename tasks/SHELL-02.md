@@ -3,7 +3,7 @@ id: SHELL-02
 title: Signed-in session and API wiring
 owner: DEV
 area: SHELL
-order: 16
+order: 10
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
@@ -31,7 +31,7 @@ src/api/: auth headers on the generated client, tokens in expo-secure-store, ref
 
 ## Capability checks
 
-- [ ] A user signs in with email and password against the test backend and stays signed in after restarting the app.
+- [ ] A user signs in with email and password and stays signed in after restarting the app: checked against the local backend (OPS-03); tester builds on phones use the live services (R-25).
 - [ ] An expired token refreshes once, silently.
 - [ ] Signing out removes the token from secure storage.
 

@@ -3,13 +3,13 @@ id: MONEY-12
 title: Open a Fintava account when someone opens a wallet
 owner: YOU
 area: MONEY
-order: 67
+order: 77
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-06, KYC-01, KYC-02]
-decisions: []
+decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -39,7 +40,7 @@ From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
 ## Capability checks
 
-- [ ] A new sandbox user ends sign-up with an account number Fintava also reports.
+- [ ] A sandbox user who finishes Open your wallet has an account number that Fintava also reports.
 - [ ] Retrying a failed opening never opens two accounts.
 
 ## Builder report

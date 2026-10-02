@@ -3,13 +3,13 @@ id: MONEY-06
 title: Fintava client
 owner: YOU
 area: MONEY
-order: 23
+order: 49
 priority: launch
 repo: wawu-backend
 type: third-party
 status: todo
-depends_on: [MONEY-04]
-decisions: []
+depends_on: [MONEY-04, OPS-02]
+decisions: [R-25]
 passes: [V1, V2, V3, V6, V8, V9]
 artboards: []
 ---
@@ -22,14 +22,22 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-One place that talks to Fintava, replacing the Flutterwave wallet gateway behind the same interface.
+A new Fintava gateway beside the Flutterwave one: one place in the backend that talks to Fintava. Fintava
+goes beside Flutterwave until the web has no callers (CLAUDE.md rule 6); the web's Flutterwave paths keep working
+until WALLET-30 removes them.
 
 ## Scope
 
-Auth and request signing, sandbox and live config, error mapping to our error shape, timeouts, env vars listed in the deploy checklist.
+Bearer-key auth (Fintava has no request signing), sandbox and live config, error mapping to our error shape,
+timeouts. The Fintava variables are added to the `hub-api.env` list in wawu-backend `deploy/README.md` (step 4).
+Local values live in the backend's `.env`; production values are put in `/etc/wawu/hub-api.env` on the
+DigitalOcean droplet by OPS-10 (deploys go through GitHub Actions; there is no staging, R-25).
+
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Fintava facts
 
@@ -39,7 +47,7 @@ Base URLs: sandbox `https://dev.fintavapay.com/api/dev`, live `https://live.fint
 
 ## Capability checks
 
-- [ ] Against the sandbox, every call used by later tasks succeeds and a bad key gives a clear typed error.
+- [ ] Against the sandbox, each call in `docs/PLAN.md` items 1 to 13 returns a typed result through the client, and a bad key gives a clear typed error. Bank sends and bill purchases that the sandbox refuses (the blocker below) are reported NOT RUN with that reason.
 - [ ] No Fintava secret appears in logs.
 
 ## Builder report

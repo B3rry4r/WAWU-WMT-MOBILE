@@ -3,13 +3,13 @@ id: SETTINGS-02
 title: About, terms and privacy policy
 owner: DEV
 area: SETTINGS
-order: 34
+order: 90
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [SHELL-01]
-decisions: []
+depends_on: [SHELL-01, UI-02]
+decisions: [R-1]
 passes: [V1, V4, V5, V6, V9]
 artboards: [Z9, Z10, Z11]
 ---
@@ -22,6 +22,7 @@ artboards: [Z9, Z10, Z11]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py Z9 Z10 Z11` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/designer/BRIEF.md`: its entries for Z9, Z10 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -31,11 +32,18 @@ You own these screens AND the backend work behind them. Build the screens as the
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
 
+The bank name and licence line come from config, filled in by the owner (R-1). Terms and Privacy text are the owner's legal text, served by the backend with their date; the canvas text is layout only (owner input).
+
 ## Artboards
 
-- **Z9 · About**: About WAWU: Version 2.4.0; description '...get paid for what they know, with a real bank account built in.'; 'Banking by Fintava MFB · Licensed by the CBN'; Contact support support@wawuafrica.com; Rate the app.
-- **Z10 · Terms**: Terms, Updated 1 September 2026: Using WAWU (18 or over, true details, one account per person); Money (payments move through your WAWU wallet, held at Fintava MFB; fees shown before you pay); What you sell (you own your work; WAWU may show it to buyers).
+- **Z9 · About**: About WAWU: Version 2.4.0; description '...get paid for what they know, with a real bank account built in.'; 'Banking by' and the bank name, then the licence line, both from config filled in by the owner (R-1, BRIEF Z9); Contact support support@wawuafrica.com; Rate the app.
+- **Z10 · Terms**: Terms, Updated 1 September 2026: Using WAWU (18 or over, true details, one account per person); Money (payments move through your WAWU wallet, held at the bank named by config (Loma Bank, BRIEF Z10); fees shown before you pay); What you sell (you own your work; WAWU may show it to buyers).
 - **Z11 · Privacy policy**: Privacy policy, Updated 1 September 2026: What we collect (details, BVN check result, in-app activity); What we never do (sell data, show BVN/NIN/balance); Your choices (download or delete from Privacy).
+
+## Brief changes (build these, not the canvas)
+
+- **Z9**: "Banking by" + the bank name slot (sample "Loma Bank"), and the licence line as a slot filled from config by the owner (rule 7). (Why: R-1.)
+- **Z10**: "held at Loma Bank" (bank name slot). The terms text itself is the owner's legal text and will be replaced; keep the layout. (Why: R-1.)
 
 ## Capability checks
 

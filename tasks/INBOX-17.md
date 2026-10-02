@@ -1,19 +1,19 @@
 ---
 id: INBOX-17
-title: Move paid DMs to the wallet
+title: Paid questions: pay, hold, pay out and refund through the wallet (backend)
 owner: DEV2
 area: INBOX
-order: 153
+order: 107
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-18]
-decisions: []
+depends_on: [MONEY-18, MONEY-13, MONEY-16, WALLET-15, WALLET-16, INBOX-08, INBOX-09]
+decisions: [R-10, R-11, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# INBOX-17 · Move paid DMs to the wallet
+# INBOX-17 · Paid questions: pay, hold, pay out and refund through the wallet (backend)
 
 ## Read first
 
@@ -22,10 +22,11 @@ artboards: []
 - `docs/people/DEV2.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
+A fan pays for a paid question from their wallet; the money waits in WAWU's merchant wallet (R-19) until the creator answers (85% to the creator, R-11) or the window passes (the price back to the fan, R-10). The web keeps Flutterwave until after launch.
 
 ## Scope
 
@@ -33,7 +34,10 @@ Sending a paid DM holds the money; a reply releases it to the creator; expiry re
 
 ## Capability checks
 
-- [ ] A user pays from their wallet with their PIN and gets what they paid for.
+- [ ] A fan pays a paid question and the money sits in WAWU's merchant wallet, not the creator's (R-19).
+- [ ] The creator replies and 85% of the price lands in the creator's wallet, or waits until they open one (R-11).
+- [ ] No reply by the deadline and the fan gets the price back, not Fintava's charge (R-10).
+- [ ] A creator switched off by INBOX-09 cannot receive a new paid question.
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 

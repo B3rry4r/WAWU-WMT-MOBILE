@@ -3,13 +3,13 @@ id: INBOX-10
 title: Ask a creator a paid question
 owner: DEV2
 area: INBOX
-order: 154
+order: 161
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-02, INBOX-17]
-decisions: []
+depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-17, ME-02, UI-02, ME-11, HOME-07, INBOX-04, PROS-01]
+decisions: [R-6, R-10, R-19]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I2, I3, I4, I5]
 ---
@@ -22,6 +22,8 @@ artboards: [I2, I3, I4, I5]
 - `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I2 I3 I4 I5` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
+- `docs/designer/BRIEF.md`: its entries for I3 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -33,20 +35,26 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **I2 · Profile · Message**: Creator profile header with Follow and "Message · ₦1,500"; the price sits on the button.
-- **I3 · Write the question**: Ask sheet: question text, "Usually replies in about 3 hours", reply window, full-refund promise, "Held by WAWU until Chidi answers", Pay from wallet with Naira wallet balance, Send · ₦1,500 then PIN.
+- **I2 · Profile · Message**: Creator profile header with Follow and "Message · ₦1,500"; the price sits on the button. I2 is ME-02's profile (M5) with the Message button added here, never a second profile.
+- **I3 · Write the question**: Ask sheet: question text, "Usually replies in about 3 hours", reply window, the refund line "No reply in time, your ₦1,500 comes back" (no "in full"), "Held by WAWU until Chidi answers", the breakdown (₦1,500 + Fintava's ₦23.25 = ₦1,523.25), Pay from wallet with the Naira wallet balance, "Send · ₦1,523.25" then PIN (BRIEF I3).
 - **I4 · Waiting for a reply**: Fan thread with the paid question, countdown "17h 52m left to reply", held-by-WAWU note, and the composer locked "You can send once Chidi replies".
 - **I5 · Replied**: Thread after the creator answered with two message bubbles, "Replied in 2h 14m", "Chidi answered, so he's been paid", and Ask a follow-up · ₦1,500 (a new paid message with its own window).
 
+## Brief changes (build these, not the canvas)
+
+- **I3**: add the breakdown: Fintava's charge ₦23.25, Total ₦1,523.25; button "Send · ₦1,523.25". The refund line names the amount that comes back without "in full": "No reply in time, your ₦1,500 comes back." (Why: R-10 and the purchases default; rule 6 for the refund.)
+
 ## Capability checks
 
-- [ ] **I2**: a user can tap Message · ₦price.
-- [ ] **I3**: a user can type question; Send · ₦1,500; enter wallet PIN (W11).
+- [ ] **I2**: from M5 (ME-02), P2 (PROS-01), H10 (HOME-07) and M35 (ME-11), a user can tap "Message · ₦price" or "Ask a question · ₦price" and reach I3 (this task adds those buttons, as drawn).
+- [ ] **I3**: a user can type a question; see ₦1,500 + ₦23.25 = ₦1,523.25; tap "Send · ₦1,523.25"; enter their PIN (W11).
 - [ ] **I4**: a user can wait; view countdown.
 - [ ] **I5**: a user can read reply; Ask a follow-up · ₦1,500.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] From I1 (INBOX-04), a fan can tap a paid DM row and reach I4 (this task adds the row, as drawn).
+- [ ] A user with no wallet who taps Send lands in Open your wallet (A26).
 
 ## What the backend serves today (from the analysis)
 

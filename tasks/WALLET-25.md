@@ -3,7 +3,7 @@ id: WALLET-25
 title: Add money by card
 owner: YOU
 area: WALLET
-order: 169
+order: 187
 priority: after-launch
 repo: wawu-backend
 type: third-party
@@ -23,6 +23,7 @@ artboards: []
 - `DECISIONS.md`: R-10 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 

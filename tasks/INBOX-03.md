@@ -3,12 +3,12 @@ id: INBOX-03
 title: Phone push notifications
 owner: DEV2
 area: INBOX
-order: 97
+order: 47
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
+depends_on: [SETTINGS-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9, V10]
 artboards: []
@@ -30,10 +30,14 @@ Replies, refunds, money in and join decisions need to reach a phone.
 
 Device token registration and removal; a sender behind the existing notification service that respects settings; Expo push.
 
+Categories follow the user's Z3 switches (SETTINGS-07). The phone side (permission, token, tap) is INBOX-21. Android push needs the owner's FCM credentials uploaded to Expo (owner input).
+
+V10 runs on a real Android phone only (DECISIONS R-24).
+
 ## Capability checks
 
-- [ ] A notification reaches a real phone within a minute.
-- [ ] A turned-off category is not sent.
+- [ ] A notification sent to a registered push token is accepted by Expo's push service, and its receipt reports it delivered within a minute (the phone side is checked in INBOX-21).
+- [ ] A category the user turned off in Z3 (SETTINGS-07) is not sent.
 - [ ] A dead token is cleaned up.
 
 ## Builder report

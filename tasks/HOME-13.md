@@ -3,13 +3,13 @@ id: HOME-13
 title: Tip a creator
 owner: DEV
 area: HOME
-order: 117
+order: 114
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-02, HOME-14]
-decisions: []
+depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-14, UI-02, HOME-02]
+decisions: [R-6, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [H26, H27, H28]
 ---
@@ -22,6 +22,8 @@ artboards: [H26, H27, H28]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H26 H27 H28` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md`: its entries for H26, H27, H28 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -33,18 +35,26 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **H26 · Tip sheet**: Tip sheet: 'Goes straight to their wallet. They see your name and note.' Quick amounts ₦500/₦1,000/₦2,000/₦5,000, other amount, note, Pay from wallet, Tip ₦2,000.
-- **H27 · PIN**: PIN sheet 'Approve ₦2,000 to Tife Adeola'. NOT in MANIFEST.json but a real artboard.
-- **H28 · Tip sent**: '₦2,000 sent to Tife', note echoed. 'The creator gets a notification and an Inbox money bubble.' Done returns to the feed.
+- **H26 · Tip sheet**: Tip sheet: 'Goes straight to their wallet. They see your name and note.' Quick amounts ₦500/₦1,000/₦2,000/₦5,000, other amount, note, the breakdown (Tip, Fintava's charge, Total), Pay from wallet, 'Tip ₦2,023.25' (BRIEF H26).
+- **H27 · PIN**: PIN sheet 'Approve ₦2,000 to Tife Adeola'.
+- **H28 · Tip sent**: '₦2,000 sent to Tife', note echoed. a 'Total paid ₦2,023.25' row (BRIEF H28). 'The creator gets a notification and an Inbox money bubble' (the bubble is drawn by INBOX-19). Done returns to the feed.
+
+## Brief changes (build these, not the canvas)
+
+- **H26**: add the breakdown above Pay from wallet: Tip ₦2,000, Fintava's charge ₦23.25, Total ₦2,023.25; button "Tip ₦2,023.25". (Why: R-10 and the purchases default; rule 5.)
+- **H27**: "Approve ₦2,023.25 to Tife Adeola". (Why: rule 5, following H26.)
+- **H28**: keep the heading, and add a row "Total paid ₦2,023.25". (Why: rule 5.)
 
 ## Capability checks
 
-- [ ] **H26**: a user can pick amount; enter other amount; write note; Tip.
+- [ ] **H26**: a user can pick an amount or enter another; write a note; see ₦2,000 + ₦23.25 = ₦2,023.25 and tap "Tip ₦2,023.25".
 - [ ] **H27**: a user can enter PIN.
-- [ ] **H28**: a user can Done.
+- [ ] **H28**: a user sees "Total paid ₦2,023.25" and can tap Done.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] From H2's ₦ Tip (HOME-02), a user can reach H26 (this task adds it, as drawn).
+- [ ] A user with no wallet who taps Tip lands in Open your wallet (A26).
 
 ## What the backend serves today (from the analysis)
 

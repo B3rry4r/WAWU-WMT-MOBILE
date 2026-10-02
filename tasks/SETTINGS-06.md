@@ -1,19 +1,19 @@
 ---
 id: SETTINGS-06
-title: Delete account: 30 days, cancellable
+title: Delete account in the Hub: empty wallet first, freeze, restore on cancel
 owner: DEV
 area: SETTINGS
-order: 107
+order: 170
 priority: launch
-repo: wawu-id, wawu-backend
+repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
-decisions: [R-17]
+depends_on: [MONEY-06, MONEY-11]
+decisions: [R-17, R-11, R-19]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# SETTINGS-06 · Delete account: 30 days, cancellable
+# SETTINGS-06 · Delete account in the Hub: empty wallet first, freeze, restore on cancel
 
 ## Read first
 
@@ -22,19 +22,24 @@ artboards: []
 - `docs/people/DEV.md` (what you own)
 - `DECISIONS.md`: R-17 (ruled; build what it says)
 - This task changes `wawu-id, wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
+- This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal
 
-Z6-Z8: deletion waits, signing in cancels it, and money is handled first.
+Z6 to Z8: deletion waits 30 days, money is handled first, and a cancelled deletion brings everything back (R-17). The WAWU ID half (the grace period and cancel on sign-in) is SETTINGS-08.
 
 ## Scope
 
-Grace period per R-17; cancel on sign-in; refuse while the wallet holds money (balance from Fintava).
+Refuse to schedule deletion while the wallet holds money (balance from Fintava, MONEY-11), a hold is open (R-19) or
+earnings are waiting (R-11). Freeze the Fintava wallet when deletion is scheduled and unfreeze it on cancel (a cancel
+route SETTINGS-08 calls). Content stays restorable for the 30 days.
+
+BACKEND_GAPS G-10: a frozen Fintava wallet can neither send nor receive, so money due to a frozen wallet (earnings, refunds) waits in WAWU's merchant wallet and is paid on unfreeze.
 
 ## Capability checks
 
-- [ ] A user who signs in during the grace period keeps their account.
-- [ ] A user with money in their wallet is told to move it first.
+- [ ] A user with money in their wallet, an open hold or waiting earnings is told to move it first.
+- [ ] A user who cancels within 30 days gets their wallet unfrozen and their content back.
 
 ## Builder report
 

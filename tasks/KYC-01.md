@@ -3,12 +3,12 @@ id: KYC-01
 title: BVN check when someone opens a wallet
 owner: YOU
 area: KYC
-order: 31
+order: 72
 priority: launch
-repo: wawu-id
+repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
+depends_on: [MONEY-06]
 decisions: [R-6]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
@@ -21,8 +21,8 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-6 (ruled; build what it says)
-- This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal
 
@@ -30,7 +30,9 @@ Identity is checked when someone first opens a wallet or touches money, never at
 
 ## Scope
 
-BVN lookup (Fintava or the R-6 vendor), prefill name, date of birth and gender, store when it was verified plus a hash and the last 4 digits only. The full BVN and NIN go to account opening (MONEY-12) in the same flow and are never stored in full.
+Fintava's BVN lookup (`GET /compliance/verify/bvn`) through the backend's Fintava client (MONEY-06; WAWU ID keeps only the account), prefill name, date of birth and gender, store when it was verified plus a hash and the last 4 digits only. The full BVN and NIN go to account opening (MONEY-12) in the same flow and are never stored in full.
+
+Occupation, typed on A5, is stored here (AUTH-03 no longer stores it).
 
 ## Fintava facts
 

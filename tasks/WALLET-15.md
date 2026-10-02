@@ -3,13 +3,13 @@ id: WALLET-15
 title: Fee quotes
 owner: YOU
 area: WALLET
-order: 95
+order: 87
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: []
-decisions: [R-10]
+depends_on: [MONEY-04, OPS-09]
+decisions: [R-10, R-31]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -30,7 +30,17 @@ Every fee shown before paying comes from the server, never from the app.
 
 ## Scope
 
-GET fee quote for transfer, withdraw, card top-up and card order, from configuration set per R-10: Fintava's fee plus WAWU's fee.
+GET a fee quote, from configuration set per R-10 (Fintava's charge plus WAWU's fee), for:
+- a purchase (unlock, tip, tick, ticket, paid DM, credits, course, legal service): Fintava's balance-transfer
+  charge by amount band, no WAWU fee;
+- a bill: Fintava's bill charge by category (₦100 electricity or cable, ₦0 airtime or data) plus WAWU's bill fee
+  (₦0 today), and the payer's balance-transfer charge into WAWU's wallet (R-31);
+- a send to a WAWU user: Fintava's balance-transfer charge by band + WAWU's ₦10;
+- a send or withdrawal to a bank: ₦40 + ₦25.
+Card top-up and card order are added by WALLET-25 and WALLET-31 after launch. The rates are the dashboard ones in
+`docs/fintava/fees.md` (final).
+
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Fintava facts
 
@@ -40,7 +50,9 @@ The user pays Fintava's fee plus WAWU's fee (R-10). The quote is Fintava's fee f
 
 ## Capability checks
 
-- [ ] Changing a fee in configuration changes the quote and the charge together.
+- [ ] A user sending ₦10,000 to a bank sees ₦40 + ₦25 = ₦65 and a total of ₦10,065 before confirming, and Fintava's record of that transfer debits ₦10,065. A difference between config and the dashboard is reported by MONEY-16.
+- [ ] A user sees the same total on the review screen and in the debit for a ₦4,999 and a ₦5,000 purchase (₦23.25 and ₦15.75 charges).
+- [ ] An electricity bill of ₦10,000 quotes its ₦100 bill charge and the payer's balance-transfer charge, each as its own part.
 
 ## Builder report
 

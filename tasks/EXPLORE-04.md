@@ -3,12 +3,12 @@ id: EXPLORE-04
 title: Search: creators, communities, no results, failed
 owner: DEV
 area: EXPLORE
-order: 83
+order: 102
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [EXPLORE-05]
+depends_on: [EXPLORE-05, UI-02, INBOX-05]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [X8, X9, X10, X11, X12]
@@ -22,6 +22,7 @@ artboards: [X8, X9, X10, X11, X12]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py X8 X9 X10 X11 X12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for X8, X9, X10, X11, X12, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -39,9 +40,17 @@ New files under `src/features/` for these screens and their route files under `s
 - **X11 · No recent searches**: From X5 with no history: 'No recent searches yet.' plus popular and creators.
 - **X12 · Search failed**: From X6 on error: 'Search isn't working right now … Try again'.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- X8: a creator (opens M5): added by ME-02
+
 ## Capability checks
 
-- [ ] **X8**: a user can Follow; open profile (M5).
+- [ ] **X8**: a user can Follow.
 - [ ] **X9**: a user can Ask (request to join private); Join (open); open community (I25).
 - [ ] **X10**: a user can tap a closest result.
 - [ ] **X12**: a user can Try again.
