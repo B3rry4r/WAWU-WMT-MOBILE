@@ -7,7 +7,7 @@ order: 13
 priority: launch
 repo: wawu-backend
 type: contract
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1]
@@ -42,6 +42,14 @@ Fintava amounts are naira decimals (`2.75`, `"100.00"`), not kobo. The contract 
 - [ ] Every wallet artboard's data needs (docs/analysis evidence, flow wallet) maps to a contract entry.
 - [ ] Conflicts between the canvas and Fintava's real behaviour are listed for the owner, not resolved.
 
+## Lead rulings (2 Oct 2026, round 2)
+
+Recorded in wawu-backend `docs/contract/WALLET.md`, section 1; they answer the verifier's three unclear items.
+
+1. **₦10,000,000 cap:** Fintava's per-transaction cap on WAWU's merchant account (`limits.md`). Applies only to money through the merchant wallet (payments, holds and their release or refund, payouts from WAWU), never to customer-to-customer sends. Read from config `MERCHANT_MAX_PER_TXN_KOBO`, not a constant. Above it: `amount_out_of_range` with `maximumKobo`, not a plain validation 400. Refuse, never split.
+2. **Daily limit on purchases:** a purchase debits the buyer like a send. `daily_limit_exceeded` is declared on payments and the payment quote carries `withinDailyLimit`. Fintava must confirm whether purchases count (question 16 in `docs/fintava/naira-api.md`).
+3. **W26 grouped row:** the canvas decides the UI. History groups several unlocks of the same item into one row: `TransactionView.group` (`count`, `key`; `?group=<key>` expands it). WALLET.md says which rows group and when. MONEY-15 builds it.
+
 ## Builder report
 
 Builder, 2 Oct 2026, branch `wmt/MONEY-04` in both repos (wawu-backend commit `b00e4c3`, from main `b7d4e63`).
@@ -53,6 +61,11 @@ Builder, 2 Oct 2026, branch `wmt/MONEY-04` in both repos (wawu-backend commit `b
 - **Gates, backend:** tsc 0 before and after; eslint on changed files 0; gates 16 fail / 0 warn / 76 accepted before and after (all 16 already on main, exit 1 on main too), files scanned 525 to 536; baseline check passes. Protected route suite: 244 of 244 before (origin/main, fresh `money04_protected_test`) and after (this branch, fresh).
 - **Gates, mobile:** `npm run check` exit 0 before and after (gates 0 fail, 23 files).
 - **Not done:** the wallet-opening request (MONEY-12, needs KYC-01's design), Face ID device routes (MONEY-14), G-1 for served routes (retypes live contract entries; G-1 row), daily limits (no task, G-7). `npm run api` not run here: the app picks the routes up once this merges to backend main.
+- **Round 2** (backend `b864994`, after verifier `74b97a4`):
+  - Defect 1: the never-null list now has 11 fields (adds `AdminFinanceTransactionView.creator`, `.buyer`, `AdminFinanceWalletView.payoutSubaccount`), in WALLET.md, `enrich-contract.js` and G-1.
+  - Defect 2: every `*Kobo` field and parameter is `integer`: enrich reads the name, `MoneyErrorReason` declares it, and a new spec test checks the whole contract. The name rule also turns 12 served admin finance fields from `number` to `integer`; the wire and the generated TS types are unchanged.
+  - Rulings applied: the cap is gone from DTO validation and lives in config (`.env.example`); payments declare `daily_limit_exceeded` and the quote has `withinDailyLimit` and `remainingTodayKobo`; `TransactionGroupView` and `?group=` added.
+  - Checks: tsc 0; eslint 0 on changed files; money spec 9/9; gates 16/0/76, the same as main (536 files); protected suite 244/244 on a fresh `money04_protected_test`; contract via `npm run contract:build`. Mobile: origin/main `6b7eaff` merged; `npm run check` exit 0 (jest 70/70, gates 0 fail on 34 files, lint 0 errors and 2 warnings, both in code from main).
 
 ## Verifier report
 
