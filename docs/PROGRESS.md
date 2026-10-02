@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 62 | 50 | 34 | 32 |
+| todo | 61 | 50 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 14 | 8 | 0 | 0 |
+
+## Built and verified, waiting for the owner's sign-off
+
+- [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 
 ## Done
 
@@ -40,7 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-10](../tasks/MONEY-10.md) The ledger
 - **Developer:** [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end
 - **Developer 2:** [INBOX-06](../tasks/INBOX-06.md) Free chat between users, [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
@@ -49,6 +53,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-07 · Round 2: the verifier's 2 defects fixed. The webhook skips every named rate limit (`short`, `medium`; a bare `@SkipThrottle()` skipped none), tested through the real global guard (30 deliveries in a second, 30 stored); a delivery with a NUL is stored once (raw body as bytes, NUL as U+FFFD in the parsed copy and the key). Backend and mobile main merged in. G-20 filed (Flutterwave webhook throttle, `trust proxy`). Back to verifying.
+- 2 Oct 2026 · MONEY-07 · Fintava webhooks built in wawu-backend (`wmt/MONEY-07` 9941aa0): `POST /api/hub/webhooks/fintava`, HMAC-SHA512 of the raw body checked in constant time (fails closed), each delivery stored once in `FintavaWebhookEvent` keyed on event, transaction reference and Fintava status (`ON CONFLICT DO NOTHING`), pending for MONEY-10 and MONEY-08; nothing moves money. Tested with documented payloads signed locally (no tunnel, R-25); no secret or personal data in logs. Gap G-19 (which field holds which reference). To verifying.
 - 2 Oct 2026 · MONEY-11 · Verified: PASS, no defects (backend 03a1503, mobile 3d7a04e). Balance equals Fintava after a ₦10 round trip in the sandbox; unreachable, unknown wallet and unconfigured production all answer 503, never 0; contract 89 suites 1852 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 9 suites on :4001 NOT RUN. One unclear item for the owner (the `src/api` fence). Status review.
 - 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
 - 2 Oct 2026 · MONEY-11 · `GET /money/wallet/balance` served in wawu-backend (`wmt/MONEY-11`): Fintava's availableBalance in kobo on every call, `503 provider_unreachable` (W6) never 0, `423 wallet_frozen`, `409 wallet_not_open`; new `FintavaWallet` table; app call `src/api/money.ts`; sandbox: route equals Fintava after two ₦10 sends. Status verifying.
@@ -62,5 +68,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-03 merged: the pay-from-wallet sheet (purchase H14/H17/H18 and the send variant W10) matching the canvas to the pixel on shared parts only. Shared changes with it: MediaCard byline and image, IconTile strokeWidth, Card and BottomSheet inset hairlines, exact fractional line heights, and the kit's `normal` leading on kvLabel/kvValue/meta/cardTitle/errorLine/linkStrong.
 - 2 Oct 2026 · MONEY-03 · Lead ruling applied: kit variants on `line-height: normal` use `canvasNormalLineHeight` in the theme; the pay sheet's per-line overrides removed; H14, H17, H18, W10 and W11 still equal to the canvas.
 - 2 Oct 2026 · MONEY-03 · Theme `style()` line heights now exact, as CSS (Lead-authorised), plus `canvasNormalLineHeight`; H18 now matches (edge 485); H14, H17, W10 and W11 unchanged and equal to the canvas.
-- 2 Oct 2026 · MONEY-03 · Round 8: MediaCard `byline`/`image`, IconTile `strokeWidth` and Card's inset edge (Lead-authorised); the pay sheet uses MediaCard and IconTile; H14, H17, W10 and W11 match the canvas at the measured points; back to verifying.
-- 2 Oct 2026 · MONEY-03 · BottomSheet's top hairline drawn inset, as the kit does (Lead-authorised): H14, H17 and W11 panel edge to grabber 9 = 9; W11's title, dots and keys unchanged.
