@@ -7,6 +7,10 @@ here outranks the design canvas, a task file, and any code comment.
 
 ## Authority
 
+*Owner, 1 Oct 2026.* The mobile app is the product; the backend changes to
+fit it and the web follows it after launch. Cite this section as
+"DECISIONS.md, Authority (owner, 1 Oct 2026)".
+
 **The canvas in `design/` is authoritative for the UI**: structure, layout,
 flow, copy tone and interaction. A screen is built as designed. It is never
 reshaped to fit what the API returns today. A shortfall is a backend task,
