@@ -9,7 +9,7 @@ repo: all
 type: ops
 status: todo
 depends_on: [CHECK-1]
-decisions: []
+decisions: [R-20]
 passes: [V8, V11]
 artboards: []
 ---
@@ -33,7 +33,7 @@ An AUDITOR session runs V8 across every payment path built so far, on staging.
 
 - [ ] For every payment path: the same request twice charges once; a wrong PIN five times locks; a failed payment reverses.
 - [ ] The nightly check reports zero differences between our ledger and Fintava (or the mock, if Fintava access hasn't arrived).
-- [ ] Staff have made real small payments on each live path with no mismatch, or the path stays behind its flag.
+- [ ] Staff have made a real small payment on each path with no mismatch; any mismatch is fixed before launch.
 
 ## Builder report
 

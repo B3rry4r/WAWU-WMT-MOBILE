@@ -29,7 +29,7 @@ Payments move one at a time, safest first (docs/WORKFLOW.md section 6): staging 
 
 ## Scope
 
-Credits purchase pays from the wallet (I28) behind its flag; credit lots and the 85/15 split unchanged; the web's Flutterwave purchase keeps working. The web stays on Flutterwave until after launch; V3 checks it still works.
+Credits purchase pays from the wallet (I28); credit lots and the 85/15 split unchanged; the web's Flutterwave purchase keeps working. The web stays on Flutterwave until after launch; V3 checks it still works.
 
 ## Capability checks
 

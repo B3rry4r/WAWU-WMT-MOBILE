@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: ops
 status: todo
 depends_on: [CHECK-3]
-decisions: []
+decisions: [R-20]
 passes: []
 artboards: []
 ---
@@ -26,11 +26,11 @@ Nothing new is built here. Each CHECK-3 defect is fixed by the owner of that fea
 
 ## Scope
 
-Fixes for CHECK-3 defects only, each re-verified. Anything still failing is turned off behind its flag rather than shipped broken. Any payment path not signed off in CHECK-2 stays behind its flag.
+Fixes for CHECK-3 defects only, each re-verified. Money launches with the app (R-20).
 
 ## Capability checks
 
-- [ ] Every CHECK-3 defect is fixed and re-verified, or its feature is off behind a flag.
+- [ ] Every CHECK-3 defect is fixed and re-verified.
 - [ ] Both apps are submitted with the final builds.
 
 ## Builder report

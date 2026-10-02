@@ -30,13 +30,13 @@ Every fee shown before paying comes from the server, never from the app.
 
 ## Scope
 
-GET fee quote for transfer, withdraw, card top-up and card order, from configuration set per R-10.
+GET fee quote for transfer, withdraw, card top-up and card order, from configuration set per R-10: Fintava's fee plus WAWU's fee.
 
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-R-10's fees are what WAWU charges; Fintava's own fee per send is still unknown (question 3). Keep both in config, and log a warning when WAWU's fee is below Fintava's, so a loss shows up instead of hiding.
+The user pays Fintava's fee plus WAWU's fee (R-10). The quote is Fintava's fee for that action plus WAWU's fee from config, shown as one total with both parts in the breakdown. Fintava's fee per action comes from their answer to question 3 and goes into config.
 
 ## Capability checks
 

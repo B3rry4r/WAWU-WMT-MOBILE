@@ -44,7 +44,8 @@ backend behind them.
 - Additive only: the web keeps using Flutterwave until after launch, and the
   protected-route suite (MONEY-01) must stay green.
 - Facts come from Fintava (`docs/fintava/`), never from the design.
-- No Fintava sandbox yet? Build against the mock (MONEY-05); every path stays
-  behind its flag until access arrives.
+- No Fintava sandbox yet? Build against the mock (MONEY-05), then test on the
+  sandbox when the keys arrive. Money launches with the app (R-20).
+- Fees: the user pays Fintava's fee plus WAWU's on top (R-10).
 
 Your list: `tasks/INDEX.md`, section "You".

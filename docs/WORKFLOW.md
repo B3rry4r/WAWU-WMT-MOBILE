@@ -187,10 +187,10 @@ camera or deep links.
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.
 
-**Payments move one at a time, safest first:** credits, tips, unlocks, ticks,
-paid DMs, event tickets, bills, legal, school fees. Each one: staging with the
-sandbox, then real money for staff only, then everyone on mobile. The web stays
-on Flutterwave until after launch.
+**Payments are tested one at a time, safest first:** credits, tips, unlocks,
+ticks, paid DMs, event tickets, bills, legal, school fees. Each one is tested
+on staging with the sandbox, then a small real payment, and all of them launch
+with the app (R-20). The web stays on Flutterwave until after launch.
 
 **Nobody has a wallet until they open one** (R-6): identity checks happen
 then, not at sign-up. Every money screen handles "this user has no wallet yet"
@@ -222,15 +222,15 @@ signs:
   match the design
 - **CHECK-2**: every payment path attacked and reconciled (V8)
 - **CHECK-3**: full verification and QA; nothing new is built
-- **RELEASE-02**: QA fixes only, each re-verified; anything still failing goes
-  behind its flag; then store submission
+- **RELEASE-02**: QA fixes only, each re-verified; then store submission
 
 "After launch" tasks (`priority: after-launch`) can wait: cards, dollar and
-crypto accounts, higher tiers, card top-up, statements, receipt sharing, bill
+crypto accounts (dollar when Fintava sends that API), card top-up, statements, receipt sharing, bill
 reminders, QR, school tracked links, ads, Flutterwave removal, the web port.
 
 If Fintava sandbox access hasn't arrived, every money task is built against the
-mock (MONEY-05) and stays behind its flag until it does.
+mock (MONEY-05), then tested on the sandbox when it does. Money launches with
+the app (R-20).
 
 ## 8. The evidence pack (every pull request)
 

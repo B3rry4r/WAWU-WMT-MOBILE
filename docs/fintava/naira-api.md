@@ -118,10 +118,9 @@ Store all three of customerId, walletId and accountNumber when an account opens.
    customer, so a user's bill is two steps: move the amount from their
    wallet to WAWU's, then pay the biller. If the biller fails, move it back.
    That's the S12 reversal (BILLS-02).
-3. **Fees.** R-10 charges ₦25 to send to a bank. Fintava's example shows
-   ₦30.75 on a ₦100 send. If that is the real fee, every bank send loses
-   money. The fee quote reads both numbers from config (WALLET-15), and the
-   real Fintava fee is question 3.
+3. **Fees.** The user pays Fintava's fee plus WAWU's on top (R-10). If
+   Fintava's bank-send fee is ₦30.75, the user pays ₦30.75 + ₦25 = ₦55.75.
+   The real Fintava fees are question 3.
 4. **The bank is Loma Bank.** The account examples name "Iyin Ekiti
    Microfinance Bank Limited (Loma Bank)", not "Fintava MFB", which is what
    the canvas prints on W15. The app shows the bank name from the API, and
@@ -191,8 +190,9 @@ webhook payloads; those come from Fintava when the card is built.
 ## Questions for Fintava
 
 These replace the list in `docs/PLAN.md`; the docs answered the rest. None of
-them blocks building: every money task is built against the mock (MONEY-05)
-and switched on when the sandbox confirms it.
+them blocks anything: money is built against the mock (MONEY-05) until the
+sandbox keys arrive, then tested on the sandbox and launched with the app
+(R-20).
 
 1. Does `/bank/credit` accept a `CustomerReference`, and does Fintava reject a
    repeated `CustomerReference`? Without one of the two, a timed-out send

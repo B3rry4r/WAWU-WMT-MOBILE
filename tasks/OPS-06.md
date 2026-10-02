@@ -9,7 +9,7 @@ repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: []
-decisions: []
+decisions: [R-20]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -24,7 +24,7 @@ artboards: []
 
 ## Goal
 
-Every payment path moves behind a flag that can be on for staff, a list of users, or everyone, and switched off instantly.
+Every payment path has an emergency switch, on at launch (R-20), that can turn it off instantly or limit it to staff while a problem is fixed.
 
 ## Scope
 

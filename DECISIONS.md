@@ -109,10 +109,19 @@ events. Free pieces count toward the upload limit; fans can still tip.
 **R-9 · No Shop tab on profiles.** Creators don't sell physical products yet.
 Profile tabs are Content, Services and About; M3 is not built.
 
-**R-10 · Fees are the design's, and WAWU keeps the margin.** ₦10 to a WAWU
-user, ₦25 to a bank, 1.5% on card top-up, ₦1,500 for a card plus ₦500
-delivery. WAWU pays Fintava's cost out of these. The fee quote reads them from
-config.
+**R-10 · The user pays Fintava's fee plus WAWU's fee on top.** WAWU's fees
+are the design's: ₦10 to a WAWU user, ₦25 to a bank, 1.5% on card top-up,
+₦1,500 for a card plus ₦500 delivery. Whatever Fintava charges for the same
+action is added to it (owner, 2 Oct 2026: "add ours on top"). Example: if
+Fintava charges ₦30.75 for a bank send, the user pays ₦55.75. The fee quote
+shows the total, read from config and Fintava, never from the canvas.
+
+**R-20 · Money ships at launch.** Every payment the Fintava docs support goes
+live with the app, not behind a switch waiting for anything. Until the
+sandbox keys arrive, money is built against the mock (MONEY-05); then it is
+tested on the sandbox and goes live. The switches (OPS-06) exist only to turn
+a broken path off in an emergency. Dollar accounts come when Fintava sends
+that API (requested).
 
 **R-11 · Earnings land in the wallet automatically.** No "Move to wallet": W39
 is built without that button, and W40 is not built. A creator without a wallet

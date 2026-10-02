@@ -43,7 +43,7 @@ New files under `src/features/` for these screens and their route files under `s
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-`POST /bank/credit` (sourceId is the customerId) after `GET /name/enquiry`; bank codes from `GET /banks`. Fintava's example shows a fee above R-10's ₦25 (₦30.75 on ₦100): the fee comes from config, and WALLET-15 shows the real one.
+`POST /bank/credit` (sourceId is the customerId) after `GET /name/enquiry`; bank codes from `GET /banks`. The user pays Fintava's bank-send fee plus WAWU's ₦25 (R-10); WALLET-15 gives the total.
 
 ## Capability checks
 
