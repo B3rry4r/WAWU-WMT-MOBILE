@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|
 | todo | 94 | 85 |
 | building | 0 | 0 |
-| verifying | 1 | 0 |
-| review | 0 | 0 |
+| verifying | 0 | 0 |
+| review | 1 | 0 |
 | done | 6 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 

@@ -7,7 +7,7 @@ order: 3
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: []
@@ -71,6 +71,24 @@ Verifier, 2 Oct 2026, fresh session, branch `wmt/OPS-02` at 2dac4f7. I did not b
 What I ran: `git diff main...wmt/OPS-02` saved to my scratchpad and scanned (key windows, digit runs, emails, dates, addresses, field names); `git grep` on the branch; read README and sandbox files 05, 07, 10, 12, 13, 22, 23, 24, 25 and the doc diffs; parsed 01, 16, 20, 10 with Python; 3 sandbox calls with the real key (`GET /banks`, `GET /merchant/balance`, `POST /create/customer {}`) and 2 `GET /merchant/balance` with fake keys, all to `https://dev.fintavapay.com/api/dev`; and `npm run check` with a temporary `node_modules` symlink (removed afterwards). One mistake on my side: my first attempt sourced the env file in the shell, which expanded `$` inside the key. That sent a mangled key (404 "Invalid API Key", which is what led to finding 1), and one malformed curl that never reached `/create/customer`. Nothing was written to Fintava and the key was never printed or saved.
 
 Status: back to `building` for findings 1 and 2. The inactive merchant is an external blocker, not a defect.
+
+### Round 2
+
+Verifier, 2 Oct 2026, branch head 60912e5 (builder fix e9c313a, main merged in 3f06c0c, LOG.md conflict fixed 60912e5).
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Finding 1 (wrong key 400 vs 404) | closed | `naira-api.md:37-43`, `sandbox/24-auth-and-errors.md:15-24` and the two new saved calls (400 without `live_`, 404 with it), `sandbox/README.md:62`. MONEY-06 is told to match the message case-insensitively and treat both as an auth failure. Matches what I saw in round 1. |
+| Finding 2 (unsaved charged call) | closed | `sandbox/06-phone-check.md:18-22` and the new 08:31:59 call with the balance read after it (49960); `25-compliance-charges.md:35-36`. The new response is consistent: content-length 164 equals a compact body with an 11-digit phone, same as the other three. The `Airtel` (200, 38 rows), `9mobile` (404) and `T2` (404) lookups are saved in `20-bills-data.md`. |
+| Secrets and personal data, diff `a3bcd8c..HEAD` (1751 lines, font binary excluded) | passed | Every 8-character window of the key against that diff and the whole HEAD tree: 0 hits. No `live_` value, bcrypt hash, `jFeVBM`, JWT, email or date of birth in added lines. 10+ digit runs: `1102038668` (sandbox merchant account), `0642289525` (UUID fragment), `1073741823/4/5` and `4294901760` (constants in the vendored React build). Phones show last 4 only (`*******0101`). |
+| `docs/LOG.md` | passed | No conflict markers, no duplicate lines, OPS-02 entry present once. |
+| Read-only call | passed | `GET /merchant/balance` (key read with `sed`, dev host only): 200, `Test Account4`, 49960, `TIER_3`. |
+| Gates (`npm run check`) | passed | Exit 0: typecheck, lint, tests 5/5, gates 9 run, **6 files scanned**, 0 fail / 0 warn / 0 accepted, baseline 0, 187 tasks, 280 artboards. Tests 4 to 5 and files 5 to 6 come from main (`src/__tests__/gates.test.ts`), not from this task. |
+
+Findings, round 2:
+- **note:** `sandbox/20-bills-data.md:16-17` quotes the 404 as `Provider '9MOBILE' not found.` for both spellings; the saved lower-case response says `'9mobile'`. Cosmetic.
+
+No open defects. The capability-1 gap stays the external blocker it was: customer, transfer, bill, freeze and webhook calls are re-run when Fintava activates the sandbox merchant (`POST /create/customer` stops answering `403 Merchant is not active`). Status: `review`.
 
 ## Owner sign-off
 
