@@ -55,7 +55,22 @@ const style = (size: number, weight: Weight, trackingEm = 0, leading: number = t
   lineHeight: Math.round(size * leading),
 });
 
-/** The design system's text classes (design/_ds/wawu/tokens/base.css, .wb-*). */
+/**
+ * The board kit sets no line-height on most copy, so it renders at Alan Sans's
+ * `normal`: (typo ascender 990 + descender 310) / 1000 units = 1.3, which is
+ * `type.leading.snug`.
+ */
+const kitNormalLeading = type.leading.snug;
+
+/** design/_gen/kit.js line 41, `h1`: 700, `letter-spacing:-0.03em`, `line-height:1.15`. */
+const kitHeadingTracking = -0.03;
+const kitHeadingLeading = 1.15;
+
+/**
+ * The design system's text classes (design/_ds/wawu/tokens/base.css, .wb-*),
+ * then the board kit's copy sizes (design/_gen/kit.js; R-22: the kit is the
+ * source for sizes). Each kit variant cites the line it comes from.
+ */
 export const text = {
   display: style(type.size.display, 600, -0.045, 1),
   title: style(type.size.title, 700, type.tracking.title, type.leading.tight),
@@ -66,6 +81,20 @@ export const text = {
   secondary: style(type.size.sec, 400, 0, 1.4),
   caption: style(type.size.caption, 400, 0, 1.35),
   label: { ...style(type.size.label, 700, 0.08), textTransform: 'uppercase' },
+  /** kit.js line 44, `kv` key: `font-size:14px`, 400, text-secondary. */
+  kvLabel: style(14, 400, 0, kitNormalLeading),
+  /** kit.js line 44, `kv` value: `font-size:14.5px;font-weight:600`; also line 58, the `banner` title. */
+  kvValue: style(14.5, 600, 0, kitNormalLeading),
+  /** kit.js line 69, the `fromWallet` line, and line 55, the `tx` sub line: `font-size:13px`, 400, text-muted. */
+  meta: style(13, 400, 0, kitNormalLeading),
+  /** kit.js line 42, `muted`: `size: 13.5`, text-secondary, `lh: 1.45`. Not `secondary`, whose line height is 1.4. */
+  muted: style(type.size.sec, 400, 0, type.leading.body),
+  /** kit.js line 69, the `fromWallet` title: `font-size:15px;font-weight:600`. */
+  cardTitle: style(type.size.body, 600, 0, kitNormalLeading),
+  /** kit.js line 41, `h1(..., { size: 22 })`: a result or step title (auth.js line 28, home.js line 156). */
+  sheetTitle: style(22, 700, kitHeadingTracking, kitHeadingLeading),
+  /** kit.js line 41, `h1(..., { size: 21 })`: the title inside `sheet()` (line 64), as on the PIN sheet (home.js line 57). */
+  sheetTitleSm: style(21, 700, kitHeadingTracking, kitHeadingLeading),
 } satisfies Record<string, TextStyle>;
 
 /**
