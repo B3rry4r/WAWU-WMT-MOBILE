@@ -1,16 +1,53 @@
 # What the checks cost (measured)
 
-Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`, 2 Oct 2026.
-Plan item: fees actually charged (OPS-02 prompt). Result: **ran**.
+Task OPS-02, sandbox `https://dev.fintavapay.com/api/dev`. Plan item: fees actually charged (OPS-02 prompt).
+Re-run 2 Oct 2026, 09:39 to 10:19 UTC, merchant active: **ran**.
+First run 2 Oct 2026, 08:28 to 08:38 UTC, merchant inactive: **ran** (kept below).
 
 Masking: the API key is `Bearer ***`; every 11-digit number (BVN, NIN,
-phone) shows its last 4 digits only; emails show the domain only; the
-merchant administrator's name, address and date of birth, which Fintava
-returns inside transaction records, are masked, and that person's BVN and
-NIN are masked completely. Account numbers are kept: they are sandbox
-account numbers.
+phone) shows its last 4 digits only, including the two test customers'
+test values; emails show the domain only; the merchant administrator's
+name, address and date of birth, which Fintava returns inside transaction
+records, are masked, and that person's BVN and NIN are masked completely.
+Account numbers are kept: they are sandbox account numbers (WAWU's sandbox
+merchant and the two test customers this task created).
 
-## What this tells us
+## Re-run (merchant active)
+
+### What this tells us
+
+- Charges measured in this run (balance before and after each call; the
+  calls are saved in the files named):
+
+| Call | HTTP | Balance before → after (₦) | Charged (₦) | File |
+|---|---|---|---|---|
+| create customer, twice | 201 | 49960 → 49960 | 0 | `07-` |
+| BVN check | 400 | 49960 → 49955 | **5** | `04-` |
+| phone check | 400 | 49665 → 49660 | 5 | `06-` |
+| BVN selfie check | 400 | 49660 → 49650 | 10 | `05-` |
+| name enquiries, lists, meter preview | 200/400 | 49665 → 49665 | 0 | `01-` to `03-`, `16-`, `17-`, `20-`, `21-` |
+| wallet-to-wallet, every direction | 200 | exact amounts only | 0 | `13-` |
+| refused bank sends and bills | 400/201 | unchanged | 0 | `14-`, `18-` to `21-` |
+
+- **New: the BVN check costs ₦5 in the sandbox, even when it fails** ("Invalid
+  BVN or BVN does not exist"). In the first run it was refused by the
+  merchant gate and cost nothing. Phone ₦5 and selfie ₦10 are unchanged.
+- **Opening a customer cost nothing** (no BVN or NIN check runs inside
+  `POST /create/customer`, and `KycFee` was not debited).
+- `/txn/merchant` shows exactly 4 new ₦5 `BVNCHARGE` rows (09:40:27.941,
+  09:43:21.255, 09:43:30.353, 09:43:30.558), ₦20, matching the balance.
+- Whole task so far: ₦40 (first run) + ₦20 (this run) = ₦60 of sandbox
+  compliance charges.
+
+### Requests and responses
+
+The calls are saved in `04-bvn-check.md`, `05-bvn-selfie.md`, `06-phone-check.md` and `07-create-customer.md`; the rows in `10-merchant-history.md`.
+
+## First run (merchant inactive)
+
+2 Oct 2026, 08:28 to 08:38 UTC, while WAWU's sandbox merchant was `inactive`. Kept as recorded.
+
+### What this tells us
 
 - Each call below was made once, with a merchant balance read before and
   after it. Results:
@@ -40,9 +77,9 @@ account numbers.
   is still a question for Fintava. The merchant settings also show `KycFee:
   "50.00"` with `DebitKycFee: false` (`12-transaction-by-id.md`).
 
-## Requests and responses
+### Requests and responses
 
-### Balance at the start
+#### Balance at the start
 
 Sent 2026-10-02 08:31:09 UTC, answered in 0.57 s.
 
@@ -83,7 +120,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Phone check
+#### Phone check
 
 Sent 2026-10-02 08:31:11 UTC, answered in 2.38 s.
 
@@ -119,7 +156,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Balance after it
+#### Balance after it
 
 Sent 2026-10-02 08:31:13 UTC, answered in 0.31 s.
 
@@ -160,7 +197,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Selfie check
+#### Selfie check
 
 Sent 2026-10-02 08:31:14 UTC, answered in 5.22 s.
 
@@ -202,7 +239,7 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Balance after it
+#### Balance after it
 
 Sent 2026-10-02 08:31:19 UTC, answered in 0.41 s.
 
