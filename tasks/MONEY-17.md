@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [OPS-06, MONEY-09, MONEY-10]
+depends_on: [MONEY-09, MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
@@ -29,7 +29,7 @@ One shared way to take a payment from a user's wallet for anything WAWU sells.
 
 ## Scope
 
-Debit to WAWU's collection account with the 85/15 split on the ledger, an Idempotency-Key, behind a feature flag per product.
+Debit to WAWU's collection account with the 85/15 split on the ledger, an Idempotency-Key.
 
 ## Capability checks
 

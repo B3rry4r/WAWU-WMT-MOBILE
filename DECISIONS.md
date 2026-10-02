@@ -116,11 +116,10 @@ action is added to it (owner, 2 Oct 2026: "add ours on top"). Example: if
 Fintava charges ₦30.75 for a bank send, the user pays ₦55.75. The fee quote
 shows the total, read from config and Fintava, never from the canvas.
 
-**R-20 · Money ships at launch.** Every payment the Fintava docs support goes
-live with the app, not behind a switch waiting for anything. Until the
-sandbox keys arrive, money is built against the mock (MONEY-05); then it is
-tested on the sandbox and goes live. The switches (OPS-06) exist only to turn
-a broken path off in an emergency. Dollar accounts come when Fintava sends
+**R-20 · Money is built on the real Fintava sandbox and ships at launch.**
+The keys are available. No mocks, no stand-ins, no feature flags or
+fallbacks: every payment the Fintava docs support is built against the
+sandbox and goes live with the app. Dollar accounts come when Fintava sends
 that API (requested).
 
 **R-11 · Earnings land in the wallet automatically.** No "Move to wallet": W39

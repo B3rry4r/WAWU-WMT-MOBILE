@@ -23,80 +23,78 @@ Builder and verifier are always different sessions.
 5. [OPS-05](OPS-05.md) Update the other repos' CLAUDE.md for today's rulings
 6. [MONEY-01](MONEY-01.md) Protected route list and regression suite
 7. [CHECK-0](CHECK-0.md) Checkpoint 0: safe to start building · needs SETUP-01 from Developer first
-8. [OPS-06](OPS-06.md) Feature flags
-9. [OPS-07](OPS-07.md) Rule the web features missing from the canvas (D14)
-10. [MONEY-02](MONEY-02.md) The PIN sheet
-11. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet
-12. [MONEY-04](MONEY-04.md) Money conventions and the wallet contract
-13. [MONEY-05](MONEY-05.md) Mock server for the wallet contract
-14. [OPS-08](OPS-08.md) Retire Shop on the backend
-15. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design
-16. [MONEY-06](MONEY-06.md) Fintava client
-17. [MONEY-07](MONEY-07.md) Fintava webhooks
-18. [MONEY-08](MONEY-08.md) Status checks and the pending sweep
-19. [MONEY-09](MONEY-09.md) Transaction PIN
-20. [MONEY-10](MONEY-10.md) The ledger
-21. [MONEY-11](MONEY-11.md) Balance
-22. [KYC-01](KYC-01.md) BVN check when someone opens a wallet
-23. [PROS-01](PROS-01.md) Find a professional · needs SHELL-01, SHELL-02 from Developer first
-24. [PROS-02](PROS-02.md) Professional fields and card data
-25. [LEGAL-01](LEGAL-01.md) Legal starts as a chat
-26. [SCHOOLS-01](SCHOOLS-01.md) Schools data model
-27. [SCHOOLS-02](SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
-28. [MONEY-14](MONEY-14.md) Reset the PIN, and Face ID approval
-29. [MONEY-15](MONEY-15.md) Transaction history and detail
-30. [MONEY-16](MONEY-16.md) Nightly check against Fintava
-31. [MONEY-17](MONEY-17.md) Pay from wallet
-32. [MONEY-18](MONEY-18.md) Hold, release and refund
-33. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
-34. [KYC-02](KYC-02.md) Selfie match to the BVN photo
-35. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
-36. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
-37. [KYC-03](KYC-03.md) Open your wallet: BVN, confirm details, selfie
-38. [PROS-03](PROS-03.md) Get listed as a professional
-39. [LEGAL-02](LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
-40. [LEGAL-03](LEGAL-03.md) Legal consultations and deliverables
-41. [SCHOOLS-04](SCHOOLS-04.md) Schools: browse, search, course detail
-42. [SCHOOLS-03](SCHOOLS-03.md) Find a school, a school, a course, no results
-43. [SCHOOLS-05](SCHOOLS-05.md) Admin screens: schools, courses, intakes
-44. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states
-45. [WALLET-04](WALLET-04.md) Transaction history and detail
-46. [WALLET-15](WALLET-15.md) Fee quotes
-47. [BILLS-01](BILLS-01.md) Pay a bill: choose biller, meter and amount · needs SHELL-02 from Developer first
-48. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly
-49. [KYC-04](KYC-04.md) Open your wallet: account opened, create PIN
-50. [LEGAL-05](LEGAL-05.md) Move legal fees to the wallet
-51. [LEGAL-04](LEGAL-04.md) Legal: book and pay a consultation
-52. [LEGAL-06](LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price
-53. [SCHOOLS-07](SCHOOLS-07.md) School enrolment order
-54. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full
-55. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
-56. [SCHOOLS-11](SCHOOLS-11.md) Paying schools
-57. [WALLET-06](WALLET-06.md) Wallet settings, PIN create and reset, statements
-58. [WALLET-07](WALLET-07.md) Send money to a WAWU user
-59. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients
-60. [WALLET-02](WALLET-02.md) Send to a WAWU user
-61. [WALLET-09](WALLET-09.md) Send money to a bank
-62. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
-63. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account
-64. [WALLET-05](WALLET-05.md) Add money and withdraw
-65. [WALLET-14](WALLET-14.md) Saved recipients and payout account
-66. [WALLET-11](WALLET-11.md) Payout bank account
-67. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
-68. [WALLET-13](WALLET-13.md) Earnings breakdown
-69. [WALLET-17](WALLET-17.md) Pay out host shares nobody receives today
-70. [BILLS-04](BILLS-04.md) Move bills to the wallet
-71. [BILLS-02](BILLS-02.md) Pay a bill: review, PIN, token, failures
-72. [BILLS-03](BILLS-03.md) Airtime and cable TV
-73. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
-74. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-75. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
-76. [ADS-03](ADS-03.md) Ads data model
-77. [ADS-04](ADS-04.md) Serve a sponsored card
-78. [ADS-01](ADS-01.md) TGIF sponsored card · needs HOME-09 from Developer first
-79. [ADS-05](ADS-05.md) Count ad views and taps
-80. [ADS-06](ADS-06.md) Admin ad endpoints
-81. [ADS-02](ADS-02.md) Admin screens: ads
+8. [OPS-07](OPS-07.md) Rule the web features missing from the canvas (D14)
+9. [MONEY-02](MONEY-02.md) The PIN sheet
+10. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet
+11. [MONEY-04](MONEY-04.md) Money conventions and the wallet contract
+12. [OPS-08](OPS-08.md) Retire Shop on the backend
+13. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design
+14. [MONEY-06](MONEY-06.md) Fintava client
+15. [MONEY-07](MONEY-07.md) Fintava webhooks
+16. [MONEY-08](MONEY-08.md) Status checks and the pending sweep
+17. [MONEY-09](MONEY-09.md) Transaction PIN
+18. [MONEY-10](MONEY-10.md) The ledger
+19. [MONEY-11](MONEY-11.md) Balance
+20. [KYC-01](KYC-01.md) BVN check when someone opens a wallet
+21. [PROS-01](PROS-01.md) Find a professional · needs SHELL-01, SHELL-02 from Developer first
+22. [PROS-02](PROS-02.md) Professional fields and card data
+23. [LEGAL-01](LEGAL-01.md) Legal starts as a chat
+24. [SCHOOLS-01](SCHOOLS-01.md) Schools data model
+25. [SCHOOLS-02](SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
+26. [MONEY-14](MONEY-14.md) Reset the PIN, and Face ID approval
+27. [MONEY-15](MONEY-15.md) Transaction history and detail
+28. [MONEY-16](MONEY-16.md) Nightly check against Fintava
+29. [MONEY-17](MONEY-17.md) Pay from wallet
+30. [MONEY-18](MONEY-18.md) Hold, release and refund
+31. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
+32. [KYC-02](KYC-02.md) Selfie match to the BVN photo
+33. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
+34. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
+35. [KYC-03](KYC-03.md) Open your wallet: BVN, confirm details, selfie
+36. [PROS-03](PROS-03.md) Get listed as a professional
+37. [LEGAL-02](LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+38. [LEGAL-03](LEGAL-03.md) Legal consultations and deliverables
+39. [SCHOOLS-04](SCHOOLS-04.md) Schools: browse, search, course detail
+40. [SCHOOLS-03](SCHOOLS-03.md) Find a school, a school, a course, no results
+41. [SCHOOLS-05](SCHOOLS-05.md) Admin screens: schools, courses, intakes
+42. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states
+43. [WALLET-04](WALLET-04.md) Transaction history and detail
+44. [WALLET-15](WALLET-15.md) Fee quotes
+45. [BILLS-01](BILLS-01.md) Pay a bill: choose biller, meter and amount · needs SHELL-02 from Developer first
+46. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly
+47. [KYC-04](KYC-04.md) Open your wallet: account opened, create PIN
+48. [LEGAL-05](LEGAL-05.md) Move legal fees to the wallet
+49. [LEGAL-04](LEGAL-04.md) Legal: book and pay a consultation
+50. [LEGAL-06](LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price
+51. [SCHOOLS-07](SCHOOLS-07.md) School enrolment order
+52. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full
+53. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
+54. [SCHOOLS-11](SCHOOLS-11.md) Paying schools
+55. [WALLET-06](WALLET-06.md) Wallet settings, PIN create and reset, statements
+56. [WALLET-07](WALLET-07.md) Send money to a WAWU user
+57. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients
+58. [WALLET-02](WALLET-02.md) Send to a WAWU user
+59. [WALLET-09](WALLET-09.md) Send money to a bank
+60. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
+61. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account
+62. [WALLET-05](WALLET-05.md) Add money and withdraw
+63. [WALLET-14](WALLET-14.md) Saved recipients and payout account
+64. [WALLET-11](WALLET-11.md) Payout bank account
+65. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
+66. [WALLET-13](WALLET-13.md) Earnings breakdown
+67. [WALLET-17](WALLET-17.md) Pay out host shares nobody receives today
+68. [BILLS-04](BILLS-04.md) Move bills to the wallet
+69. [BILLS-02](BILLS-02.md) Pay a bill: review, PIN, token, failures
+70. [BILLS-03](BILLS-03.md) Airtime and cable TV
+71. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
+72. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+73. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+74. [ADS-03](ADS-03.md) Ads data model
+75. [ADS-04](ADS-04.md) Serve a sponsored card
+76. [ADS-01](ADS-01.md) TGIF sponsored card · needs HOME-09 from Developer first
+77. [ADS-05](ADS-05.md) Count ad views and taps
+78. [ADS-06](ADS-06.md) Admin ad endpoints
+79. [ADS-02](ADS-02.md) Admin screens: ads
 
 ## You · after launch
 

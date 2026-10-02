@@ -19,7 +19,7 @@ backend behind them.
 ## What you own
 
 - **Outside contacts and setup:** Fintava docs and sandbox (OPS-02), staging
-  (OPS-03), the designer (OPS-04), feature flags (OPS-06).
+  (OPS-03), the designer (OPS-04).
 - **Money:** the core every payment uses: the Fintava connection, accounts, the
   PIN, the ledger, the nightly check, pay-from-wallet with holds and refunds,
   and the PIN and pay sheets every payment screen reuses (MONEY-*). You hold
@@ -44,8 +44,8 @@ backend behind them.
 - Additive only: the web keeps using Flutterwave until after launch, and the
   protected-route suite (MONEY-01) must stay green.
 - Facts come from Fintava (`docs/fintava/`), never from the design.
-- No Fintava sandbox yet? Build against the mock (MONEY-05), then test on the
-  sandbox when the keys arrive. Money launches with the app (R-20).
+- Build against the real Fintava sandbox, never a mock. Money launches with
+  the app (R-20).
 - Fees: the user pays Fintava's fee plus WAWU's on top (R-10).
 
 Your list: `tasks/INDEX.md`, section "You".

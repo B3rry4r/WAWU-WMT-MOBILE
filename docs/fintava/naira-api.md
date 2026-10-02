@@ -190,9 +190,8 @@ webhook payloads; those come from Fintava when the card is built.
 ## Questions for Fintava
 
 These replace the list in `docs/PLAN.md`; the docs answered the rest. None of
-them blocks anything: money is built against the mock (MONEY-05) until the
-sandbox keys arrive, then tested on the sandbox and launched with the app
-(R-20).
+them blocks building: money is built on the sandbox and launches with the
+app (R-20).
 
 1. Does `/bank/credit` accept a `CustomerReference`, and does Fintava reject a
    repeated `CustomerReference`? Without one of the two, a timed-out send

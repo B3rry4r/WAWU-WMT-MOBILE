@@ -33,7 +33,7 @@ Read the report on SETUP-01, the protected-route suite (MONEY-01), the decision 
 - [ ] SETUP-01 was verified (it was built by the setup session, so any person's session can verify it) with no open defects.
 - [ ] The protected-route suite (MONEY-01) passes on the live backend's main branch.
 - [ ] The decision defaults in DECISIONS.md have been read, and any you disagree with are changed.
-- [ ] Fintava sandbox keys are in hand, or the owner has recorded that money is built against the mock until access arrives.
+- [ ] Fintava sandbox keys are in staging's environment secrets and a test call succeeds.
 
 ## Builder report
 

@@ -93,7 +93,7 @@ step 2. No step is skipped.
 | 4 | **Verify** | Verifier session, fresh, never the builder | Every pass in the ticket's `passes` list is run and reported |
 | 5 | **Fix loop** | Builder, then verifier | Every defect is fixed or accepted by the owner. At most 2 rounds, then the task goes to the owner |
 | 6 | **Review** | Owner | The owner has looked at the screenshots and the evidence pack in the PR |
-| 7 | **Merge and live check** | Owner, then machine | Deployed to staging; a real login sees a value only the server has; flags widened in steps |
+| 7 | **Merge and live check** | Owner, then machine | Deployed to staging; a real login sees a value only the server has |
 
 Status values in a task file, in order: `todo`, `building`, `verifying`,
 `review`, `done`. A builder starts a task only when every `depends_on` task is
@@ -177,13 +177,13 @@ camera or deep links.
 
 1. **Add.** Only new tables, new nullable columns and new routes. Nothing the
    web uses today is renamed, retyped or widened. V3 proves it.
-2. **Move.** Clients switch one at a time, behind a feature flag (task OPS-06).
-   The old way keeps working.
+2. **Move.** Clients switch to the new way one at a time. The old way keeps
+   working until nothing calls it.
 3. **Remove.** Only after the logs show no calls to the old way for two weeks,
    in a `removal` task.
 
-**Before any money work:** staging exists (task OPS-03), feature flags exist
-(task OPS-06), and the nightly ledger check against Fintava runs (task MONEY-16).
+**Before any money work:** staging exists (task OPS-03), the Fintava sandbox
+keys are in its secrets (OPS-02), and the nightly ledger check against Fintava runs (task MONEY-16).
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.
 
@@ -217,7 +217,7 @@ Checkpoints sit in the owner's list where they fall. Each is a task the owner
 signs:
 
 - **CHECK-0**: safe to start building (setup verified, protected routes,
-  staging, Fintava access or the mock)
+  staging, Fintava sandbox keys in place)
 - **CHECK-1**: the app talks to the real backend, and the screens built so far
   match the design
 - **CHECK-2**: every payment path attacked and reconciled (V8)
@@ -228,9 +228,8 @@ signs:
 crypto accounts (dollar when Fintava sends that API), card top-up, statements, receipt sharing, bill
 reminders, QR, school tracked links, ads, Flutterwave removal, the web port.
 
-If Fintava sandbox access hasn't arrived, every money task is built against the
-mock (MONEY-05), then tested on the sandbox when it does. Money launches with
-the app (R-20).
+Every money task is built against the real Fintava sandbox. No mocks. Money
+launches with the app (R-20).
 
 ## 8. The evidence pack (every pull request)
 

@@ -67,8 +67,7 @@ headers):
 The questions for Fintava are at the end of `docs/fintava/naira-api.md`.
 Crypto runs through Cardex, their partner: `docs/fintava/cardex.md`.
 
-Until the sandbox arrives, money is built against the mock (MONEY-05). Then
-it's tested on the sandbox and launches with the app (R-20).
+Money is built on the sandbox, no mocks, and launches with the app (R-20).
 
 **From you:** the Apple, Google Play and Expo accounts exist; you invite the
 developer to Expo only and do the store steps in `docs/BUILDS.md`. Also: the domain behind

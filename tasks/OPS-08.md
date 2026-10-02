@@ -28,7 +28,7 @@ Shop is retired (R-2). Its routes stop taking orders without breaking past order
 
 ## Scope
 
-Before deleting anything, search for every reference. Shop routes return 410 behind a flag; past orders stay readable in purchases; Shop is removed from search and from any Home payload. The web already hides Shop (SHOP_LIVE=false).
+Before deleting anything, search for every reference. Shop routes return 410; past orders stay readable in purchases; Shop is removed from search and from any Home payload. The web already hides Shop (SHOP_LIVE=false).
 
 ## Capability checks
 
