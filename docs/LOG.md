@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · MONEY-03 · Theme `style()` line heights now exact, as CSS (Lead-authorised), plus `canvasNormalLineHeight`; H18 now matches (edge 485); H14, H17, W10 and W11 unchanged and equal to the canvas.
 - 2 Oct 2026 · MONEY-03 · Round 8: MediaCard `byline`/`image`, IconTile `strokeWidth` and Card's inset edge (Lead-authorised); the pay sheet uses MediaCard and IconTile; H14, H17, W10 and W11 match the canvas at the measured points; back to verifying.
 - 2 Oct 2026 · MONEY-03 · BottomSheet's top hairline drawn inset, as the kit does (Lead-authorised): H14, H17 and W11 panel edge to grabber 9 = 9; W11's title, dots and keys unchanged.
 - 2 Oct 2026 · MONEY-03 · Round 6: the pay sheet passes `gap={16}` to BottomSheet (H14/H17 grabber to header 20 = 20); W10 matches the canvas (160 = 160) after trimming "Sending to" to the browser's normal line height; no-wallet state has no Pay (R-27).

@@ -12,7 +12,7 @@ import { KeyValueRow } from '@/components/ListRow';
 import { MediaCard } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
-import { layout, motion, radius, space, text, type, useWawu } from '@/theme';
+import { canvasNormalLineHeight, layout, motion, radius, space, text, type, useWawu } from '@/theme';
 import type { ColorToken } from '@/theme';
 
 import { feesTotalKobo, formatNaira, payTotalKobo, shortfallKobo, type PayFeeLine } from './money';
@@ -390,7 +390,9 @@ function WalletCard({ wallet, walletName }: { wallet: PayWallet; walletName: str
     <Card style={styles.walletCard}>
       <CurrencyFlag currency="NGN" />
       <View style={styles.flex}>
-        <Text variant="cardTitle">Pay from wallet</Text>
+        <Text variant="cardTitle" style={styles.walletTitle}>
+          Pay from wallet
+        </Text>
         {line}
       </View>
       {wallet.kind === 'open' && (
@@ -429,21 +431,17 @@ const STATUS_STROKE = ICON_STROKE.fab;
 const ROW_VALUE = text.kvValue.fontSize;
 
 /**
- * Where the kit sets no line height the canvas's browser uses `normal`: Alan
- * Sans's ascent and descent (hhea 990 and 310 per 1000), each rounded to a
- * whole pixel, so 17 px at 13.5 and 18 px at 14.5. The `Text` variants lead at
- * 1.3 or more (`kitNormalLeading`, kept for phones), so the two lines below
- * come out a pixel taller than the canvas; half the difference comes off each
- * side of the line, through its margins.
+ * Lines the kit leaves at `line-height: normal`, which the canvas draws at
+ * `canvasNormalLineHeight`: W10's "Sending to" (13.5, 6 px above it), H17's
+ * banner title (14.5 / 600, 3 px below it), and the `fromWallet` card's title
+ * (15 / 600) and line (13). Their variants lead at 1.4 or 1.3 (19.5 and 16.9
+ * for the card, against the canvas's 20 and 17), so these lines take the
+ * canvas's line, with the kit's own margins.
  */
-const ALAN_ASCENT = 0.99;
-const ALAN_DESCENT = 0.31;
-const canvasLine = (size: number) => Math.round(size * ALAN_ASCENT) + Math.round(size * ALAN_DESCENT);
-const trimTo = (lineHeight: unknown, size: unknown) => (Number(lineHeight) - canvasLine(Number(size))) / 2;
-/** W10's "Sending to": 13.5 with a 6 px top margin, `secondary` leads at 19 against the canvas's 17. */
-const SENDING_TRIM = trimTo(text.secondary.lineHeight, type.size.sec);
-/** H17's banner title: kit `banner`, 14.5 / 600, `kvValue` leads at 19 against the canvas's 18. */
-const BANNER_TITLE_TRIM = trimTo(text.kvValue.lineHeight, ROW_VALUE);
+const SENDING_LINE = canvasNormalLineHeight(type.size.sec);
+const BANNER_TITLE_LINE = canvasNormalLineHeight(Number(ROW_VALUE));
+const WALLET_TITLE_LINE = canvasNormalLineHeight(Number(text.cardTitle.fontSize));
+const WALLET_LINE = canvasNormalLineHeight(Number(text.meta.fontSize));
 /** H14 and H17 space the sheet's parts 16 px apart: home.js passes `sheet()` a 16 px gap. */
 const SHEET_GAP = space.lg;
 
@@ -455,7 +453,7 @@ const styles = StyleSheet.create({
   centre: { textAlign: 'center' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   sendHead: { alignItems: 'center', gap: space.xs + NUDGE, paddingTop: space.xs + NUDGE },
-  sendingTo: { marginTop: space.xs + NUDGE - SENDING_TRIM, marginBottom: -SENDING_TRIM },
+  sendingTo: { marginTop: space.xs + NUDGE, lineHeight: SENDING_LINE },
   /** Kit `fromWallet`: `card(..., { pad: '14px 16px' })`, a row with 12 between its parts. */
   walletCard: {
     flexDirection: 'row',
@@ -464,7 +462,8 @@ const styles = StyleSheet.create({
     paddingVertical: space.md + NUDGE,
     paddingHorizontal: layout.cardPad,
   },
-  walletLine: { marginTop: NUDGE },
+  walletTitle: { lineHeight: WALLET_TITLE_LINE },
+  walletLine: { marginTop: NUDGE, lineHeight: WALLET_LINE },
   banner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -474,7 +473,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
   },
   bannerIcon: { paddingTop: NUDGE / 2 },
-  bannerTitle: { marginTop: -BANNER_TITLE_TRIM, marginBottom: NUDGE + 1 - BANNER_TITLE_TRIM },
+  bannerTitle: { marginBottom: NUDGE + 1, lineHeight: BANNER_TITLE_LINE },
   buttons: { gap: space.sm + NUDGE },
   status: { alignItems: 'center', gap: space.sm + NUDGE },
 });

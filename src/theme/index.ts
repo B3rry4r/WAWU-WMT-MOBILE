@@ -48,11 +48,17 @@ export type Weight = keyof typeof families;
 
 export const font = (weight: Weight): TextStyle => ({ fontFamily: families[weight] });
 
+/**
+ * A text class: the line height is size × leading exactly, as the kit's CSS
+ * computes it (`line-height: 1.45` on 13.5 px is 19.575 px, not 20). Rounding
+ * here made every multi-line block taller than the canvas (H18 by 1 px).
+ * Lead, 2 Oct 2026 (MONEY-03).
+ */
 const style = (size: number, weight: Weight, trackingEm = 0, leading: number = type.leading.body): TextStyle => ({
   ...font(weight),
   fontSize: size,
   letterSpacing: trackingEm * size,
-  lineHeight: Math.round(size * leading),
+  lineHeight: size * leading,
 });
 
 /**
@@ -61,6 +67,20 @@ const style = (size: number, weight: Weight, trackingEm = 0, leading: number = t
  * `type.leading.snug`.
  */
 const kitNormalLeading = type.leading.snug;
+
+/** Alan Sans's ascent and descent per em (hhea 990 and -310 per 1000, line gap 0). */
+const alanAscent = 0.99;
+const alanDescent = 0.31;
+
+/**
+ * The line height the canvas gets where the kit sets none (`line-height: normal`):
+ * the browser that drew it takes Alan Sans's ascent and descent and rounds
+ * each to a whole pixel, so 17 at 13.5 and 18 at 14.5 (measured in Chromium).
+ * The variants keep `kitNormalLeading` (1.3, the font's own ratio) because
+ * phones render `normal` their own way (Lead, 2 Oct 2026); a web layout that
+ * must match the canvas to the pixel compares against this.
+ */
+export const canvasNormalLineHeight = (size: number): number => Math.round(size * alanAscent) + Math.round(size * alanDescent);
 
 /** design/_gen/kit.js line 41, `h1`: 700, `letter-spacing:-0.03em`, `line-height:1.15`. */
 const kitHeadingTracking = -0.03;

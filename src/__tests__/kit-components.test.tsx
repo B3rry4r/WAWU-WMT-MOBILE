@@ -8,7 +8,7 @@ import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { amountTracking, Money } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { Showcase } from '@/features/showcase/Showcase';
-import { text } from '@/theme';
+import { canvasNormalLineHeight, text } from '@/theme';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
 
 let mockScheme: 'light' | 'dark' = 'dark';
@@ -181,20 +181,27 @@ describe('kit copy sizes', () => {
     expect(screen.getByRole('header', { name: 'Unlocked' })).toBeTruthy();
     expect(screen.getByRole('header', { name: 'Enter your PIN' })).toBeTruthy();
     expect(text.sheetTitle.letterSpacing).toBeCloseTo(-0.66);
-    expect(text.sheetTitle.lineHeight).toBe(Math.round(22 * 1.15));
-    expect(text.sheetTitleSm.lineHeight).toBe(Math.round(21 * 1.15));
+    expect(text.sheetTitle.lineHeight).toBe(22 * 1.15);
+    expect(text.sheetTitleSm.lineHeight).toBe(21 * 1.15);
   });
 
-  it('draws a banner body at 13 on a 1.45 line, 19 px, apart from meta on the font default 1.3', () => {
-    expect(text.bannerBody.lineHeight).toBe(Math.round(13 * 1.45));
-    expect(text.meta.lineHeight).toBe(Math.round(13 * 1.3));
+  it('draws a banner body at 13 on a 1.45 line, 18.85 px exactly as CSS computes it, apart from meta on the font default 1.3', () => {
+    expect(text.bannerBody.lineHeight).toBe(13 * 1.45);
+    expect(text.meta.lineHeight).toBe(13 * 1.3);
   });
 
   it('draws the inline error line (auth.js line 14) and the strong link (wallet.js line 81) untracked on the font default 1.3 line', () => {
     expect(text.errorLine.letterSpacing).toBe(0);
-    expect(text.errorLine.lineHeight).toBe(Math.round(13 * 1.3));
+    expect(text.errorLine.lineHeight).toBe(13 * 1.3);
     expect(text.linkStrong.letterSpacing).toBe(0);
-    expect(text.linkStrong.lineHeight).toBe(Math.round(14 * 1.3));
+    expect(text.linkStrong.lineHeight).toBe(14 * 1.3);
+  });
+
+  it('gives the canvas line for `line-height: normal`: Alan Sans ascent and descent, each rounded (17 at 13.5, 18 at 14.5)', () => {
+    expect(canvasNormalLineHeight(13.5)).toBe(17);
+    expect(canvasNormalLineHeight(14.5)).toBe(18);
+    expect(canvasNormalLineHeight(13)).toBe(17);
+    expect(canvasNormalLineHeight(15)).toBe(20);
   });
 
   it('keeps muted copy apart from secondary: same size and colour, taller line (1.45 against 1.4)', () => {
