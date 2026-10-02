@@ -47,9 +47,17 @@ Who is who, so the reasons make sense:
    the real figures come from config, never from the canvas.
 4. **"No fee" is never drawn as a fact.** Every "No fee" on the canvas becomes
    the breakdown in rule 3.
-5. **Carry the total through the whole flow.** Once a review shows a total,
-   the button, the PIN sheet's "Approve" line, the success screen and any
-   "not enough in your wallet" shortfall all use that total.
+5. **One rule for amounts on buttons, everywhere.** The button that pays
+   (the one that leads to the PIN) and the PIN sheet's "Approve" line show
+   the **total the payer pays**, fees included. When another person receives
+   a set amount (a send, a withdrawal, a request), that amount is its own
+   line, for example "They get ₦25,000". Any "money left your wallet" line
+   and any "not enough in your wallet" shortfall use the same total. A success
+   screen shows the total paid; after a send or a tip it may lead with the
+   amount sent ("₦25,000 sent"), as long as the total paid is its own row. A
+   chat bubble shows the amount sent. A button that only opens the review and doesn't pay (for
+   example "Message · ₦1,500", "Ask a follow-up · ₦1,500", "Get tickets")
+   shows the price, because the review that follows shows the total.
 6. **Refunds and reversals never promise more than came back.** Show the
    amount actually returned as a slot the app fills. Don't write "Nothing was
    taken", "in full" or "the full amount" about a payment that carried a
@@ -128,6 +136,14 @@ Who is who, so the reasons make sense:
   Events, Legal, Schools · Flows S, E, SC".
 - **Why:** R-2.
 
+### H10 · Professional card
+- **Now:** "4.9 · 212 reviews · **91 Trust Score** · ~3h usual reply", and
+  your note lists "Trust Score" among the card's parts.
+- **Instead:** remove the Trust Score figure and its label; keep rating,
+  reviews and usual reply time. Drop "Trust Score" from the note.
+- **Why:** R-18. No Trust Score on professional cards: a number nothing
+  calculates never ships.
+
 ### H14 · Unlock sheet
 - **Now:** Price ₦2,500, "Fee: No fee", button "Unlock · ₦2,500".
 - **Instead:** the breakdown (rule 3): Price ₦2,500, Fintava's charge ₦23.25,
@@ -154,17 +170,44 @@ Who is who, so the reasons make sense:
   ₦1,323.25".
 - **Why:** rule 5: the shortfall includes the charge.
 
+### H18 · Couldn't confirm
+- **Now:** "₦2,500 left your wallet and we couldn't finish opening the
+  video."
+- **Instead:** "₦2,523.25 left your wallet ...", the total H14 now shows.
+- **Why:** rule 5.
+
+### H19 · Detail · locked preview
+- **Now:** price card "₦3,000 · Yours forever" with "Unlock · ₦3,000" and
+  "Pay from wallet", leading into the unlock sheet and PIN (H14 to H16).
+- **Instead:** if this button opens the H14 sheet, it keeps the price
+  ("Unlock · ₦3,000") and the sheet shows the total. If you mean it to go
+  straight to the PIN, it shows the total instead: "Unlock · ₦3,023.25"
+  (₦3,000 + Fintava's ₦23.25).
+- **Why:** rule 5 and the purchases default.
+
+### H25 · Detail · course
+- **Now:** "Pay from wallet · ₦485,250 available" and "Unlock course ·
+  ₦8,000".
+- **Instead:** as H19: a price if it opens the unlock sheet, or the total
+  "Unlock course · ₦8,015.75" (₦8,000 + Fintava's ₦15.75) if it goes straight
+  to the PIN.
+- **Why:** rule 5 and the purchases default.
+
 ### H26 · Tip sheet
 - **Now:** amounts, note, Pay from wallet, "Tip ₦2,000". No fee shown.
-- **Instead:** add the breakdown above Pay from wallet: Fintava's charge
-  ₦23.25, Total ₦2,023.25; button "Tip ₦2,023.25" (or keep "Tip ₦2,000" if
-  you show the total clearly beside it; the total must be visible).
-- **Why:** R-10 and the purchases default.
+- **Instead:** add the breakdown above Pay from wallet: Tip ₦2,000,
+  Fintava's charge ₦23.25, Total ₦2,023.25; button "Tip ₦2,023.25".
+- **Why:** R-10 and the purchases default; rule 5.
 
 ### H27 · PIN
 - **Now:** "Approve ₦2,000 to Tife Adeola".
 - **Instead:** "Approve ₦2,023.25 to Tife Adeola".
 - **Why:** rule 5, following H26.
+
+### H28 · Tip sent
+- **Now:** "₦2,000 sent to Tife" and the note, then Done.
+- **Instead:** keep the heading, and add a row "Total paid ₦2,023.25".
+- **Why:** rule 5.
 
 ## 3. Me (profile and menu)
 
@@ -228,6 +271,12 @@ Who is who, so the reasons make sense:
 - **Instead:** the phone shows three tabs; remove hotspot 9 and renumber the
   hotspots after it.
 - **Why:** R-9.
+
+### M18 · Creator dashboard
+- **Now:** the Earnings row's subtitle reads "Move to your wallet (W39)".
+- **Instead:** a subtitle that doesn't ask for a move, for example "Lands in
+  your wallet automatically", still opening W39.
+- **Why:** R-11. Earnings land in the wallet by themselves.
 
 ### M12 · Pay
 - **Now:** Professional tick ₦2,000, Pay from wallet, "Pay ₦2,000". No fee
@@ -452,20 +501,24 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
 - **Instead:** the fee breakdown (rule 3). For this bank send: Fintava's
   charge ₦40 + WAWU's fee ₦25 = ₦65, Total ₦25,065.00. If you also draw the
   WAWU-user version: ₦15.75 + ₦10 = ₦25.75, Total ₦25,025.75. The button
-  still shows the amount the person receives.
+  shows the total, "Send ₦25,065", and a line above it says what arrives:
+  "They get ₦25,000" (rule 5). Your note on W10, "The button shows the amount
+  the person receives", changes to match.
 - **Why:** R-10, Fintava's price list.
 
 ### W11 · Send · PIN
 - **Now:** behind the PIN sheet, W10's rows with "Fee ₦10.00", "Total
   ₦25,010.00".
 - **Instead:** the same rows as the new W10 (₦40 + ₦25 = ₦65, Total
-  ₦25,065.00).
-- **Why:** R-10.
+  ₦25,065.00), and the sheet's line "Approve ₦25,000 to Chidinma Okoro"
+  becomes "Approve ₦25,065 to Chidinma Okoro".
+- **Why:** R-10 and rule 5.
 
 ### W12 · Send · success receipt
 - **Now:** "Fee ₦10.00".
-- **Instead:** the fee breakdown: ₦40 + ₦25 = ₦65 for the bank send shown.
-- **Why:** R-10.
+- **Instead:** the fee breakdown: ₦40 + ₦25 = ₦65 for the bank send shown,
+  and a "Total paid ₦25,065.00" row. The heading "₦25,000 sent" stays.
+- **Why:** R-10 and rule 5.
 
 ### W14 · Send · failed
 - **Now:** "Reversed to your wallet", "Amount ₦25,010.00", and a note headed
@@ -493,19 +546,23 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
 - **Now:** "Card fee ₦150.00", You pay ₦10,150.00, Wallet gets ₦10,000.00.
 - **Instead:** the card fee as a breakdown: card provider's charge + WAWU's
   1.5% (₦150 on ₦10,000) = card fee, then You pay and Wallet gets. The
-  provider's charge isn't known yet, so draw it as an obvious sample.
-- **Why:** R-10.
+  provider's charge isn't known yet, so draw it as an obvious sample. The
+  button shows what the card is charged ("Pay ₦10,150" plus the provider's
+  part), not "Add ₦10,000"; "Wallet gets ₦10,000" stays as its own line.
+- **Why:** R-10 and rule 5.
 
 ### W17 · Withdraw to bank
 - **Now:** "Fee ₦25.00".
 - **Instead:** the fee breakdown: ₦40 + ₦25 = ₦65 (on ₦50,000, so ₦50,065.00
-  leaves the wallet).
-- **Why:** R-10, Fintava's price list (a withdrawal is a bank send).
+  leaves the wallet). The button shows the total, "Withdraw ₦50,065", with a
+  line "Your bank gets ₦50,000".
+- **Why:** R-10, Fintava's price list (a withdrawal is a bank send); rule 5.
 
 ### W19 · Withdraw · on its way
 - **Now:** "Fee ₦25.00".
-- **Instead:** the fee breakdown: ₦40 + ₦25 = ₦65.
-- **Why:** R-10.
+- **Instead:** the fee breakdown: ₦40 + ₦25 = ₦65, and a "Total paid
+  ₦50,065.00" row. The heading "₦50,000 on its way" stays.
+- **Why:** R-10 and rule 5.
 
 ### W29 · Cards · get a card
 - **Now:** Physical card "Delivered in 3–5 working days · ₦2,000"; Virtual
@@ -520,8 +577,9 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
 ### W30 · Cards · delivery
 - **Now:** Card ₦1,500, Delivery ₦500, Total ₦2,000.
 - **Instead:** add Fintava's card charge as its own row before the total
-  (sample left obvious; Fintava hasn't published it).
-- **Why:** R-10.
+  (sample left obvious; Fintava hasn't published it). The button "Order card
+  · ₦2,000" shows that new total.
+- **Why:** R-10 and rule 5.
 
 ### W33 · Card · limits and controls
 - **Now:** your note "⚠ These are CBN-style default limits. The real caps
@@ -538,6 +596,15 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
   can fill or hide.
 - **Why:** R-1; Fintava fact: no tiers in the API, limits still to come from
   Fintava.
+
+### Wallet flow note, "Earnings · W39–W40" (no artboard id)
+- **Now:** "Earnings build up from unlocks, tips and paid DMs, then move into
+  the Naira wallet. KYC gates this move (from the code: KYC decides when
+  earnings pay out, never what can be published)."
+- **Instead:** "Earnings from unlocks, tips and paid DMs land in the Naira
+  wallet automatically." No "move", and no KYC gate on it; a creator without
+  a wallet yet keeps earning and the money lands when they open one.
+- **Why:** R-11.
 
 ### W39 · Earnings
 - **Now:** "Ready to move ₦84,500.00" and a **Move to wallet** button.
@@ -617,8 +684,9 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
 ### W21 · Swap · review
 - **Now:** "To: Dollar account", "Fee: No fee", the same 0:28 hold.
 - **Instead:** "To" names the asset (USDT or USDC), the fee row is the
-  breakdown slot, and the hold matches W20 (90 seconds).
-- **Why:** as W20.
+  breakdown slot, and the hold matches W20 (90 seconds). The button "Swap
+  ₦158,000" shows the total including that fee slot.
+- **Why:** as W20, and rule 5.
 
 ## 8. Bills and Legal (the Services flow)
 
@@ -717,6 +785,13 @@ sets one (none today). Legal services are purchases (the default above).
 
 ## 9. Inbox
 
+### Inbox flow note, "Paid DMs · I2–I8" (no artboard id)
+- **Now:** "... and if they don't answer in time the full amount comes back."
+- **Instead:** "... and if they don't answer in time, the price of the
+  message comes back." No "full amount".
+- **Why:** rule 6: the fan paid Fintava's charge too, and it isn't confirmed
+  that it comes back.
+
 ### I3 · Write the question
 - **Now:** ₦1,500, "No reply in time, your ₦1,500 comes back in full", Pay
   from wallet, "Send · ₦1,500". No fee shown.
@@ -724,6 +799,29 @@ sets one (none today). Legal services are purchases (the default above).
   button "Send · ₦1,523.25". The refund line names the amount that comes back
   without "in full": "No reply in time, your ₦1,500 comes back."
 - **Why:** R-10 and the purchases default; rule 6 for the refund.
+
+### I6 · Not enough in wallet
+- **Now:** I3's line "No reply in time, your ₦1,500 comes back in full", then
+  "You need ₦1,500. You have ₦900.00." and "Add ₦600".
+- **Instead:** the refund line as on I3 ("your ₦1,500 comes back", no "in
+  full"), then "You need ₦1,523.25. You have ₦900.00." and "Add ₦623.25".
+- **Why:** rule 5 (the shortfall uses I3's total) and rule 6.
+
+### I10 · Reply
+- **Now:** "That's 85% of ₦1,500. Miss it and Bisi gets the full amount
+  back."
+- **Instead:** "That's 85% of ₦1,500. Miss it and Bisi gets her ₦1,500
+  back." No "full amount".
+- **Why:** rule 6.
+
+### I11 · Answered
+- **Now:** "₦1,275 added to your earnings. Replied in 49 minutes. It moves to
+  your wallet from Earnings (W39).", and the flow arrow under it reads
+  "Earnings move to the wallet from W39".
+- **Instead:** "₦1,275 is in your wallet. Replied in 49 minutes." (for a
+  creator without a wallet yet: "... it lands when you open your wallet").
+  The arrow becomes "Earnings show in W39".
+- **Why:** R-11. Earnings land in the wallet by themselves.
 
 ### I8 · Creator has paid messages off
 - **Now:** "You can still follow, tip and buy from Tolu's shop."
@@ -733,10 +831,30 @@ sets one (none today). Legal services are purchases (the default above).
 ### I14 · Amount (send money in a chat)
 - **Now:** ₦25,000 to Femi, "Send ₦25,000", then the PIN. No fee shown.
 - **Instead:** add a fee line above the button: Fintava's charge ₦15.75 +
-  WAWU's fee ₦10 = ₦25.75, Total ₦25,025.75. The button still shows what
-  Femi receives, as on W10.
+  WAWU's fee ₦10 = ₦25.75, Total ₦25,025.75. The button shows the total,
+  "Send ₦25,025.75", with a line "Femi gets ₦25,000", as on W10 (rule 5).
 - **Why:** R-10: sending to a WAWU user carries Fintava's charge plus WAWU's
   ₦10.
+
+### I18 · Request from someone
+- **Now:** Kemi requests ₦12,000; the bubble's button is "Pay ₦12,000", then
+  the W11 PIN. No fee shown.
+- **Instead:** paying a request is a send to a WAWU user, so show the
+  breakdown before the PIN (in the bubble, or a short review sheet):
+  Fintava's charge ₦15.75 + WAWU's fee ₦10 = ₦25.75, Total ₦12,025.75, "Kemi
+  gets ₦12,000"; button "Pay ₦12,025.75".
+- **Why:** R-10 and rule 5, as I14.
+
+### I21 · Settings (paid messages)
+- **Now:** "On · fans pay ₦1,500 to ask you".
+- **Instead:** "On · ₦1,500 a message". Fans pay the price plus Fintava's
+  charge, so the line names the price, not what fans pay.
+- **Why:** R-10 and the purchases default.
+
+### I22 · Warning
+- **Now:** the warning keeps the line "On · fans pay ₦1,500 to ask you".
+- **Instead:** "₦1,500 a message", as I21.
+- **Why:** as I21.
 
 ### I23 · Switched off for 7 days
 - **Now:** "Back on 3 October. Publishing, communities, tips and your shop
