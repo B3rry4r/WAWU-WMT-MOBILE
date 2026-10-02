@@ -150,71 +150,74 @@ Builder and verifier are always different sessions.
 
 ## Developer 2
 
-1. [EVENTS-01](EVENTS-01.md) Events: list, filters, detail, sold out · needs SHELL-01, SHELL-02 from Developer first
-2. [EVENTS-02](EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit
-3. [INBOX-01](INBOX-01.md) Communities: my communities, links, join decisions
-4. [INBOX-02](INBOX-02.md) Live updates for chat
-5. [EVENTS-03](EVENTS-03.md) My tickets, ticket QR, called off, checked in
-6. [EVENTS-04](EVENTS-04.md) Host an event: basics, when and where, tickets, review
-7. [EVENTS-05](EVENTS-05.md) Running an event: organiser numbers and door staff
-8. [INBOX-03](INBOX-03.md) Phone push notifications
-9. [INBOX-05](INBOX-05.md) Communities: list, room, sending
-10. [INBOX-06](INBOX-06.md) Free chat between users
-11. [INBOX-07](INBOX-07.md) One inbox list with unread counts
-12. [INBOX-04](INBOX-04.md) Inbox: all, money filter, empty, loading
-13. [INBOX-08](INBOX-08.md) Paid DM threads and the creator's queue
-14. [INBOX-09](INBOX-09.md) The reply-rate penalty
-15. [EVENTS-07](EVENTS-07.md) Move event tickets to the wallet · needs MONEY-18 from You first
-16. [EVENTS-06](EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming · needs MONEY-02 from You first
-17. [EVENTS-09](EVENTS-09.md) At the door: scan, let in, already used, not valid
-18. [EVENTS-10](EVENTS-10.md) Pay event hosts and refund cancellations
-19. [EVENTS-08](EVENTS-08.md) My events, organiser dashboard, call it off
-20. [INBOX-12](INBOX-12.md) Paid message settings, warning, switched off
-21. [INBOX-14](INBOX-14.md) Private communities, hosting, join requests
-22. [INBOX-15](INBOX-15.md) Money requests in chat
-23. [INBOX-16](INBOX-16.md) Move WAWU Credits purchases to the wallet · needs MONEY-17 from You first
-24. [INBOX-13](INBOX-13.md) Out of credits, buy credits, credits added · needs MONEY-02 from You first
-25. [INBOX-17](INBOX-17.md) Move paid DMs to the wallet · needs MONEY-18 from You first
-26. [INBOX-10](INBOX-10.md) Ask a creator a paid question · needs MONEY-02 from You first
-27. [INBOX-11](INBOX-11.md) Paid question: not enough money, refunded, messages off
-28. [INBOX-18](INBOX-18.md) Answer paid questions (creator)
-29. [INBOX-19](INBOX-19.md) Chat and send money in a chat · needs WALLET-07 from You first
-30. [INBOX-20](INBOX-20.md) Request money and pay a request
+1. [INBOX-01](INBOX-01.md) Communities: my communities, links, join decisions
+2. [INBOX-02](INBOX-02.md) Live updates for chat
+3. [BILLS-01](BILLS-01.md) Pay a bill: choose biller, meter and amount · needs SHELL-02 from Developer first
+4. [INBOX-03](INBOX-03.md) Phone push notifications
+5. [INBOX-05](INBOX-05.md) Communities: list, room, sending
+6. [INBOX-06](INBOX-06.md) Free chat between users
+7. [INBOX-07](INBOX-07.md) One inbox list with unread counts
+8. [INBOX-04](INBOX-04.md) Inbox: all, money filter, empty, loading
+9. [INBOX-08](INBOX-08.md) Paid DM threads and the creator's queue
+10. [INBOX-09](INBOX-09.md) The reply-rate penalty
+11. [BILLS-04](BILLS-04.md) Move bills to the wallet · needs MONEY-17, MONEY-19 from You first
+12. [BILLS-02](BILLS-02.md) Pay a bill: review, PIN, token, failures · needs MONEY-02 from You first
+13. [BILLS-03](BILLS-03.md) Airtime and cable TV
+14. [INBOX-12](INBOX-12.md) Paid message settings, warning, switched off
+15. [INBOX-14](INBOX-14.md) Private communities, hosting, join requests
+16. [INBOX-15](INBOX-15.md) Money requests in chat
+17. [INBOX-16](INBOX-16.md) Move WAWU Credits purchases to the wallet · needs MONEY-17 from You first
+18. [INBOX-13](INBOX-13.md) Out of credits, buy credits, credits added · needs MONEY-02 from You first
+19. [INBOX-17](INBOX-17.md) Move paid DMs to the wallet · needs MONEY-18 from You first
+20. [INBOX-10](INBOX-10.md) Ask a creator a paid question · needs MONEY-02 from You first
+21. [INBOX-11](INBOX-11.md) Paid question: not enough money, refunded, messages off
+22. [INBOX-18](INBOX-18.md) Answer paid questions (creator)
+23. [INBOX-19](INBOX-19.md) Chat and send money in a chat · needs WALLET-07 from You first
+24. [INBOX-20](INBOX-20.md) Request money and pay a request
+25. [ADS-03](ADS-03.md) Ads data model
+26. [ADS-04](ADS-04.md) Serve a sponsored card
+27. [ADS-01](ADS-01.md) TGIF sponsored card · needs HOME-09 from Developer first
+28. [ADS-05](ADS-05.md) Count ad views and taps
+29. [ADS-06](ADS-06.md) Admin ad endpoints
+30. [ADS-02](ADS-02.md) Admin screens: ads
+
+## Developer 2 · after launch
+
+1. [BILLS-06](BILLS-06.md) Bill reminders
+2. [BILLS-05](BILLS-05.md) Bill reminders and the month view
 
 ## Developer 3
 
-1. [PROS-01](PROS-01.md) Find a professional · needs SHELL-01, SHELL-02 from Developer first
-2. [PROS-02](PROS-02.md) Professional fields and card data
-3. [LEGAL-01](LEGAL-01.md) Legal starts as a chat
-4. [SCHOOLS-01](SCHOOLS-01.md) Schools data model
-5. [SCHOOLS-02](SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
-6. [PROS-03](PROS-03.md) Get listed as a professional
-7. [LEGAL-02](LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
-8. [LEGAL-03](LEGAL-03.md) Legal consultations and deliverables
-9. [SCHOOLS-04](SCHOOLS-04.md) Schools: browse, search, course detail
-10. [SCHOOLS-03](SCHOOLS-03.md) Find a school, a school, a course, no results
-11. [SCHOOLS-05](SCHOOLS-05.md) Admin screens: schools, courses, intakes
-12. [BILLS-01](BILLS-01.md) Pay a bill: choose biller, meter and amount · needs SHELL-02 from Developer first
-13. [LEGAL-05](LEGAL-05.md) Move legal fees to the wallet · needs MONEY-17 from You first
-14. [LEGAL-04](LEGAL-04.md) Legal: book and pay a consultation
-15. [LEGAL-06](LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price
-16. [SCHOOLS-07](SCHOOLS-07.md) School enrolment order · needs MONEY-17 from You first
-17. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full · needs MONEY-02 from You first
-18. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
-19. [SCHOOLS-11](SCHOOLS-11.md) Paying schools · needs MONEY-17 from You first
-20. [BILLS-04](BILLS-04.md) Move bills to the wallet · needs MONEY-17, MONEY-19 from You first
-21. [BILLS-02](BILLS-02.md) Pay a bill: review, PIN, token, failures · needs MONEY-02 from You first
-22. [BILLS-03](BILLS-03.md) Airtime and cable TV
-23. [ADS-03](ADS-03.md) Ads data model
-24. [ADS-04](ADS-04.md) Serve a sponsored card
-25. [ADS-01](ADS-01.md) TGIF sponsored card · needs HOME-09 from Developer first
-26. [ADS-05](ADS-05.md) Count ad views and taps
-27. [ADS-06](ADS-06.md) Admin ad endpoints
-28. [ADS-02](ADS-02.md) Admin screens: ads
+1. [EVENTS-01](EVENTS-01.md) Events: list, filters, detail, sold out · needs SHELL-01, SHELL-02 from Developer first
+2. [EVENTS-02](EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit
+3. [PROS-01](PROS-01.md) Find a professional · needs SHELL-01, SHELL-02 from Developer first
+4. [PROS-02](PROS-02.md) Professional fields and card data
+5. [LEGAL-01](LEGAL-01.md) Legal starts as a chat
+6. [SCHOOLS-01](SCHOOLS-01.md) Schools data model
+7. [SCHOOLS-02](SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
+8. [EVENTS-03](EVENTS-03.md) My tickets, ticket QR, called off, checked in
+9. [EVENTS-04](EVENTS-04.md) Host an event: basics, when and where, tickets, review
+10. [EVENTS-05](EVENTS-05.md) Running an event: organiser numbers and door staff
+11. [PROS-03](PROS-03.md) Get listed as a professional
+12. [LEGAL-02](LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+13. [LEGAL-03](LEGAL-03.md) Legal consultations and deliverables
+14. [SCHOOLS-04](SCHOOLS-04.md) Schools: browse, search, course detail
+15. [SCHOOLS-03](SCHOOLS-03.md) Find a school, a school, a course, no results
+16. [SCHOOLS-05](SCHOOLS-05.md) Admin screens: schools, courses, intakes
+17. [EVENTS-07](EVENTS-07.md) Move event tickets to the wallet · needs MONEY-18 from You first
+18. [EVENTS-06](EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming · needs MONEY-02 from You first
+19. [EVENTS-09](EVENTS-09.md) At the door: scan, let in, already used, not valid
+20. [EVENTS-10](EVENTS-10.md) Pay event hosts and refund cancellations
+21. [EVENTS-08](EVENTS-08.md) My events, organiser dashboard, call it off
+22. [LEGAL-05](LEGAL-05.md) Move legal fees to the wallet · needs MONEY-17 from You first
+23. [LEGAL-04](LEGAL-04.md) Legal: book and pay a consultation
+24. [LEGAL-06](LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price
+25. [SCHOOLS-07](SCHOOLS-07.md) School enrolment order · needs MONEY-17 from You first
+26. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full · needs MONEY-02 from You first
+27. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
+28. [SCHOOLS-11](SCHOOLS-11.md) Paying schools · needs MONEY-17 from You first
 
 ## Developer 3 · after launch
 
 1. [SCHOOLS-10](SCHOOLS-10.md) Tracked link to a school's own site
 2. [SCHOOLS-08](SCHOOLS-08.md) My courses and apply on the school's site
-3. [BILLS-06](BILLS-06.md) Bill reminders
-4. [BILLS-05](BILLS-05.md) Bill reminders and the month view

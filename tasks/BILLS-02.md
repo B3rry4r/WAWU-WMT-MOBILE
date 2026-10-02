@@ -1,7 +1,7 @@
 ---
 id: BILLS-02
 title: Pay a bill: review, PIN, token, failures
-owner: DEV3
+owner: DEV2
 area: BILLS
 order: 146
 priority: launch
@@ -19,7 +19,7 @@ artboards: [S5, S6, S7, S11, S12]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV3.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S5 S6 S7 S11 S12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)

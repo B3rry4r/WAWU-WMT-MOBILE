@@ -22,7 +22,7 @@ part of your task.
   their payments (HOME-*).
 - **Explore** (EXPLORE-*).
 
-Events and Inbox moved to Developer 2 on 2 Oct 2026 (`docs/people/DEV2.md`).
+Inbox moved to Developer 2 and Events to Developer 3 on 2 Oct 2026.
 
 ## Rules that matter most for you
 

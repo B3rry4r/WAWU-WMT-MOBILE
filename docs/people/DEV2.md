@@ -12,9 +12,13 @@ part of your task.
   (INBOX-*). Rulings: R-13 (free chat; paid-message warning at 20%, pause at
   30%), R-5 (WAWU Credits are a count, never naira), R-19 (paid DMs hold money
   in WAWU's merchant wallet until answered).
-- **Events:** browse, tickets and their payment, hosting, refunds, the door
-  check-in (EVENTS-*). Hosting is for verified accounts; ₦0 events are allowed
-  (R-8); a refund returns the ticket price (R-10).
+- **Bills:** electricity, airtime, data and cable TV (BILLS-*). Bills debit
+  WAWU's merchant wallet, so a user's bill is a wallet transfer then the bill
+  payment, with a reversal if the biller fails (`docs/fintava/naira-api.md`).
+  Each disco has its own minimum; read them from Fintava, never assume ₦500
+  (`docs/fintava/sandbox/`).
+- **Ads:** the TGIF sponsored card, serving and counting ads, and the admin
+  side. Ads are booked by the WAWU team and invoiced by hand (R-15) (ADS-*).
 
 ## Rules that matter most for you
 

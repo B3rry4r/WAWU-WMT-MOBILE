@@ -1,7 +1,7 @@
 ---
 id: EVENTS-08
 title: My events, organiser dashboard, call it off
-owner: DEV2
+owner: DEV3
 area: EVENTS
 order: 124
 priority: launch
@@ -19,7 +19,7 @@ artboards: [E17, E18, E25]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV2.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E17 E18 E25` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 

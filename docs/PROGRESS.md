@@ -7,7 +7,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 62 | 55 | 30 | 32 |
+| todo | 62 | 55 | 32 | 30 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -31,13 +31,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet, [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet
 - **Developer:** [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs, [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring, [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money
-- **Developer 2:** [EVENTS-02](../tasks/EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit, [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
-- **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professional fields and card data, [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
+- **Developer 2:** [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications
+- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit, [PROS-02](../tasks/PROS-02.md) Professional fields and card data, [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · Rebalanced by screens, not just task count: Developer 2 takes Inbox, Bills and Ads (30 tasks, 50 screens); Developer 3 takes Events, Schools, Legal and Professionals (28 tasks, 57 screens).
 - 2 Oct 2026 · Two more developers join. Developer 2 takes Inbox and Events (30 launch tasks); Developer 3 takes Schools, Professionals, Legal, Bills and Ads (28). You and the first developer keep 107 of 165 launch tasks (65%).
 - 2 Oct 2026 · OPS-02 · First Fintava sandbox calls saved in `docs/fintava/sandbox/`; the sandbox merchant is inactive, so customer, transfer and bill calls are refused (403) until Fintava activates it. `naira-api.md`, `limits.md`, `fees.md` corrected.
 - 2 Oct 2026 · Branching and merging rules written (WORKFLOW section 8): branch from the newest main, merge main in before verification, regenerate generated files instead of fixing them, LOG.md merges as a union, one merge at a time.
@@ -52,4 +53,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · Owner: designs are final; the 112 brief changes are made in code. OPS-04 closed.
 - 2 Oct 2026 · OPS-04 designer brief passed verification (4 rounds, 112 changes).
 - 2 Oct 2026 · Fintava's dashboard charges recorded (`docs/fintava/fees.md`): user pays Fintava's charge plus WAWU's fee.
-- 2 Oct 2026 · No mocks, no feature flags: money is built on the real Fintava sandbox.

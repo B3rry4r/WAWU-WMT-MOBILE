@@ -18,8 +18,9 @@ backend behind them.
 
 ## What you own
 
-Bills, Schools, Professionals, Legal and Ads moved to Developer 3 on 2 Oct
-2026 (`docs/people/DEV3.md`); Events and Inbox to Developer 2.
+Events, Schools, Professionals and Legal moved to Developer 3 on 2 Oct 2026
+(`docs/people/DEV3.md`); Inbox, Bills and Ads to Developer 2
+(`docs/people/DEV2.md`).
 
 
 - **Outside contacts and setup:** Fintava docs and sandbox (OPS-02), the

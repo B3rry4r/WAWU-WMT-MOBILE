@@ -15,10 +15,10 @@ submission). Features: the money core, Open your wallet, Wallet. Details:
 Features: sign-up and sign-in, Settings, Me, Home, Explore. Details:
 `docs/people/DEV.md`.
 
-**Developer 2:** Inbox (chat, paid DMs, communities, credits) and Events.
+**Developer 2:** Inbox (chat, paid DMs, communities, credits), Bills and Ads.
 Details: `docs/people/DEV2.md`.
 
-**Developer 3:** Schools, Professionals, Legal, Bills and Ads. Details:
+**Developer 3:** Events, Schools, Professionals and Legal. Details:
 `docs/people/DEV3.md`.
 
 A feature's payment (tickets, unlocks, tips, credits, ticks) belongs to that
