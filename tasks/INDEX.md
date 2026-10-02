@@ -94,6 +94,7 @@ Builder and verifier are always different sessions.
 20. [WALLET-33](WALLET-33.md) Crypto through Cardex (first slice)
 21. [WALLET-21](WALLET-21.md) Dollar and crypto accounts, swap
 22. [RELEASE-03](RELEASE-03.md) iOS release
+23. [TEST-01](TEST-01.md) Tests pass on a cold cache and a loaded machine
 
 ## Developer
 
