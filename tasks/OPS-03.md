@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: setup
-status: building
+status: verifying
 depends_on: []
 decisions: [R-20]
 passes: [V1, V9]
@@ -53,6 +53,7 @@ Builder, 2 Oct 2026. wawu-backend commit 6d634fa on `wmt/OPS-03`; wawu-id and mo
 - **Not run:** Docker Postgres route (no Docker daemon in this sandbox; local Postgres route tested). Tunnel (no cloudflared/ngrok here). Phone on Wi-Fi not tested on a device; both services were reached on the machine's non-loopback address. No Fintava/Cardex call: no Hub code reads those settings yet (MONEY-06, MONEY-07, WALLET-33).
 - **Noted, not changed:** with FLUTTERWAVE_SECRET_KEY empty the existing Flutterwave mock approves charges locally; LOCAL.md says so. No gaps or shared-change rows filed.
 - **Round 2 (wawu-backend 341201f):** findings 1-5 fixed, 6 filed as BACKEND_GAPS G-2, G-3. (1) Every `.env` read goes through `scripts/local/envfile.js` (each repo's own dotenv), so these are now refused, each tested in a fresh clone: `export`, indented, `KEY = v` and later-duplicate remote DATABASE_URL in either file, `?host=` in the URL, `NODE_ENV` set with `export`, an indented `cdx_live_` key, and FINTAVA_BASE_URL `LIVE.`/`Live.FintavaPay.com`/any non-sandbox host. Sandbox URL plus `cdx_test_` key still start (control). (2) Settings given on any run rewrite both `.env` files: first run with a wrong password failed in id-migrate with P1000 and printed the rerun line; rerun with only the right `LOCAL_PG_URL` updated both DATABASE_URLs (database names kept), started, and smoke.sh passed. `HUB_PORT`/`ID_PORT` on an existing setup moved both services and smoke.sh passed. (3) Deleting only `wawu-id/.env`, then only `wawu-backend/.env`, regenerated each with the other's service key and ports, and smoke.sh passed both times. LOCAL.md: settings table, B3rry4r clone URLs, Ubuntu 22.04 note, per-step logs, reset guidance, id-migrate/P1000/P1001/port rows. Gates 16/0/76 unchanged, tsc 0, deploy and .github diff empty.
+- **Round 3 (wawu-backend edf2d3e):** `up.sh` unsets every `DOTENV_*` (incl. `DOTENV_CONFIG_PATH`, `_OVERRIDE`, `DOTENV_KEY`) before any step and passes the checked DATABASE_URL explicitly to both migrates, the Hub seed and both services. Proof in a fresh clone with `DOTENV_CONFIG_PATH` pointing at a file whose DATABASE_URL is `db.example.invalid`: the round-2 script's id-migrate went to `db.example.invalid:5432` (P1001); the new one, with that plus `DOTENV_CONFIG_OVERRIDE=true` and `DOTENV_KEY` set, migrated `localhost:5432` (ops03r2_id, ops03r2_hub), no log mentions the decoy, both running services' environments hold the local URL and no `DOTENV_*`, smoke.sh passed. The explicit URL alone also wins (`prisma migrate status` and `prisma db seed` with the decoy path set: localhost). A regenerated `.env` now takes the survivor's Postgres server and credentials (tested: hub on `127.0.0.1`, wawu-id `.env` deleted, regenerated on `127.0.0.1`, smoke.sh passed); LOCAL.md says so. Gates 16/0/76 unchanged, deploy and .github diff empty.
 
 ## Verifier report
 
