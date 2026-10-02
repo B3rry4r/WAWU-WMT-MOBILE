@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-03
 title: Find a school, a school, a course, no results
-owner: YOU
+owner: DEV3
 area: SCHOOLS
 order: 91
 priority: launch
@@ -19,7 +19,7 @@ artboards: [SC1, SC2, SC3, SC10]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - The design: `python3 scripts/design/render_design.py SC1 SC2 SC3 SC10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`
 

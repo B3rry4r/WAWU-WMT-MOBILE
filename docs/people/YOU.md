@@ -18,6 +18,11 @@ backend behind them.
 
 ## What you own
 
+Events, Schools, Professionals and Legal moved to Developer 3 on 2 Oct 2026
+(`docs/people/DEV3.md`); Inbox, Bills and Ads to Developer 2
+(`docs/people/DEV2.md`).
+
+
 - **Outside contacts and setup:** Fintava docs and sandbox (OPS-02), the
   designer (OPS-04).
 - **Money:** the core every payment uses: the Fintava connection, accounts, the
@@ -28,9 +33,8 @@ backend behind them.
   open an account and set the PIN (KYC-*, MONEY-12, MONEY-13). It runs the
   first time someone taps Wallet or anything that moves money, never at
   sign-up (R-6).
-- **Wallet** and **Bills** (WALLET-*, BILLS-*).
-- **Schools**, **Professionals** and **Legal** (SCHOOLS-*, PROS-*, LEGAL-*).
-- **Ads** (ADS-*), and the release (RELEASE-*). Only you have the Apple and
+- **Wallet** (WALLET-*).
+- **The release** (RELEASE-*). Only you have the Apple and
   Google accounts, so only you submit (`docs/BUILDS.md`).
 
 ## Rules that matter most for money

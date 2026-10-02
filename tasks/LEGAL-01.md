@@ -1,7 +1,7 @@
 ---
 id: LEGAL-01
 title: Legal starts as a chat
-owner: YOU
+owner: DEV3
 area: LEGAL
 order: 53
 priority: launch
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - `DECISIONS.md`: R-14 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 

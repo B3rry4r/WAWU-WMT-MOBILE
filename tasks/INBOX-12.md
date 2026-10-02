@@ -1,7 +1,7 @@
 ---
 id: INBOX-12
 title: Paid message settings, warning, switched off
-owner: DEV
+owner: DEV2
 area: INBOX
 order: 148
 priority: launch
@@ -19,7 +19,7 @@ artboards: [I21, I22, I23]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - `DECISIONS.md`: R-13 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py I21 I22 I23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`

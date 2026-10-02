@@ -21,10 +21,8 @@ part of your task.
 - **Home:** Today, the feed, content detail, TGIF, unlocking and tipping, and
   their payments (HOME-*).
 - **Explore** (EXPLORE-*).
-- **Events:** browse, tickets and their payment, hosting, the door (EVENTS-*).
-- **Inbox:** the inbox list, paid questions and their payments, free chat,
-  money in chat, communities, credits, push notifications, live chat updates
-  (INBOX-*).
+
+Inbox moved to Developer 2 and Events to Developer 3 on 2 Oct 2026.
 
 ## Rules that matter most for you
 
@@ -32,7 +30,9 @@ part of your task.
   `npx expo install`.
 - **Components are made once** in `src/components/`. A screen that needs a
   variant gets a new prop, never a copy.
-- **You own the route graph.** `_layout.tsx` files are yours.
+- **You own the route graph.** `_layout.tsx` files are yours. Developers 2
+  and 3 ask for route changes in `SHARED-CHANGES.md`; apply them between
+  rounds.
 - **Payments go through the money core** (pay-from-wallet, the PIN sheet, the
   pay sheet). You build each feature's payment path on top of it and never
   talk to Fintava directly. Tasks that need the money core first say so in

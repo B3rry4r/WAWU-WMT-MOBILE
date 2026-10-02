@@ -1,7 +1,7 @@
 ---
 id: INBOX-04
 title: Inbox: all, money filter, empty, loading
-owner: DEV
+owner: DEV2
 area: INBOX
 order: 101
 priority: launch
@@ -19,7 +19,7 @@ artboards: [I1, I20, I35, I36]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I1 I20 I35 I36` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 

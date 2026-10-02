@@ -1,7 +1,7 @@
 ---
 id: BILLS-01
 title: Pay a bill: choose biller, meter and amount
-owner: YOU
+owner: DEV2
 area: BILLS
 order: 96
 priority: launch
@@ -19,7 +19,7 @@ artboards: [S2, S3, S4, S10, S13]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S2 S3 S4 S10 S13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)

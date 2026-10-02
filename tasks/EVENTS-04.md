@@ -1,7 +1,7 @@
 ---
 id: EVENTS-04
 title: Host an event: basics, when and where, tickets, review
-owner: DEV
+owner: DEV3
 area: EVENTS
 order: 85
 priority: launch
@@ -19,7 +19,7 @@ artboards: [E13, E14, E15, E16, E21, E22]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - `DECISIONS.md`: R-8 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py E13 E14 E15 E16 E21 E22` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`

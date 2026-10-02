@@ -1,7 +1,7 @@
 ---
 id: EVENTS-09
 title: At the door: scan, let in, already used, not valid
-owner: DEV
+owner: DEV3
 area: EVENTS
 order: 122
 priority: launch
@@ -19,7 +19,7 @@ artboards: [E19, E20, E23, E24]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - The design: `python3 scripts/design/render_design.py E19 E20 E23 E24` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 

@@ -1,7 +1,7 @@
 ---
 id: BILLS-06
 title: Bill reminders
-owner: YOU
+owner: DEV2
 area: BILLS
 order: 182
 priority: after-launch
@@ -19,7 +19,7 @@ artboards: []
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

@@ -1,7 +1,7 @@
 ---
 id: LEGAL-06
 title: Legal: quote, pay to start, delivery, fixed price
-owner: YOU
+owner: DEV3
 area: LEGAL
 order: 127
 priority: launch
@@ -19,7 +19,7 @@ artboards: [S21, S22, S23, S24, S26]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV3.md` (what you own)
 - `DECISIONS.md`: R-14 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py S21 S22 S23 S24 S26` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`

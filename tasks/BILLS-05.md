@@ -1,7 +1,7 @@
 ---
 id: BILLS-05
 title: Bill reminders and the month view
-owner: YOU
+owner: DEV2
 area: BILLS
 order: 183
 priority: after-launch
@@ -19,7 +19,7 @@ artboards: [S27, S28, S29, S30, S31, S32]
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md` (what you own)
+- `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S27 S28 S29 S30 S31 S32` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
 
