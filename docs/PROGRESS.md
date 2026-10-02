@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 62 | 50 | 33 | 32 |
-| building | 0 | 0 | 1 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 1 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 14 | 8 | 0 | 0 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [INBOX-06](../tasks/INBOX-06.md) Free chat between users (Developer 2)
 
