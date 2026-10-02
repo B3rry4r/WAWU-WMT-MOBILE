@@ -7,7 +7,7 @@ order: 3
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: []
@@ -134,6 +134,26 @@ NOT RUN: webhooks and every bank send or purchase (forbidden to me, and blocked 
 5. **note:** `docs/PROGRESS.md` is in the diff but not in the builder's file list; it is regenerated, so this is expected.
 
 Status: back to `building` for findings 1 to 3. The bank-send and bill blocker (question 17) and webhooks are external, not defects.
+
+### Re-run verification, round 2
+
+Verifier, 2 Oct 2026, branch `wmt/OPS-02-rerun` at 72040e5 (builder fix 852826e, main fc66f3b merged in), fresh detached worktree. No sandbox calls this round.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Finding 1 (selfie credited to the wrong task) | closed | `fees.md`:65 "BVN check KYC-01, selfie match KYC-02", :78 "KYC-02 (the selfie match) limits retries"; `naira-api.md`:142 the same; `sandbox/README.md`:138 "BVN check (KYC-01 ...) and the selfie (KYC-02)". The only other KYC-04 mention is `05-bvn-selfie.md`:126, inside "First run (merchant inactive)" (from :112), kept as recorded. |
+| Finding 2 (`200 {}` lookups) | closed | Recorded with my times and values: `14-`:39-51 (10:27:45 and 10:28:11 MT-001, 10:27:46 BC-001, `content-length: 2`, the etag, `/txn/merchant` still `PENDING`, balance 49650; all match my round-1 calls), `11-`:30-35, README contradiction 9 (:175-181), answer 1 (:185-195), question 21 (:251-254), `naira-api.md`:38-40, :46-54, :83-86 and question 21. MONEY-06 is told never to read `{}` as "not found, safe to retry with the same reference", to reconcile from history and retry only under a new reference (`14-`:47-51, `naira-api.md`:49-53, README:194-195). |
+| Finding 3 (administrator masking) | closed | At HEAD `10-` has 74 and `12-` 2 administrator blocks, every one `"firstName": "***"`, `"lastName": "***"`, `"phoneNumber": "***"`. Old text of both files with only those three values masked equals the new text, so nothing else changed. `git grep` of the whole HEAD tree for the initials or the phone's last 4: 0 hits (the only `1201` strings are commit hashes in `tasks/OPS-03.md`). Older commits still hold them in their diffs; accepted, no history rewrite. |
+| Webhook note (round-1 note 4) | closed | `naira-api.md`:338-339: four sends "would have sent `wallet_to_wallet_transfer_v2` to a configured URL; no delivery was received or seen". |
+| My round-1 report after the builder's edit | intact | Findings 3 and the first run's capability-3 row now say "since removed" / "removed in the re-run fix" in place of the quoted values. What was found, where (`12-`, `10-`, 31 lines), why it mattered and the fix still read the same. Cosmetic only: the first run's note 4 says "the phone's last 4 remain", true when written, removed since. |
+| Secrets and personal data, full branch diff `fc66f3b..HEAD` (8591 lines; same as `origin/main...HEAD`), commit messages, and every file under `docs/`, `tasks/`, `BACKEND_GAPS.md` at HEAD | passed | Every 8-character window of the key: 0 hits in each. No unmasked 11-digit run in added lines. No administrator initials or phone digits in added lines or at HEAD. Emails `***@example.com` and `***@grr.la` only. The only `eyJ`/`live_` strings are the words in verifier report rows. |
+| Gates (`npm run check`) | passed | Exit 0: typecheck clean, lint clean, tests 136/136 in 9 suites, gates 9 run, **50 files scanned**, 0 fail / 0 warn / 0 accepted, baseline 0, 187 tasks, 280 artboards. Counts went up from 70 tests and 34 files because of main (UI-02), not this task. |
+| Capability checks | unchanged from round 1 | 1: NOT RUN to a result for bank sends, purchases and webhooks (external blocker, question 17), recorded correctly. 2: passed. 3: passed. |
+
+Findings, round 2:
+- **note:** main moved again during this round, to d7e434a (expo-updates, SHARED-CHANGES row 4). A trial merge (`git merge-tree`) conflicts only in the generated `docs/PROGRESS.md`. Before the pull request, merge main in, run `npm run tasks -- --write` and `npm run check` (WORKFLOW 8.4).
+
+No open defects. Bank sends, bill purchases and webhooks stay the external blocker (question 17). Status: `review`.
 
 ## Owner sign-off
 
