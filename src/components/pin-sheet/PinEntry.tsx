@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ICON_STROKE, Icon } from '@/components/icon';
 import { font, radius, space, text, useWawu } from '@/theme';
 
 import { approvalLine, lockedLine, msUntil, wrongPinLine } from './format';
 import { Keypad } from './Keypad';
-import type { PinCheckResult, PinSheetProps } from './types';
+import type { BiometricResult, PinCheckResult, PinSheetProps } from './types';
 
-/** The transaction PIN is 4 digits (W11 draws four dots; W36 creates a 4 digit PIN). */
+/** The transaction PIN is 4 digits (W11 draws four dots; the contract's `^[0-9]{4}$`). */
 export const PIN_LENGTH = 4;
 /** How often the locked countdown refreshes. */
 const TICK_MS = 1000;
+/** The canvas's inline error line (design/_gen/auth.js): CircleAlert 15, danger, stroke 2.2. */
+const ALERT_ICON = { name: 'CircleAlert', size: 15, stroke: ICON_STROKE.button } as const;
+const UNANSWERED_LINE = "We couldn't check your PIN. Try again.";
 
 /**
  * - entering: the keypad is live (with or without a message from the last try)
@@ -22,10 +26,10 @@ type Phase =
   | { kind: 'entering'; message?: { tone: 'danger'; text: string } }
   | { kind: 'submitting' }
   | { kind: 'approved' }
-  | { kind: 'locked'; until: Date | string };
+  | { kind: 'locked'; until: string };
 
-function initialPhase(lockedUntil: Date | string | undefined): Phase {
-  if (lockedUntil !== undefined && msUntil(lockedUntil, Date.now()) > 0) {
+function initialPhase(lockedUntil: string | null | undefined): Phase {
+  if (lockedUntil && msUntil(lockedUntil, Date.now()) > 0) {
     return { kind: 'locked', until: lockedUntil };
   }
   return { kind: 'entering' };
@@ -53,23 +57,32 @@ export function PinEntry({
   const mounted = useRef(true);
   // One check at a time: a double tap on the last digit never submits twice.
   const inFlight = useRef(false);
+  const busyListener = useRef(onBusyChange);
+  useEffect(() => {
+    busyListener.current = onBusyChange;
+  }, [onBusyChange]);
 
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      // Hidden or unmounted mid-check: the frame must not stay busy, or a
+      // reopened sheet could never be closed. The answer, when it comes, is
+      // the caller's to handle; this entry is gone.
+      if (inFlight.current) {
+        inFlight.current = false;
+        busyListener.current?.(false);
+      }
     };
   }, []);
 
-  // A lock the caller learns about while the sheet is open. Compared by time,
-  // not by Date object, so a new Date for the same moment is no change.
-  const lockedAt = lockedUntil === undefined ? undefined : new Date(lockedUntil).getTime();
-  const [seenLockedAt, setSeenLockedAt] = useState(lockedAt);
-  if (lockedAt !== seenLockedAt) {
-    setSeenLockedAt(lockedAt);
-    if (lockedAt !== undefined && !Number.isNaN(lockedAt)) {
+  // A lock the caller learns about while the sheet is open.
+  const [seenLockedUntil, setSeenLockedUntil] = useState(lockedUntil);
+  if (lockedUntil !== seenLockedUntil) {
+    setSeenLockedUntil(lockedUntil);
+    if (lockedUntil) {
       setPin('');
-      setPhase({ kind: 'locked', until: new Date(lockedAt) });
+      setPhase({ kind: 'locked', until: lockedUntil });
     }
   }
 
@@ -85,48 +98,68 @@ export function PinEntry({
     return () => clearInterval(id);
   }, [lockedUntilValue, expired]);
 
-  const settle = (result: PinCheckResult) => {
+  const say = (line: string) => {
+    setPhase({ kind: 'entering', message: { tone: 'danger', text: line } });
+    AccessibilityInfo.announceForAccessibility(line);
+  };
+
+  // Every answer clears the digits; only `approved` keeps the keys off.
+  const finish = (): boolean => {
+    if (!inFlight.current) return false;
     inFlight.current = false;
-    if (!mounted.current) return;
-    onBusyChange?.(false);
+    if (!mounted.current) return false;
+    busyListener.current?.(false);
     setPin('');
-    switch (result.status) {
-      case 'ok':
+    return true;
+  };
+
+  const settlePin = (result: PinCheckResult) => {
+    if (!finish()) return;
+    switch (result.code) {
+      case 'approved':
         setPhase({ kind: 'approved' });
         return;
-      case 'wrong': {
-        const line = wrongPinLine(result.triesLeft);
-        setPhase({ kind: 'entering', message: { tone: 'danger', text: line } });
-        AccessibilityInfo.announceForAccessibility(line);
+      case 'pin_incorrect':
+        say(wrongPinLine(result.triesLeft));
         return;
-      }
-      case 'locked':
-        if (msUntil(result.until, Date.now()) > 0) {
-          setNow(Date.now());
-          setPhase({ kind: 'locked', until: result.until });
-          AccessibilityInfo.announceForAccessibility(lockedLine(msUntil(result.until, Date.now())));
+      case 'pin_locked': {
+        const at = Date.now();
+        if (msUntil(result.lockedUntil, at) > 0) {
+          setNow(at);
+          setPhase({ kind: 'locked', until: result.lockedUntil });
+          AccessibilityInfo.announceForAccessibility(lockedLine(msUntil(result.lockedUntil, at)));
         } else {
           setPhase({ kind: 'entering' });
         }
         return;
-      case 'cancelled':
-        setPhase({ kind: 'entering' });
-        return;
-      case 'error': {
-        const line = "We couldn't check your PIN. Try again.";
-        setPhase({ kind: 'entering', message: { tone: 'danger', text: line } });
-        AccessibilityInfo.announceForAccessibility(line);
-        return;
       }
+      case 'unanswered':
+        say(UNANSWERED_LINE);
+        return;
     }
   };
 
-  const run = (check: () => Promise<PinCheckResult>) => {
-    if (inFlight.current) return;
+  const settleBiometric = (result: BiometricResult) => {
+    if (!finish()) return;
+    setPhase(result.code === 'approved' ? { kind: 'approved' } : { kind: 'entering' });
+  };
+
+  const start = () => {
+    if (inFlight.current) return false;
     inFlight.current = true;
-    onBusyChange?.(true);
+    busyListener.current?.(true);
     setPhase({ kind: 'submitting' });
-    check().then(settle, () => settle({ status: 'error' }));
+    return true;
+  };
+
+  const submitPin = (entered: string) => {
+    if (!start()) return;
+    onSubmit(entered).then(settlePin, () => settlePin({ code: 'unanswered' }));
+  };
+
+  const approveWithBiometric = () => {
+    if (!biometric || !start()) return;
+    biometric.onPress().then(settleBiometric, () => settleBiometric({ code: 'declined' }));
   };
 
   const keysOff = phase.kind !== 'entering';
@@ -135,7 +168,7 @@ export function PinEntry({
     if (keysOff || pin.length >= pinLength) return;
     const next = pin + d;
     setPin(next);
-    if (next.length === pinLength) run(() => onSubmit(next));
+    if (next.length === pinLength) submitPin(next);
   };
   const onDelete = () => {
     if (!keysOff) setPin((p) => p.slice(0, -1));
@@ -159,13 +192,10 @@ export function PinEntry({
     );
   } else if (phase.kind === 'entering' && phase.message) {
     status = (
-      <Text
-        accessibilityRole="alert"
-        accessibilityLiveRegion="polite"
-        style={[text.secondary, styles.center, { color: colors.danger }]}
-      >
-        {phase.message.text}
-      </Text>
+      <View style={styles.alert} accessibilityRole="alert" accessibilityLiveRegion="polite">
+        <Icon name={ALERT_ICON.name} size={ALERT_ICON.size} strokeWidth={ALERT_ICON.stroke} color={colors.danger} />
+        <Text style={[text.secondary, font(600), { color: colors.danger }]}>{phase.message.text}</Text>
+      </View>
     );
   }
 
@@ -206,7 +236,7 @@ export function PinEntry({
         onDelete={onDelete}
         onClear={onClear}
         biometricLabel={biometric?.label}
-        onBiometric={biometric ? () => run(biometric.onPress) : undefined}
+        onBiometric={biometric ? approveWithBiometric : undefined}
       />
 
       {onForgotPin ? (
@@ -236,5 +266,6 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: space.lg, paddingVertical: space.sm },
   dot: { width: space.lg, height: space.lg, borderRadius: radius.chip },
   status: { alignItems: 'center' },
+  alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs },
   forgot: { alignSelf: 'center' },
 });

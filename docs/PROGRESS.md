@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 62 | 52 | 32 | 30 |
+| todo | 61 | 52 | 32 | 30 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 6 | 4 | 0 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
+
+## Being verified
+
+- [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 
 ## Done
 
@@ -32,7 +36,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet, [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet
+- **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet, [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract
 - **Developer:** [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here
 - **Developer 2:** [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
 - **Developer 3:** [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [EVENTS-02](../tasks/EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit, [PROS-01](../tasks/PROS-01.md) Find a professional
@@ -41,6 +45,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-02 · Fix round 1: the PIN sheet uses the shared `Icon`, answers follow MONEY-04's contract (403 `pin_incorrect.triesLeft`, 423 `pin_locked.lockedUntil`), the lock shows a running clock, the busy flag resets when the sheet hides mid-check, and the tests no longer time out on a cold cache. Face ID refusal copy is an open question for the owner. Back to verifying.
+- 2 Oct 2026 · MONEY-02 · The PIN sheet built in `src/components/pin-sheet/` (entering, wrong PIN with tries left, locked with a countdown, Face ID key, submitting, error); tries and lock time come from the server's answer. Dev-only preview at `/preview/pin-sheet`. Waiting for verification.
 - 2 Oct 2026 · Icons: one shared `Icon` (`src/components/icon/`) on the latest Lucide (lucide-react-native 1.49) under the canvas's own icon names, drawn with the board kit's strokes (1.8, buttons 2.2, active tab 2.2, FAB 2.4). All 163 canvas icons resolve: 161 from Lucide, Facebook and Instagram from Simple Icons (Lucide dropped brand logos). `npm run icons` regenerates the list; the tab bar now uses it and the hand-copied `TabIcon` is gone. Expo project linked (`@moxnafrica/wawu-wmt`); test builds are Android only for now.
 - 2 Oct 2026 · SHELL-02 (signed-in session and API wiring, 3 verification rounds; fixed a sign-out race) and SHELL-03 (tester build config, eas.json, expo-dev-client) merged. Screen tasks for Developers 2 and 3 are now unblocked. Builds wait on the owner's `eas init` and real addresses.
 - 2 Oct 2026 · SHELL-02 built: signed-in session in `src/api/` (tokens in secure storage, one silent refresh on 401, one error shape, query defaults), proven live against the local backend and wawu-id; status verifying.
@@ -54,5 +60,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · SHELL-01 built: five-tab shell (Home, Explore, Inbox, Wallet, Me), the design's tab bar, Inbox badge read from data (hidden at zero); boot screen removed; status verifying.
 - 2 Oct 2026 · Rule change: a task can start once its dependencies are verified (`review`); the owner's sign-off happens at merge and never blocks the next task.
 - 2 Oct 2026 · SETUP-01 merged from the developer's branch (renderer runs offline, colour/spacing gate catches rgb/hsl/named colours and literal spacing); SETUP-01, OPS-03, OPS-05, MONEY-01 and CHECK-0 signed off by the owner.
-- 2 Oct 2026 · Fintava test key works on the sandbox (refused by the live API); tier limits recorded in `docs/fintava/limits.md`.
-- 2 Oct 2026 · Backend deploy after wawu-backend #23 succeeded; the full test suite, including the new route suite, passed in it.

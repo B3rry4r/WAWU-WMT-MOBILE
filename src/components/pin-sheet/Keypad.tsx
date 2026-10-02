@@ -1,12 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ICON_STROKE, Icon } from '@/components/icon';
 import { font, layout, radius, space, type, useWawu } from '@/theme';
-
-import { DeleteGlyph, FaceScanGlyph } from './icons';
 
 /** One key row on W11 is 58 high plus a 2 gap: one control height plus space.md. */
 const KEY_PITCH = layout.controlH + space.md;
-const GLYPH = space.s2xl;
+/** The keypad's glyphs as the kit draws them (design/_gen/kit.js `keypad`). */
+const FACE_ICON = { name: 'ScanFace', size: 26, stroke: ICON_STROKE.default } as const;
+const DELETE_ICON = { name: 'Delete', size: 24, stroke: ICON_STROKE.default } as const;
 const ROWS = [
   ['1', '2', '3'],
   ['4', '5', '6'],
@@ -69,14 +70,14 @@ export function Keypad({ inactive, onDigit, onDelete, onClear, biometricLabel, o
       <View style={styles.row}>
         {biometricLabel && onBiometric ? (
           <Key label={`Use ${biometricLabel}`} inactive={inactive} onPress={onBiometric}>
-            <FaceScanGlyph size={GLYPH} color={ink} />
+            <Icon name={FACE_ICON.name} size={FACE_ICON.size} strokeWidth={FACE_ICON.stroke} color={ink} />
           </Key>
         ) : (
           <View style={styles.cell} />
         )}
         {digit('0')}
         <Key label="Delete" inactive={inactive} onPress={onDelete} onLongPress={onClear}>
-          <DeleteGlyph size={GLYPH} color={ink} />
+          <Icon name={DELETE_ICON.name} size={DELETE_ICON.size} strokeWidth={DELETE_ICON.stroke} color={ink} />
         </Key>
       </View>
     </View>

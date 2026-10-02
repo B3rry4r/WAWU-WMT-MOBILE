@@ -3,7 +3,7 @@ import type { PinApproval } from './types';
 const KOBO_PER_NAIRA = 100;
 const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
-const MINUTES_PER_HOUR = 60;
+const SECONDS_PER_HOUR = 3600;
 
 function groupThousands(whole: number): string {
   return String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -33,27 +33,29 @@ export function wrongPinLine(triesLeft: number): string {
   return `Wrong PIN. ${triesLeft} ${triesLeft === 1 ? 'try' : 'tries'} left.`;
 }
 
-/** Milliseconds from `now` until `until`; 0 once it has passed or cannot be read. */
-export function msUntil(until: Date | string, now: number): number {
-  const at = until instanceof Date ? until.getTime() : Date.parse(until);
+/** Milliseconds from `now` until `lockedUntil` (ISO 8601); 0 once passed or unreadable. */
+export function msUntil(lockedUntil: string, now: number): number {
+  const at = Date.parse(lockedUntil);
   if (Number.isNaN(at)) return 0;
   return Math.max(0, at - now);
 }
 
-function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
+const two = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * The wait as a running clock, the canvas's countdown format (W37 "Resend in
+ * 0:42"): "m:ss" under an hour, "h:mm:ss" from an hour. Nothing is rounded to
+ * minutes or hours; seconds are rounded up, so it never reads 0:00 while the
+ * PIN is still locked.
+ */
+export function waitClock(remainingMs: number): string {
+  const total = Math.ceil(remainingMs / MS_PER_SECOND);
+  const hours = Math.floor(total / SECONDS_PER_HOUR);
+  const minutes = Math.floor((total % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+  const seconds = total % SECONDS_PER_MINUTE;
+  return hours > 0 ? `${hours}:${two(minutes)}:${two(seconds)}` : `${minutes}:${two(seconds)}`;
 }
 
-/** "Try again in 14 minutes." Rounded up, so it never reads 0 while still locked. */
 export function lockedLine(remainingMs: number): string {
-  const seconds = Math.ceil(remainingMs / MS_PER_SECOND);
-  if (seconds < SECONDS_PER_MINUTE) {
-    return `Too many wrong tries. Try again in ${plural(seconds, 'second', 'seconds')}.`;
-  }
-  const minutes = Math.ceil(seconds / SECONDS_PER_MINUTE);
-  if (minutes < MINUTES_PER_HOUR) {
-    return `Too many wrong tries. Try again in ${plural(minutes, 'minute', 'minutes')}.`;
-  }
-  const hours = Math.ceil(minutes / MINUTES_PER_HOUR);
-  return `Too many wrong tries. Try again in ${plural(hours, 'hour', 'hours')}.`;
+  return `Too many wrong tries. Try again in ${waitClock(remainingMs)}.`;
 }

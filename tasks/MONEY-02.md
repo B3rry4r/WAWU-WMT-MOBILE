@@ -7,7 +7,7 @@ order: 11
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -38,16 +38,17 @@ src/components/pin-sheet/ with states: entering, wrong PIN with tries left, lock
 
 ## Builder report
 
-- **Files:** `src/components/pin-sheet/` (`PinSheet.tsx` frame, `PinEntry.tsx` states, `Keypad.tsx`, `icons.tsx`, `format.ts`, `types.ts`, `index.ts`, `__tests__/PinSheet.test.tsx`); dev-only harness `src/app/preview/pin-sheet.tsx` (redirects home when not `__DEV__`).
-- **Contract:** `onSubmit(pin)` and `biometric.onPress()` resolve `ok` / `wrong {triesLeft}` / `locked {until}` / `error` / `cancelled`; `lockedUntil` opens it locked; `pinLength` (default 4, W11/W36). No tries, lock length or policy in the component: all from the answer (MONEY-09). One check at a time; the sheet can't be closed mid-check.
-- **Copy (brief W11, H15, M13, rule 5):** `approval.totalKobo` is the total with fees: "Approve ₦25,065 to Chidinma Okoro", "₦2,023.25 for the professional tick". Undrawn states written here: "Wrong PIN. 2 tries left.", "PIN locked" + "Too many wrong tries. Try again in 15 minutes.", "We couldn't check your PIN. Try again.", a spinner while checking.
-- **Check 1 (enter, rejected with tries left, locked):** jest, 12 tests in `PinSheet.test.tsx` (enter and delete digits, submit once; wrong with 2 then 1 tries left; locked from the answer with a countdown that unlocks; opens locked; submitting refuses digits and close; error and rejected request; Face ID; Forgot PIN; scrim close). Also driven by clicks in the web export (Playwright).
-- **Check 2 (W11 light and dark):** screenshots at 390 px, 2x, both themes, in `build/screens/` (not committed): entering, entering-no-faceid, wrong, locked, opens-locked, faceid, faceid-pressed, submitting, error; `W11-vs-built-{light,dark}.png` side by side with `build/design_shots/W11-*.png`. Whether it matches is the verifier's call.
-- **Token choices where W11's inline value is not a token:** title `text.h1` 24 (tokens: "sheet titles"; W11 21), digits `type.size.h1` 24 (W11 26), dot gap `space.lg` (W11 18), section gap `space.md` (W11 14), "Forgot PIN?" 13.5 (W11 14), Face ID glyph 24 (W11 26). Key pitch `controlH + space.md` = 60, as W11's 58 + 2.
-- **Gates before:** 9 gates, 6 files, 0 fail, 0 warn, 0 accepted; jest 2 suites, 5 tests. **After** (merged origin/main ab2df44, SHELL-01): 9 gates, 25 files, 0 fail, 0 warn, 0 accepted; jest 4 suites, 19 tests; `npm run check` exit 0.
-- **Shared changes filed:** SHARED-CHANGES 1.1 (lucide `scan-face` and `delete` in the shared icon renderer, then delete `icons.tsx`), 2.1 (adopt UI-02's sheet, UI-01's buttons and money formatting).
-- **Not done:** the real PIN check and lockout (MONEY-09); Face ID itself is only a callback (no biometric library installed; `package.json` is fenced); the sheet fades in rather than sliding (UI-02's sheet will own motion); no native device run (web export only; V10 not in this task's passes).
-- **Note:** analysis A1 conflict 4 quotes an old web line "no Face-ID"; W11 draws the Face ID key and the task asks for it, so it is shown only when the caller passes `biometric`.
+- **Files:** `src/components/pin-sheet/` (`PinSheet.tsx` frame, `PinEntry.tsx` states, `Keypad.tsx`, `format.ts`, `types.ts`, `index.ts`, `__tests__/PinSheet.test.tsx`); dev-only `src/app/preview/pin-sheet.tsx`. Round 2 deleted `icons.tsx`: the keypad uses the shared `Icon` (ScanFace 26, Delete 24, stroke `ICON_STROKE.default`, as kit.js `keypad()`), and the error line uses the canvas's inline error (CircleAlert 15, danger, 2.2, auth.js).
+- **Contract (MONEY-04, wawu-backend `docs/contract/CONVENTIONS.md` 3 to 5):** `onSubmit(pin)` is for the `X-Transaction-Pin` header and resolves `approved`, the contract's own `reason` objects `{ code: 'pin_incorrect', triesLeft }` (403) and `{ code: 'pin_locked', lockedUntil }` (423, ISO string), or `unanswered`. `lockedUntil` prop is `PinStateView.lockedUntil` (`GET /money/pin`, string or null). Both fields exist in the contract, so no gap for them. The mobile `schema.generated.ts` has no money types until MONEY-04 merges; then `PinRefusal` should be taken from the generated `MoneyErrorReason`.
+- **Idempotency-Key:** the caller makes one key per payment and sends the same key after a wrong PIN (refusals before money moves are not stored, CONVENTIONS 4.6) and after an `unanswered` request (4: same intent, same key). Written in `types.ts`.
+- **Lock time:** a running clock in the canvas's countdown format (W37 "Resend in 0:42"): "m:ss" under an hour, "h:mm:ss" from an hour; no rounding to minutes or hours; seconds round up so it never shows 0:00 while locked (verifier finding 8).
+- **Face ID:** returns `approved` or `declined`; a decline goes back to the keypad with no message, so a Face ID refusal no longer shows "Wrong PIN" (finding 6). G-7 in BACKEND_GAPS (MONEY-14) asks what the server answers.
+- **Open question for the owner:** W11, H15 and M13 draw no copy for a refused Face ID. Should the sheet say anything, and what? Also confirm the builder-written lines for undrawn states: "Wrong PIN. 2 tries left.", "PIN locked" with "Too many wrong tries. Try again in 14:59.", "We couldn't check your PIN. Try again."
+- **Fixes:** (1) cold-cache timeout: the first render lazily loaded RN's Modal (and its jest-expo mock) and react-native-svg, about 5 s cold inside the first test; the test file now loads them at file load and every test runs on Jest's fake clock. Cold first test 4.7 s before, 0.3 s after; no timeout raised. (2) Busy stuck after hiding mid-check: `PinEntry` calls `onBusyChange(false)` when it unmounts during a check; two tests (reopen and close; unmount reports not busy).
+- **Checks:** "enter, refused with tries left, locked": 16 jest tests in `PinSheet.test.tsx`. "Matches W11 light and dark": `build/screens/` (not committed), 18 state shots plus `W11-vs-built-{light,dark}.png`, `_glyph-compare.png`; the verifier decides.
+- **Token substitutions** (no token for the canvas value): title 24 (`text.h1`, W11 21), digits 24 (26), dot gap 16 (18), section gap 12 (14), heading gap 4 (6), panel top padding 8 (10), "Forgot PIN?" 13.5 (14), digit tracking -0.025em (-0.02em), error line gap 4 (6) and 13.5 (13); `--shadow-sheet` not drawn (no RN elevation tokens; hidden by the scrim). Dimension literals: handle height 5, top edge 1, dot ring 1.5, icon sizes 26, 24, 15 from the kit.
+- **Gates:** round 1 before 9 gates, 6 files, 0/0/0, jest 2 suites 5 tests; round 2 after merging origin/main 5d4208f: 9 gates, 34 files, 0 fail, 0 warn, 0 accepted; jest 6 suites, 54 tests, also 3 of 3 green with an empty cache (`npx jest --ci --cacheDirectory <empty>`); `npm run check` exit 0.
+- **Not done:** the server side (MONEY-09, MONEY-14); sliding motion and shared buttons wait for UI-02 and UI-01 (SHARED-CHANGES 2.1); no native device run (V10 not in this task's passes).
 
 ## Verifier report
 
