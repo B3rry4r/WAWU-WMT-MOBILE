@@ -25473,6 +25473,26 @@
      "lockedUntil"
     ]
    },
+   "FintavaWebhookAck": {
+    "type": "object",
+    "properties": {
+     "outcome": {
+      "type": "string",
+      "enum": [
+       "duplicate",
+       "recorded"
+      ]
+     },
+     "event": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "outcome",
+     "event"
+    ]
+   },
    "FeeBreakdown": {
     "type": "object",
     "properties": {
