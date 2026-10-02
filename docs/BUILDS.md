@@ -14,8 +14,9 @@ for when an iPhone tester joins; skip them until then.
 
 - **Done:** the project is linked to Expo as `@moxnafrica/wawu-wmt`
   (project id in `app.json`), 2 Oct 2026.
-- **Before the first preview build:** `eas.json` needs the real API and WAWU
-  ID addresses in place of the `.invalid` placeholders (owner).
+- **Addresses:** every profile points at the live services the web uses,
+  `https://api.wawuafrica.com` and `https://id.wawuafrica.com`. There is no
+  staging server, and nothing runs on Railway.
 
 ## Who has what
 
@@ -100,18 +101,11 @@ team rule: the developer publishes to `preview` only.
 The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`, and the
 WAWU ID address as `EXPO_PUBLIC_ID_URL`. Secrets never go into the app at all.
 
-`eas.json` is written. Its addresses are reserved placeholders ending in
-`.invalid` until the owner supplies the real ones, which are owner inputs:
-
-| Input | Where it goes |
-|-------|---------------|
-| Test backend (Hub API) address | `EXPO_PUBLIC_API_URL` in `development` and `preview` |
-| Test WAWU ID address | `EXPO_PUBLIC_ID_URL` in `development` and `preview` |
-| Production Hub API address | `EXPO_PUBLIC_API_URL` in `production` |
-| Production WAWU ID address | `EXPO_PUBLIC_ID_URL` in `production` |
-
-A `preview` build made before the placeholders are replaced cannot reach any
-backend. The `EXPO_PUBLIC_` values are baked in at build time, so changing one
+`eas.json` points every profile at the live services:
+`https://api.wawuafrica.com` (Hub API) and `https://id.wawuafrica.com` (WAWU
+ID), the same ones the web calls. There is no staging server; local work
+uses the local backend through `.env`. The `EXPO_PUBLIC_` values are baked in
+at build time, so changing one
 needs a new build; `eas update` takes the same variables from its own
 environment when it publishes.
 
