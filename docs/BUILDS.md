@@ -87,5 +87,25 @@ team rule: the developer publishes to `preview` only.
   production API, and the build number managed by Expo
   (`appVersionSource: remote`, `autoIncrement`).
 
-The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`. Secrets
-never go into the app at all.
+The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`, and the
+WAWU ID address as `EXPO_PUBLIC_ID_URL`. Secrets never go into the app at all.
+
+`eas.json` is written. Its addresses are reserved placeholders ending in
+`.invalid` until the owner supplies the real ones, which are owner inputs:
+
+| Input | Where it goes |
+|-------|---------------|
+| Test backend (Hub API) address | `EXPO_PUBLIC_API_URL` in `development` and `preview` |
+| Test WAWU ID address | `EXPO_PUBLIC_ID_URL` in `development` and `preview` |
+| Production Hub API address | `EXPO_PUBLIC_API_URL` in `production` |
+| Production WAWU ID address | `EXPO_PUBLIC_ID_URL` in `production` |
+
+A `preview` build made before the placeholders are replaced cannot reach any
+backend. The `EXPO_PUBLIC_` values are baked in at build time, so changing one
+needs a new build; `eas update` takes the same variables from its own
+environment when it publishes.
+
+Over-the-air updates need `expo-updates`, an `updates.url` and a
+`runtimeVersion` in `app.json`. `app.json` is fenced, so those are queued in
+`SHARED-CHANGES.md`; `npx eas-cli update:configure` (run once by the owner or
+developer, signed in to Expo) writes them.
