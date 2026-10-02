@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { TextField } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { layout, space } from '@/theme';
 
+import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
 import { Banner } from './Banner';
 import { signInFailure, type Failure } from './signInFailure';
@@ -48,6 +48,7 @@ export function SignInScreen({ onSignIn, onForgot, onBack, initialEmail = '', in
   /** Set before the first await, so a second tap in the same frame is ignored whatever React has rendered. */
   const inFlight = useRef(false);
   const passwordInput = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   const edit = (setter: (value: string) => void) => (value: string) => {
     setter(value);
@@ -82,6 +83,7 @@ export function SignInScreen({ onSignIn, onForgot, onBack, initialEmail = '', in
   return (
     <AuthFrame
       testID="sign-in"
+      scrollRef={scrollRef}
       onBack={onBack}
       footer={<Button label="Sign in" full loading={busy} onPress={() => void submit()} testID="sign-in-submit" />}
     >
@@ -96,7 +98,8 @@ export function SignInScreen({ onSignIn, onForgot, onBack, initialEmail = '', in
           <Text variant="muted">Sign in with your email.</Text>
         </View>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="sign-in-banner" /> : null}
-        <TextField
+        <AuthField
+          scrollRef={scrollRef}
           label="Email"
           testID="sign-in-email"
           value={email}
@@ -111,7 +114,8 @@ export function SignInScreen({ onSignIn, onForgot, onBack, initialEmail = '', in
           submitBehavior="submit"
           onSubmitEditing={() => passwordInput.current?.focus()}
         />
-        <TextField
+        <AuthField
+          scrollRef={scrollRef}
           label="Password"
           testID="sign-in-password"
           inputRef={passwordInput}

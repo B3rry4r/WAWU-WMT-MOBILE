@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { TextField } from '@/components/TextField';
 import { useWawu } from '@/theme';
 
+import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
 import { Banner } from './Banner';
 import { describeExpiry } from './expiry';
@@ -50,6 +50,7 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
   const [problem, setProblem] = useState<string | undefined>();
   const [sent, setSent] = useState(initialSent ?? null);
   const inFlight = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const submit = async () => {
     if (inFlight.current) return;
@@ -106,6 +107,7 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
   return (
     <AuthFrame
       testID="forgot-password"
+      scrollRef={scrollRef}
       navTitle="Reset password"
       onBack={onBackToSignIn}
       footer={<Button label="Send reset link" full loading={busy} onPress={() => void submit()} testID="forgot-submit" />}
@@ -117,8 +119,10 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
           <Text variant="muted">{"We'll email you a link to set a new one."}</Text>
         </View>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="forgot-banner" /> : null}
-        <TextField
+        <AuthField
+          scrollRef={scrollRef}
           label="Email"
+          autoFocus
           testID="forgot-email"
           value={email}
           onChangeText={(value) => {

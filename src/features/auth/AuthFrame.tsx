@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import type { ReactNode, RefObject } from 'react';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -12,6 +12,8 @@ const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } a
 const footGap = 10;
 
 export type AuthFrameProps = {
+  /** From `useFieldScroll`: lets a focused field scroll itself into view. */
+  scrollRef?: RefObject<ScrollView | null>;
   /** The bar's centred title ("Reset password"). Without it the bar holds only the back button. */
   navTitle?: string;
   /** Shows the round back button. Left off when there is nowhere to go back to. */
@@ -26,12 +28,26 @@ export type AuthFrameProps = {
   testID?: string;
 };
 
-/** The frame every signed-out screen shares: safe areas, the back bar, scrolling content and a pinned footer that rides above the keyboard. */
-export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop, testID }: AuthFrameProps) {
+/**
+ * The frame every signed-out screen shares: safe areas, the back bar, scrolling
+ * content and a pinned footer that rides above the keyboard.
+ *
+ * Android 15 and SDK 57 draw the app edge to edge, so the phone no longer
+ * resizes the window for the keyboard: the app's own `KeyboardAvoidingView`
+ * pads the bottom by the part of the keyboard that covers it (react-native
+ * `KeyboardAvoidingView`; the Expo config reference says to use it in this
+ * case). Where the window is resized anyway nothing overlaps and it adds
+ * nothing; the web has no keyboard events, the browser shrinks the viewport.
+ */
+export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop, scrollRef, testID }: AuthFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
-    <View testID={testID} style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView
+      testID={testID}
+      behavior="padding"
+      style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}
+    >
       {bare ? null : (
         <View style={styles.nav}>
           <View style={styles.side}>{onBack ? <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID="auth-back" /> : null}</View>
@@ -42,6 +58,7 @@ export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop
         </View>
       )}
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, contentTop !== undefined && { paddingTop: contentTop }]}
@@ -49,7 +66,7 @@ export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop
         {children}
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>{footer}</View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

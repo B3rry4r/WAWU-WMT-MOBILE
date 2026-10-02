@@ -53,7 +53,7 @@ export type ResetLinkAnswer = { expiresInSeconds: number | null };
  * sends a WhatsApp code instead). It answers the same whether or not an account
  * exists. The link opens WAWU ID's own web reset page: the app has no New
  * password screen. `expiresInSeconds` is the link's real lifetime; a server that
- * does not send it (BACKEND_GAPS.md G-25) gives null and the screen leaves the
+ * does not send it (BACKEND_GAPS.md G-26) gives null and the screen leaves the
  * figure out.
  */
 export async function forgotPasswordRequest(identifier: string): Promise<ResetLinkAnswer> {

@@ -1,8 +1,9 @@
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ApiError } from '@/api/errors';
 import { ForgotPasswordScreen } from '@/features/auth/ForgotPasswordScreen';
 import { SignInScreen } from '@/features/auth/SignInScreen';
+import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 
 /*
  * Development-only harness for the signed-out screens (task AUTH-01), used to
@@ -44,7 +45,7 @@ function refusal(answer: string | undefined): ApiError | null {
 export default function AuthPreviewRoute() {
   const p = useLocalSearchParams<Params>();
   const router = useRouter();
-  if (!__DEV__) return <Redirect href="/" />;
+  if (!__DEV__) return <LeaveDevRoute />;
 
   const answer = (): Promise<void> => {
     if (p.answer === 'hold') return never<void>();
