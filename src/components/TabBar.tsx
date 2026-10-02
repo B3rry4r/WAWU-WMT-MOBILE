@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 
 import { font, layout, radius, space, type, useWawu } from '@/theme';
 
+import { useFocusRing } from './focusRing';
 import { ICON_STROKE, Icon, type IconName } from './icon';
 
 /** The locked five tabs. Order and labels are fixed. */
@@ -48,13 +50,11 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         };
 
         return (
-          <Pressable
+          <TabButton
             key={route.key}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-            accessibilityLabel={count > 0 ? `${tab.label}, ${count} unread` : tab.label}
+            selected={focused}
+            label={count > 0 ? `${tab.label}, ${count} unread` : tab.label}
             onPress={onPress}
-            style={styles.tab}
           >
             <View>
               <Icon
@@ -76,10 +76,28 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               ) : null}
             </View>
             <Text style={[styles.label, font(focused ? 700 : 500), { color }]}>{tab.label}</Text>
-          </Pressable>
+          </TabButton>
         );
       })}
     </View>
+  );
+}
+
+/** One tab: its own keyboard ring, and `aria-selected` for a web screen reader. */
+function TabButton({ selected, label, onPress, children }: { selected: boolean; label: string; onPress: () => void; children: ReactNode }) {
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected }}
+      aria-selected={selected}
+      accessibilityLabel={label}
+      onPress={onPress}
+      {...ring.handlers}
+      style={[styles.tab, ring.style]}
+    >
+      {children}
+    </Pressable>
   );
 }
 
