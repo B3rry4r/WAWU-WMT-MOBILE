@@ -11,11 +11,13 @@ Four queues, because they have different owners and triggers:
 
 | # | from task | file | exact change, and why | status |
 |---|-----------|------|-----------------------|--------|
+| 1 | MONEY-03 | `package.json` (via `npx expo install react-native-svg`) plus an icon set | Add an SVG icon set so screens can draw the canvas's Lucide icons. The pay sheet draws its tick ring, plus, wallet, clock and cross from Views (`src/components/pay-sheet/glyphs.tsx`); once icons exist, swap them in and delete `glyphs.tsx`. | open |
 
 ## 2. Follow-ups in another task's screen
 
 | # | raised by | target file | change needed, and what forced it | status |
 |---|-----------|-------------|-----------------------------------|--------|
+| 1 | MONEY-03 | `src/components/pay-sheet/PaySheet.tsx` | When UI-02's sheet lands, present the pay sheet in it (scrim, slide, drag to dismiss) and drop the panel's own handle and top corners; when UI-01's buttons, text and money display land, replace the local `PillButton`, the row text styles and `Balance` with them. Built locally only because UI-01 and UI-02 were in progress at the same time (owned by the developer). | open |
 
 ## 3. Removals (deleting or hiding something)
 
