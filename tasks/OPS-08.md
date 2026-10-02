@@ -7,7 +7,7 @@ order: 37
 priority: launch
 repo: wawu-backend
 type: removal
-status: verifying
+status: building
 depends_on: [MONEY-01]
 decisions: [R-2]
 passes: [V1, V3, V4, V7, V9]
@@ -63,7 +63,47 @@ wawu-backend `wmt/OPS-08` @ a37e95f: bf9538c (code) + a37e95f (relock), on origi
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier session, 2 Oct 2026, fresh (wrote none of this task's code). Backend `wmt/OPS-08` at a37e95f (bf9538c + a37e95f) on main 5c07568; mobile `wmt/OPS-08` at 5c0fe23. Detached worktrees with `node_modules` symlinked (lockfiles identical to main), own databases (`v_ops08_*`, dropped afterwards). Evidence in the verifier scratchpad (`ops08/`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed (same as main) | Backend `tsc --noEmit` 0 on branch and main. `eslint` (no --fix) on the 8 changed .ts files: 2 prettier errors, both in `campaign-destination.ts` lines 37 and 42, identical on main. `scripts/gates/run.py`: 9 gates, 543 files scanned, 16 fail / 1 warn / 76 accepted, output byte-identical to main; `check_baseline.py` exit 0. Mobile `npm run check` exit 0: 13 suites / 250 tests, gates 9 run, 69 files scanned, 0/0/0, task check passes. |
+| V3 Regression | passed | `run.sh --fresh origin/main`: 244/244. Branch against its own lock (`PROTECTED_LOCK_REF=origin/wmt/OPS-08 run.sh --fresh`): 244/244. `ci-check.sh 5c07568 a37e95f 0` (no label, fresh DB): base checker and lock, 230 of 244, exit 1, the 14 failures all Shop (the 10 relocked plus GET /admin/shop/products/:id, POST verify, GET /shop/orders/:orderId, PATCH fulfilment). `ci-check.sh ... 1` (label): the PR's own lock, 244/244, exit 0. `lock-diff.py`: Changed (10), exactly the 10 Shop entries; nothing added or removed; setup unchanged; no checker file changed; no "outside code refers to the checker" hit. The other 232 entries are byte-identical to main and in the same order. Lock hash recomputed with the suite's own `lockHash` (`test/protected-routes/registry.ts`, unchanged): main 755ce4fa...7591f matches its file; branch `1916cf7aa5b8482d254ff67e6bb1811798d229a7683ac217d77072766fe92321` matches its file. |
+| V4 Field trace | passed (API) | ShopOrder written by main's code before the cutover, read after it by the branch: buyer list and detail (403 for another buyer), admin queue and fulfilment, webhook and verify, finance stream (admin-finance spec 39/39 green). No reader in search, feed, creators or `/content/purchases`. The UI side: see finding 3. |
+| V7 Flow walk | passed (API); web UI NOT RUN | Walked over HTTP as a buyer with a past order, a second buyer, no token, a malformed token, and a superadmin (below). No browser walk of the web: its Shop pages are statically gated (check 5). Mobile has no Shop screens (R-2). |
+| V9 Live seam | passed | Booted `dist/src/main.js` of main, then of the branch, on the same database. Users signed in through the mock WAWU ID's register (as the suite does), the admin through the real `POST /admin/auth/login` (seeded with `npm run admin:seed`). Values only the server has: order ids, stock moving 10 to 8 to 5, `paidAt`. |
+
+**Check 1, capability checks with real HTTP** (`ops08/br_checks.py`, 66/66). Main created the product (stock 10), one paid order and two pending charges, then stopped; the branch booted on the same database. Flutterwave's verify endpoint was answered by a local fake (`fakeflw.js`, preloaded; it logs each call).
+- New orders refused: checkout with a token is 410 `{statusCode: 410, message, data: null, reason: {code: "shop_retired", message}}`; cart GET, POST, PATCH, DELETE (and PATCH with a non-uuid) 410; browse (products, `?search=`, `:slug`, subcategories) 410 with and without a token. Order count, cart quantity and stock identical before and after (3, 4, 10). No token and a malformed token are 401 on all 8 user routes; admin POST/PUT product: no token 401, a WAWU ID token 401, superadmin 410 `shop_retired`.
+- A past paid order: listed for its buyer, pending ones not listed, opens with its line, 403 "This order is not yours." for another buyer, absent from that buyer's list; verify by another buyer 403.
+- A pre-cutover charge settles once: browser verify 201 paid; verify again 201 paid; webhook replay "settled" with no second effect; stock 10 to 8 (qty 2) once, `paidAt` unchanged; Flutterwave called once for it. A second charge settled by the webhook first, its replay "duplicate / Already settled", browser verify after it returns paid; stock 8 to 5 (qty 3) once. Forged `verif-hash` 401. Both now appear in the buyer's list.
+- Search, feed, creators: 60 calls (4 tabs, suggestions, closest; 5 terms incl. the product's name; with and without a token), all 200, none containing the product's id, slug or name, while the product is `live` in the table. Positive control: "SEEDED" finds 3 content items. `/content?scope=feed`, `/content`, `/creators`, `/content/purchases`: no product. Code: `prisma.product` is read only in `src/shop/`.
+- `/health` 200 `{ok: true, service: "wawu-hub-api"}`. Admin product list, detail, order queue 200; fulfilment dispatch 200. `/admin/notifications/destinations` no longer lists `/shop` (the dashboard reads this endpoint, so its composer follows).
+
+**Check 2, reference inventory.** Grepped the branch for shop/Shop/SHOP, `prisma.product|cartItem|shopOrder`, raw `"Product"`/`"ShopOrder"`, cart, checkout. Matches the builder's list: webhook router (`payment-webhook.service.ts:590`), payment link (`payment-link.service.ts:101`), finance (`admin-finance.service.ts:151,512`, `finance-streams.ts:128`), account purge (`account-data-map.ts:66` CartItem, `:133` ShopOrder, both still purge the user's rows), `app.module.ts`, deploy smoke test, marketplace saves (`shop: basket|beauty`, not this Shop). No scheduler job touches ShopOrder. Two things that still reach Shop were not handled: findings 1 and 2.
+
+**Check 4, deploy workflow.** `deploy.yml` parses (jobs test, deploy, notify); 15 steps on both sides, only "Smoke test the live service" differs; job settings and top-level keys identical. The step probes `/api/hub/health` and exits 0 only on "200". `/health` is `AppController` (unchanged from main), no auth guard; only the global throttler (20/s, 200/min), far above 15 probes 4 s apart. Check 5 of the task (deploy green): NOT RUN, it runs on the first deploy after merge.
+
+**Check 5, web.** wawuafrica origin/main 80c3671: every `/api/hub/shop` caller is `src/lib/api/shop.ts`, imported only from `src/components/shop/*` and `src/app/(app)/shop/*`; nothing outside those imports either. `src/app/(app)/shop/layout.tsx:18` `const SHOP_LIVE = false;` returns `ServiceComingSoon` for every /shop route and never mounts `WowCartProvider` (the cart fetch). The Settings "Shop orders" row (`settings/page.tsx:122`) lands on that gate. No user-reachable web call hits a 410 route.
+
+**Check 6, gates and tests.** Shop spec 16/16. Full contract suite on the branch, own database: 93 suites, 1629 passed, 91 failed, 3 pending. The 91 were the event (52) and admin-finance (39) specs, `connect ECONNREFUSED 127.0.0.1:4001`: the mock I started was replaced mid-run by another session's mock on the shared port. Re-run of those two specs plus shop with the mock up: 107/107. Total 1720 pass / 0 fail / 3 pending (the Gemini-backed legal-intake cases). Contract: `contract:emit` + `contract:enrich` on the branch reproduce `contract/openapi.json` byte for byte; the 10 retired operations list 410 and `x-wawu-retired-by: OPS-08`.
+
+**Check 7, the builder's defaults.**
+- Verify stays: safe and consistent with R-2 and rule 6 (proved exactly-once above). But together with the hosted link it is not limited to charges opened before the cutover: finding 2.
+- Admin fulfilment and catalogue reads stay: safe; a paid order is still owed, and order lines point at those rows.
+- Past orders not added to `/content/purchases`: consistent with rule 6 (that response is protected and would widen). It leaves the capability check without a screen: finding 3.
+
+**Check 8, the log grep.** NOT RUN (no droplet access). The command is correct for nginx's default `combined` format (the site in `deploy/install-services.sh` sets no `access_log`, so `/var/log/nginx/access.log` in combined): `$4` is `[dd/Mon/yyyy:...`, so `substr($4,2,11)` is the date, `$6` the quoted method, `$7` the path, `$9` the status; `zgrep -h` reads rotated `.gz` files; Ubuntu's default logrotate keeps 14 days. It covers only `shop/(cart|checkout|orders)`, which is what the check says, but not the other retired routes: finding 1.
+
+### Findings
+
+1. **defect: the dashboard still calls two of the retired routes, and no evidence covers them.** wawu-dashboard origin/main c1dfca6: nav "Shop" (`src/components/layout/nav.ts:147`) to the product list, its "New product" button (`src/app/(app)/shop/page.tsx:128`) and edit page use `ProductForm`, which calls `adminShopCreate` and `adminShopUpdate` (`src/lib/api/admin-shop.ts:114,118`): POST and PUT `/admin/shop/products`, both now 410. The builder's report does not mention the dashboard, and the merge-gating grep does not look at `/api/hub/admin/shop/products` (or at browse). WORKFLOW section 6 (Remove) and rule 6 need the logs to show no calls to each route being removed. Unblocks it: widen the grep to every retired route, e.g. `'"(POST|PUT) /api/hub/admin/shop/products|"[A-Z]+ /api/hub/shop/(cart|checkout|products|categories)'` with the deploy smoke test's `curl/` user agent left out, and record the dashboard consequence (a SHARED-CHANGES or BACKEND_GAPS row naming the task that hides "New product" and edit there, or a recorded default).
+2. **defect: a retired Shop order can still be charged after the cutover.** `POST /payments/hosted-link` resolves a ShopOrder txRef (`payment-link.service.ts:101,109`) and mints a new Flutterwave payment page, whatever the order's age or status. Shown on the booted branch: a pending order dated 20 days back, hosted link 200 (`/v3/payments` called with tx_ref and 20000), then verify 201 paid, stock claimed. The builder listed this reference but recorded no decision. Unblocks it: refuse a ShopOrder txRef there (410 `shop_retired`, the same shape) so only charges already opened before the cutover settle, or record a default with the reason. Note `POST /payments/hosted-link` is protected (web caller `src/lib/flutterwave.ts:372`); refusing only Shop txRefs leaves its locked probe untouched, which V3 will confirm.
+3. **unclear (owner): where a buyer sees a past Shop order.** The API serves them (proved above), but no screen does: the web row is behind `SHOP_LIVE = false` since 12 Sep, mobile has no Shop orders (ME-03, R-2). The 410 sentence the builder wrote says "Orders you already placed are still in your purchases", which nothing a user can open backs today. No UI calls these routes, so nobody sees it yet; if the owner does not want a surface, the sentence should drop that clause.
+
+NOT RUN: capability check 1 (droplet logs, see check 8 and finding 1); capability check 5 (the first deploy after merge); a browser walk of the web (static check only). V10 is not in `passes`.
+
+Verdict: 2 open defects. Status `building`.
 
 ## Owner sign-off
 
