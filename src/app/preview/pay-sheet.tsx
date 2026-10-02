@@ -47,7 +47,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onOpen
   },
   send: {
     variant: 'send',
-    item: { title: 'Chidinma Adaeze Okoro', avatar: { initials: 'CO', hue: 'coral' } },
+    item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },
     amountKobo: 2500000,
     details: [
       { label: 'Bank', value: 'Guaranty Trust Bank' },
@@ -66,7 +66,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onOpen
   },
   'send-short': {
     variant: 'send',
-    item: { title: 'Chidinma Adaeze Okoro', avatar: { initials: 'CO', hue: 'coral' } },
+    item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },
     amountKobo: 2500000,
     fees: [
       { label: "Fintava's charge", amountKobo: 4000 },
@@ -116,7 +116,6 @@ export default function PaySheetPreview() {
   }
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage }]}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceScrim }]} />
       {sheet}
     </View>
   );

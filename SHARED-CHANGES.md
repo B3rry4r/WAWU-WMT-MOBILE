@@ -16,12 +16,12 @@ Four queues, because they have different owners and triggers:
 | 3 | SHELL-02 | `docs/BUILDS.md` | Line 90: name `EXPO_PUBLIC_ID_URL` next to `EXPO_PUBLIC_API_URL`. | applied by SHELL-03 |
 | 5 | SHELL-03 | `eas.json` | The `.invalid` addresses for `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_ID_URL` in each profile are replaced with the real test and production addresses (owner inputs, docs/BUILDS.md). `EXPO_PUBLIC_ID_URL` is already present in every profile, which covers the request SHELL-02 made. | open |
 | 7 | UI-02 follow-up | `src/theme` (token generator input `design/_ds/wawu/tokens/elevation.css`) | Export the design's shadows as theme tokens: `--shadow-sheet` (0 -12px 40px, black 0.5) and the segment lift (kit `Seg`, 0 1px 3px, black 0.08), in both themes. Until then `src/components/shadow.ts` `blackAt(alpha)` derives black from the dark scrim colour and the two components hold the offsets as named constants citing the kit; delete `shadow.ts` when the tokens exist. | open |
+| 9 | MONEY-03 | `src/components/BottomSheet.tsx` | Add an optional `gap` prop (default `sheetMetrics.between`, 18) for the space between the panel's children, as the kit's `sheet(inner, { gap })` takes one (kit.js line 64). H14 and H17 pass 16 (home.js lines 136 and 139). The pay sheet wraps its body in a 16 px-gap View, so its parts match; only the grabber-to-header space reads 18 + 4 against the canvas's 16 + 4 (2 px, measured on H14). With the prop it passes `gap={16}` and drops its wrapper. | open |
 
 ## 2. Follow-ups in another task's screen
 
 | # | raised by | target file | change needed, and what forced it | status |
 |---|-----------|-------------|-----------------------------------|--------|
-| 1 | MONEY-03 | `src/components/pay-sheet/PaySheet.tsx` | When UI-02's bottom sheet is on main, the purchase variant renders inside it. UI-02 provides: the scrim (`surfaceScrim`), the panel (`surfaceElevated`, 44 px top corners, a 1 px `borderHairline` top edge, padding 10 / 20 / 34), the 40 × 5 `borderStrong` grab handle, slide-up on open and drag or scrim tap to dismiss. The pay sheet then drops its own panel and handle (`styles.sheet`, `styles.handle`). The send variant is a page body and needs nothing from UI-02. Buttons, amounts and copy already use UI-01. | open |
 
 ## 3. Removals (deleting or hiding something)
 

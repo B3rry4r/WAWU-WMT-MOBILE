@@ -1,18 +1,20 @@
 import { Image, type ImageSource } from 'expo-image';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { ActivityIndicator, Text as NativeText, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { Avatar, type AvatarHue } from '@/components/Avatar';
+import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
+import { Card, GroupedList } from '@/components/Card';
+import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { ICON_STROKE, Icon, VerifiedTick } from '@/components/icon';
+import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
-import { font, layout, motion, radius, space, type, useWawu } from '@/theme';
+import { layout, motion, radius, space, text, type, useWawu } from '@/theme';
 import type { ColorToken } from '@/theme';
 
 import { feesTotalKobo, formatNaira, payTotalKobo, shortfallKobo, type PayFeeLine } from './money';
-
-/** The canvas's avatar hues (`Av(name, hue)`). */
-export type PayAvatarHue = 'lilac' | 'lemon' | 'green' | 'sky' | 'pink' | 'coral' | 'sand';
 
 /** What is being paid for, or who is being paid: the header. */
 export type PayItem = {
@@ -26,8 +28,13 @@ export type PayItem = {
   subtitle?: string;
   /** Thumbnail: a URL, or a bundled image (`require(...)`). Left out, the header is the title alone. */
   image?: ImageSource | string | number;
-  /** Send: the recipient's initials and avatar hue (W10). */
-  avatar?: { initials: string; hue: PayAvatarHue };
+  /**
+   * Send: the recipient's short display name ("Chidinma Okoro"), which the
+   * avatar's initials come from, as W10 draws "CO"; `title` stays the full name.
+   */
+  displayName?: string;
+  /** Send: the recipient's avatar (W10): their hue, and a photo when they have one. */
+  avatar?: { hue: AvatarHue; source?: string | number };
 };
 
 /** A row that describes the payment and is not money ("Yours: Forever, in My purchases"). */
@@ -59,6 +66,8 @@ export type PaySheetProps = {
    * shows its kobo faded, and the host screen supplies the nav bar.
    */
   variant?: 'purchase' | 'send';
+  /** Purchase: whether the sheet is open (UI-02's `BottomSheet`). Default true. The send variant is a page body. */
+  visible?: boolean;
   item: PayItem;
   /** The price or the amount sent, in kobo, before any fee. */
   amountKobo: number;
@@ -101,9 +110,9 @@ export type PaySheetProps = {
 };
 
 /**
- * The pay-from-wallet sheet (H14, H17; W10 as the `send` variant). For a
- * purchase this is the panel only: presenting it (scrim, slide, drag to
- * dismiss) is the sheet host's job.
+ * The pay-from-wallet sheet (H14, H17; W10 as the `send` variant). A purchase
+ * opens in UI-02's `BottomSheet` (scrim, grabber, slide-up; closing calls
+ * `onCancel`, and it cannot be closed while paying).
  *
  * The total is the price plus every fee line, added here in kobo, so the
  * breakdown, the Total row, the pay button and any shortfall always agree
@@ -131,13 +140,14 @@ export function PaySheet(props: PaySheetProps) {
     return <View style={[styles.page, { backgroundColor: colors.surfacePage }]}>{body}</View>;
   }
   return (
-    <View
-      accessibilityViewIsModal
-      style={[styles.sheet, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderHairline }]}
+    <BottomSheet
+      visible={props.visible ?? true}
+      onClose={props.onCancel}
+      label={props.actionLabel}
+      dismissible={status.kind !== 'paying'}
     >
-      <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
-      {body}
-    </View>
+      <View style={styles.sheetBody}>{body}</View>
+    </BottomSheet>
   );
 }
 
@@ -178,13 +188,11 @@ function money(p: PaySheetProps, kobo: number, tone?: ColorToken) {
   return <Money minorUnits={kobo} size={ROW_VALUE} decimals={p.variant === 'send' || kobo % 100 !== 0} tone={tone} />;
 }
 
-function FeeRows({ p }: { p: PaySheetProps }) {
-  return (
-    <>
-      {p.fees.map((f) => <Row key={f.label} label={f.label} value={money(p, f.amountKobo)} />)}
-      {p.fees.length > 1 && <Row label="Fees" value={money(p, feesTotalKobo(p.fees))} />}
-    </>
-  );
+/** One row per fee part, then "Fees" when there are two or more (R-23). An array, so `GroupedList` draws a line between each. */
+function feeRows(p: PaySheetProps) {
+  const rows = p.fees.map((f) => <KeyValueRow key={f.label} label={f.label} value={money(p, f.amountKobo)} />);
+  if (p.fees.length > 1) rows.push(<KeyValueRow key="fees" label="Fees" value={money(p, feesTotalKobo(p.fees))} />);
+  return rows;
 }
 
 function Review(p: Inner) {
@@ -192,19 +200,13 @@ function Review(p: Inner) {
   const pay = usePayOnce(p.onPay, p.status.kind);
   const send = p.variant === 'send';
   const card = (
-    <Card>
-      {send ? (
-        p.details?.map((d, i) => <Row key={d.label} label={d.label} value={d.value} first={i === 0} />)
-      ) : (
-        <>
-          <Row label={p.amountLabel ?? 'Price'} value={formatNaira(p.amountKobo)} first />
-          {p.details?.map((d) => <Row key={d.label} label={d.label} value={d.value} />)}
-        </>
-      )}
-      <FeeRows p={p} />
-      <Row label="Total" value={money(p, p.total)} first={send && !p.details?.length && p.fees.length === 0} />
-      {p.notes?.map((d) => <Row key={d.label} label={d.label} value={d.value} />)}
-    </Card>
+    <GroupedList>
+      {send ? null : <KeyValueRow key="price" label={p.amountLabel ?? 'Price'} value={money(p, p.amountKobo)} />}
+      {p.details?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
+      {feeRows(p)}
+      <KeyValueRow key="total" label="Total" value={money(p, p.total)} />
+      {p.notes?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
+    </GroupedList>
   );
   const action =
     p.wallet.kind === 'none' ? (
@@ -219,7 +221,7 @@ function Review(p: Inner) {
       />
     );
   const gets = p.recipientGetsKobo !== undefined && (
-    <Text variant="secondary" style={styles.centre}>
+    <Text variant="muted" style={styles.centre}>
       They get {formatNaira(p.recipientGetsKobo)}
     </Text>
   );
@@ -261,20 +263,20 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
           <Icon name="Wallet" size={ICON_BANNER} color={colors.warning} strokeWidth={ICON_STROKE.button} />
         </View>
         <View style={styles.flex}>
-          <NativeText accessibilityRole="alert" style={[styles.kvValue, styles.bannerTitle, { color: colors.textPrimary }]}>
+          <Text variant="kvValue" accessibilityRole="alert" style={styles.bannerTitle}>
             Not enough in your {p.walletName}
-          </NativeText>
-          <NativeText style={[styles.meta, styles.bannerLine, { color: colors.textSecondary }]}>
+          </Text>
+          <Text variant="bannerBody">
             This costs {formatNaira(p.total)}. You have {formatNaira(p.balanceKobo, 'always')}.
-          </NativeText>
+          </Text>
         </View>
       </View>
-      <Card>
-        <Row label={p.amountLabel ?? (send ? 'Amount' : 'Price')} value={money(p, p.amountKobo)} first />
-        <FeeRows p={p} />
-        <Row label={p.walletName} value={<Money minorUnits={p.balanceKobo} size={ROW_VALUE} tone="danger" />} />
-        <Row label="Top up at least" value={money(p, p.short)} />
-      </Card>
+      <GroupedList>
+        <KeyValueRow key="price" label={p.amountLabel ?? (send ? 'Amount' : 'Price')} value={money(p, p.amountKobo)} />
+        {feeRows(p)}
+        <KeyValueRow key="wallet" label={p.walletName} value={<Money minorUnits={p.balanceKobo} size={ROW_VALUE} tone="danger" />} />
+        <KeyValueRow key="short" label="Top up at least" value={money(p, p.short)} />
+      </GroupedList>
     </>
   );
   const buttons = (
@@ -355,12 +357,12 @@ function Header({ item }: { item: PayItem }) {
         </Text>
         {(item.by !== undefined || item.subtitle !== undefined || item.verified) && (
           <View style={[styles.inline, styles.subtitle]}>
-            {item.by !== undefined && <NativeText style={[styles.meta, { color: colors.textMuted }]}>{item.by}</NativeText>}
+            {item.by !== undefined && <Text variant="meta">{item.by}</Text>}
             {item.by !== undefined && tick}
             {item.subtitle !== undefined && (
-              <NativeText style={[styles.meta, styles.flex, { color: colors.textMuted }]} numberOfLines={1}>
+              <Text variant="meta" style={styles.flex} numberOfLines={1}>
                 {item.by !== undefined ? `· ${item.subtitle}` : item.subtitle}
-              </NativeText>
+              </Text>
             )}
             {item.by === undefined && tick}
           </View>
@@ -370,28 +372,12 @@ function Header({ item }: { item: PayItem }) {
   );
 }
 
-const HUE: Record<PayAvatarHue, ColorToken> = {
-  lilac: 'hueLilac',
-  lemon: 'hueLemon',
-  green: 'hueGreen',
-  sky: 'hueSky',
-  pink: 'huePink',
-  coral: 'hueCoral',
-  sand: 'hueSand',
-};
-
-/**
- * W10's head: the recipient's avatar, "Sending to <name>", and the amount.
- * The avatar is the kit's `Av`; a shared one is requested (SHARED-CHANGES.md section 1 row 8).
- */
+/** W10's head: the recipient's avatar (kit `Av(..., 64)`), "Sending to <name>", and the amount. */
 function SendHeader({ item, amountKobo }: { item: PayItem; amountKobo: number }) {
-  const { colors } = useWawu();
   return (
     <View style={styles.sendHead}>
       {item.avatar && (
-        <View style={[styles.avatar, { backgroundColor: colors[HUE[item.avatar.hue]] }]}>
-          <NativeText style={[styles.avatarText, { color: colors.textOnLight }]}>{item.avatar.initials}</NativeText>
-        </View>
+        <Avatar name={item.displayName ?? item.title} hue={item.avatar.hue} source={item.avatar.source} size={AVATAR} decorative />
       )}
       <Text variant="secondary" tone="textMuted" style={styles.sendingTo}>
         Sending to {item.title}
@@ -401,88 +387,60 @@ function SendHeader({ item, amountKobo }: { item: PayItem; amountKobo: number })
   );
 }
 
-function Card({ children }: { children: ReactNode }) {
-  const { colors } = useWawu();
-  return (
-    <View style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-      {children}
-    </View>
-  );
-}
-
-function Row({ label, value, first }: { label: string; value: ReactNode; first?: boolean }) {
-  const { colors } = useWawu();
-  return (
-    <View style={[styles.row, !first && { borderTopWidth: LINE, borderTopColor: colors.borderHairline }]}>
-      <NativeText style={[styles.kvLabel, { color: colors.textSecondary }]}>{label}</NativeText>
-      {typeof value === 'string' ? (
-        <NativeText style={[styles.kvValue, styles.rowValue, { color: colors.textPrimary }]} numberOfLines={1}>
-          {value}
-        </NativeText>
-      ) : (
-        value
-      )}
-    </View>
-  );
-}
-
 function WalletCard({ wallet, walletName }: { wallet: PayWallet; walletName: string }) {
   const { colors } = useWawu();
   let line: ReactNode;
   if (wallet.kind === 'open') {
     line = (
-      <NativeText style={[styles.meta, styles.walletLine, { color: colors.textMuted }]}>
-        {walletName} · <Money minorUnits={wallet.balanceKobo} size={META} weight={500} tone="textMuted" /> available
-      </NativeText>
+      <Text variant="meta" style={styles.walletLine}>
+        {walletName} · <Money minorUnits={wallet.balanceKobo} size={text.meta.fontSize} weight={500} tone="textMuted" /> available
+      </Text>
     );
   } else if (wallet.kind === 'none') {
-    line = <NativeText style={[styles.meta, styles.walletLine, { color: colors.textMuted }]}>{"You don't have a wallet yet"}</NativeText>;
+    line = (
+      <Text variant="meta" style={styles.walletLine}>
+        {"You don't have a wallet yet"}
+      </Text>
+    );
   } else {
     line = (
       <View style={styles.inline}>
         <ActivityIndicator size="small" color={colors.textMuted} />
-        <NativeText style={[styles.meta, { color: colors.textMuted }]}>Checking your balance</NativeText>
+        <Text variant="meta">Checking your balance</Text>
       </View>
     );
   }
   return (
-    <View style={[styles.card, styles.walletCard, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-      {/* The kit's `Flag('NGN', 36)`; a shared one is requested (SHARED-CHANGES.md section 1 row 8). */}
-      <View style={[styles.coin, { backgroundColor: colors.curNgn }]}>
-        <NativeText style={[styles.coinMark, { color: colors.textOnAccent }]}>₦</NativeText>
-      </View>
+    <Card style={styles.walletCard}>
+      <CurrencyFlag currency="NGN" />
       <View style={styles.flex}>
-        <NativeText style={[styles.walletTitle, { color: colors.textPrimary }]}>Pay from wallet</NativeText>
+        <Text variant="cardTitle">Pay from wallet</Text>
         {line}
       </View>
       {wallet.kind === 'open' && (
         <Icon name="CircleCheck" size={ICON_CHECK} color={colors.accentFg} strokeWidth={ICON_STROKE.button} />
       )}
-    </View>
+    </Card>
   );
 }
 
 function Status({ tint, icon, title, line }: { tint: string; icon: ReactNode; title: string; line: string }) {
-  const { colors } = useWawu();
   return (
     <View style={styles.status}>
       <View style={[styles.statusMark, { backgroundColor: tint }]}>{icon}</View>
-      <NativeText accessibilityRole="header" style={[styles.sheetTitle, styles.centre, { color: colors.textPrimary }]}>
+      <Text variant="sheetTitle" style={styles.centre}>
         {title}
-      </NativeText>
-      <Text variant="secondary" style={styles.centre}>
+      </Text>
+      <Text variant="muted" style={styles.centre}>
         {line}
       </Text>
     </View>
   );
 }
 
-/** The canvas draws every rule, card edge and outline at 1 px. */
-const LINE = 1;
 /** The canvas nudges a few things by 2 px off the 4-point scale. */
 const NUDGE = space.xs / 2;
 const THUMB = layout.controlH + space.sm; // 56, home.js unlockSheet thumbnail
-const COIN = layout.tapMin - space.sm; // 36, kit.js fromWallet `Flag('NGN', 36)`
 const AVATAR = space.s3xl * 2; // 64, wallet.js W10 `Av(..., 64)`
 /** Icon sizes the artboards pass to I(): banner 19 (kit `banner`), check 20 (kit `fromWallet`), status 32 (H18); the tick 13 (unlockSheet). */
 const ICON_BANNER = space.xl - 1;
@@ -491,81 +449,39 @@ const ICON_STATUS = space.s3xl;
 const TICK = space.md + 1;
 /** H18 strokes its 32 px status mark at 2.4. The failed mark is W14's `X` (Send · failed), drawn at H18's sheet size. */
 const STATUS_STROKE = ICON_STROKE.fab;
-/** Kit `kv` value and `Amt(v, { size: 14.5 })`. */
-const ROW_VALUE = type.size.body - 0.5;
+/** Row amounts: the kit's `Amt(v, { size: 14.5 })`, the `kv` value size. */
+const ROW_VALUE = text.kvValue.fontSize;
 
 /**
- * Copy sizes from the kit that no `Text` variant has yet. Each is filed as a
- * variant request in SHARED-CHANGES.md section 1 (row 6); the rest of the
- * sheet's copy uses `Text` (h3, secondary).
+ * W10 draws "Sending to" at 13.5 with the browser's normal leading (1.3 for
+ * Alan Sans) and a 6 px top margin; `secondary` leads at 1.4. Half the
+ * difference comes off each side, so the line takes the canvas's height.
  */
-const KV_LABEL = type.size.sec + 0.5; // 14, kit `kv` key
-const META = type.size.sec - 0.5; // 13, unlockSheet meta line, `fromWallet` line, `banner` body
-const CARD_TITLE = type.size.body; // 15 at 600, `fromWallet` title
-const SHEET_TITLE = type.size.h1 - NUDGE; // 22 at 700, H18 `h1(..., { size: 22 })`
-const SHEET_TITLE_LEADING = 1.15; // kit `h1` line height
-const BANNER_LEADING = type.leading.body; // 1.45, kit `banner` body
-const AVATAR_TEXT = Math.round(AVATAR * 0.36); // kit `Av`: 36% of the size
-const COIN_TEXT = COIN * 0.46; // kit `Flag`: 46% of the size
+const SENDING_TRIM = (Number(text.secondary.lineHeight) - type.size.sec * type.leading.snug) / 2;
+/** H14 and H17 space the sheet's parts 16 px apart (home.js passes `sheet()` a 16 px gap); `BottomSheet` has no gap prop yet (SHARED-CHANGES.md section 1 row 9). */
+const SHEET_GAP = space.lg;
 
 const styles = StyleSheet.create({
-  sheet: {
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    borderTopWidth: LINE,
-    paddingTop: space.sm + NUDGE,
-    paddingHorizontal: layout.gutter,
-    paddingBottom: space.s3xl + NUDGE,
-    gap: space.lg,
-  },
+  sheetBody: { gap: SHEET_GAP },
   page: { flex: 1, paddingHorizontal: layout.gutter, paddingTop: space.sm, paddingBottom: space.s3xl + NUDGE },
   sendBody: { gap: space.lg + NUDGE },
   foot: { marginTop: 'auto', paddingTop: space.md, gap: space.sm + NUDGE },
-  handle: {
-    width: space.s3xl + space.sm,
-    height: space.xs + 1,
-    borderRadius: radius.chip,
-    alignSelf: 'center',
-    marginBottom: space.xs,
-  },
   flex: { flex: 1, minWidth: 0 },
   centre: { textAlign: 'center' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   thumb: { width: THUMB, height: THUMB, borderRadius: radius.input - NUDGE },
   subtitle: { marginTop: space.xs - 1 },
-  meta: { ...font(400), fontSize: META },
   sendHead: { alignItems: 'center', gap: space.xs + NUDGE, paddingTop: space.xs + NUDGE },
-  avatar: {
-    width: AVATAR,
-    height: AVATAR,
-    borderRadius: radius.chip,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { ...font(700), fontSize: AVATAR_TEXT, letterSpacing: -0.02 * AVATAR_TEXT },
-  sendingTo: { marginTop: space.xs + NUDGE },
-  card: {
-    borderRadius: radius.card,
-    borderWidth: LINE,
-    paddingHorizontal: layout.cardPad,
-    paddingVertical: NUDGE,
-  },
-  row: {
+  sendingTo: { marginTop: space.xs + NUDGE - SENDING_TRIM, marginBottom: -SENDING_TRIM },
+  /** Kit `fromWallet`: `card(..., { pad: '14px 16px' })`, a row with 12 between its parts. */
+  walletCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space.md + NUDGE,
-    minHeight: layout.controlH + NUDGE,
-    paddingVertical: space.md,
+    gap: space.md,
+    paddingVertical: space.md + NUDGE,
+    paddingHorizontal: layout.cardPad,
   },
-  kvLabel: { ...font(400), fontSize: KV_LABEL, flexShrink: 0 },
-  kvValue: { ...font(600), fontSize: ROW_VALUE },
-  rowValue: { textAlign: 'right', flexShrink: 1 },
-  walletCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md + NUDGE },
-  coin: { width: COIN, height: COIN, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
-  coinMark: { ...font(700), fontSize: COIN_TEXT },
-  walletTitle: { ...font(600), fontSize: CARD_TITLE },
   walletLine: { marginTop: NUDGE },
   banner: {
     flexDirection: 'row',
@@ -577,14 +493,7 @@ const styles = StyleSheet.create({
   },
   bannerIcon: { paddingTop: NUDGE / 2 },
   bannerTitle: { marginBottom: NUDGE + 1 },
-  bannerLine: { lineHeight: Math.round(META * BANNER_LEADING) },
   buttons: { gap: space.sm + NUDGE },
-  sheetTitle: {
-    ...font(700),
-    fontSize: SHEET_TITLE,
-    letterSpacing: -0.03 * SHEET_TITLE,
-    lineHeight: Math.round(SHEET_TITLE * SHEET_TITLE_LEADING),
-  },
   status: { alignItems: 'center', gap: space.sm + NUDGE },
   statusMark: {
     width: layout.tapMin + space.s3xl - space.xs,

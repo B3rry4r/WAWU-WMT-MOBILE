@@ -157,7 +157,7 @@ describe('PaySheet', () => {
 
   const send = (): Partial<PaySheetProps> => ({
     variant: 'send',
-    item: { title: 'Chidinma Adaeze Okoro', avatar: { initials: 'CO', hue: 'coral' } },
+    item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },
     amountKobo: 2500000,
     details: [
       { label: 'Bank', value: 'Guaranty Trust Bank' },
@@ -175,7 +175,8 @@ describe('PaySheet', () => {
   it('lets a sender review W10: who, how much, what they get, and the total on the button', async () => {
     const p = props(send());
     await render(<PaySheet {...p} />);
-    expect(screen.getByText('CO')).toBeTruthy();
+    // The avatar is decorative (the line beside it says the name); its initials come from the short display name, as W10 draws "CO".
+    expect(screen.getByText('CO', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText('Sending to Chidinma Adaeze Okoro')).toBeTruthy();
     expect(screen.getByText('₦25,000.00')).toBeTruthy();
     expect(screen.getByText('They get ₦25,000')).toBeTruthy();
