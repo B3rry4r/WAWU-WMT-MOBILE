@@ -7,7 +7,7 @@ order: 12
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -82,6 +82,40 @@ Facts: no fee, rate or amount literal in the component (`PaySheet.tsx`, `money.t
 Notes (not defects): the sheet has no latch of its own against a double tap; two taps calls `onPay` twice unless the caller flips `status` to `paying` on the first (my test: one call when the caller does, two when it doesn't). The server's idempotency belongs to the money path's V8. A malformed quote (e.g. a fee of 23.25 kobo) throws during render and the sheet shows nothing (`PaySheet.tsx:87`, `money.ts:15-19`); the host needs an error boundary. `money.ts:2-5` says "Nothing here divides", but line 46 divides (exactly, by 100). Several style sizes are token arithmetic with literal nudges (`+ 0.5`, `* 0.72`, `- 0.01`, `opacity: 0.5`; `PaySheet.tsx:388-450`), which the gates accept.
 
 Verdict: 2 open defects (1, 2), 3 unclear for the owner (3 to 5). Status back to `building`.
+
+### Round 2
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked f890056 (3edc9bd fixes, 970730e merge of origin/main e657ad5, f890056 report) in a fresh detached worktree. I exported to web with `expo export --platform web --dev --clear` (Metro cache cleared), served it on 8793 and shot it with Playwright + Chromium 1194 at 390 px. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/` (`shots2/`, `side2-*`, `zoom2-*`, `grid2-*`, `check2.log`, `edge-tests2.log`, `zz-verifier2.test.tsx`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 after the merge: tsc and lint clean; jest 6 suites, 54 tests passed; gates 9 run, **30 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 187 OK (`check2.log`) |
+| V5 Picture | passed | H14 beside the build, light and dark (`side2-H14-enough-*.png`, `zoom2-H14-header-*.png`); H17 and the send case re-shot (`shots2/pay-sheet-short-*`, `shots2/pay-sheet-send-*`) |
+| V6 States | passed | All 9 preview states re-shot in light and dark, with no page errors (`shots2/`, `grid2-others-*.png`) |
+
+- **Defect 1, closed.** The verified tick is drawn after "Chidi Eze" and before "· Video · 18 min" in every state that has a header, matching H14 and H17 in both themes (`zoom2-H14-header-light.png`). `PayItem.by` and `verified` are props; the builder's test covers the case with no tick.
+- **Defect 2, closed.** I measured the dividers and card edges at 2 device px at 2x (1 CSS px), the same as the canvas. In round 1 they were 4. `LINE = 1` at `PaySheet.tsx` replaces `hairlineWidth * 2` at every place I listed.
+- **Unclear 3, resolved by the owner's ruling.** When there are two fee parts, the send shows "Fintava's charge ₦40", "WAWU's fee ₦25", "Fees ₦65", then "Total ₦25,065" and "Send · ₦25,065". There is no Fees row with one part. The not-enough card uses the same rows. My test with parts of ₦15.75 and ₦0 shows a Fees row of ₦15.75, and the shortfall includes it ("Add ₦2,515.75").
+- **Unclear 4, deferred by the owner** to WALLET-02 (SHARED-CHANGES section 2, row 2). Not a finding for this task.
+- **Unclear 5, the owner keeps the View icons** until the shared icon request is done (SHARED-CHANGES section 1, row 6). Not a finding for this task.
+- **Double-tap guard: tried myself and judged safe for this component.** My jest tests (`edge-tests2.log`, 6 passed):
+  - Three taps in one React batch, before any re-render, call `onPay` once. Round 1 called it twice.
+  - With a void `onPay` that never changes `status`, taps inside 360 ms are ignored, and a tap after 361 ms calls `onPay` again.
+  - With a promise, the guard holds past 5 s until the promise settles. A rejected promise also releases it.
+  - The cycle review, then paying, then failed, then review allows paying again.
+
+  In the browser, a double-click on "Unlock · ₦2,523.25" produced one navigation to `state=paying`.
+
+  The 360 ms release only applies to a caller that returns nothing and never sets `paying`. Per the prop's contract, that caller opens the PIN sheet next, so a later tap at worst reopens the PIN step. No debit happens in `onPay` itself. The real protection against a double debit is the money path's own idempotency (its V8). I'd keep it, and have HOME-12 and MONEY-19 return the promise or set `paying` as the contract asks.
+- **Merge.** The branch against main e657ad5 changes only the builder's files (`src/components/pay-sheet/`, the preview route, SHARED-CHANGES, LOG, PROGRESS, this file). SHELL-02 and SHELL-03 came in unchanged, and `npm run check` is green. `SHARED-CHANGES.md` has no conflict markers. Its row numbers are unique in each table: section 1 has rows 1 to 6 and section 2 has rows 1 to 2.
+- Facts are unchanged from round 1: no literal fee in the component, no em-dashes, and no refund promise.
+
+Notes (not defects):
+- The owner's three rulings (Fees subtotal, W10 deferred, View icons) are recorded only in this file and in SHARED-CHANGES, not in DECISIONS.md or the brief. Recording the Fees-row reading of BRIEF rule 3 there would stop the next screen that shows a fee from asking again.
+- SHARED-CHANGES section 1 row 6 doesn't list the new View-drawn verified tick (`VerifiedTick` in `glyphs.tsx`) among the shapes to replace.
+- `setTimeout(release, motion.slow)` is not cleared on unmount. That is harmless because it only writes a ref.
+
+Round 2 verdict: no open defects. Status `review`.
 
 ## Owner sign-off
 
