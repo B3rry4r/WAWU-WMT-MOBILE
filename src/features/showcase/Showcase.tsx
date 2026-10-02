@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Avatar } from '@/components/Avatar';
+import { Avatar, hues } from '@/components/Avatar';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button, IconButton } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
 import { ConversationRow } from '@/components/ConversationRow';
 import { Credits } from '@/components/Credits';
+import { CurrencyFlag, type FlagCurrency } from '@/components/CurrencyFlag';
 import { FilterChips } from '@/components/FilterChips';
 import { Icon, VerifiedTick, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
@@ -22,6 +23,12 @@ import { TransactionRow } from '@/components/TransactionRow';
 import { layout, radius, space, text, useWawu } from '@/theme';
 
 const textVariants = Object.keys(text) as TextVariant[];
+const flagCurrencies: FlagCurrency[] = ['NGN', 'USD', 'USDT', 'BTC'];
+/** Sizes the board kit draws: W10's recipient (64), the kit default (44), list rows (40) and the wallet card coin (36). */
+const avatarSizes = [64, 44, 36];
+const flagSizes = [40, 36, 26];
+/** A bundled picture, so the photo avatar draws without a network. */
+const sampleAvatar = require('../../../assets/images/icon.png') as number;
 const icons: IconName[] = [
   'ChevronLeft', 'ChevronRight', 'ArrowUpRight', 'Plus', 'Check', 'X', 'Search', 'Eye', 'EyeOff', 'Lock', 'Copy', 'Edit', 'Delete', 'CircleAlert',
   'LockOpen', 'Smartphone', 'Zap', 'ArrowDownLeft', 'Clock', 'HandCoins', 'FileDown', 'Settings2', 'SquarePen', 'CircleCheck', 'WifiOff',
@@ -175,6 +182,56 @@ export function Showcase() {
         <Credits count={1} />
       </Section>
 
+      <Section title="Avatars">
+        <View style={styles.row}>
+          {avatarSizes.map((size) => (
+            <Avatar key={size} name="Chidinma Okoro" hue="coral" size={size} decorative />
+          ))}
+          <Avatar name="Tife" source={sampleAvatar} />
+          <Avatar />
+        </View>
+        <View style={styles.row}>
+          {hues.map((hue) => (
+            <Avatar key={hue} name={`${hue} Wawu`} hue={hue} />
+          ))}
+        </View>
+      </Section>
+
+      <Section title="Currency flags">
+        <View style={styles.row}>
+          {flagCurrencies.map((c) => (
+            <CurrencyFlag key={c} currency={c} size={flagSizes[0]} />
+          ))}
+        </View>
+        <View style={styles.row}>
+          {flagSizes.map((size) => (
+            <CurrencyFlag key={size} currency="NGN" size={size} />
+          ))}
+        </View>
+      </Section>
+
+      <Section title="Send review, as W10 draws it">
+        <View testID="sample-w10" style={[styles.review, { backgroundColor: colors.surfacePage }]}>
+          <Avatar testID="sample-avatar" name="Chidinma Okoro" hue="coral" size={avatarSizes[0]} />
+          <Money testID="sample-amount" minorUnits={2500000} size={text.display.fontSize} />
+        </View>
+        <View testID="sample-kv" style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
+          <View style={styles.kv}>
+            <Text variant="kvLabel">Bank</Text>
+            <Text variant="kvValue">Guaranty Trust Bank</Text>
+          </View>
+        </View>
+        <View testID="sample-wallet" style={[styles.card, styles.wallet, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
+          <CurrencyFlag testID="sample-flag" currency="NGN" />
+          <View>
+            <Text variant="cardTitle">Pay from wallet</Text>
+            <Text variant="meta">Naira wallet</Text>
+          </View>
+        </View>
+        <Text variant="sheetTitleSm">Enter your PIN</Text>
+        <Text variant="sheetTitle">Unlocked</Text>
+      </Section>
+
       <Section title="Segmented tabs">
         <SegmentedTabs label="Feed" items={viewPicks} value={view} onChange={setView} testID="showcase-tabs" />
         <Text variant="caption">Selected: {view}</Text>
@@ -326,6 +383,10 @@ const styles = StyleSheet.create({
   },
   section: { gap: space.md },
   row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.md },
+  review: { alignItems: 'center', gap: space.sm },
+  card: { borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: layout.cardPad },
+  kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: space.md },
+  wallet: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
   bleed: { marginHorizontal: -layout.gutter, gap: space.md },
   summary: { flexDirection: 'row', gap: space.lg },
   summaryHalf: { flex: 1, gap: space.xs },
