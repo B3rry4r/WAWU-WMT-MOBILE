@@ -1,4 +1,4 @@
-import { formatNaira, nairaParts, payTotalKobo, shortfallKobo } from '../money';
+import { feesTotalKobo, formatNaira, nairaParts, payTotalKobo, shortfallKobo } from '../money';
 
 describe('pay sheet money', () => {
   it('adds the price and every fee line in kobo to make the total', () => {
@@ -11,6 +11,11 @@ describe('pay sheet money', () => {
         { label: "WAWU's fee", amountKobo: 2500 },
       ]),
     ).toBe(2506500);
+  });
+
+  it('adds the fee parts into one fee total', () => {
+    expect(feesTotalKobo([{ label: 'a', amountKobo: 4000 }, { label: 'b', amountKobo: 2500 }])).toBe(6500);
+    expect(feesTotalKobo([{ label: 'a', amountKobo: 0 }, { label: 'b', amountKobo: 0 }])).toBe(0);
   });
 
   it('keeps the total equal to the price when a fee line is ₦0', () => {

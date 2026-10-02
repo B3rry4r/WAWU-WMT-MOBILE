@@ -14,7 +14,9 @@ import { useWawu } from '@/theme';
 const unlock = {
   item: {
     title: 'How I built a ₦2M a month agency',
-    subtitle: 'Chidi Eze · Video · 18 min',
+    by: 'Chidi Eze',
+    verified: true,
+    subtitle: 'Video · 18 min',
     image: require('../../../assets/images/icon.png'),
   },
   amountKobo: 250000,

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import { PaySheet, type PaySheetProps } from '..';
 
@@ -6,7 +6,7 @@ const charge = { label: "Fintava's charge", amountKobo: 2325 };
 
 function props(overrides: Partial<PaySheetProps> = {}): PaySheetProps {
   return {
-    item: { title: 'How I built a ₦2M a month agency', subtitle: 'Chidi Eze · Video · 18 min' },
+    item: { title: 'How I built a ₦2M a month agency', by: 'Chidi Eze', verified: true, subtitle: 'Video · 18 min' },
     amountKobo: 250000,
     details: [{ label: 'Yours', value: 'Forever, in My purchases' }],
     fees: [charge],
@@ -33,6 +33,87 @@ describe('PaySheet', () => {
     expect(screen.getByText('₦2,523.25')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' }));
     expect(p.onPay).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the seller's verified tick after their name", async () => {
+    await render(<PaySheet {...props()} />);
+    expect(screen.getByText('Chidi Eze')).toBeTruthy();
+    expect(screen.getByLabelText('Verified')).toBeTruthy();
+    expect(screen.getByText('· Video · 18 min')).toBeTruthy();
+  });
+
+  it('draws no tick for a seller who is not verified', async () => {
+    await render(<PaySheet {...props({ item: { title: 'A talk', by: 'Ada', subtitle: 'Audio' } })} />);
+    expect(screen.queryByLabelText('Verified')).toBeNull();
+  });
+
+  it('shows a Fees subtotal when the fee has two parts, and none for one part', async () => {
+    await render(
+      <PaySheet
+        {...props({
+          amountKobo: 2500000,
+          fees: [
+            { label: "Fintava's charge", amountKobo: 4000 },
+            { label: "WAWU's fee", amountKobo: 2500 },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText('Fees')).toBeTruthy();
+    expect(screen.getByText('₦65')).toBeTruthy();
+    expect(screen.getByText('₦25,065')).toBeTruthy();
+    await screen.rerender(<PaySheet {...props()} />);
+    expect(screen.queryByText('Fees')).toBeNull();
+  });
+
+  it('pays once when a user double-taps Pay', async () => {
+    jest.useFakeTimers();
+    try {
+      const p = props();
+      await render(<PaySheet {...p} />);
+      const button = screen.getByRole('button', { name: 'Unlock · ₦2,523.25' });
+      await fireEvent.press(button);
+      await fireEvent.press(button);
+      expect(p.onPay).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
+      await fireEvent.press(button);
+      expect(p.onPay).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('ignores another tap on Pay until the payment promise settles', async () => {
+    let settle: () => void = () => undefined;
+    const onPay = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve;
+        }),
+    );
+    await render(<PaySheet {...props({ onPay })} />);
+    const button = screen.getByRole('button', { name: 'Unlock · ₦2,523.25' });
+    await fireEvent.press(button);
+    await fireEvent.press(button);
+    await fireEvent.press(button);
+    expect(onPay).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      settle();
+    });
+    await fireEvent.press(button);
+    expect(onPay).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets a user pay again once the status has moved on', async () => {
+    const onPay = jest.fn(() => new Promise<void>(() => undefined));
+    await render(<PaySheet {...props({ onPay })} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' }));
+    await screen.rerender(<PaySheet {...props({ onPay, status: { kind: 'paying' } })} />);
+    await screen.rerender(<PaySheet {...props({ onPay, status: { kind: 'review' } })} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' }));
+    expect(onPay).toHaveBeenCalledTimes(2);
   });
 
   it('shows a ₦0 fee line and a total equal to the price', async () => {

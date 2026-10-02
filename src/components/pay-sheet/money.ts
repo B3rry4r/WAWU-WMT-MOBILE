@@ -1,8 +1,9 @@
 /**
  * Naira arithmetic for the pay sheet. Every amount is an integer number of
- * kobo (100 kobo = ₦1). Nothing here divides, multiplies by a fraction or
- * rounds: totals and shortfalls are integer sums and differences, and the
- * display splits naira from kobo with an exact integer remainder.
+ * kobo (100 kobo = ₦1). Nothing here rounds or multiplies by a fraction:
+ * totals and shortfalls are integer sums and differences, and the display
+ * splits naira from kobo with an integer remainder, dividing only an exact
+ * multiple of 100.
  */
 
 export type PayFeeLine = {
@@ -28,6 +29,11 @@ export function payTotalKobo(amountKobo: number, fees: readonly PayFeeLine[]): n
   }
   assertKobo(total, 'total');
   return total;
+}
+
+/** Every fee line added together (the "Fees" row when there are two or more parts). */
+export function feesTotalKobo(fees: readonly PayFeeLine[]): number {
+  return payTotalKobo(0, fees);
 }
 
 /** How much more the wallet needs to cover the total. Zero when it already does. */

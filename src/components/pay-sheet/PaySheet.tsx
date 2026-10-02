@@ -1,16 +1,20 @@
 import { Image, type ImageSource } from 'expo-image';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { font, layout, radius, space, text, type, useWawu } from '@/theme';
+import { font, layout, motion, radius, space, text, type, useWawu } from '@/theme';
 
-import { CheckRing, Clock, Cross, Plus, Wallet } from './glyphs';
-import { formatNaira, nairaParts, payTotalKobo, shortfallKobo, type PayFeeLine } from './money';
+import { CheckRing, Clock, Cross, Plus, VerifiedTick, Wallet } from './glyphs';
+import { feesTotalKobo, formatNaira, nairaParts, payTotalKobo, shortfallKobo, type PayFeeLine } from './money';
 
 /** What is being paid for: the header of the sheet. */
 export type PayItem = {
   title: string;
-  /** One line under the title, e.g. "Chidi Eze · Video · 18 min". */
+  /** Who sells it, first on the line under the title ("Chidi Eze"). */
+  by?: string;
+  /** The seller has a verification tick: drawn after their name, as H14 draws it. */
+  verified?: boolean;
+  /** The rest of the line under the title, e.g. "Video · 18 min". */
   subtitle?: string;
   /** Thumbnail: a URL, or a bundled image (`require(...)`). Left out, the header is the title alone. */
   image?: ImageSource | string | number;
@@ -60,8 +64,12 @@ export type PaySheetProps = {
   /** When another person receives a set amount (a send), say what arrives. */
   recipientGetsKobo?: number;
   status: PayStatus;
-  /** Pay the total. The caller opens the PIN sheet next. */
-  onPay: () => void;
+  /**
+   * Pay the total. The caller opens the PIN sheet next. A second tap is
+   * ignored until `status` changes or the returned promise settles; a caller
+   * that returns nothing gets a short guard against a double tap.
+   */
+  onPay: () => void | Promise<unknown>;
   /** Top up by at least the shortfall (kobo), then come back. */
   onAddMoney: (shortfallKobo: number) => void;
   /** No wallet yet: start "Open your wallet" (MONEY-13). */
@@ -112,16 +120,44 @@ export function PaySheet(props: PaySheetProps) {
 
 type Inner = PaySheetProps & { total: number };
 
+/** A second tap on Pay does nothing until the payment has moved on. */
+function usePayOnce(onPay: PaySheetProps['onPay'], statusKind: PayStatus['kind']) {
+  const held = useRef(false);
+  useEffect(() => {
+    held.current = false;
+  }, [statusKind]);
+  return () => {
+    if (held.current) return;
+    held.current = true;
+    const release = () => {
+      held.current = false;
+    };
+    const result = onPay();
+    if (result instanceof Promise) result.then(release, release);
+    else setTimeout(release, motion.slow);
+  };
+}
+
+function FeeRows({ fees }: { fees: readonly PayFeeLine[] }) {
+  return (
+    <>
+      {fees.map((f) => <Row key={f.label} label={f.label} value={formatNaira(f.amountKobo)} />)}
+      {fees.length > 1 && <Row label="Fees" value={formatNaira(feesTotalKobo(fees))} />}
+    </>
+  );
+}
+
 function Review(p: Inner) {
   const { colors } = useWawu();
   const paying = p.status.kind === 'paying';
+  const pay = usePayOnce(p.onPay, p.status.kind);
   return (
     <>
       <Header item={p.item} />
       <Card>
         <Row label={p.amountLabel ?? 'Price'} value={formatNaira(p.amountKobo)} first />
         {p.details?.map((d) => <Row key={d.label} label={d.label} value={d.value} />)}
-        {p.fees.map((f) => <Row key={f.label} label={f.label} value={formatNaira(f.amountKobo)} />)}
+        <FeeRows fees={p.fees} />
         <Row label="Total" value={formatNaira(p.total)} strong />
       </Card>
       <WalletCard wallet={p.wallet} walletName={p.walletName} />
@@ -135,7 +171,7 @@ function Review(p: Inner) {
       ) : (
         <PillButton
           label={paying ? 'Paying' : `${p.actionLabel} · ${formatNaira(p.total)}`}
-          onPress={p.onPay}
+          onPress={pay}
           busy={paying}
           disabled={paying || p.wallet.kind === 'loading'}
         />
@@ -164,7 +200,7 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
       </View>
       <Card>
         <Row label={p.amountLabel ?? 'Price'} value={formatNaira(p.amountKobo)} first />
-        {p.fees.map((f) => <Row key={f.label} label={f.label} value={formatNaira(f.amountKobo)} />)}
+        <FeeRows fees={p.fees} />
         <Row label={p.walletName} value={<Balance kobo={p.balanceKobo} color={colors.danger} />} />
         <Row label="Top up at least" value={formatNaira(p.short)} />
       </Card>
@@ -229,10 +265,19 @@ function Header({ item }: { item: PayItem }) {
         <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
           {item.title}
         </Text>
-        {item.subtitle !== undefined && (
-          <Text style={[text.secondary, styles.subtitle, { color: colors.textMuted }]} numberOfLines={1}>
-            {item.subtitle}
-          </Text>
+        {(item.by !== undefined || item.subtitle !== undefined || item.verified) && (
+          <View style={[styles.inline, styles.subtitle]}>
+            {item.by !== undefined && <Text style={[text.secondary, { color: colors.textMuted }]}>{item.by}</Text>}
+            {item.verified && item.by !== undefined && <VerifiedTick fill={colors.tickProfessional} mark={colors.textOnAccent} />}
+            {item.subtitle !== undefined && (
+              <Text style={[text.secondary, styles.flex, { color: colors.textMuted }]} numberOfLines={1}>
+                {item.by !== undefined ? `· ${item.subtitle}` : item.subtitle}
+              </Text>
+            )}
+            {item.verified && item.by === undefined && (
+              <VerifiedTick fill={colors.tickProfessional} mark={colors.textOnAccent} />
+            )}
+          </View>
         )}
       </View>
     </View>
@@ -252,7 +297,7 @@ function Row({ label, value, first, strong }: { label: string; value: ReactNode;
   const { colors } = useWawu();
   return (
     <View
-      style={[styles.row, !first && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: colors.borderHairline }]}
+      style={[styles.row, !first && { borderTopWidth: LINE, borderTopColor: colors.borderHairline }]}
     >
       <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>{label}</Text>
       {typeof value === 'string' ? (
@@ -354,7 +399,7 @@ function PillButton({
       style={({ pressed }) => [
         styles.button,
         quiet
-          ? { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline, borderWidth: StyleSheet.hairlineWidth * 2 }
+          ? { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline, borderWidth: LINE }
           : { backgroundColor: pressed ? colors.accentPress : colors.accent },
         disabled && !busy && styles.dim,
       ]}
@@ -366,6 +411,8 @@ function PillButton({
   );
 }
 
+/** The canvas draws every rule, card edge and outline at 1 px. */
+const LINE = 1;
 /** The canvas nudges a few things by 2 px off the 4-point scale. */
 const NUDGE = space.xs / 2;
 /** The canvas pay button is 54 px tall: the control height plus 6. */
@@ -377,7 +424,7 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
-    borderTopWidth: StyleSheet.hairlineWidth * 2,
+    borderTopWidth: LINE,
     paddingTop: space.sm + NUDGE,
     paddingHorizontal: layout.gutter,
     paddingBottom: space.s3xl + NUDGE,
@@ -399,7 +446,7 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: space.xs - 1 },
   card: {
     borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderWidth: LINE,
     paddingHorizontal: layout.cardPad,
     paddingVertical: NUDGE,
   },

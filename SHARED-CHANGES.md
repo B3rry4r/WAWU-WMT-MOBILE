@@ -18,6 +18,7 @@ Four queues, because they have different owners and triggers:
 | # | raised by | target file | change needed, and what forced it | status |
 |---|-----------|-------------|-----------------------------------|--------|
 | 1 | MONEY-03 | `src/components/pay-sheet/PaySheet.tsx` | When UI-02's sheet lands, present the pay sheet in it (scrim, slide, drag to dismiss) and drop the panel's own handle and top corners; when UI-01's buttons, text and money display land, replace the local `PillButton`, the row text styles and `Balance` with them. Built locally only because UI-01 and UI-02 were in progress at the same time (owned by the developer). | open |
+| 2 | MONEY-03 (owner, round 2) | `src/components/pay-sheet/PaySheet.tsx`, when WALLET-02 builds W10 | The sheet follows H14: whole-naira amounts ("₦25,065") and detail rows before the fees. W10 draws Fee and Total with faded kobo ("₦25,065.00") and Note after Total. If WALLET-02 reuses the sheet for the send review, it may need a send variant (a prop for always-kobo amounts and for detail rows after Total); add it then, as a prop, not a fork. | open |
 
 ## 3. Removals (deleting or hiding something)
 

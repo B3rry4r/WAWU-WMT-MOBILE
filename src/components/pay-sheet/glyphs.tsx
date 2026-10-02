@@ -19,6 +19,15 @@ export function CheckRing({ color }: { color: string }) {
   );
 }
 
+/** The seller's verification tick: a filled badge with a tick, as H14 draws it after the name. */
+export function VerifiedTick({ fill, mark }: { fill: string; mark: string }) {
+  return (
+    <View accessibilityLabel="Verified" style={[styles.badge, { backgroundColor: fill }]}>
+      <View style={[styles.badgeTick, { borderColor: mark }]} />
+    </View>
+  );
+}
+
 /** A plus sign, for "Add ₦X". */
 export function Plus({ color }: { color: string }) {
   return (
@@ -80,6 +89,20 @@ const styles = StyleSheet.create({
     borderLeftWidth: STROKE,
     borderBottomWidth: STROKE,
     transform: [{ translateY: -1 }, { rotate: '-45deg' }],
+  },
+  badge: {
+    width: space.md + 1,
+    height: space.md + 1,
+    borderRadius: radius.chip,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeTick: {
+    width: space.xs + STROKE / 2,
+    height: STROKE + 1,
+    borderLeftWidth: STROKE - 0.5,
+    borderBottomWidth: STROKE - 0.5,
+    transform: [{ translateY: -0.5 }, { rotate: '-45deg' }],
   },
   plus: { width: ICON - space.xs, height: ICON - space.xs, alignItems: 'center', justifyContent: 'center' },
   plusBar: { position: 'absolute', width: ICON - space.xs, height: STROKE, borderRadius: radius.chip },
