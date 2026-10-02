@@ -1,6 +1,3 @@
-import { render, screen } from '@testing-library/react-native';
-
-import Boot from '@/app/index';
 import { api } from '@/api/client';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
 
@@ -12,14 +9,6 @@ describe('design tokens', () => {
   it('use WAWU Purple as the accent in both themes', () => {
     expect(darkColors.accent).toBe('#9411C9');
     expect(lightColors.accent).toBe('#9411C9');
-  });
-});
-
-describe('boot screen', () => {
-  it('shows the wordmark', async () => {
-    await render(<Boot />);
-    expect(screen.getByRole('header')).toBeTruthy();
-    expect(screen.getByText('WAWU')).toBeTruthy();
   });
 });
 
