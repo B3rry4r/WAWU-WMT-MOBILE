@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: building
 depends_on: []
 decisions: [R-20]
 passes: [V1, V9]
@@ -95,6 +95,63 @@ Safety refusals, each run myself (one `.env` line changed, `up.sh` run, restored
 NOT RUN: Docker Postgres route (no Docker daemon here), tunnel (no cloudflared/ngrok), a physical phone on Wi-Fi (both services answered on the machine's non-loopback address instead).
 
 Verdict: capability checks 1-5 and V1, V9 pass. Findings 1-4 are open defects in the scripts and the page, so the status goes back to `building`.
+
+### Round 2
+
+Verifier, 2 Oct 2026. Checked wawu-backend `wmt/OPS-03` @ 341201f (diff vs 6d634fa: `scripts/local/envfile.js` new, `up.sh`, `smoke.sh` and `docs/LOCAL.md` changed) with wawu-id origin/main @ 76d8b46. Same setup as round 1: fresh clones side by side in `…/scratchpad/verify-ops03/r2/`, databases `ops03v_*`, ports 3501/4501. A second fresh clone was used for the wrong-password, port, database and delete-a-.env runs. Every process was stopped by pid and confirmed gone. All `ops03v_*` databases were dropped.
+
+| Pass / check | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | Backend gates: 523 files scanned, 16 fail / 0 warn / 76 accepted, output identical to origin/main 231cb64. `tsc --noEmit` 0. `bash -n` and `node --check` ok on the scripts. Mobile `npm run check` exit 0 at 2e20486 (5 files scanned, 0 fail, jest 4/4). `r2/gates-r2.txt`, `r2/mobile-check.txt` |
+| V9 Live seam | passed | `smoke.sh` exit 0, all 10 PASS lines. By hand with curl: registered on wawu-id :4501, login refused `EMAIL_NOT_VERIFIED`, code read from the log, confirmed, real login. PATCHed the bio and read it back from the Hub. Seeded `creator-basic` `GET /api/hub/kyc`: `pending`, masked BVN, server `submittedAt` |
+| 1. Fresh clone starts, health answers | passed | `HUB_DB=ops03v_hub ID_DB=ops03v_id HUB_PORT=3501 ID_PORT=4501 up.sh --detach` took 72 s, with a remote `DATABASE_URL` and `PORT=9999` exported. Both health bodies match the doc. Neither process had `DATABASE_URL`/`PORT` in its environment. `git status` clean in both clones |
+| 2. V9 locally | passed | as V9 |
+| 3. Mobile web reaches it | passed in round 1 (scratch probe), not re-run | Nothing in round 2 touches CORS, ports or the client. Same caveat: the app has no API screen yet |
+| 4. `.env.example` | passed | unchanged since round 1 |
+| 5. deploy/.github unchanged | passed | `git diff 231cb64 -- deploy .github` empty |
+
+Round 1 findings:
+
+- **Finding 1 (guard bypass): closed for the `.env` files.**
+  - Every read now goes through dotenv (`envfile.js`).
+  - Refused, exit 1, each with its own message, using harness `r2/refusals2.sh`:
+    - Hub `.env` remote `DATABASE_URL` written with `export`, space-indented, tab-indented, `KEY = v`, a later duplicate, `KEY: v` (new), single quotes (new), backticks (new), and `  export   KEY\t=\tv` (new).
+    - The same remote URL written with `export`, indented, `KEY = v` and a later duplicate in the wawu-id `.env`.
+    - `?host=`, `?hostaddr=` and percent-encoded `?ho%73t=` (new).
+    - `postgresql://localhost:5432@db.example.invalid/x`, where the host hides behind userinfo (new).
+    - A URL with no host at all (new).
+    - `NODE_ENV=production` plain, with `export`, as `Production` and indented `NODE_ENV = production` in either file, and in the shell.
+    - Fintava `live.`, `LIVE.FintavaPay.com`, `export`-ed live, `https://dev.fintavapay.com@live.fintavapay.com` (new) and `dev.fintavapay.com.evil.test` (new).
+    - Cardex `cdx_live_` plain and indented.
+  - Controls passed the checks: sandbox URL plus `cdx_test_`, a `[::1]` database, and a dotted key name in `.env`.
+  - `NODE_OPTIONS=--env-file=…` is not a way in: Node 22 itself refuses `--env-file` in `NODE_OPTIONS`.
+  - One new way past it, below (new finding 7).
+- **Finding 2 (fix after a failed run): closed.**
+  - Fresh clone, first run with `LOCAL_PG_URL` password `WRONG`: `id-migrate` failed with P1000 and printed the rerun line.
+  - Rerun with only the right `LOCAL_PG_URL`: both `DATABASE_URL`s were updated with the names kept (`ops03v_t_*`), the stack started and `smoke.sh` passed.
+  - The troubleshooting rows now name `id-migrate`, P1000 and P1001.
+- **Finding 3 (delete one `.env`): closed.**
+  - Deleted only `wawu-id/.env` and reran with `ID_DB`: it was regenerated with the hub's service key and both ports, and `smoke.sh` passed.
+  - Deleted only `wawu-backend/.env` and reran with `HUB_DB`: same result, `smoke.sh` passed.
+- **Finding 4 (port overrides undocumented): closed.**
+  - LOCAL.md has a Settings table and the port row names `HUB_PORT`/`ID_PORT`.
+  - On an existing setup, `HUB_PORT=4501 ID_PORT=3501` moved both services (6 lines updated) and `smoke.sh` passed. Moving back together with `HUB_DB=ops03v_t2_hub` migrated the new database and `smoke.sh` passed.
+- **Finding 5 (doc nits): closed.** The clone URLs name B3rry4r with explicit folder names, the Ubuntu 22.04 note is there, and the per-step log wording is right.
+- **Finding 6:** filed as BACKEND_GAPS G-2 and G-3, both owned outside this task.
+
+New findings:
+
+7. **defect.** A `DOTENV_CONFIG_PATH` left in the shell still sends migrate (and so the seed) to another database after every check has passed.
+   - `up.sh` lines 213-215 clear only the keys the two `.env` files define. Both repos' `prisma.config.ts` load their settings with `import "dotenv/config"`, which honours `DOTENV_CONFIG_PATH`.
+   - Reproduced on the fresh clone, stack stopped, with `DOTENV_CONFIG_PATH=<file with DATABASE_URL on db.example.invalid> scripts/local/up.sh --detach`.
+   - Every safety check passed. `up.sh` printed "wawu-id: migrating ops03v_id", but Prisma reported `Datasource "db": … database "leftover" … at "db.example.invalid:5432"` and failed only because that host does not resolve (`r2/dotenvpath.log`).
+   - This breaks LOCAL.md section 4 (lines 132-139): "before touching any database" and "one left over from another project cannot redirect it".
+   - Unlikely to happen by accident, but it is the same class as round 1's finding 1, and it lands on the write path. Two ways to fix it:
+     - clear `DOTENV_CONFIG_*` along with the `.env` keys;
+     - or hand each Prisma and seed command the `DATABASE_URL` the guard just checked, so nothing can be read after the check.
+8. **unclear (doc nit).** LOCAL.md lines 317-323 say a regenerated `.env` copies "the shared service key, both ports" from the surviving one. Not the Postgres server, though: a deleted `wawu-id/.env` comes back with the default `postgres:postgres@localhost:5432` (up.sh line 159). Someone using a custom `LOCAL_PG_URL` would hit P1000. The printed hint (rerun with `LOCAL_PG_URL`) recovers it, so this is a sentence for the page, not a blocker.
+
+Round 2 verdict: round 1's defects 1-4 and nits are closed and every check passes, but finding 7 is an open defect in the same safety guard, so the status stays `building`. If the owner rules a `DOTENV_CONFIG_PATH` leftover out of scope, nothing else blocks `review`.
 
 ## Owner sign-off
 
