@@ -33,11 +33,21 @@ merchant and the two test customers this task created).
 - **A refused bank send is not a clean failure.** Each 400 "Unable to find
   customers" still wrote a ₦100 `AATRANSFER` DEBIT record, `status:
   "PENDING"`, with our reference and a `sessionId`, visible in the history
-  (`09-`, `10-`) and by reference; no balance moved; and **the reference is
+  (`09-`, `10-`) and, at first, by reference; no balance moved; and **the reference is
   used up** (unlike wallet-to-wallet, `13-`). Re-checked about 37 minutes
-  later: still `PENDING`, balances unchanged, nothing reversed. MONEY-06 has
-  to treat a 400 from a bank send as "refused, but a record may exist", use
-  a new reference for a retry, and MONEY-16 must ignore these orphan
+  later (10:18 UTC): still `PENDING`, balances unchanged, nothing reversed.
+- **Then the record went invisible by reference** (observed by the OPS-02
+  verifier, not by this run; no new calls were made for this note): at
+  10:27:45 and 10:28:11 UTC `GET /transaction/reference/OPS02R-MT-001`, and
+  at 10:27:46 UTC `.../OPS02R-BC-001`, answered **HTTP 200 with the body
+  `{}`** (`content-length: 2`, `etag: W/"2-vyGp6PvFo4RvsFtPoIWeCReyIC8"`),
+  while `GET /txn/merchant` at 10:27:46 UTC still listed `OPS02R-MT-001` as a
+  ₦100 `PENDING` debit. The merchant balance was still 49650. So a lookup
+  must check for `data`: `200 {}` is neither found nor not found.
+- MONEY-06 has to treat a 400 from a bank send as "refused, but a record may
+  exist", never take a `200 {}` lookup as "not found, safe to retry with the
+  same reference", reconcile from the history, use a new reference for a
+  retry, and MONEY-16 must ignore these orphan
   `PENDING` rows.
 - **Validation** (`/bank/credit`, empty body): `sourceId` (not empty, a
   uuid), `accountNumber` and `sortCode` ("must be a number conforming to

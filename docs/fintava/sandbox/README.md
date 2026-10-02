@@ -134,8 +134,8 @@ tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
    `fees.md` says opening a wallet "runs a BVN check (₦60) and a NIN check
    (₦70)". In the sandbox `POST /create/customer` cost ₦0, accepted a BVN
    the BVN check rejects, and accepted the same BVN and NIN twice (`07-`,
-   `25-`). The checks happen only if our backend calls them (KYC-01): the
-   BVN check (₦5 in the sandbox) and the selfie; there is no NIN check
+   `25-`). The checks happen only if our backend calls them: the
+   BVN check (KYC-01, ₦5 in the sandbox) and the selfie (KYC-02); there is no NIN check
    endpoint. `fees.md` also says the BVN check "could not run": it now has.
 3. **`/bank/credit` does take a `CustomerReference`.** `naira-api.md` says
    a customer's bank transfer "does not take one" and so "can't be looked
@@ -175,17 +175,24 @@ tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
 9. **A refused bank send can still leave a record.** Nothing in the docs or
    `naira-api.md` says so: a `400 "Unable to find customers"` wrote a
    `PENDING` debit record with our reference, moved no money, and used the
-   reference up; 37 minutes later it was still `PENDING` (`14-`). MONEY-16's
+   reference up; 37 minutes later it was still `PENDING` (`14-`), and from
+   10:27 UTC the lookup by reference answered `200 {}` while the history
+   still listed it (verifier's calls). MONEY-16's
    ledger check must allow for these.
 
 ## Answers to the questions in `../naira-api.md`
 
 1. **Does `/bank/credit` accept a `CustomerReference`; are duplicates
    refused?** **Yes and yes** (`14-`): stored, findable by
-   `/transaction/reference/{ours}`, and a repeat is `400 "CustomerReference
+   `/transaction/reference/{ours}` at first (a refused send later answers
+   `200 {}` there, see below), and a repeat is `400 "CustomerReference
    Already Exists"`. Wallet-to-wallet refuses a repeat too ("customerReference
    already exists"). Catch: a refused bank send uses up its reference and
-   leaves a `PENDING` record; a refused wallet-to-wallet send does not.
+   leaves a `PENDING` record; a refused wallet-to-wallet send does not. And
+   that record later becomes invisible by reference: the verifier's lookups
+   at 10:27:45, 10:27:46 and 10:28:11 UTC answered **200 with `{}`** while `/txn/merchant` still
+   listed the send as `PENDING`. MONEY-06 must never read `{}` as "not
+   found, safe to retry with the same reference"; reconcile from history.
 2. **A hold or lien on a customer wallet?** Unknown; none published. Freeze
    is not one: it stops money in as well as out (`15-`). Plan unchanged
    (R-19).
@@ -242,8 +249,9 @@ tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
     (after the selfie check, from the dashboard, or by an API call), and
     does create always open `TIER_2`?
 21. **New.** A refused bank send leaves a `PENDING` record and uses up its
-    `CustomerReference`. Will those records ever resolve, and how should we
-    retry?
+    `CustomerReference`; later the lookup by reference answers `200 {}`
+    while `/txn/merchant` still lists it as `PENDING`. Will those records
+    ever resolve, why does the lookup go empty, and how should we retry?
 22. **New.** `POST /create/customer` returns `nin: null` even when a NIN is
     sent. Is the NIN stored?
 

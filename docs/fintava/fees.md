@@ -62,7 +62,7 @@ costs nothing: in the sandbox it accepted a BVN the BVN check rejects, took
 the same BVN and NIN for two customers, and charged ₦0
 (`sandbox/07-create-customer.md`). So the checks are ours to call, and to
 pay for: our backend calls the BVN check and the selfie match itself before
-create (KYC-01, KYC-04). At the dashboard rates that is ₦60 for the BVN
+create (BVN check KYC-01, selfie match KYC-02). At the dashboard rates that is ₦60 for the BVN
 check per wallet, plus the selfie, which isn't in the list (ask Fintava for
 its price). There is no separate NIN check endpoint in the Naira API, so
 the ₦70 NIN check is only paid if we add one. Sign-up codes by SMS cost ₦7
@@ -75,7 +75,7 @@ as `BVNCHARGE` debits. Name enquiries, the meter preview and creating a
 customer were free. These are sandbox prices; the dashboard list above is
 what we use, and the live price of the selfie and phone checks is still
 Fintava's to confirm. So each failed check or retry costs WAWU money:
-KYC-01 and KYC-04 limit retries.
+KYC-02 (the selfie match) limits retries.
 
 Wallet-to-wallet sends ran in the sandbox with `transaction_fee: 0` and
 `platformComm`, `merchantComm` and `lomaCharge` all null

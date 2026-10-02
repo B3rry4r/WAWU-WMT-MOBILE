@@ -27,6 +27,12 @@ merchant and the two test customers this task created).
   (`23f77125-...`, a uuid) is **Fintava's** `reference`, not ours, and is
   found. MONEY-06 stores our `CustomerReference` and the response's
   `customerReference` value, and looks up by ours.
+- **A `200` here does not always carry a record.** A refused bank send was
+  found by our reference at 10:18 UTC, but the OPS-02 verifier's lookups of
+  `OPS02R-MT-001` and `OPS02R-BC-001` at 10:27:45 to 10:28:11 UTC answered
+  **200 with the body `{}`** while `/txn/merchant` still listed the send as
+  `PENDING` (`14-bank-transfer.md`). Check for `data`; `{}` is neither found
+  nor not found.
 - New fields seen: `transType: "AATRANSFER"`, `sessionId` (30 digits,
   starting with the receiving bank's code `090620`, then the date and time),
   `senderDetails`/`recipientDetails` as "name account".

@@ -62,21 +62,21 @@ cf-cache-status: DYNAMIC
 ```json
 {
   "data": [
-{"id": "007015f2-23a8-4c3e-8383-e64744471cb1", "createdAt": "2026-10-02T09:43:30.558Z", "updatedAt": "2026-10-02T09:43:30.558Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "609b03b6-2561-49f7-9618-e1d2f925cf07", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "767fb3b8-7b53-4759-b932-6cf9fc2609c0", "createdAt": "2026-10-02T09:43:30.353Z", "updatedAt": "2026-10-02T09:43:30.353Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "c4be0f40-f8ff-4555-8f8a-e91adc48c6cb", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "8b623b29-d946-49f1-a82d-f6a1423c9c7a", "createdAt": "2026-10-02T09:43:21.255Z", "updatedAt": "2026-10-02T09:43:21.255Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2562bc8b-74de-4588-9e3d-d2f83a446953", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "ae39f1f5-fa04-44b4-8486-0182be38a823", "createdAt": "2026-10-02T09:42:10.065Z", "updatedAt": "2026-10-02T09:42:10.065Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "b7f1555f-d3aa-4f3a-93d7-3a6bfc045a2f", "CustomerReference": "OPS02R-MT-002", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "Bayo Sandbox (1151496137)", "narration": "OPS-02 rerun merchant to Loma account", "status": "PENDING", "recipientDetails": "Bayo Sandbox (1151496137)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "LOMA BANK", "provider": null, "sessionId": "090620261002094210920088137510", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "55788ec8-13f3-479c-a994-5e78e741887b", "createdAt": "2026-10-02T09:41:37.284Z", "updatedAt": "2026-10-02T09:41:37.284Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "6c3dd7c2-ced0-4119-bdb0-1e44a080c57a", "CustomerReference": "OPS02R-MT-001", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "SIMI MICHELLE (0123456789)", "narration": "OPS-02 rerun merchant to bank", "status": "PENDING", "recipientDetails": "SIMI MICHELLE (0123456789)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "GTBANK PLC", "provider": null, "sessionId": "000013261002094137685648997507", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "02271ab1-413f-45d0-905b-c6c62a16d77a", "createdAt": "2026-10-02T09:40:36.779Z", "updatedAt": "2026-10-02T09:40:36.792Z", "amount": "300.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "23f77125-eac0-4e73-bb83-8562ccdfddb9", "CustomerReference": "OPS02R-W2W-001", "source": "Test Account4 1102038668", "destination": "1154079370", "narration": "OPS-02 rerun WAWU to A", "status": "SUCCESS", "recipientDetails": "Ada Sandbox 1154079370", "senderDetails": "Test Account4 1102038668", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": "090620261002094036531865681434", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "759ae2dc-1eae-4af3-a2ec-bc8a92257bb1", "createdAt": "2026-10-02T09:40:27.941Z", "updatedAt": "2026-10-02T09:40:27.941Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "bd2648ec-7094-4bb9-835e-1e413e78cb88", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "fc163c4e-602f-4ae2-90d9-21960fa18c68", "createdAt": "2026-10-02T08:32:00.050Z", "updatedAt": "2026-10-02T08:32:00.050Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1500fb0f-c8d0-4a6e-9433-6683b2ea919f", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "cc8f40c6-62dd-4499-8581-49d393ef5f4c", "createdAt": "2026-10-02T08:31:14.852Z", "updatedAt": "2026-10-02T08:31:14.852Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "4e7c79df-d7ba-463d-91d6-4108f7dbbcb7", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "f3d694e3-ca22-4765-a943-1e1627adf151", "createdAt": "2026-10-02T08:31:14.652Z", "updatedAt": "2026-10-02T08:31:14.652Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2997f093-8e9b-488b-991e-b84df5f2e1c5", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "33ae41e0-0800-4f01-aac7-682fea57b87e", "createdAt": "2026-10-02T08:31:11.960Z", "updatedAt": "2026-10-02T08:31:11.960Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "341a6b18-7153-4d31-b62d-ae6e1c3e7596", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "ff0266ef-03b7-4e30-94b8-2eae11cff21d", "createdAt": "2026-10-02T08:30:33.753Z", "updatedAt": "2026-10-02T08:30:33.753Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1c0577a0-e667-4c29-9ebe-9d64e4ade7f1", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "0a637df8-a60a-41b3-8073-ae10534c96b7", "createdAt": "2026-10-02T08:29:11.254Z", "updatedAt": "2026-10-02T08:29:11.254Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "7b07010d-3c36-4532-8ed9-9c49263b7f51", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "30838964-fa46-47dd-8a8c-351fec526fda", "createdAt": "2026-10-02T08:29:11.041Z", "updatedAt": "2026-10-02T08:29:11.041Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "a66b6444-8bce-4bbe-a240-9b42fe33a096", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "89cf76b9-c66e-4faa-a9e4-1d7e933b8e92", "createdAt": "2026-10-02T08:28:44.233Z", "updatedAt": "2026-10-02T08:28:44.233Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "66a8b3d5-7be3-4788-82f9-227a3ee41209", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}}
+{"id": "007015f2-23a8-4c3e-8383-e64744471cb1", "createdAt": "2026-10-02T09:43:30.558Z", "updatedAt": "2026-10-02T09:43:30.558Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "609b03b6-2561-49f7-9618-e1d2f925cf07", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "767fb3b8-7b53-4759-b932-6cf9fc2609c0", "createdAt": "2026-10-02T09:43:30.353Z", "updatedAt": "2026-10-02T09:43:30.353Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "c4be0f40-f8ff-4555-8f8a-e91adc48c6cb", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "8b623b29-d946-49f1-a82d-f6a1423c9c7a", "createdAt": "2026-10-02T09:43:21.255Z", "updatedAt": "2026-10-02T09:43:21.255Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2562bc8b-74de-4588-9e3d-d2f83a446953", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "ae39f1f5-fa04-44b4-8486-0182be38a823", "createdAt": "2026-10-02T09:42:10.065Z", "updatedAt": "2026-10-02T09:42:10.065Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "b7f1555f-d3aa-4f3a-93d7-3a6bfc045a2f", "CustomerReference": "OPS02R-MT-002", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "Bayo Sandbox (1151496137)", "narration": "OPS-02 rerun merchant to Loma account", "status": "PENDING", "recipientDetails": "Bayo Sandbox (1151496137)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "LOMA BANK", "provider": null, "sessionId": "090620261002094210920088137510", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "55788ec8-13f3-479c-a994-5e78e741887b", "createdAt": "2026-10-02T09:41:37.284Z", "updatedAt": "2026-10-02T09:41:37.284Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "6c3dd7c2-ced0-4119-bdb0-1e44a080c57a", "CustomerReference": "OPS02R-MT-001", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "SIMI MICHELLE (0123456789)", "narration": "OPS-02 rerun merchant to bank", "status": "PENDING", "recipientDetails": "SIMI MICHELLE (0123456789)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "GTBANK PLC", "provider": null, "sessionId": "000013261002094137685648997507", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "02271ab1-413f-45d0-905b-c6c62a16d77a", "createdAt": "2026-10-02T09:40:36.779Z", "updatedAt": "2026-10-02T09:40:36.792Z", "amount": "300.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "23f77125-eac0-4e73-bb83-8562ccdfddb9", "CustomerReference": "OPS02R-W2W-001", "source": "Test Account4 1102038668", "destination": "1154079370", "narration": "OPS-02 rerun WAWU to A", "status": "SUCCESS", "recipientDetails": "Ada Sandbox 1154079370", "senderDetails": "Test Account4 1102038668", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": "090620261002094036531865681434", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "759ae2dc-1eae-4af3-a2ec-bc8a92257bb1", "createdAt": "2026-10-02T09:40:27.941Z", "updatedAt": "2026-10-02T09:40:27.941Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "bd2648ec-7094-4bb9-835e-1e413e78cb88", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "fc163c4e-602f-4ae2-90d9-21960fa18c68", "createdAt": "2026-10-02T08:32:00.050Z", "updatedAt": "2026-10-02T08:32:00.050Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1500fb0f-c8d0-4a6e-9433-6683b2ea919f", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "cc8f40c6-62dd-4499-8581-49d393ef5f4c", "createdAt": "2026-10-02T08:31:14.852Z", "updatedAt": "2026-10-02T08:31:14.852Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "4e7c79df-d7ba-463d-91d6-4108f7dbbcb7", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "f3d694e3-ca22-4765-a943-1e1627adf151", "createdAt": "2026-10-02T08:31:14.652Z", "updatedAt": "2026-10-02T08:31:14.652Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2997f093-8e9b-488b-991e-b84df5f2e1c5", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "33ae41e0-0800-4f01-aac7-682fea57b87e", "createdAt": "2026-10-02T08:31:11.960Z", "updatedAt": "2026-10-02T08:31:11.960Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "341a6b18-7153-4d31-b62d-ae6e1c3e7596", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "ff0266ef-03b7-4e30-94b8-2eae11cff21d", "createdAt": "2026-10-02T08:30:33.753Z", "updatedAt": "2026-10-02T08:30:33.753Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1c0577a0-e667-4c29-9ebe-9d64e4ade7f1", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "0a637df8-a60a-41b3-8073-ae10534c96b7", "createdAt": "2026-10-02T08:29:11.254Z", "updatedAt": "2026-10-02T08:29:11.254Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "7b07010d-3c36-4532-8ed9-9c49263b7f51", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "30838964-fa46-47dd-8a8c-351fec526fda", "createdAt": "2026-10-02T08:29:11.041Z", "updatedAt": "2026-10-02T08:29:11.041Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "a66b6444-8bce-4bbe-a240-9b42fe33a096", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "89cf76b9-c66e-4faa-a9e4-1d7e933b8e92", "createdAt": "2026-10-02T08:28:44.233Z", "updatedAt": "2026-10-02T08:28:44.233Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "66a8b3d5-7be3-4788-82f9-227a3ee41209", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}}
 ],
   "meta": {
     "page": "1",
@@ -117,21 +117,21 @@ cf-cache-status: DYNAMIC
 ```json
 {
   "data": [
-{"id": "007015f2-23a8-4c3e-8383-e64744471cb1", "createdAt": "2026-10-02T09:43:30.558Z", "updatedAt": "2026-10-02T09:43:30.558Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "609b03b6-2561-49f7-9618-e1d2f925cf07", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "767fb3b8-7b53-4759-b932-6cf9fc2609c0", "createdAt": "2026-10-02T09:43:30.353Z", "updatedAt": "2026-10-02T09:43:30.353Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "c4be0f40-f8ff-4555-8f8a-e91adc48c6cb", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "8b623b29-d946-49f1-a82d-f6a1423c9c7a", "createdAt": "2026-10-02T09:43:21.255Z", "updatedAt": "2026-10-02T09:43:21.255Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2562bc8b-74de-4588-9e3d-d2f83a446953", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "ae39f1f5-fa04-44b4-8486-0182be38a823", "createdAt": "2026-10-02T09:42:10.065Z", "updatedAt": "2026-10-02T09:42:10.065Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "b7f1555f-d3aa-4f3a-93d7-3a6bfc045a2f", "CustomerReference": "OPS02R-MT-002", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "Bayo Sandbox (1151496137)", "narration": "OPS-02 rerun merchant to Loma account", "status": "PENDING", "recipientDetails": "Bayo Sandbox (1151496137)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "LOMA BANK", "provider": null, "sessionId": "090620261002094210920088137510", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "55788ec8-13f3-479c-a994-5e78e741887b", "createdAt": "2026-10-02T09:41:37.284Z", "updatedAt": "2026-10-02T09:41:37.284Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "6c3dd7c2-ced0-4119-bdb0-1e44a080c57a", "CustomerReference": "OPS02R-MT-001", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "SIMI MICHELLE (0123456789)", "narration": "OPS-02 rerun merchant to bank", "status": "PENDING", "recipientDetails": "SIMI MICHELLE (0123456789)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "GTBANK PLC", "provider": null, "sessionId": "000013261002094137685648997507", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "02271ab1-413f-45d0-905b-c6c62a16d77a", "createdAt": "2026-10-02T09:40:36.779Z", "updatedAt": "2026-10-02T09:40:36.792Z", "amount": "300.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "23f77125-eac0-4e73-bb83-8562ccdfddb9", "CustomerReference": "OPS02R-W2W-001", "source": "Test Account4 1102038668", "destination": "1154079370", "narration": "OPS-02 rerun WAWU to A", "status": "SUCCESS", "recipientDetails": "Ada Sandbox 1154079370", "senderDetails": "Test Account4 1102038668", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": "090620261002094036531865681434", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "759ae2dc-1eae-4af3-a2ec-bc8a92257bb1", "createdAt": "2026-10-02T09:40:27.941Z", "updatedAt": "2026-10-02T09:40:27.941Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "bd2648ec-7094-4bb9-835e-1e413e78cb88", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "fc163c4e-602f-4ae2-90d9-21960fa18c68", "createdAt": "2026-10-02T08:32:00.050Z", "updatedAt": "2026-10-02T08:32:00.050Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1500fb0f-c8d0-4a6e-9433-6683b2ea919f", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "cc8f40c6-62dd-4499-8581-49d393ef5f4c", "createdAt": "2026-10-02T08:31:14.852Z", "updatedAt": "2026-10-02T08:31:14.852Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "4e7c79df-d7ba-463d-91d6-4108f7dbbcb7", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "f3d694e3-ca22-4765-a943-1e1627adf151", "createdAt": "2026-10-02T08:31:14.652Z", "updatedAt": "2026-10-02T08:31:14.652Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2997f093-8e9b-488b-991e-b84df5f2e1c5", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "33ae41e0-0800-4f01-aac7-682fea57b87e", "createdAt": "2026-10-02T08:31:11.960Z", "updatedAt": "2026-10-02T08:31:11.960Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "341a6b18-7153-4d31-b62d-ae6e1c3e7596", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "ff0266ef-03b7-4e30-94b8-2eae11cff21d", "createdAt": "2026-10-02T08:30:33.753Z", "updatedAt": "2026-10-02T08:30:33.753Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1c0577a0-e667-4c29-9ebe-9d64e4ade7f1", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "0a637df8-a60a-41b3-8073-ae10534c96b7", "createdAt": "2026-10-02T08:29:11.254Z", "updatedAt": "2026-10-02T08:29:11.254Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "7b07010d-3c36-4532-8ed9-9c49263b7f51", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "30838964-fa46-47dd-8a8c-351fec526fda", "createdAt": "2026-10-02T08:29:11.041Z", "updatedAt": "2026-10-02T08:29:11.041Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "a66b6444-8bce-4bbe-a240-9b42fe33a096", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}},
-{"id": "89cf76b9-c66e-4faa-a9e4-1d7e933b8e92", "createdAt": "2026-10-02T08:28:44.233Z", "updatedAt": "2026-10-02T08:28:44.233Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "66a8b3d5-7be3-4788-82f9-227a3ee41209", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "V***", "lastName": "A***", "phoneNumber": "*******1201"}}
+{"id": "007015f2-23a8-4c3e-8383-e64744471cb1", "createdAt": "2026-10-02T09:43:30.558Z", "updatedAt": "2026-10-02T09:43:30.558Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "609b03b6-2561-49f7-9618-e1d2f925cf07", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "767fb3b8-7b53-4759-b932-6cf9fc2609c0", "createdAt": "2026-10-02T09:43:30.353Z", "updatedAt": "2026-10-02T09:43:30.353Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "c4be0f40-f8ff-4555-8f8a-e91adc48c6cb", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "8b623b29-d946-49f1-a82d-f6a1423c9c7a", "createdAt": "2026-10-02T09:43:21.255Z", "updatedAt": "2026-10-02T09:43:21.255Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2562bc8b-74de-4588-9e3d-d2f83a446953", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "ae39f1f5-fa04-44b4-8486-0182be38a823", "createdAt": "2026-10-02T09:42:10.065Z", "updatedAt": "2026-10-02T09:42:10.065Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "b7f1555f-d3aa-4f3a-93d7-3a6bfc045a2f", "CustomerReference": "OPS02R-MT-002", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "Bayo Sandbox (1151496137)", "narration": "OPS-02 rerun merchant to Loma account", "status": "PENDING", "recipientDetails": "Bayo Sandbox (1151496137)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "LOMA BANK", "provider": null, "sessionId": "090620261002094210920088137510", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "55788ec8-13f3-479c-a994-5e78e741887b", "createdAt": "2026-10-02T09:41:37.284Z", "updatedAt": "2026-10-02T09:41:37.284Z", "amount": "100.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "6c3dd7c2-ced0-4119-bdb0-1e44a080c57a", "CustomerReference": "OPS02R-MT-001", "source": "undefined ae4de060-0058-4f5b-a63c-aabe94b9b2c0", "destination": "SIMI MICHELLE (0123456789)", "narration": "OPS-02 rerun merchant to bank", "status": "PENDING", "recipientDetails": "SIMI MICHELLE (0123456789)", "senderDetails": "Test Account4", "senderBank": "Loma Bank", "receiverBank": "GTBANK PLC", "provider": null, "sessionId": "000013261002094137685648997507", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "02271ab1-413f-45d0-905b-c6c62a16d77a", "createdAt": "2026-10-02T09:40:36.779Z", "updatedAt": "2026-10-02T09:40:36.792Z", "amount": "300.00", "transType": "AATRANSFER", "entry": "DEBIT", "reference": "23f77125-eac0-4e73-bb83-8562ccdfddb9", "CustomerReference": "OPS02R-W2W-001", "source": "Test Account4 1102038668", "destination": "1154079370", "narration": "OPS-02 rerun WAWU to A", "status": "SUCCESS", "recipientDetails": "Ada Sandbox 1154079370", "senderDetails": "Test Account4 1102038668", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": "090620261002094036531865681434", "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "759ae2dc-1eae-4af3-a2ec-bc8a92257bb1", "createdAt": "2026-10-02T09:40:27.941Z", "updatedAt": "2026-10-02T09:40:27.941Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "bd2648ec-7094-4bb9-835e-1e413e78cb88", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "fc163c4e-602f-4ae2-90d9-21960fa18c68", "createdAt": "2026-10-02T08:32:00.050Z", "updatedAt": "2026-10-02T08:32:00.050Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1500fb0f-c8d0-4a6e-9433-6683b2ea919f", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "cc8f40c6-62dd-4499-8581-49d393ef5f4c", "createdAt": "2026-10-02T08:31:14.852Z", "updatedAt": "2026-10-02T08:31:14.852Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "4e7c79df-d7ba-463d-91d6-4108f7dbbcb7", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "f3d694e3-ca22-4765-a943-1e1627adf151", "createdAt": "2026-10-02T08:31:14.652Z", "updatedAt": "2026-10-02T08:31:14.652Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "2997f093-8e9b-488b-991e-b84df5f2e1c5", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "33ae41e0-0800-4f01-aac7-682fea57b87e", "createdAt": "2026-10-02T08:31:11.960Z", "updatedAt": "2026-10-02T08:31:11.960Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "341a6b18-7153-4d31-b62d-ae6e1c3e7596", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "ff0266ef-03b7-4e30-94b8-2eae11cff21d", "createdAt": "2026-10-02T08:30:33.753Z", "updatedAt": "2026-10-02T08:30:33.753Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "1c0577a0-e667-4c29-9ebe-9d64e4ade7f1", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "0a637df8-a60a-41b3-8073-ae10534c96b7", "createdAt": "2026-10-02T08:29:11.254Z", "updatedAt": "2026-10-02T08:29:11.254Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "7b07010d-3c36-4532-8ed9-9c49263b7f51", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "30838964-fa46-47dd-8a8c-351fec526fda", "createdAt": "2026-10-02T08:29:11.041Z", "updatedAt": "2026-10-02T08:29:11.041Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "a66b6444-8bce-4bbe-a240-9b42fe33a096", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}},
+{"id": "89cf76b9-c66e-4faa-a9e4-1d7e933b8e92", "createdAt": "2026-10-02T08:28:44.233Z", "updatedAt": "2026-10-02T08:28:44.233Z", "amount": "5.00", "transType": "BVNCHARGE", "entry": "DEBIT", "reference": "66a8b3d5-7be3-4788-82f9-227a3ee41209", "CustomerReference": null, "source": "customer", "destination": "compliance", "narration": "Compliance charges (BVNCHARGE)", "status": "SUCCESS", "recipientDetails": "Compliance account", "senderDetails": "customer", "senderBank": "Loma Bank", "receiverBank": "Loma Bank", "provider": null, "sessionId": null, "accountProvider": "loma", "customer": {"id": "a2162db5-0911-4786-8760-7b99f5d4a69a", "firstName": "***", "lastName": "***", "phoneNumber": "***"}}
 ],
   "meta": {
     "page": "1",
@@ -309,9 +309,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -336,9 +336,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -363,9 +363,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -390,9 +390,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -417,9 +417,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -444,9 +444,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -471,9 +471,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     }
   ],
@@ -578,9 +578,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -605,9 +605,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -632,9 +632,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -659,9 +659,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -686,9 +686,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -713,9 +713,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -740,9 +740,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     }
   ],
@@ -846,9 +846,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -873,9 +873,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -900,9 +900,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -927,9 +927,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -954,9 +954,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -981,9 +981,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1008,9 +1008,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     }
   ],
@@ -1075,9 +1075,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1102,9 +1102,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1129,9 +1129,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1156,9 +1156,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1183,9 +1183,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1210,9 +1210,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1237,9 +1237,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1264,9 +1264,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     }
   ],
@@ -1331,9 +1331,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1358,9 +1358,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1385,9 +1385,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1412,9 +1412,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1439,9 +1439,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1466,9 +1466,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1493,9 +1493,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     }
   ],
@@ -1560,9 +1560,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1587,9 +1587,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1614,9 +1614,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1641,9 +1641,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1668,9 +1668,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1695,9 +1695,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1722,9 +1722,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     },
     {
@@ -1749,9 +1749,9 @@ cf-cache-status: DYNAMIC
       "accountProvider": "loma",
       "customer": {
         "id": "a2162db5-0911-4786-8760-7b99f5d4a69a",
-        "firstName": "V***",
-        "lastName": "A***",
-        "phoneNumber": "*******1201"
+        "firstName": "***",
+        "lastName": "***",
+        "phoneNumber": "***"
       }
     }
   ],

@@ -35,15 +35,23 @@ blocker").
   `400 "CustomerReference Already Exists"` (`sandbox/13-wallet-to-wallet.md`,
   `sandbox/14-bank-transfer.md`). `GET /transaction/reference/{ours}` finds
   the transaction (`sandbox/11-transaction-by-reference.md`). So a timed-out
-  send is looked up by our reference before any retry.
+  send is looked up by our reference before any retry, and **the lookup
+  counts only if the body has `data`**: a `200` with `{}` is neither "found"
+  nor "not found" (next point).
 - **A refused send is not always clean.** A refused wallet-to-wallet send
   writes nothing and does not use up its reference, so it can be retried
   with the same one. A bank send refused with `400 "Unable to find
   customers"` still wrote a `PENDING` debit record with our reference, moved
   no money, stayed `PENDING` for at least 37 minutes, and **used the
-  reference up** (`sandbox/14-bank-transfer.md`). MONEY-06 retries a refused
-  bank send under a new reference; MONEY-16 ignores these orphan `PENDING`
-  rows.
+  reference up** (`sandbox/14-bank-transfer.md`). Later the record **became
+  invisible by reference**: at 10:18 UTC the lookup still returned it, but at
+  10:27:45, 10:27:46 and 10:28:11 UTC (OPS-02 verifier) `GET /transaction/reference/{ours}` answered
+  **HTTP 200 with the body `{}`**, while `/txn/merchant` still listed the same
+  send as `PENDING`. So MONEY-06 never reads `{}` as "not found, safe to
+  retry with the same reference": it reconciles from the history (where the
+  `PENDING` row still sits), retries a refused bank send only under a **new**
+  reference, and MONEY-16 treats these orphan `PENDING` rows as no money
+  moved.
 - **A 2xx is not proof of payment.** A cable purchase came back HTTP 201 with
   only `{ status: 200, message: "service not currently available" }`
   (`sandbox/21-bills-cable.md`). A payment counts only when the body carries
@@ -72,7 +80,10 @@ blocker").
   (`sandbox/24-auth-and-errors.md`).
 - **Not found is not one code.** Unknown wallet on the balance call: 400
   "Wallet not found". Unknown customer on `/txn`: 404. Unknown transaction
-  reference: 404. **Unknown transaction id: 200 with `data: null`.**
+  reference: 404. **Unknown transaction id: 200 with `data: null`.** A
+  refused bank send looked up by our reference some time later: **200 with
+  `{}`** (no `data`, no `status`), though the history still lists it
+  (`sandbox/14-bank-transfer.md`).
   Unknown account on `/loma-name/enquiry`: 400 with a leaked JavaScript
   error (`sandbox/03-name-enquiry-internal.md`). A customer record id used as
   `sourceId`: 404 "No wallet exists for the customer"
@@ -128,7 +139,7 @@ Store customerId, walletId and accountNumber when an account opens.
   BVN check says does not exist, accepted the same BVN and NIN for a second
   customer, and charged ₦0 (`sandbox/07-create-customer.md`,
   `sandbox/25-compliance-charges.md`). Our backend runs the BVN check and the
-  selfie itself, before create (KYC-01, KYC-04).
+  selfie itself, before create (BVN check KYC-01, selfie match KYC-02).
 - **Check a BVN:** `GET /compliance/verify/bvn?bvn=`. Returns first, middle
   and last name, date of birth, phone, gender and a photo (documented; the
   sandbox has not yet answered with a match). This is what A5
@@ -323,8 +334,9 @@ webhook payloads; those come from Fintava when the card is built.
 ## Webhooks (MONEY-07)
 
 None received yet: neither sandbox run had a public URL or dashboard access
-(`sandbox/23-webhooks.md`). Events did fire in the re-run (four
-wallet-to-wallet sends). Everything below is from the docs. They carry more
+(`sandbox/23-webhooks.md`). The re-run did make four wallet-to-wallet
+sends, which would have sent `wallet_to_wallet_transfer_v2` to a configured
+URL; no delivery was received or seen. Everything below is from the docs. They carry more
 weight than planned: the history lists show no money received, so the app's
 "money in" depends on these deliveries.
 
@@ -402,5 +414,8 @@ app (R-20). What the sandbox showed on each, with evidence, is in
 19. Open. How do we list money a wallet received? `/txn` and `/txn/merchant`
     list debits only (`sandbox/09-`, `10-`).
 20. Open. How does a wallet move from `TIER_2` to `TIER_3`?
-21. Open. Will the `PENDING` records left by refused bank sends ever resolve?
+21. Open. Will the `PENDING` records left by refused bank sends ever resolve,
+    and why does the lookup by our reference turn from the `PENDING` record
+    into `200 {}` while `/txn/merchant` still lists it? How should we retry?
+    (`sandbox/14-bank-transfer.md`.)
 22. Open. Create returns `nin: null`: is the NIN stored?
