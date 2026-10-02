@@ -7,7 +7,7 @@ order: 6
 priority: launch
 repo: wawuafrica, wawu-backend
 type: ops
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: []
@@ -116,6 +116,24 @@ Heads read: web d2d23bf, backend e4f471e, mobile 02b3d7d; mobile main ce86832 fo
 4. **defect** · web `CLAUDE.md:129-130`, "Nothing enforces a tick tier or a storage limit yet". The tick-tier half is true; the storage half is not. The backend enforces a flat 2 GB per account today: `STORAGE_BYTES_PER_ACCOUNT = 2 * 1024 * 1024 * 1024` and `DEFAULT_STORAGE_BYTES` (same) in `wawu-backend/src/common/creator-allowance.ts:48,57`, checked before every upload URL is signed (`src/storage/storage.service.ts:191-197`, `PayloadTooLargeException`). This wording came from my own round-1 finding 1, which said "no storage limit" without checking storage; that was the verifier's error, not the builder's. Closed when the line says the backend enforces a flat 2 GB storage quota per account and no tick tier.
 
 Findings 1, 2 and 3 are closed. Status stays `building` (finding 4 open).
+
+### Round 3
+
+Heads read: web 97edd90 (round-3 commits 1e4aabe, 97edd90), mobile 174717d (067aa8e, 174717d: builder report and status only), backend unchanged at e4f471e. Scratch copies under the scratchpad (`r3/`), not the worktrees.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Finding 4 (storage limit) | closed | Web `CLAUDE.md:129-133` now reads "Today the backend enforces a flat 5-item cap and a flat 2 GB storage quota per account, with no tick tier". Confirmed in backend e4f471e: `STORAGE_BYTES_PER_ACCOUNT` and `DEFAULT_STORAGE_BYTES` both 2 GB (`src/common/creator-allowance.ts:48,57`), chosen by `storageAllowanceFor()` (line 59) with no tick input, read at `src/storage/storage.service.ts:346` and checked before the upload URL is signed (lines 191-197). `MAX_ITEMS_PER_ACCOUNT = 5` unchanged (line 25) |
+| Round-3 diff read | passed | d2d23bf..97edd90 changes only that one hunk in `CLAUDE.md` (2 lines out, 5 in) and the same hunk in the four copies. No other line changed; no ruling id or date touched. Mobile delta is the builder report and status line only |
+| Em-dashes in added lines | passed | Web `CLAUDE.md` vs origin/main: 0 |
+| Agent rules copies via `scripts/sync-agent-rules.sh` | passed | Re-ran on a scratch copy of 97edd90: all four files byte-identical to the committed ones; each equals `CLAUDE.md` below the header line |
+| Web gates `scripts/gates/run.py` | passed (no change) | 10 gates, 350 files scanned, 15 fail, 8 warn, 42 accepted, exit 1: same as origin/main |
+| Web `check-copy.mjs` | passed | "copy rules: clean", exit 0 |
+| Mobile task check | passed | 174717d: 187 tasks, 280 artboards covered, exit 0 |
+| Backend gates | not re-run | Backend unchanged since round 2 (e4f471e, same counts as origin/main then) |
+| Typecheck, lint, tests | NOT RUN | No `node_modules` in any worktree; Markdown-only diff |
+
+Findings 1 to 4 are closed; no open defects. Status set to `review`.
 
 ## Owner sign-off
 
