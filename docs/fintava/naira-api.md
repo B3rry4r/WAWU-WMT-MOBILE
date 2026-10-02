@@ -15,8 +15,8 @@ Fintava's documented example, and several pages document no response at all.
 - **Base URLs.** Sandbox `https://dev.fintavapay.com/api/dev`, live
   `https://live.fintavapay.com/api/dev`.
 - **Auth.** `Authorization: Bearer <api key>` on every call. Requests are not
-  signed. The key alone moves money, so it lives only in the backend's
-  environment secrets, never in the app, a commit or a chat.
+  signed. The key lives in the backend's `.env` (local for testing, the
+  server's for live), never in the mobile app and never committed.
 - **Amounts are naira, as decimal numbers** (`2.75`, `"100.00"`), sometimes
   as strings in webhooks. We keep kobo integers everywhere else. The Fintava
   client (MONEY-06) converts at the boundary by parsing the decimal string,

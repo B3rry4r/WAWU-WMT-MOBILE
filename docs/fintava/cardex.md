@@ -107,6 +107,6 @@ It does four things:
 ## Keys
 
 The owner will receive test (`cdx_test_`) and live keys, plus a signing secret
-and a webhook secret. They go into the backend's environment secrets as
-`CARDEX_API_KEY`, `CARDEX_SIGNING_SECRET` and `CARDEX_WEBHOOK_SECRET`. Never
-paste them into a chat, a commit, a task file or the app.
+and a webhook secret. They go in the backend's `.env` as `CARDEX_API_KEY`,
+`CARDEX_SIGNING_SECRET` and `CARDEX_WEBHOOK_SECRET` (never committed, never
+in the mobile app).

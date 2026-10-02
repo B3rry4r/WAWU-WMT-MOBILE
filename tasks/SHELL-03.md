@@ -31,7 +31,7 @@ Follow `docs/BUILDS.md`. `npx expo install expo-dev-client`; `eas.json` with the
 
 ## Capability checks
 
-- [ ] A preview build installs on a real Android phone and a real iPhone and reaches staging.
+- [ ] A preview build installs on a real Android phone and a real iPhone and reaches the test backend.
 - [ ] The developer can run `eas build --profile preview` for both platforms without an Apple or Google login.
 - [ ] `eas update --channel preview` reaches an installed preview build without a rebuild.
 

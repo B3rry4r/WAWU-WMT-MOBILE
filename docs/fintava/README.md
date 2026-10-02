@@ -10,5 +10,4 @@
 
 Nothing in the money lane is built from guesses about Fintava's API. A real
 sandbox response beats the published docs; when they differ, correct
-`naira-api.md`. Keys and secrets live in the backend's environment secrets,
-never here.
+`naira-api.md`. Keys go in the backend's `.env`, never committed here.

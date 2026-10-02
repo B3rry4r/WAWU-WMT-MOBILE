@@ -27,7 +27,7 @@ No payment path goes to real users until it has been attacked and reconciled.
 
 ## Scope
 
-An AUDITOR session runs V8 across every payment path built so far, on staging.
+An AUDITOR session runs V8 across every payment path built so far, against the local backend and the Fintava sandbox.
 
 ## Capability checks
 

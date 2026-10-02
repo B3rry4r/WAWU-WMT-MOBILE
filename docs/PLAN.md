@@ -6,7 +6,7 @@ the only schedule.
 
 ## Who owns what
 
-**You:** running the build (Fintava, staging, the designer, reviews,
+**You:** running the build (Fintava, the designer, reviews,
 checkpoints, store submission). Features: the money core, Wallet, Bills,
 Schools, Professionals, Legal, Ads. Details: `docs/people/YOU.md`.
 
@@ -43,8 +43,8 @@ the session with the backend repo and this repo both attached.
 
 ## Needed from outside
 
-**From Fintava (OPS-02):** sandbox keys, put straight into the backend's
-environment secrets (never into a chat or a commit). Their published docs are
+**From Fintava (OPS-02):** sandbox keys, in the backend's local `.env` for
+testing (the `.env` is never committed). Their published docs are
 already in `docs/fintava/reference/`, and `docs/fintava/naira-api.md` says
 what they mean for us. These sandbox calls get saved in `docs/fintava/`
 (request and full response, keys and BVNs masked, webhooks with their

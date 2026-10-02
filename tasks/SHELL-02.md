@@ -31,7 +31,7 @@ src/api/: auth headers on the generated client, tokens in expo-secure-store, ref
 
 ## Capability checks
 
-- [ ] A user signs in with email and password on staging and stays signed in after restarting the app.
+- [ ] A user signs in with email and password against the test backend and stays signed in after restarting the app.
 - [ ] An expired token refreshes once, silently.
 - [ ] Signing out removes the token from secure storage.
 

@@ -35,7 +35,7 @@ code, stop and say so. A builder cannot verify their own work.
      five times (locks); not enough money (shortfall shown); replay a webhook
      (no double credit); forge its signature (rejected); force a failure (it
      reverses); our ledger equals Fintava's balance.
-   - **V9 Live seam:** on staging, sign in through the real login (no injected
+   - **V9 Live seam:** against the local backend, sign in through the real login (no injected
      token) and see a value only the server could have.
 4. **Test each capability check in the task, as written.**
 5. **Check the facts.** Any fee, limit, rate, hold, notification or promise on

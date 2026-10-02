@@ -30,11 +30,11 @@ Crypto (W3, W22, W23) runs through Cardex, Fintava's crypto partner, after launc
 
 ## Scope
 
-Once the Cardex test keys are in the backend's environment secrets, split this into small tasks: signed client and webhooks, deposit addresses, per-user ledger and nightly check, quote and convert, send out, then the screens. USDT and USDC only (no BTC), the real 90-second quote, the fee on top.
+Once the Cardex test keys are in the backend's local `.env`, split this into small tasks: signed client and webhooks, deposit addresses, per-user ledger and nightly check, quote and convert, send out, then the screens. USDT and USDC only (no BTC), the real 90-second quote, the fee on top.
 
 ## Capability checks
 
-- [ ] Cardex test keys are in the backend's environment secrets, and a sandbox deposit reaches our webhook and is recorded once.
+- [ ] With Cardex test keys in the local `.env`, a sandbox deposit reaches our webhook and is recorded once.
 - [ ] This task is split into small tasks, each with its own checks, and none shows BTC.
 
 ## Builder report

@@ -8,7 +8,7 @@ priority: launch
 repo: all
 type: ops
 status: todo
-depends_on: [SETUP-01, OPS-02, OPS-03, MONEY-01]
+depends_on: [SETUP-01, OPS-02, MONEY-01]
 decisions: []
 passes: []
 artboards: []
@@ -33,7 +33,7 @@ Read the report on SETUP-01, the protected-route suite (MONEY-01), the decision 
 - [ ] SETUP-01 was verified (it was built by the setup session, so any person's session can verify it) with no open defects.
 - [ ] The protected-route suite (MONEY-01) passes on the live backend's main branch.
 - [ ] The decision defaults in DECISIONS.md have been read, and any you disagree with are changed.
-- [ ] Fintava sandbox keys are in staging's environment secrets and a test call succeeds.
+- [ ] With the sandbox keys in a local `.env`, a test call to Fintava succeeds.
 
 ## Builder report
 

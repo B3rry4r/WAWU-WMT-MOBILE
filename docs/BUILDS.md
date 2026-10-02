@@ -79,10 +79,10 @@ team rule: the developer publishes to `preview` only.
 
 ## The profiles (`eas.json`, written in SHELL-03)
 
-- `development`: `developmentClient: true`, internal distribution, staging
-  API.
-- `preview`: internal distribution, Android APK, channel `preview`, staging
-  API.
+- `development`: `developmentClient: true`, internal distribution, the
+  test backend's URL.
+- `preview`: internal distribution, Android APK, channel `preview`, the test
+  backend's URL.
 - `production`: store builds (AAB and App Store), channel `production`,
   production API, and the build number managed by Expo
   (`appVersionSource: remote`, `autoIncrement`).

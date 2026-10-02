@@ -25,7 +25,7 @@ artboards: []
 
 ## Goal
 
-Payments move one at a time, safest first (docs/WORKFLOW.md section 6): staging with the sandbox, then staff with real money, then everyone on mobile.
+Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
 
 ## Scope
 

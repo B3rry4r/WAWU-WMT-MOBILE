@@ -93,7 +93,7 @@ step 2. No step is skipped.
 | 4 | **Verify** | Verifier session, fresh, never the builder | Every pass in the ticket's `passes` list is run and reported |
 | 5 | **Fix loop** | Builder, then verifier | Every defect is fixed or accepted by the owner. At most 2 rounds, then the task goes to the owner |
 | 6 | **Review** | Owner | The owner has looked at the screenshots and the evidence pack in the PR |
-| 7 | **Merge and live check** | Owner, then machine | Deployed to staging; a real login sees a value only the server has |
+| 7 | **Merge and live check** | Owner, then machine | Run against the local backend; a real login sees a value only the server has |
 
 Status values in a task file, in order: `todo`, `building`, `verifying`,
 `review`, `done`. A builder starts a task only when every `depends_on` task is
@@ -140,7 +140,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 | **V6 States** | Every state can actually be reached | Trigger each drawn state, plus loading, empty and error, through its real cause. A capture showing the app's generic error screen is a failed capture |
 | **V7 Flow walk** | A real person gets from start to finish | Walk the path as each user type the ticket names (new, existing without wallet, unverified, KYC pending, verified, creator, buyer), from a cold start and from resume |
 | **V8 Money attack** | Money cannot be lost, doubled or stolen | Same request twice (one debit only); double-tap; wrong PIN 5 times (locks); insufficient funds (clear shortfall); webhook replayed (no double credit) and forged (rejected); a failed transfer reverses; ledger equals Fintava balance |
-| **V9 Live seam** | The app really talks to the real backend | On staging: sign in through the real login (no injected token), see a value only the server has, create something and read it back through the API |
+| **V9 Live seam** | The app really talks to the real backend | Against the local backend: sign in through the real login (no injected token), see a value only the server has, create something and read it back through the API |
 | **V10 Device** | The release build works, not just debug | A signed release build on a real Android phone and a real iPhone: network, camera, push, deep links |
 | **V11 Checkpoint audit** | Nothing was missed so far | `docs/roles/AUDITOR.md`, at CHECK-1, CHECK-2 and CHECK-3 |
 
@@ -182,14 +182,17 @@ camera or deep links.
 3. **Remove.** Only after the logs show no calls to the old way for two weeks,
    in a `removal` task.
 
-**Before any money work:** staging exists (task OPS-03), the Fintava sandbox
-keys are in its secrets (OPS-02), and the nightly ledger check against Fintava runs (task MONEY-16).
+**Testing runs locally.** The backend runs on the builder's machine with a
+local `.env` holding the Fintava sandbox keys; the live server isn't touched.
+The phone reaches it over the same Wi-Fi or a tunnel, and Fintava's webhooks
+need the tunnel too (they can't reach `localhost`). The nightly ledger check
+(MONEY-16) runs before money goes live.
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.
 
 **Payments are tested one at a time, safest first:** credits, tips, unlocks,
 ticks, paid DMs, event tickets, bills, legal, school fees. Each one is tested
-on staging with the sandbox, then a small real payment, and all of them launch
+locally against the sandbox, then with a small real payment, and all of them launch
 with the app (R-20). The web stays on Flutterwave until after launch.
 
 **Nobody has a wallet until they open one** (R-6): identity checks happen
@@ -217,7 +220,7 @@ Checkpoints sit in the owner's list where they fall. Each is a task the owner
 signs:
 
 - **CHECK-0**: safe to start building (setup verified, protected routes,
-  staging, Fintava sandbox keys in place)
+  Fintava sandbox keys working locally)
 - **CHECK-1**: the app talks to the real backend, and the screens built so far
   match the design
 - **CHECK-2**: every payment path attacked and reconciled (V8)
@@ -254,6 +257,6 @@ No evidence pack, no merge. The owner's own tasks are verified the same way.
 - Any mismatch between our ledger and Fintava, of any size.
 - Something on the web isn't in the design (decision D14). It is neither kept
   nor cut until the owner rules.
-- A verifier cannot run a required pass (no device, staging down).
+- A verifier cannot run a required pass (no device, backend not running).
 - A task needs a third fix round.
 - Anyone believes they need a destructive git command or migration.

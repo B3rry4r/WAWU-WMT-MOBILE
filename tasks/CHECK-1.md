@@ -31,7 +31,7 @@ Dispatch an AUDITOR session over everything marked done so far.
 
 ## Capability checks
 
-- [ ] A tester signs in on staging with the real login and sees a seeded creator's real content (V9).
+- [ ] A tester signs in against the test backend with the real login and sees a seeded creator's real content (V9).
 - [ ] Every screen built so far is compared picture against picture in the audit, or listed as not reachable with a reason.
 - [ ] A preview build runs on a real Android phone and a real iPhone (V10).
 

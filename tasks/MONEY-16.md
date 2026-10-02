@@ -39,7 +39,7 @@ Compare against `GET /txn?customerId=` per customer, `GET /txn/merchant` for WAW
 
 ## Capability checks
 
-- [ ] A deliberately altered staging row is reported the next run.
+- [ ] A deliberately altered test row is reported the next run.
 - [ ] A clean night reports zero mismatches and says how many wallets it checked.
 
 ## Builder report

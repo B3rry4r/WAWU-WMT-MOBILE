@@ -18,8 +18,8 @@ backend behind them.
 
 ## What you own
 
-- **Outside contacts and setup:** Fintava docs and sandbox (OPS-02), staging
-  (OPS-03), the designer (OPS-04).
+- **Outside contacts and setup:** Fintava docs and sandbox (OPS-02), the
+  designer (OPS-04).
 - **Money:** the core every payment uses: the Fintava connection, accounts, the
   PIN, the ledger, the nightly check, pay-from-wallet with holds and refunds,
   and the PIN and pay sheets every payment screen reuses (MONEY-*). You hold
