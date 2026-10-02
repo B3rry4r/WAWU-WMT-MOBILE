@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 60 | 50 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 15 | 8 | 0 | 0 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
 
@@ -54,6 +54,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · KYC-01 · Verified: PASS, no defects (backend 7a64a51, mobile 5776ac3, checked with backend main 14a7fb2 and mobile main ca6d6cb merged). Full BVN and NIN in 0 of 823 columns and 0 log lines across six real boots; keyed HMAC confirmed; 14 of 14 mutants killed; 10 parallel checks never passed 3; production boots without settings (BVN check 503); protected 253/253; contract 105 suites, 2054 passed. One sandbox BVN lookup (docs example, refused, 422). Merge note: renumber this branch's BACKEND_GAPS G-21 (main now has G-21 to G-24).
 - 2 Oct 2026 · KYC-01 · BVN check served in wawu-backend (`wmt/KYC-01`): `POST /money/identity/bvn` gives A5's prefill once, A14 as `422 bvn_phone_mismatch`, stores only keyed hashes and last 4 digits (log capture and a whole-database scan prove it), 3 checks a day per person plus a per-caller throttle; production boots with no Fintava settings (503). App calls in `src/api/walletIdentity.ts`. Sandbox: 2 lookups, both refused (no sandbox BVN known). Status verifying.
 - 2 Oct 2026 · MONEY-07 · Round 2: the verifier's 2 defects fixed. The webhook skips every named rate limit (`short`, `medium`; a bare `@SkipThrottle()` skipped none), tested through the real global guard (30 deliveries in a second, 30 stored); a delivery with a NUL is stored once (raw body as bytes, NUL as U+FFFD in the parsed copy and the key). Backend and mobile main merged in. G-20 filed (Flutterwave webhook throttle, `trust proxy`). Back to verifying.
 - 2 Oct 2026 · MONEY-07 · Fintava webhooks built in wawu-backend (`wmt/MONEY-07` 9941aa0): `POST /api/hub/webhooks/fintava`, HMAC-SHA512 of the raw body checked in constant time (fails closed), each delivery stored once in `FintavaWebhookEvent` keyed on event, transaction reference and Fintava status (`ON CONFLICT DO NOTHING`), pending for MONEY-10 and MONEY-08; nothing moves money. Tested with documented payloads signed locally (no tunnel, R-25); no secret or personal data in logs. Gap G-19 (which field holds which reference). To verifying.
@@ -68,4 +69,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · AUTH-03: wawu-id texts a 6-digit sign-up code (`POST /auth/signup`, `/auth/phone/verify/start`, `/auth/phone/verify/confirm`) through Fintava's SMS route; the fourth wrong code makes the user wait (provisional 900 s); a phone-verified account can sign in without a verified email; occupation and account type are stored. Additive migration; real SMS send NOT RUN (needs Fintava sandbox keys).
 - 2 Oct 2026 · TEST-01 merged: the first-render test timeouts are fixed (preloads, warm-up renders, a fake clock, and the developer Showcase split into sections). 10 of 10 cold runs pass under heavy load.
 - 2 Oct 2026 · MONEY-03 merged: the pay-from-wallet sheet (purchase H14/H17/H18 and the send variant W10) matching the canvas to the pixel on shared parts only. Shared changes with it: MediaCard byline and image, IconTile strokeWidth, Card and BottomSheet inset hairlines, exact fractional line heights, and the kit's `normal` leading on kvLabel/kvValue/meta/cardTitle/errorLine/linkStrong.
-- 2 Oct 2026 · MONEY-03 · Lead ruling applied: kit variants on `line-height: normal` use `canvasNormalLineHeight` in the theme; the pay sheet's per-line overrides removed; H14, H17, H18, W10 and W11 still equal to the canvas.
