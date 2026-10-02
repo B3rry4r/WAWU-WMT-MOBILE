@@ -11,9 +11,11 @@ You build ONE task. Your prompt named it: `tasks/<ID>.md`.
 3. If the task lists open decisions, build the default written in
    `DECISIONS.md`. Put any number it needs in config with a
    `PROVISIONAL(...)` marker.
-4. Take artboard ids from the task file only. A code comment citing an
+4. Look up each of your artboards in `docs/designer/BRIEF.md`. Where it lists
+   a change, build the changed version: the designs are not being redrawn.
+5. Take artboard ids from the task file only. A code comment citing an
    artboard is never a source: canvases get renumbered.
-5. Make a branch: `wmt/<ID>` in each repo you will change. Record the gate
+6. Make a branch: `wmt/<ID>` in each repo you will change. Record the gate
    counts before you change anything (`npm run check` here; the backend's own
    checks there).
 

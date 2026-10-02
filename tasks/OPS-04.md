@@ -7,7 +7,7 @@ order: 5
 priority: launch
 repo: design
 type: ops
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: []
@@ -27,13 +27,11 @@ The canvas still draws Shop, and its figures are placeholders. Screens built fro
 
 ## Scope
 
-Write `docs/designer/BRIEF.md`: every change the designer must make, one per artboard id, with the ruling or fact behind it. At least: Shop to Schools on the Home tile and Me menu (R-2); no profile Shop tab (M3, R-9); no "Move to wallet" (W39, W40, R-11); NIN and address fields in Open your wallet, and no "blink" or liveness wording on A6 (`docs/fintava/naira-api.md`); fee lines showing Fintava's charge plus WAWU's (R-10, `docs/fintava/fees.md`), including bills, which are not free; the bank and licence lines from config (Loma Bank, R-1); crypto without BTC and a 90-second quote (`docs/fintava/cardex.md`); the ₦ glyph (D15). Then the owner sends it, and when the new export arrives: replace `design/`, re-run `render_design.py --inventory`, and record the changed hashes.
+Write `docs/designer/BRIEF.md`: every change the designer must make, one per artboard id, with the ruling or fact behind it. At least: Shop to Schools on the Home tile and Me menu (R-2); no profile Shop tab (M3, R-9); no "Move to wallet" (W39, W40, R-11); NIN and address fields in Open your wallet, and no "blink" or liveness wording on A6 (`docs/fintava/naira-api.md`); fee lines showing Fintava's charge plus WAWU's (R-10, `docs/fintava/fees.md`), including bills, which are not free; the bank and licence lines from config (Loma Bank, R-1); crypto without BTC and a 90-second quote (`docs/fintava/cardex.md`); the ₦ glyph (D15). The designs are not being redrawn (owner, 2 Oct 2026): every change in the brief is made in code, by the task that builds that screen.
 
 ## Capability checks
 
 - [ ] `docs/designer/BRIEF.md` lists every change above by artboard id, each with its ruling or fact, in words the designer can act on without this repo.
-- [ ] The new export has no Shop tile on H1 and no 'My purchases → orders' Shop link.
-- [ ] design/canvas-inventory.json is regenerated and the changed artboards are listed in the PR.
 
 ## Builder report
 
@@ -190,4 +188,4 @@ No open defects.
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: no new design export; the brief is applied in code.

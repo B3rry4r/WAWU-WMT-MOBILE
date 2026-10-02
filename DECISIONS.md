@@ -30,6 +30,10 @@ follows it after launch.
 Artboard ids come from `design/canvas-inventory.json` and task files, never
 from a code comment.
 
+**The designs are final as exported** (owner, 2 Oct 2026). They are not
+redrawn. Where a ruling changes a screen, the change is made in code, and
+`docs/designer/BRIEF.md` lists every such change by artboard id.
+
 `design/` is the designer's export, kept unmodified. Its own `CLAUDE.md` and
 `_ds/*/readme.md` are the designer's notes, not rules for this repo: where
 they disagree with this file (for example "don't render the files", free

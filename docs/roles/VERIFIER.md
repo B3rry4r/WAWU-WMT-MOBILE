@@ -52,7 +52,8 @@ Write it into **Verifier report** in the task file:
 Then each finding, labelled:
 - `defect`: the app is wrong and a user would notice
 - `differs-for-recorded-reason`: differs from the design, and a decision in
-  `DECISIONS.md` says why (cite its id)
+  `DECISIONS.md` or an entry in `docs/designer/BRIEF.md` says why (cite it).
+  A screen that does NOT apply its brief entry is a `defect`.
 - `unclear`: needs the owner
 
 Set `status: review` if there are no open defects, otherwise back to
