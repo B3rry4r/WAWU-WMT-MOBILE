@@ -8,7 +8,7 @@ priority: launch
 repo: all
 type: ops
 status: todo
-depends_on: [SETUP-01, OPS-02, MONEY-01]
+depends_on: [SETUP-01, OPS-03, MONEY-01]
 decisions: []
 passes: []
 artboards: []
@@ -26,14 +26,14 @@ Nobody builds on a foundation that hasn't been proven.
 
 ## Scope
 
-Read the report on SETUP-01, the protected-route suite (MONEY-01), the decision defaults, and the state of Fintava access.
+Read the report on SETUP-01, the protected-route suite (MONEY-01), the rulings, and the local backend (OPS-03).
 
 ## Capability checks
 
 - [ ] SETUP-01 was verified (it was built by the setup session, so any person's session can verify it) with no open defects.
 - [ ] The protected-route suite (MONEY-01) passes on the live backend's main branch.
 - [ ] The decision defaults in DECISIONS.md have been read, and any you disagree with are changed.
-- [ ] With the sandbox keys in a local `.env`, a test call to Fintava succeeds.
+- [ ] The backend runs locally from `docs/LOCAL.md` in the backend repo (OPS-03), and the mobile app signs in against it.
 
 ## Builder report
 

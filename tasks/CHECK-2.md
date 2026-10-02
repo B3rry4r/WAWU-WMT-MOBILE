@@ -8,7 +8,7 @@ priority: launch
 repo: all
 type: ops
 status: todo
-depends_on: [CHECK-1]
+depends_on: [OPS-02, CHECK-1]
 decisions: [R-20]
 passes: [V8, V11]
 artboards: []

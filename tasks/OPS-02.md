@@ -1,6 +1,6 @@
 ---
 id: OPS-02
-title: Fintava sandbox keys and the sandbox calls
+title: Fintava test keys: the first real calls
 owner: YOU
 area: OPS
 order: 3
@@ -13,7 +13,7 @@ decisions: []
 passes: []
 artboards: []
 ---
-# OPS-02 · Fintava sandbox keys and the sandbox calls
+# OPS-02 · Fintava test keys: the first real calls
 
 ## Read first
 
@@ -23,7 +23,7 @@ artboards: []
 
 ## Goal
 
-The money layer is built from Fintava's real API, not from guesses. Field names come from real responses.
+Money is built from Fintava's published docs (`docs/fintava/`), so nothing waits on this task. When the test (sandbox) keys arrive, this task runs the real calls and corrects anything the docs got wrong before money goes live (CHECK-2).
 
 ## Scope
 

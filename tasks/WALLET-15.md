@@ -36,7 +36,7 @@ GET fee quote for transfer, withdraw, card top-up and card order, from configura
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-The user pays Fintava's fee plus WAWU's fee (R-10). The quote is Fintava's fee for that action plus WAWU's fee from config, shown as one total with both parts in the breakdown. Fintava's fee per action comes from their answer to question 3 and goes into config.
+The user pays Fintava's fee plus WAWU's fee (R-10). The quote is Fintava's fee for that action plus WAWU's fee from config, shown as one total with both parts in the breakdown. Fintava's charges are in `docs/fintava/fees.md`. WAWU's fee is set as a merchant charge in Fintava's dashboard; config holds the same numbers so the quote shows the total before the user confirms.
 
 ## Capability checks
 

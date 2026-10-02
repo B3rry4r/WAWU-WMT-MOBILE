@@ -118,9 +118,9 @@ Store all three of customerId, walletId and accountNumber when an account opens.
    customer, so a user's bill is two steps: move the amount from their
    wallet to WAWU's, then pay the biller. If the biller fails, move it back.
    That's the S12 reversal (BILLS-02).
-3. **Fees.** The user pays Fintava's fee plus WAWU's on top (R-10). If
-   Fintava's bank-send fee is ₦30.75, the user pays ₦30.75 + ₦25 = ₦55.75.
-   The real Fintava fees are question 3.
+3. **Fees.** The user pays Fintava's fee plus WAWU's on top (R-10).
+   Fintava's real charges are in `fees.md` (bank send ₦40, so the user pays
+   ₦65). WAWU's fees are set as "merchant charges" in Fintava's dashboard.
 4. **The bank is Loma Bank.** The account examples name "Iyin Ekiti
    Microfinance Bank Limited (Loma Bank)", not "Fintava MFB", which is what
    the canvas prints on W15. The app shows the bank name from the API, and
@@ -198,9 +198,9 @@ app (R-20).
    can't be retried safely.
 2. Is there a hold or lien on a customer wallet that we missed? Until there
    is, we use WAWU's merchant wallet (R-19).
-3. What are the real fees for wallet-to-wallet, bank sends (what are
-   `lomaCharge` and `charges`), bills and SMS? Who pays them, sender or
-   merchant?
+3. Fees are answered (`fees.md`). Still to confirm: what `lomaCharge` and
+   `charges` in the responses are, and how a dashboard merchant charge shows
+   up in a response and a webhook.
 4. What are the account tiers and their limits, and how does an account move
    up a tier?
 5. What exact licence wording may the app show for Loma Bank?

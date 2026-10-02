@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: third-party
 status: todo
-depends_on: [OPS-02, MONEY-04]
+depends_on: [MONEY-04]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
 artboards: []

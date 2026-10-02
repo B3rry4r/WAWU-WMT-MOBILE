@@ -112,9 +112,10 @@ Profile tabs are Content, Services and About; M3 is not built.
 **R-10 · The user pays Fintava's fee plus WAWU's fee on top.** WAWU's fees
 are the design's: ₦10 to a WAWU user, ₦25 to a bank, 1.5% on card top-up,
 ₦1,500 for a card plus ₦500 delivery. Whatever Fintava charges for the same
-action is added to it (owner, 2 Oct 2026: "add ours on top"). Example: if
-Fintava charges ₦30.75 for a bank send, the user pays ₦55.75. The fee quote
-shows the total, read from config and Fintava, never from the canvas.
+action is added to it (owner, 2 Oct 2026: "add ours on top"). Fintava's
+charges are in `docs/fintava/fees.md` (₦40 for a bank send, so the user pays
+₦40 + ₦25 = ₦65). The fee quote shows the total, read from config, never
+from the canvas.
 
 **R-20 · Money is built on the real Fintava sandbox and ships at launch.**
 The keys are available. No mocks, no stand-ins, no feature flags or

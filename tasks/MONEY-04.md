@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: contract
 status: todo
-depends_on: [OPS-02]
+depends_on: []
 decisions: []
 passes: [V1]
 artboards: []

@@ -2,6 +2,8 @@
 
 - `naira-api.md`: what Fintava's Naira API does, what that changes in our
   tasks, and the questions still open for Fintava. Start here.
+- `fees.md`: Fintava's charges, what the user pays, and where WAWU's fee
+  is set.
 - `cardex.md`: Cardex, their crypto partner, and how crypto is built on it.
 - `reference/`: Fintava's published API pages, saved on 2 Oct 2026
   (`reference/INDEX.txt` lists them).

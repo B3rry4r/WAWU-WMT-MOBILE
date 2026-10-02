@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-id
 type: backend-endpoint
 status: todo
-depends_on: [OPS-02]
+depends_on: []
 decisions: [R-6]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
