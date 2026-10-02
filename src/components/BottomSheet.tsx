@@ -18,6 +18,12 @@ export const sheetMetrics = {
   shadowY: -12,
   shadowBlur: 40,
   shadowAlpha: 0.5,
+  /**
+   * The top hairline, drawn as the kit does: `inset 0 1px 0 var(--border-hairline)`
+   * inside the 10 px top padding, so the grabber sits 10 below the sheet's edge.
+   * A border would sit outside the padding and push everything down by its width.
+   */
+  edge: 1,
 } as const;
 
 export type BottomSheetProps = {
@@ -76,9 +82,11 @@ export function BottomSheet({
             styles.sheet,
             {
               backgroundColor: colors.surfaceElevated,
-              borderTopColor: colors.borderHairline,
               gap,
-              boxShadow: [{ offsetX: 0, offsetY: sheetMetrics.shadowY, blurRadius: sheetMetrics.shadowBlur, color: blackAt(sheetMetrics.shadowAlpha) }],
+              boxShadow: [
+                { offsetX: 0, offsetY: sheetMetrics.shadowY, blurRadius: sheetMetrics.shadowBlur, color: blackAt(sheetMetrics.shadowAlpha) },
+                { offsetX: 0, offsetY: sheetMetrics.edge, blurRadius: 0, color: colors.borderHairline, inset: true },
+              ],
             },
           ]}
         >
@@ -112,7 +120,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.screenW,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
-    borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: sheetMetrics.padTop,
     paddingHorizontal: layout.gutter,
     paddingBottom: sheetMetrics.padBottom,

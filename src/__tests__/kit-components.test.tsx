@@ -1,21 +1,53 @@
 import { render, screen } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { Platform } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text as NativeText,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Avatar, hues, initialsOf } from '@/components/Avatar';
 import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { amountTracking, Money } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { Showcase } from '@/features/showcase/Showcase';
-import { text } from '@/theme';
+import { canvasNormalLineHeight, text } from '@/theme';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
+
+/*
+ * Nothing here depends on how fast the machine is or how warm Jest's cache is.
+ *
+ * React Native's components load on first use (babel-preset-expo makes the
+ * `react-native` import lazy), so the first render in this file used to pay
+ * for transforming them: Modal alone takes about 5 s with a cold cache, all
+ * inside one test's 5 s budget. Touching every primitive the components and
+ * the showcase draw moves that one-off cost to file load, where no test
+ * timeout applies (the same fix as PinSheet.test.tsx).
+ */
+void [AccessibilityInfo, ActivityIndicator, Modal, Pressable, ScrollView, NativeText, TextInput, View];
 
 let mockScheme: 'light' | 'dark' = 'dark';
 jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
   __esModule: true,
   default: () => mockScheme,
 }));
+
+/*
+ * The showcase draws every kit component, so rendering it once before the
+ * first test pays whatever React Native still does on a component's first
+ * render (beyond loading its module) with a 60 s budget of its own.
+ */
+beforeAll(async () => {
+  const { unmount } = await render(<Showcase />);
+  await unmount();
+}, 60_000);
 
 const flat = (style: unknown): Record<string, unknown> => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
 
@@ -181,20 +213,36 @@ describe('kit copy sizes', () => {
     expect(screen.getByRole('header', { name: 'Unlocked' })).toBeTruthy();
     expect(screen.getByRole('header', { name: 'Enter your PIN' })).toBeTruthy();
     expect(text.sheetTitle.letterSpacing).toBeCloseTo(-0.66);
-    expect(text.sheetTitle.lineHeight).toBe(Math.round(22 * 1.15));
-    expect(text.sheetTitleSm.lineHeight).toBe(Math.round(21 * 1.15));
+    expect(text.sheetTitle.lineHeight).toBe(22 * 1.15);
+    expect(text.sheetTitleSm.lineHeight).toBe(21 * 1.15);
   });
 
-  it('draws a banner body at 13 on a 1.45 line, 19 px, apart from meta on the font default 1.3', () => {
-    expect(text.bannerBody.lineHeight).toBe(Math.round(13 * 1.45));
-    expect(text.meta.lineHeight).toBe(Math.round(13 * 1.3));
+  it('draws a banner body at 13 on a 1.45 line, 18.85 px exactly as CSS computes it, apart from meta on the canvas normal line, 17 px', () => {
+    expect(text.bannerBody.lineHeight).toBe(13 * 1.45);
+    expect(text.meta.lineHeight).toBe(17);
   });
 
-  it('draws the inline error line (auth.js line 14) and the strong link (wallet.js line 81) untracked on the font default 1.3 line', () => {
+  it('draws the inline error line (auth.js line 14) and the strong link (wallet.js line 81) untracked on the canvas normal line, 17 and 18 px', () => {
     expect(text.errorLine.letterSpacing).toBe(0);
-    expect(text.errorLine.lineHeight).toBe(Math.round(13 * 1.3));
+    expect(text.errorLine.lineHeight).toBe(17);
     expect(text.linkStrong.letterSpacing).toBe(0);
-    expect(text.linkStrong.lineHeight).toBe(Math.round(14 * 1.3));
+    expect(text.linkStrong.lineHeight).toBe(18);
+  });
+
+  it('puts every kit variant on line-height normal on the canvas line: kvLabel 18, kvValue 18, meta 17, cardTitle 20, errorLine 17, linkStrong 18', () => {
+    expect(text.kvLabel.lineHeight).toBe(18);
+    expect(text.kvValue.lineHeight).toBe(18);
+    expect(text.meta.lineHeight).toBe(17);
+    expect(text.cardTitle.lineHeight).toBe(20);
+    expect(text.errorLine.lineHeight).toBe(17);
+    expect(text.linkStrong.lineHeight).toBe(18);
+  });
+
+  it('gives the canvas line for `line-height: normal`: Alan Sans ascent and descent, each rounded (17 at 13.5, 18 at 14.5)', () => {
+    expect(canvasNormalLineHeight(13.5)).toBe(17);
+    expect(canvasNormalLineHeight(14.5)).toBe(18);
+    expect(canvasNormalLineHeight(13)).toBe(17);
+    expect(canvasNormalLineHeight(15)).toBe(20);
   });
 
   it('keeps muted copy apart from secondary: same size and colour, taller line (1.45 against 1.4)', () => {

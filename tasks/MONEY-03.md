@@ -7,7 +7,7 @@ order: 45
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: todo
+status: done
 depends_on: [UI-02, MONEY-02, MONEY-04]
 decisions: [R-6, R-10]
 passes: [V1, V5, V6]
@@ -51,11 +51,288 @@ the way into Open your wallet (docs/WORKFLOW.md section 7, "Links between screen
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Builder session, 2 Oct 2026, branch `wmt/MONEY-03`, origin/main ab2df44 (SHELL-01) merged in.
+- Files: `src/components/pay-sheet/` (`PaySheet.tsx`, `money.ts`, `glyphs.tsx` (deleted in round 3), `index.ts`, `__tests__/PaySheet.test.tsx`, `__tests__/money.test.ts`); `src/app/preview/pay-sheet.tsx` (dev-only state gallery, `?state=enough|short|paying|confirming|failed|no-wallet|loading|zero-fee|send`, redirects home when `__DEV__` is false); `SHARED-CHANGES.md` (2 rows).
+- Props in, UI out: item, price (kobo), detail rows, fee lines (label + kobo, any can be 0), wallet (`loading` / `none` / `open` with Fintava's balance), status (`review` / `paying` / `confirming` / `failed`), callbacks. The total is price + fee lines added in integer kobo inside the sheet, so the Total row, the pay button, "This costs" and the shortfall can't disagree (brief rule 5). Enough vs not enough comes from balance against that total.
+- Check "with too little money, the sheet shows the shortfall and a way to add money": jest `PaySheet.test.tsx` (₦1,200.00 balance against ₦2,523.25 shows "Top up at least ₦1,323.25", the Unlock button is gone, and "Add ₦1,323.25" calls `onAddMoney(132325)`; a bank-send case adds ₦40 + ₦25 to the shortfall). Screenshot `pay-sheet-short-*`.
+- Total = amount + fees in kobo, ₦0 fee included: `money.test.ts` and `PaySheet.test.tsx` (₦0 fee line shows "₦0", Total and button show ₦2,500). Non-integer, negative and unsafe amounts throw.
+- Other states, each tested: paying (button disabled, no second `onPay`), still confirming (Refresh, Contact support), failed (server message, Try again, Cancel), no wallet (hands over via `onOpenWallet`, MONEY-13), loading balance (pay disabled), send ("They get ₦25,000", "Send · ₦25,065").
+- "Matches H14 in light and dark": NOT claimed here; for the verifier. Evidence: `build/screens/MONEY-03/` has 18 state shots (9 states, light and dark, 390 px, from `npx expo export --platform web --dev`, then Playwright and Chromium) plus `side-H14-enough-*`, `side-H17-short-*`, `side-W10-send-*` beside `build/design_shots/` renders. Built to the BRIEF changes (H14: Fintava's charge row and Total, button shows the total; H17: charge under the price, shortfall includes it), not the canvas's "No fee".
+- Known differences: icons are drawn from Views (no icon shapes outside TabIcon yet); the thumbnail in the preview is the app icon; the verified tick in the subtitle isn't drawn; type sizes use the nearest `@/theme` sizes (e.g. 13.5 for the canvas's 13). The "still confirming" and "failed" copy is my own, following H18, and makes no promise about refunds (rule 6).
+- Gates before: tests 5 passed (2 suites); gates 9 run, 6 files, 0 fail, 0 warn, 0 accepted; tsc and lint clean. After (with main merged): tests 22 passed (5 suites); gates 9 run, 23 files, 0 fail, 0 warn, 0 accepted; tsc and lint clean; `npm run check` exit 0.
+- Shared-change requests: icon shapes added to TabIcon or a general Icon; adopt UI-02's sheet and UI-01's buttons, text and money display once they land. No backend gap: the fee quote and balance are inputs, served by MONEY-core tasks.
+- Round 2 (origin/main e657ad5 merged): defect 1 fixed, `PayItem.by` + `verified` draws the tick after the seller's name (test). Defect 2 fixed, rules, card edges, sheet top edge and Cancel outline are 1 px (`LINE = 1`; no border-width token exists). Owner ruling 3: a "Fees" subtotal row before Total when the fee has two or more parts (₦40 + ₦25 shows Fees ₦65; test). Ruling 4: W10 send variant filed for WALLET-02 (SHARED-CHANGES section 2 row 2). Ruling 5: View icons stay (row 6). Pay ignores a second tap until `status` changes or `onPay`'s promise settles (a short guard for a void callback); 3 tests. The preview drives the tick from the URL (`&tick=off`), not a literal. After: `npm run check` exit 0, jest 6 suites, 54 tests (29 in pay-sheet); gates 9 run, 30 files, 0 fail, 0 warn, 0 accepted; screenshots re-shot in `build/screens/MONEY-03/`.
+- Round 3 (origin/main 5d4208f, then 6b7eaff merged). **Owner overruled two deferrals on 2 Oct 2026**: the View-drawn icons (SHARED-CHANGES section 1 row 6) and leaving W10's send styling to WALLET-02 (section 2 row 2). Both rows are removed and both are built here. Icons: `glyphs.tsx` deleted; the sheet uses `Icon` and `VerifiedTick` from `@/components/icon` with the canvas's names, sizes and strokes (CircleCheck 20/2.2, Wallet 19/2.2, Plus and RotateCcw 19/2.2 in buttons, Clock 32/2.4 as H18; `item.verified` is now `'creator' | 'pro'`). The failed mark (no pay-sheet artboard draws it) is `X`, following W14 (Send · failed), at H18's 32/2.4 sheet size; main 9f35e9f added `X` to the icon set, so no request is filed. W10: `variant: 'send'` renders W10's body (avatar, "Sending to", the amount at 40, then Bank, Account, fee parts, Fees, Total and `notes` after Total; every amount with faded kobo as the kit's `Amt`), "They get" and "Send ₦25,065"; compared with `render_design.py W10` light and dark (`side-W10-send-*`). The 360 ms double-tap timer is cleared on unmount (test). Fees-row ruling recorded as DECISIONS R-23 (renumbered from R-21: main took R-21 and R-22). `npm run check` exit 0: jest 7 suites, 63 tests (25 pay-sheet); gates 9 run, 32 files, 0 fail, 0 warn, 0 accepted.
+- Round 4 (branch 78f3d87 and origin/main 6b7eaff, both already merged). R3-1: the sheet uses UI-01's `Button` (lg, primary and secondary, `icon`, `loading`), `Money` for every on-screen amount (kobo in, R-21; whole purchase prices without ".00", real kobo always shown) and `Text` (h3 title, secondary lines); the preview's back control is `IconButton`. `PillButton` and `Amount` are deleted, and `formatNaira` now wraps `formatMoney`. Kit sizes with no `Text` variant are named constants citing the kit, filed as SHARED-CHANGES section 1 row 6; the kit's `Av` and `Flag` as row 8. Section 2 row 1 is cut down to the UI-02 sheet host and lists what UI-02 provides. R3-2: measured in the browser, `Money` at 40 px is 44 px tall because its kobo run inherits the absolute 40 px line height; giving that run 28.8 px makes it exactly 40 (the kit's `line-height: 1`). That is inside `Money`, so it is filed as row 7 (with the kit's -0.025em tracking). W10 avatar-top-to-card is 166 CSS px against the canvas's 160 in light and dark; 4 of the 6 px are this line box. `npm run check` exit 0: jest 8 suites, 95 tests; gates 9 run, 40 files, 0 fail, 0 warn, 0 accepted; the 2 lint warnings are in main's `Button.tsx`.
+- Round 5 (branch and origin/main 7148749 merged: SHARED-01 and UI-02). No local copies of shared parts remain: the purchase variant opens in UI-02's `BottomSheet` (closing calls `onCancel`; not while paying; new `visible` prop), rows are `GroupedList` + `KeyValueRow` (its label keeps `flexShrink: 0`), the wallet card is `Card` with `CurrencyFlag`, the W10 avatar is `Avatar` (decorative, named from the new `PayItem.displayName`, "Chidinma Okoro" gives "CO"), and copy uses `Text` `meta`, `bannerBody`, `kvValue`, `cardTitle`, `sheetTitle` and `muted`. Deleted: every item in SHARED-CHANGES Applied #6 and #8, plus the local `Card`, `Row`, panel and grabber. W10, avatar top to card: 162 CSS px after `Money`'s fix, 161 after trimming "Sending to" to the kit's normal leading (`SENDING_TRIM`), against the canvas's 160 (light and dark); avatar to text 16 = 16, amount to card 22.5 = 22.5, text block 59 against 58. H14 in the shared sheet: the grabber-to-header space is 2 px more (the sheet's fixed 18 gap), filed as section 1 row 9. Section 2 row 1 is removed (UI-02 is adopted). `npm run check` exit 0: jest 12 suites, 210 tests; gates 9 run, 59 files, 0 fail, 0 warn, 0 accepted; lint 0 warnings.
+- Round 6 (origin/main f8d8277 merged: MONEY-02; main's new task body, `depends_on` and `decisions` kept). My request row 9 (the `BottomSheet` gap prop) is applied on main as Applied "MONEY-02 #10" and removed from section 1; the purchase variant passes `gap={16}` and its wrapper View is gone. H14 and H17, grabber to header: 20 = 20 px (was 22), light and dark; edge to grabber is 10 against 9, a `BottomSheet` border detail filed as section 1 row 11. W10, avatar top to card 160 = 160 and text block 58 = 58, light and dark: the canvas's "Sending to" is `line-height: normal`, which the browser makes Alan Sans's ascent and descent each rounded (13 + 4 = 17 px at 13.5), not 1.3 × 13.5; `SENDING_TRIM` now trims to that. No shared variant was needed. Per the task's new scope and R-27, the no-wallet state shows no balance and no Pay; the "Open your wallet" button and `onOpenWallet` are removed (KYC-05 adds the entry). The sheet draws no kit error line and no strong link, so `errorLine` and `linkStrong` have no use here. New tests: no wallet means no balance and no Pay; ₦5,000 in the wallet unlocks ₦2,500 + ₦23.25 = ₦2,523.25. `npm run check` exit 0: jest 13 suites, 245 tests; gates 9 run, 69 files, 0 fail, 0 warn, 0 accepted; lint 0 warnings.
+- Round 7 (Lead-authorised row 11, 2 Oct 2026): `BottomSheet` draws its top hairline as an inset shadow inside the 10 px padding, as the kit's `sheet()` does, not a border outside it. Panel edge to grabber, light and dark: H14 9 = 9, H17 9 = 9 (both 10 before); grabber to header still 20 = 20. W11 (PIN sheet): edge to grabber 9 = 9 (was 10), panel top 398 = 398 (was 397); title, dots and keys from the grabber unchanged at 54 / 115 / 190 = canvas. Row 11 moved to Applied. `kitNormalLeading` left as it is (Lead). `npm run check` exit 0: 13 suites, 245 tests; gates 9 run, 69 files, 0 fail, 0 warn.
+- Round 8 (verifier b759631, F1; origin/main 8f0d90c merged). Lead-authorised additive shared changes, each in SHARED-CHANGES Applied: `MediaCard` `byline` and `image` (the pay sheet's `Header` is now `MediaCard`, tick between name and "· Video · 18 min"), `IconTile` `strokeWidth` (H18's 72 disc with a 32 glyph at 2.4 is now `IconTile`), and `Card`'s edge as the kit's inset shadow. H17's banner title is trimmed to the canvas's `normal` line (18 against `kvValue`'s 19), as W10's "Sending to" is. Measured at 390 px, light and dark: H14 and H17 edge to grabber 9 = 9, grabber to header 20 = 20, wallet card 67 = 67, banner 68 = 68, gaps equal (the KV card is one brief row taller); W10 avatar top to card 160 = 160, text block 58 = 58; W11 (`?biometric=face&forgot=1`) sheet edge 397 = 397 and every band at the canvas's position (key digits 0.5 px shorter ink); H18 (the confirming state) is 1 px taller, because `style()` in `@/theme` rounds `muted` (19.575 to 20, twice) and `sheetTitle` (25.3 to 25), which a shared theme change would fix. `npm run check` exit 0: 13 suites, 248 tests; gates 9 run, 69 files, 0 fail, 0 warn.
+- Round 9 (Lead-authorised theme change): `style()` keeps exact line heights (no rounding); new `canvasNormalLineHeight` in `@/theme` for `line-height: normal`. The margin trims are gone; four lines the kit leaves at `normal` take that line directly ("Sending to", H17's banner title, the wallet card's title and line). Measured at 390 px, light and dark (canvas = built): H14 edge to grabber 9 = 9, grabber to header 20 = 20, wallet card 67 = 67; H17 the same and banner 68 = 68; H18 sheet edge 485 = 485 (was 484), buttons at 206 = 206; W10 avatar to card 160 = 160, avatar to text 16 = 16, text block 58 = 58, text to card 22.5 = 22.5; W11 sheet edge 397 = 397, title / dots / keys from the grabber 54 / 115 / 190 at 2x. All 13 suites pass (249 tests).
+- Round 10 (Lead ruling): the kit variants on `normal` (`kvLabel`, `kvValue`, `meta`, `cardTitle`, `errorLine`, `linkStrong`) take `canvasNormalLineHeight` in the theme, and the pay sheet's per-line overrides for them are gone; only W10's "Sending to" keeps the helper (no 13.5 variant on `normal`). Every point in the round 9 table re-measured equal to the canvas in light and dark, plus W10's card-row labels (19.5 / 69.5 / 119.5 / 169.5 / 219.5 = canvas) and the Showcase kv rows (50 high, labels centred, unchanged). 13 suites, 250 tests pass.
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier session, 2 Oct 2026, fresh (did not build this task). Checked 988808c in a separate detached worktree; evidence in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/` (scratchpad, not committed).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0: tsc and lint clean; jest 5 suites, 22 tests passed; gates 9 run, **23 files scanned** (all 6 pay-sheet files and the preview route among them), 0 fail, 0 warn, 0 accepted, baseline 0; tasks 187 OK. Log: `check.log` |
+| V5 Picture | failed (2 minor defects, below) | H14, H17, W10 rendered (`design_shots/`); my own 390 px light and dark shots of all 9 preview states from `expo export --platform web --dev`, served on 8793, Playwright + Chromium 1194 (`shots/`); side by side `side-H14-enough-*.png`, `side-H17-short-*.png`, `side-W10-send-*.png`, zoom `zoom-H14-*.png`. Spacing, row pitch (50 px), button height (54 px), card and wallet card positions match H14 to within 1 px |
+| V6 States | passed | Every state reached through its cause, which for a props-in component is its props: enough, not enough (shortfall ₦1,323.25, "Add ₦1,323.25"), paying (button disabled, spinner), still confirming, failed, no wallet, loading balance (pay disabled), ₦0 fee, send ("They get ₦25,000", "Send · ₦25,065"). No page errors in either theme. Network/server causes belong to the flow tasks that use the sheet (HOME-12, MONEY-19) |
+
+Capability checks, as written:
+- "With too little money, the sheet shows the shortfall and a way to add money": **passed**. Screenshot `shots/pay-sheet-short-*.png`: "This costs ₦2,523.25. You have ₦1,200.00.", Fintava's charge under the price, "Top up at least ₦1,323.25", "Add ₦1,323.25", Cancel; the Unlock button is gone. My test: 1 kobo short shows "Add ₦0.01"; exactly enough shows the pay button.
+- "It matches H14 in light and dark": **not yet**. Layout, order, copy (as amended by BRIEF H14) and both themes match; two visible differences have no recorded reason (defects 1 and 2).
+
+Diff vs report: `git diff ab2df44...988808c --stat` is 11 files, exactly the builder's list plus LOG, PROGRESS and this file. Nothing in `src/theme`, `src/api`, any `_layout.tsx`, `src/components/pin-sheet/`, TabIcon/TabBar, package.json or app.json. `src/components/pay-sheet/` is inside the ticket's own scope. Note: local main is now 6595e9d (LOG/PROGRESS wording only), one commit past the ab2df44 the branch merged; WORKFLOW 8.4 wants it merged again before the PR.
+
+Money (read `money.ts`, plus my own jest edge tests, `zz-verifier.test.tsx`, `edge-tests.log`, 9 passed): total = price + every fee line as integer kobo sums; shortfall is an integer difference; display splits naira from kobo with `%` and an exact `/100` of a multiple of 100. No float arithmetic on money (the only floats are style sizes). Checked 0 (₦0), 1 (₦0.01), 9, 10, 99, 100 (₦1), 101, 252325 (₦2,523.25), 99999999 (₦999,999.99), 2502575 (₦25,025.75), MAX_SAFE_INTEGER (₦90,071,992,547,409.91); 1,000 one-kobo fees sum exactly; negative, fractional, NaN, Infinity and overflowing totals throw. ₦0 fee shows "₦0" and Total equals the price.
+
+Facts: no fee, rate or amount literal in the component (`PaySheet.tsx`, `money.ts`, `glyphs.tsx`); every amount and label arrives as a prop. The brief's sample values (₦23.25, ₦40 + ₦25) live only in the dev-only preview route and tests. No em-dashes. No refund promise: confirming says "hasn't been confirmed yet. Check again before you pay a second time"; failed says "didn't complete. Check your Naira wallet before you try again" (BRIEF rule 6 respected). Rule 5 respected: Total row, pay button, "This costs" and the shortfall all use the same total.
+
+### Findings
+
+1. **defect** (V5, minor): the creator's verified tick in the sheet header is not drawn. H14 and H17 show a blue tick after "Chidi Eze"; `PayItem` (`src/components/pay-sheet/PaySheet.tsx:11-17`) has no way to say the seller is verified, and `Header` (`PaySheet.tsx:216-240`) draws the subtitle as plain text. The builder lists it as a known difference, but no DECISIONS or BRIEF entry removes it.
+2. **defect** (V5, minor): row dividers, card borders, the sheet's top edge and the Cancel button border are twice the canvas's weight. `StyleSheet.hairlineWidth * 2` (`PaySheet.tsx:255, 357, 380, 402`) is 2 px on web, measured 4 device px at 2x against the canvas's 2 (`zoom-H14-*.png`); on a 3x phone it would be about 0.67 px instead, so the weight changes by platform. The canvas draws 1 px.
+3. **unclear** (W10, BRIEF rule 3): with two fee parts the sheet shows "Fintava's charge ₦40", "WAWU's fee ₦25", then "Total ₦25,065", but never the total fee (₦65). Rule 3 reads "Fintava's charge + WAWU's fee = total fee, then the Total", and BRIEF W10 writes "₦40 + ₦25 = ₦65, Total ₦25,065.00"; but its layout examples ("two rows plus a total") can be read either way. The component cannot show a total-fee line (`PaySheet.tsx:124-125`), so this needs the owner's reading before WALLET-02 uses it.
+4. **unclear** (W10): W10 draws Fee and Total with faded kobo always ("₦25,065.00"), and Note after Total; the sheet uses H14's whole-naira style for every row ("₦25,065", `money.ts:55-59`) and puts detail rows before the fees (`PaySheet.tsx:123-124`). The full W10 screen is WALLET-02's, so whether the sheet should follow H14 or W10 here is the owner's call.
+5. **unclear** (icons): the wallet, plus, clock, cross and check-ring marks are drawn from Views (`glyphs.tsx`) and only roughly match the canvas's Lucide shapes (H17 banner wallet most visibly). Requested in SHARED-CHANGES section 1 row 1, which is a request, not a ruling, so it is not a recorded reason yet.
+6. **differs-for-recorded-reason**: "Fee: No fee" and "Unlock · ₦2,500" (H14) and "₦2,500 / ₦1,300" (H17) are replaced by the Fintava's charge row, Total and totals on the buttons: BRIEF H14, H17, rules 3 to 5, DECISIONS R-10. The ₦ sign is drawn by the platform fallback font at a different weight from the canvas's: DECISIONS D15 / BRIEF section 1. The thumbnail (app icon) and the grey or black backdrop are preview-route sample data, not the component.
+
+Notes (not defects): the sheet has no latch of its own against a double tap; two taps calls `onPay` twice unless the caller flips `status` to `paying` on the first (my test: one call when the caller does, two when it doesn't). The server's idempotency belongs to the money path's V8. A malformed quote (e.g. a fee of 23.25 kobo) throws during render and the sheet shows nothing (`PaySheet.tsx:87`, `money.ts:15-19`); the host needs an error boundary. `money.ts:2-5` says "Nothing here divides", but line 46 divides (exactly, by 100). Several style sizes are token arithmetic with literal nudges (`+ 0.5`, `* 0.72`, `- 0.01`, `opacity: 0.5`; `PaySheet.tsx:388-450`), which the gates accept.
+
+Verdict: 2 open defects (1, 2), 3 unclear for the owner (3 to 5). Status back to `building`.
+
+### Round 2
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked f890056 (3edc9bd fixes, 970730e merge of origin/main e657ad5, f890056 report) in a fresh detached worktree. I exported to web with `expo export --platform web --dev --clear` (Metro cache cleared), served it on 8793 and shot it with Playwright + Chromium 1194 at 390 px. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/` (`shots2/`, `side2-*`, `zoom2-*`, `grid2-*`, `check2.log`, `edge-tests2.log`, `zz-verifier2.test.tsx`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 after the merge: tsc and lint clean; jest 6 suites, 54 tests passed; gates 9 run, **30 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 187 OK (`check2.log`) |
+| V5 Picture | passed | H14 beside the build, light and dark (`side2-H14-enough-*.png`, `zoom2-H14-header-*.png`); H17 and the send case re-shot (`shots2/pay-sheet-short-*`, `shots2/pay-sheet-send-*`) |
+| V6 States | passed | All 9 preview states re-shot in light and dark, with no page errors (`shots2/`, `grid2-others-*.png`) |
+
+- **Defect 1, closed.** The verified tick is drawn after "Chidi Eze" and before "· Video · 18 min" in every state that has a header, matching H14 and H17 in both themes (`zoom2-H14-header-light.png`). `PayItem.by` and `verified` are props; the builder's test covers the case with no tick.
+- **Defect 2, closed.** I measured the dividers and card edges at 2 device px at 2x (1 CSS px), the same as the canvas. In round 1 they were 4. `LINE = 1` at `PaySheet.tsx` replaces `hairlineWidth * 2` at every place I listed.
+- **Unclear 3, resolved by the owner's ruling.** When there are two fee parts, the send shows "Fintava's charge ₦40", "WAWU's fee ₦25", "Fees ₦65", then "Total ₦25,065" and "Send · ₦25,065". There is no Fees row with one part. The not-enough card uses the same rows. My test with parts of ₦15.75 and ₦0 shows a Fees row of ₦15.75, and the shortfall includes it ("Add ₦2,515.75").
+- **Unclear 4, deferred by the owner** to WALLET-02 (SHARED-CHANGES section 2, row 2). Not a finding for this task.
+- **Unclear 5, the owner keeps the View icons** until the shared icon request is done (SHARED-CHANGES section 1, row 6). Not a finding for this task.
+- **Double-tap guard: tried myself and judged safe for this component.** My jest tests (`edge-tests2.log`, 6 passed):
+  - Three taps in one React batch, before any re-render, call `onPay` once. Round 1 called it twice.
+  - With a void `onPay` that never changes `status`, taps inside 360 ms are ignored, and a tap after 361 ms calls `onPay` again.
+  - With a promise, the guard holds past 5 s until the promise settles. A rejected promise also releases it.
+  - The cycle review, then paying, then failed, then review allows paying again.
+
+  In the browser, a double-click on "Unlock · ₦2,523.25" produced one navigation to `state=paying`.
+
+  The 360 ms release only applies to a caller that returns nothing and never sets `paying`. Per the prop's contract, that caller opens the PIN sheet next, so a later tap at worst reopens the PIN step. No debit happens in `onPay` itself. The real protection against a double debit is the money path's own idempotency (its V8). I'd keep it, and have HOME-12 and MONEY-19 return the promise or set `paying` as the contract asks.
+- **Merge.** The branch against main e657ad5 changes only the builder's files (`src/components/pay-sheet/`, the preview route, SHARED-CHANGES, LOG, PROGRESS, this file). SHELL-02 and SHELL-03 came in unchanged, and `npm run check` is green. `SHARED-CHANGES.md` has no conflict markers. Its row numbers are unique in each table: section 1 has rows 1 to 6 and section 2 has rows 1 to 2.
+- Facts are unchanged from round 1: no literal fee in the component, no em-dashes, and no refund promise.
+
+Notes (not defects):
+- The owner's three rulings (Fees subtotal, W10 deferred, View icons) are recorded only in this file and in SHARED-CHANGES, not in DECISIONS.md or the brief. Recording the Fees-row reading of BRIEF rule 3 there would stop the next screen that shows a fee from asking again.
+- SHARED-CHANGES section 1 row 6 doesn't list the new View-drawn verified tick (`VerifiedTick` in `glyphs.tsx`) among the shapes to replace.
+- `setTimeout(release, motion.slow)` is not cleared on unmount. That is harmless because it only writes a ref.
+
+Round 2 verdict: no open defects. Status `review`.
+
+### Round 3
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked 8b079e4, which sits on main 6b7eaff, in a fresh detached worktree that I removed afterwards. I exported with `expo export --platform web --dev --clear`, served it on 8793, and shot it with Playwright + Chromium 1194 at 390 px in light and dark. All 10 preview states rendered, including `send` and `send-short`. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/`: `shots3/`, `design_shots3/`, `side3-W10-send-*.png`, `icons3-*.png`, `plus-and-sendshort.png`, `check3.log`, `edge-tests3.log` and `zz-verifier3.test.tsx`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0: tsc and lint clean; jest 8 suites, 95 tests passed; gates 9 run, **40 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 187 OK (`check3.log`) |
+| V5 Picture | failed (defect R3-2) | W10 beside the send state in light and dark (`side3-W10-send-*.png`); H14 and H17 icons and ticks (`icons3-*.png`) |
+| V6 States | passed | All 10 preview states in light and dark, with no page errors (`shots3/`) |
+
+Checks:
+1. **Send variant against W10, light and dark.**
+   - Matches: the avatar (CO, coral, 64), "Sending to Chidinma Adaeze Okoro", the amount at 40 with faded kobo, and the card rows in the order Bank, Account, fee parts, Fees, Total, Note. Every card amount shows its kobo at 0.72 size and 50% opacity (`Amount`, `KOBO_SCALE`, `styles.kobo`). The wallet card, the 54 px button and the 50 px row pitch also match.
+   - Differences with a recorded reason:
+     - The Fee row became "Fintava's charge ₦40.00", "WAWU's fee ₦25.00" and "Fees ₦65.00" (BRIEF rule 3, W10 entry, DECISIONS R-23).
+     - Total ₦25,065.00 (BRIEF W10).
+     - "They get ₦25,000" above the button, and "Send ₦25,065" (BRIEF rule 5, W10 entry).
+     - The ₦ sign comes from the platform fallback font (D15).
+     - The status bar and the exact top offset belong to the preview route, not the component.
+   - One difference without a recorded reason: defect R3-2.
+2. **Icons.**
+   - Every mark comes from `@/components/icon`, matching the generator's `I()` calls:
+     - Wallet 19 / 2.2 (kit `banner`)
+     - CircleCheck 20 / 2.2 (kit `fromWallet`)
+     - Plus and RotateCcw 19 / 2.2 (kit `Btn` lg)
+     - Clock 32 / 2.4 (H18)
+     - `VerifiedTick` 'pro' at 13 (H14 and H17: `tick('pro', 13)`)
+   - The failed state's X takes W14's icon name at H18's 32 / 2.4 inside H18's 72 px disc. No pay-sheet artboard draws a failed state; the coordinator recorded this, and I accept it.
+   - `glyphs.tsx` is gone, and no hand-drawn mark is left in `src/components/pay-sheet/`. The ₦ coin is text, as on the canvas.
+   - I checked the tick again: blue, after "Chidi Eze", in H14 and H17, light and dark.
+3. **SHARED-CHANGES: failed (defect R3-1).** There are no conflict markers, and row numbers are unique in every table (section 1: 1 to 5; section 2: 1; Applied: 6). But section 2 row 1 is still a MONEY-03 deferral row.
+4. **Rulings: passed.** R-21, R-22 and R-23 appear once each in DECISIONS.md, and `git grep '^<<<<<<<\|^>>>>>>>'` finds nothing.
+5. **Round 2 behaviour: passed** (`edge-tests3.log`, all passed).
+   - Three taps in one batch: one `onPay`.
+   - A void caller is held for 360 ms, then released.
+   - A promise caller is held until it settles; a rejected promise releases too.
+   - The cycle review, paying, failed, review re-arms the button.
+   - The Fees row is right.
+   - Unmounting with the release timer pending calls `clearTimeout` once (`usePayOnce`'s cleanup effect).
+   - A browser double-click on Unlock gave one navigation.
+   - Send with ₦15.75 + ₦10 shows "Send ₦25,025.75".
+6. **Branch against main: passed.** It changes only `src/components/pay-sheet/`, `src/app/preview/pay-sheet.tsx`, DECISIONS.md (R-23), SHARED-CHANGES.md, LOG, PROGRESS and this file.
+7. **`npm run check`: exit 0** (above).
+
+Findings:
+
+- **R3-1, defect (forked shared components, and a deferral row left).** UI-01 is `done` and on main: `src/components/Button.tsx` (lg 54 / 24 / 16 / icon 19, `primary`, `secondary`, `loading`), `src/components/Money.tsx` (kobo at 0.72 and 0.5) and `src/components/Text.tsx`. The pay sheet still carries its own copies:
+  - `PillButton` (`PaySheet.tsx:498-540`). Its comment still says "Local to this sheet until UI-01's Button lands".
+  - `Amount` (`PaySheet.tsx:417-447`), a copy of `Money`.
+  - Local row text styles.
+
+  `SHARED-CHANGES.md` section 2 row 1 (MONEY-03) still defers swapping them in, and the UI-01 half of that row is already due. Adopt `Button` and `Money` (add a prop to them if the sheet needs one, never a fork), then either remove the row or cut it down to the UI-02 sheet host. UI-02 is still `todo`, so that half can't be done yet.
+- **R3-2, defect (V5, W10, minor).** The W10 amount block is about 14 CSS px taller than the canvas, so the card and everything below it sit lower.
+  - Measured from the avatar's top: the caption is in place (+1 px), the amount's ink is +8 CSS px, and the card's top edge is +14 CSS px (`side3-W10-send-*.png`).
+  - Cause: `Amount` (`PaySheet.tsx:421-447`), used at 40 in `SendHeader` (`PaySheet.tsx:377-390`), sets no `lineHeight`. The kit's `Amt` uses `line-height:1`.
+  - The row amounts are not affected, because the 50 px row minimum height absorbs it.
+  - Adopting `Money` for R3-1 may fix this too, if `Money` sets the kit's line height.
+
+Notes (not defects):
+- The send-short state mixes styles: the banner says "This costs ₦25,065. You have ₦25,000.00." and the button says "Add ₦65", while the card shows faded kobo. This follows H17's purchase convention, and no artboard draws a send that is short.
+- The 360 ms release for a void `onPay` is unchanged from round 2 and still judged safe: no money moves in `onPay`, and the money path's idempotency is its V8.
+
+Round 3 verdict: 2 open defects (R3-1, R3-2). Status back to `building`.
+
+### Final round
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked 10b5fb8, which contains main f8d8277 (MONEY-02 merged), in a fresh detached worktree with `node_modules` symlinked; I removed it afterwards. I exported with `expo export --platform web --dev --clear`, served it on 8793, and shot it with Playwright + Chromium 1194 at 390 px, 2x, light and dark. To compare the PIN sheet I also exported main f8d8277 the same way. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/`: `shots4/`, `design_shots4/` (H14, H17, H18, W10, W11), `side4-*.png`, `grid4-*.png`, `check4.log`, `check4b.log`, `edge-tests4.log` and `zz-verifier4.test.tsx`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 on the second run: tsc and lint clean; jest 13 suites, 245 tests passed; gates 9 run, **69 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 199 OK (`check4b.log`). The first run exited 1 on a 5 s timeout in `src/__tests__/lists.test.tsx` "filter chips" (a test this branch doesn't touch), under load average 5; that suite passed alone (42/42) and the full re-run was green (`check4.log`) |
+| V5 Picture | passed | H14, H17, H18, W10 and W11 beside the build, light and dark (`side4-*.png`); measurements below |
+| V6 States | passed | All 10 states in light and dark, with no page errors (`shots4/`, `grid4-*.png`) |
+
+Checks:
+1. **R3-1 and R3-2.**
+   - R3-2 is **closed**. W10, measured in light: avatar top to card top is 157 = 157, and the text block from the "Sending to" ink to the amount's ink is 58 = 58. Avatar to caption is 16 = 16 and amount to card is 19.5 = 19.5. Dark gives the same pairs.
+   - R3-1 is **closed for what it named**: `PillButton`, `Amount`/`Balance` and the row styles are gone, replaced by Button, Money, Text, KeyValueRow, GroupedList, Card, CurrencyFlag, Avatar and BottomSheet, and the SHARED-CHANGES deferral row is gone.
+   - **Two local copies of main's components remain** (defect F1 below), so this check **fails**.
+2. **Pictures.**
+   - H14 and H17, light and dark: sheet edge to grabber is 9 = 9 below the 1 px hairline (10 = 10 from the outer edge), and grabber to header is 20 = 20.
+   - In H14 the card top, the gap to the wallet card (22.5) and the gap to the button (25) all match the canvas. H17's banner top and its gaps match.
+   - W10 is as in check 1. H18's mark (Clock 32 / 2.4 in a 72 disc), title, line, Refresh with RotateCcw and Contact support match the H18 layout. H18's copy differs, which is recorded in round 1.
+   - Differences:
+     - Each sheet is one row taller: H14 adds Total, H17 adds Fintava's charge (BRIEF H14 and H17, R-10).
+     - Purchase rows show real kobo faded ("₦23.25", "₦2,523.25") while whole prices stay "₦2,500" (BRIEF H14 sample values, R-21).
+     - The ₦ sign (D15).
+     - The wallet card is 2 px taller (62.5 against 60.5), with its text 1 px lower. The cause is main's shared `Card`, which draws its hairline as a 1 px layout border (`src/components/Card.tsx:54`, `borderWidth: StyleSheet.hairlineWidth`) where the kit uses an inset shadow, the same pattern this branch fixed in BottomSheet. That is UI-02's Card, not this task, and it affects every Card.
+     - H17's banner is 1 px taller (65.5 against 64.5).
+3. **The BottomSheet change.**
+   - The PIN sheet is no worse than main. Every block (title, line, dots, the four key rows, Forgot PIN) sits at the same pixel on main and on this branch, and from the grabber at 2x the title, dots and keys are 54 / 115 / 190, the same as W11.
+   - It is not better either. The canvas edge is at 794 px at 2x (397), main had 794, and the branch has 796 (398). The 1 px offset moved from the grabber gap (main 10 against 9) to the sheet edge, and every PIN element is still 1 px below W11 (870 against 868 at 2x), exactly as on main. The builder's note "panel top at 398 = 398 (was 397)" mismeasures the canvas, which is 397. This doesn't block MONEY-03.
+   - The test change in `src/__tests__/lists.test.tsx` adds the inset hairline shadow to the exact `toEqual` and asserts `borderTopWidth` is undefined. It is stricter, not looser. UI-02's tests, including "lets a developer open the unlock sheet and close it again", pass.
+4. **States: pass.**
+   - enough, short ("Add ₦1,323.25"), paying ("Paying", disabled, sheet not closable), confirming, failed (X), no wallet, loading (Unlock disabled, in the kit's disabled look), zero fee ("₦0", Total ₦2,500), send ("They get ₦25,000", "Send ₦25,065"), send-short ("Add ₦65").
+   - No wallet: the only control is the sheet's own Close. There is no Pay, no balance and no dead control, and the wallet card isn't pressable (R-27).
+5. **Fees: pass** (my tests, `edge-tests4.log`, 7 passed).
+   - ₦2,500 + ₦23.25 gives "Unlock · ₦2,523.25", with no Fees row for one part. The builder's new test checks the same with ₦5,000 in the wallet.
+   - ₦40 + ₦25 shows Fees ₦65 and Total ₦25,065. ₦15.75 + ₦10 shows "Send ₦25,025.75".
+   - Three parts give exactly one Fees row and "Unlock · ₦2,565".
+   - 1 kobo short gives "Add ₦0.01".
+   - Double tap: three taps in one batch call `onPay` once. A void caller is held for 360 ms, then released. A promise caller is held until it settles. Unmounting with the timer pending calls `clearTimeout` once.
+6. **Branch scope: pass.**
+   - Against main f8d8277 the branch touches only `src/components/pay-sheet/`, `src/app/preview/pay-sheet.tsx`, the authorised `src/components/BottomSheet.tsx` and its test in `src/__tests__/lists.test.tsx`, DECISIONS.md (R-23, once), SHARED-CHANGES.md (Applied "MONEY-03 #11"), LOG, PROGRESS and this file.
+   - SHARED-CHANGES has no conflict markers, and every row id is unique in its table (section 1: 1, 2, 3, 7, 8; Applied: 4, 5, 6, 9, 10 and the prefixed MONEY-02 and MONEY-03 ids). Sections 2 to 4 are empty, so no MONEY-03 deferral rows are left.
+   - R-23 and R-27 appear once each, and `git grep '^<<<<<<<\|^>>>>>>>'` finds nothing.
+7. **`npm run check`: exit 0** (counts above; first run flaked as noted).
+
+Findings:
+
+- **F1, defect (local copies of main's components; check 1).**
+  - `Header` (`src/components/pay-sheet/PaySheet.tsx:341-373`, `styles.header`, `thumb`, `subtitle`) copies main's `MediaCard` row layout (`src/components/MediaCard.tsx`, "`row`: thumbnail beside the words (a sheet header)"). It is built from the same `home.js unlockSheet`: thumb 56, corner 14, gap 12, caption gap 3, subtitle 13.
+  - The `Status` mark (`PaySheet.tsx:427-439`, `styles.statusMark`) copies main's `IconTile`: a round tinted icon whose glyph is 45% of the circle, 32 at 72.
+  - Neither copy looks wrong. But main already has both parts, and the sheet needs a prop on each rather than its own version:
+    - `MediaCard` can't put the tick between "Chidi Eze" and "· Video · 18 min" as H14 does, and it takes only `imageUrl`.
+    - `IconTile` fixes its stroke at 2, where H18 draws 2.4.
+  - Ask for those props in SHARED-CHANGES, or have the Lead authorise them as with BottomSheet, then use the shared parts.
+
+Notes (not defects):
+- The Card hairline and the PIN sheet's 1 px edge, both described in check 2 and check 3, belong to UI-02 and MONEY-02.
+- The `lists.test.tsx` filter-chips timeout is flaky under load.
+
+Final round verdict: 1 open defect (F1). Status back to `building`.
+
+### Round 10
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked 4bc29d1, which contains main 8f0d90c, in a fresh detached worktree with `node_modules` symlinked; I removed it afterwards. I exported the branch and main 8f0d90c with `expo export --platform web --dev --clear` and served each on 8793 in turn. I shot them with Playwright + Chromium 1194 at 390 px, 2x, light and dark: all 10 pay-sheet states, the PIN sheet (`?answer=hold&biometric=face&forgot=1`) and the Showcase (`/dev/components`, every scroll page, and with the unlock sheet open). Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/`: `shots5/` (branch, `MAIN-` for main, `v844-` for the 844 px frame), `design_shots5/`, `side5-*.png`, `grid5-*.png`, `showcase-cmp-*.png`, `showcase-sheet-cmp.png`, `check5.log` and `edge-tests5.log`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 on the first run: tsc and lint clean; jest 13 suites, 250 tests passed; gates 9 run, **69 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 199 OK (`check5.log`) |
+| V5 Picture | passed | H14, H17, H18, W10 and W11 beside the build, light and dark (`side5-*.png`); measurements below |
+| V6 States | passed | All 10 states in light and dark, with no page errors (`shots5/`, `grid5-*.png`) |
+
+Checks:
+1. **F1 closed.**
+   - `Header` now renders `MediaCard` (with `byline`, `image` and the `VerifiedTick` accessory), and the status mark is `IconTile` (`warn` with Clock, `danger` with X, 72 px, stroke 2.4).
+   - Nothing in `src/components/pay-sheet/` is a copy of a main component. The one local layout left is the warning banner, and main has no banner component.
+   - The only local line height is W10's "Sending to" (`canvasNormalLineHeight(13.5)`), because no variant is 13.5 px on the normal line.
+2. **Pictures, measured. The 397/398 question is settled.**
+   - The kit's `phone` is 844 px tall (`design/_gen/kit.js`, `height:844px`), while the renderer's PNG and my earlier 390 × 845 viewport are 845. A bottom-anchored sheet therefore sits 1 px lower at 845 than on the canvas.
+   - At a 390 × 844 viewport (`v844-*`), the build matches the canvas:
+     - W11 edge 397 = 397 and grabber 407 = 407.
+     - H18 edge 485 = 485 and grabber 495 = 495.
+     - H14 and H17 sit exactly 50 px higher, which is the brief's one extra row.
+   - At 845, the W11 edge is 398, which is why I reported "398 vs 397" in the final round. The builder's "W11 edge 397" is right at the canvas's 844. The older Applied row "MONEY-03 #11" still says "398 = 398 (was 397)" (note below).
+   - Measured from the grabber, light and dark (all in px):
+
+     | | Canvas | Build |
+     |---|---|---|
+     | H14 and H17: edge to grabber, below the hairline | 9 | 9 |
+     | H14 and H17: grabber to header | 25 | 25 |
+     | H14: card top | 100 | 100 |
+     | H14: wallet card | 270 to 330.5 | 320 to 380.5 |
+     | H14: button | 355.5 | 405.5 |
+     | H17: banner | 98.5 to 163 | 98.5 to 163 |
+     | H17: card top | 184 | 184 |
+     | H17: buttons | 356.5 / 420.5 | 406.5 / 470.5 |
+     | H18: mark, title, line, Refresh, Contact support | 46 / 110.5 to 111 / 146 / 197 / 282.5 | the same |
+     | W10: avatar top to card top | 157 | 157 |
+     | W10: text block | 58 | 58 |
+     | W10: card-row label ink | 22.5 / 72.5 / 122.5 | 22.5 / 72.5 / 122.5 |
+     | W11 at 844: title / line / dots | 434 / 464.5 / 502 | 434 / 464.5 / 502 |
+
+     Every H14 and H17 offset after the extra row is exactly +50. W11's key rows sit 0.5 px lower than the canvas (560 against 559.5), the same on main, so that belongs to MONEY-02's keypad.
+   - Differences with a recorded reason: one extra row (BRIEF H14 and H17, R-10, R-23), faded kobo on fractional amounts (R-21), H18's copy (round 1), and the preview's thumbnail and backdrop.
+3. **Shared changes are safe for their other callers.**
+   - **BottomSheet:** the PIN sheet's content is pixel-identical on main and on this branch at every band. Its edge is now drawn as the kit draws it. The Showcase unlock sheet moves 1 px, as recorded.
+   - **Card** (inset edge, no border): the Showcase's grouped lists, list rows, transaction rows and cards look the same as on main, a pixel or two shorter each, and the page is 11 px shorter overall (`showcase-cmp-*.png`).
+   - **MediaCard:** `byline` and `image` are optional, so a card without them takes the old path. The Showcase's media cards look the same.
+   - **IconTile:** the stroke defaults to 2, unchanged for TransactionRow and StateViews.
+   - **Theme:** fractional line heights, and `normalStyle` for six variants. PIN sheet, Showcase and pay sheet all match.
+   - **Tests:** every changed test is exact or stricter.
+     - The sheet and card shadows are asserted with exact `toEqual`, plus `borderTopWidth` / `borderWidth` undefined.
+     - The theme line heights are exact products and pinned values. `meta`, `errorLine` and `linkStrong` are 17 / 17 / 18, the same numbers as before.
+     - New tests cover the byline order, the screen-reader label, bundled and URL images, and the IconTile stroke.
+
+     UI-02's tests, the PinSheet suite and the Showcase test pass.
+4. **States and fees: pass.**
+   - All 10 states render correctly. No wallet leaves only the sheet's Close control. Loading disables Unlock. Paying disables both Paying and Close.
+   - My 7 tests pass again (`edge-tests5.log`): ₦2,500 + ₦23.25 = "Unlock · ₦2,523.25"; Fees ₦65 and Total ₦25,065; "Send ₦25,025.75"; one Fees row with three parts; "Add ₦0.01"; the double-tap guard; `clearTimeout` on unmount.
+5. **Scope: pass.**
+   - Against main 8f0d90c the branch touches only `src/components/pay-sheet/`, `src/app/preview/pay-sheet.tsx` and the authorised shared changes: BottomSheet, Card, IconTile, MediaCard, `src/theme/index.ts`, and the tests in `src/__tests__/lists.test.tsx` and `kit-components.test.tsx`. Each is recorded in SHARED-CHANGES Applied ("MONEY-03 #11", "round 8 a/b/c", "round 9", "round 10").
+   - The other files are DECISIONS.md (R-23, once), SHARED-CHANGES, LOG, PROGRESS and this file.
+   - Row ids are unique in every table, sections 2 to 4 are empty, and `git grep` finds no conflict markers.
+6. **`npm run check`: exit 0** (counts above).
+
+Findings: none open. F1 is closed.
+
+Notes (not defects):
+- The Applied row "MONEY-03 #11" still reads "panel top at 398 = 398 (was 397)". The canvas is 397, and so is the build at the canvas's 844 px frame. The round-10 row has the right figure. Worth correcting the older row so nobody re-measures it.
+- W11's keypad digits sit 0.5 px below the canvas at 844 (MONEY-02, unchanged here).
+- When comparing bottom-anchored sheets, shoot at 390 × 844, the kit's phone height, not 845.
+
+Round 10 verdict: no open defects. Status `review`.
 
 ## Owner sign-off
 

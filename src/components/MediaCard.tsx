@@ -54,8 +54,16 @@ export type MediaCardProps = {
   subtitle?: string;
   /** A verified Tick or a pill, shown on the subtitle line after the creator's name. */
   subtitleAccessory?: ReactNode;
+  /**
+   * Row only: the creator's name, first on the subtitle line. With it the line
+   * reads name, accessory, then "· subtitle", as H14's unlock sheet draws
+   * "Chidi Eze ✓ · Video · 18 min" (design/_gen/home.js `unlockSheet`).
+   */
+  byline?: string;
   /** The picture. Without one a quiet block holds its place, so a layout never jumps when it arrives. */
   imageUrl?: string;
+  /** The picture as a bundled image (`require(...)`) or a URL, where `imageUrl` isn't used. */
+  image?: string | number;
   /** What the picture shows, for a screen reader. Leave empty when the title already says it. */
   imageLabel?: string;
   /** `row`: thumbnail beside the words (a sheet header). `stacked`: picture above the words (a shelf). */
@@ -72,7 +80,9 @@ export function MediaCard({
   title,
   subtitle,
   subtitleAccessory,
+  byline,
   imageUrl,
+  image,
   imageLabel,
   layout = 'row',
   width = mediaMetrics.stackedWidth,
@@ -87,11 +97,13 @@ export function MediaCard({
     ? { width, height, borderRadius: radius.media }
     : { width: mediaMetrics.thumb, height: mediaMetrics.thumb, borderRadius: mediaMetrics.thumbRadius };
 
+  const src = imageUrl ?? image;
   const picture = (
     <View style={[styles.picture, frame, { backgroundColor: colors.surfaceSunken }]}>
-      {imageUrl ? (
+      {src !== undefined && src !== '' ? (
         <Image
-          source={{ uri: imageUrl }}
+          testID={testID ? `${testID}-image` : undefined}
+          source={typeof src === 'string' ? { uri: src } : src}
           accessibilityLabel={imageLabel}
           accessible={Boolean(imageLabel)}
           contentFit="cover"
@@ -125,7 +137,19 @@ export function MediaCard({
       <Text variant="h3" numberOfLines={1} style={font(600)}>
         {title}
       </Text>
-      {subtitle || subtitleAccessory ? (
+      {byline ? (
+        <View style={styles.subtitleLine}>
+          <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.byline}>
+            {byline}
+          </Text>
+          {subtitleAccessory}
+          {subtitle ? (
+            <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.subtitle}>
+              {`· ${subtitle}`}
+            </Text>
+          ) : null}
+        </View>
+      ) : subtitle || subtitleAccessory ? (
         <View style={styles.subtitleLine}>
           {subtitle ? (
             <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.subtitle}>
@@ -137,7 +161,7 @@ export function MediaCard({
       ) : null}
     </View>
   );
-  const label = [title, subtitle].filter(Boolean).join(', ');
+  const label = [title, byline, subtitle].filter(Boolean).join(', ');
   const style = stacked ? styles.stacked : styles.row;
   const body = (
     <>
@@ -164,6 +188,7 @@ const styles = StyleSheet.create({
   words: { flex: 1, minWidth: 0 },
   subtitleLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: mediaMetrics.captionGap },
   subtitle: { fontSize: mediaMetrics.subtitle, flexShrink: 1 },
+  byline: { fontSize: mediaMetrics.subtitle, flexShrink: 0 },
   caption: { position: 'absolute', left: mediaMetrics.captionInset, right: mediaMetrics.captionInset, bottom: mediaMetrics.captionInset },
   stackedTitle: { fontSize: mediaMetrics.stackedTitle },
   stackedSubtitleLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: mediaMetrics.stackedSubtitleGap },

@@ -17,6 +17,18 @@ const routes = {
   '(tabs)/me': Me,
 };
 
+/*
+ * Nothing here depends on how fast the machine is or how warm Jest's cache is.
+ * The first router render loads and first-renders the tab navigator and its
+ * screens (about 1 s with a cold cache, over 4 s on a loaded machine), all
+ * inside one test's 5 s budget. Rendering the app once here pays that with a
+ * 60 s budget of its own (the same fix as lists.test.tsx).
+ */
+beforeAll(async () => {
+  const { unmount } = await renderRouter(routes);
+  await unmount();
+}, 60_000);
+
 describe('tab shell', () => {
   beforeEach(async () => {
     await act(async () => setInboxUnread(0));

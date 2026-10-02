@@ -1,12 +1,24 @@
 import { fireEvent, render, screen, userEvent, within } from '@testing-library/react-native';
 import { useState } from 'react';
-import { Platform, processColor } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text as NativeText,
+  TextInput,
+  View,
+  processColor,
+} from 'react-native';
 
 import { Avatar, initialsOf } from '@/components/Avatar';
 import { BottomSheet, sheetMetrics } from '@/components/BottomSheet';
 import { Card, GroupedList } from '@/components/Card';
 import { ConversationRow } from '@/components/ConversationRow';
 import { chipMetrics, FilterChips } from '@/components/FilterChips';
+import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, ListRow, ListSection, rowMetrics } from '@/components/ListRow';
 import { mediaMetrics, MediaCard } from '@/components/MediaCard';
 import { SegmentedTabs, segmentMetrics } from '@/components/SegmentedTabs';
@@ -17,11 +29,33 @@ import { TransactionRow } from '@/components/TransactionRow';
 import { Showcase } from '@/features/showcase/Showcase';
 import { darkColors, darkGradients, lightColors, radius } from '@/theme/tokens.generated';
 
+/*
+ * Nothing here depends on how fast the machine is or how warm Jest's cache is.
+ *
+ * React Native's components load on first use (babel-preset-expo makes the
+ * `react-native` import lazy), so the first render in this file used to pay
+ * for transforming them: Modal alone takes about 5 s with a cold cache, all
+ * inside one test's 5 s budget. Touching every primitive the components and
+ * the showcase draw moves that one-off cost to file load, where no test
+ * timeout applies (the same fix as PinSheet.test.tsx).
+ */
+void [AccessibilityInfo, ActivityIndicator, Modal, Pressable, ScrollView, NativeText, TextInput, View];
+
 let mockScheme: 'light' | 'dark' = 'dark';
 jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
   __esModule: true,
   default: () => mockScheme,
 }));
+
+/*
+ * The showcase draws every kit component, so rendering it once before the
+ * first test pays whatever React Native still does on a component's first
+ * render (beyond loading its module) with a 60 s budget of its own.
+ */
+beforeAll(async () => {
+  const { unmount } = await render(<Showcase />);
+  await unmount();
+}, 60_000);
 
 beforeEach(() => {
   mockScheme = 'dark';
@@ -146,9 +180,13 @@ describe('segment and sheet shadows', () => {
         <Text>Price</Text>
       </BottomSheet>,
     );
-    expect(flat(screen.getByTestId('sheet').props.style).boxShadow).toEqual([
+    const sheet = flat(screen.getByTestId('sheet').props.style);
+    expect(sheet.boxShadow).toEqual([
       { offsetX: 0, offsetY: -12, blurRadius: 40, color: 'rgba(0, 0, 0, 0.5)' },
+      // kit.js line 64: the top hairline is `inset 0 1px 0 var(--border-hairline)`, inside the padding.
+      { offsetX: 0, offsetY: 1, blurRadius: 0, color: (scheme === 'dark' ? darkColors : lightColors).borderHairline, inset: true },
     ]);
+    expect(sheet.borderTopWidth).toBeUndefined();
   });
 });
 
@@ -322,7 +360,9 @@ describe('grouped lists', () => {
     expect(flat(screen.getByTestId('row').props.style).minHeight).toBe(64);
     const card = flat(screen.getByTestId('card').props.style);
     expect(card.borderRadius).toBe(radius.card);
-    expect(card.borderColor).toBe(darkColors.borderHairline);
+    // kit.js `card`: the edge is `inset 0 0 0 1px var(--border-hairline)`, inside the card, adding no height.
+    expect(card.boxShadow).toEqual([{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: darkColors.borderHairline, inset: true }]);
+    expect(card.borderWidth).toBeUndefined();
     expect(card.backgroundColor).toBe(darkColors.surfaceCard);
   });
 
@@ -420,6 +460,46 @@ describe('media cards', () => {
   });
 });
 
+describe('media card byline and bundled picture (MONEY-03, Lead-authorised)', () => {
+  it('reads the maker, then their tick, then the rest of the line, as H14 draws "Chidi Eze ✓ · Video · 18 min"', async () => {
+    await render(
+      <MediaCard
+        title="How I built a ₦2M a month agency"
+        byline="Chidi Eze"
+        subtitle="Video · 18 min"
+        subtitleAccessory={<View testID="tick" />}
+        testID="row"
+      />,
+    );
+    // The line is name, tick, rest: each sits after the one before it in the tree.
+    const line = screen.getByText('Chidi Eze').parent!;
+    const kids = line.children.map((c) => (typeof c === 'string' ? c : (c.props.testID ?? c.props.children)));
+    expect(kids).toEqual(['Chidi Eze', 'tick', '· Video · 18 min']);
+    expect(screen.getByLabelText('How I built a ₦2M a month agency, Chidi Eze, Video · 18 min')).toBeTruthy();
+  });
+
+  it('shows a bundled picture as well as a URL', async () => {
+    const { unmount } = await render(<MediaCard title="Piece" image={7} testID="bundled" />);
+    // expo-image resolves a bundled module number to its asset record.
+    expect(screen.getByTestId('bundled-image').props.source).toEqual([expect.objectContaining({ __packager_asset: true })]);
+    await unmount();
+    await render(<MediaCard title="Piece" image="https://wawu.example/p.jpg" testID="url" />);
+    expect(screen.getByTestId('url-image').props.source).toEqual([{ uri: 'https://wawu.example/p.jpg' }]);
+  });
+});
+
+describe('icon tile stroke (MONEY-03, Lead-authorised)', () => {
+  it('strokes its glyph at 2 by default and at what a caller passes, 2.4 for H18', async () => {
+    const { unmount } = await render(<IconTile icon="Clock" tone="warn" size={72} />);
+    expect(screen.getByTestId('icon-Clock', hiddenOk).props.strokeWidth).toBe(2);
+    await unmount();
+    await render(<IconTile icon="Clock" tone="warn" size={72} strokeWidth={2.4} />);
+    const glyph = screen.getByTestId('icon-Clock', hiddenOk);
+    expect(glyph.props.strokeWidth).toBe(2.4);
+    expect(glyph.props.width).toBe(32);
+  });
+});
+
 describe('people and badges', () => {
   it('shows a person as their initials, or W for WAWU', async () => {
     expect(initialsOf('Amaka Nwosu')).toBe('AN');
@@ -486,15 +566,30 @@ describe('loading, empty and error views', () => {
 });
 
 describe('showcase of lists, sheets and states', () => {
+  /*
+   * These walk the whole showcase page, five presses in one test. Each press
+   * holds the finger down for 130 ms, so on a real clock the waiting alone ate
+   * a tenth of the 5 s budget before a loaded machine slowed the renders. On
+   * Jest's fake clock a press advances the clock instead of waiting.
+   */
+  let user: ReturnType<typeof userEvent.setup>;
+  beforeEach(() => {
+    jest.useFakeTimers();
+    user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('lets a developer reach the loading, empty and error views, and retry from the error', async () => {
     await render(<Showcase />);
     const states = screen.getByLabelText('State');
-    await userEvent.press(within(states).getByRole('tab', { name: 'Loading' }));
+    await user.press(within(states).getByRole('tab', { name: 'Loading' }));
     expect(within(screen.getByTestId('showcase-state-view')).getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
-    await userEvent.press(within(states).getByRole('tab', { name: 'Empty' }));
+    await user.press(within(states).getByRole('tab', { name: 'Empty' }));
     expect(within(screen.getByTestId('showcase-state-view')).getByText('No messages yet')).toBeTruthy();
-    await userEvent.press(within(states).getByRole('tab', { name: 'Error' }));
-    await userEvent.press(within(screen.getByTestId('showcase-state-view')).getByRole('button', { name: 'Try again' }));
+    await user.press(within(states).getByRole('tab', { name: 'Error' }));
+    await user.press(within(screen.getByTestId('showcase-state-view')).getByRole('button', { name: 'Try again' }));
     expect(within(screen.getByTestId('showcase-state-view')).getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
     expect(screen.getByText('Tried again 1 times')).toBeTruthy();
   });
@@ -502,9 +597,9 @@ describe('showcase of lists, sheets and states', () => {
   it('lets a developer open the unlock sheet and close it again', async () => {
     await render(<Showcase />);
     expect(screen.queryByLabelText('Unlock')).toBeNull();
-    await userEvent.press(screen.getByRole('button', { name: 'Open the unlock sheet' }));
+    await user.press(screen.getByRole('button', { name: 'Open the unlock sheet' }));
     expect(screen.getByLabelText('Unlock').props.role).toBe('dialog');
-    await userEvent.press(screen.getByTestId('showcase-sheet-close'));
+    await user.press(screen.getByTestId('showcase-sheet-close'));
     expect(screen.queryByLabelText('Unlock')).toBeNull();
   });
 });

@@ -185,6 +185,14 @@ line, and must match it exactly (for example, button side padding 14 / 18 / 24
 for sm / md / lg). Moving them into theme tokens is housekeeping, never a
 question for the owner.
 
+**R-23 · Two or more fee parts get one "Fees" row.** Wherever a payment is
+reviewed, each fee part has its own row (Fintava's charge, WAWU's fee), and
+when there are two or more parts a single "Fees" row adds them up, before
+Total (₦40 + ₦25 shows "Fees ₦65", then "Total ₦25,065"). With one part
+there is no Fees row: that part is the fee. This is how brief rule 3's
+"total fee" is drawn. Owner, 2 Oct 2026, ruling on the MONEY-03 verifier's
+finding 3. Built in the pay sheet (MONEY-03); every fee screen follows it.
+
 ### Lead rulings of 2 Oct 2026
 
 Settled by the Lead while applying the two task reviews of 2 Oct 2026. The owner can change any of them; those
