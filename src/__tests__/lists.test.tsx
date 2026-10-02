@@ -146,9 +146,13 @@ describe('segment and sheet shadows', () => {
         <Text>Price</Text>
       </BottomSheet>,
     );
-    expect(flat(screen.getByTestId('sheet').props.style).boxShadow).toEqual([
+    const sheet = flat(screen.getByTestId('sheet').props.style);
+    expect(sheet.boxShadow).toEqual([
       { offsetX: 0, offsetY: -12, blurRadius: 40, color: 'rgba(0, 0, 0, 0.5)' },
+      // kit.js line 64: the top hairline is `inset 0 1px 0 var(--border-hairline)`, inside the padding.
+      { offsetX: 0, offsetY: 1, blurRadius: 0, color: (scheme === 'dark' ? darkColors : lightColors).borderHairline, inset: true },
     ]);
+    expect(sheet.borderTopWidth).toBeUndefined();
   });
 });
 
