@@ -1,5 +1,7 @@
 # Developer 2
 
+> **Reporting (2 Oct 2026).** You never need to forward your agent's NOT RUN list or questions to the owner. They belong in the task file on your branch (`tasks/<ID>.md`); the lead reads every branch, runs what the lead can, and collects the owner's items on the progress page. If your agent asks you to send something to the owner, tell it to write it in the task file instead.
+
 > **2 Oct 2026 · R-37: the app is now "Who Made This", with a new logo.** WAWU is
 > out of the app's name and logo. Draw the logo only with `<BrandMark>`
 > (`src/components/BrandMark.tsx`), never the canvas's `wawu-icon`/`wawu-logo`
