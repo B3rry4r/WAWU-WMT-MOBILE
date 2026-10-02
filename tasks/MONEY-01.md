@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -47,6 +47,20 @@ wawu-backend `wmt/MONEY-01` @ 5f2658a (one commit on origin/main 231cb64). Files
 - Gates before -> after: tsc 0 -> 0; eslint 4497 -> 4497 (new files clean); scripts/gates 16 fail / 76 accepted -> same (523 -> 525 files); full jest (money01_hub_test, mock :4401) 1372 pass/40 fail -> 1609 pass/40 fail. The 40 are 4 suites that hardcode localhost:4001 (account, credits-state, kyc-submission, privacy-settings), environmental here, same on main.
 - Found on main, locked as-is, not fixed (owner): POST /kyc for a creator with no CreatorState row (no upload yet) writes the submission then answers 404 "Not found."; POST /learn/courses/:id/enrol 403 cites the removed subscription ("free-course slots ... paid creator subscription"); GET /notifications nests a second envelope inside `data.items`; mock-wawu-id has no /internal/users/:id/name, so a name in PATCH /users/me 502s locally (probes send no name).
 - Not done: no PR, per run instructions. Lock was recorded locally, not on CI; CI runs it inside `npx jest` (mock :4001, wawu_hub_test). Until merged, origin/main has no lock: use PROTECTED_LOCK_REF=wmt/MONEY-01.
+
+### Round 2 (backend ddb5727 on 5f2658a)
+- Fix 1, success shapes: provider doubles (`test/protected-routes/providers.ts`) answer Flutterwave, WellaHealth and Gemini through `sealNetwork`. Storage has dummy credentials and signs locally. The wallet gateway uses the production client against the double. The probes are reordered. Result: 240 of 241 entries lock a 2xx (round 1: 215 of 235). The exception is a NEW course enrolment, refused for everyone on main (slots tied to the removed subscription; registry `why`); its `already enrolled` variant locks the success shape.
+- Fix 2: the six lists and search content/creators now have items. Search `communities` is `[]` for every query on main. Runner, lock = this branch: verifier's 98aeab4 (bills wrap) recreated as 7ae419d -> exit 1 "locked as an array, now an object"; 4a5389f (search title rename) as 3239787 -> exit 1 "title missing / headline widened".
+- Fix 3 + 6: `run.sh` checks host (localhost/127.0.0.1/::1) and name before any migrate or drop; the suite checks the host too. Results: money01_prodlike -> exit 1, 0 tables; db.invalid -> exit 1 for run.sh, --fresh and the suite. A lock ref with no suite now gets a clear refusal.
+- Fix 4: new `.github/workflows/protected-routes.yml` (pull requests only; deploy.yml untouched). It runs PR code against the base branch's lock and puts `lock-diff.py` in the job summary. A lock change needs the owner's `relock-approved` label. Proof: dc6b9fc changes the bills shape and rewrites its own lock with a recomputed hash. It is green on its own lock (the old in-tree run) and red on this branch's lock (what the workflow does); lock-diff exits 1 naming the entry. The workflow file was not run on GitHub.
+- Fix 5: six variant entries (GET /credits, /settings/notifications, /settings/privacy, /creator/state [returning user]; GET /users/me [new account]; enrol [already enrolled]). Verifier's ed86dd2 and 76ea3b5 (existing-row credits) recreated as 1af6ccc and 7172efa -> exit 1 on `GET /credits [returning user]`. Optional inputs filled. null/[]/unknown leaves went from 820 of 3897 to 645 of 4430. What remains:
+  - lifecycle fields the entity has not reached (deliveredAt, cancelledAt, refundedAt and similar);
+  - `nextPage` on single-page lists;
+  - fields no protected route writes (recap*, durationLabel, lessons);
+  - WAWU ID fields the mock lacks (gender, occupation, state);
+  - search `communities`.
+- Main still passes: `run.sh --fresh origin/main` -> 252/252. `npm run test:protected` x2 on money01_hub_test -> 252/252; DB checksums identical. All scratch commits are dangling (`git branch -a --contains` empty).
+- Gates: tsc 0; eslint 4497 (unchanged); gates 16 fail / 76 accepted (unchanged); full jest 1624 pass / 40 fail (the same 4 :4001 suites). Round 1's "1609" was wrong; the correct figure was 1618.
 
 ## Verifier report
 
