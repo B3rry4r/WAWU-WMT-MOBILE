@@ -2692,6 +2692,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's chats, newest activity first, cursor-paged. */
+        get: operations["ChatController_list"];
+        put?: never;
+        /** Open the chat with one person, or get the one that already exists. */
+        post: operations["ChatController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ChatController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Messages, newest first, cursor-paged. */
+        get: operations["ChatController_messages"];
+        put?: never;
+        post: operations["ChatController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move the caller's read mark forward. */
+        post: operations["ChatController_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Where to upload one photo, video or PDF for this chat. */
+        post: operations["ChatController_presignAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/wallet": {
         parameters: {
             query?: never;
@@ -4067,6 +4152,44 @@ export interface components {
         ChangePinDto: {
             newPin: string;
             newPinConfirmation: string;
+        };
+        OpenChatDto: {
+            /**
+             * Format: uuid
+             * @description The other person's WAWU ID (uuid).
+             */
+            wawuId: string;
+        };
+        ChatAttachmentDto: {
+            /** @description The `key` POST /chats/:chatId/attachments returned, after the upload. */
+            key: string;
+            /** @description The file's own name, shown on a PDF bubble. */
+            name?: string;
+        };
+        ChatSendMessageDto: {
+            text?: string;
+            attachment?: components["schemas"]["ChatAttachmentDto"];
+            /**
+             * @description The app's own id for this message. Sending the same one again returns
+             *     the message already stored instead of posting it twice.
+             */
+            clientMessageId?: string;
+        };
+        MarkChatReadDto: {
+            /** Format: uuid */
+            messageId?: string;
+        };
+        ChatUploadDto: {
+            /**
+             * @description image/png, image/jpeg, image/webp, video/mp4, video/quicktime or application/pdf.
+             * @enum {string}
+             */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "video/mp4" | "video/quicktime" | "application/pdf";
+            /**
+             * @description Exact size in bytes; the upload link is signed for this length. Up to
+             *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
+             */
+            contentLength: number;
         };
         ConfirmPinResetDto: {
             /** @description The code from the text message. Its length is set by whoever sends it (MONEY-14). */
@@ -5838,6 +5961,62 @@ export interface components {
             changedAt: string | null;
             triesLeft: number;
             lockedUntil: string | null;
+        };
+        ChatPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+        };
+        ChatAttachment: {
+            url: string | null;
+            contentType: string;
+            bytes: number;
+            name: string | null;
+        };
+        ChatMessage: {
+            id: string;
+            chatId: string;
+            senderWawuId: string;
+            mine: boolean;
+            /** @enum {string} */
+            kind: "video" | "image" | "text" | "file";
+            text: string | null;
+            attachment: components["schemas"]["ChatAttachment"] | null;
+            clientMessageId: string | null;
+            createdAt: string;
+            /** @enum {string|null} */
+            readState: "read" | "sent" | null;
+        };
+        ChatSummary: {
+            id: string;
+            other: components["schemas"]["ChatPerson"];
+            createdAt: string;
+            lastActivityAt: string;
+            lastMessage: components["schemas"]["ChatMessage"] | null;
+            unreadCount: number;
+            myLastReadAt: string | null;
+            otherLastReadAt: string | null;
+            canMessage: boolean;
+        };
+        ChatSummaryPage: {
+            items: components["schemas"]["ChatSummary"][];
+            nextCursor: string | null;
+        };
+        ChatMessagePage: {
+            items: components["schemas"]["ChatMessage"][];
+            nextCursor: string | null;
+        };
+        ChatReadMark: {
+            chatId: string;
+            lastReadAt: string | null;
+            lastReadMessageId: string | null;
+            unreadCount: number;
+        };
+        ChatUpload: {
+            uploadUrl: string;
+            key: string;
         };
         FintavaWebhookAck: {
             /** @enum {string} */
@@ -11528,6 +11707,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ChatController_list: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSummaryPage"];
+                };
+            };
+        };
+    };
+    ChatController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenChatDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSummary"];
+                };
+            };
+        };
+    };
+    ChatController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSummary"];
+                };
+            };
+        };
+    };
+    ChatController_messages: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessagePage"];
+                };
+            };
+        };
+    };
+    ChatController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"];
+                };
+            };
+        };
+    };
+    ChatController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkChatReadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatReadMark"];
+                };
+            };
+        };
+    };
+    ChatController_presignAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatUploadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatUpload"];
                 };
             };
         };

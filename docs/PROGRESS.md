@@ -3,24 +3,21 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 22 of 177.**
+**Launch tasks done: 23 of 177.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 62 | 50 | 33 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
-| done | 15 | 8 | 0 | 0 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [INBOX-06](../tasks/INBOX-06.md) Free chat between users (Developer 2)
+| review | 0 | 0 | 0 | 0 |
+| done | 15 | 8 | 1 | 0 |
 
 ## Done
 
 - [OPS-01](../tasks/OPS-01.md) Record the owner's rulings (You)
 - [SETUP-01](../tasks/SETUP-01.md) Verify the mobile repo setup (Developer)
+- [INBOX-06](../tasks/INBOX-06.md) Free chat between users (Developer 2)
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 - [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs (Developer)
 - [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
