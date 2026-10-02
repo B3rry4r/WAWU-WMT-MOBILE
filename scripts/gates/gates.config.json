@@ -56,7 +56,9 @@
       ],
       "check_colors": true,
       "allow_paths": [],
-      "color_severity": "fail"
+      "color_severity": "fail",
+      "literal_strictness": "all",
+      "spacing_severity": "fail"
     },
     "dead_controls": {
       "enabled": true
@@ -65,7 +67,7 @@
       "enabled": true,
       "banned": [
         {
-          "pattern": "—",
+          "pattern": "\u2014",
           "ruling": "PO-2026-09-01",
           "why": "No em-dashes in anything a user reads. Use a comma, a colon, brackets or two sentences."
         },
