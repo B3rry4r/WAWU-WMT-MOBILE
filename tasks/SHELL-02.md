@@ -7,7 +7,7 @@ order: 16
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: review
+status: done
 depends_on: [SETUP-01]
 decisions: []
 passes: [V1, V9]
@@ -171,4 +171,4 @@ No open defect. Status set to `review`.
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: merged from wmt/SHELL-02 after three verification rounds; checks green on main.
