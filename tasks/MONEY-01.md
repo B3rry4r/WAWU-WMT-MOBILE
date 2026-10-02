@@ -7,7 +7,7 @@ order: 7
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -116,6 +116,60 @@ Verifier: fresh session, 2 Oct 2026. Own clone of wawu-backend `wmt/MONEY-01` @ 
 7. Not a finding on the code: the builder's databases `money01_fresh_test`, `money01_hub_test` and `money01_runner_test` were still on the local Postgres when I started. I left them alone.
 
 Status back to `building`: findings 1-3 are open defects.
+
+### Round 2 (backend ddb5727, mobile 991b289)
+
+Fresh clone of `wmt/MONEY-01` @ ddb5727, origin/main = 231cb64. Own databases `money01v_*_test`, all dropped afterwards. Mock on :4601, stopped by pid. Callers' origin/main unchanged (235945b, c1dfca6). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money01-r2/`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed (nothing went up) | tsc 0 errors. eslint 3646 + 851 = 4497 (main 4497); `protected-routes` files 0 problems. gates 16 fail / 0 warn / 76 accepted, item-for-item identical to main; files scanned 525; baseline exit 0. Full jest: main 1372 pass / 40 fail of 1415; branch 1624 pass / 40 fail of 1667. Same 40 failures by name (the four `:4001` suites). The protected spec passes inside the full run (243 + 9). Logs: `jest_main.json`, `jest_branch.json`, `gj_*.json`, `eslint_branch.json`, `tsc.log` |
+| V3 Regression (suite on main) | passed | `PROTECTED_LOCK_REF=wmt/MONEY-01 run.sh --fresh 231cb64` -> 252/252, exit 0 (`run_main.log`). `npm run test:protected` x2 -> 252/252 (`tp_1.log`, `tp_2.log`) |
+| Capability: suite passes on main | passed | as V3 |
+| Capability: a shape change in a scratch branch fails | passed | 14 of 14 scratch commits red, below |
+| Capability: README explains running it against any branch | passed | followed as written; the new safety and CI paragraphs match the behaviour I saw |
+
+**Scratch breakages.** Each is a dangling commit on 231cb64, run with `run.sh <sha>` and the lock from `wmt/MONEY-01` (`mutations.txt`, `mut_*.log`). All 14 exit 1, each naming the right route and reason:
+- Round 1's nine: removed key, widened key, 201 to 200, admin role added, guard internals loosened, route deleted, nested retype.
+- Round 1's misses, recreated: bills wrap (was 98aeab4) gives "body.data: locked as an array, now an object". Search title rename (was 4a5389f) gives "content[0].title missing / headline widened". Existing-row credits key removed or added (were ed86dd2 and 76ea3b5) fails on `GET /credits [returning user]`.
+- New, previously 5xx-locked: POST /uploads/presign `fileUrl` renamed to `url` gives "fileUrl missing / url widened".
+- New, previously 4xx-locked: POST /wallet/withdraw `amount` number to string gives "locked as number, now string".
+- New, returning-user branch: GET /settings/privacy existing row widened fails on `GET /settings/privacy [returning user]`.
+- The self-relock (was 6ce263f) recreated on ddb5727 as 2938b63: red against the `wmt/MONEY-01` lock (2 failed). `lock-diff.py wmt/MONEY-01 2938b63` exits 1, naming the removed entry and the hash change. It is green against its own lock.
+- Runner DB checksums (tables and sequences) were identical before and after all of this.
+
+**Round 1 findings, closed or not:**
+1. **Closed** (defect 1, success shapes). 241 entries, 240 locked on a 2xx. The one exception is the NEW-enrolment 403, which has a recorded `why` and an `already enrolled` variant that locks the success shape. In the trace, presign, document-url, hosted-link, bills, care plans and the wallet all answer 200 with real bodies. The six lists and search content/creators now have items; search `communities` is always `[]` on main. Coverage was re-checked with my own extractor: still 235 distinct routes, exact match both ways. `protected:callers` reports 0 differences.
+2. **Closed** (defect 2, the capability check): see the breakages above.
+3. **Closed** (defect 3, `run.sh` migrating a non-test DB). These are refused with 0 tables touched:
+   - empty `money01v_prodlike` via `run.sh <ref>` and via `run.sh` with no ref;
+   - `db.invalid` via `run.sh`, via `--fresh` and via the suite (even with `PROTECTED_ROUTES_ALLOW_DB` set);
+   - `127.0.0.2`.
+4. **Partly closed, still unclear (owner)** (CI lock). `.github/workflows/protected-routes.yml` parses and has no `secrets.*`. It is `pull_request` only (not `pull_request_target`), so forks get no secrets. Its DB is the localhost service container, which run.sh's host check also enforces, so it cannot touch production. I simulated its steps locally: `lock-diff origin/main HEAD` gives exit 2 (this PR uses its own lock); `lock-diff wmt/MONEY-01 HEAD` gives exit 0. It has never run on GitHub: NOT RUN there. What it does not close:
+   - **It runs the PR's own `scripts/protected-routes/run.sh`, `lock-diff.py` and (on `pull_request`) its own workflow file.** Proven: c26400a is the self-relock plus one changed line in run.sh. Run the way the workflow step runs it (`PROTECTED_LOCK_REF=<base> run.sh --fresh HEAD` from that checkout), it reports `lock: HEAD` and passes 251/251 with no label. The lock-diff summary would still say "This branch changes the lock" unless lock-diff.py is edited too. Mitigation is the owner's call: take run.sh and lock-diff.py from `origin/$BASE_REF`, put CODEOWNERS on `.github/` and `scripts/protected-routes/`, and make this job a required check.
+   - The `relock-approved` label stays on after later pushes, so lock changes in later commits pass unreviewed.
+   - `lock-diff.py` only diffs the registry. A PR that loosens `test/protected-routes/shape.ts` is checked with the base's suite and lands without the label gate.
+   - There is no `permissions:` block, so the token gets the repo default (`contents: read` would do).
+5. **Closed for the cases tested; leniency still the owner's call** (one probe per route). Six variant entries; the existing-row breakages are now caught. Loose leaves went from 820 of 3897 to 645 of 4430 (613 `null`, 32 `[]`). Sampled by field name, they mostly fit the builder's categories:
+   - `expiresAt` 50 (tick expiries);
+   - `nextPage` 35;
+   - delivered, cancelled and refunded lifecycle fields;
+   - recap, durationLabel and lessons;
+   - gender, occupation and state;
+   - search `communities`.
+
+   Two clusters do not fit those categories, and are left to the owner:
+   - `GET /admin/payments/receipts/:id` and `POST .../reverify`: the whole `charge` block, 7 fields x 2 = 14 leaves. It is null only because the probe's webhook payload carries no `data`, yet the dashboard renders `charge.amount`/`flwRef`/`chargedAmount` (`ReceiptDetail.tsx`).
+   - `GET /admin/finance/wallets` `balance.ngn` is null because `?withBalances=true`, which the dashboard's toggle sends, is not probed.
+6. **Closed** (DB host check), as in 3.
+
+**Provider doubles are test-only: confirmed.**
+- `test/protected-routes/providers.ts` is imported only by `test/protected-routes/harness.ts`, which only the two `src/protected-routes/*.spec.ts` import.
+- `tsconfig.build.json` excludes `test` and `**/*spec.ts`; `tsc -p tsconfig.build.json --listFilesOnly` lists 0 `protected-routes` files.
+- The branch changes nothing in `src/` except those two spec files. The doubles are reached only through the suite's in-process `globalThis.fetch` replacement, and no env variable in `src/` switches them on.
+- Informational, pre-existing on main: under jest `NODE_ENV=test` makes five modules pick their in-src Mock Flutterwave adapter, so the real adapters' parsing is not exercised by this suite for those modules. The README says so.
+
+**Status: `review`.** No open defects. Points 4 and 5 are left to the owner.
 
 ## Owner sign-off
 
