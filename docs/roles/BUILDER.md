@@ -55,5 +55,7 @@ verified.
 2. Fill in **Builder report** in the task file (max 20 lines): files changed;
    each capability check and how you tested it; gate counts before and after;
    gaps and shared-change requests filed; anything you could not do and why.
-3. Set `status: verifying`. Open a pull request titled `<ID>: <title>`.
-4. Do not say the screen matches the design. The verifier decides that.
+3. Add one line to the top of `docs/LOG.md` (date · task · what changed), then
+   run `npm run tasks -- --write` so `docs/PROGRESS.md` is current.
+4. Set `status: verifying`. Open a pull request titled `<ID>: <title>`.
+5. Do not say the screen matches the design. The verifier decides that.

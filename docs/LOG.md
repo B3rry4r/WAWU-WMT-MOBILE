@@ -1,0 +1,16 @@
+# Work log
+
+Newest first. One line per thing that happened, written when it happens.
+`docs/PROGRESS.md` shows this beside the task counts.
+
+- 2 Oct 2026 · Fintava test key works on the sandbox (refused by the live API); tier limits recorded in `docs/fintava/limits.md`.
+- 2 Oct 2026 · Backend deploy after wawu-backend #23 succeeded; the full test suite, including the new route suite, passed in it.
+- 2 Oct 2026 · wawu-backend #23 merged: OPS-03 (run the backend locally), MONEY-01 (235 routes locked), OPS-05 (backend CLAUDE.md).
+- 2 Oct 2026 · wawuafrica #23 merged: OPS-05 (web CLAUDE.md follows the mobile rulings).
+- 2 Oct 2026 · CHECK-0 evidence written; waiting on the developer's SETUP-01 push and the owner's sign-off.
+- 2 Oct 2026 · Developer verified SETUP-01 in their own session; push blocked by GitHub access to MOXN-AFRICA.
+- 2 Oct 2026 · Owner: designs are final; the 112 brief changes are made in code. OPS-04 closed.
+- 2 Oct 2026 · OPS-04 designer brief passed verification (4 rounds, 112 changes).
+- 2 Oct 2026 · Fintava's dashboard charges recorded (`docs/fintava/fees.md`): user pays Fintava's charge plus WAWU's fee.
+- 2 Oct 2026 · No mocks, no feature flags: money is built on the real Fintava sandbox.
+- 2 Oct 2026 · Owner's rulings R-6 to R-20 applied to every task.

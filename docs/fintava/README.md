@@ -2,6 +2,8 @@
 
 - `naira-api.md`: what Fintava's Naira API does, what that changes in our
   tasks, and the questions still open for Fintava. Start here.
+- `limits.md`: wallet tiers and daily limits (Tier 1 to 3), and what they
+  mean for opening a wallet.
 - `fees.md`: Fintava's charges, what the user pays, and where WAWU's fee
   is set.
 - `cardex.md`: Cardex, their crypto partner, and how crypto is built on it.

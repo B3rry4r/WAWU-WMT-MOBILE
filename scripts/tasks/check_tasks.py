@@ -26,6 +26,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 TASKS = ROOT / "tasks"
 INDEX = TASKS / "INDEX.md"
+PROGRESS = ROOT / "docs" / "PROGRESS.md"
+LOG = ROOT / "docs" / "LOG.md"
 
 OWNERS = {"YOU": "You", "DEV": "Developer"}
 PRIORITIES = {"launch", "after-launch"}
@@ -145,6 +147,11 @@ def main() -> int:
         INDEX.write_text(index)
     elif not INDEX.exists() or INDEX.read_text() != index:
         errors.append("tasks/INDEX.md is out of date: run python3 scripts/tasks/check_tasks.py --write")
+    progress = render_progress(tasks)
+    if write:
+        PROGRESS.write_text(progress)
+    elif not PROGRESS.exists() or PROGRESS.read_text() != progress:
+        errors.append("docs/PROGRESS.md is out of date: run python3 scripts/tasks/check_tasks.py --write")
 
     for e in errors:
         print("TASK CHECK FAILED:", e)
@@ -153,6 +160,38 @@ def main() -> int:
           f"{len([a for a in inventory if built(a)])} artboards covered"
           + (", INDEX.md written" if write else ""))
     return 1 if errors else 0
+
+
+def render_progress(tasks: dict) -> str:
+    """docs/PROGRESS.md: where every task stands, rebuilt from the task files."""
+    labels = {"done": "Done", "review": "Built and verified, waiting for the owner's sign-off",
+              "verifying": "Being verified", "building": "Being built (or fixing verifier findings)"}
+    out = ["# Progress", "",
+           "Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;",
+           "`npm run check` fails if it is out of date. Do not edit by hand.", ""]
+    launch = [t for t in tasks.values() if t["priority"] == "launch"]
+    done = sum(1 for t in launch if t["status"] == "done")
+    out += [f"**Launch tasks done: {done} of {len(launch)}.**", ""]
+    out += ["| | You | Developer |", "|---|---|---|"]
+    for st in STATUSES:
+        row = [sum(1 for t in tasks.values() if t["owner"] == o and t["status"] == st) for o in OWNERS]
+        out.append(f"| {st} | {row[0]} | {row[1]} |")
+    out.append("")
+    for st in ["review", "verifying", "building", "done"]:
+        ts = sorted([t for t in tasks.values() if t["status"] == st], key=lambda t: t["order"])
+        if ts:
+            out += [f"## {labels[st]}", ""] + [f"- [{t['id']}](../tasks/{t['id']}.md) {t['title']} ({OWNERS[t['owner']]})" for t in ts] + [""]
+    out += ["## Next up", ""]
+    for owner, name in OWNERS.items():
+        nxt = [t for t in sorted(tasks.values(), key=lambda t: t["order"])
+               if t["owner"] == owner and t["status"] == "todo" and t["priority"] == "launch"
+               and all(tasks.get(d, {}).get("status") in ("done", "review") for d in t["depends_on"])][:3]
+        out.append(f"- **{name}:** " + (", ".join(f"[{t['id']}](../tasks/{t['id']}.md) {t['title']}" for t in nxt) or "nothing unblocked"))
+    out.append("")
+    if LOG.exists():
+        entries = [l for l in LOG.read_text().splitlines() if l.startswith("- ")][:15]
+        out += ["## Latest", "", "From `docs/LOG.md`, newest first.", ""] + entries + [""]
+    return "\n".join(out)
 
 
 def render_index(tasks: dict) -> str:

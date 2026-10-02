@@ -60,6 +60,8 @@ python3 scripts/design/render_design.py <IDs>    render artboards to build/desig
 
 | | |
 |---|---|
+| `docs/PROGRESS.md` | Where everything stands (generated) and the latest work |
+| `docs/LOG.md` | One line per thing done, newest first |
 | `docs/WORKFLOW.md` | How every task is built and verified |
 | `docs/PLAN.md` | Who owns what, how the lists work, what's needed from outside |
 | `docs/BUILDS.md` | Builds, testers, store releases (owner submits) |
