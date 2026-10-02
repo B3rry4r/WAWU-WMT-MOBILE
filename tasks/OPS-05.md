@@ -7,7 +7,7 @@ order: 6
 priority: launch
 repo: wawuafrica, wawu-backend
 type: ops
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: []
@@ -51,6 +51,8 @@ Fintava's examples put customer accounts at Loma Bank (Iyin Ekiti MFB), not "Fin
 - NOT RUN: typecheck, lint and tests in all three repos (no node_modules in the worktrees; only Markdown changed).
 - Gaps, not changed (outside scope): web `docs/01_SPEC.md`, the web's own `DECISIONS.md`, and the `check-copy.mjs` comment still describe Flutterwave subaccounts; its `no-free` rule will meet R-8 when the web follows. Backend `README.md` "Payments" stays Flutterwave-only, correct until after launch.
 - Repo named as its git remote spells it: `MOXN-AFRICA/wawu-wmt-mobile`. No shared-change requests. Not pushed, no PR (orchestrator integrates).
+- **Round 2** (web d2d23bf, backend e4f471e). Finding 1: the original "Maximum 5 items per account" line is back word for word as today's web and backend behaviour (`MAX_ITEMS_PER_ACCOUNT = 5`). R-7, R-8 and R-9 each now say "ruled for the mobile app" and what the web still does (flat 5-item cap, no tick tier or storage limit; ₦0 refused in `creator-content.ts`, "free" banned by `check-copy.mjs`; tabs Overview plus Content, Services, Events from `profileTabsFor()`). Mirrors re-synced. Finding 2: backend says the registry is the web's 129 endpoints, none under `admin/`, and MONEY-01 extends it to the dashboard. Finding 3: both files cite mobile-first as "DECISIONS.md, Authority (owner, 1 Oct 2026)" (dated on mobile main, ce86832); R-3 is cited only for "built with Expo".
+- Round 2 checks: facts read in the source files named above; registry counted with python (129 endpoints, 0 admin paths, consumerApp WAWU-Web); added-line em-dashes 0 in both files; gates unchanged (web 15/8/42, copy clean; backend 16/0/76).
 
 ## Verifier report
 
