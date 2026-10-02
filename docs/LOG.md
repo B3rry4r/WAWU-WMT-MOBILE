@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · MONEY-02 · The PIN sheet now uses the shared `Text` (`sheetTitleSm`, `muted`) and UI-02's `BottomSheet`; its own frame and the matching kit constants are gone. SHARED-CHANGES 1.7 applied by SHARED-01; request 10 asks `BottomSheet` for a `gap` prop. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · Fix round 2: kit sizes (R-22) and shared `formatMoney`; the biometric key is whatever the phone has (fingerprint or face, `expo-local-authentication`, owner ruling) with "<Name> failed. Use your PIN."; `Fingerprint` added to the icon set; Face ID gap renumbered G-9. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · Fix round 1: the PIN sheet uses the shared `Icon`, answers follow MONEY-04's contract (403 `pin_incorrect.triesLeft`, 423 `pin_locked.lockedUntil`), the lock shows a running clock, the busy flag resets when the sheet hides mid-check, and the tests no longer time out on a cold cache. Face ID refusal copy is an open question for the owner. Back to verifying.
 - 2 Oct 2026 · MONEY-02 · The PIN sheet built in `src/components/pin-sheet/` (entering, wrong PIN with tries left, locked with a countdown, Face ID key, submitting, error); tries and lock time come from the server's answer. Dev-only preview at `/preview/pin-sheet`. Waiting for verification.

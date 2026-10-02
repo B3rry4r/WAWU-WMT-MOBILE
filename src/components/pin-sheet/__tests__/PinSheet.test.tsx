@@ -184,6 +184,7 @@ describe('PinSheet', () => {
     expect(screen.getByLabelText('4 of 4 digits entered')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: '7' })).toBeDisabled();
     await user.press(screen.getByRole('button', { name: 'Close' }));
+    await user.press(screen.getByTestId('sheet-backdrop', { includeHiddenElements: true }));
     expect(props.onClose).not.toHaveBeenCalled();
 
     await act(async () => pending.resolve({ code: 'unanswered' }));
@@ -249,12 +250,13 @@ describe('PinSheet', () => {
     expect(screen.getByText('₦2,023.25 for the professional tick')).toBeOnTheScreen();
   });
 
-  it('lets a user close the sheet from the scrim', async () => {
+  it('lets a user close the sheet from the grabber or the dimmed page behind it', async () => {
     const user = press();
     const props = setup();
     await render(<PinSheet {...props} />);
     await user.press(screen.getByRole('button', { name: 'Close' }));
-    expect(props.onClose).toHaveBeenCalledTimes(1);
+    await user.press(screen.getByTestId('sheet-backdrop', { includeHiddenElements: true }));
+    expect(props.onClose).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 61 | 50 | 32 | 30 |
+| todo | 60 | 50 | 32 | 30 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 8 | 6 | 0 | 0 |
+
+## Being verified
+
+- [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 
 ## Done
 
@@ -32,7 +36,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet, [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet
+- **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** [UI-03](../tasks/UI-03.md) Avatars, ticks and chips, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here
 - **Developer 2:** [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
 - **Developer 3:** [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [EVENTS-02](../tasks/EVENTS-02.md) Hosting an event: hybrid, kinds, one-step submit, [PROS-01](../tasks/PROS-01.md) Find a professional
@@ -41,6 +45,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-02 · The PIN sheet now uses the shared `Text` (`sheetTitleSm`, `muted`) and UI-02's `BottomSheet`; its own frame and the matching kit constants are gone. SHARED-CHANGES 1.7 applied by SHARED-01; request 10 asks `BottomSheet` for a `gap` prop. Back to verifying.
+- 2 Oct 2026 · MONEY-02 · Fix round 2: kit sizes (R-22) and shared `formatMoney`; the biometric key is whatever the phone has (fingerprint or face, `expo-local-authentication`, owner ruling) with "<Name> failed. Use your PIN."; `Fingerprint` added to the icon set; Face ID gap renumbered G-9. Back to verifying.
+- 2 Oct 2026 · MONEY-02 · Fix round 1: the PIN sheet uses the shared `Icon`, answers follow MONEY-04's contract (403 `pin_incorrect.triesLeft`, 423 `pin_locked.lockedUntil`), the lock shows a running clock, the busy flag resets when the sheet hides mid-check, and the tests no longer time out on a cold cache. Face ID refusal copy is an open question for the owner. Back to verifying.
+- 2 Oct 2026 · MONEY-02 · The PIN sheet built in `src/components/pin-sheet/` (entering, wrong PIN with tries left, locked with a countdown, Face ID key, submitting, error); tries and lock time come from the server's answer. Dev-only preview at `/preview/pin-sheet`. Waiting for verification.
 - 2 Oct 2026 · UI-02 follow-up merged: media-card gradient caption (expo-linear-gradient), sheet shadow at the 0.5 scrim token, the selected segment's soft shadow. First Android preview build is out; an over-the-air update carries main to it.
 - 2 Oct 2026 · UI-02 follow-up: shelf media card draws its caption over the design's `scrimCard` gradient (expo-linear-gradient); bottom sheet shadow is 0.5 black and the selected segment has the kit's soft shadow, both themes; theme shadow tokens requested (SHARED-CHANGES row 7).
 - 2 Oct 2026 · SHARED-01 merged: shared `Avatar` (one, UI-02's API with the kit drawing), `CurrencyFlag`, Text variants (kvLabel, kvValue, meta, muted, bannerBody, cardTitle, sheetTitle, sheetTitleSm) and Money at exactly its size (per-run line heights on web only). Phone check (V10) waits on the Android build.
@@ -52,7 +60,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · Over-the-air updates added (expo-updates, EAS Update on project @moxnafrica/wawu-wmt): once testers install the Android preview build, each merge to main can reach their phones without reinstalling.
 - 2 Oct 2026 · OPS-02 re-run · Fintava's sandbox merchant is active now (since 09:22 UTC). Two test customers opened (`TIER_2`), wallet-to-wallet works in every direction with a ₦0 fee, freeze blocks money in and out; bank sends and bill purchases are still refused ("Unable to find customers"). Results in `docs/fintava/sandbox/` (README lists 9 contradictions), tier answers in `docs/fintava/limits.md`. ₦20 of sandbox charges.
 - 2 Oct 2026 · UI-02 merged (lists, cards, sheets, tabs, skeleton, empty and error states; UI-01 fixes: button padding 14/18/24, visible focus ring, no browser outline). Still to match the design, Developer 1's next commit before UI-03: media-card gradient caption (expo-linear-gradient), sheet shadow at the 0.5 scrim token, the selected segment's soft shadow.
-- 2 Oct 2026 · UI-02 built: list, card, row, chip, segmented tab, bottom sheet, skeleton, empty and error components; Button padding 14/18/24, double focus ring, no web outline; 51 new tests; status verifying.
-- 2 Oct 2026 · MONEY-04 merged: the wallet contract (29 money routes, declared and not served yet) is on backend main (PR #24) and mobile types are regenerated from it. MONEY-09 (transaction PIN) can start.
-- 2 Oct 2026 · Builders now replace any stand-in for a shared component as soon as main has it, and verifiers fail a branch that keeps one (BUILDER.md, VERIFIER.md). Fintava fees: the dashboard rates in `docs/fintava/fees.md` are final; the sandbox's ₦0 doesn't change them.
-- 2 Oct 2026 · MONEY-04 round 2: kobo fields are `integer` in the contract, the never-null list corrected to 11, and three Lead rulings applied and recorded (merchant cap from config on merchant-wallet money only, purchases count toward the daily limit, W26 grouped unlock rows); status verifying.

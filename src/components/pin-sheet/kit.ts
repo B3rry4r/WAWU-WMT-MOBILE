@@ -7,18 +7,13 @@ import { ICON_STROKE } from '@/components/icon';
  * design/_gen/wallet.js line 81, which calls them.
  */
 
-/** kit.js `sheet()`: padding 10px 20px 34px, gap (W11 passes 14), handle 40 by 5, radius 3, margin 0 auto 4px. */
+/**
+ * kit.js `sheet()`: the frame (padding 10 / 20 / 34, the 40 by 5 grabber) is
+ * the shared `BottomSheet`. W11 and M13 pass 14 to `sheet()` as the spacing
+ * between the sheet's rows.
+ */
 export const SHEET = {
-  padTop: 10,
-  padBottom: 34,
-  /** W11 and M13 pass 14 to `sheet()` as the stack spacing. */
   stack: 14,
-  handleW: 40,
-  handleH: 5,
-  handleRound: 3,
-  handleBelow: 4,
-  /** `inset 0 1px 0 var(--border-hairline)`. */
-  edge: 1,
 } as const;
 
 /**
