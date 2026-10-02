@@ -1,9 +1,10 @@
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { IconButton } from '@/components/Button';
 import { PaySheet, type PaySheetProps } from '@/components/pay-sheet';
 import { font, layout, space, type, useWawu } from '@/theme';
+import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 
 /**
  * Development-only gallery of the pay sheet's states, for screenshots beside
@@ -82,7 +83,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onCanc
 export default function PaySheetPreview() {
   const { colors } = useWawu();
   const { state, tick } = useLocalSearchParams<{ state?: string; tick?: string }>();
-  if (!__DEV__) return <Redirect href="/" />;
+  if (!__DEV__) return <LeaveDevRoute />;
 
   const shown = cases[state ?? 'enough'] ?? cases.enough;
   const go = (next: string) => router.setParams({ state: next });

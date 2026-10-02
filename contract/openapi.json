@@ -18249,6 +18249,179 @@
         ]
       }
     },
+    "/api/hub/communities/mine": {
+      "get": {
+        "operationId": "CommunityRoomsController_mine",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyCommunity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "The caller's communities: rooms they host and rooms they were let into,\nnewest activity first, each with its share link, last message and unread\ncount. A request still waiting for the host is not listed.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
+    "/api/hub/communities/rooms": {
+      "post": {
+        "operationId": "CommunityRoomsController_createRoom",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRoom"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a room, the way the app does. Creator accounts only, like\nPOST /communities. A private room needs a cover image (`imageUrl`):\nwithout one the answer is 400 \"A private room needs a cover image.\".\nThe answer carries the room's share link.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
+    "/api/hub/communities/links/{slug}": {
+      "get": {
+        "operationId": "CommunityRoomsController_resolve",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRoom"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Open a `wawu/c/<slug>` link: the room it names, members or not. Capitals\nare accepted. 404 \"No community has this link.\" otherwise.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
+    "/api/hub/communities/{id}/link": {
+      "get": {
+        "operationId": "CommunityRoomsController_link",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityLinkView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The room's share link, made from its name the first time it is asked for.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
+    "/api/hub/communities/{id}/read": {
+      "post": {
+        "operationId": "CommunityRoomsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityReadView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The caller has read the room up to now; its unread count on\nGET /communities/mine goes to 0. The host or an approved member only\n(403 otherwise). 200, not 201: it moves a marker.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
     "/api/hub/communities": {
       "get": {
         "operationId": "CommunityController_list",
@@ -19859,7 +20032,7 @@
             "wawu-id": []
           }
         ],
-        "summary": "A6: matches the selfie against the BVN record's photo with Fintava\n(charged per match, a failed one too). A face match, not a liveness\ncheck. Needs a passed BVN check, and the BVN it passed with\n(`bvn_not_checked` otherwise). A failed match is A16\n(`selfie_not_matched`, with matches left today); the fourth in 24 hours\nis `selfie_checks_exhausted`, and Fintava is not asked. Neither the\nselfie nor the BVN photo is stored or logged. Limited per address by the\napp's throttler, as the BVN check is.",
+        "summary": "A6: matches the selfie against the BVN record's photo with Fintava\n(charged per match, a failed one too). A face match, not a liveness\ncheck. Needs a passed BVN check, and the BVN it passed with\n(`bvn_not_checked` otherwise). A failed match is A16\n(`selfie_not_matched`, with matches left today); the fourth in 24 hours\nis `selfie_checks_exhausted`, and Fintava is not asked. Only an explicit\nmatch from Fintava passes: an answer with no verdict is\n`provider_unreachable` and still counts. A match counts only for the\nBVN check it was compared against (`bvn_not_checked` if another check\npassed meanwhile). Neither the\nselfie nor the BVN photo is stored or logged. Limited per address by the\napp's throttler, as the BVN check is.",
         "tags": [
           "MoneyIdentity"
         ],
@@ -24138,11 +24311,11 @@
             "pattern": "\\S"
           },
           "kind": {
-            "type": "string",
             "enum": [
               "open",
               "private"
-            ]
+            ],
+            "type": "string"
           },
           "imageUrl": {
             "type": "string",
@@ -31711,6 +31884,209 @@
           "handle",
           "avatarUrl",
           "verification"
+        ]
+      },
+      "CommunityLastMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "senderWawuId": {
+            "type": "string"
+          },
+          "sender": {
+            "$ref": "#/components/schemas/CommunityMessageSender",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "imageUrl",
+          "sentAt",
+          "senderWawuId",
+          "sender"
+        ]
+      },
+      "MyCommunity": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "open",
+              "private"
+            ]
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "hostWawuId": {
+            "type": "string"
+          },
+          "memberCount": {
+            "type": "number"
+          },
+          "messagesToday": {
+            "type": "number"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "host",
+              "member"
+            ]
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastMessage": {
+            "$ref": "#/components/schemas/CommunityLastMessage",
+            "nullable": true
+          },
+          "unreadCount": {
+            "type": "number"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "kind",
+          "imageUrl",
+          "description",
+          "hostWawuId",
+          "memberCount",
+          "messagesToday",
+          "slug",
+          "link",
+          "role",
+          "joinedAt",
+          "lastMessage",
+          "unreadCount",
+          "lastActivityAt"
+        ]
+      },
+      "CommunityRoom": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "open",
+              "private"
+            ]
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "hostWawuId": {
+            "type": "string"
+          },
+          "memberCount": {
+            "type": "number"
+          },
+          "messagesToday": {
+            "type": "number"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "kind",
+          "imageUrl",
+          "description",
+          "hostWawuId",
+          "memberCount",
+          "messagesToday",
+          "slug",
+          "link"
+        ]
+      },
+      "CommunityLinkView": {
+        "type": "object",
+        "properties": {
+          "communityId": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "communityId",
+          "slug",
+          "link"
+        ]
+      },
+      "CommunityReadView": {
+        "type": "object",
+        "properties": {
+          "communityId": {
+            "type": "string"
+          },
+          "lastReadAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "communityId",
+          "lastReadAt"
         ]
       },
       "CommunityMessage": {

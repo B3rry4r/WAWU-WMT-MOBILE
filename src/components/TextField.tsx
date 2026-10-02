@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { font, layout, radius, space, text, useWawu } from '@/theme';
@@ -27,6 +27,10 @@ export type TextFieldProps = Omit<TextInputProps, 'style' | 'editable' | 'secure
   hint?: string;
   /** What is wrong, in words the user can act on. Turns the field red. */
   error?: string;
+  /** The red outline alone, with no sentence under the field (a sign-in that was refused says it once, in a banner above). */
+  invalid?: boolean;
+  /** The text input itself, so a form can move focus to its next field. */
+  inputRef?: Ref<TextInput>;
   disabled?: boolean;
   /** A check is running against the server (for example the phone check). Typing stays allowed. */
   loading?: boolean;
@@ -40,6 +44,8 @@ export function TextField({
   label,
   hint,
   error,
+  invalid,
+  inputRef,
   disabled,
   loading,
   secret,
@@ -54,7 +60,8 @@ export function TextField({
   const [shown, setShown] = useState(false);
   const eyeRing = useFocusRing();
 
-  const border = error ? colors.danger : focused ? colors.accent : colors.borderHairline;
+  const bad = Boolean(error) || Boolean(invalid);
+  const border = bad ? colors.danger : focused ? colors.accent : colors.borderHairline;
   const message = error ?? hint;
 
   return (
@@ -69,12 +76,13 @@ export function TextField({
           {
             backgroundColor: disabled ? colors.surfaceSunken : colors.surfaceInput,
             borderColor: border,
-            borderWidth: focused || error ? fieldMetrics.ring : StyleSheet.hairlineWidth,
+            borderWidth: focused || bad ? fieldMetrics.ring : StyleSheet.hairlineWidth,
           },
         ]}
       >
         {leadingIcon ? <Icon name={leadingIcon} size={space.xl} color={colors.textMuted} /> : null}
         <TextInput
+          ref={inputRef}
           testID={testID}
           accessibilityLabel={label}
           accessibilityHint={message}
