@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 62 | 49 | 33 | 32 |
+| todo | 61 | 49 | 33 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 15 | 9 | 1 | 0 |
+
+## Being verified
+
+- [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 
 ## Done
 
@@ -52,6 +56,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-10 · The ledger built in wawu-backend (`wmt/MONEY-10` da74274): `FintavaLedgerEntry` in BIGINT kobo, one row per wallet side, recorded once by a reference key (any of ours, Fintava's, tagapay, id: G-19), fed from MONEY-07's stored deliveries by a 30-second sweep, confirmed with Fintava when no side is held; a reversal marks the debit reversed, never a second row. Sandbox: two ₦10 round trips, 8 rows for 4 movements, balances back. Never a balance, no route. G-25 filed. To verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
 - 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
 - 2 Oct 2026 · INBOX-06 · Verified round 2: no defects (backend 8077ee9, mobile e012709). Chat media is held to 512 MB; the branch includes main `ac2a057` and its migrations apply cleanly on a fresh database; read marks hold for two messages in the same millisecond. Contract 99 suites 1964 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 2 unclear items for the owner (pending upload keys, CHAT-LIMITS). Status review.
@@ -66,4 +71,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-06 · Fintava client built in wawu-backend `src/fintava/` beside Flutterwave (no route served): every plan call typed in kobo, our reference on every send, reconcile before any resend, no secret in logs; sandbox run 25 passed, 5 NOT RUN (charged checks, no new customers, payouts blocked by question 17, webhooks are MONEY-07's); new fact: lookups answer `200 {}` for SUCCESS records too. To verifying.
 - 2 Oct 2026 · AUTH-03 merged (Developer 1): phone check at sign-up in WAWU ID (wawu-id PR #3), phone-verified sign-in for new sign-ups only, PROVISIONAL limits, Nigerian numbers at launch (R-36). Existing accounts unchanged.
 - 2 Oct 2026 · AUTH-03 fix round 2: sign-up returns an `attempt` secret that the phone routes need (a later sign-up can no longer capture someone else's code), no session by any route before the phone code, a held email moves only with a mailbox code, strangers spend nothing of a number's budget, the daily text budget is exact, IPv6 /64 counted as one, expired sign-ups release web `register`. AUTH-04 must send `attempt` (BACKEND_GAPS G-13).
-- 2 Oct 2026 · AUTH-03 fix round 1: the phone routes act only on a pending sign-up, wrong codes count per number and are never reset by a resend (12 a day), every kind of number gets the same answer, unconfirmed sign-ups expire after 24 h and release their email, parallel requests no longer 500, Nigerian numbers only, limits per address, number and day in the database; the sign-in answer carries `accountType` when the account has one (R-36). All limits PROVISIONAL.
