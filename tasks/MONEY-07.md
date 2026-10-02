@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [MONEY-06]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
@@ -107,6 +107,46 @@ Notes, not defects:
 - The builder's contract run had 40 failures; on a fresh database with the mock on :4001 there are none, so they were the :4001 suites, as the report says.
 
 NOT RUN: a real Fintava delivery (no tunnel, R-25; G-19, unblocked by OPS-10 registering the production URL or Fintava sending samples); the V8 items that need money to move (not applicable to MONEY-07); V10 (not in this task's passes); checking the droplet's nginx and tracker for defect 1 (no access, and not needed for the defect).
+
+### Round 2 (verifier, 2 Oct 2026)
+
+Re-verified wawu-backend `wmt/MONEY-07` `688593d` (fixes `4ba22f0`, plus main `ac2a057`, which carries MONEY-11, merged in) and mobile `wmt/MONEY-07` `dba9816` (main `246f395` merged in, still main), in fresh detached worktrees, with my own databases `v07r2_*` (dropped afterwards), the mock WAWU ID on :4001 (free per `lsof`; KYC-01's :4741 untouched) and production builds on :4721 and :4722 (all stopped). No sandbox or live Fintava call. **Verdict: PASS, `review`.** Defects 1 and 2 are fixed and no new defect was found.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | Mobile `npm run check` on `dba9816` exit 0: typecheck 0, lint 0, 16 suites / 285 tests, gates 9 run / 75 files scanned / 0 fail, 200 tasks. Backend: `tsc --noEmit` 0; eslint (no `--fix`) on the 15 changed `.ts` files 0; repo-wide 4492 problems against main's 4496; gates 16 fail / 3 warn / 76 accepted on 568 files, main `ac2a057` the same on 557, findings identical line by line; `check_baseline.py` passes. Key scan (my scanner, 58 windows): 0 hits in the backend diff against main (84,881 bytes), the round 2 fix diff, the merge's commit messages, the mobile diff against main and against round 1, the mobile commit message and this report. |
+| V2 Contract | passed | Full `test:contract` on fresh migrated and seeded `v07r2_full_test`, mock on :4001: **100 of 100 suites, 1978 passed, 0 failed, 3 skipped** (legal-intake's, as on main). :4001 suites: `kyc-submission` 22, `privacy-settings` 9, `credits-state` 4, `account` 5, all passed. Webhook specs 40/40; MONEY-11's `money-balance` 14/14 and `production-boot` 5/5. `contract:emit` + `contract:enrich` on a fresh build of `688593d` regenerate `contract/openapi.json` byte-identical; against main `ac2a057` it is 42 lines added, 0 removed, and `/api/hub/money/wallet/balance` is there. Mobile sync simulated with this contract: the op is excluded by `^PaymentWebhook$`; the only generated change is the unused `FintavaWebhookAck` type, as in round 1. |
+| V3 Regression | passed | `run.sh --fresh` on `v07r2_protected_test`, lock `origin/main` `ac2a057`: branch `688593d` 253/253 and main `ac2a057` 253/253 (all 244 required); lock and suite unchanged on the branch. Production builds of main and branch side by side: the route table is identical plus `POST /api/hub/webhooks/fintava`; 10 probes byte-identical, and every other route still carries `X-RateLimit-Limit-short: 20` and `-medium: 200`, so moving the list to `HUB_THROTTLERS` changed no limit. |
+| V6 States | passed | Real build: 200 `recorded` and `duplicate`, 400 (not JSON, empty), 401 (signature, no secret). No 429 any more (below). The 503 is still reachable through a database failure (the builder's spec); a NUL no longer causes it. |
+| V8 Money attack | passed | Forged: refused, database never touched. Replay: once. Concurrent: once. Burst: every delivery stored. NUL: stored once. Items that need money to move: NOT RUN, not applicable (MONEY-10, MONEY-16). |
+| V9 Live seam | passed (no app caller) | Production build of `688593d` with no `FINTAVA_*`: signed deliveries over HTTP, rows read back from Postgres. A real Fintava delivery: NOT RUN (R-25; G-19, OPS-10). |
+
+**Defect 1 (throttle): fixed.**
+- My production-build burst, at the same 1-second release: 30 different signed deliveries gave 30 times 200 and 30 rows (round 1: 10 times 429). Then 250 at once, twice (past `medium`'s 200 a minute): 250 times 200 and 250 rows each time. The webhook's answers carry no `X-RateLimit-*` header, and `/health` straight after still had 19 of 20 and 198 of 200 left, so the deliveries count against no bucket.
+- My full round 1 harness, unpaced, on the real build: 0 failures, where round 1 failed 19 checks on 429s (40 identical at once: 1 `recorded`, 39 `duplicate`, one row).
+- Mutations against the webhook specs (baseline 40/40): the old bare `@SkipThrottle()` fails 12 tests; no decorator fails 12; skipping only `short` fails the skip-map test; a hard-coded skip map with a third throttler added fails 12. The skip map is built from the registered names, and AppModule registers `[...HUB_THROTTLERS]` (pinned by a test).
+
+**Defect 2 (NUL): fixed.**
+- My round 1 repro (`\u0000` in `accountName`) on the production build: `recorded`, `duplicate`, `duplicate`; `rawBody` (now `bytea`) equals the bytes sent; the payload holds U+FFFD; the server logged no "not stored".
+- NUL in the keyed `customerReference`, in a description, in a key and in the status: stored once, two replays `duplicate`, the key and status hold U+FFFD (status still upper case), the raw bytes round-trip and re-sign to the signature sent. A raw 0x00 byte (invalid JSON) is still refused 400 by the parser.
+- `rawBody` as `bytea` also closes round 1's note: a body with invalid UTF-8 is now stored byte for byte.
+- Mutations: the payload not sanitised (P2039), the references not sanitised, NUL removed instead of replaced, and a non-deterministic replacement each fail the tests.
+- Ruling on the default (Default (agent), owner may override): **accepted.** The exact bytes are kept in `bytea` and only the derived columns are changed, the same way every time, so dedupe holds and nothing Fintava signed is lost. Two consequences, recorded rather than defects: a reference that differs from another only by NUL against U+FFFD lands on the same key (I sent `X\u0000Z` then `X�Z`: `recorded`, then `duplicate`); and `jsonWithoutNul` rebuilds objects by assignment, so a `__proto__` key in a body is dropped from `payload` (kept in `rawBody`; it pollutes nothing beyond that one object). Fintava's references are its own and carry neither.
+
+**The round 1 mutations, re-run on `688593d`:** 23 of 24 killed, including removing `@SkipThrottle`, which survived in round 1. `timingSafeEqual` against `===` still survives, as no functional test can see timing (the code is constant time, read by hand).
+
+**Rule 6 and the merge**
+- Production build of `688593d`, `NODE_ENV=production`, no `FINTAVA_*`: boots (MONEY-11's client warns once "FINTAVA_BASE_URL is not set"), `/health` 200, the webhook 401 "Fintava webhooks are not configured on this server." with nothing stored. Balance through a real mock WAWU ID registration and its token: no wallet 409 `wallet_not_open`; with a `FintavaWallet` row 503 `provider_unreachable`; main `ac2a057` answers the same.
+- The merge of `ac2a057`: every file MONEY-11 touched is either identical to main or, for `prisma/schema.prisma`, `deploy/README.md`, `src/fintava/fintava-config.ts` and `contract/openapi.json`, main plus additions with no line of main removed. `FintavaWallet` and the balance route are there and their specs pass.
+- Migrations: on fresh `v07r2_migrate_test`, `20261002120000_transaction_pin`, `20261002180000_fintava_wallet` and `20261002180000_fintava_webhook_event` apply in that order; `rawBody` is `bytea`, `payload` `jsonb`, `FintavaWallet` exists; the diff against the schema shows only the pre-existing `ContentPiece_specializations_idx` drift. Editing the migration in place is acceptable because no shared database has applied it (it is not on main); a local database that applied round 1's version must be recreated (Prisma reports the checksum change).
+
+**G-20:** accurate. `src/payment-webhook/payment-webhook.controller.ts:31` is a bare `@SkipThrottle()` on the merged branch, and `src/main.ts` sets no `trust proxy`.
+
+Notes, not defects:
+- The new burst test asserts the 30 sends finish inside the 1-second window. On a slow CI it would fail rather than pass falsely; if it flakes, raise the count rather than loosen the check.
+- The spec imports `THROTTLER_SKIP` from `@nestjs/throttler/dist/throttler.constants`, an internal path; a throttler upgrade may move it (the test would then fail to compile, not pass silently).
+
+NOT RUN: a real Fintava delivery (no tunnel, R-25; G-19, OPS-10); the V8 items that need money to move (not applicable); V10 (not in this task's passes); the droplet's nginx and tracker (G-20, out of scope).
 
 ## Owner sign-off
 
