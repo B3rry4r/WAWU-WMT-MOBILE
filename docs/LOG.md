@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · TEST-01 · Showcase state split per section (a press re-renders one section, not the page; same tree, Lead authorised) and router warm-up in `shell` and `focus`: 10 of 10 cold runs under load pass. Task file written, status verifying.
 - 2 Oct 2026 · TEST-01 · Tests no longer time out on a cold cache or a loaded machine: `lists`, `components` and `kit-components` load React Native's primitives (Modal alone was about 5 s cold) when the file loads and render the showcase once in a `beforeAll` with its own budget, and the showcase walk in `lists` runs on Jest's fake clock (the PinSheet.test.tsx pattern). No timeout raised, no test skipped.
 - 2 Oct 2026 · Owner stops narrowed (WORKFLOW section 10): agents decide anything with a sensible default, record it, and carry on; only invented money or legal facts, ledger mismatches, real data loss and destructive git go to the owner. No fix-round limit. Sign-up defaults recorded as R-36.
 - 2 Oct 2026 · MONEY-02 merged: the PIN sheet every payment reuses. Fingerprint or face (whatever the phone has), "<Name> failed. Use your PIN.", lock countdown, the shared BottomSheet (new `gap` prop) and Text (`errorLine`, `linkStrong`), matching W11 exactly. Adds expo-local-authentication: the next Android build carries it.
