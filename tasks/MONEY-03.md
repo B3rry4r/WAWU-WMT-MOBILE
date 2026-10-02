@@ -7,7 +7,7 @@ order: 45
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: [UI-02, MONEY-02, MONEY-04]
 decisions: [R-6, R-10]
 passes: [V1, V5, V6]
@@ -198,6 +198,66 @@ Notes (not defects):
 - The 360 ms release for a void `onPay` is unchanged from round 2 and still judged safe: no money moves in `onPay`, and the money path's idempotency is its V8.
 
 Round 3 verdict: 2 open defects (R3-1, R3-2). Status back to `building`.
+
+### Final round
+
+Verifier session (the same one, still not the builder), 2 Oct 2026. I checked 10b5fb8, which contains main f8d8277 (MONEY-02 merged), in a fresh detached worktree with `node_modules` symlinked; I removed it afterwards. I exported with `expo export --platform web --dev --clear`, served it on 8793, and shot it with Playwright + Chromium 1194 at 390 px, 2x, light and dark. To compare the PIN sheet I also exported main f8d8277 the same way. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money03/`: `shots4/`, `design_shots4/` (H14, H17, H18, W10, W11), `side4-*.png`, `grid4-*.png`, `check4.log`, `check4b.log`, `edge-tests4.log` and `zz-verifier4.test.tsx`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 on the second run: tsc and lint clean; jest 13 suites, 245 tests passed; gates 9 run, **69 files scanned**, 0 fail, 0 warn, 0 accepted, baseline 0; tasks 199 OK (`check4b.log`). The first run exited 1 on a 5 s timeout in `src/__tests__/lists.test.tsx` "filter chips" (a test this branch doesn't touch), under load average 5; that suite passed alone (42/42) and the full re-run was green (`check4.log`) |
+| V5 Picture | passed | H14, H17, H18, W10 and W11 beside the build, light and dark (`side4-*.png`); measurements below |
+| V6 States | passed | All 10 states in light and dark, with no page errors (`shots4/`, `grid4-*.png`) |
+
+Checks:
+1. **R3-1 and R3-2.**
+   - R3-2 is **closed**. W10, measured in light: avatar top to card top is 157 = 157, and the text block from the "Sending to" ink to the amount's ink is 58 = 58. Avatar to caption is 16 = 16 and amount to card is 19.5 = 19.5. Dark gives the same pairs.
+   - R3-1 is **closed for what it named**: `PillButton`, `Amount`/`Balance` and the row styles are gone, replaced by Button, Money, Text, KeyValueRow, GroupedList, Card, CurrencyFlag, Avatar and BottomSheet, and the SHARED-CHANGES deferral row is gone.
+   - **Two local copies of main's components remain** (defect F1 below), so this check **fails**.
+2. **Pictures.**
+   - H14 and H17, light and dark: sheet edge to grabber is 9 = 9 below the 1 px hairline (10 = 10 from the outer edge), and grabber to header is 20 = 20.
+   - In H14 the card top, the gap to the wallet card (22.5) and the gap to the button (25) all match the canvas. H17's banner top and its gaps match.
+   - W10 is as in check 1. H18's mark (Clock 32 / 2.4 in a 72 disc), title, line, Refresh with RotateCcw and Contact support match the H18 layout. H18's copy differs, which is recorded in round 1.
+   - Differences:
+     - Each sheet is one row taller: H14 adds Total, H17 adds Fintava's charge (BRIEF H14 and H17, R-10).
+     - Purchase rows show real kobo faded ("₦23.25", "₦2,523.25") while whole prices stay "₦2,500" (BRIEF H14 sample values, R-21).
+     - The ₦ sign (D15).
+     - The wallet card is 2 px taller (62.5 against 60.5), with its text 1 px lower. The cause is main's shared `Card`, which draws its hairline as a 1 px layout border (`src/components/Card.tsx:54`, `borderWidth: StyleSheet.hairlineWidth`) where the kit uses an inset shadow, the same pattern this branch fixed in BottomSheet. That is UI-02's Card, not this task, and it affects every Card.
+     - H17's banner is 1 px taller (65.5 against 64.5).
+3. **The BottomSheet change.**
+   - The PIN sheet is no worse than main. Every block (title, line, dots, the four key rows, Forgot PIN) sits at the same pixel on main and on this branch, and from the grabber at 2x the title, dots and keys are 54 / 115 / 190, the same as W11.
+   - It is not better either. The canvas edge is at 794 px at 2x (397), main had 794, and the branch has 796 (398). The 1 px offset moved from the grabber gap (main 10 against 9) to the sheet edge, and every PIN element is still 1 px below W11 (870 against 868 at 2x), exactly as on main. The builder's note "panel top at 398 = 398 (was 397)" mismeasures the canvas, which is 397. This doesn't block MONEY-03.
+   - The test change in `src/__tests__/lists.test.tsx` adds the inset hairline shadow to the exact `toEqual` and asserts `borderTopWidth` is undefined. It is stricter, not looser. UI-02's tests, including "lets a developer open the unlock sheet and close it again", pass.
+4. **States: pass.**
+   - enough, short ("Add ₦1,323.25"), paying ("Paying", disabled, sheet not closable), confirming, failed (X), no wallet, loading (Unlock disabled, in the kit's disabled look), zero fee ("₦0", Total ₦2,500), send ("They get ₦25,000", "Send ₦25,065"), send-short ("Add ₦65").
+   - No wallet: the only control is the sheet's own Close. There is no Pay, no balance and no dead control, and the wallet card isn't pressable (R-27).
+5. **Fees: pass** (my tests, `edge-tests4.log`, 7 passed).
+   - ₦2,500 + ₦23.25 gives "Unlock · ₦2,523.25", with no Fees row for one part. The builder's new test checks the same with ₦5,000 in the wallet.
+   - ₦40 + ₦25 shows Fees ₦65 and Total ₦25,065. ₦15.75 + ₦10 shows "Send ₦25,025.75".
+   - Three parts give exactly one Fees row and "Unlock · ₦2,565".
+   - 1 kobo short gives "Add ₦0.01".
+   - Double tap: three taps in one batch call `onPay` once. A void caller is held for 360 ms, then released. A promise caller is held until it settles. Unmounting with the timer pending calls `clearTimeout` once.
+6. **Branch scope: pass.**
+   - Against main f8d8277 the branch touches only `src/components/pay-sheet/`, `src/app/preview/pay-sheet.tsx`, the authorised `src/components/BottomSheet.tsx` and its test in `src/__tests__/lists.test.tsx`, DECISIONS.md (R-23, once), SHARED-CHANGES.md (Applied "MONEY-03 #11"), LOG, PROGRESS and this file.
+   - SHARED-CHANGES has no conflict markers, and every row id is unique in its table (section 1: 1, 2, 3, 7, 8; Applied: 4, 5, 6, 9, 10 and the prefixed MONEY-02 and MONEY-03 ids). Sections 2 to 4 are empty, so no MONEY-03 deferral rows are left.
+   - R-23 and R-27 appear once each, and `git grep '^<<<<<<<\|^>>>>>>>'` finds nothing.
+7. **`npm run check`: exit 0** (counts above; first run flaked as noted).
+
+Findings:
+
+- **F1, defect (local copies of main's components; check 1).**
+  - `Header` (`src/components/pay-sheet/PaySheet.tsx:341-373`, `styles.header`, `thumb`, `subtitle`) copies main's `MediaCard` row layout (`src/components/MediaCard.tsx`, "`row`: thumbnail beside the words (a sheet header)"). It is built from the same `home.js unlockSheet`: thumb 56, corner 14, gap 12, caption gap 3, subtitle 13.
+  - The `Status` mark (`PaySheet.tsx:427-439`, `styles.statusMark`) copies main's `IconTile`: a round tinted icon whose glyph is 45% of the circle, 32 at 72.
+  - Neither copy looks wrong. But main already has both parts, and the sheet needs a prop on each rather than its own version:
+    - `MediaCard` can't put the tick between "Chidi Eze" and "· Video · 18 min" as H14 does, and it takes only `imageUrl`.
+    - `IconTile` fixes its stroke at 2, where H18 draws 2.4.
+  - Ask for those props in SHARED-CHANGES, or have the Lead authorise them as with BottomSheet, then use the shared parts.
+
+Notes (not defects):
+- The Card hairline and the PIN sheet's 1 px edge, both described in check 2 and check 3, belong to UI-02 and MONEY-02.
+- The `lists.test.tsx` filter-chips timeout is flaky under load.
+
+Final round verdict: 1 open defect (F1). Status back to `building`.
 
 ## Owner sign-off
 
