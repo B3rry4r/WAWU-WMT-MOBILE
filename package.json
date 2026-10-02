@@ -13,6 +13,7 @@
     "test": "jest",
     "gates": "python3 scripts/gates/run.py && python3 scripts/gates/check_baseline.py",
     "tokens": "python3 scripts/design/gen_tokens.py",
+    "icons": "node scripts/design/gen_icons.js",
     "api": "python3 scripts/api/sync_contract.py",
     "tasks": "python3 scripts/tasks/check_tasks.py",
     "check": "npm run typecheck && npm run lint && npm test && npm run gates && npm run tasks"
@@ -21,6 +22,7 @@
     "@tanstack/react-query": "^5.104.0",
     "expo": "~57.0.26",
     "expo-constants": "~57.0.20",
+    "expo-dev-client": "~57.0.19",
     "expo-font": "~57.0.4",
     "expo-image": "~57.0.5",
     "expo-linking": "~57.0.11",
@@ -29,6 +31,7 @@
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
+    "lucide-react-native": "^1.49.0",
     "openapi-fetch": "^0.17.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -37,6 +40,7 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2",
     "react-native-worklets": "0.10.1"
   },
@@ -48,6 +52,7 @@
     "eslint-config-expo": "~57.0.2",
     "jest": "^29.7.0",
     "jest-expo": "~57.0.5",
+    "simple-icons": "^16.33.0",
     "typescript": "~6.0.3"
   },
   "jest": {
@@ -56,6 +61,10 @@
       "/node_modules/",
       "/design/",
       "/build/"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^lucide-react-native$": "<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js",
+      "^lucide-react-native/icons/(.*)$": "<rootDir>/node_modules/lucide-react-native/dist/cjs/icons/$1.js"
+    }
   }
 }

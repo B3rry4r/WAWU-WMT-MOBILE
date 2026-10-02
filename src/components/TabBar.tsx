@@ -3,20 +3,20 @@ import type { BottomTabBarProps } from 'expo-router/js-tabs';
 
 import { font, layout, radius, space, type, useWawu } from '@/theme';
 
-import { TabIcon, type TabIconName } from './TabIcon';
+import { ICON_STROKE, Icon, type IconName } from './icon';
 
 /** The locked five tabs. Order and labels are fixed. */
 export const tabs = [
-  { route: 'index', icon: 'home', label: 'Home' },
-  { route: 'explore', icon: 'explore', label: 'Explore' },
-  { route: 'inbox', icon: 'inbox', label: 'Inbox' },
-  { route: 'wallet', icon: 'wallet', label: 'Wallet' },
-  { route: 'me', icon: 'me', label: 'Me' },
-] as const satisfies readonly { route: string; icon: TabIconName; label: string }[];
+  { route: 'index', icon: 'House', label: 'Home' },
+  { route: 'explore', icon: 'Compass', label: 'Explore' },
+  { route: 'inbox', icon: 'MessageCircle', label: 'Inbox' },
+  { route: 'wallet', icon: 'Wallet', label: 'Wallet' },
+  { route: 'me', icon: 'CircleUserRound', label: 'Me' },
+] as const satisfies readonly { route: string; icon: IconName; label: string }[];
 
 const iconSize = space.s2xl;
-const strokeActive = 2.2;
-const strokeIdle = 1.8;
+const strokeActive = ICON_STROKE.activeTab;
+const strokeIdle = ICON_STROKE.default;
 
 /**
  * The bottom bar every signed-in screen shares. Badges come from each tab's
@@ -57,12 +57,12 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             style={styles.tab}
           >
             <View>
-              <TabIcon
+              <Icon
                 name={tab.icon}
                 size={iconSize}
                 color={color}
-                fill={focused ? colors.accentTintStrong : undefined}
-                stroke={focused ? strokeActive : strokeIdle}
+                fill={focused ? colors.accentTintStrong : 'none'}
+                strokeWidth={focused ? strokeActive : strokeIdle}
               />
               {count > 0 ? (
                 <View

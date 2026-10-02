@@ -5,6 +5,18 @@ belong to the company, not to a person on the team. **Only the owner has
 them, and only the owner submits to the stores.** The developer has Expo
 access only.
 
+## Now: Android only
+
+The owner tests on Android; nobody on the team has an iPhone yet. Until that
+changes, every test build is Android (`eas build -p android --profile
+preview`, an APK anyone installs from Expo's link). The iOS steps below stay
+for when an iPhone tester joins; skip them until then.
+
+- **Done:** the project is linked to Expo as `@moxnafrica/wawu-wmt`
+  (project id in `app.json`), 2 Oct 2026.
+- **Before the first preview build:** `eas.json` needs the real API and WAWU
+  ID addresses in place of the `.invalid` placeholders (owner).
+
 ## Who has what
 
 - **Owner:** Expo organization Owner, Apple (App Store Connect), Google Play
@@ -22,13 +34,11 @@ team rule: the developer publishes to `preview` only.
 
 1. **Invite the developer:** expo.dev, your organization, Members, Invite,
    role **Developer**.
-2. **Link the project** (SHELL-03): `npx eas-cli init` in this repo, under the
-   organization. It writes `owner` and the project id into `app.json`;
-   commit that.
+2. **Link the project** (SHELL-03): done 2 Oct 2026 (`@moxnafrica/wawu-wmt`).
 3. **Create the store records:**
    - App Store Connect: a new app with bundle id `africa.wawu.wmt`.
    - Play Console: a new app with package `africa.wawu.wmt`.
-4. **Create the iOS signing credentials once:** run the first
+4. **Later, when an iPhone tester joins. Create the iOS signing credentials once:** run the first
    `eas build -p ios --profile preview` yourself, interactively, and sign in
    to Apple when asked. Expo generates and stores the certificate and
    profile. After that, the developer's iOS builds reuse them without Apple
@@ -87,5 +97,25 @@ team rule: the developer publishes to `preview` only.
   production API, and the build number managed by Expo
   (`appVersionSource: remote`, `autoIncrement`).
 
-The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`. Secrets
-never go into the app at all.
+The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`, and the
+WAWU ID address as `EXPO_PUBLIC_ID_URL`. Secrets never go into the app at all.
+
+`eas.json` is written. Its addresses are reserved placeholders ending in
+`.invalid` until the owner supplies the real ones, which are owner inputs:
+
+| Input | Where it goes |
+|-------|---------------|
+| Test backend (Hub API) address | `EXPO_PUBLIC_API_URL` in `development` and `preview` |
+| Test WAWU ID address | `EXPO_PUBLIC_ID_URL` in `development` and `preview` |
+| Production Hub API address | `EXPO_PUBLIC_API_URL` in `production` |
+| Production WAWU ID address | `EXPO_PUBLIC_ID_URL` in `production` |
+
+A `preview` build made before the placeholders are replaced cannot reach any
+backend. The `EXPO_PUBLIC_` values are baked in at build time, so changing one
+needs a new build; `eas update` takes the same variables from its own
+environment when it publishes.
+
+Over-the-air updates need `expo-updates`, an `updates.url` and a
+`runtimeVersion` in `app.json`. `app.json` is fenced, so those are queued in
+`SHARED-CHANGES.md`; `npx eas-cli update:configure` (run once by the owner or
+developer, signed in to Expo) writes them.
