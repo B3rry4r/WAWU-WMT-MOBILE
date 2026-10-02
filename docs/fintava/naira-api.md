@@ -47,11 +47,16 @@ blocker").
   invisible by reference**: at 10:18 UTC the lookup still returned it, but at
   10:27:45, 10:27:46 and 10:28:11 UTC (OPS-02 verifier) `GET /transaction/reference/{ours}` answered
   **HTTP 200 with the body `{}`**, while `/txn/merchant` still listed the same
-  send as `PENDING`. So MONEY-06 never reads `{}` as "not found, safe to
-  retry with the same reference": it reconciles from the history (where the
-  `PENDING` row still sits), retries a refused bank send only under a **new**
-  reference, and MONEY-16 treats these orphan `PENDING` rows as no money
-  moved.
+  send as `PENDING`. **`{}` is not only for refused sends** (MONEY-06,
+  `sandbox/26-money06-client.md`): from about 15:34 UTC the same lookup
+  answered `{}` for records of every status, SUCCESS included, about a
+  minute after each was found, while a reference that never existed still
+  answered 404; records that were `{}` at 10:27 came back at 15:33. So `{}`
+  comes and goes and looks like "a record exists, its body was not served".
+  The client (MONEY-06) never reads `{}` as "not found, safe to retry with
+  the same reference": it reconciles from the history (where the row still
+  sits), retries a refused bank send only under a **new** reference, and
+  MONEY-16 treats orphan `PENDING` rows as no money moved.
 - **A 2xx is not proof of payment.** A cable purchase came back HTTP 201 with
   only `{ status: 200, message: "service not currently available" }`
   (`sandbox/21-bills-cable.md`). A payment counts only when the body carries
@@ -60,8 +65,9 @@ blocker").
 - **A 5xx on a money call means "unknown".** A wallet-to-wallet send first
   answered `500 ["read ECONNRESET"]`; the identical request seconds later
   answered `400 "Insufficient balance on source wallet..."`
-  (`sandbox/13-wallet-to-wallet.md`). Look the send up by our reference
-  before retrying, never assume it failed or succeeded.
+  (`sandbox/13-wallet-to-wallet.md`). And a ₦10 send the client gave up on
+  after 3 s **went through** (`sandbox/26-money06-client.md`). Look the send
+  up by our reference before retrying, never assume it failed or succeeded.
 - **Errors.** Not plain NestJS (`sandbox/24-auth-and-errors.md`). Business
   errors are `{ status, timestamp, message: [string], path }`, with
   `message` always an array. Validation errors nest the NestJS object:
@@ -80,7 +86,8 @@ blocker").
   (`sandbox/24-auth-and-errors.md`).
 - **Not found is not one code.** Unknown wallet on the balance call: 400
   "Wallet not found". Unknown customer on `/txn`: 404. Unknown transaction
-  reference: 404. **Unknown transaction id: 200 with `data: null`.** A
+  reference: 404. **Unknown transaction id: 200 with `data: null`**, and
+  later `200 {}` (`sandbox/26-`). A
   refused bank send looked up by our reference some time later: **200 with
   `{}`** (no `data`, no `status`), though the history still lists it
   (`sandbox/14-bank-transfer.md`).
@@ -415,7 +422,9 @@ app (R-20). What the sandbox showed on each, with evidence, is in
     list debits only (`sandbox/09-`, `10-`).
 20. Open. How does a wallet move from `TIER_2` to `TIER_3`?
 21. Open. Will the `PENDING` records left by refused bank sends ever resolve,
-    and why does the lookup by our reference turn from the `PENDING` record
-    into `200 {}` while `/txn/merchant` still lists it? How should we retry?
-    (`sandbox/14-bank-transfer.md`.)
+    and why does the lookup by our reference turn into `200 {}` while
+    `/txn/merchant` still lists the row? It now happens to SUCCESS records
+    too, about a minute after they are made, and comes and goes; the lookup
+    by id does it as well. How should we retry? (`sandbox/14-bank-transfer.md`,
+    `sandbox/26-money06-client.md`.)
 22. Open. Create returns `nin: null`: is the NIN stored?
