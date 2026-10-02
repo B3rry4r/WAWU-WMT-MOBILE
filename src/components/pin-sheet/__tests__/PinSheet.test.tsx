@@ -245,6 +245,20 @@ describe('PinSheet', () => {
     expect(onForgotPin).toHaveBeenCalledTimes(1);
   });
 
+  it('draws its rows 14 apart, as W11 passes to sheet(), with the shared error line and link copy', async () => {
+    const user = press();
+    await render(
+      <PinSheet {...setup({ onSubmit: answer({ code: 'pin_incorrect', triesLeft: 2 }), onForgotPin: jest.fn() })} />,
+    );
+    const flat = (el: { props: Record<string, unknown> }) =>
+      Object.assign({}, ...[el.props.style].flat(Infinity).filter(Boolean));
+    expect(flat(screen.getByLabelText('Enter your PIN')).gap).toBe(14);
+    await enter(user, '0000');
+    await flush();
+    expect(flat(screen.getByText('Wrong PIN. 2 tries left.'))).toMatchObject({ fontSize: 13, fontFamily: 'AlanSans-SemiBold' });
+    expect(flat(screen.getByText('Forgot PIN?'))).toMatchObject({ fontSize: 14, fontFamily: 'AlanSans-SemiBold' });
+  });
+
   it('writes the approval line with the total for a purpose (M13)', async () => {
     await render(<PinSheet {...setup({ approval: { totalKobo: 202_325, purpose: 'the professional tick' } })} />);
     expect(screen.getByText('₦2,023.25 for the professional tick')).toBeOnTheScreen();

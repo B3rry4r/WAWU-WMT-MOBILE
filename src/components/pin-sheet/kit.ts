@@ -46,15 +46,11 @@ export const KEYPAD = {
   delete: { name: 'Delete', size: 24, stroke: ICON_STROKE.default },
 } as const;
 
-/** W11's "Forgot PIN?" line: 14px, 600, accent-fg. */
-export const FORGOT = { size: 14 } as const;
-
 /**
- * The kit's inline error line (design/_gen/auth.js, "That code isn't right"):
- * CircleAlert 15 in danger at stroke 2.2, 13px 600 text, 6 apart.
+ * The kit's inline error line (design/_gen/auth.js line 14): CircleAlert 15 in
+ * danger at stroke 2.2, 6 apart from its text (the shared `Text` `errorLine`).
  */
 export const ALERT = {
   icon: { name: 'CircleAlert', size: 15, stroke: ICON_STROKE.button },
-  size: 13,
   apart: 6,
 } as const;

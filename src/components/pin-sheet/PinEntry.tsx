@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { font, radius, space, useWawu } from '@/theme';
+import { radius, space, useWawu } from '@/theme';
 
 import { approvalLine, lockedLine, msUntil, wrongPinLine } from './format';
-import { ALERT, DOTS, FORGOT, HEADING, SHEET } from './kit';
+import { ALERT, DOTS, HEADING, SHEET } from './kit';
 import { Keypad } from './Keypad';
 import { biometricFailedLine, biometricLook, useBiometricKind } from './biometric';
 import type { BiometricKind, BiometricResult, PinCheckResult, PinSheetProps } from './types';
@@ -204,7 +204,7 @@ export function PinEntry({
     status = (
       <View style={styles.alert} accessible accessibilityRole="alert" accessibilityLiveRegion="polite">
         <Icon name={ALERT_ICON.name} size={ALERT_ICON.size} strokeWidth={ALERT_ICON.stroke} color={colors.danger} />
-        <NativeText style={[styles.alertText, { color: colors.danger }]}>{phase.message.text}</NativeText>
+        <Text variant="errorLine">{phase.message.text}</Text>
       </View>
     );
   }
@@ -260,9 +260,9 @@ export function PinEntry({
           hitSlop={space.md}
           style={styles.forgot}
         >
-          <NativeText style={[styles.forgotText, { color: submitting ? colors.textDisabled : colors.accentFg }]}>
+          <Text variant="linkStrong" tone={submitting ? 'textDisabled' : undefined} style={styles.center}>
             Forgot PIN?
-          </NativeText>
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -277,7 +277,5 @@ const styles = StyleSheet.create({
   dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
   status: { alignItems: 'center' },
   alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ALERT.apart },
-  alertText: { ...font(600), fontSize: ALERT.size },
-  forgotText: { ...font(600), fontSize: FORGOT.size, textAlign: 'center' },
   forgot: { alignSelf: 'center' },
 });

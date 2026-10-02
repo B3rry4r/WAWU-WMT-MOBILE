@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { BottomSheet } from '@/components/BottomSheet';
 
+import { SHEET } from './kit';
 import { PinEntry } from './PinEntry';
 import type { PinSheetProps } from './types';
 
@@ -19,7 +20,7 @@ export function PinSheet({ visible, onClose, ...entry }: PinSheetProps) {
   const [busy, setBusy] = useState(false);
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} label="Enter your PIN" dismissible={!busy}>
+    <BottomSheet visible={visible} onClose={onClose} label="Enter your PIN" dismissible={!busy} gap={SHEET.stack}>
       <PinEntry {...entry} onBusyChange={setBusy} />
     </BottomSheet>
   );
