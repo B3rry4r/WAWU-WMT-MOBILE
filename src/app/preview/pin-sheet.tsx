@@ -1,9 +1,10 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PinSheet, type BiometricKind, type BiometricResult, type PinCheckResult } from '@/components/pin-sheet';
 import { layout, space, text, useWawu } from '@/theme';
+import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 
 /*
  * Development-only harness for the PIN sheet (task MONEY-02), used to
@@ -65,7 +66,7 @@ export default function PinSheetPreview() {
   const [open, setOpen] = useState(true);
   const [lockedUntil] = useState(() => (params.opensLocked === '1' ? lockEnd(params) : null));
 
-  if (!__DEV__) return <Redirect href="/" />;
+  if (!__DEV__) return <LeaveDevRoute />;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage }]}>

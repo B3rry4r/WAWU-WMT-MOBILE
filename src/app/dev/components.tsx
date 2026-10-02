@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router';
 import { lazy, Suspense } from 'react';
+import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 
 const Showcase = lazy(() => import('@/features/showcase/Showcase').then((m) => ({ default: m.Showcase })));
 
@@ -9,7 +9,7 @@ const Showcase = lazy(() => import('@/features/showcase/Showcase').then((m) => (
  * Open /dev/components in `npm run web`.
  */
 export default function ComponentsRoute() {
-  if (!__DEV__) return <Redirect href="/" />;
+  if (!__DEV__) return <LeaveDevRoute />;
   return (
     <Suspense fallback={null}>
       <Showcase />

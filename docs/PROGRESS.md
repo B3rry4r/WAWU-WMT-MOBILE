@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 25 of 177.**
+**Launch tasks done: 26 of 177.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 61 | 49 | 33 | 32 |
+| todo | 61 | 48 | 33 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 16 | 9 | 1 | 0 |
+| done | 16 | 10 | 1 | 0 |
 
 ## Done
 
@@ -33,6 +33,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
+- [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
@@ -45,7 +46,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy)
-- **Developer:** [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content
+- **Developer:** [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content
 - **Developer 2:** [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
 
@@ -53,6 +54,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · AUTH-01 · Fix round 1: dev routes leave for Home or sign in in a release build (F1), tests for the held splash on a slow vault read (F6), keyboard handling and A23 autofocus (F5, F9), gaps G-26 to G-30; verifying.
+- 2 Oct 2026 · AUTH-01 · Sign in, wrong password, forgot password and check your email built (A22 to A25) behind a signed-in/signed-out route guard; wawu-id's reset-link answer now carries the link's real lifetime (additive); 41 tests, 20 revert proofs, real login and reset run on the local stack; verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
 - 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
 - 2 Oct 2026 · INBOX-06 · Verified round 2: no defects (backend 8077ee9, mobile e012709). Chat media is held to 512 MB; the branch includes main `ac2a057` and its migrations apply cleanly on a fresh database; read marks hold for two messages in the same millisecond. Contract 99 suites 1964 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 2 unclear items for the owner (pending upload keys, CHAT-LIMITS). Status review.
@@ -66,5 +69,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
 - 2 Oct 2026 · MONEY-11 · `GET /money/wallet/balance` served in wawu-backend (`wmt/MONEY-11`): Fintava's availableBalance in kobo on every call, `503 provider_unreachable` (W6) never 0, `423 wallet_frozen`, `409 wallet_not_open`; new `FintavaWallet` table; app call `src/api/money.ts`; sandbox: route equals Fintava after two ₦10 sends. Status verifying.
 - 2 Oct 2026 · MONEY-06 · Round 2: the verifier's 5 defects fixed (exact Fintava hosts only; only Fintava's own `404 "Transaction not found!"` counts as absent; no resend before the money timeout plus a 10-minute safety window and only when history also lacks the send; a repeated reference is an unknown outcome; the `{}` timing in the docs matches the evidence); key fragments masked in logs. Back to verifying.
-- 2 Oct 2026 · MONEY-06 · Fintava client built in wawu-backend `src/fintava/` beside Flutterwave (no route served): every plan call typed in kobo, our reference on every send, reconcile before any resend, no secret in logs; sandbox run 25 passed, 5 NOT RUN (charged checks, no new customers, payouts blocked by question 17, webhooks are MONEY-07's); new fact: lookups answer `200 {}` for SUCCESS records too. To verifying.
-- 2 Oct 2026 · AUTH-03 merged (Developer 1): phone check at sign-up in WAWU ID (wawu-id PR #3), phone-verified sign-in for new sign-ups only, PROVISIONAL limits, Nigerian numbers at launch (R-36). Existing accounts unchanged.
