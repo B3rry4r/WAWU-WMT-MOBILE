@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { Platform } from 'react-native';
 
-import { Avatar, hues, initials } from '@/components/Avatar';
+import { Avatar, hues, initialsOf } from '@/components/Avatar';
 import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { amountTracking, Money } from '@/components/Money';
 import { Text } from '@/components/Text';
@@ -64,7 +65,12 @@ beforeEach(() => {
   mockScheme = 'dark';
 });
 
-describe('amount at the kit size', () => {
+describe('amount at the kit size, on the web', () => {
+  beforeEach(() => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+  });
+  afterEach(() => jest.restoreAllMocks());
+
   it.each([40, 15.5, 14.5])('shows a user a %p px amount exactly that tall, kobo included, as the kit Amt draws it', async (size) => {
     await render(<Money minorUnits={2500075} size={size} testID="amount" />);
     const whole = flat(screen.getByTestId('amount').props.style);
@@ -98,6 +104,41 @@ describe('amount at the kit size', () => {
     expect(lineBox([runs[0], { ...runs[1], lineHeight: 40 }])).toBeGreaterThan(40);
   });
 
+});
+
+describe('amount at the kit size, on a phone', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  // One paragraph has one line height on native: iOS takes the first run's
+  // paragraph style, Android the last line-height span. So only the outer Text
+  // carries one, `size`, and no run inside it sets its own.
+  it.each(['ios', 'android'] as const)('shows a user on %s an amount with one line height, the size, and none on the sign or kobo', async (os) => {
+    jest.replaceProperty(Platform, 'OS', os);
+    await render(<Money minorUnits={2500075} size={40} testID="amount" />);
+    expect(flat(screen.getByTestId('amount').props.style).lineHeight).toBe(40);
+    const sign = flat(screen.getByText('₦').props.style);
+    const kobo = flat(screen.getByText('.75').props.style);
+    expect(sign).not.toHaveProperty('lineHeight');
+    expect(sign.fontFamily).toBe('System');
+    expect(kobo).not.toHaveProperty('lineHeight');
+    expect(kobo.fontSize).toBeCloseTo(28.8);
+  });
+
+  it.each(['ios', 'android'] as const)('keeps a hidden balance on %s to the one outer line height', async (os) => {
+    jest.replaceProperty(Platform, 'OS', os);
+    await render(<Money minorUnits={2500075} size={40} masked testID="hidden" />);
+    expect(flat(screen.getByTestId('hidden').props.style).lineHeight).toBe(40);
+    expect(flat(screen.getByText('₦').props.style)).not.toHaveProperty('lineHeight');
+  });
+
+  it('gives the sign its own kobo-sized line height on the web only, hidden balance included', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    await render(<Money minorUnits={2500075} size={40} masked testID="hidden" />);
+    expect(flat(screen.getByText('₦').props.style).lineHeight).toBeCloseTo(28.8);
+  });
+});
+
+describe('amount tracking', () => {
   it('tracks an amount at the kit -0.025em, not the -0.03em token', async () => {
     expect(amountTracking).toBe(-0.025);
     await render(<Money minorUnits={2500000} size={40} testID="amount" />);
@@ -111,6 +152,7 @@ describe('kit copy sizes', () => {
     kvValue: { fontSize: 14.5, fontFamily: 'AlanSans-SemiBold', tone: 'textPrimary' },
     meta: { fontSize: 13, fontFamily: 'AlanSans-Regular', tone: 'textMuted' },
     muted: { fontSize: 13.5, fontFamily: 'AlanSans-Regular', tone: 'textSecondary' },
+    bannerBody: { fontSize: 13, fontFamily: 'AlanSans-Regular', tone: 'textSecondary' },
     cardTitle: { fontSize: 15, fontFamily: 'AlanSans-SemiBold', tone: 'textPrimary' },
     sheetTitle: { fontSize: 22, fontFamily: 'AlanSans-Bold', tone: 'textPrimary' },
     sheetTitleSm: { fontSize: 21, fontFamily: 'AlanSans-Bold', tone: 'textPrimary' },
@@ -141,6 +183,11 @@ describe('kit copy sizes', () => {
     expect(text.sheetTitleSm.lineHeight).toBe(Math.round(21 * 1.15));
   });
 
+  it('draws a banner body at 13 on a 1.45 line, 19 px, apart from meta on the font default 1.3', () => {
+    expect(text.bannerBody.lineHeight).toBe(Math.round(13 * 1.45));
+    expect(text.meta.lineHeight).toBe(Math.round(13 * 1.3));
+  });
+
   it('keeps muted copy apart from secondary: same size and colour, taller line (1.45 against 1.4)', () => {
     expect(text.muted.fontSize).toBe(text.secondary.fontSize);
     expect(Number(text.muted.lineHeight)).toBeGreaterThan(Number(text.secondary.lineHeight));
@@ -149,11 +196,11 @@ describe('kit copy sizes', () => {
 
 describe('avatars', () => {
   it('shows a user the first letters of up to two names, and W with no name', () => {
-    expect(initials('Chidinma Okoro')).toBe('CO');
-    expect(initials('Chidinma Adaeze Okoro')).toBe('CA');
-    expect(initials('Tife')).toBe('T');
-    expect(initials('  Femi   Bello ')).toBe('FB');
-    expect(initials()).toBe('W');
+    expect(initialsOf('Chidinma Okoro')).toBe('CO');
+    expect(initialsOf('Chidinma Adaeze Okoro')).toBe('CA');
+    expect(initialsOf('Tife')).toBe('T');
+    expect(initialsOf('  Femi   Bello ')).toBe('FB');
+    expect(initialsOf()).toBe('W');
   });
 
   describe.each(themes)('in %s', (scheme, colors) => {
@@ -182,14 +229,14 @@ describe('avatars', () => {
   });
 
   it('shows a user the photo instead of initials when there is one', async () => {
-    await render(<Avatar testID="av" name="Tife Ade" src="https://example.test/tife.jpg" label="Tife Ade" />);
+    await render(<Avatar testID="av" name="Tife Ade" source="https://example.test/tife.jpg" />);
     expect(screen.getByTestId('av-image')).toBeTruthy();
     expect(screen.queryByText('TA')).toBeNull();
     expect(screen.getByRole('image', { name: 'Tife Ade' })).toBeTruthy();
   });
 
   it('keeps a screen reader from reading initials twice beside a name, at the kit default size of 44', async () => {
-    await render(<Avatar testID="av" name="Tife Ade" />);
+    await render(<Avatar testID="av" name="Tife Ade" decorative />);
     expect(screen.queryByText('TA')).toBeNull();
     expect(flat(screen.getByTestId('av', hidden).props.style).width).toBe(44);
   });

@@ -1,4 +1,4 @@
-import { StyleSheet, Text as NativeText, View, type StyleProp, type TextStyle } from 'react-native';
+import { Platform, StyleSheet, Text as NativeText, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { font, radius, type, useWawu, type ColorToken } from '@/theme';
 
@@ -116,16 +116,20 @@ export function Money({
     color,
   };
 
-  // The runs inside the figure (the sign in the platform font, the smaller kobo)
-  // get a line height of their own, kobo-sized. Left to inherit the figure's
-  // absolute one, each is centred on its own font's metrics and pushes the line
-  // box past `size` on the web: 44 px at 40 from the kobo (measured on W10), and
-  // 41 from the platform-font sign. Line height never moves a glyph off the
-  // baseline, so nothing shifts; the figure is `size` tall, like the kit's
+  // Web only: the runs inside the figure (the sign in the platform font, the
+  // smaller kobo) get a kobo-sized line height of their own. In CSS each inline
+  // run is centred on its own font's metrics, so inheriting the figure's
+  // absolute line height pushes the line box past `size`: 44 px at 40 from the
+  // kobo (measured on W10), 41 from the platform-font sign. Line height never
+  // moves a glyph off the baseline, so nothing shifts.
+  // Native gets none: one paragraph has one line height there (iOS takes the
+  // first run's paragraph style, RCTAttributedTextUtils; Android the last
+  // CustomLineHeightSpan, TextLayoutManager.kt), so a run's 72% would set the
+  // whole line and clip it. The outer `lineHeight: size` alone is the kit's
   // `line-height:1`.
-  const runLineHeight = size * minorScale;
+  const runLineHeight: TextStyle | null = Platform.OS === 'web' ? { lineHeight: size * minorScale } : null;
   const signStyle: TextStyle = {
-    lineHeight: runLineHeight,
+    ...runLineHeight,
     ...(currency === 'NGN' ? { fontFamily: platformFont, fontWeight: weightName[weight] } : null),
   };
 
@@ -150,7 +154,7 @@ export function Money({
       <NativeText style={signStyle}>{p.glyph}</NativeText>
       {p.whole}
       {decimals ? (
-        <NativeText style={{ fontSize: size * minorScale, lineHeight: runLineHeight, opacity: minorOpacity }}>.{p.minor}</NativeText>
+        <NativeText style={{ fontSize: size * minorScale, opacity: minorOpacity, ...runLineHeight }}>.{p.minor}</NativeText>
       ) : null}
     </NativeText>
   );

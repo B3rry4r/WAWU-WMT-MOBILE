@@ -87,6 +87,8 @@ export const text = {
   kvValue: style(14.5, 600, 0, kitNormalLeading),
   /** kit.js line 69, the `fromWallet` line, and line 55, the `tx` sub line: `font-size:13px`, 400, text-muted. */
   meta: style(13, 400, 0, kitNormalLeading),
+  /** kit.js line 58, the `banner` body: `font-size:13px;color:var(--text-secondary);line-height:1.45`, 400. */
+  bannerBody: style(13, 400, 0, type.leading.body),
   /** kit.js line 42, `muted`: `size: 13.5`, text-secondary, `lh: 1.45`. Not `secondary`, whose line height is 1.4. */
   muted: style(type.size.sec, 400, 0, type.leading.body),
   /** kit.js line 69, the `fromWallet` title: `font-size:15px;font-weight:600`. */

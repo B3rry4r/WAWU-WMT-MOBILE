@@ -52,7 +52,7 @@ ask for one; don't pick work yourself.
 npm run check      typecheck, lint, tests, gates, task check (must exit 0)
 npm run web        run in the browser
 npm run tokens     regenerate the theme from the design tokens
-npm run api        regenerate API types from the backend contract
+npm run api -- --backend ../wawu-backend   copy the backend main contract and regenerate API types
 npm run tasks      check task files (add -- --write to refresh tasks/INDEX.md)
 python3 scripts/design/render_design.py <IDs>    render artboards to build/design_shots/
 ```

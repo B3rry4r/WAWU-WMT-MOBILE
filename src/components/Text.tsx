@@ -18,6 +18,7 @@ const defaultTone: Record<TextVariant, ColorToken> = {
   kvLabel: 'textSecondary',
   kvValue: 'textPrimary',
   meta: 'textMuted',
+  bannerBody: 'textSecondary',
   muted: 'textSecondary',
   cardTitle: 'textPrimary',
   sheetTitle: 'textPrimary',
