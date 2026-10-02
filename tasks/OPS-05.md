@@ -7,7 +7,7 @@ order: 6
 priority: launch
 repo: wawuafrica, wawu-backend
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: []
@@ -91,6 +91,30 @@ Verifier session, fresh (did not build this task). Branches read: web `wmt/OPS-0
 Checked and not a finding: "There is no Shop" (web `CLAUDE.md:126`) matches the web as users see it, since Shop is closed by `SHOP_LIVE = false` (`src/app/(app)/shop/layout.tsx:18`); its code removal on the backend is OPS-08.
 
 Status set back to `building` (findings 1 and 2 open).
+
+### Round 2
+
+Heads read: web d2d23bf, backend e4f471e, mobile 02b3d7d; mobile main ce86832 for the dated Authority section (`git -C /home/user/wawu-wmt-mobile show main:DECISIONS.md`). Re-read the full diff of each repo against origin/main, plus the round-2 deltas (web 66c5a33..d2d23bf touches only the two hunks below in `CLAUDE.md` and its four copies; backend e3e67d4..e4f471e touches two hunks). Gates and the sync script were run on `git archive` copies under the scratchpad, not in the worktrees.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Finding 1 (web R-7/R-8/R-9 stated as web fact) | closed, but one new false claim in the fix (finding 4) | Web `CLAUDE.md:120-122` restores the removed 5-item line word for word (compared with origin/main). Lines 123-143 say what the web does today: `MAX_ITEMS_PER_ACCOUNT = 5` (backend `src/common/creator-allowance.ts:25`), ₦0 refused (web `src/lib/api/creator-content.ts:192`, text matches), `check-copy.mjs` bans "free", `SHOP_LIVE = false` (`src/app/(app)/shop/layout.tsx:18`), tabs from `profileTabsFor()` (`src/types/profile.ts:43-53`: overview, then content, services, events when present). All confirmed in the code |
+| Finding 2 (backend registry description) | closed | Backend `CLAUDE.md:26-30`: "129 endpoints, frozen 22 Aug 2026, none under `admin/`", MONEY-01 extends it. Matches the file (`frozenAt` 2026-08-22, 129 endpoints, 0 admin paths, `consumerApp` WAWU-Web) |
+| Finding 3 (mobile-first with no id/date) | closed | Mobile main ce86832 dates Authority: "*Owner, 1 Oct 2026.* ... Cite this section as "DECISIONS.md, Authority (owner, 1 Oct 2026)"". Web `CLAUDE.md:9-12` and backend `CLAUDE.md:8-11` cite exactly that; R-3 now cited only for "built with Expo", which is what R-3 says |
+| Ruling ids and dates in the full diff | passed | R-1 (1 and 2 Oct), R-2 (1 Oct), R-3 (1 Oct), R-5 (21 Sep), R-6, R-7, R-8, R-9, R-10, R-11, R-16, R-19, R-20 (2 Oct) all match `DECISIONS.md`; Authority citation matches main. No other lines changed outside the rulings |
+| Agent rules copies via `scripts/sync-agent-rules.sh` | passed | Re-ran on a scratch copy of d2d23bf: all four files byte-identical to the committed ones; each equals `CLAUDE.md` below the header line |
+| Em-dashes in added lines | passed | Web `CLAUDE.md` 0, backend 0 |
+| Web gates `scripts/gates/run.py` | passed (no change) | 10 gates, 350 files scanned, 15 fail, 8 warn, 42 accepted, exit 1: same as origin/main in round 1 |
+| Web `check-copy.mjs` | passed | "copy rules: clean", exit 0 |
+| Backend gates + baseline | passed (no change) | 9 gates, 523 files scanned, 16 fail, 0 warn, 76 accepted, exit 1: same as origin/main; baseline exit 0 |
+| Mobile gates + task check | passed | Branch 02b3d7d and main ce86832 both: 9 gates, 5 files scanned, 0/0/0, exit 0; 187 tasks, 280 artboards, exit 0 |
+| Typecheck, lint, tests | NOT RUN | No `node_modules` in any worktree; Markdown-only diff |
+
+#### Round 2 findings
+
+4. **defect** · web `CLAUDE.md:129-130`, "Nothing enforces a tick tier or a storage limit yet". The tick-tier half is true; the storage half is not. The backend enforces a flat 2 GB per account today: `STORAGE_BYTES_PER_ACCOUNT = 2 * 1024 * 1024 * 1024` and `DEFAULT_STORAGE_BYTES` (same) in `wawu-backend/src/common/creator-allowance.ts:48,57`, checked before every upload URL is signed (`src/storage/storage.service.ts:191-197`, `PayloadTooLargeException`). This wording came from my own round-1 finding 1, which said "no storage limit" without checking storage; that was the verifier's error, not the builder's. Closed when the line says the backend enforces a flat 2 GB storage quota per account and no tick tier.
+
+Findings 1, 2 and 3 are closed. Status stays `building` (finding 4 open).
 
 ## Owner sign-off
 
