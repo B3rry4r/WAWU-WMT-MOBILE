@@ -11,7 +11,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 11 | 6 | 0 | 0 |
+| done | 12 | 6 | 0 | 0 |
 
 ## Done
 
@@ -32,6 +32,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
+- [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
 
 ## Next up
 
@@ -44,6 +45,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · TEST-01 merged: the first-render test timeouts are fixed (preloads, warm-up renders, a fake clock, and the developer Showcase split into sections). 10 of 10 cold runs pass under heavy load.
 - 2 Oct 2026 · MONEY-03 merged: the pay-from-wallet sheet (purchase H14/H17/H18 and the send variant W10) matching the canvas to the pixel on shared parts only. Shared changes with it: MediaCard byline and image, IconTile strokeWidth, Card and BottomSheet inset hairlines, exact fractional line heights, and the kit's `normal` leading on kvLabel/kvValue/meta/cardTitle/errorLine/linkStrong.
 - 2 Oct 2026 · MONEY-03 · Lead ruling applied: kit variants on `line-height: normal` use `canvasNormalLineHeight` in the theme; the pay sheet's per-line overrides removed; H14, H17, H18, W10 and W11 still equal to the canvas.
 - 2 Oct 2026 · MONEY-03 · Theme `style()` line heights now exact, as CSS (Lead-authorised), plus `canvasNormalLineHeight`; H18 now matches (edge 485); H14, H17, W10 and W11 unchanged and equal to the canvas.
@@ -56,6 +58,5 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-03 · Round 3: owner overruled two deferrals; the pay sheet now uses the shared Lucide `Icon` and `VerifiedTick` (View-drawn icons deleted) and has a W10 `send` variant (faded kobo, Note after Total). Fees-row ruling recorded as R-23. Back to verifying.
 - 2 Oct 2026 · MONEY-03 · Round 2: verified tick in the pay sheet header, 1 px lines, Fees subtotal for two-part fees, double-tap guard on Pay; back to verifying.
 - 2 Oct 2026 · MONEY-03 · Pay-from-wallet sheet built (`src/components/pay-sheet/`): price, fee breakdown and total in kobo, enough / not enough with shortfall and Add top-up / paying / still confirming / failed / no wallet; to verifying.
-- 2 Oct 2026 · Owner stops narrowed (WORKFLOW section 10): agents decide anything with a sensible default, record it, and carry on; only invented money or legal facts, ledger mismatches, real data loss and destructive git go to the owner. No fix-round limit. Sign-up defaults recorded as R-36.
-- 2 Oct 2026 · MONEY-02 merged: the PIN sheet every payment reuses. Fingerprint or face (whatever the phone has), "<Name> failed. Use your PIN.", lock countdown, the shared BottomSheet (new `gap` prop) and Text (`errorLine`, `linkStrong`), matching W11 exactly. Adds expo-local-authentication: the next Android build carries it.
-- 2 Oct 2026 · MONEY-09 merged (transaction PIN on the server: 4 digits, argon2id, locks after 5 wrong tries for PIN_LOCK_MINUTES, X-Transaction-Pin guard; verified with no defects). Backend PR #25.
+- 2 Oct 2026 · TEST-01 · Showcase state split per section (a press re-renders one section, not the page; same tree, Lead authorised) and router warm-up in `shell` and `focus`: 10 of 10 cold runs under load pass. Task file written, status verifying.
+- 2 Oct 2026 · TEST-01 · Tests no longer time out on a cold cache or a loaded machine: `lists`, `components` and `kit-components` load React Native's primitives (Modal alone was about 5 s cold) when the file loads and render the showcase once in a `beforeAll` with its own budget, and the showcase walk in `lists` runs on Jest's fake clock (the PinSheet.test.tsx pattern). No timeout raised, no test skipped.

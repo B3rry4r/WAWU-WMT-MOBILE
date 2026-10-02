@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Avatar, hues } from '@/components/Avatar';
@@ -80,22 +80,192 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/** Returns a press handler that records which control fired. */
+type Mark = (name: string) => () => void;
+
+/**
+ * Which control was pressed last. Many sections write it and one caption reads
+ * it, so it lives outside React state: a press re-renders the caption, not the page.
+ */
+function lastPressedStore() {
+  let value = 'Nothing yet';
+  const listeners = new Set<() => void>();
+  return {
+    get: () => value,
+    set: (next: string) => {
+      value = next;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+type LastPressedStore = ReturnType<typeof lastPressedStore>;
+
+function LastPressed({ store }: { store: LastPressedStore }) {
+  const last = useSyncExternalStore(store.subscribe, store.get);
+  return <Text variant="caption">Last pressed: {last}</Text>;
+}
+
+/*
+ * Each section that changes on a press holds its own state, so pressing one
+ * re-renders that section and leaves the rest of the page alone.
+ */
+
+function LargeButtons({ mark, store }: { mark: Mark; store: LastPressedStore }) {
+  const [saving, setSaving] = useState(false);
+  return (
+    <Section title="Buttons, large">
+      <Button label="Continue" onPress={mark('Continue')} full />
+      <LastPressed store={store} />
+      <Button
+        label={saving ? 'Saving' : 'Tap to load for two seconds'}
+        loading={saving}
+        onPress={() => {
+          setSaving(true);
+          setTimeout(() => setSaving(false), 2000);
+        }}
+        full
+      />
+      <Button label="Loading" loading onPress={mark('Loading')} full />
+      <Button label="Disabled" disabled onPress={mark('Disabled')} full />
+      <Button label="Secondary" variant="secondary" onPress={mark('Secondary')} full />
+      <Button label="Outline" variant="outline" onPress={mark('Outline')} full />
+      <Button label="White" variant="white" onPress={mark('White')} full />
+      <Button label="Glass" variant="glass" onPress={mark('Glass')} full />
+    </Section>
+  );
+}
+
+function Inputs() {
+  const [email, setEmail] = useState('');
+  return (
+    <Section title="Inputs">
+      <TextField
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Type an email address"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        hint="Type here to see the focus ring"
+      />
+      <TextField label="Phone number" defaultValue="Filled" hint="Must be the number on your BVN" />
+      <TextField label="Password" defaultValue="hidden text" secret hint="At least 8 characters" />
+      <TextField label="Error" defaultValue="Not right" error="This is what is wrong, and how to fix it" />
+      <TextField label="Checking" defaultValue="Checking" loading />
+      <TextField label="Disabled" defaultValue="Locked" disabled />
+      <TextField label="Search" leadingIcon="Search" placeholder="Search WAWU" />
+    </Section>
+  );
+}
+
+function Tabs() {
+  const [view, setView] = useState<(typeof viewPicks)[number]['value']>('foryou');
+  return (
+    <Section title="Segmented tabs">
+      <SegmentedTabs label="Feed" items={viewPicks} value={view} onChange={setView} testID="showcase-tabs" />
+      <Text variant="caption">Selected: {view}</Text>
+    </Section>
+  );
+}
+
+function Chips() {
+  const [txFilter, setTxFilter] = useState<(typeof transactionFilters)[number]['value']>('all');
+  const [inboxFilter, setInboxFilter] = useState<(typeof inboxFilters)[number]['value']>('all');
+  return (
+    <Section title="Filter chips">
+      <View style={styles.bleed}>
+        <FilterChips label="Filter transactions" items={transactionFilters} value={txFilter} onChange={setTxFilter} testID="showcase-chips" />
+        <FilterChips label="Filter inbox" items={inboxFilters} value={inboxFilter} onChange={setInboxFilter} />
+      </View>
+    </Section>
+  );
+}
+
+function Sheet() {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  return (
+    <Section title="Bottom sheet">
+      <Button label="Open the unlock sheet" variant="secondary" onPress={() => setSheetOpen(true)} full />
+      <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} label="Unlock" testID="showcase-sheet">
+        <MediaCard title="How I built a ₦2M a month agency" subtitle="Chidi Eze" subtitleAccessory={<VerifiedTick kind="pro" size={13} />} />
+        <GroupedList>
+          <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
+          <KeyValueRow label="Yours" value="Forever, in My purchases" />
+          <KeyValueRow label="Fintava's charge" value={<Money minorUnits={2325} size={14.5} />} />
+          <KeyValueRow label="Total" value={<Money minorUnits={252325} size={14.5} />} />
+        </GroupedList>
+        <Button label="Unlock · ₦2,523.25" onPress={() => setSheetOpen(false)} full />
+      </BottomSheet>
+    </Section>
+  );
+}
+
+function States({ mark }: { mark: Mark }) {
+  const [listState, setListState] = useState<(typeof statePicks)[number]['value']>('content');
+  const [retries, setRetries] = useState(0);
+  return (
+    <Section title="Loading, empty and error">
+      <SegmentedTabs label="State" items={statePicks} value={listState} onChange={setListState} testID="showcase-state" />
+      <View testID="showcase-state-view" style={styles.stateBox}>
+        {listState === 'content' ? (
+          <ListSection title="Today">
+            <TransactionRow title="MTN airtime" subtitle="0803 ••• 4412" amountMinor={-200000} time="08:15" icon="Smartphone" />
+          </ListSection>
+        ) : listState === 'loading' ? (
+          <SkeletonRows />
+        ) : listState === 'empty' ? (
+          <EmptyState
+            title="No messages yet"
+            message="Message a creator from their profile, or join a community to talk with people like you."
+            action={{ label: 'Browse communities', onPress: mark('Browse communities') }}
+          />
+        ) : (
+          <ErrorState
+            title="Search isn't working right now"
+            message="Check your connection and try again."
+            onRetry={() => {
+              setRetries((n) => n + 1);
+              setListState('loading');
+            }}
+          />
+        )}
+      </View>
+      <Text variant="caption">Tried again {retries} times</Text>
+      <Text variant="label">Explore, while it loads</Text>
+      <LoadingView label="Loading Explore" testID="showcase-explore-loading">
+        <View style={styles.loadingPage}>
+          <Skeleton height={loadingHeroHeight} radius={loadingHeroRadius} />
+          <View style={styles.skeletonTiles}>
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} width={loadingTile} height={loadingTile} />
+            ))}
+          </View>
+          <Skeleton width="50%" height={loadingBar} radius={loadingBarRadius} />
+          <View style={styles.skeletonCards}>
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} width={loadingCard.width} height={loadingCard.height} radius={radius.media} />
+            ))}
+          </View>
+        </View>
+      </LoadingView>
+    </Section>
+  );
+}
+
 /**
  * Every shared component in every state, on one page. Development only: the route
  * that mounts it (src/app/dev/components.tsx) is a redirect in a production build.
  */
 export function Showcase() {
   const { colors } = useWawu();
-  const [last, setLast] = useState('Nothing yet');
-  const mark = (name: string) => () => setLast(name);
-  const [saving, setSaving] = useState(false);
-  const [email, setEmail] = useState('');
-  const [txFilter, setTxFilter] = useState<(typeof transactionFilters)[number]['value']>('all');
-  const [inboxFilter, setInboxFilter] = useState<(typeof inboxFilters)[number]['value']>('all');
-  const [view, setView] = useState<(typeof viewPicks)[number]['value']>('foryou');
-  const [listState, setListState] = useState<(typeof statePicks)[number]['value']>('content');
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [retries, setRetries] = useState(0);
+  const [store] = useState(lastPressedStore);
+  const mark: Mark = (name) => () => store.set(name);
 
   return (
     <ScrollView
@@ -113,25 +283,7 @@ export function Showcase() {
         ))}
       </Section>
 
-      <Section title="Buttons, large">
-        <Button label="Continue" onPress={mark('Continue')} full />
-        <Text variant="caption">Last pressed: {last}</Text>
-        <Button
-          label={saving ? 'Saving' : 'Tap to load for two seconds'}
-          loading={saving}
-          onPress={() => {
-            setSaving(true);
-            setTimeout(() => setSaving(false), 2000);
-          }}
-          full
-        />
-        <Button label="Loading" loading onPress={mark('Loading')} full />
-        <Button label="Disabled" disabled onPress={mark('Disabled')} full />
-        <Button label="Secondary" variant="secondary" onPress={mark('Secondary')} full />
-        <Button label="Outline" variant="outline" onPress={mark('Outline')} full />
-        <Button label="White" variant="white" onPress={mark('White')} full />
-        <Button label="Glass" variant="glass" onPress={mark('Glass')} full />
-      </Section>
+      <LargeButtons mark={mark} store={store} />
 
       <Section title="Buttons, medium and small">
         <View style={styles.row}>
@@ -151,23 +303,7 @@ export function Showcase() {
         </View>
       </Section>
 
-      <Section title="Inputs">
-        <TextField
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Type an email address"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          hint="Type here to see the focus ring"
-        />
-        <TextField label="Phone number" defaultValue="Filled" hint="Must be the number on your BVN" />
-        <TextField label="Password" defaultValue="hidden text" secret hint="At least 8 characters" />
-        <TextField label="Error" defaultValue="Not right" error="This is what is wrong, and how to fix it" />
-        <TextField label="Checking" defaultValue="Checking" loading />
-        <TextField label="Disabled" defaultValue="Locked" disabled />
-        <TextField label="Search" leadingIcon="Search" placeholder="Search WAWU" />
-      </Section>
+      <Inputs />
 
       <Section title="Money">
         <Money minorUnits={48525075} size={text.display.fontSize} weight={600} />
@@ -232,17 +368,9 @@ export function Showcase() {
         <Text variant="sheetTitle">Unlocked</Text>
       </Section>
 
-      <Section title="Segmented tabs">
-        <SegmentedTabs label="Feed" items={viewPicks} value={view} onChange={setView} testID="showcase-tabs" />
-        <Text variant="caption">Selected: {view}</Text>
-      </Section>
+      <Tabs />
 
-      <Section title="Filter chips">
-        <View style={styles.bleed}>
-          <FilterChips label="Filter transactions" items={transactionFilters} value={txFilter} onChange={setTxFilter} testID="showcase-chips" />
-          <FilterChips label="Filter inbox" items={inboxFilters} value={inboxFilter} onChange={setInboxFilter} />
-        </View>
-      </Section>
+      <Chips />
 
       <Section title="Grouped list cards">
         <GroupedList>
@@ -301,65 +429,9 @@ export function Showcase() {
         </View>
       </Section>
 
-      <Section title="Bottom sheet">
-        <Button label="Open the unlock sheet" variant="secondary" onPress={() => setSheetOpen(true)} full />
-        <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} label="Unlock" testID="showcase-sheet">
-          <MediaCard title="How I built a ₦2M a month agency" subtitle="Chidi Eze" subtitleAccessory={<VerifiedTick kind="pro" size={13} />} />
-          <GroupedList>
-            <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
-            <KeyValueRow label="Yours" value="Forever, in My purchases" />
-            <KeyValueRow label="Fintava's charge" value={<Money minorUnits={2325} size={14.5} />} />
-            <KeyValueRow label="Total" value={<Money minorUnits={252325} size={14.5} />} />
-          </GroupedList>
-          <Button label="Unlock · ₦2,523.25" onPress={() => setSheetOpen(false)} full />
-        </BottomSheet>
-      </Section>
+      <Sheet />
 
-      <Section title="Loading, empty and error">
-        <SegmentedTabs label="State" items={statePicks} value={listState} onChange={setListState} testID="showcase-state" />
-        <View testID="showcase-state-view" style={styles.stateBox}>
-          {listState === 'content' ? (
-            <ListSection title="Today">
-              <TransactionRow title="MTN airtime" subtitle="0803 ••• 4412" amountMinor={-200000} time="08:15" icon="Smartphone" />
-            </ListSection>
-          ) : listState === 'loading' ? (
-            <SkeletonRows />
-          ) : listState === 'empty' ? (
-            <EmptyState
-              title="No messages yet"
-              message="Message a creator from their profile, or join a community to talk with people like you."
-              action={{ label: 'Browse communities', onPress: mark('Browse communities') }}
-            />
-          ) : (
-            <ErrorState
-              title="Search isn't working right now"
-              message="Check your connection and try again."
-              onRetry={() => {
-                setRetries((n) => n + 1);
-                setListState('loading');
-              }}
-            />
-          )}
-        </View>
-        <Text variant="caption">Tried again {retries} times</Text>
-        <Text variant="label">Explore, while it loads</Text>
-        <LoadingView label="Loading Explore" testID="showcase-explore-loading">
-          <View style={styles.loadingPage}>
-            <Skeleton height={loadingHeroHeight} radius={loadingHeroRadius} />
-            <View style={styles.skeletonTiles}>
-              {[0, 1, 2, 3].map((i) => (
-                <Skeleton key={i} width={loadingTile} height={loadingTile} />
-              ))}
-            </View>
-            <Skeleton width="50%" height={loadingBar} radius={loadingBarRadius} />
-            <View style={styles.skeletonCards}>
-              {[0, 1, 2].map((i) => (
-                <Skeleton key={i} width={loadingCard.width} height={loadingCard.height} radius={radius.media} />
-              ))}
-            </View>
-          </View>
-        </LoadingView>
-      </Section>
+      <States mark={mark} />
 
       <Section title="Icons">
         <View style={styles.row}>
