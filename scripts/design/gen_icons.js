@@ -28,6 +28,13 @@ const boards = fs
   .join('\n');
 const names = new Set();
 for (const hit of boards.matchAll(/['"]([A-Z][A-Za-z0-9]*)['"]/g)) if (canvasIcons[hit[1]]) names.add(hit[1]);
+
+// Icons the app needs that the canvas never names, each with the ruling that
+// asks for it. Keep this list short: a screen's icons come from its artboard.
+//   Fingerprint: the PIN sheet's biometric key on a phone with a fingerprint
+//   reader (owner, 2 Oct 2026, task MONEY-02; the canvas only draws ScanFace).
+const EXTRA = ['Fingerprint'];
+for (const n of EXTRA) names.add(n);
 const sorted = [...names].sort();
 const have = sorted.filter((n) => exported.has(n));
 const si = require(path.join(root, 'node_modules/simple-icons'));

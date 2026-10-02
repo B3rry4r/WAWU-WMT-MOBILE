@@ -156,6 +156,8 @@ describe('kit copy sizes', () => {
     cardTitle: { fontSize: 15, fontFamily: 'AlanSans-SemiBold', tone: 'textPrimary' },
     sheetTitle: { fontSize: 22, fontFamily: 'AlanSans-Bold', tone: 'textPrimary' },
     sheetTitleSm: { fontSize: 21, fontFamily: 'AlanSans-Bold', tone: 'textPrimary' },
+    errorLine: { fontSize: 13, fontFamily: 'AlanSans-SemiBold', tone: 'danger' },
+    linkStrong: { fontSize: 14, fontFamily: 'AlanSans-SemiBold', tone: 'accentFg' },
   } as const;
 
   describe.each(themes)('in %s', (scheme, colors) => {
@@ -186,6 +188,13 @@ describe('kit copy sizes', () => {
   it('draws a banner body at 13 on a 1.45 line, 19 px, apart from meta on the font default 1.3', () => {
     expect(text.bannerBody.lineHeight).toBe(Math.round(13 * 1.45));
     expect(text.meta.lineHeight).toBe(Math.round(13 * 1.3));
+  });
+
+  it('draws the inline error line (auth.js line 14) and the strong link (wallet.js line 81) untracked on the font default 1.3 line', () => {
+    expect(text.errorLine.letterSpacing).toBe(0);
+    expect(text.errorLine.lineHeight).toBe(Math.round(13 * 1.3));
+    expect(text.linkStrong.letterSpacing).toBe(0);
+    expect(text.linkStrong.lineHeight).toBe(Math.round(14 * 1.3));
   });
 
   it('keeps muted copy apart from secondary: same size and colour, taller line (1.45 against 1.4)', () => {
