@@ -7,7 +7,7 @@ order: 5
 priority: launch
 repo: design
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: []
@@ -115,6 +115,47 @@ Verifier, 2 Oct 2026, same fresh session, against c110f2d (brief now 95 entries,
 No differs-for-recorded-reason findings.
 
 **Round-2 verdict:** defects R2-1 to R2-6 are open, so status goes back to `building`. This would be a third fix round, so under `docs/WORKFLOW.md` (step 5, "At most 2 rounds, then the task goes to the owner", and section 9) the owner decides whether the builder fixes these or accepts them. Checks 2 and 3 stay NOT RUN until the export arrives.
+
+### Round 3
+
+Verifier, 2 Oct 2026, same session, against d7d7526 (after a7f63e1 merged `main`, so this branch's DECISIONS.md now carries R-10's purchase rule). Brief: 109 entries (111 `###` headings). `git diff main...wmt/OPS-04` is still `docs/designer/BRIEF.md` and `tasks/OPS-04.md` only.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates (`npm run check`, re-run) | passed | Exit 0. tsc and lint clean, jest 4 of 4, gates 9 run / **5 files scanned** / 0 findings, baseline 0, tasks 187 / 280 artboards. node_modules symlinked in and removed afterwards, not committed. |
+| Capability check 1 | **failed** (minor) | R2-1 to R2-6 are closed; two small rule-5 gaps remain (R3-1, R3-2). |
+| Capability checks 2 and 3 | NOT RUN | No new export yet (expected). |
+| Accuracy, round-3 entries | passed | Rendered I3 I6 I10 I11 M18 W10 W11 W12 H10 H18 H19 H25 H26 I18 I21 I22, plus W1 W26 S26 E25 for the findings, into `build/design_shots/` and opened the light renders. Every new or changed "Now" matches the picture and the id: H10 "91 Trust Score", H18 "₦2,500 left your wallet", H19 "Unlock · ₦3,000", H25 "Unlock course · ₦8,000", H28 "₦2,000 sent to Tife", I18 "Pay ₦12,000", I21 and I22 "On · fans pay ₦1,500 to ask you", W12 "Fee ₦10.00" under "₦25,000 sent". The Inbox note "Paid DMs · I2–I8" and the Wallet note "Earnings · W39–W40" quote the canvas exactly. |
+| Figures | passed | W11 ₦25,000 + ₦65 = ₦25,065; I18 ₦12,000 + ₦15.75 + ₦10 = ₦12,025.75 (send to a WAWU user, ₦5,000 and over); H19 ₦3,000 + ₦23.25 = ₦3,023.25; H25 ₦8,000 + ₦15.75 = ₦8,015.75; H28 ₦2,023.25; I6 ₦1,523.25 − ₦900 = ₦623.25; W17 and W19 ₦50,065; I14 ₦25,025.75. All from fees.md, R-10 and canvas amounts. |
+| Em-dashes, `design/` | passed | 0 U+2014; `design/` unchanged. |
+
+**Round-2 findings:**
+- R2-1 closed: new entries for I11 (text and arrow), M18, and the Wallet note "Earnings · W39–W40".
+- R2-2 closed: new I6 entry (refund line, ₦1,523.25, "Add ₦623.25").
+- R2-3 closed: I10 and the Inbox "Paid DMs" note.
+- R2-4 closed: rule 5 is now one rule. The paying button and the Approve line show the total, the amount received is its own line, and a button that only opens the review shows the price. W10, W11, I14 and H26 now follow it, and the canvas's W10 note is told to change.
+- R2-5 closed: H18 and I18 added.
+- R2-6 closed: H10 added (R-18).
+- Housekeeping closed: R-10's purchase rule is in the branch's DECISIONS.md.
+
+**Rule 5 consistency check.** Every entry that names a button, Approve line, success line or shortfall now matches rule 5: H14 to H18, H26 to H28, M12, M13, SC5 to SC7, E3, E4, S5 to S7, S11, S19, S22, S30, I3, I6, I14, I18, I28, I29, W10 to W12, W16, W17, W19, W21 and W30. H19 and H25 state both cases (review-opening button keeps the price; a direct-to-PIN button shows the total). Buttons not in the brief that only open a review ("Message · ₦1,500", "Ask a follow-up · ₦1,500", S18 "Pay ₦15,000" opening S19, E2 tickets) are covered by rule 5's last sentence. The chat bubbles "₦1,500 paid" on I4, I5 and I7 and "You sent ₦25,000" on I15 and I20 are covered by "a chat bubble shows the amount sent". Two places still don't fit:
+
+- **R3-1 defect (minor): the transaction lists still show debits without the fee.** W1's recent rows and W26 · Transaction history show "Chidinma Okoro · Transfer · GTBank −₦25,000.00", "Ikeja Electric · Prepaid −₦10,500.00" and "MTN airtime −₦2,000.00", plus the "Out · September ₦96,820.50" total (`W26-light.png`, `W1-light.png`). Rule 5 says "any 'money left your wallet' line ... use[s] the same total", so these rows should read −₦25,065.00 and −₦10,600.00, or show the charge as its own row. Neither the W1 entry nor any W26 entry says which.
+- **R3-2 defect (minor): S26 contradicts rule 5's last sentence.** S26 tells the designer to put the breakdown "here or on the pay step that follows" and fixes the button at "Continue · ₦35,015.75". If the breakdown goes on the following pay step, Continue only opens the review, and rule 5 says such a button shows the price ("Continue · ₦35,000"). S26 should say: total on Continue only if the breakdown is on S26 itself, otherwise the price.
+
+**Final sweep** (case-insensitive over every artboard, map, flow note and component sheet: shop, Fintava, CBN, licence, NDIC/insured, no fee, free, blink, liveness, BTC/Bitcoin, 30 seconds/0:28, move to wallet and its variants, tier, slots, postpaid, dollar, in full/full amount/nothing was taken, Trust Score, fee, Approve ₦, Paid ₦, left your wallet, Add ₦/Top up, every pay-button form, comes back/is back/refund). Every hit is either covered by a brief entry or is not a change:
+- "Free" on free content, free hosting, free reading and free setup (R-8, R-5).
+- "licence" on professional credentials (P2, P3, P6, P8, P9).
+- "fee per matter" on S18 and S25.
+- Designer notes naming Fintava as the provider (W6, W38, and the swap and NQR notes).
+- The Me notes' "slot meter".
+- R-13's 20% and 30% thresholds, which match I22 and I23.
+
+One wording item for the owner:
+
+- **unclear:** E25 · Call it off tells the organiser "This refunds real money. All 64 buyers get their money back." That avoids rule 6's banned phrases. It still implies each buyer gets back everything they paid (₦7,515.75 with Fintava's charge), which is the same unconfirmed question rule 6 and E11 leave as a slot.
+
+**Round-3 verdict:** R3-1 and R3-2 are open, so status stays `building`. Both are one-line wording fixes in the brief, not missing coverage. This is past the two fix rounds `docs/WORKFLOW.md` allows (step 5 and section 9), so the owner decides whether to accept them as known or have the builder fix them before the brief is sent. Checks 2 and 3 stay NOT RUN until the designer's export arrives.
 
 ## Owner sign-off
 
