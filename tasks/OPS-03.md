@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: setup
-status: building
+status: verifying
 depends_on: []
 decisions: [R-20]
 passes: [V1, V9]
@@ -52,6 +52,7 @@ Builder, 2 Oct 2026. wawu-backend commit 6d634fa on `wmt/OPS-03`; wawu-id and mo
 - **Gates:** backend `scripts/gates/run.py` 523 files, 16 fail / 0 warn / 76 accepted before and after (pre-existing, none in files I touched; gates scan `src/` only); `tsc --noEmit` 0. Mobile `npm run check` exit 0 before and after.
 - **Not run:** Docker Postgres route (no Docker daemon in this sandbox; local Postgres route tested). Tunnel (no cloudflared/ngrok here). Phone on Wi-Fi not tested on a device; both services were reached on the machine's non-loopback address. No Fintava/Cardex call: no Hub code reads those settings yet (MONEY-06, MONEY-07, WALLET-33).
 - **Noted, not changed:** with FLUTTERWAVE_SECRET_KEY empty the existing Flutterwave mock approves charges locally; LOCAL.md says so. No gaps or shared-change rows filed.
+- **Round 2 (wawu-backend 341201f):** findings 1-5 fixed, 6 filed as BACKEND_GAPS G-2, G-3. (1) Every `.env` read goes through `scripts/local/envfile.js` (each repo's own dotenv), so these are now refused, each tested in a fresh clone: `export`, indented, `KEY = v` and later-duplicate remote DATABASE_URL in either file, `?host=` in the URL, `NODE_ENV` set with `export`, an indented `cdx_live_` key, and FINTAVA_BASE_URL `LIVE.`/`Live.FintavaPay.com`/any non-sandbox host. Sandbox URL plus `cdx_test_` key still start (control). (2) Settings given on any run rewrite both `.env` files: first run with a wrong password failed in id-migrate with P1000 and printed the rerun line; rerun with only the right `LOCAL_PG_URL` updated both DATABASE_URLs (database names kept), started, and smoke.sh passed. `HUB_PORT`/`ID_PORT` on an existing setup moved both services and smoke.sh passed. (3) Deleting only `wawu-id/.env`, then only `wawu-backend/.env`, regenerated each with the other's service key and ports, and smoke.sh passed both times. LOCAL.md: settings table, B3rry4r clone URLs, Ubuntu 22.04 note, per-step logs, reset guidance, id-migrate/P1000/P1001/port rows. Gates 16/0/76 unchanged, tsc 0, deploy and .github diff empty.
 
 ## Verifier report
 
