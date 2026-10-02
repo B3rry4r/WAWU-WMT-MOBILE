@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 61 | 52 | 32 | 30 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 6 | 4 | 0 | 0 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 
