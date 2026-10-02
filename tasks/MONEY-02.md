@@ -7,7 +7,7 @@ order: 11
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: todo
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
