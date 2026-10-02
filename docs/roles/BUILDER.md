@@ -17,7 +17,7 @@ You build ONE task. Your prompt named it: `tasks/<ID>.md`.
    a change, build the changed version: the designs are not being redrawn.
 5. Take artboard ids from the task file only. A code comment citing an
    artboard is never a source: canvases get renumbered.
-6. Make a branch: `wmt/<ID>` in each repo you will change. Record the gate
+6. Pull main, then make a branch from it: `wmt/<ID>` in each repo you will change. Record the gate
    counts before you change anything (`npm run check` here; the backend's own
    checks there).
 
@@ -53,7 +53,9 @@ verified.
 
 ## When you finish
 
-1. Run the checks again and record the counts after.
+1. Merge the newest main into your branch (`git fetch origin && git merge
+   origin/main`, never a rebase), then run the checks again and record the
+   counts after.
 2. Fill in **Builder report** in the task file (max 20 lines): files changed;
    each capability check and how you tested it; gate counts before and after;
    gaps and shared-change requests filed; anything you could not do and why.
