@@ -3,13 +3,13 @@ id: SCHOOLS-10
 title: Tracked link to a school's own site
 owner: YOU
 area: SCHOOLS
-order: 163
+order: 162
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: [SCHOOLS-04]
-decisions: [D7]
+decisions: [R-12]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D7 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-12 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

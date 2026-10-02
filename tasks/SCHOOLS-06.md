@@ -3,13 +3,13 @@ id: SCHOOLS-06
 title: Enrol and pay, class full
 owner: YOU
 area: SCHOOLS
-order: 130
+order: 129
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [MONEY-02, SCHOOLS-07]
-decisions: [D7]
+decisions: [R-12]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [SC4, SC5, SC6, SC7, SC11]
 ---
@@ -20,7 +20,7 @@ artboards: [SC4, SC5, SC6, SC7, SC11]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D7 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-12 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py SC4 SC5 SC6 SC7 SC11` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`
 

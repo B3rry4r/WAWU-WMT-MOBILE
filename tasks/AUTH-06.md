@@ -1,27 +1,26 @@
 ---
 id: AUTH-06
-title: Sign-up: confirm details and selfie
+title: After sign-up: creator setup, interests, people to follow
 owner: DEV
 area: AUTH
-order: 69
+order: 106
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [AUTH-05, AUTH-08]
-decisions: [D1]
-passes: [V1, V4, V5, V6, V7, V9, V10]
-artboards: [A5, A6, A7, A16]
+depends_on: [AUTH-04]
+decisions: []
+passes: [V1, V4, V5, V6, V7, V9]
+artboards: [A11, A12, A13]
 ---
-# AUTH-06 · Sign-up: confirm details and selfie
+# AUTH-06 · After sign-up: creator setup, interests, people to follow
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
-- The design: `python3 scripts/design/render_design.py A5 A6 A7 A16` then open `build/design_shots/`
+- The design: `python3 scripts/design/render_design.py A11 A12 A13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
 ## Goal
@@ -34,27 +33,24 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **A5 · Confirm your details**: Read-only 'From your BVN' card: Name, Date of birth, Gender, State you live in, Occupation; checkbox 'I agree to the terms and privacy policy'; Continue.
-- **A6 · Selfie**: Camera oval: 'Fit your face in the oval. It must match your BVN photo. Then blink slowly' (liveness).
-- **A7 · Matched**: Success state: 'Matched to your BVN. Opening your account' (spinner while the wallet is provisioned).
-- **A16 · Face doesn't match**: Selfie failure: 'We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.' Try again.
+- **A11 · Creator setup**: 'Set up your account' checklist, 1 of 5: Price your paid messages; Finish your profile; Publish your first piece (Free to list); Start your first community (Optional, Free to host); Verify your identity (Needed to get paid). 'Uploading is open. Getting paid needs your ID checked.' Later -> Home.
+- **A12 · Interests**: 'What are you into? 3 of 3. Pick three or more.' 12 chips: Music & Audio, Film & Video, Photography, Fashion & Beauty, Business & Finance, Technology, Food & Lifestyle, Faith & Spirituality, Art & Design, Writing & Publishing, Sports & Fitness, Gaming & Esports.
+- **A13 · People to follow**: Suggested creators 'Based on what you picked' with Follow/Following toggles (name + role line). Go to Home.
 
 ## Capability checks
 
-- [ ] **A5**: a user can review prefilled details; tick terms/privacy consent; tap Continue (-> A6).
-- [ ] **A6**: a user can position face; blink (liveness); auto-capture.
-- [ ] **A7**: a user can wait.
-- [ ] **A16**: a user can retry.
+- [ ] **A11**: a user can open each row; tap Later (-> Home); Verify your identity (-> A21 per Start-here map).
+- [ ] **A12**: a user can pick >=3 interests; tap Continue.
+- [ ] **A13**: a user can follow / unfollow suggested creators; tap Go to Home.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
-- [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states A7, A16.
+- [ ] Loading, empty and error states exist and are entered by their real cause (V6).
 
 ## What the backend serves today (from the analysis)
 
-- **A5**: partial. Missing: No dateOfBirth column in WAWU ID or Hub. Occupation is silently dropped today. No BVN source to prefill from. Consent route exists but is not called by any client (grep '/policies' wawuafrica/src -> none).
-- **A6**: missing. Missing: No liveness or face-match capability or provider anywhere; no place to store the result.
-- **A7**: missing. Missing: No face-match result; account opening at Fintava does not exist (see A8).
-- **A16**: missing. Missing: No face match; no retry/lockout policy; no fallback to manual review is drawn.
+- **A11**: served.
+- **A12**: served. Missing: Interests are free strings; no canonical vocabulary server-side, so the 12 canvas labels will not match the 25 explore category ids or web's 11 sign-up labels unless one list is adopted.
+- **A13**: partial. Missing: Discovery filters by ONE category; a multi-interest 'based on what you picked' ranking needs either repeated calls merged client-side or an interests[] param.
 
 A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
@@ -62,8 +58,10 @@ A missing or partial row is yours to fix in the backend as part of this task (or
 
 Do not hard-code any of these. Show what the API returns, or leave the figure out and file it.
 
-- A5: 'From your BVN' includes 'State you live in' and 'Occupation' (claim that a BVN record carries these is unverified)
-- A6: 'It must match your BVN photo'
+- A11: 'Free to list'
+- A11: 'Free to host'
+- A11: 'Getting paid needs your ID checked'
+- A12: 'Pick three or more'
 
 ## Designer notes (⚠, unresolved)
 

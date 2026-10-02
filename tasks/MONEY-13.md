@@ -1,9 +1,9 @@
 ---
 id: MONEY-13
-title: Open a wallet for existing users
+title: No wallet yet: money screens lead to Open your wallet
 owner: YOU
 area: MONEY
-order: 67
+order: 68
 priority: launch
 repo: wawu-backend
 type: money-path
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# MONEY-13 · Open a wallet for existing users
+# MONEY-13 · No wallet yet: money screens lead to Open your wallet
 
 ## Read first
 
@@ -25,15 +25,15 @@ artboards: []
 
 ## Goal
 
-Everyone already on WAWU has no BVN and no wallet. Every money screen has to handle that and lead them in.
+Nobody has a wallet until they open one (R-6), new and existing users alike. Every money endpoint answers 'no wallet yet' the same way, and every money screen leads to Open your wallet.
 
 ## Scope
 
-'Open your wallet' for an existing account (BVN, selfie per D1, account opening), and a consistent 'no wallet yet' answer on every wallet endpoint.
+A consistent 'no wallet yet' answer on every wallet and payment endpoint, and the entry point into KYC-03 from the Wallet tab and from the pay sheet.
 
 ## Capability checks
 
-- [ ] An existing web user signs in on mobile, taps Wallet, and can open a wallet without making a new account.
+- [ ] A signed-in user with no wallet taps Wallet, or Pay on any sheet, and lands in Open your wallet.
 - [ ] Every wallet endpoint answers 'no wallet yet' the same way for that user (no 500s).
 
 ## Builder report

@@ -1,25 +1,25 @@
 ---
-id: AUTH-09
-title: Sign-up: wallet opened, create and confirm PIN
-owner: DEV
-area: AUTH
+id: KYC-04
+title: Open your wallet: account opened, create PIN
+owner: YOU
+area: KYC
 order: 105
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-02, MONEY-09, MONEY-12, AUTH-06]
+depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [A8, A9, A10]
 ---
-# AUTH-09 · Sign-up: wallet opened, create and confirm PIN
+# KYC-04 · Open your wallet: account opened, create PIN
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A8 A9 A10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 
@@ -36,6 +36,16 @@ New files under `src/features/` for these screens and their route files under `s
 - **A8 · Wallet open**: 'Your wallet is open' card: Tier 1 · Fintava MFB, account name, account number 812 345 6789 (Copy), Bank Fintava MFB, Limit ₦300,000 balance; links Raise your limits (-> A17) and Create your transaction PIN (-> A9).
 - **A9 · Create PIN**: Step 1 of 2: 'Create your transaction PIN. Four digits. It approves every payment and transfer.' Keypad.
 - **A10 · Confirm PIN**: Step 2 of 2: 'Enter it again'. Then PIN set: earn -> A11, discover -> A12.
+
+## Ruling R-6
+
+This flow is not part of sign-up. It starts the first time someone taps Wallet
+or anything that moves money, for every user, new or existing. The design draws
+these screens inside sign-up; keep their look, change only where they sit. The
+BVN entry is A3's BVN field on its own step (A3 itself is sign-up and no longer
+asks for it). Someone without a Nigerian BVN cannot open a Naira wallet; dollar
+and crypto accounts are for them and come after launch, so for now the flow
+ends with a clear "not available yet" instead of an error.
 
 ## Capability checks
 

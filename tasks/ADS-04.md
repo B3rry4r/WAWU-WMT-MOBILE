@@ -3,13 +3,13 @@ id: ADS-04
 title: Serve a sponsored card
 owner: YOU
 area: ADS
-order: 186
-priority: after-launch
+order: 185
+priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: [ADS-03]
-decisions: [D10]
+decisions: [R-15]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D10 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-15 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

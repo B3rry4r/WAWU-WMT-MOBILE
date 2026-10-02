@@ -13,8 +13,8 @@ backend behind them.
 - Sign the checkpoints: CHECK-0 (safe to start), CHECK-1 (the app talks to the
   real backend), CHECK-2 (money moves correctly), CHECK-3 (full QA), then
   RELEASE-02 (QA fixes and store submission).
-- Confirm or change the decision defaults in `DECISIONS.md` (OPS-01). Nothing
-  waits on them.
+- Rule what's still open in `DECISIONS.md` (D14 in OPS-07, D15 through the
+  designer in OPS-04). Nothing waits on them.
 
 ## What you own
 
@@ -24,6 +24,10 @@ backend behind them.
   PIN, the ledger, the nightly check, pay-from-wallet with holds and refunds,
   and the PIN and pay sheets every payment screen reuses (MONEY-*). You hold
   the Fintava relationship, so you own what talks to it.
+- **Open your wallet:** the BVN check, the selfie match, and the screens that
+  open an account and set the PIN (KYC-*, MONEY-12, MONEY-13). It runs the
+  first time someone taps Wallet or anything that moves money, never at
+  sign-up (R-6).
 - **Wallet** and **Bills** (WALLET-*, BILLS-*).
 - **Schools**, **Professionals** and **Legal** (SCHOOLS-*, PROS-*, LEGAL-*).
 - **Ads** (ADS-*), and the release (RELEASE-*).

@@ -1,42 +1,41 @@
 ---
 id: AUTH-03
-title: BVN check at sign-up
+title: Phone check at sign-up, and the email trap
 owner: DEV
 area: AUTH
-order: 31
+order: 32
 priority: launch
 repo: wawu-id
 type: backend-endpoint
 status: todo
-depends_on: [OPS-02]
-decisions: [D1]
+depends_on: []
+decisions: [R-6]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# AUTH-03 · BVN check at sign-up
+# AUTH-03 · Phone check at sign-up, and the email trap
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-A3 and A5: the BVN confirms who the person is and fills in their details.
+A4 verifies the phone. The canvas never verifies email, but login refuses unverified email today, so a new user could never sign back in.
 
 ## Scope
 
-BVN lookup (Fintava or the D1 vendor), prefill name, date of birth and gender, store when it was verified plus a hash and the last 4 digits only.
+Phone code at registration; fix the login rule so a phone-verified account can sign in even without a verified email (the design never verifies email, but login refuses it today); store occupation and account type. No BVN here (R-6).
 
 ## Capability checks
 
-- [ ] A valid sandbox BVN fills the A5 details.
-- [ ] The full BVN is never stored or logged.
-- [ ] A BVN whose phone differs from the one entered gives the A14 state.
+- [ ] A user who signs up on mobile can sign out and sign back in.
+- [ ] A wrong code shows A15 and a fourth wrong code waits before retrying.
 
 ## Builder report
 

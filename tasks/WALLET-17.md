@@ -3,7 +3,7 @@ id: WALLET-17
 title: Pay out host shares nobody receives today
 owner: YOU
 area: WALLET
-order: 145
+order: 144
 priority: launch
 repo: wawu-backend
 type: money-path

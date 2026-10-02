@@ -1,27 +1,27 @@
 ---
 id: WALLET-13
-title: Earnings and move to wallet
+title: Earnings breakdown
 owner: YOU
 area: WALLET
-order: 144
+order: 143
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-16]
-decisions: [D6]
+decisions: [R-11]
 passes: [V1, V4, V5, V6, V7, V8, V9]
-artboards: [W39, W40]
+artboards: [W39]
 ---
-# WALLET-13 · Earnings and move to wallet
+# WALLET-13 · Earnings breakdown
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D6 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
-- The design: `python3 scripts/design/render_design.py W39 W40` then open `build/design_shots/`
+- `DECISIONS.md`: R-11 (ruled; build what it says)
+- The design: `python3 scripts/design/render_design.py W39` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 
 ## Goal
@@ -35,12 +35,14 @@ New files under `src/features/` for these screens and their route files under `s
 ## Artboards
 
 - **W39 · Earnings**: Creator-only earnings screen: 'Ready to move' amount, all-time earned, Move to wallet button, stream split (Unlocks, Tips, Paid DMs) and per-content earnings this month.
-- **W40 · Earnings · move to wallet**: Sheet to move ready earnings into the Naira wallet, 'instant and free'; KYC-not-approved shows the W18 banner instead; then PIN, then W1 with new balance.
+
+## Ruling R-11
+
+Earnings go into the wallet automatically. W39 is built without its 'Move to wallet' button, and W40 is not built.
 
 ## Capability checks
 
 - [ ] **W39**: a user can tap Move to wallet; view per-content earnings.
-- [ ] **W40**: a user can Move ₦84,500; enter PIN.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
@@ -48,7 +50,6 @@ New files under `src/features/` for these screens and their route files under `s
 ## What the backend serves today (from the analysis)
 
 - **W39**: partial. Missing: Earnings exist but are swept automatically into the wallet, so there is no 'ready to move' balance concept and no per-content aggregation (unlocks/tips/sales per piece). The response also carries community_credits and 'held' DM money that the canvas does not show.
-- **W40**: missing. Missing: No user-initiated move; funding is a background sweep that does not check KYC.
 
 A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 

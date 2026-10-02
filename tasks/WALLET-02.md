@@ -3,13 +3,13 @@ id: WALLET-02
 title: Send to a WAWU user
 owner: YOU
 area: WALLET
-order: 136
+order: 135
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [MONEY-02, WALLET-07, WALLET-08]
-decisions: [D5]
+decisions: [R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W7, W9, W10, W11, W12]
 ---
@@ -20,7 +20,7 @@ artboards: [W7, W9, W10, W11, W12]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D5 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-10 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W7 W9 W10 W11 W12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 

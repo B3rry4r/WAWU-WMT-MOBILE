@@ -3,7 +3,7 @@ id: WALLET-34
 title: Admin screens: tier 3 review queue
 owner: YOU
 area: WALLET
-order: 182
+order: 181
 priority: after-launch
 repo: wawu-dashboard
 type: admin-screen

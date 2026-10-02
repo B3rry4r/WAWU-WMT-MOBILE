@@ -9,7 +9,7 @@ repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: []
-decisions: [D9]
+decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D9 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-14 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal
@@ -29,7 +29,7 @@ S18-S26: phone, video and in-person options, slots, several delivered files.
 
 ## Scope
 
-Phone medium, per-medium length, slots; several deliverables posted into the chat; fees from configuration (D9).
+Phone medium, per-medium length, slots; several deliverables posted into the chat; prices set by WAWU in admin (R-14).
 
 ## Capability checks
 

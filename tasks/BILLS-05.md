@@ -3,7 +3,7 @@ id: BILLS-05
 title: Bill reminders and the month view
 owner: YOU
 area: BILLS
-order: 184
+order: 183
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen

@@ -3,13 +3,13 @@ id: WALLET-31
 title: WAWU card (first slice)
 owner: YOU
 area: WALLET
-order: 177
+order: 176
 priority: after-launch
 repo: wawu-backend
 type: money-path
 status: todo
 depends_on: []
-decisions: [D11]
+decisions: [R-16]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -20,21 +20,21 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D11 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-16 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-WAWU card is on the canvas, marked as placeholder until Fintava confirms it. It is only built if D11 puts it in the first release.
+WAWU card is on the canvas, marked as placeholder until Fintava confirms it. It is only built if R-16 puts it in the first release.
 
 ## Scope
 
-Split into two-day tasks once D11 is ruled and Fintava's API for it is in docs/fintava/.
+Split into two-day tasks once R-16 is ruled and Fintava's API for it is in docs/fintava/.
 
 ## Capability checks
 
-- [ ] D11 is ruled 'in', Fintava's docs are in docs/fintava/, and this task has been split into tasks of two days or less.
+- [ ] R-16 is ruled 'in', Fintava's docs are in docs/fintava/, and this task has been split into tasks of two days or less.
 
 ## Builder report
 

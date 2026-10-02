@@ -1,40 +1,42 @@
 ---
-id: AUTH-07
-title: The sign-up sequence end to end
-owner: DEV
-area: AUTH
-order: 65
+id: KYC-01
+title: BVN check when someone opens a wallet
+owner: YOU
+area: KYC
+order: 31
 priority: launch
 repo: wawu-id
 type: backend-endpoint
 status: todo
-depends_on: [AUTH-03, AUTH-04]
-decisions: []
+depends_on: [OPS-02]
+decisions: [R-6]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# AUTH-07 · The sign-up sequence end to end
+# KYC-01 · BVN check when someone opens a wallet
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-The mobile sign-up (A2-A10) is one sequence the server enforces: no wallet before BVN, no money before PIN.
+Identity is checked when someone first opens a wallet or touches money, never at sign-up (R-6). The BVN confirms who they are and fills in their details (A5).
 
 ## Scope
 
-The registration state machine and its endpoints; each step refuses to run before the previous one completed.
+BVN lookup (Fintava or the R-6 vendor), prefill name, date of birth and gender, store when it was verified plus a hash and the last 4 digits only.
 
 ## Capability checks
 
-- [ ] Skipping straight to PIN creation without BVN is refused.
-- [ ] Quitting after the selfie and coming back resumes at the next step.
+- [ ] A valid sandbox BVN fills the A5 details.
+- [ ] The full BVN is never stored or logged.
+- [ ] A BVN whose phone differs from the one entered gives the A14 state.
 
 ## Builder report
 

@@ -3,7 +3,7 @@ id: BILLS-04
 title: Move bills to the wallet
 owner: YOU
 area: BILLS
-order: 146
+order: 145
 priority: launch
 repo: wawu-backend
 type: money-path

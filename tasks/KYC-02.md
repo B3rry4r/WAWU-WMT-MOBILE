@@ -1,26 +1,26 @@
 ---
-id: AUTH-08
+id: KYC-02
 title: Selfie match to the BVN photo
-owner: DEV
-area: AUTH
-order: 68
+owner: YOU
+area: KYC
+order: 66
 priority: launch
 repo: wawu-id
 type: third-party
 status: todo
-depends_on: [AUTH-03]
-decisions: [D1]
+depends_on: [KYC-01]
+decisions: [R-6]
 passes: [V1, V2, V3, V6, V8, V9]
 artboards: []
 ---
-# AUTH-08 · Selfie match to the BVN photo
+# KYC-02 · Selfie match to the BVN photo
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `docs/people/YOU.md` (what you own)
+- `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
@@ -30,7 +30,7 @@ A6, A7, A16: a live selfie must match the BVN photo.
 
 ## Scope
 
-The D1 vendor's liveness and face match, retries, result stored.
+The R-6 vendor's liveness and face match, retries, result stored.
 
 ## Capability checks
 

@@ -41,7 +41,6 @@ MIN_PASSES = {
 }
 REQUIRED = ["id", "title", "owner", "area", "order", "priority", "repo", "type", "status",
             "depends_on", "decisions", "passes", "artboards"]
-RETIRED_PREFIXES = ("SH",)  # Shop, retired by R-2
 
 
 def parse(path: Path) -> dict:
@@ -66,6 +65,11 @@ def main() -> int:
     inventory = {x["id"] for x in json.loads((ROOT / "design/canvas-inventory.json").read_text())["items"]}
     decisions_text = (ROOT / "DECISIONS.md").read_text()
     known_d = set(re.findall(r"\b(D\d+|R-\d+)\b", decisions_text))
+    m = re.search(r"<!-- not-built: (.*?) -->", decisions_text)
+    not_built = tuple(m.group(1).split()) if m else ()
+
+    def built(a: str) -> bool:
+        return not any(a == x or (x.isalpha() and a.startswith(x) and a[len(x):].isdigit()) for x in not_built)
     tasks, errors = {}, []
 
     for f in sorted(TASKS.glob("*.md")):
@@ -127,7 +131,9 @@ def main() -> int:
             errors.append(f"{where}: no capability checks")
 
     for a in sorted(inventory):
-        if a.startswith(RETIRED_PREFIXES):
+        if not built(a):
+            if screen_cover[a]:
+                errors.append(f"artboard {a} is listed as not built in DECISIONS.md but a screen task builds it")
             continue
         if screen_cover[a] == 0:
             errors.append(f"artboard {a} is in no mobile-screen task")
@@ -144,7 +150,7 @@ def main() -> int:
         print("TASK CHECK FAILED:", e)
     by = Counter(t["owner"] for t in tasks.values())
     print(f"{len(tasks)} tasks ({', '.join(f'{OWNERS[o]} {by[o]}' for o in OWNERS)}), "
-          f"{len([a for a in inventory if not a.startswith(RETIRED_PREFIXES)])} artboards covered"
+          f"{len([a for a in inventory if built(a)])} artboards covered"
           + (", INDEX.md written" if write else ""))
     return 1 if errors else 0
 

@@ -74,5 +74,5 @@ Until the sandbox arrives, money is built against the mock (MONEY-05) and
 stays behind its flags.
 
 **From you:** Apple Developer, Google Play and Expo accounts; the domain behind
-`wawu/...` links; an SMS route for sign-up codes; a BVN and selfie vendor if
-Fintava doesn't cover them; Redis for live chat.
+`wawu/...` links; an SMS route for sign-up codes; a BVN and selfie vendor for
+"Open your wallet" if Fintava doesn't cover them; Redis for live chat.

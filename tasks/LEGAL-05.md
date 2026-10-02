@@ -3,7 +3,7 @@ id: LEGAL-05
 title: Move legal fees to the wallet
 owner: YOU
 area: LEGAL
-order: 126
+order: 125
 priority: launch
 repo: wawu-backend
 type: money-path
@@ -29,7 +29,7 @@ Payments move one at a time, safest first (docs/WORKFLOW.md section 6): staging 
 
 ## Scope
 
-Consultation and service fees, and business-name registration, pay from the wallet (S19, S22, S26) at configured prices. The web stays on Flutterwave until after launch; V3 checks it still works.
+Consultation and service fees, and business-name registration, pay from the wallet (S19, S22, S26) at the prices WAWU sets in admin (R-14). The web stays on Flutterwave until after launch; V3 checks it still works.
 
 ## Capability checks
 

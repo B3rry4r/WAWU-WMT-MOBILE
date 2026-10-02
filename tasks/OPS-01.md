@@ -1,19 +1,19 @@
 ---
 id: OPS-01
-title: Confirm or change the decision defaults
+title: Record the owner's rulings
 owner: YOU
 area: OPS
 order: 2
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: todo
+status: done
 depends_on: []
 decisions: []
 passes: []
 artboards: []
 ---
-# OPS-01 · Confirm or change the decision defaults
+# OPS-01 · Record the owner's rulings
 
 ## Read first
 
@@ -23,16 +23,16 @@ artboards: []
 
 ## Goal
 
-Every open decision in DECISIONS.md already has a default that work follows, so nobody waits. This is where you confirm a default or change it. A change updates settings or a flag, not the build.
+The owner ruled D1 to D13 on 2 Oct 2026. They are recorded in DECISIONS.md as R-6 to R-18, and every affected task was changed to match: identity checks moved into "Open your wallet" (KYC-01 to KYC-04), the profile Shop tab and "Move to wallet" are not built, and the fees, limits and splits are the owner's numbers.
 
 ## Scope
 
-DECISIONS.md: for each of D1 to D15, either confirm the default (move it to the rulings with your name and date) or write the change. Fees, limits and prices go into config, so a changed number never means rebuilding a screen.
+DECISIONS.md and the task files. D14 (web features missing from the canvas) is ruled in OPS-07; D15 (the ₦ glyph) is answered by the designer in OPS-04. Fees, limits and prices still go into config, so a later change never means rebuilding a screen.
 
 ## Capability checks
 
-- [ ] Every D-row says "confirmed" or "changed", with who and when.
-- [ ] Every number the defaults put in config (fees, limits, splits, prices) is confirmed, so the release gate stops flagging it.
+- [x] Every ruling from 2 Oct 2026 is in DECISIONS.md with the tasks that carry it out.
+- [x] `npm run tasks` passes: no task names an unknown decision, and every artboard is built once or listed as not built.
 
 ## Builder report
 
@@ -44,4 +44,4 @@ _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, f
 
 ## Owner sign-off
 
-_Owner: date, and "screenshots and evidence pack reviewed"._
+Owner, 2 Oct 2026: rulings given in the planning session and recorded by it.

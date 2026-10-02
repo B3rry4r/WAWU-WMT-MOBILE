@@ -3,7 +3,7 @@ id: WALLET-24
 title: Tier 3: address and proof
 owner: YOU
 area: WALLET
-order: 168
+order: 167
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

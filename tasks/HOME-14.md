@@ -3,7 +3,7 @@ id: HOME-14
 title: Move tips to the wallet
 owner: DEV
 area: HOME
-order: 117
+order: 116
 priority: launch
 repo: wawu-backend
 type: money-path

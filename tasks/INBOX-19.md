@@ -3,13 +3,13 @@ id: INBOX-19
 title: Chat and send money in a chat
 owner: DEV
 area: INBOX
-order: 158
+order: 157
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [INBOX-06, WALLET-07]
-decisions: [D8]
+decisions: [R-13]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I12, I13, I14, I15]
 ---
@@ -20,7 +20,7 @@ artboards: [I12, I13, I14, I15]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D8 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-13 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py I12 I13 I14 I15` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
 

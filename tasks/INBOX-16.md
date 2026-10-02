@@ -3,7 +3,7 @@ id: INBOX-16
 title: Move WAWU Credits purchases to the wallet
 owner: DEV
 area: INBOX
-order: 152
+order: 151
 priority: launch
 repo: wawu-backend
 type: money-path

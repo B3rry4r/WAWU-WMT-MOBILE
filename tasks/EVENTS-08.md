@@ -3,7 +3,7 @@ id: EVENTS-08
 title: My events, organiser dashboard, call it off
 owner: DEV
 area: EVENTS
-order: 125
+order: 124
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

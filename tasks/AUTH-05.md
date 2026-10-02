@@ -1,79 +1,40 @@
 ---
 id: AUTH-05
-title: Sign-up: email, phone and BVN
+title: The sign-up sequence end to end
 owner: DEV
 area: AUTH
-order: 64
+order: 65
 priority: launch
-repo: wawu-wmt-mobile
-type: mobile-screen
+repo: wawu-id
+type: backend-endpoint
 status: todo
-depends_on: [AUTH-02, AUTH-03, AUTH-04]
-decisions: [D1]
-passes: [V1, V4, V5, V6, V7, V9]
-artboards: [A3, A4, A14, A15]
+depends_on: [AUTH-03]
+decisions: []
+passes: [V1, V2, V3, V4, V9]
+artboards: []
 ---
-# AUTH-05 · Sign-up: email, phone and BVN
+# AUTH-05 · The sign-up sequence end to end
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
-- The design: `python3 scripts/design/render_design.py A3 A4 A14 A15` then open `build/design_shots/`
-- What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
+- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
+Sign-up (A2 to A4, then A11 to A13) is one sequence the server enforces, with no identity checks in it (R-6).
 
 ## Scope
 
-New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
-
-## Artboards
-
-- **A3 · Email, phone, BVN**: Create account form: Email, Phone number ('Must be the number on your BVN'), BVN ('Dial *565*0# to get it'), Password ('At least 8 characters'); footer 'Checked with NIBSS. We never see your balances.' Continue.
-- **A4 · Phone code**: Verify your phone: 6-digit code 'Sent by SMS to 0803 ••• 4412, the number on your BVN', resend countdown 0:42, numeric keypad.
-- **A14 · Phone doesn't match BVN**: A3 with inline error under phone: 'This isn't the number on your BVN. Use that one.'
-- **A15 · Wrong code**: A4 with 6 digits entered and 'That code isn't right'.
+The registration state machine and its endpoints; each step refuses to run before the previous one completed.
 
 ## Capability checks
 
-- [ ] **A3**: a user can enter email; enter phone; enter BVN; enter password; tap Continue (BVN lookup + phone match, then -> A4).
-- [ ] **A4**: a user can enter 6-digit code; resend after countdown.
-- [ ] **A14**: a user can correct phone.
-- [ ] **A15**: a user can re-enter; resend.
-- [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
-- [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
-- [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states A14, A15.
-
-## What the backend serves today (from the analysis)
-
-- **A3**: partial. Missing: No BVN field, no BVN lookup, no phone-vs-BVN match anywhere. Register requires `country` (not on board) and has no place to store BVN or a BVN-verified flag. Names are required for wallet opening (wallet.service.ts openForAccount) but the board collects none; they must come from the BVN response.
-- **A4**: partial. Missing: otp/verify is a phone-LOGIN: it find-or-creates a phone-only WawuUser and issues tokens (auth.service.ts:713-748); it does not mark a registering account's phone as verified - WawuUser has no phoneVerified column. Delivery is WhatsApp, not SMS. No resend throttle beyond replacing the previous code. Separately: WAWU ID login refuses accounts with an unverified email (auth.service.ts:206-213 EMAIL_NOT_VERIFIED), and this board path never verifies the email, so a user created this way cannot sign in on A22 later.
-- **A14**: missing. Missing: No BVN lookup, so no phone match.
-- **A15**: partial. Missing: Error exists, but see A4: the route is a phone login, not registration phone verification; no attempt counter/lockout.
-
-A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
-
-## Figures on these artboards are not facts
-
-Do not hard-code any of these. Show what the API returns, or leave the figure out and file it.
-
-- A3: 'Must be the number on your BVN'
-- A3: 'Dial *565*0# to get it' (USSD code)
-- A3: 'Checked with NIBSS. We never see your balances.'
-- A3: password 'At least 8 characters' (matches WAWU ID MinLength(8))
-- A4: 'Enter the 6-digit code'
-- A4: 'Sent by SMS'
-- A4: 'Resend in 0:42'
-- A14: phone must equal the BVN-registered phone
-
-## Designer notes (⚠, unresolved)
-
-- None.
+- [ ] Quitting halfway through sign-up and coming back resumes at the next step.
+- [ ] A new account can browse, follow and buy nothing yet: anything with money leads to Open your wallet (KYC-03).
 
 ## Builder report
 

@@ -3,7 +3,7 @@ id: INBOX-13
 title: Out of credits, buy credits, credits added
 owner: DEV
 area: INBOX
-order: 153
+order: 152
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

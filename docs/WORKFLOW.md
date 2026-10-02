@@ -192,10 +192,10 @@ paid DMs, event tickets, bills, legal, school fees. Each one: staging with the
 sandbox, then real money for staff only, then everyone on mobile. The web stays
 on Flutterwave until after launch.
 
-**People who already have accounts** have no BVN and no wallet. Every money
-screen handles "this user has no wallet yet" and sends them through "open your
-wallet" (task MONEY-13). Test every money flow with an existing-user account, not
-just a new one.
+**Nobody has a wallet until they open one** (R-6): identity checks happen
+then, not at sign-up. Every money screen handles "this user has no wallet yet"
+and sends them through "Open your wallet" (task MONEY-13). Test every money
+flow with an account that has no wallet, as well as one that does.
 
 ---
 

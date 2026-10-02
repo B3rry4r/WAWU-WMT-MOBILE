@@ -11,8 +11,10 @@ part of your task.
 - **The app shell and session:** the five tabs, sign-in storage, API client
   wiring, tester builds (SHELL-*).
 - **The design-system components** every screen is built from (UI-*).
-- **Sign-up and sign-in:** BVN, phone check, selfie, the sign-up sequence in
-  WAWU ID, and the screens (AUTH-*).
+- **Sign-up and sign-in:** email and phone, the phone check, the sign-up
+  sequence in WAWU ID, and the screens (AUTH-*). Sign-up asks for no BVN and
+  no selfie: those happen later, when someone opens a wallet (R-6, owned by
+  You).
 - **Settings** (SETTINGS-*).
 - **Me:** profile, someone else's profile, edit, featured works, create and
   publish, ticks and their payment, saved, purchases, notifications (ME-*).
@@ -35,8 +37,10 @@ part of your task.
   pay sheet). You build each feature's payment path on top of it and never
   talk to Fintava directly. Tasks that need the money core first say so in
   `tasks/INDEX.md`.
-- **People already on WAWU have no BVN and no wallet.** The first time they
-  touch money, lead them to "open your wallet".
+- **Nobody has a wallet until they open one.** That's everyone at first, new
+  or existing (R-6). Every payment screen you build checks for a wallet and,
+  if there isn't one, hands over to "Open your wallet" (MONEY-13). Earnings
+  still accrue without one and land when it opens (R-11).
 - **Compare pictures with pictures:** render the artboard, screenshot your
   screen at 390 px in both themes, open both.
 

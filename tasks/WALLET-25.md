@@ -3,13 +3,13 @@ id: WALLET-25
 title: Add money by card
 owner: YOU
 area: WALLET
-order: 170
+order: 169
 priority: after-launch
 repo: wawu-backend
 type: third-party
 status: todo
 depends_on: [MONEY-06]
-decisions: [D5]
+decisions: [R-10]
 passes: [V1, V2, V3, V6, V8, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D5 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-10 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
@@ -30,7 +30,7 @@ W16: top up with a card, 3-D Secure, saved cards.
 
 ## Scope
 
-Card funding through Fintava (or the provider they name) with 3-D Secure and saved card tokens; the fee per D5.
+Card funding through Fintava (or the provider they name) with 3-D Secure and saved card tokens; the fee per R-10.
 
 ## Capability checks
 

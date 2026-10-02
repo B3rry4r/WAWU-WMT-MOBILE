@@ -1,41 +1,41 @@
 ---
 id: WALLET-16
-title: Earnings and move to wallet
+title: Earnings land in the wallet automatically
 owner: YOU
 area: WALLET
-order: 143
+order: 142
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-17]
-decisions: [D6]
+decisions: [R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# WALLET-16 · Earnings and move to wallet
+# WALLET-16 · Earnings land in the wallet automatically
 
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D6 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-11 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
 ## Goal
 
-W39, W40: earnings per piece, and a creator-initiated move to the wallet gated by KYC.
+Sales, tips and answered paid questions land in the creator's wallet automatically (R-11). W39 shows where they came from.
 
 ## Scope
 
-Per-content earnings breakdown; move to wallet with KYC check (replacing or alongside the automatic sweep, per D6).
+Per-content earnings breakdown; automatic settlement into the wallet. A creator without a wallet keeps earning; the money waits and lands the moment they open one.
 
 ## Capability checks
 
 - [ ] Earnings shown equal the sum of that creator's sales after the split.
-- [ ] A creator without approved KYC sees W18-style guidance, not an error.
+- [ ] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
 
 ## Builder report
 

@@ -3,7 +3,7 @@ id: HOME-15
 title: Move content unlocks to the wallet
 owner: DEV
 area: HOME
-order: 119
+order: 118
 priority: launch
 repo: wawu-backend
 type: money-path

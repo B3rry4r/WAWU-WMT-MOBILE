@@ -3,7 +3,7 @@ id: INBOX-17
 title: Move paid DMs to the wallet
 owner: DEV
 area: INBOX
-order: 154
+order: 153
 priority: launch
 repo: wawu-backend
 type: money-path

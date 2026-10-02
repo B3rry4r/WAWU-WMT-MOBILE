@@ -3,13 +3,13 @@ id: INBOX-15
 title: Money requests in chat
 owner: DEV
 area: INBOX
-order: 151
+order: 150
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: [INBOX-06]
-decisions: [D8]
+decisions: [R-13]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D8 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-13 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal

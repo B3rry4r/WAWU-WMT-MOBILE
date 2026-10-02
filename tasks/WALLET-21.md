@@ -3,13 +3,13 @@ id: WALLET-21
 title: Dollar and crypto accounts, swap
 owner: YOU
 area: WALLET
-order: 181
+order: 180
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-32, WALLET-33]
-decisions: [D11]
+decisions: [R-16]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W2, W3, W20, W21, W22, W23]
 ---
@@ -20,7 +20,7 @@ artboards: [W2, W3, W20, W21, W22, W23]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D11 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-16 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W2 W3 W20 W21 W22 W23` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 

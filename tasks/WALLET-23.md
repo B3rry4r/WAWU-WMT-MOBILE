@@ -3,7 +3,7 @@ id: WALLET-23
 title: Tier 2: NIN upgrade and limits
 owner: YOU
 area: WALLET
-order: 167
+order: 166
 priority: after-launch
 repo: wawu-backend
 type: money-path

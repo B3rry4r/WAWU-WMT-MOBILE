@@ -9,7 +9,7 @@ repo: wawu-backend
 type: backend-endpoint
 status: todo
 depends_on: []
-decisions: [D3]
+decisions: [R-8]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D3 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-8 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 
 ## Goal
@@ -29,7 +29,7 @@ E13-E16 ask for things the event model lacks and submit in one go.
 
 ## Scope
 
-Additive: hybrid format, Conference and Concert kinds, ticket types in the same submit, ₦0 tickets per D3.
+Additive: hybrid format, Conference and Concert kinds, ticket types in the same submit, ₦0 tickets per R-8.
 
 ## Capability checks
 

@@ -3,7 +3,7 @@ id: EVENTS-09
 title: At the door: scan, let in, already used, not valid
 owner: DEV
 area: EVENTS
-order: 123
+order: 122
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

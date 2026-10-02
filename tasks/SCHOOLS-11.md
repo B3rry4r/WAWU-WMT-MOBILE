@@ -3,13 +3,13 @@ id: SCHOOLS-11
 title: Paying schools
 owner: YOU
 area: SCHOOLS
-order: 132
+order: 131
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-17, SCHOOLS-07]
-decisions: [D7]
+decisions: [R-12]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -20,7 +20,7 @@ artboards: []
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D7 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-12 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 
@@ -30,7 +30,7 @@ Enrolment money reaches the school at the ruled split.
 
 ## Scope
 
-School payee details and verification, settlement through Fintava at the split in D7.
+School payee details and verification, settlement through Fintava at the split in R-12.
 
 ## Capability checks
 

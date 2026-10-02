@@ -3,7 +3,7 @@ id: INBOX-11
 title: Paid question: not enough money, refunded, messages off
 owner: DEV
 area: INBOX
-order: 156
+order: 155
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

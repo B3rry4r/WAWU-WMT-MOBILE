@@ -33,8 +33,8 @@ Read-only check of the whole repo. Fixes go back to the owner as findings.
 
 - [ ] `npm ci` then `npm run check` exits 0 on a fresh clone, and the gates report a non-zero 'files scanned'.
 - [ ] `npx expo-doctor` passes, and `npm view expo dist-tags.latest` matches the installed SDK line.
-- [ ] `python3 scripts/design/render_design.py W1 H1 SC5` writes six images that show Alan Sans and real icons (open them).
-- [ ] `python3 scripts/design/render_design.py --list` lists 297 artboards, matching design/canvas-inventory.json.
+- [ ] `python3 scripts/design/render_design.py ` writes six images that show Alan Sans and real icons (open them).
+- [ ] `python3 scripts/design/render_design.py ` lists 297 artboards, matching design/canvas-inventory.json.
 - [ ] Planting an em-dash in JSX text, a raw colour, an empty onPress and 'we will email you' in a throwaway .tsx makes the gates fail on each one; deleting it makes them pass.
 - [ ] `npm run tokens -- --check` and `python3 scripts/api/sync_contract.py` leave no diff.
 - [ ] `npx expo export --platform web`, served locally, shows the WAWU wordmark in Alan Sans in both light and dark at 390 px.

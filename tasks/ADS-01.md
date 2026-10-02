@@ -3,13 +3,13 @@ id: ADS-01
 title: TGIF sponsored card
 owner: YOU
 area: ADS
-order: 187
-priority: after-launch
+order: 186
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [HOME-09, ADS-04]
-decisions: [D10]
+decisions: [R-15]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H33]
 ---
@@ -20,7 +20,7 @@ artboards: [H33]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D10 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-15 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py H33` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
 

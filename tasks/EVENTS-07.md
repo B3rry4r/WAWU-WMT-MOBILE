@@ -3,7 +3,7 @@ id: EVENTS-07
 title: Move event tickets to the wallet
 owner: DEV
 area: EVENTS
-order: 121
+order: 120
 priority: launch
 repo: wawu-backend
 type: money-path

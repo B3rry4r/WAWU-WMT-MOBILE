@@ -3,13 +3,13 @@ id: WALLET-05
 title: Add money and withdraw
 owner: YOU
 area: WALLET
-order: 140
+order: 139
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-09, WALLET-10]
-decisions: [D5]
+decisions: [R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W15, W16, W17, W18, W19]
 ---
@@ -20,7 +20,7 @@ artboards: [W15, W16, W17, W18, W19]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
-- `DECISIONS.md`: D5 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-10 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W15 W16 W17 W18 W19` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 

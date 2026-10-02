@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [SHELL-01]
-decisions: [D1]
+decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [A1, A2]
 ---
@@ -20,7 +20,7 @@ artboards: [A1, A2]
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/DEV.md` (what you own)
-- `DECISIONS.md`: D1 (not ruled yet: build the default written there; a later ruling changes settings, not the build)
+- `DECISIONS.md`: R-6 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py A1 A2` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
 

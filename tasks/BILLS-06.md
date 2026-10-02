@@ -3,7 +3,7 @@ id: BILLS-06
 title: Bill reminders
 owner: YOU
 area: BILLS
-order: 183
+order: 182
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

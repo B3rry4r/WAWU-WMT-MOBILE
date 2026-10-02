@@ -3,7 +3,7 @@ id: EVENTS-10
 title: Pay event hosts and refund cancellations
 owner: DEV
 area: EVENTS
-order: 124
+order: 123
 priority: launch
 repo: wawu-backend
 type: money-path

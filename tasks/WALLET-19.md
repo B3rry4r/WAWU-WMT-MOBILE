@@ -3,7 +3,7 @@ id: WALLET-19
 title: Raise your limits (Tier 2 and 3)
 owner: YOU
 area: WALLET
-order: 169
+order: 168
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen

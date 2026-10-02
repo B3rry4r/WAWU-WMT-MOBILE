@@ -1,19 +1,19 @@
 ---
 id: MONEY-12
-title: Open a Tier 1 account at sign-up
+title: Open a Tier 1 account when someone opens a wallet
 owner: YOU
 area: MONEY
-order: 66
+order: 67
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-06, AUTH-07]
+depends_on: [MONEY-06, KYC-01, KYC-02]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# MONEY-12 · Open a Tier 1 account at sign-up
+# MONEY-12 · Open a Tier 1 account when someone opens a wallet
 
 ## Read first
 
@@ -25,7 +25,7 @@ artboards: []
 
 ## Goal
 
-A8: every new user gets their own Fintava account.
+A8: when a user finishes Open your wallet, they get their own Fintava account (R-6: never at sign-up).
 
 ## Scope
 
