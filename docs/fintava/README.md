@@ -1,8 +1,15 @@
 # Fintava
 
-Fintava's API docs and real sandbox responses go here (task Y-02). One file
-per call, request and full response, keys and BVNs masked; webhooks with their
-headers. The list of calls and questions is in `docs/PLAN.md`.
+- `naira-api.md`: what Fintava's Naira API does, what that changes in our
+  tasks, and the questions still open for Fintava. Start here.
+- `cardex.md`: Cardex, their crypto partner, and the custody question to
+  answer before crypto is built.
+- `reference/`: Fintava's published API pages, saved on 2 Oct 2026
+  (`reference/INDEX.txt` lists them).
+- Real sandbox calls go here too (task OPS-02): one file per call, request
+  and full response, keys and BVNs masked; webhooks with their headers.
 
-Nothing in the money lane is built from guesses about Fintava's API. If a task
-needs a call that isn't here, it is blocked until it is.
+Nothing in the money lane is built from guesses about Fintava's API. A real
+sandbox response beats the published docs; when they differ, correct
+`naira-api.md`. Keys and secrets live in the backend's environment secrets,
+never here.

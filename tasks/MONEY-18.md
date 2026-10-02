@@ -9,7 +9,7 @@ repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-17]
-decisions: []
+decisions: [D16]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -30,6 +30,12 @@ Paid DMs and tickets hold money until something happens, then pay out or refund.
 ## Scope
 
 Hold (Fintava lien, or WAWU's collection account if Fintava has no lien), release to the payee, refund to the payer.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Fintava has no hold or lien. The only place to hold money is WAWU's merchant wallet, which puts customer money in WAWU's account (the custody line in `docs/fintava/naira-api.md`, "To raise with the owner"). Build the hold behind a flag that stays off in live until Fintava answers question 2.
 
 ## Capability checks
 

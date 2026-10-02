@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -30,6 +30,12 @@ W1: the balance is Fintava's, never a sum of our records.
 ## Scope
 
 GET balance in kobo from Fintava; a typed 'can't reach your account' error (W6).
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+`GET /customer/wallet/balance/{walletId}` returns `availableBalance` and `bookedBalance` in naira. Show `availableBalance`, fetched from Fintava.
 
 ## Capability checks
 

@@ -22,15 +22,21 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
-A6, A7, A16: a live selfie must match the BVN photo.
+A6, A7, A16: a selfie must match the BVN photo.
 
 ## Scope
 
-The R-6 vendor's liveness and face match, retries, result stored.
+Fintava's face match (`/compliance/verify/bvn/selfie`), retries, result stored.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+`POST /compliance/verify/bvn/selfie` (base64 image and BVN) is a face match. Fintava offers no liveness check, so nothing claims one: the selfie is captured and matched, and the "blink" instruction is left out until a liveness provider exists.
 
 ## Capability checks
 

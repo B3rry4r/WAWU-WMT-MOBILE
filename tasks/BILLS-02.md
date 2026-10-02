@@ -22,6 +22,7 @@ artboards: [S5, S6, S7, S11, S12]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S5 S6 S7 S11 S12` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -38,6 +39,12 @@ New files under `src/features/` for these screens and their route files under `s
 - **S7 · Token**: Receipt: ₦10,000 paid, prepaid token '4821 0937 5510 2286 7734' with Copy, 45.2 kWh, meter, reference WAW-BIL-8Q2M, date, Share receipt, Done.
 - **S11 · Not enough in wallet**: 'Not enough in your Naira wallet · You have ₦6,200.00. Add ₦3,800 to pay this.' Add ₦3,800.
 - **S12 · Failed**: 'Payment didn't go through · Ikeja Electric didn't confirm it · Reversed to your wallet', amount, reference, Done / Try again.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Bill calls debit WAWU's merchant wallet, not the user's. A user's bill is two steps: wallet to WAWU's wallet (`/transaction/wallet-to-wallet`), then pay the biller. If the biller fails, move it back; that is S12's reversal. Whether the electricity response includes the token and units (S7) is not documented: show what comes back and file a gap if it's missing.
 
 ## Capability checks
 

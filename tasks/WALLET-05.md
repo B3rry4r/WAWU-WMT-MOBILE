@@ -23,6 +23,7 @@ artboards: [W15, W16, W17, W18, W19]
 - `DECISIONS.md`: R-10 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W15 W16 W17 W18 W19` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -43,6 +44,12 @@ New files under `src/features/` for these screens and their route files under `s
 ## Launch scope
 
 Card top-up (W16) comes after launch (WALLET-25): show bank transfer and USSD only, and keep W16's layout for when it lands.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Top-up at launch is a bank transfer to the account number (`account_funded`). The canvas prints the bank as "Fintava MFB"; Fintava's own examples say Loma Bank (Iyin Ekiti MFB). Show the bank name the backend gets from Fintava, never the canvas's.
 
 ## Capability checks
 

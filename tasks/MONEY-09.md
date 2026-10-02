@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -30,6 +30,12 @@ Every movement of money asks for a 4-digit PIN (W11, W36).
 ## Scope
 
 Set, confirm, change; stored as a slow hash; locked after 5 wrong tries; required on every debit endpoint.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Fintava has no wallet PIN (only card PINs), so this PIN is ours, as planned.
 
 ## Capability checks
 

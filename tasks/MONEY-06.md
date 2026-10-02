@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -30,6 +30,12 @@ One place that talks to Fintava, replacing the Flutterwave wallet gateway behind
 ## Scope
 
 Auth and request signing, sandbox and live config, error mapping to our error shape, timeouts, env vars listed in the deploy checklist.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Base URLs: sandbox `https://dev.fintavapay.com/api/dev`, live `https://live.fintavapay.com/api/dev`. Bearer key, no request signing. Errors are `{ statusCode, message, error }` with `message` a string or an array. `/single/transfer` is deprecated: use `/transaction/wallet-to-wallet`. `/bank/credit` takes no `CustomerReference`, so a timed-out bank send is checked with Fintava before any retry (question 1 in `docs/fintava/naira-api.md`).
 
 ## Capability checks
 

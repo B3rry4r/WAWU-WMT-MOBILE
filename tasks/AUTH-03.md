@@ -22,7 +22,7 @@ artboards: []
 - `docs/people/DEV.md` (what you own)
 - `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -31,6 +31,12 @@ A4 verifies the phone. The canvas never verifies email, but login refuses unveri
 ## Scope
 
 Phone code at registration; fix the login rule so a phone-verified account can sign in even without a verified email (the design never verifies email, but login refuses it today); store occupation and account type. No BVN here (R-6).
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Fintava has `GET /compliance/verify/phone-number` and `POST /sms/send`. If the price is right, that is the SMS route for sign-up codes `docs/PLAN.md` asks for.
 
 ## Capability checks
 

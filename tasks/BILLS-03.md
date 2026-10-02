@@ -22,6 +22,7 @@ artboards: [S8, S9]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S8 S9` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -35,6 +36,12 @@ New files under `src/features/` for these screens and their route files under `s
 
 - **S8 · Airtime**: Airtime: network MTN/Airtel/Glo/9mobile, phone number with 'Mine', amount presets ₦500/₦1,000/₦2,000/₦5,000, Buy ₦2,000 airtime; then PIN and receipt like S7.
 - **S9 · Cable package**: DStv packages with monthly prices; then smartcard, review, PIN, receipt.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Airtime `POST /billing/airtime` (GLO, MTN, AIRTEL, 9MOBILE), data `GET /billing/data-bundles/{network}` then `POST /billing/data-bundle`, cable `GET /cable-service-name/{network}` then `POST /billing/cable-subscription`. Same two-step debit as BILLS-02.
 
 ## Capability checks
 

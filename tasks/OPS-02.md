@@ -1,6 +1,6 @@
 ---
 id: OPS-02
-title: Fintava docs, sandbox keys and the 14 sandbox calls
+title: Fintava sandbox keys and the sandbox calls
 owner: YOU
 area: OPS
 order: 3
@@ -13,7 +13,7 @@ decisions: []
 passes: []
 artboards: []
 ---
-# OPS-02 · Fintava docs, sandbox keys and the 14 sandbox calls
+# OPS-02 · Fintava sandbox keys and the sandbox calls
 
 ## Read first
 
@@ -27,12 +27,12 @@ The money layer is built from Fintava's real API, not from guesses. Field names 
 
 ## Scope
 
-docs/fintava/: the API docs (or links), and one file per sandbox call with request and full response (keys and BVNs masked). Webhooks with headers. Answers on: holds/lien, PIN, BVN/NIN/liveness, fees, tier limits, paying a non-user payee, licence wording, and whether USD, crypto and cards are in the contract.
+The published docs are already in `docs/fintava/reference/`, digested in `docs/fintava/naira-api.md`. Still needed: sandbox keys in the backend's environment secrets (never in chat or a commit), one file per sandbox call with request and full response (keys and BVNs masked), webhooks with their headers, and written answers to the questions at the end of `naira-api.md`. Correct `naira-api.md` wherever a real response differs.
 
 ## Capability checks
 
-- [ ] docs/fintava/ has the 14 calls listed in docs/PLAN.md, each with request and response.
-- [ ] Every question in docs/PLAN.md 'Questions for Fintava' has a written answer or 'unknown'.
+- [ ] docs/fintava/ has every sandbox call listed in docs/PLAN.md, each with request and response.
+- [ ] Every question at the end of `docs/fintava/naira-api.md` has a written answer or 'unknown'.
 - [ ] No secret or real BVN is committed (gates and a manual read).
 
 ## Builder report

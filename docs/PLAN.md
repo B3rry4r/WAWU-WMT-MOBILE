@@ -43,36 +43,33 @@ the session with the backend repo and this repo both attached.
 
 ## Needed from outside
 
-**From Fintava (OPS-02):** API docs, sandbox keys, and these sandbox calls
-saved in `docs/fintava/` (request and full response, keys and BVNs masked,
-webhooks with their headers):
+**From Fintava (OPS-02):** sandbox keys, put straight into the backend's
+environment secrets (never into a chat or a commit). Their published docs are
+already in `docs/fintava/reference/`, and `docs/fintava/naira-api.md` says
+what they mean for us. These sandbox calls get saved in `docs/fintava/`
+(request and full response, keys and BVNs masked, webhooks with their
+headers):
 
-1. Create a customer
-2. Open a Naira account at Tier 1
+1. Check a BVN, then a selfie against it
+2. Create a customer (with BVN, NIN and address) and read back its wallet
 3. Get the balance
-4. Get transaction history
+4. Get transaction history, for a customer and for WAWU
 5. Bank list
-6. Check an account name
-7. Send to a bank (one success, one failure)
-8. Check a transfer's status
+6. Check an account name, at another bank and at Fintava
+7. Send to a bank (one success, one failure, one reversal)
+8. Look up a transaction by reference
 9. Move money between two customers
-10. Move money from a customer to WAWU's account
-11. Hold money, then release it
-12. Validate and pay a bill
-13. Webhooks: money received, transfer succeeded, failed, reversed
-14. Upgrade a tier with NIN
+10. Move money from a customer to WAWU's wallet, and back
+11. Pay a bill (electricity with meter preview, and airtime)
+12. Freeze and unfreeze a wallet
+13. Webhooks: money received, wallet transfer, bank transfer, reversal
 
-Questions for Fintava:
-- Do they handle BVN, NIN and liveness checks themselves?
-- Do they manage a transaction PIN, or do we?
-- What are their fees and tier limits?
-- Can we pay a school that isn't a WAWU user?
-- What exact licence wording should the app use?
-- Are dollar accounts, crypto and the card in our contract?
+The questions for Fintava are at the end of `docs/fintava/naira-api.md`.
+Crypto runs through Cardex, their partner: `docs/fintava/cardex.md`.
 
 Until the sandbox arrives, money is built against the mock (MONEY-05) and
 stays behind its flags.
 
 **From you:** Apple Developer, Google Play and Expo accounts; the domain behind
-`wawu/...` links; an SMS route for sign-up codes; a BVN and selfie vendor for
-"Open your wallet" if Fintava doesn't cover them; Redis for live chat.
+`wawu/...` links; an SMS route for sign-up codes (Fintava sells SMS); a liveness
+provider if you want one (Fintava only matches the face); Redis for live chat.

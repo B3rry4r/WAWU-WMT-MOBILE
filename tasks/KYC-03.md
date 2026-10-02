@@ -23,6 +23,7 @@ artboards: [A5, A6, A7, A14, A16]
 - `DECISIONS.md`: R-6 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py A5 A6 A7 A14 A16` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -48,6 +49,12 @@ BVN entry is A3's BVN field on its own step (A3 itself is sign-up and no longer
 asks for it). Someone without a Nigerian BVN cannot open a Naira wallet; dollar
 and crypto accounts are for them and come after launch, so for now the flow
 ends with a clear "not available yet" instead of an error.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Fintava needs the NIN and a full address to open an account, and the canvas draws neither. Add both in the canvas's own field style (NIN beside the BVN step, address on A5) and ask the designer to draw them (OPS-04). A6 says nothing about blinking or liveness (KYC-02). A5's name, date of birth and gender come from the BVN check; state and occupation are typed by the user.
 
 ## Capability checks
 

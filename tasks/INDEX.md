@@ -17,7 +17,7 @@ Builder and verifier are always different sessions.
 ## You
 
 1. [OPS-01](OPS-01.md) Record the owner's rulings
-2. [OPS-02](OPS-02.md) Fintava docs, sandbox keys and the 14 sandbox calls
+2. [OPS-02](OPS-02.md) Fintava sandbox keys and the sandbox calls
 3. [OPS-03](OPS-03.md) Staging backend
 4. [OPS-04](OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers
 5. [OPS-05](OPS-05.md) Update the other repos' CLAUDE.md for today's rulings
@@ -50,7 +50,7 @@ Builder and verifier are always different sessions.
 32. [MONEY-18](MONEY-18.md) Hold, release and refund
 33. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
 34. [KYC-02](KYC-02.md) Selfie match to the BVN photo
-35. [MONEY-12](MONEY-12.md) Open a Tier 1 account when someone opens a wallet
+35. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
 36. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
 37. [KYC-03](KYC-03.md) Open your wallet: BVN, confirm details, selfie
 38. [PROS-03](PROS-03.md) Get listed as a professional
@@ -117,7 +117,7 @@ Builder and verifier are always different sessions.
 15. [WALLET-31](WALLET-31.md) WAWU card (first slice)
 16. [WALLET-22](WALLET-22.md) WAWU card
 17. [WALLET-32](WALLET-32.md) Dollar account and swaps (first slice)
-18. [WALLET-33](WALLET-33.md) Crypto through Fintava's custody partner (first slice)
+18. [WALLET-33](WALLET-33.md) Crypto through Cardex (first slice)
 19. [WALLET-21](WALLET-21.md) Dollar and crypto accounts, swap
 20. [WALLET-34](WALLET-34.md) Admin screens: tier 3 review queue
 21. [BILLS-06](BILLS-06.md) Bill reminders

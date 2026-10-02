@@ -1,6 +1,6 @@
 ---
 id: MONEY-12
-title: Open a Tier 1 account when someone opens a wallet
+title: Open a Fintava account when someone opens a wallet
 owner: YOU
 area: MONEY
 order: 67
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# MONEY-12 · Open a Tier 1 account when someone opens a wallet
+# MONEY-12 · Open a Fintava account when someone opens a wallet
 
 ## Read first
 
@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -29,7 +29,13 @@ A8: when a user finishes Open your wallet, they get their own Fintava account (R
 
 ## Scope
 
-Account opening after BVN, safe to retry, a visible 'still opening' state, the account number shown on W1.
+Account opening after BVN, NIN and address, safe to retry, a visible 'still opening' state, the account number shown on W1.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+`POST /create/customer` requires first and last name, phone, email, `fundingMethod: STATIC_FUND`, address, date of birth, BVN **and NIN**, and returns the account number at once. Store customerId (`userInfo.id`), walletId (`wallet.id`) and the account number. There is no tier in the API: open a normal account; limits are a question for Fintava.
 
 ## Capability checks
 

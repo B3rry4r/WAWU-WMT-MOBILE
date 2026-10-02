@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -29,7 +29,13 @@ Money that arrives or settles while nobody is looking is still recorded once.
 
 ## Scope
 
-Webhook endpoint with signature check, an event store keyed by Fintava's event id, safe to replay.
+Webhook endpoint with signature check, an event store keyed by the transaction reference (Fintava sends no event id), safe to replay.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Signature: HMAC-SHA512 of the raw body with the dashboard webhook secret, hex, in `x-fintava-signature`, compared in constant time. No timestamp and no event id: deduplicate on the transaction reference. Retries: live every 3 minutes for 4 tries, then hourly for 72 hours. Events: `account_funded`, `virtual_wallet_payment` (possibly upper case), `customer_bank_transfer`, `wallet_to_wallet_transfer_v2`, `debit_transfer_reversal` (how a failed bank send shows up), `card_payment`, `dynamic_card_payment`. The name field is `event` in one page and `type` in another: read both.
 
 ## Capability checks
 

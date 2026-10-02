@@ -43,7 +43,10 @@ Each ruling names who made it, when, and the task that carries it out.
 user can have a wallet and pay from it. Fintava replaces Flutterwave as the
 money rail. Still to confirm with Fintava (task OPS-02): whether dollar accounts,
 crypto through their custody partner, and the Verve card fall under their
-licence and the contract.
+licence and the contract. Fintava's published examples (2 Oct 2026) put
+customer accounts at Loma Bank (Iyin Ekiti MFB), so the bank name and licence
+wording in the app wait on Fintava's answer (`docs/fintava/naira-api.md`,
+question 5).
 **Carried out by:** the MONEY tasks. Web CLAUDE.md wallet note
 is rewritten in OPS-05.
 
@@ -153,6 +156,13 @@ exactly one screen task.
 ## Still open
 
 Nothing waits on these.
+
+**D16 · Holding money between payer and payee.** Fintava has no hold or lien
+(`docs/fintava/naira-api.md`). Paid DMs, tickets and the bill reversal step
+can only hold money in WAWU's merchant wallet, which means WAWU holding
+customer money. Until Fintava says whether that's allowed under their
+licence (question 2), the hold is built behind a flag that stays off in live
+(MONEY-18), and nothing else waits.
 
 **D14 · Web features missing from the canvas.** 89 things on the web don't
 appear in the design (WAWU Learn, health plans, mentors, the EVG score,

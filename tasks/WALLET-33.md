@@ -1,6 +1,6 @@
 ---
 id: WALLET-33
-title: Crypto through Fintava's custody partner (first slice)
+title: Crypto through Cardex (first slice)
 owner: YOU
 area: WALLET
 order: 179
@@ -13,7 +13,7 @@ decisions: [R-16]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# WALLET-33 · Crypto through Fintava's custody partner (first slice)
+# WALLET-33 · Crypto through Cardex (first slice)
 
 ## Read first
 
@@ -22,19 +22,20 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-16 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/cardex.md` (what Cardex does, what the canvas assumes, and the custody question)
 
 ## Goal
 
-Crypto through Fintava's custody partner is on the canvas, marked as placeholder until Fintava confirms it. It is only built if R-16 puts it in the first release.
+Crypto (W3, W22, W23) runs through Cardex, Fintava's crypto partner, after launch (R-16). Cardex is a business treasury: every user's coins sit in WAWU's treasury, so WAWU would be the custodian. That question is answered before anything is built.
 
 ## Scope
 
-Split into two-day tasks once R-16 is ruled and Fintava's API for it is in docs/fintava/.
+Get written answers to the five questions in `docs/fintava/cardex.md`, then split this into small tasks. USDT and USDC only (no BTC), the real 90-second quote, the fee on top, keys only in environment secrets.
 
 ## Capability checks
 
-- [ ] R-16 is ruled 'in', Fintava's docs are in docs/fintava/, and this task has been split into tasks of two days or less.
+- [ ] The custodian of record and its licence are confirmed in writing and recorded in DECISIONS.md.
+- [ ] This task is split into small tasks, each with its own checks, and none shows BTC.
 
 ## Builder report
 

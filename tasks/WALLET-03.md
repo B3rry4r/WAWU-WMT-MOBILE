@@ -23,6 +23,7 @@ artboards: [W8, W13, W14]
 - `DECISIONS.md`: R-10 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W8 W13 W14` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -37,6 +38,12 @@ New files under `src/features/` for these screens and their route files under `s
 - **W8 · Send · to a bank account**: Bank + account number entry; account name resolves from the bank before Continue unlocks; saved beneficiaries incl. 'My payout account' (withdraw).
 - **W13 · Send · insufficient balance**: Amount over balance: inline error, Continue disabled, Add money one tap away.
 - **W14 · Send · failed**: Transfer the receiving bank did not confirm in time; shows automatic reversal to wallet, amount incl. fee, reference, Done / Try again.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+`POST /bank/credit` (sourceId is the customerId) after `GET /name/enquiry`; bank codes from `GET /banks`. Fintava's example shows a fee above R-10's ₦25 (₦30.75 on ₦100): the fee comes from config, and WALLET-15 shows the real one.
 
 ## Capability checks
 

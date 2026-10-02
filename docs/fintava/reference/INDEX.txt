@@ -1,0 +1,84 @@
+# Fintava Documentation
+
+> Documentation for Fintava
+
+## API Reference: GETTING STARTED
+- [Introduction](https://fintava.readme.io/reference/getting-started-with-fintava-api.md): This page will tell you all about Fintava and how to get started
+- [Environments](https://fintava.readme.io/reference/enviroments.md): Fintava API has two environments, Live and Sandbox.
+- [Authentication](https://fintava.readme.io/reference/authentication.md)
+- [Pagination](https://fintava.readme.io/reference/pagination.md)
+- [Response codes](https://fintava.readme.io/reference/status-codes.md): Here are status code you can encounter on Fintava and what they mean.
+- [Identifiers & References](https://fintava.readme.io/reference/identifiers-references.md): Fintava uses different identifiers and references to identify customers, wallets, accounts, and transactions.
+
+## API Reference: Customer
+- [Create Customer](https://fintava.readme.io/reference/create.md): This endpoint helps you create new customers. The parameters needed are the customer's personal data and the funding method. See the information section in this endpoint to get more insight on what…
+- [Get customer list](https://fintava.readme.io/reference/get-customer-list.md): This endpoint will get you the list of all the customers that belong to a merchant
+- [Get customer by phone](https://fintava.readme.io/reference/get-customer-by-phone-number-not-available-yet.md): You can get a customer's details, by inputing their phone number
+- [Fetch Customer](https://fintava.readme.io/reference/create-customer-copy.md): This endpoint helps you get the details of a specific customer. The only parameter needed for this operation is the customer ID. You can get the customer ID by running the Get customer list endpoint.
+
+## API Reference: ACCOUNTS & WALLETS
+- [Get merchant's wallet balance](https://fintava.readme.io/reference/wallet-balancepending.md): This endpoint returns a merchant's wallet balance
+- [Wallet Balance](https://fintava.readme.io/reference/unfreeze-wallet-copy.md): This endpoint helps you get the wallet balance of a particular customer. The only parameter needed for this is the walletId. The walletId is created after you run the create customer endpoint…
+- [Get Wallet Details](https://fintava.readme.io/reference/get-wallet-details.md): Get the details of any wallet on fintava.
+- [Get Account Details](https://fintava.readme.io/reference/get-account-details.md): Get the account information of external account number from other banks
+- [Freeze Wallet](https://fintava.readme.io/reference/freeze-customer-wallet.md): This endpoint freezes a customer's wallet, disabling all financial transactions.
+- [Unfreeze Wallet](https://fintava.readme.io/reference/freeze-customer-wallet-copy.md): This endpoint unfreezes a customer's walletId allowing them to perform financial transactions.
+
+## API Reference: Virtual WALLET
+- [Generate Virtual Wallet](https://fintava.readme.io/reference/generate-virtual-wallet.md): Generate Virtual wallets to receive one time payments from your customers
+- [Virtual Wallet Details](https://fintava.readme.io/reference/virtual-wallet-status.md): Get the details of a virtual wallet you've generated. Details include, payment status, and wallet's status (active/disabled).
+- [Batch Virtual Wallet Create](https://fintava.readme.io/reference/batch-virtual-wallet-create.md): Batch Virtual Wallet Create
+
+## API Reference: transfer
+- [Transfer to bank](https://fintava.readme.io/reference/bank-credit.md): This endpoint enables funds transfer from a customer's wallet to a bank.
+- [Merchant Transfer](https://fintava.readme.io/reference/merchant-transfer.md): Transfer from your Merchant Wallet To Banks
+- [Wallet Transfer](https://fintava.readme.io/reference/wallet-transfer.md): This endpoints allows transfers between two Fintava wallets.
+
+## API Reference: transactions
+- [Get merchant transactions](https://fintava.readme.io/reference/banks-copy.md): This endpoint returns all the transactions that have been made by a merchant
+- [Get Customer Transaction](https://fintava.readme.io/reference/customer-transaction.md): Get all the transactions that occurred on a specified customer's wallet
+- [Get Transaction by id](https://fintava.readme.io/reference/get-transaction-by-id.md): Use this endpoint to search for a transaction using the transaction id
+- [Get Transaction by Reference](https://fintava.readme.io/reference/get-transaction-by-reference.md): Get details of a transaction by searching for it with it's reference.
+
+## API Reference: BANKS & LOOKUPS
+- [Get Bank List](https://fintava.readme.io/reference/get-banks.md): This endpoint give you a list of all the banks supported by Fintava.
+
+## API Reference: compliance
+- [Verify Bvn](https://fintava.readme.io/reference/verify-bvn.md): This endpoint verifies a customer's bank verification number (BVN
+- [Verify BVN Selfie](https://fintava.readme.io/reference/verify-bvn-copy-1.md): This endpoint verifies a customer BVN with a selfie.
+- [Verify phone number](https://fintava.readme.io/reference/verify-bvn-selfie-copy.md): This endpoint verifies a phone number. The only parameter required is a phone number
+
+## API Reference: sms
+- [Send Sms](https://fintava.readme.io/reference/send-sms.md): Merchants can use this endpoint to send SMS(s) to their customers.
+- [Send bulk](https://fintava.readme.io/reference/send-copy.md): This endpoint allows a merchants send SMS(s) to several customers at once.
+- [SMS list](https://fintava.readme.io/reference/send-bulk-copy.md): Get a list of all messages sent via SMS
+
+## API Reference: billing
+- [Buy airtime](https://fintava.readme.io/reference/pay-airtime.md)
+- [List cable service providers](https://fintava.readme.io/reference/cable-service-names-list.md): This endpoint returns all cable service providers supported by Fintava.
+- [List cable subscriptions](https://fintava.readme.io/reference/get-cable-subscription-plans-by-name.md): This endpoint will list the various cable subscription plans by the cable subscription services supported by Fintava.
+- [Buy cable subscription](https://fintava.readme.io/reference/pay-cable-subscription.md): This endpoint helps you purchase cable subscription from your preferred cable service provider.
+- [List data bundles](https://fintava.readme.io/reference/list-data-bundles.md): This endpoint returns the data bundles offered by mobile network provider.
+- [Buy data bundle](https://fintava.readme.io/reference/pay-data-bundle.md): Use this endpoint to purchase data bundles from your preferred mobile network provider.
+- [List  discos](https://fintava.readme.io/reference/list-discos.md): Get a list of electricity distribution companies supported by Fintava.
+- [Preview meter details](https://fintava.readme.io/reference/preview-meter-details.md)
+- [Buy electricity](https://fintava.readme.io/reference/pay-electricity.md): Use this endpoint to purchase electricity.
+
+## API Reference: CARDS
+- [Create card](https://fintava.readme.io/reference/create-physical-card.md): create new card request
+- [Fetch All Cards](https://fintava.readme.io/reference/fetch-cards.md): Fetch all cards
+- [View Card](https://fintava.readme.io/reference/view-card.md)
+- [Card Status](https://fintava.readme.io/reference/card-status.md): Get card status
+- [Activate Card](https://fintava.readme.io/reference/activate-card.md): Activate card
+- [Deactivate Card](https://fintava.readme.io/reference/deactivate-card.md): deactivate card
+- [Reissue Card](https://fintava.readme.io/reference/reissue-card.md): reissue card to customer
+- [Link Card](https://fintava.readme.io/reference/link-card.md): Link card
+- [Change Card PIN](https://fintava.readme.io/reference/change-card-pin.md): Update Card PIN
+
+## API Reference: Webhooks
+- [Introduction](https://fintava.readme.io/reference/webhooks.md): Using Fintava webhooks
+- [Verifying Events](https://fintava.readme.io/reference/verifying-events.md): Verifying webhook events come from Fintava is necessary to avoid creating transactions due to a fraudulent event.  To verify events, validate the x-fintava-signature header sent with the event
+- [Webhook Events](https://fintava.readme.io/reference/webhook-events.md): Fintava sends webhook events to your configured webhook URL when supported payment and transaction activities occur.
+
+## API Reference: DEPRECATED
+- [Transfer between wallets](https://fintava.readme.io/reference/single-transfer.md): This endpoints allows transfers between two Fintava wallets. N.B: endpoint is deprecated, use the Wallet Transfer endpoint.

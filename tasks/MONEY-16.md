@@ -21,7 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -30,6 +30,12 @@ Any difference between our ledger and Fintava is found the same night.
 ## Scope
 
 A nightly job that compares every wallet's movements and balance with Fintava's and alerts the owner on any mismatch.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Compare against `GET /txn?customerId=` per customer, `GET /txn/merchant` for WAWU, and `GET /merchant/balance`. Pages take up to 100 rows.
 
 ## Capability checks
 

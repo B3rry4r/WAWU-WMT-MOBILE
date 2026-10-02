@@ -22,6 +22,7 @@ artboards: [S2, S3, S4, S10, S13]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py S2 S3 S4 S10 S13` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -38,6 +39,12 @@ New files under `src/features/` for these screens and their route files under `s
 - **S4 · Meter and amount**: Meter number with validated name AND address ('Chidinma Okoro · 14 Admiralty Way'), amount ₦10,000 with presets ₦2,000/₦5,000/₦10,000/₦20,000.
 - **S10 · Meter not found**: 'We couldn't find this meter. Check the number.'
 - **S13 · Not live yet**: 'Bill payments aren't switched on yet · You'll be able to pay airtime, data, electricity and cable from your wallet here soon.'
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Electricity is prepaid only, ₦500 minimum, with each disco's own minimum and maximum from `GET /billing/discos`. `POST /billing/preview-meter` returns the name on the meter.
 
 ## Capability checks
 

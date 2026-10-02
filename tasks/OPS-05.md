@@ -21,6 +21,7 @@ artboards: []
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawuafrica, wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -29,6 +30,12 @@ The web and backend CLAUDE.md files still say Flutterwave holds wallet money and
 ## Scope
 
 Rewrite the wallet note (R-1), add that the mobile app is now authoritative and the web follows (R-3, DECISIONS authority), and point to this repo's docs/WORKFLOW.md.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+Fintava's examples put customer accounts at Loma Bank (Iyin Ekiti MFB), not "Fintava MFB". The wallet note names the bank Fintava confirms (question 5 in `docs/fintava/naira-api.md`).
 
 ## Capability checks
 

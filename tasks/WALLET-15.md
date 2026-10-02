@@ -22,7 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-10 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -31,6 +31,12 @@ Every fee shown before paying comes from the server, never from the app.
 ## Scope
 
 GET fee quote for transfer, withdraw, card top-up and card order, from configuration set per R-10.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+R-10's fees are what WAWU charges; Fintava's own fee per send is still unknown (question 3). Keep both in config, and log a warning when WAWU's fee is below Fintava's, so a loss shows up instead of hiding.
 
 ## Capability checks
 

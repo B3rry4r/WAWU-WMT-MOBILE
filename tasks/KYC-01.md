@@ -22,7 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-6 (ruled; build what it says)
 - This task changes `wawu-id`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
 
 ## Goal
 
@@ -30,7 +30,13 @@ Identity is checked when someone first opens a wallet or touches money, never at
 
 ## Scope
 
-BVN lookup (Fintava or the R-6 vendor), prefill name, date of birth and gender, store when it was verified plus a hash and the last 4 digits only.
+BVN lookup (Fintava or the R-6 vendor), prefill name, date of birth and gender, store when it was verified plus a hash and the last 4 digits only. The full BVN and NIN go to account opening (MONEY-12) in the same flow and are never stored in full.
+
+## Fintava facts
+
+From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
+
+`GET /compliance/verify/bvn?bvn=` returns name, date of birth, phone, gender and a photo. State and occupation are not in it: the user types them on A5. Fintava also needs the **NIN and a full address** to open the account (MONEY-12), so this step collects them.
 
 ## Capability checks
 
