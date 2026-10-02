@@ -11,7 +11,7 @@ Four queues, because they have different owners and triggers:
 
 | # | from task | file | exact change, and why | status |
 |---|-----------|------|-----------------------|--------|
-| 1 | MONEY-03 | `package.json` (via `npx expo install react-native-svg`) plus an icon set | Add an SVG icon set so screens can draw the canvas's Lucide icons. The pay sheet draws its tick ring, plus, wallet, clock and cross from Views (`src/components/pay-sheet/glyphs.tsx`); once icons exist, swap them in and delete `glyphs.tsx`. | open |
+| 1 | MONEY-03 | `src/components/TabIcon.tsx` (SHELL-01), or a general `Icon` grown from it | Add the Lucide shapes the pay sheet draws: `circle-check`, `plus`, `wallet`, `clock`, `circle-x` (same paths as H14, H17, H18 on the canvas). The pay sheet draws these from Views today (`src/components/pay-sheet/glyphs.tsx`) because TabIcon's shape list is fenced and was tab-only; once the shapes exist, the pay sheet uses them and `glyphs.tsx` is deleted. | open |
 
 ## 2. Follow-ups in another task's screen
 
