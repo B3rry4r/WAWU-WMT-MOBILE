@@ -41,7 +41,10 @@ whoever wrote it.
 4. **Compare pictures with pictures.** Render the artboard
    (`python3 scripts/design/render_design.py <ID>`) and screenshot the built
    screen at the same width, in both themes, and look at both images. Reading
-   design markup while looking at the app is not a comparison.
+   design markup while looking at the app is not a comparison. The renderer
+   needs `pip install -r scripts/design/requirements.txt` (playwright, Pillow)
+   and a Chromium; it needs no network (React and Alan Sans are vendored in
+   `scripts/design/vendor/`).
 5. **Prove what a user can do, not that nothing crashed.** Write checks as "a
    user can ...", never "the screen renders" or "no error appears".
 6. **The live product keeps working at every step.** Backend changes only add
@@ -132,7 +135,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 
 | Pass | Proves | How |
 |------|--------|-----|
-| **V1 Gates** | No placeholders, fake data, copied components, raw colours, dead buttons, unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
+| **V1 Gates** | No placeholders, fake data, copied components, raw colours (any hex, rgb/hsl, named colour), literal spacing and radii, dead buttons, unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
 | **V2 Contract** | The endpoint does what its contract says, including refusing the wrong user | Contract tests from the registry entry, including one input in an unexpected format (a phone written `080...` instead of `+234...`) |
 | **V3 Regression** | Everything live still behaves the same | The protected route suite (task MONEY-01), before and after |
 | **V4 Field trace** | Data one person writes reaches every screen that reads it | For each field: writer, storage, every reader. Data that crosses between users (a creator's price shown to a buyer) is checked on both sides |

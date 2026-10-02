@@ -26,6 +26,12 @@ Usage:
     python3 scripts/design/render_design.py W1 W2          # by id
     python3 scripts/design/render_design.py --flow Wallet  # one flow
     python3 scripts/design/render_design.py                # everything (slow)
+
+Setup: `pip install -r scripts/design/requirements.txt` (playwright, Pillow) and
+a Chromium (PLAYWRIGHT_BROWSERS_PATH, /opt/pw-browsers or ~/.cache/ms-playwright).
+No network is needed: React 18.3.1 and the Alan Sans variable font are served
+from scripts/design/vendor/ (licences beside them), so the render is the same
+on any machine and nothing is fetched from unpkg.com or cdn.jsdelivr.net.
 """
 from __future__ import annotations
 
@@ -44,6 +50,18 @@ import threading
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DESIGN = ROOT / "design"
 OUT = ROOT / "build" / "design_shots"
+VENDOR = pathlib.Path(__file__).resolve().parent / "vendor"
+# URL fragment the design files request -> (local file, content type). The
+# bytes are the ones the design pins: the React files match the SRI hashes in
+# design/support.js.
+LOCAL_ASSETS = {
+    "unpkg.com/react@18.3.1/umd/react.production.min.js":
+        ("react.production.min.js", "application/javascript"),
+    "unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":
+        ("react-dom.production.min.js", "application/javascript"),
+    "cdn.jsdelivr.net/fontsource/fonts/alan-sans:vf@5.3.0/latin-wght-normal.woff2":
+        ("alan-sans-vf-latin-wght-normal.woff2", "font/woff2"),
+}
 ARTBOARD = re.compile(r'<div id="([^"]+)" data-screen-label="([^"]+)"')
 
 
@@ -131,6 +149,22 @@ READY = """() => ({
 })"""
 
 
+def route_local(route) -> None:
+    """Answer the design's CDN requests from scripts/design/vendor/. Anything
+    else that is not the local design server is refused, so a render never
+    depends on (or silently uses) the network."""
+    url = route.request.url
+    for fragment, (name, ctype) in LOCAL_ASSETS.items():
+        if fragment in url:
+            route.fulfill(body=(VENDOR / name).read_bytes(), content_type=ctype,
+                          headers={"access-control-allow-origin": "*"})
+            return
+    if url.startswith(("http://127.0.0.1", "data:", "blob:")):
+        route.continue_()
+    else:
+        route.abort()
+
+
 def render(boards: list[dict]) -> tuple[list[dict], list[dict]]:
     from playwright.sync_api import sync_playwright
 
@@ -149,6 +183,7 @@ def render(boards: list[dict]) -> tuple[list[dict], list[dict]]:
         for fname, group in by_file.items():
             page = browser.new_page(ignore_https_errors=True, viewport={"width": 1600, "height": 1200},
                                     device_scale_factor=2)
+            page.route("**/*", route_local)
             page.goto(f"{base}/{fname.replace(' ', '%20')}", wait_until="networkidle", timeout=120_000)
             try:
                 page.wait_for_function("document.querySelectorAll('[data-slot]').length > 0", timeout=60_000)
@@ -164,7 +199,7 @@ def render(boards: list[dict]) -> tuple[list[dict], list[dict]]:
             st = page.evaluate(READY)
             problems = []
             if st["react"] != "object":
-                problems.append("React never loaded (no egress to unpkg.com?)")
+                problems.append("React never loaded (is scripts/design/vendor/ intact?)")
             if not filled.get("ok"):
                 problems.append(filled.get("why", "sections not filled"))
             if st["unresolved"]:
