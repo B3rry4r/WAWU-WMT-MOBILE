@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Avatar, hues } from '@/components/Avatar';
+import { BrandMark } from '@/components/BrandMark';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button, IconButton } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
@@ -182,7 +183,7 @@ function Inputs() {
       <TextField label="Error" defaultValue="Not right" error="This is what is wrong, and how to fix it" />
       <TextField label="Checking" defaultValue="Checking" loading />
       <TextField label="Disabled" defaultValue="Locked" disabled />
-      <TextField label="Search" leadingIcon="Search" placeholder="Search WAWU" />
+      <TextField label="Search" leadingIcon="Search" placeholder="Search Who Made This" />
     </Section>
   );
 }
@@ -364,6 +365,15 @@ export function Showcase() {
         <Money minorUnits={12400050} currency="USD" />
         <Credits count={1250} />
         <Credits count={1} />
+      </Section>
+
+      <Section title="Brand (R-37)">
+        <BrandMark layout="horizontal" width={180} testID="showcase-brand" />
+        <View style={styles.row}>
+          <BrandMark width={34} decorative />
+          <BrandMark width={64} />
+          <BrandMark layout="vertical" width={96} />
+        </View>
       </Section>
 
       <Section title="Avatars">

@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-17, ME-02, UI-02, ME-11, HOME-07, INBOX-04, PROS-01]
-decisions: [R-6, R-10, R-19]
+decisions: [R-6, R-10, R-19, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I2, I3, I4, I5]
 ---

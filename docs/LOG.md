@@ -84,3 +84,4 @@ Newest first. One line per thing that happened, written when it happens.
 - 2 Oct 2026 · Owner's rulings R-6 to R-20 applied to every task.
 - 2 Oct 2026 · UI-03 status pills and option chips merged to main (second verifier passed, no open defect). Showcase fitted into TEST-01's per-section layout.
 - 2 Oct 2026 · MONEY-06 Fintava client merged (backend PR #27, 433a826; mobile docs). Nothing serves it yet; MONEY-07 and MONEY-08 wire it in.
+- 2 Oct 2026 · R-37: the app is now Who Made This. New logo (BrandMark, Avatar brand), launcher and adaptive icons, splash, app name; 37 tasks carry R-37; people files notified.
