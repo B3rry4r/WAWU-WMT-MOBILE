@@ -7,15 +7,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer |
 |---|---|---|
-| todo | 95 | 84 |
+| todo | 95 | 83 |
 | building | 0 | 0 |
 | verifying | 0 | 0 |
-| review | 0 | 1 |
+| review | 0 | 2 |
 | done | 6 | 1 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs (Developer)
+- [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring (Developer)
 
 ## Done
 
@@ -30,12 +31,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls, [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet
-- **Developer:** [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring, [SHELL-03](../tasks/SHELL-03.md) Tester builds, [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money
+- **Developer:** [SHELL-03](../tasks/SHELL-03.md) Tester builds, [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money, [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · SHELL-02 built: signed-in session in `src/api/` (tokens in secure storage, one silent refresh on 401, one error shape, query defaults), proven live against the local backend and wawu-id; status verifying.
 - 2 Oct 2026 · SHELL-01 built: five-tab shell (Home, Explore, Inbox, Wallet, Me), the design's tab bar, Inbox badge read from data (hidden at zero); boot screen removed; status verifying.
 - 2 Oct 2026 · Rule change: a task can start once its dependencies are verified (`review`); the owner's sign-off happens at merge and never blocks the next task.
 - 2 Oct 2026 · SETUP-01 merged from the developer's branch (renderer runs offline, colour/spacing gate catches rgb/hsl/named colours and literal spacing); SETUP-01, OPS-03, OPS-05, MONEY-01 and CHECK-0 signed off by the owner.
