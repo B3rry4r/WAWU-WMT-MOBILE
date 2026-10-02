@@ -228,3 +228,9 @@ No open defect. Round 1's F1 and F6 are fixed and confirmed; F5 and F9 are done 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+## Lead follow-up on NOT RUN (2 Oct 2026)
+
+- **Live reachability: passed** (run by the lead, whose sandbox reaches the live hosts). Read-only GETs at 21:3x UTC: `id.wawuafrica.com/health` 200, `id.wawuafrica.com/.well-known/jwks.json` 200 (RSA key set served), `api.wawuafrica.com/api/hub/health` 200.
+- **wawu-id expiry field:** opened as wawu-id PR #4; the app leaves the expiry line out until it deploys.
+- **Real-account sign-in on the live servers, the emailed link opening the web reset page, and the Android device checks** (keyboard, slow vault read, hardware back): owner items on the progress page, done on the owner's phone with the owner's own account once the next update lands. Unblocked by: the APK installed on a device.
