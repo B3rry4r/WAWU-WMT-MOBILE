@@ -269,22 +269,22 @@ describe('web only behaviour', () => {
     jest.replaceProperty(Platform, 'OS', 'web');
     await render(<Button label="Continue" onPress={() => undefined} />);
     const button = screen.getByRole('button', { name: 'Continue' });
-    const ring = () => flat(button.props.style).borderColor;
-    expect(ring()).toBe('transparent');
+    const ring = () => flat(button.props.style).boxShadow;
+    expect(ring()).toBeUndefined();
     await fireEvent(button, 'focus', { target: { matches: () => false } });
-    expect(ring()).toBe('transparent');
+    expect(ring()).toBeUndefined();
     await fireEvent(button, 'blur');
     await fireEvent(button, 'focus', { target: { matches: (q: string) => q === ':focus-visible' } });
-    expect(ring()).toBe(darkColors.accentFg);
+    expect(ring()).toContain(darkColors.accentFg);
     await fireEvent(button, 'blur');
-    expect(ring()).toBe('transparent');
+    expect(ring()).toBeUndefined();
   });
 
   it('shows a device keyboard user the button ring on a phone', async () => {
     await render(<Button label="Continue" onPress={() => undefined} />);
     const button = screen.getByRole('button', { name: 'Continue' });
     await fireEvent(button, 'focus', {});
-    expect(flat(button.props.style).borderColor).toBe(darkColors.accentFg);
+    expect(flat(button.props.style).boxShadow).toContain(darkColors.accentFg);
   });
 });
 

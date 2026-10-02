@@ -1,4 +1,4 @@
-import { StyleSheet, Text as NativeText, View, type StyleProp, type TextStyle } from 'react-native';
+import { Platform, StyleSheet, Text as NativeText, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { font, radius, type, useWawu, type ColorToken } from '@/theme';
 
@@ -19,9 +19,15 @@ const names: Record<Currency, { major: string; minor: string }> = {
 /** A minus sign (U+2212), the one the design draws on a debit. */
 const minus = '−';
 const minorPerMajor = 100;
-/** The kobo part is drawn at 72% size and half strength (design Amount). */
+/** The kobo part is drawn at 72% size and half strength (design/_gen/kit.js line 13, `Amt`: `font-size:0.72em;opacity:0.5`). */
 const minorScale = 0.72;
 const minorOpacity = 0.5;
+/**
+ * Tracking in em, from design/_gen/kit.js line 13 (`Amt`: `letter-spacing:-0.025em`).
+ * The design token `--tracking-money` says -0.03em; R-22 makes the kit win, so
+ * this constant replaces `type.tracking.money` here and the token is left unused.
+ */
+export const amountTracking = -0.025;
 const maskDots = '•'.repeat(6);
 
 type Parts = { sign: string; glyph: string; whole: string; minor: string };
@@ -103,16 +109,34 @@ export function Money({
   const base: TextStyle = {
     ...font(weight),
     fontSize: size,
-    letterSpacing: type.tracking.money * size,
+    letterSpacing: amountTracking * size,
+    /** The kit's `line-height:1`: a figure at size 40 is 40 px tall. */
     lineHeight: size,
     fontVariant: ['tabular-nums', 'lining-nums'],
     color,
   };
 
+  // Web only: the runs inside the figure (the sign in the platform font, the
+  // smaller kobo) get a kobo-sized line height of their own. In CSS each inline
+  // run is centred on its own font's metrics, so inheriting the figure's
+  // absolute line height pushes the line box past `size`: 44 px at 40 from the
+  // kobo (measured on W10), 41 from the platform-font sign. Line height never
+  // moves a glyph off the baseline, so nothing shifts.
+  // Native gets none: one paragraph has one line height there (iOS takes the
+  // first run's paragraph style, RCTAttributedTextUtils; Android the last
+  // CustomLineHeightSpan, TextLayoutManager.kt), so a run's 72% would set the
+  // whole line and clip it. The outer `lineHeight: size` alone is the kit's
+  // `line-height:1`.
+  const runLineHeight: TextStyle | null = Platform.OS === 'web' ? { lineHeight: size * minorScale } : null;
+  const signStyle: TextStyle = {
+    ...runLineHeight,
+    ...(currency === 'NGN' ? { fontFamily: platformFont, fontWeight: weightName[weight] } : null),
+  };
+
   if (masked) {
     return (
       <NativeText testID={testID} accessibilityLabel="Balance hidden" style={[base, style]}>
-        <NativeText style={currency === 'NGN' ? { fontFamily: platformFont, fontWeight: weightName[weight] } : undefined}>{glyphs[currency]}</NativeText>
+        <NativeText style={signStyle}>{glyphs[currency]}</NativeText>
         {maskDots}
       </NativeText>
     );
@@ -127,10 +151,10 @@ export function Money({
       style={[base, style]}
     >
       {p.sign}
-      <NativeText style={currency === 'NGN' ? { fontFamily: platformFont, fontWeight: weightName[weight] } : undefined}>{p.glyph}</NativeText>
+      <NativeText style={signStyle}>{p.glyph}</NativeText>
       {p.whole}
       {decimals ? (
-        <NativeText style={{ fontSize: size * minorScale, opacity: minorOpacity }}>.{p.minor}</NativeText>
+        <NativeText style={{ fontSize: size * minorScale, opacity: minorOpacity, ...runLineHeight }}>.{p.minor}</NativeText>
       ) : null}
     </NativeText>
   );

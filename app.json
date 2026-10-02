@@ -19,7 +19,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "output": "single",
@@ -56,6 +59,9 @@
       "eas": {
         "projectId": "d07de585-f201-4b3e-989a-34f948d6e860"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d07de585-f201-4b3e-989a-34f948d6e860"
     }
   }
 }

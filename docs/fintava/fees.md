@@ -4,6 +4,10 @@ From the Fintava dashboard, shared by the owner on 2 Oct 2026. "Platform"
 is what Fintava charges. "Merchant" is the extra WAWU can set in the same
 dashboard; it is ₦0 for everything today.
 
+**These dashboard rates are the ones we use.** The sandbox charged ₦0 for
+wallet to wallet in the OPS-02 re-run; that is a sandbox setting and does not
+change these figures (owner, 2 Oct 2026).
+
 - Bank transfer ("transfer fee"): ₦40
 - Wallet to wallet ("balance transfer"):
   - below ₦5,000: ₦23.25
@@ -53,19 +57,29 @@ response and the webhook.
 
 ## Charges WAWU pays itself
 
-Opening a wallet runs a BVN check (₦60) and a NIN check (₦70), so each wallet
-costs WAWU at least ₦130 in checks. The selfie match isn't in the list; ask
-Fintava for its price. Sign-up codes by SMS cost ₦7 each.
+Opening a wallet (`POST /create/customer`) runs **no** identity check and
+costs nothing: in the sandbox it accepted a BVN the BVN check rejects, took
+the same BVN and NIN for two customers, and charged ₦0
+(`sandbox/07-create-customer.md`). So the checks are ours to call, and to
+pay for: our backend calls the BVN check and the selfie match itself before
+create (BVN check KYC-01, selfie match KYC-02). At the dashboard rates that is ₦60 for the BVN
+check per wallet, plus the selfie, which isn't in the list (ask Fintava for
+its price). There is no separate NIN check endpoint in the Naira API, so
+the ₦70 NIN check is only paid if we add one. Sign-up codes by SMS cost ₦7
+each.
 
-Measured in the sandbox (OPS-02, `sandbox/25-compliance-charges.md`): a phone
-check cost ₦5 and a selfie check ₦10 (two ₦5 rows), **both charged even when
-the check failed**, both taken from WAWU's merchant wallet as `BVNCHARGE`
-debits. Name enquiries and the meter preview were free. These are sandbox
-prices; the live price of the selfie and phone checks is still Fintava's to
-confirm, and the BVN and NIN checks could not run (merchant inactive). So
-each failed selfie or retry costs WAWU money: KYC-04 limits retries.
+Measured in the sandbox (OPS-02, `sandbox/25-compliance-charges.md`): a BVN
+check cost ₦5, a phone check ₦5 and a selfie check ₦10 (two ₦5 rows), **all
+charged even when the check failed**, all taken from WAWU's merchant wallet
+as `BVNCHARGE` debits. Name enquiries, the meter preview and creating a
+customer were free. These are sandbox prices; the dashboard list above is
+what we use, and the live price of the selfie and phone checks is still
+Fintava's to confirm. So each failed check or retry costs WAWU money:
+KYC-02 (the selfie match) limits retries.
 
-No transfer or bill has run in the sandbox yet, so how a merchant charge
-shows up is unconfirmed. The full transaction record has `platformComm`,
-`merchantComm` and `lomaCharge` fields (`sandbox/12-transaction-by-id.md`);
-`merchantComm` is the likely place.
+Wallet-to-wallet sends ran in the sandbox with `transaction_fee: 0` and
+`platformComm`, `merchantComm` and `lomaCharge` all null
+(`sandbox/12-transaction-by-id.md`, `sandbox/13-wallet-to-wallet.md`); per
+the owner's ruling above, the dashboard rates stand. No bank send or bill has
+gone through in the sandbox yet (`sandbox/14-bank-transfer.md`), so how a
+merchant charge shows up is unconfirmed; `merchantComm` is the likely place.

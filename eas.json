@@ -9,8 +9,8 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://staging.invalid",
-        "EXPO_PUBLIC_ID_URL": "https://id.staging.invalid"
+        "EXPO_PUBLIC_API_URL": "https://api.wawuafrica.com",
+        "EXPO_PUBLIC_ID_URL": "https://id.wawuafrica.com"
       }
     },
     "preview": {
@@ -20,8 +20,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://staging.invalid",
-        "EXPO_PUBLIC_ID_URL": "https://id.staging.invalid"
+        "EXPO_PUBLIC_API_URL": "https://api.wawuafrica.com",
+        "EXPO_PUBLIC_ID_URL": "https://id.wawuafrica.com"
       }
     },
     "production": {
@@ -31,8 +31,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://production.invalid",
-        "EXPO_PUBLIC_ID_URL": "https://id.production.invalid"
+        "EXPO_PUBLIC_API_URL": "https://api.wawuafrica.com",
+        "EXPO_PUBLIC_ID_URL": "https://id.wawuafrica.com"
       }
     }
   }

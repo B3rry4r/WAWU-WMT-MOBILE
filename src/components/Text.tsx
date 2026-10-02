@@ -4,7 +4,7 @@ import { text, useWawu, type ColorToken } from '@/theme';
 
 export type TextVariant = keyof typeof text;
 
-/** The colour each text class carries in the design system (base.css, .wb-*). */
+/** The colour each text class carries in the design system (base.css, .wb-*) or the board kit (design/_gen/kit.js). */
 const defaultTone: Record<TextVariant, ColorToken> = {
   display: 'textPrimary',
   title: 'textPrimary',
@@ -15,10 +15,18 @@ const defaultTone: Record<TextVariant, ColorToken> = {
   secondary: 'textSecondary',
   caption: 'textMuted',
   label: 'textMuted',
+  kvLabel: 'textSecondary',
+  kvValue: 'textPrimary',
+  meta: 'textMuted',
+  bannerBody: 'textSecondary',
+  muted: 'textSecondary',
+  cardTitle: 'textPrimary',
+  sheetTitle: 'textPrimary',
+  sheetTitleSm: 'textPrimary',
 };
 
 /** Headings announce themselves to screen readers, so a screen never has to say so. */
-const headings: readonly TextVariant[] = ['display', 'title', 'h1', 'h2'];
+const headings: readonly TextVariant[] = ['display', 'title', 'h1', 'h2', 'sheetTitle', 'sheetTitleSm'];
 
 export type TextProps = NativeTextProps & {
   variant?: TextVariant;
