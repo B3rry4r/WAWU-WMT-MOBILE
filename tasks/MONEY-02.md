@@ -7,7 +7,7 @@ order: 11
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V5, V6]
@@ -92,6 +92,127 @@ Copy check: no em-dashes in any added line; no "Flutterwave". "Wrong PIN. 2 trie
 Ran: `git diff --stat`; `npm run check` x3 (warm); `npx jest --cacheDirectory <fresh>` x3 (cold); `npx jest src/components/pin-sheet` x3; `python3 scripts/design/render_design.py W11 H15 M13`; `npx expo export --platform web --dev --clear` and `npx expo export --platform web --clear` with a private TMPDIR (Metro cache); static server on port 8794; Playwright (Chromium 1194) at 390 px, 2x, light and dark; one throwaway jest probe for finding 2, deleted. Not run: native device (V10 not in this task's passes); real server answers (MONEY-09 not built).
 
 Status back to `building` for findings 1 and 2.
+
+### Round 2 (final)
+
+Verifier session, 2 Oct 2026, on a fresh detached worktree of 38b4969 (contains main 7148749; `origin/main` is still 7148749), `node_modules` symlinked from the main checkout (expo-local-authentication 57.0.3), no install. Nothing in this session wrote the task's code. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify-money02-r2/`, not committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | `npm run check` exit 0, 2 runs: tsc 0, lint clean, jest 11 suites / 219 tests, gates run 9, files scanned 63, 0 fail / 0 warn / 0 accepted, task check passes (`check1.log`, `check2.log`). `expo-doctor` 21/21; `gen_tokens.py --check` up to date; `gen_icons.js` regenerates `icons.generated.ts` with no diff (Fingerprint kept); production `expo export --platform web` exit 0. Cold cache (`npx jest --ci --cacheDirectory <empty>`, full suite, 3 runs): `PinSheet.test.tsx` passed all 3 (27 tests, first test 123 ms); runs 1 and 2 failed on `src/__tests__/lists.test.tsx` "filter chips" (finding 2, main's test); run 3 exit 0. PIN sheet suite alone, cold, 3 runs: 27/27 each |
+| V5 | passed | `shots/W11-vs-built-{light,dark}.png`, `shots/W11-vs-built-sheet-{light,dark}.png`; renders `shots/W11-*`, `H15-*`, `M13-*` |
+| V6 | passed (server answers simulated through the preview; device biometrics through a mocked `expo-local-authentication`) | `shots/01` to `shots/17`, light and dark; `shots/states-grid-{light,dark}.png`; `shoot.log`; `shots/18-prod-preview-redirect.png` |
+| V10 | NOT RUN | not in this task's passes; no Android build yet includes `expo-local-authentication`, so the real fingerprint and face prompts are untested on hardware |
+
+Capability checks: "A user can enter a PIN, see it rejected with tries left, and see the locked state": passed by clicks in the dev web export (`shots/03`, `04`, `05`, `15`). "It matches W11 in light and dark": passed (below).
+
+**1. Round-1 defects, re-checked with my own tests.**
+- **Round-1 finding 1 (cold-cache timeout): closed.** The PIN sheet suite never timed out cold (6 cold runs, full and alone).
+- **Round-1 finding 2 (busy flag): closed.** My own throwaway jest tests, deleted afterwards, both passed:
+  - hidden mid-check, answered, reopened, Close pressed: `onClose` called once;
+  - hidden mid-check and reopened before any answer: Close works.
+
+  The fix is the unmount cleanup at `PinEntry.tsx:67-79`.
+
+**2. Picture against W11.** I measured ink rows from the grabber's top edge at 2x (W11 render against `preview/pin-sheet?answer=hold&biometric=face&forgot=1` with two digits).
+
+| Element | W11 (2x px) | Built (2x px) |
+|---|---|---|
+| Title and line block | 54 to 93 | 54 to 93 |
+| Dots | 115 to 138 | 115 to 138 |
+| Key row 1 | 190 to 221 | 190 to 221 |
+| Key rows 2 to 4 (tops) | 305, 425, 545 | 306, 426, 546 |
+| Bottom row (glyphs) | 662 to 705 | 662 to 705 |
+| "Forgot PIN?" | 779 to 802 | 779 to 802 |
+
+Light and dark are the same. The builder's 54 / 115 / 190 are confirmed. The 1 px on digit rows 2 to 4 is glyph rasterisation; row bottoms match. Element by element, these all match:
+- the frame, through the shared `BottomSheet`: scrim, 44 radius, hairline, 40 by 5 grabber, `--shadow-sheet`;
+- `sheetTitleSm` 21 and `muted` copy;
+- dots 16 / 18 / 1.5 ring;
+- keypad 58 + 2, digits 26 / 500 / -0.02em;
+- ScanFace 26 and Delete 24 at stroke 1.8;
+- "Forgot PIN?" 14 / 600 `accent-fg`.
+
+The Approve line reads "Approve ₦25,065 to Chidinma Okoro", the total, as brief rule 5 and its W11 entry ask. Round-1 findings 3 and 4 (token substitutions) are closed: R-22 sizes from the kit, each cited in `kit.ts`.
+
+**3. States.** All reached in the dev web export, light and dark.
+- Entering: with the face key, the fingerprint key, or no key (`01`, `07`, `02`).
+- Wrong PIN: "Wrong PIN. 2 tries left." / "1 try left." with the CircleAlert line and red rings (`03`, `04`).
+- Locked from `lockedUntil`: counts "14:59" then "14:57" (`05`).
+- Opens locked at 61 minutes: "1:00:57" (`06`).
+- A 6 s lock counts 0:06, 0:03, then gives the keypad back (`15`, `16`).
+- Biometric failed: "Fingerprint failed. Use your PIN." and "Face unlock failed. Use your PIN." These show no red rings and no tries line, and `onSubmit` is never called (`08`, `09`).
+- Submitting, by PIN and by biometric: the grabber, a scrim click, Escape and a digit all did nothing (`10`, `11`, `12`).
+- Error: "We couldn't check your PIN. Try again." (`13`).
+- Approved: keys off (`14`).
+- Scrim close when idle works.
+
+Device kinds come from my own jest tests with `expo-local-authentication` mocked. The real enum is FINGERPRINT 1, FACIAL_RECOGNITION 2, checked in node_modules. Results:
+
+| Phone | Key | Failure line |
+|---|---|---|
+| Android, fingerprint | Use fingerprint | "Fingerprint failed. Use your PIN." |
+| Android, face only | Use face unlock | "Face unlock failed. Use your PIN." |
+| iOS, face | Use Face ID | "Face ID failed. Use your PIN." |
+| iOS, fingerprint | Use fingerprint | "Fingerprint failed. Use your PIN." |
+| Android, both | fingerprint | |
+| iOS, both | Face ID | |
+| no hardware | no key | |
+
+Also from my jest tests:
+- a cancelled prompt goes back to the keypad with no message;
+- a double tap on the last digit submits once (`onSubmit` once with `7395`);
+- no duration or try count is a literal: the clock is `format.ts:45-51` from `lockedUntil`, with no rounding to minutes, and `PIN_LENGTH = 4` is backed by the contract's `^[0-9]{4}$`.
+
+**4. Shared additions.**
+- **`BottomSheet` `gap`** (`BottomSheet.tsx:37`, 49, 80) defaults to `sheetMetrics.between` = 18, kit.js line 64 `gap:${o.gap ?? 18}`. Existing callers are unchanged:
+  - the only other caller, Showcase (`Showcase.tsx:306`), passes no gap;
+  - UI-02's sheet tests in `lists.test.tsx` pass, and the two new tests cover 18 and 14.
+- **`Text` variants** (`src/theme/index.ts:105`, 111), number by number:
+  - `errorLine` 13 / 600 / `danger` / untracked / normal line = auth.js line 14 `font-size:13px;font-weight:600;color:var(--danger)`, with CircleAlert 15 at 2.2 and gap 6 (`kit.ts` `ALERT`, `ICON_STROKE.button` = 2.2);
+  - `linkStrong` 14 / 600 / `accent-fg` / untracked = wallet.js line 81 "Forgot PIN?" `font-size:14px;font-weight:600;color:var(--accent-fg)`.
+
+**5. No stand-ins.**
+- `src/components/pin-sheet/` holds no Modal, scrim, SVG, money formatter or icon drawing. It uses `BottomSheet`, `Text`, `Icon` and `formatMoney` (through `sheetAmount`) from main.
+- The keypad digits use React Native `Text` with kit `keypad()` constants. This is not a stand-in: main has no keypad-digit component or variant, and kit.js draws them as grid cells, not `Btn`.
+- SHARED-CHANGES row ids are unique: 1 to 7 once each; MONEY-02 #6, #7, #8, #9, 2.1, #10, #11; MONEY-03 #6, #7, #8.
+- BACKEND_GAPS has G-7, G-8, G-9 and G-10 exactly once each.
+
+**6. Contract** (wawu-backend `origin/wmt/MONEY-04` `docs/contract/CONVENTIONS.md`): `pin_incorrect` 403 with `triesLeft`, `pin_locked` 423 with `lockedUntil`, and the PIN in `X-Transaction-Pin` all match `types.ts`. On the app side the PIN goes only to `onSubmit` and is cleared on every answer.
+- No `console`, fetch, router, storage or URL use in the sheet or the preview.
+- The browser console over every run held no PIN, and no request URL or body carried one (`shoot.log`).
+- In my jest test the console spies caught no PIN.
+- The preview's query parameters are `answer`, `tries`, `lockMinutes`, `opensLocked`, `biometric`, `forgot`. Production redirects `/preview/pin-sheet` to `/`, and the preview's text is absent from the production bundle.
+
+**7. Branch scope** (`git diff --stat 7148749 38b4969`, 25 files):
+- the task's own files: `src/components/pin-sheet/`, `src/app/preview/pin-sheet.tsx`, the task file, LOG, PROGRESS, SHARED-CHANGES, BACKEND_GAPS G-9;
+- the Lead-authorised additions: `BottomSheet.tsx`, `Text.tsx`, `src/theme/index.ts` (the two variants only), and their tests in `lists.test.tsx` and `kit-components.test.tsx`;
+- the owner-instructed changes (SHARED-CHANGES MONEY-02 #8, #9): `gen_icons.js` EXTRA, `icons.generated.ts`, `package.json`, `package-lock.json`, `app.json`.
+
+Nothing else changed, including nothing in `src/api`, any `_layout.tsx` or `pay-sheet/`.
+
+**8.** `npm run check` exit 0 (V1 row).
+
+#### Findings
+
+1. **None open against MONEY-02.**
+2. **unclear** (owner; not this task's): `src/__tests__/lists.test.tsx:56` "filter chips › lets a user pick Money out" (UI-02's test, already on main) exceeds jest's 5 s on a cold cache. It failed 2 of 3 cold runs on this branch and 1 of 2 on main 7148749 alone, under load average about 5 on 4 cores. CI runs cold (`npx jest --ci`), so CI can go red without any change. WORKFLOW section 10 makes a flaky suite an owner stop. A separate task should make that test independent of cache warmth, as MONEY-02 did for its own.
+3. **unclear** (owner copy, already listed by the builder): the builder's lines for undrawn states await the owner. Separately, the lock line reads "Try again in 14:59." A screen reader may announce "14:59" as a time of day rather than a wait. Only the owner's copy decision can settle it.
+
+Ran:
+- `git diff --stat 7148749 38b4969` and per-file diffs of every shared file;
+- `npx jest --ci --cacheDirectory <empty>` x3, full suite, and x3 for the PIN sheet alone;
+- main 7148749 cold x2 for comparison;
+- `npm run check` x2;
+- `npx expo-doctor`, `gen_tokens.py --check`, `gen_icons.js` (no diff);
+- `python3 scripts/design/render_design.py W11 H15 M13`;
+- `npx expo export --platform web --dev --clear` and the production export, with a private TMPDIR (own Metro cache);
+- a static server on port 8794 and Playwright (Chromium 1194) at 390 px, 2x, light and dark;
+- one throwaway jest file (12 tests, deleted).
+
+Not run: V10 (above); real server answers (MONEY-09 is on its branch, not in this app's contract types yet).
+
+Status `review`: no open defects.
 
 ## Owner sign-off
 
