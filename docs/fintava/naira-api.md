@@ -34,8 +34,13 @@ freezes a wallet was refused with `403 Merchant is not active`
   errors are `{ status, timestamp, message: [string], path }`, with
   `message` always an array. Validation errors nest the NestJS object:
   `{ status, timestamp, message: { statusCode, message: [string], error },
-  path }`. **A missing key is 401, a wrong key is 400** ("Invalid API key"),
-  so a 400 is not always the user's fault. 429 means slow down; limits are
+  path }`. **A missing key is 401** ("API Key is required"). **A wrong key
+  is 400 or 404, never 401:** without the `live_` prefix it is 400 ["Invalid
+  API key"]; with the prefix but unrecognised (a revoked or rotated real
+  key) it is 404 ["Invalid API Key"]. MONEY-06 treats both as an
+  authentication failure by matching the message case-insensitively, not
+  the status code, so a dead key is never read as "not found" or as the
+  user's mistake. 429 means slow down; limits are
   not published, no rate-limit headers are sent, and about 100 sandbox
   calls in 10 minutes never hit one.
 - **Not found is not one code.** Unknown wallet on the balance call: 400

@@ -59,7 +59,7 @@ preview.
 | `21-bills-cable.md` | `GET /cable-service-name[/{n}]`, `POST /billing/cable-subscription` | 200 / 403 | GOTV and DSTV only; purchase NOT RUN |
 | `22-merchant-balance.md` | `GET /merchant/balance` | 200 | returns `tier: "TIER_3"` |
 | `23-webhooks.md` | webhooks | none | NOT RUN: no public URL here, and nothing could fire |
-| `24-auth-and-errors.md` | no key, wrong key, error shapes | 401, 400 | wrong key is 400; two error shapes |
+| `24-auth-and-errors.md` | no key, wrong keys, error shapes | 401, 400, 404 | wrong key is 400 without `live_`, 404 with it; two error shapes |
 | `25-compliance-charges.md` | balance read around each check | 200 | phone ₦5, selfie ₦10, the rest free |
 
 About 100 requests in all (most of them the cache test in `10-`). Money

@@ -7,7 +7,7 @@ order: 3
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: []
@@ -46,6 +46,7 @@ Builder, 2 Oct 2026, branch `wmt/OPS-02`. About 100 sandbox calls (`dev.fintavap
 - Findings that change plans: a wrong key is 400 not 401; error bodies are `{status,timestamp,message[],path}` or a nested validation object; unknown transaction id is 200 `data:null`; `/txn/merchant` is cached about 5 minutes per page/take; selfie (₦10) and phone (₦5) checks are charged even when they fail; merchant balance returns `tier: "TIER_3"`; transaction-by-id embeds the customer's BVN/NIN; postpaid discos exist and minimums vary; 9mobile data is `ETISALAT`.
 - Gates (`npm run check`): before (clean HEAD copy) typecheck 0 errors, lint clean, tests 4/4, gates 9 run, 5 files scanned, 0 fail/0 warn/0 accepted, task check 187 tasks. After: identical (exit 0; tests 4/4, gates 9 run, 5 scanned, 0/0/0, 187 tasks). Docs-only change, so no count moved.
 - No shared-change requests. Nothing filed in `BACKEND_GAPS.md` (no code changed).
+- Round 2 (verifier findings 1 and 2): wrong key documented as 400 without `live_` and 404 with it (confirmed with two fake keys, both saved in `sandbox/24-`), MONEY-06 told to treat both as auth failure (`naira-api.md`, `sandbox/24-`, `sandbox/README.md`); the 4th phone check (08:31:59, charge row `fc163c4e-...`) and the `Airtel`, `9mobile` and `T2` bundle attempts are now saved (`sandbox/06-`, `20-`, `25-`). Gates unchanged.
 
 ## Verifier report
 

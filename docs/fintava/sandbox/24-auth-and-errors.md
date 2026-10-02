@@ -12,10 +12,16 @@ account numbers.
 
 ## What this tells us
 
-- **No key: `401 ["API Key is required"]`. A wrong key: `400 ["Invalid API
-  key"]`**, not 401 as the docs say. The Fintava client must treat this 400
-  as a configuration error (alert, do not retry), not as a bad request from
-  the user.
+- **No key: `401 ["API Key is required"]`. A wrong key is 400 or 404,
+  depending on its shape**, never the documented 401:
+  - a key without the `live_` prefix: `400 ["Invalid API key"]`;
+  - a key **with** the `live_` prefix that Fintava does not recognise (which
+    is what a revoked or rotated real key looks like): `404 ["Invalid API
+    Key"]`, capital K.
+  MONEY-06 must treat both as an authentication failure: match the message
+  case-insensitively on "invalid api key" (and "api key is required"),
+  whatever the status code, then alert and do not retry. It must never read
+  that 404 as "not found" or that 400 as a bad request from the user.
 - **Errors are not plain NestJS.** Two shapes were seen:
   - Business errors: `{ status, timestamp, message: [string], path }`.
     `message` is always an array, even for one message. There is no `error`
@@ -24,11 +30,11 @@ account numbers.
     [string], error }, path }`: the NestJS object is nested inside `message`.
   The client should read `status`, then take the text from `message` if it
   is an array or from `message.message` if it is an object.
-- Status codes seen: 200, 400 (validation, wrong key, wallet not found,
+- Status codes seen: 200, 400 (validation, wrong key without `live_`, wallet not found,
   upstream failures such as "Http Exception" and "Request failed with
   status code 404", "Phone Number not Found"), 401 (no key), 403 (merchant
   inactive), 404 (customer not found, transaction reference not found,
-  unknown data provider).
+  unknown data provider, wrong key with `live_`).
 - No rate-limit headers on any response (no `x-ratelimit-*`, no
   `retry-after`), and no 429 across about 100 calls in 10 minutes. Rate
   limits stay unknown.
@@ -71,14 +77,14 @@ cf-cache-status: DYNAMIC
 }
 ```
 
-### Wrong key
+### Wrong key without the live_ prefix (08:30)
 
 Sent 2026-10-02 08:30:43 UTC.
 
 ```http
 GET /api/dev/merchant/balance
 Host: dev.fintavapay.com
-Authorization: Bearer *** (deliberately wrong value, not the sandbox key)
+Authorization: Bearer *** (deliberately fake value without the live_ prefix, not the sandbox key)
 ```
 
 **Response: HTTP 400**
@@ -101,6 +107,76 @@ cf-cache-status: DYNAMIC
   "timestamp": "2026-10-02T08:30:44.006Z",
   "message": [
     "Invalid API key"
+  ],
+  "path": "/api/dev/merchant/balance"
+}
+```
+
+### Wrong key without the live_ prefix (08:51, confirmation)
+
+Sent 2026-10-02 08:51:41 UTC.
+
+```http
+GET /api/dev/merchant/balance
+Host: dev.fintavapay.com
+Authorization: Bearer *** (deliberately fake value without the live_ prefix, not the sandbox key)
+```
+
+**Response: HTTP 400**
+
+```http
+HTTP/2 400 
+date: Fri, 02 Oct 2026 08:51:41 GMT
+content-type: application/json; charset=utf-8
+content-length: 118
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"76-5QikDdb3aHl1poVh2s/KLBD7eFs"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "status": 400,
+  "timestamp": "2026-10-02T08:51:41.863Z",
+  "message": [
+    "Invalid API key"
+  ],
+  "path": "/api/dev/merchant/balance"
+}
+```
+
+### Wrong key with the live_ prefix: 404
+
+Sent 2026-10-02 08:51:41 UTC.
+
+```http
+GET /api/dev/merchant/balance
+Host: dev.fintavapay.com
+Authorization: Bearer *** (deliberately fake value starting with live_, not the sandbox key)
+```
+
+**Response: HTTP 404**
+
+```http
+HTTP/2 404 
+date: Fri, 02 Oct 2026 08:51:41 GMT
+content-type: application/json; charset=utf-8
+content-length: 118
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"76-bX0njlLW5R041U/sdmNoojiBhls"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "status": 404,
+  "timestamp": "2026-10-02T08:51:41.447Z",
+  "message": [
+    "Invalid API Key"
   ],
   "path": "/api/dev/merchant/balance"
 }

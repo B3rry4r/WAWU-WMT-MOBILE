@@ -32,6 +32,8 @@ account numbers.
   narration "Compliance charges (BVNCHARGE)", against WAWU's merchant wallet.
   Over the whole task: 4 phone checks and 2 selfies, 8 rows, ₦40, and the
   balance went from ₦50,000 to ₦49,960. The ledger and the balance agree.
+  Every one of those six calls is saved: three phone checks in
+  `06-phone-check.md` and one below, both selfies in `05-bvn-selfie.md`.
 - These are sandbox prices. The dashboard list in `fees.md` (BVN ₦60, NIN
   ₦70) is not contradicted, because the BVN and NIN checks never ran. The
   selfie and phone checks are not in that list at all, so their live price

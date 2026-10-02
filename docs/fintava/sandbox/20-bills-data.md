@@ -481,6 +481,157 @@ cf-cache-status: DYNAMIC
 
 </details>
 
+### Mixed case: Airtel
+
+Sent 2026-10-02 08:38:09 UTC, answered in 0.46 s.
+
+```http
+GET /api/dev/billing/data-bundles/Airtel
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+```
+
+**Response: HTTP 200**
+
+```http
+HTTP/2 200 
+date: Fri, 02 Oct 2026 08:38:10 GMT
+content-type: application/json; charset=utf-8
+content-length: 8849
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"2291-/IxYCEEyvX+ucCVHz20VJtDYw/g"
+cf-cache-status: DYNAMIC
+```
+
+`data` holds 38 entries (all of them below, one per line). The rest of the body:
+
+```json
+{
+  "status": 200,
+  "message": "Provider bundles fetched"
+}
+```
+
+<details><summary>All 38 entries</summary>
+
+```json
+{"id": "44a7ad34-4459-48b2-a8dc-6965c0874620", "createdAt": "2024-07-11T13:48:30.643Z", "updatedAt": "2024-07-11T13:48:30.643Z", "code": "54", "title": "Airtel D-MFIN-1-40MB for 1 day", "price": "50", "validity": "1 day"}
+{"id": "3750850b-5eb5-418c-9772-6efd11306b31", "createdAt": "2024-07-11T13:48:31.045Z", "updatedAt": "2024-07-11T13:48:31.045Z", "code": "55", "title": "Airtel D-MFIN-1-100MB for 1 day", "price": "99", "validity": "1 day"}
+{"id": "963e16e8-4a58-4d6b-bec2-92899cdfa8a1", "createdAt": "2024-07-11T13:48:31.443Z", "updatedAt": "2024-07-11T13:48:31.443Z", "code": "56", "title": "Airtel D-MFIN-1-200MB for 3 days", "price": "199", "validity": "3 days"}
+{"id": "89ccd734-df11-4c95-97ae-8cc630c4976a", "createdAt": "2024-07-11T13:48:31.719Z", "updatedAt": "2024-07-11T13:48:31.719Z", "code": "57", "title": "Airtel D-MFIN-1-350MB for 7 days", "price": "349", "validity": "7 days"}
+{"id": "eac951a5-f40c-492d-a61f-ce8d3cb348f7", "createdAt": "2024-07-11T13:48:32.004Z", "updatedAt": "2024-07-11T13:48:32.004Z", "code": "58", "title": "Airtel D-MFIN-1-750MB for 7 days", "price": "499", "validity": "7 days"}
+{"id": "32772ca5-b0cf-428d-8617-610bc9ea23d8", "createdAt": "2024-07-11T13:48:32.285Z", "updatedAt": "2024-07-11T13:48:32.285Z", "code": "59", "title": "Airtel D-MFIN-1-1.5GB for 30 days", "price": "999", "validity": "30 days"}
+{"id": "a1993caf-e10b-4233-84d5-84028bebba48", "createdAt": "2024-07-11T13:48:32.566Z", "updatedAt": "2024-07-11T13:48:32.566Z", "code": "60", "title": "Airtel D-MFIN-1-3GB for 30 days", "price": "1499", "validity": "30 days"}
+{"id": "2e788eb7-c419-4129-92e8-af1dfbd16b7a", "createdAt": "2024-07-11T13:48:32.850Z", "updatedAt": "2024-07-11T13:48:32.850Z", "code": "61", "title": "Airtel D-MFIN-1-6GB for 30 days", "price": "2499", "validity": "30 days"}
+{"id": "b77188a1-e589-47be-9c92-7cba85b29725", "createdAt": "2024-07-11T13:48:33.124Z", "updatedAt": "2024-07-11T13:48:33.124Z", "code": "62", "title": "Airtel D-MFIN-1-11GB for 30 days", "price": "3999", "validity": "30 days"}
+{"id": "e96453b8-8b34-4b18-b073-e93296a7135c", "createdAt": "2024-07-11T13:48:33.404Z", "updatedAt": "2024-07-11T13:48:33.404Z", "code": "63", "title": "Airtel D-MFIN-1-20GB for 30 days", "price": "4999", "validity": "30 days"}
+{"id": "8a207bd3-4b3b-47ea-b84c-e9fda9087899", "createdAt": "2024-07-11T13:48:33.692Z", "updatedAt": "2024-07-11T13:48:33.692Z", "code": "64", "title": "Airtel D-MFIN-1-40GB for 30 days", "price": "9999", "validity": "30 days"}
+{"id": "b600e578-e994-45c3-8c01-d0db790007f0", "createdAt": "2024-07-11T13:48:33.963Z", "updatedAt": "2024-07-11T13:48:33.963Z", "code": "65", "title": "Airtel D-MFIN-1-75GB for 30 days", "price": "14999", "validity": "30 days"}
+{"id": "9f683b6a-5dd3-41d2-8ed7-09511b3907a6", "createdAt": "2024-07-11T13:48:34.455Z", "updatedAt": "2024-07-11T13:48:34.455Z", "code": "66", "title": "Airtel D-MFIN-1-8GB for 30 days", "price": "2999", "validity": "30 days"}
+{"id": "bb7acd41-7d8e-42c7-a66b-f11e14e2d6bb", "createdAt": "2024-07-11T13:48:34.786Z", "updatedAt": "2024-07-11T13:48:34.786Z", "code": "67", "title": "Airtel D-MFIN-1-120GB for 30 days", "price": "19999", "validity": "30 days"}
+{"id": "f54ab6f2-251d-4dbd-a45d-8d7501e65c42", "createdAt": "2024-07-11T13:48:35.206Z", "updatedAt": "2024-07-11T13:48:35.206Z", "code": "68", "title": "Airtel D-MFIN-1-1GB1D for 1 day", "price": "349", "validity": "1 day"}
+{"id": "a554aa9b-439b-47c9-824c-8927a7a42f28", "createdAt": "2024-07-11T13:48:35.583Z", "updatedAt": "2024-07-11T13:48:35.583Z", "code": "69", "title": "Airtel D-MFIN-1-2GB1D for 1 day", "price": "499", "validity": "1 day"}
+{"id": "e430b081-321f-4685-b33b-af21b44f2455", "createdAt": "2024-07-11T13:48:36.011Z", "updatedAt": "2024-07-11T13:48:36.011Z", "code": "70", "title": "Airtel D-MFIN-1-6GB1W for 7 days", "price": "1499", "validity": "7 days"}
+{"id": "6f2b158a-4430-41ee-b83b-264396be2869", "createdAt": "2024-07-11T13:48:36.303Z", "updatedAt": "2024-07-11T13:48:36.303Z", "code": "71", "title": "Airtel D-MFIN-1-2GB1M for 30 days", "price": "1199", "validity": "30 days"}
+{"id": "15ea0f97-a140-4154-9af4-57f8451a166c", "createdAt": "2024-07-11T13:48:36.604Z", "updatedAt": "2024-07-11T13:48:36.604Z", "code": "72", "title": "Airtel D-MFIN-1-4.5GB for 30 days", "price": "1999", "validity": "30 days"}
+{"id": "14e751a8-3401-48b1-a0ec-1d1c90f4af0d", "createdAt": "2024-07-11T13:48:37.046Z", "updatedAt": "2024-07-11T13:48:37.046Z", "code": "73", "title": "Airtel D-MFIN-1-25GB1M for 30 days", "price": "7999", "validity": "30 days"}
+{"id": "59825958-27f3-46ff-9c83-776887db17df", "createdAt": "2024-07-11T13:48:37.495Z", "updatedAt": "2024-07-11T13:48:37.495Z", "code": "74", "title": "Airtel D-MFIN-1-200GB1M for 30 days", "price": "29999", "validity": "30 days"}
+{"id": "3f9b6310-cb26-4178-9f90-bab92c9a4f6a", "createdAt": "2024-07-11T13:48:37.782Z", "updatedAt": "2024-07-11T13:48:37.782Z", "code": "75", "title": "Airtel D-MFIN-1-280GB1M for 30 days", "price": "35999", "validity": "30 days"}
+{"id": "0ed61762-2ddb-4f0a-aef8-90fee1e97b86", "createdAt": "2024-07-11T13:48:38.064Z", "updatedAt": "2024-07-11T13:48:38.064Z", "code": "76", "title": "Airtel D-MFIN-1-400GB3M for 90 days", "price": "49999", "validity": "90 days"}
+{"id": "7a8bea3a-5522-4d56-9508-0642289525cd", "createdAt": "2024-07-11T13:48:38.509Z", "updatedAt": "2024-07-11T13:48:38.509Z", "code": "77", "title": "Airtel D-MFIN-1-500GB4M for 120 days", "price": "59999", "validity": "120 days"}
+{"id": "f9680c7a-af4e-4938-b281-325b6a364a4c", "createdAt": "2024-07-11T13:48:38.811Z", "updatedAt": "2024-07-11T13:48:38.811Z", "code": "78", "title": "Airtel D-MFIN-1-1TB1Y for 365 days", "price": "99999", "validity": "365 days"}
+{"id": "2cecfa04-eabf-4ab5-a3c1-2627a89e8178", "createdAt": "2024-07-11T13:48:39.120Z", "updatedAt": "2024-07-11T13:48:39.120Z", "code": "79", "title": "Airtel D-MFIN-1-1GB for 14 day", "price": "599", "validity": "14 day"}
+{"id": "f889f4c6-81af-4671-993d-77d5f504a34f", "createdAt": "2024-07-11T13:48:39.436Z", "updatedAt": "2024-07-11T13:48:39.436Z", "code": "80", "title": "Airtel D-MFIN-1-15GB for 7 day", "price": "999", "validity": "7 day"}
+{"id": "f86d35c9-073a-4428-a6c4-f177f8f41be1", "createdAt": "2024-07-11T13:48:39.762Z", "updatedAt": "2024-07-11T13:48:39.762Z", "code": "81", "title": "Airtel D-MFIN-1-7GB for 7 day", "price": "1999", "validity": "7 day"}
+{"id": "9b6cf1ff-2832-4ffc-a714-224b0237143b", "createdAt": "2024-07-11T13:48:40.168Z", "updatedAt": "2024-07-11T13:48:40.168Z", "code": "82", "title": "Airtel D-MFIN-1-25GB for 7 day", "price": "4999", "validity": "7 day"}
+{"id": "cf4e68e2-51e9-43f0-9a90-9011f411966a", "createdAt": "2024-07-11T13:48:40.522Z", "updatedAt": "2024-07-11T13:48:40.522Z", "code": "83", "title": "Airtel D-MFIN-1-15MB for 1 day", "price": "399", "validity": "1 day"}
+{"id": "5a225abd-84ec-4e13-aa61-5cd8d6f5cc5b", "createdAt": "2024-07-11T13:48:41.076Z", "updatedAt": "2024-07-11T13:48:41.076Z", "code": "84", "title": "Airtel D-MFIN-1-35GB for 2 day", "price": "799", "validity": "2 day"}
+{"id": "bbd805ae-bfd0-4ab4-a690-d80a4edb57a6", "createdAt": "2024-07-11T13:48:41.545Z", "updatedAt": "2024-07-11T13:48:41.545Z", "code": "85", "title": "Airtel D-MFIN-1-23GB for 30 day", "price": "5999", "validity": "30 day"}
+{"id": "79b6cd89-2c4b-43b6-9482-815381f70adc", "createdAt": "2024-07-11T13:48:42.037Z", "updatedAt": "2024-07-11T13:48:42.037Z", "code": "86", "title": "Airtel D-MFIN-1-50MB for This Data plan gives 40MB for N50 valid for 1day (Social Plan)", "price": "50", "validity": "This Data plan gives 40MB for N50 valid for 1day (Social Plan)"}
+{"id": "c2c8aa41-d7f5-4b9b-9c64-29f8443018f4", "createdAt": "2024-07-11T13:48:42.407Z", "updatedAt": "2024-07-11T13:48:42.407Z", "code": "87", "title": "Airtel D-MFIN-1-200MB2 for This Data plan gives 200MB for N100 valid for 5day (Social Plan)", "price": "100", "validity": "This Data plan gives 200MB for N100 valid for 5day (Social Plan)"}
+{"id": "dd4e1648-4fb3-47ba-b92c-5395d95b69e1", "createdAt": "2024-07-11T13:48:42.761Z", "updatedAt": "2024-07-11T13:48:42.761Z", "code": "88", "title": "Airtel D-MFIN-1-400MB for This Data plan gives 400MB for N100 valid for 3day (TikTok)", "price": "100", "validity": "This Data plan gives 400MB for N100 valid for 3day (TikTok)"}
+{"id": "b69db254-b70e-4cb8-ad5e-93176fffe21a", "createdAt": "2024-07-11T13:48:43.177Z", "updatedAt": "2024-07-11T13:48:43.177Z", "code": "89", "title": "Airtel D-MFIN-1-1024MB for This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok)", "price": "200", "validity": "This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok)"}
+{"id": "4f0a7d45-c515-45cf-ac28-717681be2c9a", "createdAt": "2024-07-11T13:48:43.471Z", "updatedAt": "2024-07-11T13:48:43.471Z", "code": "90", "title": "Airtel D-MFIN-1-2048MB for This Data plan gives 2,048MB for N200 valid for 1 hr", "price": "200", "validity": "This Data plan gives 2,048MB for N200 valid for 1 hr"}
+{"id": "8e2d654e-6119-4fc7-9a45-448f93d19f35", "createdAt": "2024-07-11T13:48:43.770Z", "updatedAt": "2024-07-11T13:48:43.770Z", "code": "91", "title": "Airtel D-MFIN-1-700MB for This Data plan gives 700MB for N300 valid for 25days (Social Plan)", "price": "300", "validity": "This Data plan gives 700MB for N300 valid for 25days (Social Plan)"}
+```
+
+</details>
+
+### Lower case: 9mobile
+
+Sent 2026-10-02 08:38:10 UTC, answered in 0.23 s.
+
+```http
+GET /api/dev/billing/data-bundles/9mobile
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+```
+
+**Response: HTTP 404**
+
+```http
+HTTP/2 404 
+date: Fri, 02 Oct 2026 08:38:10 GMT
+content-type: application/json; charset=utf-8
+content-length: 144
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"90-DCI4K6K9CWGfor5JeNQ9CrI8ynI"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "status": 404,
+  "timestamp": "2026-10-02T08:38:10.411Z",
+  "message": [
+    "Provider '9mobile' not found."
+  ],
+  "path": "/api/dev/billing/data-bundles/9mobile"
+}
+```
+
+### A guess that is not a provider: T2
+
+Sent 2026-10-02 08:38:10 UTC, answered in 0.21 s.
+
+```http
+GET /api/dev/billing/data-bundles/T2
+Host: dev.fintavapay.com
+Authorization: Bearer ***
+Accept: application/json
+```
+
+**Response: HTTP 404**
+
+```http
+HTTP/2 404 
+date: Fri, 02 Oct 2026 08:38:10 GMT
+content-type: application/json; charset=utf-8
+content-length: 134
+server: cloudflare
+x-powered-by: Express
+access-control-allow-methods: GET, OPTIONS
+etag: W/"86-KJOw/vGXrX8SrbLgEqy21YK0Oyw"
+cf-cache-status: DYNAMIC
+```
+
+```json
+{
+  "status": 404,
+  "timestamp": "2026-10-02T08:38:10.837Z",
+  "message": [
+    "Provider 'T2' not found."
+  ],
+  "path": "/api/dev/billing/data-bundles/T2"
+}
+```
+
 ### POST /billing/data-bundle, ₦100 bundle
 
 Sent 2026-10-02 08:29:57 UTC, answered in 0.20 s.
