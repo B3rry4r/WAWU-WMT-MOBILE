@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 64 | 52 | 34 | 32 |
+| todo | 63 | 52 | 34 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 12 | 6 | 0 | 0 |
+
+## Being verified
+
+- [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 
 ## Done
 
@@ -36,7 +40,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-06](../tasks/MONEY-06.md) Fintava client
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [MONEY-06](../tasks/MONEY-06.md) Fintava client
 - **Developer:** [UI-03](../tasks/UI-03.md) Avatars, ticks and chips, [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap, [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours
 - **Developer 2:** [INBOX-06](../tasks/INBOX-06.md) Free chat between users, [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions, [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
@@ -45,6 +49,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · OPS-08 · Shop retired on the backend (wmt/OPS-08): browse, cart, checkout and admin product writes answer 410 `shop_retired`; past orders, verify and fulfilment stay; the deploy smoke test probes /api/hub/health; the protected lock is re-recorded for the 10 Shop entries only (needs the owner's `relock-approved`); the two-week log check is NOT RUN (droplet grep in the task); to verifying.
 - 2 Oct 2026 · TEST-01 merged: the first-render test timeouts are fixed (preloads, warm-up renders, a fake clock, and the developer Showcase split into sections). 10 of 10 cold runs pass under heavy load.
 - 2 Oct 2026 · MONEY-03 merged: the pay-from-wallet sheet (purchase H14/H17/H18 and the send variant W10) matching the canvas to the pixel on shared parts only. Shared changes with it: MediaCard byline and image, IconTile strokeWidth, Card and BottomSheet inset hairlines, exact fractional line heights, and the kit's `normal` leading on kvLabel/kvValue/meta/cardTitle/errorLine/linkStrong.
 - 2 Oct 2026 · MONEY-03 · Lead ruling applied: kit variants on `line-height: normal` use `canvasNormalLineHeight` in the theme; the pay sheet's per-line overrides removed; H14, H17, H18, W10 and W11 still equal to the canvas.
@@ -59,4 +64,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-03 · Round 2: verified tick in the pay sheet header, 1 px lines, Fees subtotal for two-part fees, double-tap guard on Pay; back to verifying.
 - 2 Oct 2026 · MONEY-03 · Pay-from-wallet sheet built (`src/components/pay-sheet/`): price, fee breakdown and total in kobo, enough / not enough with shortfall and Add top-up / paying / still confirming / failed / no wallet; to verifying.
 - 2 Oct 2026 · TEST-01 · Showcase state split per section (a press re-renders one section, not the page; same tree, Lead authorised) and router warm-up in `shell` and `focus`: 10 of 10 cold runs under load pass. Task file written, status verifying.
-- 2 Oct 2026 · TEST-01 · Tests no longer time out on a cold cache or a loaded machine: `lists`, `components` and `kit-components` load React Native's primitives (Modal alone was about 5 s cold) when the file loads and render the showcase once in a `beforeAll` with its own budget, and the showcase walk in `lists` runs on Jest's fake clock (the PinSheet.test.tsx pattern). No timeout raised, no test skipped.
