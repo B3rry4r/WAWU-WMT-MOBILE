@@ -47,6 +47,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · MONEY-03 · Lead ruling applied: kit variants on `line-height: normal` use `canvasNormalLineHeight` in the theme; the pay sheet's per-line overrides removed; H14, H17, H18, W10 and W11 still equal to the canvas.
 - 2 Oct 2026 · MONEY-03 · Theme `style()` line heights now exact, as CSS (Lead-authorised), plus `canvasNormalLineHeight`; H18 now matches (edge 485); H14, H17, W10 and W11 unchanged and equal to the canvas.
 - 2 Oct 2026 · MONEY-03 · Round 8: MediaCard `byline`/`image`, IconTile `strokeWidth` and Card's inset edge (Lead-authorised); the pay sheet uses MediaCard and IconTile; H14, H17, W10 and W11 match the canvas at the measured points; back to verifying.
 - 2 Oct 2026 · MONEY-03 · BottomSheet's top hairline drawn inset, as the kit does (Lead-authorised): H14, H17 and W11 panel edge to grabber 9 = 9; W11's title, dots and keys unchanged.
@@ -61,4 +62,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-02 merged: the PIN sheet every payment reuses. Fingerprint or face (whatever the phone has), "<Name> failed. Use your PIN.", lock countdown, the shared BottomSheet (new `gap` prop) and Text (`errorLine`, `linkStrong`), matching W11 exactly. Adds expo-local-authentication: the next Android build carries it.
 - 2 Oct 2026 · MONEY-09 merged (transaction PIN on the server: 4 digits, argon2id, locks after 5 wrong tries for PIN_LOCK_MINUTES, X-Transaction-Pin guard; verified with no defects). Backend PR #25.
 - 2 Oct 2026 · Task backlog reviewed and fixed (199 tasks): order and dependencies, Android first, no staging (tester builds use the live services; checks run locally with the sandbox), biometric not Face ID, the designer brief in every screen task, links between screens, duplicates removed, Lead rulings R-24 to R-35. Each person's first tasks are startable now.
-- 2 Oct 2026 · Backlog fixed from the two task reviews: Android first (iOS is RELEASE-03), no staging, fingerprint or face instead of Face ID, links between screens (R-27), the designer brief in every screen task, fees in every payment check, 12 new tasks (OPS-09, OPS-10, KYC-05, SUPPORT-01, INBOX-21, LEGAL-07, SETTINGS-07, SETTINGS-08, WALLET-35, WALLET-36, SCHOOLS-12, RELEASE-03), D14 and D15 closed, Lead rulings R-24 to R-35, every list reordered so nothing comes before what it needs and ads land before CHECK-3.

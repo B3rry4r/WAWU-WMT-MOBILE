@@ -390,9 +390,7 @@ function WalletCard({ wallet, walletName }: { wallet: PayWallet; walletName: str
     <Card style={styles.walletCard}>
       <CurrencyFlag currency="NGN" />
       <View style={styles.flex}>
-        <Text variant="cardTitle" style={styles.walletTitle}>
-          Pay from wallet
-        </Text>
+        <Text variant="cardTitle">Pay from wallet</Text>
         {line}
       </View>
       {wallet.kind === 'open' && (
@@ -431,17 +429,11 @@ const STATUS_STROKE = ICON_STROKE.fab;
 const ROW_VALUE = text.kvValue.fontSize;
 
 /**
- * Lines the kit leaves at `line-height: normal`, which the canvas draws at
- * `canvasNormalLineHeight`: W10's "Sending to" (13.5, 6 px above it), H17's
- * banner title (14.5 / 600, 3 px below it), and the `fromWallet` card's title
- * (15 / 600) and line (13). Their variants lead at 1.4 or 1.3 (19.5 and 16.9
- * for the card, against the canvas's 20 and 17), so these lines take the
- * canvas's line, with the kit's own margins.
+ * W10's "Sending to" is the kit's 13.5 at `line-height: normal` (6 px above it).
+ * No `Text` variant is 13.5 on the canvas's normal line (`secondary` leads at
+ * 1.4, `muted` at 1.45), so this one line takes `canvasNormalLineHeight`.
  */
 const SENDING_LINE = canvasNormalLineHeight(type.size.sec);
-const BANNER_TITLE_LINE = canvasNormalLineHeight(Number(ROW_VALUE));
-const WALLET_TITLE_LINE = canvasNormalLineHeight(Number(text.cardTitle.fontSize));
-const WALLET_LINE = canvasNormalLineHeight(Number(text.meta.fontSize));
 /** H14 and H17 space the sheet's parts 16 px apart: home.js passes `sheet()` a 16 px gap. */
 const SHEET_GAP = space.lg;
 
@@ -462,8 +454,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.md + NUDGE,
     paddingHorizontal: layout.cardPad,
   },
-  walletTitle: { lineHeight: WALLET_TITLE_LINE },
-  walletLine: { marginTop: NUDGE, lineHeight: WALLET_LINE },
+  walletLine: { marginTop: NUDGE },
   banner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -473,7 +464,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
   },
   bannerIcon: { paddingTop: NUDGE / 2 },
-  bannerTitle: { marginBottom: NUDGE + 1, lineHeight: BANNER_TITLE_LINE },
+  bannerTitle: { marginBottom: NUDGE + 1 },
   buttons: { gap: space.sm + NUDGE },
   status: { alignItems: 'center', gap: space.sm + NUDGE },
 });

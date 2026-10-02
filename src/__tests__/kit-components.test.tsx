@@ -185,16 +185,25 @@ describe('kit copy sizes', () => {
     expect(text.sheetTitleSm.lineHeight).toBe(21 * 1.15);
   });
 
-  it('draws a banner body at 13 on a 1.45 line, 18.85 px exactly as CSS computes it, apart from meta on the font default 1.3', () => {
+  it('draws a banner body at 13 on a 1.45 line, 18.85 px exactly as CSS computes it, apart from meta on the canvas normal line, 17 px', () => {
     expect(text.bannerBody.lineHeight).toBe(13 * 1.45);
-    expect(text.meta.lineHeight).toBe(13 * 1.3);
+    expect(text.meta.lineHeight).toBe(17);
   });
 
-  it('draws the inline error line (auth.js line 14) and the strong link (wallet.js line 81) untracked on the font default 1.3 line', () => {
+  it('draws the inline error line (auth.js line 14) and the strong link (wallet.js line 81) untracked on the canvas normal line, 17 and 18 px', () => {
     expect(text.errorLine.letterSpacing).toBe(0);
-    expect(text.errorLine.lineHeight).toBe(13 * 1.3);
+    expect(text.errorLine.lineHeight).toBe(17);
     expect(text.linkStrong.letterSpacing).toBe(0);
-    expect(text.linkStrong.lineHeight).toBe(14 * 1.3);
+    expect(text.linkStrong.lineHeight).toBe(18);
+  });
+
+  it('puts every kit variant on line-height normal on the canvas line: kvLabel 18, kvValue 18, meta 17, cardTitle 20, errorLine 17, linkStrong 18', () => {
+    expect(text.kvLabel.lineHeight).toBe(18);
+    expect(text.kvValue.lineHeight).toBe(18);
+    expect(text.meta.lineHeight).toBe(17);
+    expect(text.cardTitle.lineHeight).toBe(20);
+    expect(text.errorLine.lineHeight).toBe(17);
+    expect(text.linkStrong.lineHeight).toBe(18);
   });
 
   it('gives the canvas line for `line-height: normal`: Alan Sans ascent and descent, each rounded (17 at 13.5, 18 at 14.5)', () => {

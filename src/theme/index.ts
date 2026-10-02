@@ -61,26 +61,24 @@ const style = (size: number, weight: Weight, trackingEm = 0, leading: number = t
   lineHeight: size * leading,
 });
 
-/**
- * The board kit sets no line-height on most copy, so it renders at Alan Sans's
- * `normal`: (typo ascender 990 + descender 310) / 1000 units = 1.3, which is
- * `type.leading.snug`.
- */
-const kitNormalLeading = type.leading.snug;
-
 /** Alan Sans's ascent and descent per em (hhea 990 and -310 per 1000, line gap 0). */
 const alanAscent = 0.99;
 const alanDescent = 0.31;
 
 /**
  * The line height the canvas gets where the kit sets none (`line-height: normal`):
- * the browser that drew it takes Alan Sans's ascent and descent and rounds
- * each to a whole pixel, so 17 at 13.5 and 18 at 14.5 (measured in Chromium).
- * The variants keep `kitNormalLeading` (1.3, the font's own ratio) because
- * phones render `normal` their own way (Lead, 2 Oct 2026); a web layout that
- * must match the canvas to the pixel compares against this.
+ * the font's ascent and descent, each rounded to a whole pixel, so 17 at 13 and
+ * 13.5, 18 at 14 and 14.5, 20 at 15 (measured in Chromium, which drew the canvas).
+ * Every kit variant on `normal` takes this on every platform (Lead, 2 Oct 2026,
+ * MONEY-03), so a screen never overrides a variant's line height.
  */
 export const canvasNormalLineHeight = (size: number): number => Math.round(size * alanAscent) + Math.round(size * alanDescent);
+
+/** A kit text class on `line-height: normal`: `style()` with the canvas's normal line. */
+const normalStyle = (size: number, weight: Weight, trackingEm = 0): TextStyle => ({
+  ...style(size, weight, trackingEm),
+  lineHeight: canvasNormalLineHeight(size),
+});
 
 /** design/_gen/kit.js line 41, `h1`: 700, `letter-spacing:-0.03em`, `line-height:1.15`. */
 const kitHeadingTracking = -0.03;
@@ -102,17 +100,17 @@ export const text = {
   caption: style(type.size.caption, 400, 0, 1.35),
   label: { ...style(type.size.label, 700, 0.08), textTransform: 'uppercase' },
   /** kit.js line 44, `kv` key: `font-size:14px`, 400, text-secondary. */
-  kvLabel: style(14, 400, 0, kitNormalLeading),
+  kvLabel: normalStyle(14, 400, 0),
   /** kit.js line 44, `kv` value: `font-size:14.5px;font-weight:600`; also line 58, the `banner` title. */
-  kvValue: style(14.5, 600, 0, kitNormalLeading),
+  kvValue: normalStyle(14.5, 600, 0),
   /** kit.js line 69, the `fromWallet` line, and line 55, the `tx` sub line: `font-size:13px`, 400, text-muted. */
-  meta: style(13, 400, 0, kitNormalLeading),
+  meta: normalStyle(13, 400, 0),
   /** kit.js line 58, the `banner` body: `font-size:13px;color:var(--text-secondary);line-height:1.45`, 400. */
   bannerBody: style(13, 400, 0, type.leading.body),
   /** kit.js line 42, `muted`: `size: 13.5`, text-secondary, `lh: 1.45`. Not `secondary`, whose line height is 1.4. */
   muted: style(type.size.sec, 400, 0, type.leading.body),
   /** kit.js line 69, the `fromWallet` title: `font-size:15px;font-weight:600`. */
-  cardTitle: style(type.size.body, 600, 0, kitNormalLeading),
+  cardTitle: normalStyle(type.size.body, 600, 0),
   /** kit.js line 41, `h1(..., { size: 22 })`: a result or step title (auth.js line 28, home.js line 156). */
   sheetTitle: style(22, 700, kitHeadingTracking, kitHeadingLeading),
   /** kit.js line 41, `h1(..., { size: 21 })`: the title inside `sheet()` (line 64), as on the PIN sheet (home.js line 57). */
@@ -122,13 +120,13 @@ export const text = {
    * `font-size:13px;font-weight:600;color:var(--danger)`, no tracking, no
    * line height (the font default). Drawn beside a CircleAlert 15 at 2.2.
    */
-  errorLine: style(13, 600, 0, kitNormalLeading),
+  errorLine: normalStyle(13, 600, 0),
   /**
    * wallet.js line 81, W11's "Forgot PIN?":
    * `font-size:14px;font-weight:600;color:var(--accent-fg)`, no tracking, no
    * line height (the font default).
    */
-  linkStrong: style(14, 600, 0, kitNormalLeading),
+  linkStrong: normalStyle(14, 600, 0),
 } satisfies Record<string, TextStyle>;
 
 /**
