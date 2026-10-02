@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { font, radius, space, useWawu } from '@/theme';
+import { font, radius, space, useWawu, type GradientToken } from '@/theme';
 
 import { useFocusRing } from './focusRing';
 import { Text } from './Text';
@@ -16,7 +17,36 @@ export const mediaMetrics = {
   subtitle: 13,
   stackedWidth: 150,
   stackedHeight: 200,
+  /** design/_gen/explore.js `cCard`: the caption sits 10 in from the left, right and bottom of the picture, title 14.5 bold, line under it 12 at 80%. */
+  captionInset: 10,
+  stackedTitle: 14.5,
+  stackedSubtitle: 12,
+  stackedSubtitleOpacity: 0.8,
+  stackedSubtitleGap: 2,
 } as const;
+
+/** A CSS-style angle (180 is top to bottom, as in `--scrim-card`) as the start and end points `LinearGradient` takes. */
+export function gradientEnds(angle: number) {
+  const rad = (angle * Math.PI) / 180;
+  const dx = Math.sin(rad);
+  const dy = -Math.cos(rad);
+  return { start: { x: 0.5 - dx / 2, y: 0.5 - dy / 2 }, end: { x: 0.5 + dx / 2, y: 0.5 + dy / 2 } };
+}
+
+function Scrim({ token }: { token: GradientToken }) {
+  const ends = gradientEnds(token.angle);
+  return (
+    <LinearGradient
+      testID="media-scrim"
+      pointerEvents="none"
+      colors={token.colors as unknown as readonly [string, string, ...string[]]}
+      locations={token.locations as unknown as readonly [number, number, ...number[]]}
+      start={ends.start}
+      end={ends.end}
+      style={StyleSheet.absoluteFill}
+    />
+  );
+}
 
 export type MediaCardProps = {
   title: string;
@@ -50,7 +80,7 @@ export function MediaCard({
   onPress,
   testID,
 }: MediaCardProps) {
-  const { colors } = useWawu();
+  const { colors, gradients } = useWawu();
   const ring = useFocusRing();
   const stacked = layout === 'stacked';
   const frame = stacked
@@ -68,11 +98,31 @@ export function MediaCard({
           style={styles.fill}
         />
       ) : null}
+      {stacked ? (
+        <>
+          <Scrim token={gradients.scrimCard} />
+          <View style={styles.caption}>
+            <Text variant="h3" tone="textOnAccent" numberOfLines={1} style={[font(700), styles.stackedTitle]}>
+              {title}
+            </Text>
+            {subtitle || subtitleAccessory ? (
+              <View style={styles.stackedSubtitleLine}>
+                {subtitle ? (
+                  <Text variant="secondary" tone="textOnAccent" numberOfLines={1} style={styles.stackedSubtitle}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+                {subtitleAccessory}
+              </View>
+            ) : null}
+          </View>
+        </>
+      ) : null}
     </View>
   );
-  const words = (
-    <View style={stacked ? { width } : styles.words}>
-      <Text variant="h3" numberOfLines={stacked ? 2 : 1} style={font(600)}>
+  const words = stacked ? null : (
+    <View style={styles.words}>
+      <Text variant="h3" numberOfLines={1} style={font(600)}>
         {title}
       </Text>
       {subtitle || subtitleAccessory ? (
@@ -108,11 +158,15 @@ export function MediaCard({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: mediaMetrics.rowGap },
-  stacked: { gap: space.sm },
+  stacked: {},
   picture: { overflow: 'hidden', flexShrink: 0 },
   fill: { width: '100%', height: '100%' },
   words: { flex: 1, minWidth: 0 },
   subtitleLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: mediaMetrics.captionGap },
   subtitle: { fontSize: mediaMetrics.subtitle, flexShrink: 1 },
+  caption: { position: 'absolute', left: mediaMetrics.captionInset, right: mediaMetrics.captionInset, bottom: mediaMetrics.captionInset },
+  stackedTitle: { fontSize: mediaMetrics.stackedTitle },
+  stackedSubtitleLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: mediaMetrics.stackedSubtitleGap },
+  stackedSubtitle: { fontSize: mediaMetrics.stackedSubtitle, opacity: mediaMetrics.stackedSubtitleOpacity, flexShrink: 1 },
 });
 

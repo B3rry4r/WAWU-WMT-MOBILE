@@ -15,6 +15,7 @@ Four queues, because they have different owners and triggers:
 | 2 | SHELL-02 | `eas.json` (when SHELL-03 creates it) | Each build profile's `env` sets `EXPO_PUBLIC_ID_URL` (WAWU ID, the sign-in service) beside `EXPO_PUBLIC_API_URL`. Local: `http://<lan-ip>:3002`; the app falls back to a non-resolving address if it is missing. | applied by SHELL-03 (`eas.json` has it in every profile) |
 | 3 | SHELL-02 | `docs/BUILDS.md` | Line 90: name `EXPO_PUBLIC_ID_URL` next to `EXPO_PUBLIC_API_URL`. | applied by SHELL-03 |
 | 5 | SHELL-03 | `eas.json` | The `.invalid` addresses for `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_ID_URL` in each profile are replaced with the real test and production addresses (owner inputs, docs/BUILDS.md). `EXPO_PUBLIC_ID_URL` is already present in every profile, which covers the request SHELL-02 made. | open |
+| 7 | UI-02 follow-up | `src/theme` (token generator input `design/_ds/wawu/tokens/elevation.css`) | Export the design's shadows as theme tokens: `--shadow-sheet` (0 -12px 40px, black 0.5) and the segment lift (kit `Seg`, 0 1px 3px, black 0.08), in both themes. Until then `src/components/shadow.ts` `blackAt(alpha)` derives black from the dark scrim colour and the two components hold the offsets as named constants citing the kit; delete `shadow.ts` when the tokens exist. | open |
 
 ## 2. Follow-ups in another task's screen
 
