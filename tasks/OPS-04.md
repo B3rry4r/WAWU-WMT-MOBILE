@@ -7,7 +7,7 @@ order: 5
 priority: launch
 repo: design
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: []
@@ -84,6 +84,36 @@ Search method: split every `design/*.sections.json` per artboard (and the flow n
 No differs-for-recorded-reason findings.
 
 **Verdict:** defects 1 to 7 are open, so status goes back to `building`. Checks 2 and 3 stay NOT RUN until the designer's export arrives.
+
+### Round 2
+
+Verifier, 2 Oct 2026, same fresh session, against c110f2d (brief now 95 entries, 97 `###` headings including "Two defaults" and the example table). R-10's purchase default was read from mobile `main` (`git -C /home/user/wawu-wmt-mobile show main:DECISIONS.md`, commit 98eb933); this branch's own DECISIONS.md predates it.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates (`npm run check`, re-run) | passed | Exit 0. tsc and lint clean, jest 4 of 4, gates 9 run / **5 files scanned** / 0 findings, baseline 0, tasks 187 / 280 artboards. node_modules symlinked in and removed afterwards, not committed. |
+| Diff | passed | `main...wmt/OPS-04`: `docs/designer/BRIEF.md` and `tasks/OPS-04.md` only; `design/` diff empty. |
+| Capability check 1 | **failed** | Round-1 defects 1 to 7 are closed, but the re-sweep finds more misses and one self-contradiction (R2-1 to R2-6). |
+| Capability checks 2 and 3 | NOT RUN | No new export yet (expected). |
+| Accuracy, round-2 entries | passed | Rendered H14 H15 H16 H17 E3 E4 E11 SC5 SC6 SC7 S7 S12 Z1 Z2 I8 I23 A8 I3 I14 I28 M12 S22 W2 H26 W11 (plus I6 I10 I11 M18 H10 for the findings below) into `build/design_shots/` and opened the light renders. Every round-2 "Now" matches its picture and the id is right. Auth note "Starts from A8 · Raise your limits, or Wallet settings", Wallet map hotspots 3, 4, 5 and the earnings row, and the Cards note "Virtual cards are free" also match the canvas text. |
+| Figures | passed | Every new figure traces to fees.md + R-10 (main) + canvas: H17 ₦2,523.25 − ₦1,200 = ₦1,323.25; I14 ₦15.75 + ₦10 = ₦25.75, total ₦25,025.75; H26 and M12 ₦2,000 + ₦23.25; I3 ₦1,523.25; I28 and I29 ₦1,023.25; S19 ₦15,015.75; S22 ₦45,015.75; S26 ₦35,015.75; S7 ₦10,100; W14 and S12 sample returns equal the amount sent; purchase rows in the example table equal fees.md's balance-transfer charges with no WAWU fee (R-10 on main). |
+| Em-dashes, `design/` | passed | 0 U+2014; `design/` unchanged. |
+
+**Round-1 findings:** 1 (Z1) closed; 2 (Z2) closed; 3 (I8, I23) closed; 4 (Services and Events maps) closed; 5 (Wallet components banner, KeyValue fee, flow note, map rows) closed; 6 (totals carried through H14 to H17, E3, E4, E11, SC5 to SC7, S7, S12) closed; 7 (A8 link, Auth notes and map, W33) closed. Unclear 8 closed by the stated Dollar default (W2 and the Dollar tab drawn, hidden at launch, provider line from config; consistent with R-16 "no dollar account yet", though "hidden at launch" itself is not written in DECISIONS.md). Unclear 9 closed by R-10's purchase default on main (H26, H27, I3, I14, I28, I29, M12, M13, S19, S22, S26 added). Unclear 10 closed (rule 3 labels, rule 6 and W14, A6 now "Fintava's API").
+
+**Round-2 findings** (from a fresh case-insensitive sweep of artboards, maps, flow notes and component sheets; I also searched "trust", "moves to your wallet", "from earnings", "full amount", "in full", ads, deletion and the R-13 thresholds):
+
+- **R2-1 defect: earnings still "move to the wallet" in two places (R-11).** I11 · Answered: "₦1,275 added to your earnings. Replied in 49 minutes. It moves to your wallet from Earnings (W39)." plus its flow arrow "Earnings move to the wallet from W39". M18 · Creator dashboard: the Earnings row's subtitle "Move to your wallet (W39)". Neither is in the brief (renders `I11-light.png`, `M18-light.png`). My round-1 sweep searched "move to wallet" and missed this wording.
+- **R2-2 defect: I6 · Not enough in wallet is not carried through, although I3 is.** I6 repeats I3's "No reply in time, your ₦1,500 comes back in full" (rule 6), and its shortfall "You need ₦1,500. You have ₦900.00." / "Add ₦600" ignores I3's new total ₦1,523.25 (rule 5: "You need ₦1,523.25", "Add ₦623.25").
+- **R2-3 defect: I10 · Reply still promises "the full amount".** "That's 85% of ₦1,500. Miss it and Bisi gets the full amount back." Rule 6 forbids "the full amount" for a payment that carried a charge; the Inbox flow note "Paid DMs" says the same ("the full amount comes back").
+- **R2-4 defect: rule 5 contradicts W10, W11, I14 and H26.** Rule 5 says the button and the PIN sheet's "Approve" line use the review's total. W10 and I14 say "The button still shows the amount the person receives", H26 allows "keep 'Tip ₦2,000'", and W11's sheet "Approve ₦25,000 to Chidinma Okoro" (`W11-light.png`) is not mentioned, so the designer can't tell which line is meant to show ₦25,000 and which ₦25,065. Rule 5 needs the send-money exception written into it, and W11 needs its Approve line stated.
+- **R2-5 defect (minor): two more money screens keep the old amount.** H18 · Couldn't confirm: "₦2,500 left your wallet" after an unlock the brief now totals at ₦2,523.25 (rule 5). I18 · Request from someone: "Pay ₦12,000", then the W11 PIN, with no fee line. Paying a request is a send to a WAWU user, which the brief's own I14 entry charges ₦15.75 + ₦10 (R-10).
+- **R2-6 defect: H10 · Professional card still shows a Trust Score (R-18).** "4.9 · 212 reviews · **91 Trust Score** · ~3h usual reply" (`H10-light.png`); the canvas note also lists "Trust Score". R-18 ("No Trust Score on professional cards. A number nothing calculates never ships.") is an owner ruling the canvas contradicts, and the brief doesn't carry it. My round-1 sweep did not search for it, so this is new in round 2.
+- **unclear (housekeeping):** the brief cites "R-10 and the purchases default", which is in R-10 on `main` (98eb933) but not in this branch's DECISIONS.md. Bring the branch up to `main` before merge so the citation reads true in the PR.
+
+No differs-for-recorded-reason findings.
+
+**Round-2 verdict:** defects R2-1 to R2-6 are open, so status goes back to `building`. This would be a third fix round, so under `docs/WORKFLOW.md` (step 5, "At most 2 rounds, then the task goes to the owner", and section 9) the owner decides whether the builder fixes these or accepts them. Checks 2 and 3 stay NOT RUN until the export arrives.
 
 ## Owner sign-off
 
