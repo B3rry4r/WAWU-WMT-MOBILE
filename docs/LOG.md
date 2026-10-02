@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 2 Oct 2026 · INBOX-06 · Verified: 2 defects (a chat video is not held to the 512 MB upload limit; the backend branch conflicts with main `ac2a057` in the schema and contract), 3 unclear for the owner. Both capability checks pass over HTTP through real wawu-id sign-ins; contract 99 suites 1962 passed after merging main; protected 253/253; the same 16 gates as main; mobile check exits 0. Back to building.
 - 2 Oct 2026 · INBOX-06 · Free chat between two users in wawu-backend: new `/chats` routes (open, list, messages with photos, videos and PDFs, read marks, upload links), a block either way refuses opening and sending (403 `chat_blocked`), sent messages show `sent` then `read`. Additive migration, three new tables. To verifying.
 - 2 Oct 2026 · MONEY-11 · Verified: PASS, no defects (backend 03a1503, mobile 3d7a04e). Balance equals Fintava after a ₦10 round trip in the sandbox; unreachable, unknown wallet and unconfigured production all answer 503, never 0; contract 89 suites 1852 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 9 suites on :4001 NOT RUN. One unclear item for the owner (the `src/api` fence). Status review.
 - 2 Oct 2026 · MONEY-11 · Round 2: the backend starts in production with no Fintava settings (client unconfigured, one warning, balance 503, nothing sent); test boots AppModule that way. Mobile merged main (R-37). Status verifying.
