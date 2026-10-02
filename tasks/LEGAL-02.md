@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [LEGAL-01, INBOX-02, UI-02]
-decisions: [R-14]
+decisions: [R-14, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [S14, S15, S16, S17]
 ---

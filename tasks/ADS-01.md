@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [HOME-09, HOME-01, ADS-04, ADS-05, EVENTS-01]
-decisions: [R-15]
+decisions: [R-15, R-37]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H33]
 ---
