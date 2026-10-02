@@ -1,4 +1,4 @@
-import { feesTotalKobo, formatNaira, nairaParts, payTotalKobo, shortfallKobo } from '../money';
+import { feesTotalKobo, formatNaira, payTotalKobo, shortfallKobo } from '../money';
 
 describe('pay sheet money', () => {
   it('adds the price and every fee line in kobo to make the total', () => {
@@ -44,6 +44,6 @@ describe('pay sheet money', () => {
     expect(formatNaira(48525075, 'always')).toBe('₦485,250.75');
     // 0.1 + 0.2 style traps: 1,000,000,000.07 naira stays exact.
     expect(formatNaira(100000000007)).toBe('₦1,000,000,000.07');
-    expect(nairaParts(120000)).toEqual({ naira: '₦1,200', kobo: '00' });
+    expect(() => formatNaira(23.25)).toThrow(RangeError);
   });
 });

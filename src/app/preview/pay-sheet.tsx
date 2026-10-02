@@ -1,9 +1,9 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Icon } from '@/components/icon';
+import { IconButton } from '@/components/Button';
 import { PaySheet, type PaySheetProps } from '@/components/pay-sheet';
-import { font, layout, radius, space, type, useWawu } from '@/theme';
+import { font, layout, space, type, useWawu } from '@/theme';
 
 /**
  * Development-only gallery of the pay sheet's states, for screenshots beside
@@ -106,9 +106,7 @@ export default function PaySheetPreview() {
     return (
       <View style={[styles.page, { backgroundColor: colors.surfacePage }]}>
         <View style={styles.nav}>
-          <View style={[styles.back, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-            <Icon name="ChevronLeft" size={Math.round(BACK * 0.46)} color={colors.textPrimary} />
-          </View>
+          <IconButton icon="ChevronLeft" label="Back" onPress={() => go('enough')} size={BACK} />
           <Text style={[styles.navTitle, { color: colors.textPrimary }]}>Review</Text>
           <View style={styles.backSpace} />
         </View>
@@ -136,14 +134,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
-  },
-  back: {
-    width: BACK,
-    height: BACK,
-    borderRadius: radius.chip,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   backSpace: { width: BACK },
   navTitle: { ...font(700), flex: 1, textAlign: 'center', fontSize: type.size.h3 + 1, letterSpacing: -0.02 * (type.size.h3 + 1) },

@@ -1,9 +1,10 @@
+import { formatMoney } from '@/components/Money';
+
 /**
  * Naira arithmetic for the pay sheet. Every amount is an integer number of
  * kobo (100 kobo = ₦1). Nothing here rounds or multiplies by a fraction:
- * totals and shortfalls are integer sums and differences, and the display
- * splits naira from kobo with an integer remainder, dividing only an exact
- * multiple of 100.
+ * totals and shortfalls are integer sums and differences. Display goes
+ * through the shared `Money` component and its `formatMoney`.
  */
 
 export type PayFeeLine = {
@@ -43,23 +44,13 @@ export function shortfallKobo(totalKobo: number, balanceKobo: number): number {
   return totalKobo > balanceKobo ? totalKobo - balanceKobo : 0;
 }
 
-const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-/** "₦2,523" and "25" for 252325 kobo. Integer remainder only, no float division. */
-export function nairaParts(kobo: number): { naira: string; kobo: string } {
-  assertKobo(kobo, 'amount');
-  const rest = kobo % 100;
-  const whole = (kobo - rest) / 100;
-  return { naira: `₦${group(String(whole))}`, kobo: String(rest).padStart(2, '0') };
-}
-
 /**
- * "₦2,523.25". With `decimals: 'auto'` (prices, fees, totals, buttons) a whole
- * amount drops its ".00" ("₦2,500", "₦0"), as the canvas draws prices.
- * `'always'` keeps two decimals, as the canvas draws wallet balances.
+ * "₦2,523.25", for copy and button labels; on-screen figures use `Money`.
+ * With `decimals: 'auto'` (prices, fees, totals, buttons) a whole amount drops
+ * its ".00" ("₦2,500", "₦0"), as the canvas draws prices; a part-naira amount
+ * keeps its kobo. `'always'` keeps two decimals, as the canvas draws balances.
  */
 export function formatNaira(kobo: number, decimals: 'auto' | 'always' = 'auto'): string {
-  const parts = nairaParts(kobo);
-  if (decimals === 'auto' && parts.kobo === '00') return parts.naira;
-  return `${parts.naira}.${parts.kobo}`;
+  assertKobo(kobo, 'amount');
+  return formatMoney(kobo, { decimals: decimals === 'always' || kobo % 100 !== 0 });
 }
