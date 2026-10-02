@@ -3,7 +3,7 @@ id: OPS-03
 title: Run the backend locally for testing
 owner: YOU
 area: OPS
-order: 3
+order: 4
 priority: launch
 repo: wawu-backend
 type: setup
