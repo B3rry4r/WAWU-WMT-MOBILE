@@ -1,12 +1,13 @@
 import { fireEvent, render, screen, userEvent, within } from '@testing-library/react-native';
 import { useState } from 'react';
-import { Platform, processColor } from 'react-native';
+import { Platform, processColor, View } from 'react-native';
 
 import { Avatar, initialsOf } from '@/components/Avatar';
 import { BottomSheet, sheetMetrics } from '@/components/BottomSheet';
 import { Card, GroupedList } from '@/components/Card';
 import { ConversationRow } from '@/components/ConversationRow';
 import { chipMetrics, FilterChips } from '@/components/FilterChips';
+import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, ListRow, ListSection, rowMetrics } from '@/components/ListRow';
 import { mediaMetrics, MediaCard } from '@/components/MediaCard';
 import { SegmentedTabs, segmentMetrics } from '@/components/SegmentedTabs';
@@ -326,7 +327,9 @@ describe('grouped lists', () => {
     expect(flat(screen.getByTestId('row').props.style).minHeight).toBe(64);
     const card = flat(screen.getByTestId('card').props.style);
     expect(card.borderRadius).toBe(radius.card);
-    expect(card.borderColor).toBe(darkColors.borderHairline);
+    // kit.js `card`: the edge is `inset 0 0 0 1px var(--border-hairline)`, inside the card, adding no height.
+    expect(card.boxShadow).toEqual([{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: darkColors.borderHairline, inset: true }]);
+    expect(card.borderWidth).toBeUndefined();
     expect(card.backgroundColor).toBe(darkColors.surfaceCard);
   });
 
@@ -421,6 +424,46 @@ describe('media cards', () => {
     await render(<MediaCard title="Pricing a wedding film" subtitle="Video · 18 min" onPress={onPress} />);
     await userEvent.press(screen.getByRole('button', { name: 'Pricing a wedding film, Video · 18 min' }));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('media card byline and bundled picture (MONEY-03, Lead-authorised)', () => {
+  it('reads the maker, then their tick, then the rest of the line, as H14 draws "Chidi Eze ✓ · Video · 18 min"', async () => {
+    await render(
+      <MediaCard
+        title="How I built a ₦2M a month agency"
+        byline="Chidi Eze"
+        subtitle="Video · 18 min"
+        subtitleAccessory={<View testID="tick" />}
+        testID="row"
+      />,
+    );
+    // The line is name, tick, rest: each sits after the one before it in the tree.
+    const line = screen.getByText('Chidi Eze').parent!;
+    const kids = line.children.map((c) => (typeof c === 'string' ? c : (c.props.testID ?? c.props.children)));
+    expect(kids).toEqual(['Chidi Eze', 'tick', '· Video · 18 min']);
+    expect(screen.getByLabelText('How I built a ₦2M a month agency, Chidi Eze, Video · 18 min')).toBeTruthy();
+  });
+
+  it('shows a bundled picture as well as a URL', async () => {
+    const { unmount } = await render(<MediaCard title="Piece" image={7} testID="bundled" />);
+    // expo-image resolves a bundled module number to its asset record.
+    expect(screen.getByTestId('bundled-image').props.source).toEqual([expect.objectContaining({ __packager_asset: true })]);
+    await unmount();
+    await render(<MediaCard title="Piece" image="https://wawu.example/p.jpg" testID="url" />);
+    expect(screen.getByTestId('url-image').props.source).toEqual([{ uri: 'https://wawu.example/p.jpg' }]);
+  });
+});
+
+describe('icon tile stroke (MONEY-03, Lead-authorised)', () => {
+  it('strokes its glyph at 2 by default and at what a caller passes, 2.4 for H18', async () => {
+    const { unmount } = await render(<IconTile icon="Clock" tone="warn" size={72} />);
+    expect(screen.getByTestId('icon-Clock', hiddenOk).props.strokeWidth).toBe(2);
+    await unmount();
+    await render(<IconTile icon="Clock" tone="warn" size={72} strokeWidth={2.4} />);
+    const glyph = screen.getByTestId('icon-Clock', hiddenOk);
+    expect(glyph.props.strokeWidth).toBe(2.4);
+    expect(glyph.props.width).toBe(32);
   });
 });
 

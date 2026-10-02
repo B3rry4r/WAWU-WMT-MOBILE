@@ -1,4 +1,3 @@
-import { Image, type ImageSource } from 'expo-image';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
@@ -8,7 +7,9 @@ import { Button } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
 import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { ICON_STROKE, Icon, VerifiedTick } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
+import { MediaCard } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { layout, motion, radius, space, text, type, useWawu } from '@/theme';
@@ -27,7 +28,7 @@ export type PayItem = {
   /** The rest of the line under the title, e.g. "Video · 18 min". */
   subtitle?: string;
   /** Thumbnail: a URL, or a bundled image (`require(...)`). Left out, the header is the title alone. */
-  image?: ImageSource | string | number;
+  image?: string | number;
   /**
    * Send: the recipient's short display name ("Chidinma Okoro"), which the
    * avatar's initials come from, as W10 draws "CO"; `title` stays the full name.
@@ -302,12 +303,10 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
 }
 
 function Confirming(p: Inner) {
-  const { colors } = useWawu();
   return (
     <>
       <Status
-        tint={colors.warningTint}
-        icon={<Icon name="Clock" size={ICON_STATUS} color={colors.warning} strokeWidth={STATUS_STROKE} />}
+        icon={<IconTile icon="Clock" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
         title="Still confirming"
         line={`Your payment of ${formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
       />
@@ -321,12 +320,10 @@ function Confirming(p: Inner) {
 }
 
 function Failed(p: Inner & { message?: string }) {
-  const { colors } = useWawu();
   return (
     <>
       <Status
-        tint={colors.dangerTint}
-        icon={<Icon name="X" size={ICON_STATUS} color={colors.danger} strokeWidth={STATUS_STROKE} />}
+        icon={<IconTile icon="X" tone="danger" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
         title="Payment didn't go through"
         line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
       />
@@ -338,37 +335,16 @@ function Failed(p: Inner & { message?: string }) {
   );
 }
 
+/** H14's head: the thumbnail, the title, and "Chidi Eze ✓ · Video · 18 min" (UI-02's `MediaCard`, row layout). */
 function Header({ item }: { item: PayItem }) {
-  const { colors } = useWawu();
-  const tick = item.verified && <VerifiedTick kind={item.verified} size={TICK} />;
   return (
-    <View style={styles.header}>
-      {item.image !== undefined && (
-        <Image
-          source={item.image}
-          contentFit="cover"
-          style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}
-          accessibilityIgnoresInvertColors
-        />
-      )}
-      <View style={styles.flex}>
-        <Text variant="h3" numberOfLines={2}>
-          {item.title}
-        </Text>
-        {(item.by !== undefined || item.subtitle !== undefined || item.verified) && (
-          <View style={[styles.inline, styles.subtitle]}>
-            {item.by !== undefined && <Text variant="meta">{item.by}</Text>}
-            {item.by !== undefined && tick}
-            {item.subtitle !== undefined && (
-              <Text variant="meta" style={styles.flex} numberOfLines={1}>
-                {item.by !== undefined ? `· ${item.subtitle}` : item.subtitle}
-              </Text>
-            )}
-            {item.by === undefined && tick}
-          </View>
-        )}
-      </View>
-    </View>
+    <MediaCard
+      title={item.title}
+      byline={item.by}
+      subtitle={item.subtitle}
+      subtitleAccessory={item.verified ? <VerifiedTick kind={item.verified} size={TICK} /> : undefined}
+      image={item.image}
+    />
   );
 }
 
@@ -424,10 +400,10 @@ function WalletCard({ wallet, walletName }: { wallet: PayWallet; walletName: str
   );
 }
 
-function Status({ tint, icon, title, line }: { tint: string; icon: ReactNode; title: string; line: string }) {
+function Status({ icon, title, line }: { icon: ReactNode; title: string; line: string }) {
   return (
     <View style={styles.status}>
-      <View style={[styles.statusMark, { backgroundColor: tint }]}>{icon}</View>
+      {icon}
       <Text variant="sheetTitle" style={styles.centre}>
         {title}
       </Text>
@@ -440,12 +416,12 @@ function Status({ tint, icon, title, line }: { tint: string; icon: ReactNode; ti
 
 /** The canvas nudges a few things by 2 px off the 4-point scale. */
 const NUDGE = space.xs / 2;
-const THUMB = layout.controlH + space.sm; // 56, home.js unlockSheet thumbnail
 const AVATAR = space.s3xl * 2; // 64, wallet.js W10 `Av(..., 64)`
-/** Icon sizes the artboards pass to I(): banner 19 (kit `banner`), check 20 (kit `fromWallet`), status 32 (H18); the tick 13 (unlockSheet). */
+/** Icon sizes the artboards pass to I(): banner 19 (kit `banner`), check 20 (kit `fromWallet`); the tick 13 (unlockSheet). */
 const ICON_BANNER = space.xl - 1;
 const ICON_CHECK = space.xl;
-const ICON_STATUS = space.s3xl;
+/** H18's status mark: a 72 tinted disc (its 32 glyph is `IconTile`'s 45%). */
+const STATUS_MARK = layout.tapMin + space.s3xl - space.xs;
 const TICK = space.md + 1;
 /** H18 strokes its 32 px status mark at 2.4. The failed mark is W14's `X` (Send · failed), drawn at H18's sheet size. */
 const STATUS_STROKE = ICON_STROKE.fab;
@@ -453,16 +429,21 @@ const STATUS_STROKE = ICON_STROKE.fab;
 const ROW_VALUE = text.kvValue.fontSize;
 
 /**
- * W10 draws "Sending to" at 13.5 with `line-height: normal` and a 6 px top
- * margin. The browser that drew the canvas makes `normal` the font's ascent
- * and descent (Alan Sans hhea 990 and 310 per 1000), each rounded to a whole
- * pixel: 13 + 4 = 17 px at 13.5. `secondary` leads at 1.4 (19 px); half the
- * difference comes off each side, so the line takes the canvas's 17.
+ * Where the kit sets no line height the canvas's browser uses `normal`: Alan
+ * Sans's ascent and descent (hhea 990 and 310 per 1000), each rounded to a
+ * whole pixel, so 17 px at 13.5 and 18 px at 14.5. The `Text` variants lead at
+ * 1.3 or more (`kitNormalLeading`, kept for phones), so the two lines below
+ * come out a pixel taller than the canvas; half the difference comes off each
+ * side of the line, through its margins.
  */
 const ALAN_ASCENT = 0.99;
 const ALAN_DESCENT = 0.31;
-const SENDING_LINE = Math.round(type.size.sec * ALAN_ASCENT) + Math.round(type.size.sec * ALAN_DESCENT);
-const SENDING_TRIM = (Number(text.secondary.lineHeight) - SENDING_LINE) / 2;
+const canvasLine = (size: number) => Math.round(size * ALAN_ASCENT) + Math.round(size * ALAN_DESCENT);
+const trimTo = (lineHeight: unknown, size: unknown) => (Number(lineHeight) - canvasLine(Number(size))) / 2;
+/** W10's "Sending to": 13.5 with a 6 px top margin, `secondary` leads at 19 against the canvas's 17. */
+const SENDING_TRIM = trimTo(text.secondary.lineHeight, type.size.sec);
+/** H17's banner title: kit `banner`, 14.5 / 600, `kvValue` leads at 19 against the canvas's 18. */
+const BANNER_TITLE_TRIM = trimTo(text.kvValue.lineHeight, ROW_VALUE);
 /** H14 and H17 space the sheet's parts 16 px apart: home.js passes `sheet()` a 16 px gap. */
 const SHEET_GAP = space.lg;
 
@@ -473,9 +454,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   centre: { textAlign: 'center' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
-  header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  thumb: { width: THUMB, height: THUMB, borderRadius: radius.input - NUDGE },
-  subtitle: { marginTop: space.xs - 1 },
   sendHead: { alignItems: 'center', gap: space.xs + NUDGE, paddingTop: space.xs + NUDGE },
   sendingTo: { marginTop: space.xs + NUDGE - SENDING_TRIM, marginBottom: -SENDING_TRIM },
   /** Kit `fromWallet`: `card(..., { pad: '14px 16px' })`, a row with 12 between its parts. */
@@ -496,14 +474,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
   },
   bannerIcon: { paddingTop: NUDGE / 2 },
-  bannerTitle: { marginBottom: NUDGE + 1 },
+  bannerTitle: { marginTop: -BANNER_TITLE_TRIM, marginBottom: NUDGE + 1 - BANNER_TITLE_TRIM },
   buttons: { gap: space.sm + NUDGE },
   status: { alignItems: 'center', gap: space.sm + NUDGE },
-  statusMark: {
-    width: layout.tapMin + space.s3xl - space.xs,
-    height: layout.tapMin + space.s3xl - space.xs,
-    borderRadius: radius.chip,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

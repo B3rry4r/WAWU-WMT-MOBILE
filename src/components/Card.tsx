@@ -5,6 +5,11 @@ import { radius, space, useWawu } from '@/theme';
 
 /** The card's vertical padding: rows carry their own height, so only 2 is left over (design/_gen/kit.js `card`). */
 const cardPadV = 2;
+/**
+ * The card's edge: kit.js `card` draws `box-shadow: inset 0 0 0 1px var(--border-hairline)`,
+ * inside the card, so it adds no height. A border would add 1 px top and bottom.
+ */
+const edge = 1;
 
 export type CardProps = {
   children: ReactNode;
@@ -23,7 +28,7 @@ export function Card({ children, padded, style, testID }: CardProps) {
       style={[
         styles.card,
         padded ? styles.padded : styles.rows,
-        { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline },
+        { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: edge, color: colors.borderHairline, inset: true }] },
         style,
       ]}
     >
@@ -51,7 +56,7 @@ export function GroupedList({ children, style, testID }: GroupedListProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth },
+  card: { borderRadius: radius.card },
   rows: { paddingVertical: cardPadV, paddingHorizontal: space.lg },
   padded: { padding: space.lg },
   /** The next row's top edge carries the line, as the kit's inset shadow does: no layout of its own. */
