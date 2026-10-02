@@ -8,7 +8,8 @@ npm run web        # or: npm run ios / npm run android with a development build
 npm run check      # everything CI runs
 ```
 
-Set `EXPO_PUBLIC_API_URL` to the backend you want (staging for development).
+Set `EXPO_PUBLIC_API_URL` to the backend you want: your local backend (wawu-backend `scripts/local/up.sh`) for
+development. There is no staging (DECISIONS R-25).
 
 ## How work happens here
 

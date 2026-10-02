@@ -3,13 +3,13 @@ id: SCHOOLS-08
 title: My courses and apply on the school's site
 owner: DEV3
 area: SCHOOLS
-order: 163
-priority: after-launch
+order: 131
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [SCHOOLS-09, SCHOOLS-10]
-decisions: [R-12]
+depends_on: [SCHOOLS-03, SCHOOLS-09, SCHOOLS-10, UI-02, SCHOOLS-06]
+decisions: [R-12, R-33]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [SC8, SC9]
 ---
@@ -23,6 +23,7 @@ artboards: [SC8, SC9]
 - `DECISIONS.md`: R-12 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py SC8 SC9` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for SC8, SC9, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -31,6 +32,8 @@ You own these screens AND the backend work behind them. Build the screens as the
 ## Scope
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+Built at launch (R-33): SC3, SC7 and M7 draw ways in on launch screens. SC8 reads the new school enrolments (SCHOOLS-09), never LearnCourse's `CourseEnrollment`. 'week 3 of 6' is left out until something writes progress (filed in BACKEND_GAPS.md). SC9's link and click log are SCHOOLS-10's.
 
 ## Artboards
 
@@ -44,6 +47,7 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states SC9.
+- [ ] From SC3's 'Or apply on the school's website' (SCHOOLS-03) and SC7's My courses (SCHOOLS-06), a user reaches SC9 and SC8 (this task adds them, as drawn).
 
 ## What the backend serves today (from the analysis)
 
@@ -58,7 +62,6 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - SC9: greenfield.ng/apply?ref=wawu-7KQ2
 - SC9: 'the school pays WAWU a commission' (rate unstated)
-- SC9: who sees the tracking: unstated (school? WAWU admin? user?)
 
 ## Designer notes (⚠, unresolved)
 

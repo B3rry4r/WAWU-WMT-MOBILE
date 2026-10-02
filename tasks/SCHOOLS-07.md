@@ -1,19 +1,19 @@
 ---
 id: SCHOOLS-07
-title: School enrolment order
+title: Enrol in a course and pay from the wallet (backend)
 owner: DEV3
 area: SCHOOLS
-order: 128
+order: 120
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17, SCHOOLS-04]
-decisions: [R-12]
+depends_on: [MONEY-17, MONEY-18, MONEY-13, MONEY-16, WALLET-15, SCHOOLS-04]
+decisions: [R-12, R-10, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# SCHOOLS-07 · School enrolment order
+# SCHOOLS-07 · Enrol in a course and pay from the wallet (backend)
 
 ## Read first
 
@@ -23,6 +23,7 @@ artboards: []
 - `DECISIONS.md`: R-12 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs)
 
 ## Goal
 
@@ -31,6 +32,8 @@ SC4-SC7, SC11: enrol in an intake and pay from the wallet, with the seat claimed
 ## Scope
 
 Enrolment order with amount and commission snapshot, race-safe seat claim (the Product.stock pattern), class-full returns the next intake, receipt; payment through MONEY-17.
+
+The fee waits in WAWU's merchant wallet until it is paid to the school (MONEY-18, R-19). School enrolments never read the old LearnCourse enrolment gate, which references the removed subscription.
 
 ## Capability checks
 

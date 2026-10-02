@@ -3,12 +3,12 @@ id: KYC-04
 title: Open your wallet: account opened, create PIN
 owner: YOU
 area: KYC
-order: 105
+order: 85
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03]
+depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [A8, A9, A10]
@@ -22,6 +22,7 @@ artboards: [A8, A9, A10]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py A8 A9 A10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A2.json`
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -33,28 +34,34 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **A8 · Wallet open**: 'Your wallet is open' card: Tier 1 · Fintava MFB, account name, account number 812 345 6789 (Copy), Bank Fintava MFB, Limit ₦300,000 balance; links Raise your limits (-> A17) and Create your transaction PIN (-> A9).
+- **A8 · Wallet open**: 'Your wallet is open' card: the bank name from the API (Loma Bank; the long legal name must fit), account name, account number (Copy), Bank row, a Limit row shown only if Fintava returns a limit; Create your transaction PIN (-> A9). No tier and no 'Raise your limits' (BRIEF A8).
 - **A9 · Create PIN**: Step 1 of 2: 'Create your transaction PIN. Four digits. It approves every payment and transfer.' Keypad.
-- **A10 · Confirm PIN**: Step 2 of 2: 'Enter it again'. Then PIN set: earn -> A11, discover -> A12.
+- **A10 · Confirm PIN**: Step 2 of 2: 'Enter it again'. Then the user returns to where Open your wallet started.
 
 ## Ruling R-6
 
 This flow is not part of sign-up. It starts the first time someone taps Wallet
 or anything that moves money, for every user, new or existing. The design draws
 these screens inside sign-up; keep their look, change only where they sit. The
-BVN entry is A3's BVN field on its own step (A3 itself is sign-up and no longer
-asks for it). Someone without a Nigerian BVN cannot open a Naira wallet; dollar
+BVN and NIN step is A26 (KYC-05); A3 is sign-up and no longer asks for the BVN. Someone without a Nigerian BVN cannot open a Naira wallet; dollar
 and crypto accounts are for them and come after launch, so for now the flow
 ends with a clear "not available yet" instead of an error.
 
+## Brief changes (build these, not the canvas)
+
+- **A8**: the subtitle and the Bank row show the bank name as a slot the app fills. Sample: "Loma Bank", and make sure the long legal name "Iyin Ekiti Microfinance Bank Limited (Loma Bank)" also fits (wrap or truncate). No "Tier 1". Draw the Limit row as a slot that can be hidden. Remove the "Raise your limits" link; "Create your transaction PIN" stays. (Why: R-1 and a Fintava fact: the bank is Loma Bank and its name comes from the API. Fintava's API has no tiers, so there is nothing to raise; limits are still a question for Fintava.)
+- **A10**: a mismatch uses the PIN sheet's wrong-PIN line in W11's style; KYC-04 records its wording here. (Why: every state needs a real look; the canvas's own style is used.)
+
 ## Capability checks
 
-- [ ] **A8**: a user can copy account number; tap Raise your limits; tap Create your transaction PIN.
+- [ ] **A8**: a user can copy the account number and tap Create your transaction PIN; the bank row shows the name from the API (Loma Bank); the Limit row shows only if Fintava returns a limit.
 - [ ] **A9**: a user can enter 4 digits.
-- [ ] **A10**: a user can re-enter 4 digits; mismatch handling (no state drawn).
+- [ ] **A10**: a user can re-enter the 4 digits; a mismatch uses the PIN sheet's wrong-PIN line (W11 style), with its wording listed in `docs/designer/BRIEF.md`.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] After A7 (KYC-03), a user lands on A8 (this task adds that step).
+- [ ] After A10, a user who started from Pay returns to that pay sheet, and one who started from the Wallet tab lands on W5.
 
 ## What the backend serves today (from the analysis)
 

@@ -3,7 +3,7 @@ id: MONEY-07
 title: Fintava webhooks
 owner: YOU
 area: MONEY
-order: 24
+order: 53
 priority: launch
 repo: wawu-backend
 type: third-party
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -30,6 +31,8 @@ Money that arrives or settles while nobody is looking is still recorded once.
 ## Scope
 
 Webhook endpoint with signature check, an event store keyed by the transaction reference (Fintava sends no event id), safe to replay.
+
+There is no standing tunnel (R-25): locally, webhook checks send payloads built from Fintava's documented format (`docs/fintava/reference/`) and signed with the local secret to the local endpoint, and the report says so. Real payloads are recorded into `docs/fintava/sandbox/23-webhooks.md` once OPS-10 registers the production webhook URL, or when Fintava sends samples (unblocking fact). The production webhook URL is registered by OPS-10.
 
 ## Fintava facts
 

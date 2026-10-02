@@ -3,13 +3,13 @@ id: INBOX-11
 title: Paid question: not enough money, refunded, messages off
 owner: DEV2
 area: INBOX
-order: 155
+order: 163
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [INBOX-10]
-decisions: []
+depends_on: [INBOX-10, INBOX-09, MONEY-03, MONEY-19, HOME-13, UI-02, WALLET-05]
+decisions: [R-2, R-9, R-10, R-13, R-6]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I6, I7, I8]
 ---
@@ -22,6 +22,8 @@ artboards: [I6, I7, I8]
 - `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I6 I7 I8` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
+- `docs/designer/BRIEF.md`: its entries for I6, I8 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -33,15 +35,20 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **I6 · Not enough in wallet**: Ask sheet with an insufficient-balance banner "You need ₦1,500. You have ₦900.00." and "Add ₦600", which opens Add money (W15) with the shortfall prefilled.
+- **I6 · Not enough in wallet**: Ask sheet with an insufficient-balance banner "You need ₦1,523.25. You have ₦900.00." and "Add ₦623.25", which opens Add money (W15) with the shortfall prefilled (BRIEF I6).
 - **I7 · Refunded**: Thread after the window passed unanswered: "No reply in 24 hours, so you got ₦200 back. It went back to your Naira wallet on Tuesday at 14:10. Zainab earned nothing." with Try again · ₦200.
-- **I8 · Creator has paid messages off**: Profile with "Messages off" and "Tolu isn't taking paid messages right now. You can still follow, tip and buy from Tolu's shop." Designer note: off by choice, or switched off after missing too many.
+- **I8 · Creator has paid messages off**: Profile with "Messages off" and "Tolu isn't taking paid messages right now. You can still follow, tip and buy Tolu's work." (BRIEF I8; no shop, R-2, R-9) Designer note: off by choice, or switched off after missing too many.
+
+## Brief changes (build these, not the canvas)
+
+- **I6**: the refund line as on I3 ("your ₦1,500 comes back", no "in full"), then "You need ₦1,523.25. You have ₦900.00." and "Add ₦623.25". (Why: rule 5 (the shortfall uses I3's total) and rule 6.)
+- **I8**: "You can still follow, tip and buy Tolu's work." (Why: R-2 and R-9: there is no shop.)
 
 ## Capability checks
 
-- [ ] **I6**: a user can Add ₦600 -> W15.
+- [ ] **I6**: with ₦900 a user sees "You need ₦1,523.25. You have ₦900.00." and taps "Add ₦623.25", which opens W15 with the shortfall filled in.
 - [ ] **I7**: a user can Try again · ₦200.
-- [ ] **I8**: a user can follow; tip; open shop.
+- [ ] **I8**: a user can follow; tip (H26); open the creator's work (M5 Content tab).
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states I6, I7, I8.

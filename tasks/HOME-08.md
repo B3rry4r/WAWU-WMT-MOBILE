@@ -3,12 +3,12 @@ id: HOME-08
 title: Content detail: free video and course layouts
 owner: DEV
 area: HOME
-order: 78
+order: 139
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [HOME-03]
+depends_on: [HOME-03, UI-02, HOME-13, HOME-12]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H24, H25]
@@ -23,6 +23,7 @@ artboards: [H24, H25]
 - `DECISIONS.md`: R-8 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py H24 H25` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md`: its entries for H25 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -36,6 +37,10 @@ New files under `src/features/` for these screens and their route files under `s
 
 - **H24 · Detail · free video**: Free video detail: Free · 1:50, 12.4K views, Tip instead of a price, link 'From the course VFX for Beginners · 12 lessons ₦8,000', 340 comments.
 - **H25 · Detail · course**: Course detail: 12 lessons · 2h 40m, 1,280 students, lesson list with lesson 01 tagged Free and the rest locked, Unlock course · ₦8,000, Pay from wallet.
+
+## Brief changes (build these, not the canvas)
+
+- **H25**: as H19: a price if it opens the unlock sheet, or the total "Unlock course · ₦8,015.75" (₦8,000 + Fintava's ₦15.75) if it goes straight to the PIN. (Why: rule 5 and the purchases default.)
 
 ## Capability checks
 

@@ -3,14 +3,14 @@ id: INBOX-14
 title: Private communities, hosting, join requests
 owner: DEV2
 area: INBOX
-order: 149
+order: 171
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [INBOX-01]
+depends_on: [INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04]
 decisions: []
-passes: [V1, V4, V5, V6, V7, V9]
+passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [I30, I31, I37, I32, I33, I34]
 ---
 # INBOX-14 · Private communities, hosting, join requests
@@ -22,6 +22,7 @@ artboards: [I30, I31, I37, I32, I33, I34]
 - `docs/people/DEV2.md` (what you own)
 - The design: `python3 scripts/design/render_design.py I30 I31 I37 I32 I33 I34` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A5.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for I30, I31, I37, I32, I33, I34, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -30,6 +31,12 @@ You own these screens AND the backend work behind them. Build the screens as the
 ## Scope
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+I32's "You keep 85% of every credit spent in your room" is backed by WALLET-17, which pays hosts their share; this task depends on it. I33's wawu/c/ link is a deep link (V10).
+
+V10 runs on a real Android phone only (DECISIONS R-24).
+
+Native modules: `expo-image-picker` (I32 picture), `expo-clipboard` (I33 Copy link). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
 
 ## Artboards
 
@@ -51,6 +58,8 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states I31.
+- [ ] From A11 (AUTH-06), M19 (ME-04), M18 (ME-07) and I1 (INBOX-04), a user can reach I32 to start a community, and from I24 (INBOX-05) tap Ask (private) and reach I30 (this task adds them, as drawn).
+- [ ] A user who opens wawu/c/aba-tailors on their Android phone lands in that room.
 
 ## What the backend serves today (from the analysis)
 

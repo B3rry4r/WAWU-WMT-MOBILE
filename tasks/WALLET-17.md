@@ -1,19 +1,19 @@
 ---
 id: WALLET-17
-title: Pay out host shares nobody receives today
+title: Hosts receive their share: community credits and event tickets
 owner: YOU
 area: WALLET
-order: 144
+order: 154
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
-decisions: []
+depends_on: [MONEY-18, WALLET-16, EVENTS-07, INBOX-16]
+decisions: [R-5, R-11, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# WALLET-17 · Pay out host shares nobody receives today
+# WALLET-17 · Hosts receive their share: community credits and event tickets
 
 ## Read first
 
@@ -22,18 +22,25 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-Community hosts' credit share and event hosts' 85% are computed today but never paid.
+Community hosts' share of credits spent in their room, and event hosts' 85% of ticket sales, are computed today
+but never paid. This is the one task that pays both (Lead, 2 Oct 2026); EVENTS-10 keeps the refunds.
 
 ## Scope
 
-Fund CreditSpendEarning.hostShareKobo and event host shares into the host's wallet.
+Fund CreditSpendEarning.hostShareKobo into the community host's wallet as credits are spent, and pay each event
+host 85% of the ticket price for the tickets sold, from WAWU's merchant wallet once the event has taken place
+(EVENTS-07 holds the ticket money there, R-19). A host without a wallet keeps the share, which lands when they
+open one (R-11, WALLET-16). Fintava's charge on each payout is WAWU's (R-31).
 
 ## Capability checks
 
 - [ ] After members spend credits in a community, the host's wallet grows by their share.
+- [ ] After an event, the host's wallet receives 85% of ticket sales once, even if the payout job runs twice.
+- [ ] A host without a wallet keeps the share, and it lands once when they open one.
 
 ## Builder report
 

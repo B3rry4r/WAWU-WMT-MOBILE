@@ -97,6 +97,18 @@ export const text = {
   sheetTitle: style(22, 700, kitHeadingTracking, kitHeadingLeading),
   /** kit.js line 41, `h1(..., { size: 21 })`: the title inside `sheet()` (line 64), as on the PIN sheet (home.js line 57). */
   sheetTitleSm: style(21, 700, kitHeadingTracking, kitHeadingLeading),
+  /**
+   * auth.js line 14 (and line 55), the inline error under a code entry:
+   * `font-size:13px;font-weight:600;color:var(--danger)`, no tracking, no
+   * line height (the font default). Drawn beside a CircleAlert 15 at 2.2.
+   */
+  errorLine: style(13, 600, 0, kitNormalLeading),
+  /**
+   * wallet.js line 81, W11's "Forgot PIN?":
+   * `font-size:14px;font-weight:600;color:var(--accent-fg)`, no tracking, no
+   * line height (the font default).
+   */
+  linkStrong: style(14, 600, 0, kitNormalLeading),
 } satisfies Record<string, TextStyle>;
 
 /**

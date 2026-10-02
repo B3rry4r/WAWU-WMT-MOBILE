@@ -13,8 +13,8 @@ backend behind them.
 - Sign the checkpoints: CHECK-0 (safe to start), CHECK-1 (the app talks to the
   real backend), CHECK-2 (money moves correctly), CHECK-3 (full QA), then
   RELEASE-02 (QA fixes and store submission).
-- Rule what's still open in `DECISIONS.md` (D14 in OPS-07, D15 through the
-  designer in OPS-04). Nothing waits on them.
+- Nothing is open in `DECISIONS.md` today (D14 and D15 closed by R-34 and
+  R-35). Rule anything new there; nothing waits on it.
 
 ## What you own
 
@@ -34,8 +34,8 @@ Events, Schools, Professionals and Legal moved to Developer 3 on 2 Oct 2026
   first time someone taps Wallet or anything that moves money, never at
   sign-up (R-6).
 - **Wallet** (WALLET-*).
-- **The release** (RELEASE-*). Only you have the Apple and
-  Google accounts, so only you submit (`docs/BUILDS.md`).
+- **The release** (RELEASE-*). Only you have the store accounts, so only you
+  submit (`docs/BUILDS.md`). Android launches first; iOS is RELEASE-03 (R-24).
 
 ## Rules that matter most for money
 
@@ -50,6 +50,12 @@ Events, Schools, Professionals and Legal moved to Developer 3 on 2 Oct 2026
 - Facts come from Fintava (`docs/fintava/`), never from the design.
 - Build against the real Fintava sandbox, never a mock. Money launches with
   the app (R-20).
-- Fees: the user pays Fintava's fee plus WAWU's on top (R-10).
+- Fees: the user pays Fintava's fee plus WAWU's on top (R-10); WAWU pays Fintava's
+  charge on its own movements (R-31).
+- **Designs are final; changes come from the brief.** Check
+  `docs/designer/BRIEF.md` for every artboard you build (R-29).
+- **Links between screens:** a hub builds only the rows whose screen exists;
+  the task that builds a screen adds its own way in, as drawn (R-27,
+  `docs/WORKFLOW.md` section 7).
 
 Your list: `tasks/INDEX.md`, section "You".

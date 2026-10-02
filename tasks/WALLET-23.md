@@ -1,9 +1,9 @@
 ---
 id: WALLET-23
-title: Tier 2: NIN upgrade and limits
+title: Account limits from Fintava
 owner: YOU
 area: WALLET
-order: 166
+order: 183
 priority: after-launch
 repo: wawu-backend
 type: money-path
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# WALLET-23 · Tier 2: NIN upgrade and limits
+# WALLET-23 · Account limits from Fintava
 
 ## Read first
 
@@ -22,19 +22,21 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-A17-A19: raise limits with a NIN; limits come from Fintava, never from the canvas.
+Limits come from Fintava, never from the canvas. Fintava's API has no tiers and every wallet gives its NIN at
+opening (BRIEF A17 to A20), so there is no NIN upgrade.
 
 ## Scope
 
-NIN submission and check, tier and limits read from Fintava, limits enforced on debits.
+Read the account's limits from Fintava once Fintava publishes them, enforce them on debits, and show them on the
+W35 limits row. What A17 to A20 become waits for the owner's ruling on them (after launch).
 
 ## Capability checks
 
-- [ ] A debit over the Tier 1 limit is refused with the limit shown.
-- [ ] After NIN, the new limit applies without signing out.
+- [ ] A debit over the account's limit is refused with the limit shown.
 
 ## Builder report
 

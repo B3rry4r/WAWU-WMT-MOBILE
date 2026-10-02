@@ -3,7 +3,7 @@ id: OPS-04
 title: Designer: Shop to Schools, the ₦ glyph, real numbers
 owner: YOU
 area: OPS
-order: 5
+order: 13
 priority: launch
 repo: design
 type: ops

@@ -3,13 +3,13 @@ id: WALLET-13
 title: Earnings breakdown
 owner: YOU
 area: WALLET
-order: 143
+order: 152
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [WALLET-16]
-decisions: [R-11]
+depends_on: [WALLET-16, UI-02, KYC-05]
+decisions: [R-11, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W39]
 ---
@@ -23,6 +23,8 @@ artboards: [W39]
 - `DECISIONS.md`: R-11 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W39` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/designer/BRIEF.md`: its entries for W39 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -34,15 +36,19 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Artboards
 
-- **W39 · Earnings**: Creator-only earnings screen: 'Ready to move' amount, all-time earned, Move to wallet button, stream split (Unlocks, Tips, Paid DMs) and per-content earnings this month.
+- **W39 · Earnings**: Creator-only earnings screen: what was earned (all time and this month), stream split (Unlocks, Tips, Paid DMs) and per-content earnings this month. No 'Ready to move' and no Move to wallet button (R-11, BRIEF W39).
 
 ## Ruling R-11
 
 Earnings go into the wallet automatically. W39 is built without its 'Move to wallet' button, and W40 is not built.
 
+## Brief changes (build these, not the canvas)
+
+- **W39**: no button and no "Ready to move". Earnings land in the wallet by themselves. Lead with what was earned (for example "₦312,800 earned all time", or this month) and keep the breakdown by stream and by content. For a creator who hasn't opened a wallet yet, a short note: the money is waiting and lands the moment they open one, with a link to Open your wallet. (Why: R-11.)
+
 ## Capability checks
 
-- [ ] **W39**: a user can tap Move to wallet; view per-content earnings.
+- [ ] **W39**: a user sees what they earned (all time and this month), split by Unlocks, Tips and Paid DMs, and per piece; a creator without a wallet sees that the money is waiting and can tap Open your wallet (A26).
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).

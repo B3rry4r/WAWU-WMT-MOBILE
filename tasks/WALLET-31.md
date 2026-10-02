@@ -3,7 +3,7 @@ id: WALLET-31
 title: WAWU card (first slice)
 owner: YOU
 area: WALLET
-order: 176
+order: 194
 priority: after-launch
 repo: wawu-backend
 type: money-path
@@ -24,10 +24,12 @@ artboards: []
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
 - `docs/fintava/naira-api.md` (section "Cards")
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-WAWU card is on the canvas, marked as placeholder until Fintava confirms it. It is only built if R-16 puts it in the first release.
+WAWU card. Blocked until the owner decides on cards (R-16 says undecided) and Fintava publishes card fees and
+webhooks.
 
 ## Scope
 
@@ -39,7 +41,7 @@ Fintava issues physical Verve, Visa and Mastercard cards tied to the wallet acco
 
 ## Capability checks
 
-- [ ] R-16 is ruled 'in', Fintava's docs are in docs/fintava/, and this task has been split into tasks of two days or less.
+- [ ] The owner has decided on cards, Fintava's card fees and webhooks are in `docs/fintava/`, and this task has been split into tasks of two days or less.
 
 ## Builder report
 

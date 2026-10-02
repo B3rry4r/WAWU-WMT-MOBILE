@@ -1,19 +1,19 @@
 ---
 id: LEGAL-05
-title: Move legal fees to the wallet
+title: Pay legal fees from the wallet (backend)
 owner: DEV3
 area: LEGAL
-order: 125
+order: 108
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
-decisions: []
+depends_on: [MONEY-17, MONEY-13, MONEY-16, WALLET-15, WALLET-16, LEGAL-03]
+decisions: [R-10, R-14]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# LEGAL-05 · Move legal fees to the wallet
+# LEGAL-05 · Pay legal fees from the wallet (backend)
 
 ## Read first
 
@@ -22,10 +22,11 @@ artboards: []
 - `docs/people/DEV3.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs)
 
 ## Goal
 
-Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
+Consultation and service fees are paid from the wallet with the PIN, at the prices WAWU sets in admin (R-14). The web keeps Flutterwave until after launch.
 
 ## Scope
 
@@ -33,7 +34,7 @@ Consultation and service fees, and business-name registration, pay from the wall
 
 ## Capability checks
 
-- [ ] A user pays from their wallet with their PIN and gets what they paid for.
+- [ ] The price charged equals the price set in admin at the time of the quote (R-14), plus Fintava's charge from the fee quote.
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 

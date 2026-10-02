@@ -3,7 +3,7 @@ id: LEGAL-03
 title: Legal consultations and deliverables
 owner: DEV3
 area: LEGAL
-order: 89
+order: 68
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -30,6 +30,8 @@ S18-S26: phone, video and in-person options, slots, several delivered files.
 ## Scope
 
 Phone medium, per-medium length, slots; several deliverables posted into the chat; prices set by WAWU in admin (R-14).
+
+Admin sets the prices through LEGAL-07's screens.
 
 ## Capability checks
 

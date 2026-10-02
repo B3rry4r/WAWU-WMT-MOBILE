@@ -3,12 +3,12 @@ id: INBOX-15
 title: Money requests in chat
 owner: DEV2
 area: INBOX
-order: 150
+order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
-depends_on: [INBOX-06]
+depends_on: [INBOX-06, INBOX-07, WALLET-07]
 decisions: [R-13]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
@@ -25,11 +25,13 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+A user can ask someone in a chat for money; the other pays or declines once. Additive only.
 
 ## Scope
 
 MoneyRequest (pending, paid, declined, cancelled) written into the chat; paying uses WALLET-07.
+
+Requests appear in the INBOX-07 feed and the I20 Money filter. Paying a request is a send to a WAWU user (WALLET-07), with that fee.
 
 ## Capability checks
 

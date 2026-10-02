@@ -3,7 +3,7 @@ id: INBOX-06
 title: Free chat between users
 owner: DEV2
 area: INBOX
-order: 99
+order: 3
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -25,7 +25,7 @@ artboards: []
 
 ## Goal
 
-A backend gap behind lane B's screens, from docs/analysis/ANALYSIS-EVIDENCE.md. Additive only.
+Any two users can chat for free with text, photos and files; a blocked user cannot message (R-13). Additive only.
 
 ## Scope
 
@@ -34,6 +34,7 @@ Conversations, messages with images and files, read state, blocks enforced (per 
 ## Capability checks
 
 - [ ] Two users can chat; a blocked user cannot message.
+- [ ] A user sees read state on their sent message.
 
 ## Builder report
 

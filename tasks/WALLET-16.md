@@ -3,12 +3,12 @@ id: WALLET-16
 title: Earnings land in the wallet automatically
 owner: YOU
 area: WALLET
-order: 142
+order: 95
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
+depends_on: [MONEY-17, MONEY-12]
 decisions: [R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
@@ -23,6 +23,7 @@ artboards: []
 - `DECISIONS.md`: R-11 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 

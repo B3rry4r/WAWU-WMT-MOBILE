@@ -3,13 +3,13 @@ id: OPS-08
 title: Retire Shop on the backend
 owner: YOU
 area: OPS
-order: 21
+order: 37
 priority: launch
 repo: wawu-backend
 type: removal
 status: todo
-depends_on: []
-decisions: []
+depends_on: [MONEY-01]
+decisions: [R-2]
 passes: [V1, V3, V4, V7, V9]
 artboards: []
 ---
@@ -28,13 +28,22 @@ Shop is retired (R-2). Its routes stop taking orders without breaking past order
 
 ## Scope
 
-Before deleting anything, search for every reference. Shop routes return 410; past orders stay readable in purchases; Shop is removed from search and from any Home payload. The web already hides Shop (SHOP_LIVE=false).
+Before deleting anything, search for every reference. Shop routes return 410; past orders stay readable in
+purchases; Shop is removed from search and from any Home payload. The web already hides Shop (SHOP_LIVE=false).
+
+In the same pull request:
+- change the deploy smoke test, which probes `https://$API_DOMAIN/api/hub/shop/products` and accepts only 200 or
+  401 (wawu-backend `.github/workflows/deploy.yml`), to a route that stays (for example `/api/hub/health`), or
+  every deploy after this one fails;
+- relock the protected-route list (MONEY-01) for the Shop routes only; the owner applies `relock-approved`.
 
 ## Capability checks
 
+- [ ] Production logs show no Shop order calls for the two weeks before the change (docs/WORKFLOW.md section 6, Remove).
 - [ ] A buyer can still see a past shop order in their purchases.
 - [ ] Placing a new shop order is refused with a clear message.
 - [ ] Search never returns a shop product.
+- [ ] The deploy after this change goes green with the new smoke-test route.
 - [ ] V3: every other protected route behaves the same.
 
 ## Builder report

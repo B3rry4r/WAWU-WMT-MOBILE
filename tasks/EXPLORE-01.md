@@ -3,12 +3,12 @@ id: EXPLORE-01
 title: Explore: browse, categories, loading, empty
 owner: DEV
 area: EXPLORE
-order: 47
+order: 106
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [EXPLORE-03]
+depends_on: [EXPLORE-03, UI-02, UI-03, EXPLORE-02, EVENTS-01, PROS-01, SCHOOLS-03, PROS-03]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [X1, X15, X2, X3, X13, X14]
@@ -22,6 +22,7 @@ artboards: [X1, X15, X2, X3, X13, X14]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py X1 X15 X2 X3 X13 X14` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for X1, X15, X2, X3, X13, X14, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -40,12 +41,21 @@ New files under `src/features/` for these screens and their route files under `s
 - **X13 · Empty category**: From X3 when a category is empty: chips All, Gaming & Esports, Faith & Spirituality; 'Nobody is publishing in Gaming & Esports yet'.
 - **X14 · Explore · loading**: From X1 while loading: skeleton with search bar and tab bar.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- X1: the bell (opens M31): added by ME-14
+- X1: a creator (opens M5): added by ME-02
+
 ## Capability checks
 
-- [ ] **X1**: a user can search (X5); bell (M31); open featured event (Flow E); tap category (X3); See all creators (X4); open creator (M5) / Follow; open event (Flow E); Find a professional (P1); Find a school (SC1); List your services (P5).
-- [ ] **X15**: a user can open an event (Flow E); Find a professional (P1); Find a school (SC1); List your services (P5).
-- [ ] **X2**: a user can tap a chip (X3); Follow; open creator (M5).
-- [ ] **X3**: a user can switch chip; Follow; open creator (M5).
+- [ ] **X1**: a user can search (X5); open the featured event or an event row (E2); tap a category (X3); See all creators (X4); Follow; Find a professional (P1); Find a school (SC1); List your services (P5).
+- [ ] **X15**: a user can open an event (E2); Find a professional (P1); Find a school (SC1); List your services (P5).
+- [ ] **X2**: a user can tap a chip (X3); Follow.
+- [ ] **X3**: a user can switch chip; Follow.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states X13, X14.

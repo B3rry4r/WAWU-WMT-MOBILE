@@ -30,12 +30,26 @@ export type BottomSheetProps = {
   dismissible?: boolean;
   /** Text for the grabber's screen reader name. */
   closeLabel?: string;
+  /**
+   * Space between the sheet's rows (grabber included): kit.js `sheet(inner, { gap })`,
+   * 18 when an artboard passes none (W11 and M13 pass 14).
+   */
+  gap?: number;
   children: ReactNode;
   testID?: string;
 };
 
 /** A panel that rises from the bottom over a dimmed page. Tap outside it, press its grabber or hit Escape to close it. */
-export function BottomSheet({ visible, onClose, label, dismissible = true, closeLabel = 'Close', children, testID }: BottomSheetProps) {
+export function BottomSheet({
+  visible,
+  onClose,
+  label,
+  dismissible = true,
+  closeLabel = 'Close',
+  gap = sheetMetrics.between,
+  children,
+  testID,
+}: BottomSheetProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const close = () => {
@@ -63,6 +77,7 @@ export function BottomSheet({ visible, onClose, label, dismissible = true, close
             {
               backgroundColor: colors.surfaceElevated,
               borderTopColor: colors.borderHairline,
+              gap,
               boxShadow: [{ offsetX: 0, offsetY: sheetMetrics.shadowY, blurRadius: sheetMetrics.shadowBlur, color: blackAt(sheetMetrics.shadowAlpha) }],
             },
           ]}
@@ -101,7 +116,6 @@ const styles = StyleSheet.create({
     paddingTop: sheetMetrics.padTop,
     paddingHorizontal: layout.gutter,
     paddingBottom: sheetMetrics.padBottom,
-    gap: sheetMetrics.between,
   },
   grabber: {
     alignSelf: 'center',

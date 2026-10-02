@@ -3,12 +3,12 @@ id: PROS-01
 title: Find a professional
 owner: DEV3
 area: PROS
-order: 51
+order: 44
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [SHELL-01, SHELL-02]
+depends_on: [PROS-02, PROS-03, UI-02, UI-03]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [P1, P2, P3, P4]
@@ -22,6 +22,7 @@ artboards: [P1, P2, P3, P4]
 - `docs/people/DEV3.md` (what you own)
 - The design: `python3 scripts/design/render_design.py P1 P2 P3 P4` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A6.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for P1, P2, P3, P4, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -38,10 +39,18 @@ New files under `src/features/` for these screens and their route files under `s
 - **P3 · Not taking messages**: Profile with button replaced: 'Not taking messages · Check back later, or find someone else in this field.'
 - **P4 · Empty field**: Empty category: 'Nobody listed in Engineering yet · If you do this work, apply to be listed here.' Offer your services.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- P2: Ask a question · ₦price (opens I3): added by INBOX-10
+
 ## Capability checks
 
 - [ ] **P1**: a user can filter by field; tap a professional (P2).
-- [ ] **P2**: a user can Ask a question (→ I3 paid DM).
+- [ ] **P2**: a user can read the profile, what they take on and their credentials.
 - [ ] **P4**: a user can Offer your services (P5).
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.

@@ -1,9 +1,9 @@
 ---
 id: WALLET-34
-title: Admin screens: tier 3 review queue
+title: Admin screens: proof-of-address review queue
 owner: YOU
 area: WALLET
-order: 181
+order: 186
 priority: after-launch
 repo: wawu-dashboard
 type: admin-screen
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V6, V7, V9]
 artboards: []
 ---
-# WALLET-34 · Admin screens: tier 3 review queue
+# WALLET-34 · Admin screens: proof-of-address review queue
 
 ## Read first
 
@@ -29,6 +29,10 @@ Tier 3 needs a person to check proof of address.
 ## Scope
 
 Dashboard queue over WALLET-24's review endpoints.
+
+## Waiting on
+
+This waits for the owner's ruling on what A17 to A20 become (BRIEF, "A17 to A20"; after launch). Fintava's API has no tiers.
 
 ## Capability checks
 

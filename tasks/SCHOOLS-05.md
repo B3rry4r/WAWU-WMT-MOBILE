@@ -3,12 +3,12 @@ id: SCHOOLS-05
 title: Admin screens: schools, courses, intakes
 owner: DEV3
 area: SCHOOLS
-order: 92
+order: 36
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
 status: todo
-depends_on: [SCHOOLS-02]
+depends_on: [SCHOOLS-02, SCHOOLS-04]
 decisions: []
 passes: [V1, V6, V7, V9]
 artboards: []
@@ -32,7 +32,7 @@ Dashboard screens over SCHOOLS-02's endpoints.
 
 ## Capability checks
 
-- [ ] An admin can add a school with a course and an intake from the dashboard and see it in the app.
+- [ ] An admin can add a school with a course and an intake from the dashboard, and the public schools route returns it (SCHOOLS-04).
 
 ## Builder report
 

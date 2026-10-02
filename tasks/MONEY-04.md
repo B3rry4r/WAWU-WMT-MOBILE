@@ -3,13 +3,13 @@ id: MONEY-04
 title: Money conventions and the wallet contract
 owner: YOU
 area: MONEY
-order: 13
+order: 29
 priority: launch
 repo: wawu-backend
 type: contract
 status: done
-depends_on: []
-decisions: []
+depends_on: [OPS-02]
+decisions: [R-10, R-19, R-20, R-21]
 passes: [V1]
 artboards: []
 ---
@@ -40,7 +40,7 @@ Fintava amounts are naira decimals (`2.75`, `"100.00"`), not kobo. The contract 
 ## Capability checks
 
 - [ ] Every wallet artboard's data needs (docs/analysis evidence, flow wallet) maps to a contract entry.
-- [ ] Conflicts between the canvas and Fintava's real behaviour are listed for the owner, not resolved.
+- [ ] Conflicts between the canvas and Fintava's real behaviour are listed in `docs/designer/BRIEF.md` and resolved there; only a conflict about money behaviour that `DECISIONS.md` doesn't cover goes to the owner.
 
 ## Lead rulings (2 Oct 2026, round 2)
 

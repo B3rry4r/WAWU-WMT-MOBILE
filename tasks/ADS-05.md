@@ -3,7 +3,7 @@ id: ADS-05
 title: Count ad views and taps
 owner: DEV2
 area: ADS
-order: 187
+order: 39
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

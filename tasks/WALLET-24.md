@@ -1,9 +1,9 @@
 ---
 id: WALLET-24
-title: Tier 3: address and proof
+title: Proof of address (A20)
 owner: YOU
 area: WALLET
-order: 167
+order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
@@ -13,7 +13,7 @@ decisions: []
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
-# WALLET-24 · Tier 3: address and proof
+# WALLET-24 · Proof of address (A20)
 
 ## Read first
 
@@ -30,6 +30,10 @@ A20: proof of address reviewed by a person.
 ## Scope
 
 Submission with upload, review queue endpoints for admins (screens in WALLET-34).
+
+## Waiting on
+
+This waits for the owner's ruling on what A17 to A20 become (BRIEF, "A17 to A20"; after launch). Fintava's API has no tiers.
 
 ## Capability checks
 

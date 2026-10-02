@@ -3,7 +3,7 @@ id: WALLET-12
 title: Share a receipt as image or PDF
 owner: YOU
 area: WALLET
-order: 165
+order: 180
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -22,6 +22,7 @@ artboards: [W41, W42, W43]
 - `docs/people/YOU.md` (what you own)
 - The design: `python3 scripts/design/render_design.py W41 W42 W43` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/designer/BRIEF.md`: its entries for W41, W42, W43 (the brief is part of the design: build its version, not the canvas's; R-29)
 
 ## Goal
 
@@ -36,6 +37,12 @@ New files under `src/features/` for these screens and their route files under `s
 - **W41 · Share as**: Receipt preview (type, from, to with NUBAN, bank, reference, verification link) with a sheet to pick Image or PDF.
 - **W42 · Image**: PNG receipt, always a white document in both themes, share via WhatsApp, Email, WAWU chat, Save image.
 - **W43 · PDF**: One-page A4 receipt PDF ready to share (WhatsApp, Email, WAWU chat, Save to Files).
+
+## Brief changes (build these, not the canvas)
+
+- **W41**: Bank shows the bank name slot (sample "Loma Bank"). The footer's licence wording is a slot filled from config by the owner (rule 7). (Why: R-1.)
+- **W42**: as W41. (Why: R-1.)
+- **W43**: as W41. (Why: R-1.)
 
 ## Capability checks
 
@@ -66,7 +73,10 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - W43: 'Fintava MFB, licensed by the CBN'
 - W43: 'Check it at wawu/r/T1P9'
 
-## Licence wording
+## Launch and licence wording
+
+At launch, Share receipt uses the phone's share sheet with the receipt's text and reference (R-33); this task
+adds the W41 image and PDF choice to the same button.
 
 The canvas prints 'Fintava MFB, licensed by the CBN'. The bank is Loma Bank (R-1): the line comes from config, filled in by the owner, never from the canvas.
 

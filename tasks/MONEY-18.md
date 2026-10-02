@@ -3,13 +3,13 @@ id: MONEY-18
 title: Hold, release and refund
 owner: YOU
 area: MONEY
-order: 62
+order: 91
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-17]
-decisions: [R-19]
+decisions: [R-19, R-10, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -30,6 +31,8 @@ Paid DMs and tickets hold money until something happens, then pay out or refund.
 ## Scope
 
 Hold (a transfer into WAWU's merchant wallet, R-19), release to the payee, refund to the payer.
+
+Fintava's charge on a release or a refund is WAWU's to pay (R-31).
 
 ## Fintava facts
 
@@ -40,7 +43,7 @@ Fintava's API can't reserve part of a balance, so a hold is a transfer into WAWU
 ## Capability checks
 
 - [ ] A held payment is not spendable by the payer and not yet paid to the payee.
-- [ ] A refund lands in the payer's wallet once, even if requested twice.
+- [ ] A refund returns the price (not Fintava's charge) to the payer's wallet once, even if requested twice (R-10).
 
 ## Builder report
 

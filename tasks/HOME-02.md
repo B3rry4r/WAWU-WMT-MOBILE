@@ -3,12 +3,12 @@ id: HOME-02
 title: For you feed: video, photo set, book, locked, audio
 owner: DEV
 area: HOME
-order: 42
+order: 82
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [HOME-04]
+depends_on: [HOME-04, HOME-05, HOME-06, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
 artboards: [H2, H3, H4, H5, H6]
@@ -22,6 +22,7 @@ artboards: [H2, H3, H4, H5, H6]
 - `docs/people/DEV.md` (what you own)
 - The design: `python3 scripts/design/render_design.py H2 H3 H4 H5 H6` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A4.json`
+- `docs/designer/BRIEF.md` (the brief is part of the design, R-29; it has no entry for H2, H3, H4, H5, H6, so those artboards stand, under its rules 3 to 8 on fees, refunds, licence lines and em-dashes)
 
 ## Goal
 
@@ -35,16 +36,27 @@ New files under `src/features/` for these screens and their route files under `s
 
 - **H2 · For you · video**: Full-bleed dark video post in the For you feed with a right rail (avatar, 12.4K, 340, 1.1K, ₦ Tip), tap-to-pause and a scrubber above the caption.
 - **H3 · Photo set**: Photo-set post ('Approved F1'): sideways frames with the next frame peeking, 1/6 counter, and a paid offer bar 'Golden Hour presets · Template · 12 presets ₦2,500'.
-- **H4 · PDF / book**: PDF post ('Approved F2'): cover, '12 pages free', read in place, offer bar 'Read the full playbook · Yours forever · Pay from wallet ₦3,000'. NOT in MANIFEST.json (regex missed it) but is a real artboard on the board.
+- **H4 · PDF / book**: PDF post ('Approved F2'): cover, '12 pages free', read in place, offer bar 'Read the full playbook · Yours forever · Pay from wallet ₦3,000'.
 - **H5 · Locked**: Locked video ('Approved F3, with Subscribe removed'): frame frosts when the preview ends, 'Preview ended' message, offer bar 'Unlock the full video · 18 min · Pay from wallet ₦2,500'.
 - **H6 · Audio · Following**: Audio post ('Approved F6') with a scrubbable waveform; author tagged 'Following'.
 
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- H2: ₦ Tip (opens H26): added by HOME-13
+- H2: the caption (opens H19): added by HOME-03
+- H2: the avatar (opens M5): added by ME-02
+- H4: the offer bar (H3, H4, H5) (opens H14): added by HOME-12
+
 ## Capability checks
 
-- [ ] **H2**: a user can tap to pause/play; scrub; swipe up to next post; tap ₦ Tip (H26); tap caption (H19); tap avatar (profile).
-- [ ] **H3**: a user can swipe sideways through frames; tap offer bar (H19 / unlock); tip; swipe up.
-- [ ] **H4**: a user can read free pages in place; tap offer bar to unlock (H14).
-- [ ] **H5**: a user can tap Unlock (H14); swipe on.
+- [ ] **H2**: a user can tap to pause/play; scrub; swipe up to the next post.
+- [ ] **H3**: a user can swipe sideways through frames; swipe up.
+- [ ] **H4**: a user can read the free pages in place.
+- [ ] **H5**: a user sees the frame frost when the preview ends; swipe on.
 - [ ] **H6**: a user can play/pause; scrub waveform; swipe on.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.

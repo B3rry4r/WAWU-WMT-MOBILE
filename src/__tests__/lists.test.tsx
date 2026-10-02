@@ -153,6 +153,25 @@ describe('segment and sheet shadows', () => {
 });
 
 describe('bottom sheet', () => {
+  it('spaces its rows 18 apart by default, the kit sheet() default', async () => {
+    await render(
+      <BottomSheet visible onClose={() => undefined} label="Unlock" testID="sheet">
+        <Text>Price</Text>
+      </BottomSheet>,
+    );
+    expect(sheetMetrics.between).toBe(18);
+    expect(flat(screen.getByTestId('sheet').props.style).gap).toBe(18);
+  });
+
+  it('spaces its rows by the gap an artboard passes (W11 passes 14 to sheet())', async () => {
+    await render(
+      <BottomSheet visible onClose={() => undefined} label="Enter your PIN" gap={14} testID="sheet">
+        <Text>Price</Text>
+      </BottomSheet>,
+    );
+    expect(flat(screen.getByTestId('sheet').props.style).gap).toBe(14);
+  });
+
   it('shows a user the sheet and its content only while it is open', async () => {
     const { rerender } = await render(
       <BottomSheet visible={false} onClose={() => undefined} label="Unlock">

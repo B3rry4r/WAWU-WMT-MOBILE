@@ -1,19 +1,19 @@
 ---
 id: EVENTS-10
-title: Pay event hosts and refund cancellations
+title: Refund ticket buyers when an event is called off
 owner: DEV3
 area: EVENTS
-order: 123
+order: 144
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [EVENTS-07]
-decisions: []
+depends_on: [EVENTS-07, MONEY-18]
+decisions: [R-10, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
-# EVENTS-10 · Pay event hosts and refund cancellations
+# EVENTS-10 · Refund ticket buyers when an event is called off
 
 ## Read first
 
@@ -22,20 +22,21 @@ artboards: []
 - `docs/people/DEV3.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-Payments are tested one at a time, safest first (docs/WORKFLOW.md section 6): locally against the Fintava sandbox, then a small real payment, then live with the app.
+Calling an event off (E25) returns each buyer's ticket price to their wallet (E11). Host payouts are WALLET-17's (Lead, 2 Oct 2026).
 
 ## Scope
 
-The host's 85% is paid after the event; calling an event off (E25) refunds every buyer's wallet (E11). The web stays on Flutterwave until after launch; V3 checks it still works.
+Refunds from WAWU's merchant wallet, where ticket money waits (R-19): the ticket price comes back, not Fintava's charge (R-10), and Fintava's charge on the refund is WAWU's (R-31). The web stays on Flutterwave until after launch; V3 checks it still works.
 
 ## Capability checks
 
-- [ ] A user pays from their wallet with their PIN and gets what they paid for.
-- [ ] The same request twice charges once (V8).
-- [ ] The ledger and Fintava agree after the payment (MONEY-16).
+- [ ] Calling an event off returns each buyer's ticket price to their wallet once (R-10).
+- [ ] Running the refund twice pays each buyer once (V8).
+- [ ] The ledger and Fintava agree after the refunds (MONEY-16).
 
 ## Builder report
 

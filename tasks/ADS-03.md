@@ -3,7 +3,7 @@ id: ADS-03
 title: Ads data model
 owner: DEV2
 area: ADS
-order: 184
+order: 27
 priority: launch
 repo: wawu-backend
 type: migration
@@ -33,7 +33,7 @@ Additive: AdCampaign and AdCreative (advertiser, headline, subline, CTA label, C
 
 ## Capability checks
 
-- [ ] Migration applies cleanly to a copy of production.
+- [ ] The migration applies on a fresh local database built from every existing migration (`prisma migrate deploy`) and on the OPS-03 seeded database, and adds only new tables or nullable columns.
 - [ ] V3 regression suite unchanged.
 
 ## Builder report

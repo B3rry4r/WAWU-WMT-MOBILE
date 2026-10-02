@@ -3,13 +3,13 @@ id: WALLET-03
 title: Send to a bank, not enough money, failed send
 owner: YOU
 area: WALLET
-order: 137
+order: 142
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [WALLET-02, WALLET-09]
-decisions: [R-10]
+depends_on: [WALLET-02, WALLET-09, WALLET-14, MONEY-19]
+decisions: [R-10, R-6]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W8, W13, W14]
 ---
@@ -24,6 +24,8 @@ artboards: [W8, W13, W14]
 - The design: `python3 scripts/design/render_design.py W8 W13 W14` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/designer/BRIEF.md`: its entries for W14 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -32,6 +34,8 @@ You own these screens AND the backend work behind them. Build the screens as the
 ## Scope
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
 ## Artboards
 
@@ -45,14 +49,28 @@ From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
 `POST /bank/credit` (sourceId is the customerId) after `GET /name/enquiry`; bank codes from `GET /banks`. The user pays Fintava's bank-send fee plus WAWU's ₦25 (R-10); WALLET-15 gives the total.
 
+## Brief changes (build these, not the canvas)
+
+- **W14**: the Amount row is "Returned to your wallet" with a slot the app fills (sample ₦25,000.00); if a charge was kept, a second row shows it. Replace the note's heading "Nothing was taken" with a plain one such as "Your money is back", and the line with "₦25,000 is back in your Naira wallet." No "full", no "nothing was taken". (Why: rule 6. The total now includes Fintava's charge (R-10), and whether Fintava returns its charge on a reversal is not confirmed.)
+
+## Added by later tasks
+
+These entries are drawn on this task's artboards but lead to screens built by later tasks, so this task does
+not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
+section 7, R-27). The verifier reports their checks as belonging to that task.
+
+- W13: Add money (opens W15): added by WALLET-05
+
 ## Capability checks
 
-- [ ] **W8**: a user can pick bank; type 10-digit account; Continue after name resolves; pick saved beneficiary; pick My payout account (W17).
-- [ ] **W13**: a user can Add money.
-- [ ] **W14**: a user can Done; Try again.
+- [ ] **W8**: a user can pick a bank; type a 10-digit account; Continue after the name resolves; pick a saved beneficiary or My payout account.
+- [ ] **W13**: a user sees the shortfall including the fee (BRIEF rule 5) and Continue stays disabled.
+- [ ] **W14**: a user sees "Returned to your wallet" with the amount that came back (no "Nothing was taken", BRIEF W14); Done; Try again.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states W13, W14.
+- [ ] From W7 (WALLET-02), a user can switch to the Bank account tab and reach W8 (this task adds the tab, as W7 draws it).
+- [ ] A user sending ₦25,000 to a bank sees ₦40 + ₦25 = ₦65 and "Send ₦25,065", with "They get ₦25,000" (BRIEF W10).
 
 ## What the backend serves today (from the analysis)
 

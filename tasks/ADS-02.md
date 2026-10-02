@@ -3,12 +3,12 @@ id: ADS-02
 title: Admin screens: ads
 owner: DEV2
 area: ADS
-order: 189
+order: 43
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
 status: todo
-depends_on: [ADS-06]
+depends_on: [ADS-06, ADS-05]
 decisions: [R-15]
 passes: [V1, V6, V7, V9]
 artboards: []

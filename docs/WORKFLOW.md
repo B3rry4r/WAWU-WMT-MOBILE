@@ -100,7 +100,7 @@ step 2. No step is skipped.
 
 Status values in a task file, in order: `todo`, `building`, `verifying`,
 `review`, `done`. A builder starts a task only when every `depends_on` task is
-`done`.
+`review` or `done` (built and verified; the owner's sign-off never blocks the next task).
 
 ### Shared files (fenced)
 
@@ -144,7 +144,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 | **V7 Flow walk** | A real person gets from start to finish | Walk the path as each user type the ticket names (new, existing without wallet, unverified, KYC pending, verified, creator, buyer), from a cold start and from resume |
 | **V8 Money attack** | Money cannot be lost, doubled or stolen | Same request twice (one debit only); double-tap; wrong PIN 5 times (locks); insufficient funds (clear shortfall); webhook replayed (no double credit) and forged (rejected); a failed transfer reverses; ledger equals Fintava balance |
 | **V9 Live seam** | The app really talks to the real backend | Against the local backend: sign in through the real login (no injected token), see a value only the server has, create something and read it back through the API |
-| **V10 Device** | The release build works, not just debug | A signed release build on a real Android phone and a real iPhone: network, camera, push, deep links |
+| **V10 Device** | The release build works, not just debug | A signed release build on the owner's Android phone: network, camera, push, deep links. Testing is Android first (DECISIONS R-24); an iPhone joins when a tester has one (RELEASE-03) |
 | **V11 Checkpoint audit** | Nothing was missed so far | `docs/roles/AUDITOR.md`, at CHECK-1, CHECK-2 and CHECK-3 |
 
 ### Which passes each task type needs
@@ -186,9 +186,14 @@ camera or deep links.
    in a `removal` task.
 
 **Testing runs locally.** The backend runs on the builder's machine with a
-local `.env` holding the Fintava sandbox keys; the live server isn't touched.
-The phone reaches it over the same Wi-Fi or a tunnel, and Fintava's webhooks
-need the tunnel too (they can't reach `localhost`). The nightly ledger check
+local `.env` holding the Fintava sandbox keys (wawu-backend `scripts/local/up.sh`, OPS-03), with seeded data;
+the live server isn't touched. There is no staging and no "test backend" (DECISIONS R-25): production is the
+DigitalOcean droplet, deployed by GitHub Actions. Checks run through the web
+build or an emulator; tester builds on phones talk to the live services
+(tester builds are not pointed at a local backend, and there is no standing tunnel), so money paths
+run on a phone only once OPS-10 has put the live Fintava setup on the
+droplet. Fintava's webhooks can't reach `localhost`: locally they are
+sent to the local endpoint as payloads built from Fintava's documented format and signed with the local secret (MONEY-07); real payloads are recorded once OPS-10 registers the production webhook URL. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava before OPS-10. The nightly ledger check
 (MONEY-16) runs before money goes live.
 Fintava's balance is always the truth. Never add up our own records and show
 that as a balance.
@@ -231,8 +236,32 @@ signs:
 - **RELEASE-02**: QA fixes only, each re-verified; then store submission
 
 "After launch" tasks (`priority: after-launch`) can wait: cards, dollar and
-crypto accounts (dollar when Fintava sends that API), card top-up, statements, receipt sharing, bill
-reminders, QR, school tracked links, ads, Flutterwave removal, the web port.
+crypto accounts (dollar when Fintava sends that API), card top-up, USSD top-up, statements, receipt images and
+PDFs, QR, school sign-up commissions, account limits, Flutterwave removal, the web port, the iOS release. Ads,
+bill reminders, My courses, applying on a school's site and Share receipt through the phone's share sheet are
+launch work (R-15, R-33). Every launch task is ordered before CHECK-3; `scripts/tasks/check_tasks.py` refuses
+anything else.
+
+### Links between screens
+
+No placeholders, no dead buttons, no feature flags (DECISIONS R-27).
+
+- A hub or menu task (a home screen, a menu, a list whose rows open other screens) builds only the rows,
+  tiles, tabs and buttons whose destination screen already exists.
+- The task that builds a destination screen also adds its entry row or button to the hub, exactly as the
+  artboard draws it, and owns the check "a user can reach X from Y". Its task file says so ("this task adds
+  it, as drawn") and depends on the hub's task.
+- Lead default for ordering (not part of the rule): where the hub and the destination have the same owner and
+  money doesn't block, the destination is listed first, so the hub wires it.
+- An entry whose destination is an after-launch task is not built at launch; that task adds it, and
+  `docs/designer/BRIEF.md` lists it under "Not built at launch".
+- CHECK-3 confirms every hub matches its artboard in full.
+
+### The designer brief is part of the design
+
+Every screen task lists `docs/designer/BRIEF.md` under Read first, and its text and checks use the brief's
+version (DECISIONS R-29). Where the brief changes an artboard, the task builds the brief's version; a screen that
+doesn't is a defect.
 
 Every money task is built against the real Fintava sandbox. No mocks. Money
 launches with the app (R-20).
@@ -289,14 +318,35 @@ No evidence pack, no merge. The owner's own tasks are verified the same way.
 
 ## 10. When work stops and goes to the owner
 
-- The design states a fee, limit, rate, legal line or system behaviour the
-  system doesn't match.
-- A task would change something live: a rename, a type change, a widened
-  response, anything in the login path.
-- The regression suite goes red, or any suite is flaky.
-- Any mismatch between our ledger and Fintava, of any size.
-- Something on the web isn't in the design (decision D14). It is neither kept
-  nor cut until the owner rules.
-- A verifier cannot run a required pass (no device, backend not running).
-- A task needs a third fix round.
-- Anyone believes they need a destructive git command or migration.
+**Almost never.** The owner answers money, legal and live-data questions only.
+Everything else is decided by the agent doing the work, using the docs and the
+rulings in DECISIONS.md, and recorded in the task file as
+"Default (agent), owner may override", then the work carries on. A question
+with a sensible default is never a stop.
+
+Stop and ask the owner only when:
+
+- A fee, price, rate, limit or legal line would be invented: the design or
+  docs don't give it and no ruling covers it.
+- Our ledger and Fintava disagree, by any amount.
+- A change would lose or rewrite real user money or real user data (a
+  destructive migration, deleting accounts, moving balances).
+- Anyone believes they need a destructive git command.
+
+Not stops (decide, record, continue):
+
+- **Login path or a live response.** Allowed when the verifier's V3 pass shows
+  existing accounts get byte-identical responses, and any new field is
+  additive. The web keeps working; that is the test.
+- **Provisional numbers** (lock times, resend gaps, rate limits): pick a safe
+  default, mark it `PROVISIONAL(...)` in config, list it in the task file.
+- **Fix rounds.** There is no round limit. A builder fixes until the verifier
+  passes; a defect that keeps coming back means fix the root cause.
+- **A flaky suite.** Fix it (make it deterministic); never skip or retry it
+  to green.
+- **A pass that can't run** (no device, no backend deployed yet): record it
+  NOT RUN with the reason and the fact that unblocks it, and continue.
+- **Copy the design doesn't draw.** Write it in the canvas's tone, no
+  em-dashes, and list it in the task file for the owner to read later.
+- **A gap in another task's area.** File a BACKEND_GAPS or SHARED-CHANGES row
+  naming the task that owns it, and continue.

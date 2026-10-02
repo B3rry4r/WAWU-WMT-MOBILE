@@ -3,13 +3,13 @@ id: WALLET-07
 title: Send money to a WAWU user
 owner: YOU
 area: WALLET
-order: 133
+order: 132
 priority: launch
 repo: wawu-backend
 type: money-path
 status: todo
-depends_on: [MONEY-17]
-decisions: []
+depends_on: [MONEY-17, WALLET-15, SETTINGS-04]
+decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -22,6 +22,7 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -33,7 +34,7 @@ Transfer between two Fintava accounts with a note, PIN and Idempotency-Key; a re
 
 ## Capability checks
 
-- [ ] A user sends ₦2,000 to @amaka and both balances change by exactly that (plus any ruled fee).
+- [ ] A user with ₦10,000 sends ₦2,000 to @amaka: their balance drops by ₦2,033.25 (₦2,000 + Fintava's ₦23.25 + WAWU's ₦10, the quoted total); Amaka's rises by exactly ₦2,000.
 - [ ] Sending to a blocked user is refused.
 
 ## Builder report

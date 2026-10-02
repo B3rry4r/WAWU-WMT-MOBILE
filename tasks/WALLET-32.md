@@ -3,7 +3,7 @@ id: WALLET-32
 title: Dollar account and swaps (first slice)
 owner: YOU
 area: WALLET
-order: 178
+order: 196
 priority: after-launch
 repo: wawu-backend
 type: money-path
@@ -23,10 +23,11 @@ artboards: []
 - `DECISIONS.md`: R-16 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
-Dollar account and swaps is on the canvas, marked as placeholder until Fintava confirms it. It is only built if R-16 puts it in the first release.
+Dollar account and swaps. Blocked until Fintava sends the dollar-account API (requested, R-20).
 
 ## Scope
 
@@ -34,7 +35,7 @@ Split into two-day tasks once R-16 is ruled and Fintava's API for it is in docs/
 
 ## Capability checks
 
-- [ ] R-16 is ruled 'in', Fintava's docs are in docs/fintava/, and this task has been split into tasks of two days or less.
+- [ ] Fintava's dollar-account API is in `docs/fintava/`, and this task has been split into tasks of two days or less.
 
 ## Builder report
 

@@ -3,15 +3,15 @@ id: WALLET-05
 title: Add money and withdraw
 owner: YOU
 area: WALLET
-order: 139
+order: 148
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [WALLET-09, WALLET-10]
-decisions: [R-10]
+depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-09, WALLET-10, WALLET-14, MONEY-12, UI-02, HOME-12, WALLET-03, BILLS-02]
+decisions: [R-10, R-1, R-16, R-28, R-33, R-6]
 passes: [V1, V4, V5, V6, V7, V8, V9]
-artboards: [W15, W16, W17, W18, W19]
+artboards: [W15, W17, W19]
 ---
 # WALLET-05 · Add money and withdraw
 
@@ -21,9 +21,11 @@ artboards: [W15, W16, W17, W18, W19]
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-10 (ruled; build what it says)
-- The design: `python3 scripts/design/render_design.py W15 W16 W17 W18 W19` then open `build/design_shots/`
+- The design: `python3 scripts/design/render_design.py W15 W17 W19` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
 - `docs/fintava/naira-api.md` (what Fintava's API really does; the pages are in `docs/fintava/reference/`)
+- `docs/designer/BRIEF.md`: its entries for W15, W17, W19 (the brief is part of the design: build its version, not the canvas's; R-29)
+- `docs/fintava/fees.md` (what each payment costs; the dashboard rates, final)
 
 ## Goal
 
@@ -33,17 +35,22 @@ You own these screens AND the backend work behind them. Build the screens as the
 
 New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
 
+Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
+
 ## Artboards
 
-- **W15 · Add money**: Bank transfer details first (account name, number, bank Fintava MFB, share); other ways: Debit card (1.5% fee), USSD, From your Dollar account at a rate.
-- **W16 · Add money · card**: Card top-up: amount with quick picks, saved Verve card or new card, card fee added on top, you pay / wallet gets; then 3-D Secure then receipt.
-- **W17 · Withdraw to bank**: Withdraw: available NGN, amount with Max, destination defaulting to the KYC payout account with Change, fee, arrival estimate.
-- **W18 · Withdraw · waiting on KYC**: Withdraw blocked while ID check is in review; says sending, bills and unlocks still work; link to ID check.
-- **W19 · Withdraw · on its way**: Withdrawal receipt with a timeline (Requested, Sent to bank, In your bank account), reference, fee.
+- **W15 · Add money**: Bank transfer details first (account name, number, the bank name from the API (Loma Bank), share). The other ways (Debit card, USSD, From your Dollar account) are not built at launch (BRIEF W15, R-16).
+- **W17 · Withdraw to bank**: Withdraw: available NGN, amount with Max, destination defaulting to the saved payout account with Change, the fee breakdown (₦40 + ₦25), arrival estimate; the button shows the total and a line says what the bank gets (BRIEF W17).
+- **W19 · Withdraw · on its way**: Withdrawal receipt with a timeline (Requested, Sent to bank, In your bank account), reference, the fee breakdown and Total paid (BRIEF W19); Share receipt is the phone's share sheet (R-33).
 
 ## Launch scope
 
-Card top-up (W16) comes after launch (WALLET-25): show bank transfer and USSD only, and keep W16's layout for when it lands.
+At launch W15 shows bank transfer only. Debit card is added with its screen by WALLET-36 (after launch, on WALLET-25),
+and USSD by WALLET-26; "From your Dollar account" waits for the dollar account (R-16).
+
+W18 ("Withdraw · waiting on KYC") is not built: a wallet only exists after the BVN and selfie checks pass, so it
+has no real cause. It is built when Fintava names an account status that blocks withdrawals (R-28,
+`DECISIONS.md` "Artboards that are not built").
 
 ## Fintava facts
 
@@ -51,23 +58,26 @@ From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
 Top-up at launch is a bank transfer to the account number (`account_funded`). The canvas prints the bank as "Fintava MFB"; Fintava's own examples say Loma Bank (Iyin Ekiti MFB). Show the bank name the backend gets from Fintava, never the canvas's.
 
+## Brief changes (build these, not the canvas)
+
+- **W15**: Bank shows the bank name slot (sample "Loma Bank", long name must fit). The card row's fee reads as a breakdown hint, for example "Card provider's charge + 1.5%". Keep the Dollar option drawn; the app hides it at launch. (Why: R-1 for the bank. R-10 for the card: WAWU's 1.5% is added to the card provider's own charge (Fintava doesn't take cards, so it is another provider; card top-up comes after launch). R-16 for the Dollar option.)
+- **W17**: the fee breakdown: ₦40 + ₦25 = ₦65 (on ₦50,000, so ₦50,065.00 leaves the wallet). The button shows the total, "Withdraw ₦50,065", with a line "Your bank gets ₦50,000". (Why: R-10, Fintava's price list (a withdrawal is a bank send); rule 5.)
+- **W19**: the fee breakdown: ₦40 + ₦25 = ₦65, and a "Total paid ₦50,065.00" row. The heading "₦50,000 on its way" stays. (Why: R-10 and rule 5.)
+
 ## Capability checks
 
-- [ ] **W15**: a user can copy account number; share account details; pick Debit card (W16); pick USSD; fund from Dollar account.
-- [ ] **W16**: a user can pick amount; pick saved card; use new card; Add ₦10,000.
-- [ ] **W17**: a user can enter amount; Max; Change destination; Withdraw (then PIN W11).
-- [ ] **W18**: a user can View ID check.
-- [ ] **W19**: a user can Share receipt; Done.
+- [ ] **W15**: a user can copy and share the account details.
+- [ ] **W17**: a user can enter an amount; Max; Change destination; see ₦40 + ₦25 = ₦65 and "Withdraw ₦50,065" with "Your bank gets ₦50,000" for ₦50,000; Withdraw (then PIN W11).
+- [ ] **W19**: a user can Share receipt through the phone's share sheet; Done.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
-- [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states W18.
+- [ ] Loading, empty and error states exist and are entered by their real cause (V6).
+- [ ] From H17 (HOME-12), W13 (WALLET-03) and S11 (BILLS-02), a user can tap Add and reach W15 with the shortfall filled in (this task adds them, as drawn).
 
 ## What the backend serves today (from the analysis)
 
 - **W15**: partial. Missing: Account details exist (Flutterwave MFB). Missing: card funding, USSD funding, USD-to-NGN funding, inbound deposit recording.
-- **W16**: missing. Missing: No wallet top-up by card, no saved cards, no fee quote.
 - **W17**: partial. Missing: Withdraw exists (Flutterwave, KYC-gated, min ₦1,000, whole naira). Missing: default payout account lookup (bank stored as name), fee, PIN, arrival estimate.
-- **W18**: served.
 - **W19**: partial. Missing: Only pending/completed/failed and settledAt; no intermediate 'sent to bank' timestamp, no fee.
 
 A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
@@ -81,13 +91,8 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - W15: Debit card Instant · 1.5% fee
 - W15: $1 = ₦1,580.00
 - W15: Bank Fintava MFB
-- W16: Card fee ₦150.00 (1.5%)
-- W16: You pay ₦10,150.00
-- W16: Wallet gets ₦10,000.00
-- W16: Verve ••7710 GTBank · expires 04/28 (sample)
 - W17: Fee ₦25.00
 - W17: Arrives In a few minutes
-- W18: 'It usually takes 1–2 working days.'
 - W19: Fee ₦25.00
 - W19: 'Usually within minutes'
 - W19: Reference WAW-W9L2-33RT
@@ -95,7 +100,6 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 ## Designer notes (⚠, unresolved)
 
 - W15: “⚠ From your Dollar account $1 = ₦1,580.00”
-- W16: “⚠ A 1.5% card fee, added on top.”
 
 ## Builder report
 

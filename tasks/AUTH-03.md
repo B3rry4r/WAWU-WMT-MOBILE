@@ -3,7 +3,7 @@ id: AUTH-03
 title: Phone check at sign-up, and the email trap
 owner: DEV
 area: AUTH
-order: 32
+order: 30
 priority: launch
 repo: wawu-id
 type: backend-endpoint
@@ -30,20 +30,25 @@ A4 verifies the phone. The canvas never verifies email, but login refuses unveri
 
 ## Scope
 
-Phone code at registration; fix the login rule so a phone-verified account can sign in even without a verified email (the design never verifies email, but login refuses it today); store occupation and account type. No BVN here (R-6).
+Phone code at registration; fix the login rule so a phone-verified account can sign in even without a verified email (the design never verifies email, but login refuses it today); store account type (A2). No BVN here (R-6); occupation is asked on A5, inside Open your wallet, and stored by KYC-01.
+
+BACKEND_GAPS G-2 (register issues tokens before anything is confirmed) is this task's to settle: tokens are issued once the sign-up proof the design draws, the phone code on A4, is done.
 
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-Fintava has `GET /compliance/verify/phone-number` and `POST /sms/send`. If the price is right, that is the SMS route for sign-up codes `docs/PLAN.md` asks for.
+Fintava has `GET /compliance/verify/phone-number` and `POST /sms/send`. Codes go by SMS through `POST /sms/send` (₦7 each, `docs/fintava/fees.md`); MONEY-14 reuses the same route for PIN resets.
 
 ## Capability checks
 
 - [x] A user who signs up on mobile can sign out and sign back in.
 - [x] A wrong code shows A15 and a fourth wrong code waits before retrying.
+- [ ] A user who registers but never enters the phone code holds no token that the Hub accepts (G-2).
 
 ## Builder report
+
+> Gap numbers: the reports below call this task's gap rows G-11 to G-14. At the merge with main (8f0d90c), main's own G-11 and G-12 (MONEY-09) kept their numbers, so this task's rows are now G-13 to G-16 in `BACKEND_GAPS.md` (old G-11 is G-13, G-12 is G-14, G-13 is G-15, G-14 is G-16).
 
 Branch `wmt/AUTH-03` in `wawu-id` (from origin/main 76d8b46) and here (from 7148749, unmoved). Nothing committed or pushed.
 - **wawu-id files:** new `src/auth/phone-signup.service.ts` (+spec), `phone-verification.config.ts`, `dto/signup.dto.ts`, `dto/phone-verify-{start,confirm}.dto.ts`, `src/sms/{sms.provider,fintava-sms.provider,sms.module}.ts` (+spec), `src/common/phone.util.ts` (+spec), `src/testing/recording-sms.provider.ts`, `src/auth/login-phone-verified.spec.ts`, `test/phone-signup.local.mjs`, migration `20261002120000_add_phone_verification`. Edited `prisma/schema.prisma`, `auth.controller.ts`, `auth.module.ts`, `auth.service.ts`, `dto/register.dto.ts`, `http-exception.filter.ts`, `package.json` (one script), `.env.example`, `deploy/ENV.md`, `WAWUAfrica_API_Contracts.md` (the three routes). Here: this file, `BACKEND_GAPS.md` (G-11 to G-13, G-2 note), `docs/LOG.md`, regenerated `docs/PROGRESS.md` (`tasks/INDEX.md` came out unchanged). wawu-id has no `CLAUDE.md` and no `docs/` folder: its README is the Nest default, so I followed `package.json` and `deploy/ENV.md`.
