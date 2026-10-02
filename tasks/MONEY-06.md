@@ -7,7 +7,7 @@ order: 49
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [MONEY-04, OPS-02]
 decisions: [R-25]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -121,6 +121,84 @@ Notes, not defects:
 - The backend specs carry Fintava's documented example BVN and NIN and made-up test phones unmasked. None is a real person's. The masking rule covers the docs and sandbox files, and those are clean.
 
 NOT RUN: bank sends and bill purchases against the sandbox (question 17); the BVN, selfie and phone checks (charged); creating a customer; webhooks (MONEY-07); a re-run of the builder's money-moving `sandbox-check.ts` and the remaining reads (balances, banks, names, customers, freeze, bill lists, bad key), outside the verifier's 10 read-only calls (the builder's run 3 in `sandbox/26-` is the evidence); V9 (no route yet); V10 (not in this task's passes).
+
+### Round 2 (verifier, 2 Oct 2026)
+
+Re-verified wawu-backend `wmt/MONEY-06` `b1e361f` (on `9dc61f3`, main `5c07568`) and mobile `wmt/MONEY-06` `465253c` (main `637fbc6` merged in), in fresh detached worktrees, with my own databases `vm6r2_money06_test` and `vm6r2_protected_test` and my own mock WAWU ID (:4001 for the contract suite, :4011 for the protected suite; both stopped, databases dropped). **Verdict: PASS, `review`.** Defects 1 to 5 are fixed and no new defect was found.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0; eslint (no `--fix`) on the 12 changed `.ts` files 0; gates main 16 fail / 1 warn / 76 accepted on 543 files, branch 16 / 3 / 76 on 553, the same 16 failures (diffed), warns are the `PROVISIONAL` markers only (`FINTAVA-TIMEOUTS`, `FINTAVA-RESEND-SAFETY`, main's `PIN-LOCK-MINUTES`); `check_baseline.py` passes. Mobile `npm run check` exit 0: 14 suites, 271 tests, gates 0 on 71 files, tasks check passes. |
+| V2 Contract | passed | Fintava suites 192/192 (164 + 28). Full `test:contract` on a fresh database: 96 suites, 1919 passed, 3 skipped, 0 failed. My own 75 tests against the double (deleted afterwards): 73 passed. The other 2 cover one input, and the rule it shows is fine (note 1 below). |
+| V3 Regression | passed | Protected suite, fresh database, lock `origin/main`, mock on :4011: main `5c07568` 253/253, branch `b1e361f` 253/253 (all 244 required). The branch diff still touches no Flutterwave, controller, `app.module`, prisma, `src/common`, guard, `.pipeline` or `contract/` file. |
+| V6 States | passed | The round 1 states plus every 404 form below, the resend window, and a repeated reference on a resend. |
+| V8 Money attack | passed | No path found to a second send or to a landed send reported as failed (below). Bank sends and bill purchases against the sandbox: NOT RUN (question 17). |
+| V9 Live seam | NOT RUN (no route) | The client serves no route yet (MONEY-07 onwards). 3 read-only sandbox calls through it (below). |
+
+**Defects, each fixed and mutation-checked.** Each mutation was applied on its own and run against the builder's suites and mine, then the file was restored.
+
+1. **Host lock: fixed.** Refused under `production`, `test` and unset NODE_ENV: `constructor`, `__proto__`, `tostring`, `toString`, `hasownproperty`, `valueof`, `isprototypeof`, `prototype`, `__definegetter__`, `propertyisenumerable`, `tolocalestring`. Also refused in production: other hosts, look-alikes, `http`, a username in the URL, the bare domain, and `127.0.0.1`. The two Fintava hosts still work, and production with the base URL unset still throws. Mutation (back to an object lookup): builder 2 failed, mine 6 more failed.
+2. **Only Fintava's own 404 is absent: fixed.** Each of these makes both `retryMerchantBankTransfer` and `retryWalletToWallet` answer `wait unrecognised` and send nothing, and by-id never answers `absent`:
+   - a framework "Cannot GET";
+   - an empty body, or an HTML page;
+   - a JSON 404 saying "Not Found", or "No wallet exists for the customer";
+   - "Transaction not found!" sent beside a second message;
+   - "Transaction not found!" in the nested validation shape.
+
+   The real body still reads as absent. Sandbox call #1 below, `{ status, timestamp, message: ["Transaction not found!"], path }`, gave `absent` through the client.
+
+   Mutations:
+   - any 404 counts as absent: builder 9 failed, mine 14 more;
+   - the message check dropped: builder 2, mine 6;
+   - the classify guard dropped: builder 3. Mine still pass, because the client's message check alone still refuses those 404s.
+3. **Resend needs the real 404, no history row and the timeout plus the safety window: fixed.**
+   - My round 1 reproduction (timeout 200 ms, send lands at 600 ms, immediate retry) now gives `wait too_soon`, and only one send reached Fintava.
+   - The minimum window (60 s) still waits at 59 s.
+   - The default (30 s plus 10 min) still waits at 10 min.
+   - `FINTAVA_RESEND_SAFETY_MS` of 0, 1, 59999, 86400001, `abc` and -5 are refused when the client is built.
+   - The real 404 with a PENDING row in history gives `wait pending`; with a SUCCESS row, `settled`; with history down, `wait unreachable`.
+   - The real 404, old enough and with no row: one send (bank under the new reference, wallet to wallet under the same one).
+   - `{}` cases unchanged from round 1.
+
+   Mutations:
+   - the safety window removed: builder 2 failed, mine 3 more;
+   - history ignored on a 404: builder 1, mine 2;
+   - the age check removed: builder 5, mine 3.
+4. **A repeated reference: fixed.** On a resend it is `duplicate_reference` with `recordMayExist: true`. Its HTTP error is 503 "We are still confirming this payment...", equal in status and body to `outcome_unknown`'s.
+
+   Mutations:
+   - dropped from the unknown outcomes: builder 2 failed, mine 1 more;
+   - its HTTP case removed: builder 1, mine 1.
+
+   **Ruling: keeping it a separate kind is acceptable.** `FINTAVA_UNKNOWN_OUTCOMES` lists it, and a caller sees the same `recordMayExist` and the same HTTP error as for `outcome_unknown`. The separate kind also tells the caller that Fintava has the reference, so reconcile will find it. One condition: references must stay unique per payment (derived from our own transaction id, CONVENTIONS section 4). A reused reference would otherwise reconcile to the older send.
+5. **Docs: fixed.** `naira-api.md:50-60` and `:94-99`, `sandbox/26-money06-client.md:28-49` and `tasks/MONEY-06.md:64` now give only observed timing. `{}` was seen from about a minute to at least 18.5 minutes after a send (and on hours-old records), flipping within 1 to 2 s, and an unknown id answers `data: null`, sometimes with no `data`. They agree with each other, with CONVENTIONS section 4 (now names the real 404, history and the safety window), with the task's "Fintava facts", and with my calls.
+
+**Builder's notes.**
+- **Masking: holds.** Any run of 8 or more key characters is masked: 20, 9 and 8 characters, at the key's end, two runs, a run beside digits. 7 characters are left, as designed. A 20-character echo through the client never reaches the error.
+
+  The logging spec now echoes a fragment without "Bearer". It fails when masking goes back to the whole key only, and when the run masking is disabled. It passes restored.
+- **One retry at a time: documented, mostly.** It is in the class comment (`fintava-client.ts:274-277`), which names `retry*` and the two-bank-retries case, and on `retryWalletToWallet` (`:1146`). `retryBankTransfer` and `retryMerchantBankTransfer` don't repeat it. The class comment covers them, so this is a note for MONEY-08, not a defect.
+
+**Secrets.** No 8-character window of the real key in:
+- either branch diff against its main;
+- any commit patch (backend 2 commits, mobile 8);
+- any changed file;
+- my logs and the sandbox output.
+
+**Sandbox, 3 read-only GETs to `https://dev.fintavapay.com/api/dev`, 16:27:31 UTC, through the round-2 client** behind a fetch guard (GET, that host, at most 3); no money moved, nothing charged:
+
+| # | Call | HTTP | Client read |
+|---|------|------|-------------|
+| 1 | by reference, a reference that never existed | 404, `{ status, timestamp, message: ["Transaction not found!"], path }` | absent |
+| 2 | by reference `MONEY06-SBX-20261002154144-1` (sent 15:41:44, 46 min earlier) | 200, 769 bytes | found SUCCESS |
+| 3 | by id `00000000-0000-0000-0000-000000000000` | 200, 49 bytes (`data: null`) | absent |
+
+**Notes (not defects):**
+1. A JSON 404 whose only message is "Transaction not found" (no `!`), in the NestJS `{ statusCode, message, error }` shape, reads as absent. That shape is one of Fintava's documented error shapes (task "Fintava facts"), and the text is Fintava's, so this is in line with the rule. It is the only input my 2 failing tests cover.
+2. A non-default port on a Fintava host (`https://dev.fintavapay.com:444`) is accepted; the key still goes only to Fintava's host.
+3. Any MONEY-08 caller must hold one retry at a time per payment (above).
+
+NOT RUN: bank sends and bill purchases against the sandbox (question 17, unblocked when a ₦100 `POST /bank/credit/merchant` to `0123456789`/`000013` stops answering "Unable to find customers"); the BVN, selfie and phone checks (charged); creating a customer; webhooks (MONEY-07); the builder's money-moving `sandbox-check.ts` (not re-run; read-only calls only); V9 (no route yet); V10 (not in this task's passes).
 
 ## Owner sign-off
 
