@@ -66,7 +66,7 @@ export type PaySheetProps = {
   /**
    * The fee breakdown from the fee quote, one line per part (Fintava's charge,
    * WAWU's fee). Any part can be zero. With two or more parts a "Fees" row
-   * adds them up (owner ruling, DECISIONS.md). The Total row always shows.
+   * adds them up (DECISIONS.md R-23). The Total row always shows.
    */
   fees: readonly PayFeeLine[];
   /** Rows after Total that are not money (W10's Note). */
@@ -317,7 +317,7 @@ function Failed(p: Inner & { message?: string }) {
     <>
       <Status
         tint={colors.dangerTint}
-        icon={<Icon name="CircleX" size={ICON_STATUS} color={colors.danger} strokeWidth={STATUS_STROKE} />}
+        icon={<Icon name="X" size={ICON_STATUS} color={colors.danger} strokeWidth={STATUS_STROKE} />}
         title="Payment didn't go through"
         line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
       />
@@ -553,7 +553,7 @@ const ICON_BUTTON = space.xl - 1;
 const ICON_CHECK = space.xl;
 const ICON_STATUS = space.s3xl;
 const TICK = space.md + 1;
-/** H18 strokes its 32 px status mark at 2.4, the kit's heaviest stroke. */
+/** H18 strokes its 32 px status mark at 2.4. The failed mark is W14's `X` (Send · failed), drawn at H18's sheet size. */
 const STATUS_STROKE = ICON_STROKE.fab;
 /** The kit's `Amt`: row amounts at 14.5, kobo at 0.72 of the size. */
 const ROW_VALUE = type.size.body - 0.5;

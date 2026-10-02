@@ -16,7 +16,6 @@ Four queues, because they have different owners and triggers:
 | 3 | SHELL-02 | `docs/BUILDS.md` | Line 90: name `EXPO_PUBLIC_ID_URL` next to `EXPO_PUBLIC_API_URL`. | applied by SHELL-03 |
 | 4 | SHELL-03 | `package.json`, `app.json` | Add `expo-updates` with `npx expo install expo-updates`, then `app.json` gets `runtimeVersion: { "policy": "appVersion" }` and `updates.url` (the owner's EAS project URL). `npx eas-cli update:configure` writes the app.json part. Without it `eas update --channel preview` has nothing to receive it. Also after `eas init`: `owner` and `extra.eas.projectId` in `app.json` (owner runs it, docs/BUILDS.md step 2). | open |
 | 5 | SHELL-03 | `eas.json` | The `.invalid` addresses for `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_ID_URL` in each profile are replaced with the real test and production addresses (owner inputs, docs/BUILDS.md). `EXPO_PUBLIC_ID_URL` is already present in every profile, which covers the request SHELL-02 made. | open |
-| 6 | MONEY-03 | `scripts/design/gen_icons.js` (then `npm run icons`) | The name scan `/['"]([A-Z][A-Za-z0-9]+)['"]/g` needs two or more letters, so the canvas's one-letter Lucide name `X` (`I('X', ...)`, 10 calls in `design/_gen/*.js`, e.g. W14's result mark and sheet close buttons) never reaches `icons.generated.ts`. Change `+` to `*` so `X` is generated. The pay sheet does not wait on this: its failed state (not drawn on the canvas) uses `CircleX`. | open |
 
 ## 2. Follow-ups in another task's screen
 
