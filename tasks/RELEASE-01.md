@@ -26,7 +26,7 @@ The stores need listings, screenshots and privacy answers before they will revie
 
 ## Scope
 
-App Store Connect and Google Play listings, privacy and data-safety forms (BVN, selfie, payments), screenshots from the real app, an EAS production profile pointing at production.
+App Store Connect and Google Play listings, privacy and data-safety forms (BVN, selfie, payments), screenshots from the real app, an EAS production profile pointing at production. Submission is the owner's alone, from their own machine, with the store keys kept off Expo (`docs/BUILDS.md`).
 
 ## Capability checks
 

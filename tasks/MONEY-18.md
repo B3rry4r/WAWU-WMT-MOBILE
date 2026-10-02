@@ -9,7 +9,7 @@ repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-17]
-decisions: [D16]
+decisions: [R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -29,13 +29,13 @@ Paid DMs and tickets hold money until something happens, then pay out or refund.
 
 ## Scope
 
-Hold (Fintava lien, or WAWU's collection account if Fintava has no lien), release to the payee, refund to the payer.
+Hold (a transfer into WAWU's merchant wallet, R-19), release to the payee, refund to the payer.
 
 ## Fintava facts
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-Fintava has no hold or lien. The only place to hold money is WAWU's merchant wallet, which puts customer money in WAWU's account (the custody line in `docs/fintava/naira-api.md`, "To raise with the owner"). Build the hold behind a flag that stays off in live until Fintava answers question 2.
+Fintava's API can't reserve part of a balance, so a hold is a transfer into WAWU's merchant wallet (`/transaction/wallet-to-wallet` with our `CustomerReference`), released by a transfer to the payee or refunded by a transfer back (R-19). The nightly check (MONEY-16) also checks that held money in WAWU's wallet equals the open holds in our ledger.
 
 ## Capability checks
 

@@ -70,6 +70,7 @@ Crypto runs through Cardex, their partner: `docs/fintava/cardex.md`.
 Until the sandbox arrives, money is built against the mock (MONEY-05) and
 stays behind its flags.
 
-**From you:** Apple Developer, Google Play and Expo accounts; the domain behind
+**From you:** the Apple, Google Play and Expo accounts exist; you invite the
+developer to Expo only and do the store steps in `docs/BUILDS.md`. Also: the domain behind
 `wawu/...` links; an SMS route for sign-up codes (Fintava sells SMS); a liveness
 provider if you want one (Fintava only matches the face); Redis for live chat.

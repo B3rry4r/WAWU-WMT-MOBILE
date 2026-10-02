@@ -30,7 +30,8 @@ backend behind them.
   sign-up (R-6).
 - **Wallet** and **Bills** (WALLET-*, BILLS-*).
 - **Schools**, **Professionals** and **Legal** (SCHOOLS-*, PROS-*, LEGAL-*).
-- **Ads** (ADS-*), and the release (RELEASE-*).
+- **Ads** (ADS-*), and the release (RELEASE-*). Only you have the Apple and
+  Google accounts, so only you submit (`docs/BUILDS.md`).
 
 ## Rules that matter most for money
 

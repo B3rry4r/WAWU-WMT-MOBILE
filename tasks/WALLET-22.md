@@ -23,6 +23,7 @@ artboards: [W29, W30, W31, W32, W33, W34]
 - `DECISIONS.md`: R-16 (ruled; build what it says)
 - The design: `python3 scripts/design/render_design.py W29 W30 W31 W32 W33 W34` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A1.json`
+- `docs/fintava/naira-api.md` (section "Cards")
 
 ## Goal
 
@@ -40,6 +41,10 @@ New files under `src/features/` for these screens and their route files under `s
 - **W32 · Card · frozen**: Frozen card: payments and ATM blocked, wallet untouched; Unfreeze; Block if lost or stolen.
 - **W33 · Card · limits and controls**: Channel toggles (Online, Shops/POS, ATM, Contactless) and editable daily limits with used-today.
 - **W34 · Card PIN**: Choose a card PIN for ATMs/POS, explicitly separate from the transaction PIN.
+
+## Fintava facts
+
+Fintava issues physical Verve, Visa and Mastercard cards tied to the wallet account number (`POST /cards/physical/request`, `cardType: STATIC_WITH_ACCOUNT`), with activate, deactivate, reissue, link, PIN change and status. Fee, delivery and card webhook payloads are not documented: get them from Fintava.
 
 ## Capability checks
 

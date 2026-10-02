@@ -27,11 +27,13 @@ Testers and the owner install real builds, not Expo Go.
 
 ## Scope
 
-eas.json profiles (development, preview pointing at staging, production); internal distribution for Android and TestFlight for iOS. Needs the owner's Apple and Google accounts.
+Follow `docs/BUILDS.md`. `npx expo install expo-dev-client`; `eas.json` with the three profiles it lists; the owner runs `eas init` and the first iOS build (only they have Apple). Android preview is an APK anyone can install. iPhones get builds through TestFlight, submitted by the owner. Updates from this task go to the `preview` channel only.
 
 ## Capability checks
 
 - [ ] A preview build installs on a real Android phone and a real iPhone and reaches staging.
+- [ ] The developer can run `eas build --profile preview` for both platforms without an Apple or Google login.
+- [ ] `eas update --channel preview` reaches an installed preview build without a rebuild.
 
 ## Builder report
 

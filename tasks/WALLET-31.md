@@ -23,6 +23,7 @@ artboards: []
 - `DECISIONS.md`: R-16 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
 - `docs/fintava/` (Fintava's docs and real sandbox responses, task OPS-02)
+- `docs/fintava/naira-api.md` (section "Cards")
 
 ## Goal
 
@@ -31,6 +32,10 @@ WAWU card is on the canvas, marked as placeholder until Fintava confirms it. It 
 ## Scope
 
 Split into two-day tasks once R-16 is ruled and Fintava's API for it is in docs/fintava/.
+
+## Fintava facts
+
+Fintava issues physical Verve, Visa and Mastercard cards tied to the wallet account number (`POST /cards/physical/request`, `cardType: STATIC_WITH_ACCOUNT`), with activate, deactivate, reissue, link, PIN change and status. Fee, delivery and card webhook payloads are not documented: get them from Fintava.
 
 ## Capability checks
 

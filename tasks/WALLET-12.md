@@ -66,6 +66,10 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - W43: 'Fintava MFB, licensed by the CBN'
 - W43: 'Check it at wawu/r/T1P9'
 
+## Licence wording
+
+The canvas prints 'Fintava MFB, licensed by the CBN'. The bank is Loma Bank (R-1): the line comes from config, filled in by the owner, never from the canvas.
+
 ## Designer notes (⚠, unresolved)
 
 - None.

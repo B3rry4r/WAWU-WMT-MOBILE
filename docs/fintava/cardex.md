@@ -3,8 +3,8 @@
 Read from the developer page Fintava shared (base URL
 `https://cardex.live/api`), pasted by the owner on 2 Oct 2026. It is the
 partner behind the canvas's "crypto account" (W3, W22, W23) and "swap"
-(W20). Crypto is after launch (R-16). This file says what Cardex does, what
-the canvas assumes, and the question to answer before WALLET-33 starts.
+(W20). Crypto is after launch (R-16). This file says what Cardex does, where the
+canvas differs, and how we build on it. Licensing is the owner's (R-1).
 
 ## What Cardex is
 
@@ -61,10 +61,9 @@ It does four things:
 
 ## What the canvas assumes, and what Cardex does
 
-- **Custody.** The canvas (W3) says "USDT and BTC held by Fintava's custody
-  partner". Cardex does hold the coins, but as WAWU's treasury. Each user's
-  balance would be a number in WAWU's database, owed by WAWU. That is WAWU
-  custody.
+- **Who holds what.** The canvas (W3) says the coins are held by Fintava's
+  partner. Cardex holds them in WAWU's treasury, so each user's balance is
+  kept in our own ledger (below). The wording on W3 comes from config.
 - **Bitcoin.** The canvas shows BTC holdings and BTC receive. Cardex has no
   BTC. Only USDT and USDC.
 - **Networks.** The canvas offers TRC-20, ERC-20 and BEP-20 for USDT, which
@@ -86,33 +85,24 @@ It does four things:
   converts, then an NGN payout goes to the user's Fintava account number
   (fee on top), and Fintava's `account_funded` webhook confirms it arrived.
 
-## The question to answer before WALLET-33 starts
+## How we build on it (WALLET-33)
 
-**Who is the custodian of record for users' crypto, and under whose licence?**
-
-The product's rule is that WAWU instructs and never holds money itself.
-Fintava's Naira accounts keep that rule: each user has an account in their own
-name at a licensed bank. Cardex does not. Every user's coins sit in one WAWU
-treasury, and WAWU's database decides who owns what. In Nigeria, a business
-that holds digital assets for other people is normally a virtual asset
-service provider that has to register with the SEC, on top of any CBN
-question about the naira side. That needs checking with counsel and with
-Fintava. It is not something to assume either way.
-
-Ask Fintava and Cardex:
-1. Is Cardex licensed (SEC, CBN, or abroad), and does that cover holding
-   assets for WAWU's end users?
-2. Can each user have a segregated account in their own name, like the Naira
-   wallet, instead of a share of WAWU's treasury?
-3. How does WAWU fund or empty its NGN treasury at Cardex? Can it be the same
-   balance as WAWU's Fintava merchant wallet?
-4. Is BTC planned?
-5. What are the payout and conversion fees and the network minimums?
-
-Until those are answered, the crypto screens stay after launch and behind a
-flag. If WAWU does end up keeping its own crypto ledger, the nightly check
-must compare the sum of user balances with Cardex's treasury balance every
-night, the same way MONEY-16 does for Fintava.
+- **Our ledger is the per-user record.** Cardex knows only WAWU's treasury,
+  so every deposit, conversion and send is written to the user's crypto
+  ledger in integer units (USDT and USDC to 6 decimals; BEP20
+  USDT arrives in 18 and is scaled down at the boundary).
+- **The nightly check** compares the sum of every user's balance with
+  Cardex's treasury balance per currency, the same way MONEY-16 does for
+  Fintava, and alerts on any difference.
+- **Deposits** credit the user on `deposit.confirmed` only, matched by
+  `customerRef` (our user id).
+- **Naira to crypto:** the user's naira moves to WAWU's merchant wallet, then
+  WAWU converts in its Cardex treasury. **Crypto to naira:** convert, then an
+  NGN payout to the user's own Fintava account number, confirmed by
+  Fintava's `account_funded`.
+- **Ask Fintava** how WAWU's naira gets into its Cardex NGN treasury (not in
+  either set of docs), and for the payout and conversion fees and network
+  minimums.
 
 ## Keys
 

@@ -38,17 +38,15 @@ owner's approval; a new export replaces the folder.
 
 Each ruling names who made it, when, and the task that carries it out.
 
-### R-1 · Fintava holds wallet money
-*Owner, 1 Oct 2026.* Fintava MFB's banking licence covers custody, so every
-user can have a wallet and pay from it. Fintava replaces Flutterwave as the
-money rail. Still to confirm with Fintava (task OPS-02): whether dollar accounts,
-crypto through their custody partner, and the Verve card fall under their
-licence and the contract. Fintava's published examples (2 Oct 2026) put
-customer accounts at Loma Bank (Iyin Ekiti MFB), so the bank name and licence
-wording in the app wait on Fintava's answer (`docs/fintava/naira-api.md`,
-question 5).
-**Carried out by:** the MONEY tasks. Web CLAUDE.md wallet note
-is rewritten in OPS-05.
+### R-1 · Loma Bank's licence covers the money; legal is the owner's
+*Owner, 1 and 2 Oct 2026.* Fintava is the technology; the licence is Loma
+Bank's (Iyin Ekiti MFB). Every WAWU wallet, Naira and crypto, rides on it.
+Fintava replaces Flutterwave as the money rail. Licensing, custody and
+regulatory questions belong to the owner: no task waits on them, and no task
+reopens them. Licence wording shown in the app (W41 to W43 receipts, W15)
+comes from config, filled in by the owner.
+**Carried out by:** the MONEY tasks. Web CLAUDE.md wallet note is rewritten in
+OPS-05.
 
 ### R-2 · Shop is retired; Schools takes its place
 *Owner, 1 Oct 2026.* The canvas still draws Shop (flow SH1–SH15, the fourth
@@ -134,14 +132,20 @@ Self-serve buying comes later.
 
 **R-16 · Dollar, crypto and cards come after launch.** No dollar account yet.
 Crypto runs through Cardex (Fintava's crypto partner, `docs/fintava/cardex.md`)
-once its keys arrive, and needs the custody question in that file answered
-first. Cards are undecided.
+and is built once its keys arrive (WALLET-33). Cards are undecided.
 
 **R-17 · Deleting an account takes 30 days and is cancelled by signing in.**
 The wallet must be empty first.
 
 **R-18 · No Trust Score on professional cards.** A number nothing calculates
 never ships.
+
+**R-19 · Money held between payer and payee sits in WAWU's merchant wallet.**
+Fintava's API has no way to reserve part of a customer's balance (a "hold"
+or "lien"), so paid DMs, tickets and bills move the money into WAWU's own
+Fintava wallet, then on to the payee or back to the payer. It ships like any
+other payment path, under Loma Bank's licence (R-1). Tasks: MONEY-18,
+BILLS-02.
 
 ## Artboards that are not built
 
@@ -156,13 +160,6 @@ exactly one screen task.
 ## Still open
 
 Nothing waits on these.
-
-**D16 · Holding money between payer and payee.** Fintava has no hold or lien
-(`docs/fintava/naira-api.md`). Paid DMs, tickets and the bill reversal step
-can only hold money in WAWU's merchant wallet, which means WAWU holding
-customer money. Until Fintava says whether that's allowed under their
-licence (question 2), the hold is built behind a flag that stays off in live
-(MONEY-18), and nothing else waits.
 
 **D14 · Web features missing from the canvas.** 89 things on the web don't
 appear in the design (WAWU Learn, health plans, mentors, the EVG score,

@@ -108,10 +108,12 @@ Store all three of customerId, walletId and accountNumber when an account opens.
 
 **What that changes:**
 
-1. **There is no hold or lien.** Paid DMs and tickets (MONEY-18) can only be
-   "held" by moving the money into WAWU's merchant wallet and paying it out
-   later. That puts customer money in WAWU's account, which is the custody
-   line the product has always drawn. See "To raise with the owner" below.
+1. **The API can't reserve part of a balance.** A "hold" (or "lien") would
+   keep money in the payer's own account but stop them spending it until a
+   paid DM is answered or an event happens. Fintava has no endpoint for
+   that. So a held payment moves into WAWU's merchant wallet and is paid out
+   or refunded from there (R-19, MONEY-18). This is about what the API can
+   do, not about the licence.
 2. **Bills are paid from WAWU's merchant wallet.** The bill calls take no
    customer, so a user's bill is two steps: move the amount from their
    wallet to WAWU's, then pay the biller. If the biller fails, move it back.
@@ -123,7 +125,7 @@ Store all three of customerId, walletId and accountNumber when an account opens.
 4. **The bank is Loma Bank.** The account examples name "Iyin Ekiti
    Microfinance Bank Limited (Loma Bank)", not "Fintava MFB", which is what
    the canvas prints on W15. The app shows the bank name from the API, and
-   the licence wording waits on question 5 (OPS-05).
+   the licence wording from config (R-1).
 
 ## Bills (BILLS-*)
 
@@ -146,9 +148,24 @@ price is right.
 
 ## Cards (after launch)
 
-Physical card requests in VERVE, VISA or MASTERCARD, then activate,
-deactivate, reissue, link, change PIN and status. So cards are possible
-through Fintava when the owner wants them (R-16).
+These are ATM and debit cards.
+- **Request:** `POST /cards/physical/request` with `cardBrand` (VERVE, VISA or
+  MASTERCARD), `cardName` and `cardType`. `STATIC_WITH_ACCOUNT` is tied to
+  the customer's wallet account number. `STATIC_NO_ACCOUNT` and
+  `DYNAMIC_CARD` don't need one.
+- **Then:** link a card (PAN) to an account (`/cards/link`), activate,
+  deactivate (with a reason), reissue, change the PIN (old PIN, CVV and
+  expiry needed), read the status, list cards, view one card.
+- **Card payments** come back as the `card_payment` and
+  `dynamic_card_payment` webhooks; the payloads aren't published.
+- No virtual-card endpoint is documented, though the introduction mentions
+  virtual cards.
+
+**What that means for the WAWU card (WALLET-22, WALLET-31):** a physical
+Verve (or Visa or Mastercard) card linked to the user's own account number
+(`STATIC_WITH_ACCOUNT`) is supported end to end. The docs don't cover the
+card fee, delivery, whether Fintava prints and ships the card, or the card
+webhook payloads; those come from Fintava when the card is built.
 
 ## Webhooks (MONEY-07)
 
@@ -173,32 +190,22 @@ through Fintava when the owner wants them (R-16).
 
 ## Questions for Fintava
 
-These replace the list in `docs/PLAN.md`; the docs answered the rest.
+These replace the list in `docs/PLAN.md`; the docs answered the rest. None of
+them blocks building: every money task is built against the mock (MONEY-05)
+and switched on when the sandbox confirms it.
 
 1. Does `/bank/credit` accept a `CustomerReference`, and does Fintava reject a
    repeated `CustomerReference`? Without one of the two, a timed-out send
    can't be retried safely.
-2. Is there a hold or lien on a customer wallet? If not, may WAWU move
-   customer money into its merchant wallet for escrow under your licence?
+2. Is there a hold or lien on a customer wallet that we missed? Until there
+   is, we use WAWU's merchant wallet (R-19).
 3. What are the real fees for wallet-to-wallet, bank sends (what are
    `lomaCharge` and `charges`), bills and SMS? Who pays them, sender or
    merchant?
 4. What are the account tiers and their limits, and how does an account move
    up a tier?
-5. Which bank holds the accounts (Loma Bank, Iyin Ekiti MFB?), and what exact
-   licence wording may the app show?
+5. What exact licence wording may the app show for Loma Bank?
 6. What does the selfie check return, and do you offer liveness?
 7. Do the electricity responses include the token and units?
 8. What are the rate limits?
-9. Is Cardex (crypto) covered by your licence and our contract, and who is
-   the custodian of record? See `cardex.md`.
-
-## To raise with the owner
-
-**Escrow puts customer money in WAWU's account.** Paid DMs, tickets and the
-bill reversal step all need money held somewhere between payer and payee.
-Fintava has no hold, so the only place is WAWU's merchant wallet. The web
-product's rule has always been that WAWU instructs and never holds. Until
-Fintava answers question 2, MONEY-18 builds the hold behind a flag that stays
-off in live. Paid DMs and tickets can still go live without it by paying the
-creator at once and refunding from WAWU's own balance when a refund is due.
+9. How does WAWU fund its Cardex NGN treasury? See `cardex.md`.

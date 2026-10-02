@@ -35,11 +35,11 @@ Rewrite the wallet note (R-1), add that the mobile app is now authoritative and 
 
 From `docs/fintava/naira-api.md`; a real sandbox response overrides it.
 
-Fintava's examples put customer accounts at Loma Bank (Iyin Ekiti MFB), not "Fintava MFB". The wallet note names the bank Fintava confirms (question 5 in `docs/fintava/naira-api.md`).
+Fintava's examples put customer accounts at Loma Bank (Iyin Ekiti MFB), not "Fintava MFB". The wallet note names Loma Bank and Fintava (R-1).
 
 ## Capability checks
 
-- [ ] Both files describe Fintava custody and mobile-first, with the date and the ruling id.
+- [ ] Both files describe Fintava on Loma Bank's licence and mobile-first, with the date and the ruling id.
 
 ## Builder report
 

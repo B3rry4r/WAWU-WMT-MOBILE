@@ -62,6 +62,7 @@ python3 scripts/design/render_design.py <IDs>    render artboards to build/desig
 |---|---|
 | `docs/WORKFLOW.md` | How every task is built and verified |
 | `docs/PLAN.md` | Who owns what, how the lists work, what's needed from outside |
+| `docs/BUILDS.md` | Builds, testers, store releases (owner submits) |
 | `docs/people/` | One file per person: what they own end to end |
 | `DECISIONS.md` | Rulings, what is not built, and what is still open |
 | `tasks/` | One file per task; `tasks/INDEX.md` lists them |

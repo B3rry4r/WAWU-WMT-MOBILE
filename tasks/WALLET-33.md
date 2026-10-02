@@ -22,19 +22,19 @@ artboards: []
 - `docs/people/YOU.md` (what you own)
 - `DECISIONS.md`: R-16 (ruled; build what it says)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands.
-- `docs/fintava/cardex.md` (what Cardex does, what the canvas assumes, and the custody question)
+- `docs/fintava/cardex.md` (what Cardex does and where the canvas differs)
 
 ## Goal
 
-Crypto (W3, W22, W23) runs through Cardex, Fintava's crypto partner, after launch (R-16). Cardex is a business treasury: every user's coins sit in WAWU's treasury, so WAWU would be the custodian. That question is answered before anything is built.
+Crypto (W3, W22, W23) runs through Cardex, Fintava's crypto partner, after launch (R-16). Cardex holds the coins in WAWU's treasury, so our backend keeps each user's crypto balance in its own ledger, checked against Cardex's treasury every night.
 
 ## Scope
 
-Get written answers to the five questions in `docs/fintava/cardex.md`, then split this into small tasks. USDT and USDC only (no BTC), the real 90-second quote, the fee on top, keys only in environment secrets.
+Once the Cardex test keys are in the backend's environment secrets, split this into small tasks: signed client and webhooks, deposit addresses, per-user ledger and nightly check, quote and convert, send out, then the screens. USDT and USDC only (no BTC), the real 90-second quote, the fee on top.
 
 ## Capability checks
 
-- [ ] The custodian of record and its licence are confirmed in writing and recorded in DECISIONS.md.
+- [ ] Cardex test keys are in the backend's environment secrets, and a sandbox deposit reaches our webhook and is recorded once.
 - [ ] This task is split into small tasks, each with its own checks, and none shows BTC.
 
 ## Builder report

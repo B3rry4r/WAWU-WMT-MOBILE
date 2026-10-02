@@ -44,4 +44,7 @@ part of your task.
 - **Compare pictures with pictures:** render the artboard, screenshot your
   screen at 390 px in both themes, open both.
 
+- **Builds:** you have Expo, not Apple or Google. Build and publish to the
+  `preview` channel; the owner submits to the stores (`docs/BUILDS.md`).
+
 Your list: `tasks/INDEX.md`, section "Developer".
