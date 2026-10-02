@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer |
 |---|---|---|
-| todo | 96 | 85 |
+| todo | 95 | 85 |
 | building | 0 | 0 |
-| verifying | 0 | 1 |
+| verifying | 1 | 1 |
 | review | 3 | 0 |
 | done | 2 | 0 |
 
@@ -22,6 +22,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Being verified
 
 - [SETUP-01](../tasks/SETUP-01.md) Verify the mobile repo setup (Developer)
+- [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 
 ## Done
 
@@ -30,13 +31,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls, [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet
+- **You:** [OPS-07](../tasks/OPS-07.md) Rule the web features missing from the canvas (D14), [MONEY-02](../tasks/MONEY-02.md) The PIN sheet, [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet
 - **Developer:** [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap, [ME-05](../tasks/ME-05.md) Profile fields, [HOME-04](../tasks/HOME-04.md) Feed: following, likes, views, shares
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · OPS-02 · First Fintava sandbox calls saved in `docs/fintava/sandbox/`; the sandbox merchant is inactive, so customer, transfer and bill calls are refused (403) until Fintava activates it. `naira-api.md`, `limits.md`, `fees.md` corrected.
 - 2 Oct 2026 · Fintava test key works on the sandbox (refused by the live API); tier limits recorded in `docs/fintava/limits.md`.
 - 2 Oct 2026 · Backend deploy after wawu-backend #23 succeeded; the full test suite, including the new route suite, passed in it.
 - 2 Oct 2026 · wawu-backend #23 merged: OPS-03 (run the backend locally), MONEY-01 (235 routes locked), OPS-05 (backend CLAUDE.md).
