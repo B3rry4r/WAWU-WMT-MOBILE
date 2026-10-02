@@ -7,7 +7,7 @@ order: 5
 priority: launch
 repo: design
 type: ops
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: []
@@ -49,6 +49,7 @@ Builder, 2 Oct 2026. Status `verifying` covers the brief only; checks 2 and 3 wa
 - **No gaps or shared-change requests filed.**
 - **Round 2 (after verifier, 58a6f8f):** brief now 95 entries (Everywhere 1, Home 9, Me 12, Shop 2, Schools 4, Open your wallet 10, Wallet 29, Bills and Legal 13, Inbox 6, Events 4, Settings 5). Fixed defects 1 to 7 and 10: Z1, Z2, I8, I23, Services and Events maps, the Wallet components sheet, flow notes and map, totals carried through H15-H17, E4, E11, SC6, SC7, S7, S12; A8 link, Auth notes and map, W33 tier note; rule 3 labels, W14, A6. Applied the coordinator's defaults for 8 and 9 as stated rules the owner can change (dollar hidden at launch, W2 provider line from config; purchases pay Fintava's charge, no WAWU fee: H26, H27, I3, I14, I28, I29, M12, M13, S19, S22, S26). Also found by a case-insensitive re-sweep: the cards flow note "Virtual cards are free". `npm run check` after: same counts as before.
 - **Round 3 (after verifier round 2, cffee67; main merged in for R-10's purchase rule):** 109 entries (Everywhere 1, Home 14, Me 13, Shop 2, Schools 4, Open your wallet 10, Wallet 30, Bills and Legal 13, Inbox 13, Events 4, Settings 5). Fixed R2-1 to R2-6: I11 and its arrow, M18, the Earnings flow note (R-11); I6; I10 and the Paid DMs note (rule 6); rule 5 rewritten as one button rule (pay button and Approve show the total, the receiver's amount is its own line) and applied to W10, W11, W12, W16, W17, W19, W21, W30, H26, H28, I14; H18; I18; H10 Trust Score (R-18). Case-insensitive re-sweep (full, in full, move, trust, score, Approve ₦, left your wallet, Pay ₦, amount buttons) also added H19, H25, I21, I22. `npm run check` after: same counts.
+- **Round 4 (after verifier round 3, 27d5f08):** 112 entries (Wallet 32, Events 5, rest unchanged). R3-1: W1 rows and new W26 and W27 entries (debits show the total that left the wallet, Out sums totals, charge visible on the detail). R3-2: S26's breakdown on S26 itself. Refund default stated (price back, not Fintava's charge; owner can change), new E25 entry, E11 aligned; I3, I6, I10 and the Paid DMs note already name the price. `npm run check` after: same counts.
 
 ## Verifier report
 

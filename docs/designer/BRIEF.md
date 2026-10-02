@@ -62,14 +62,15 @@ Who is who, so the reasons make sense:
    amount actually returned as a slot the app fills. Don't write "Nothing was
    taken", "in full" or "the full amount" about a payment that carried a
    charge: whether Fintava returns its own charge on a reversal is not
-   confirmed yet.
+   confirmed yet. A refund names the price that comes back (the refund
+   default, below).
 7. **Licence, bank and deposit-insurance lines come from config.** Draw them
    as slots (keep room for a line about as long as today's) and don't write
    your own wording; the owner fills them in (R-1).
 8. **No em-dashes in any copy.** Use a full stop, a comma, a colon or brackets.
    (Owner instruction, 1 Sep 2026.)
 
-### Two defaults the owner may still change
+### Three defaults the owner may still change
 
 - **Purchases carry Fintava's charge, and no WAWU fee.** Paying from your
   wallet for anything on WAWU (an unlock, a tip, a paid message, credits, a
@@ -82,6 +83,13 @@ Who is who, so the reasons make sense:
   tab on W1, W3 and W5 stay drawn as they are; at launch the app hides them,
   and hides W15's "From your Dollar account" option too. The only Dollar
   change now is W2's provider line (see W2).
+- **A refund returns the price, not Fintava's charge.** When a paid message
+  goes unanswered or an event is called off, the buyer gets the price back
+  (the ₦1,500 message, the ₦7,500 ticket); Fintava's charge on the original
+  payment is not returned. Refund copy names the price ("your ₦1,500 comes
+  back", "the ticket price back") and never "everything you paid". This is
+  separate from a failed send or bill (W14, S12), where whether Fintava's
+  charge comes back is still unconfirmed, so rule 6 applies.
 
 ### Example values to use (Fintava's price list, 2 Oct 2026)
 
@@ -480,8 +488,31 @@ gender, phone and photo only. Fintava's API has **no account tiers**.
   Crypto.
 - **Instead:** "WAWU · " followed by the bank name as a slot the app fills.
   Sample "Loma Bank". Keep the Dollar tab drawn; the app hides it at launch.
+  In the recent transactions, a debit row shows the total that left the
+  wallet: "Chidinma Okoro · Transfer · GTBank −₦25,065.00" (₦25,000 + ₦65)
+  and "Ikeja Electric · Prepaid −₦10,600.00" (₦10,500 + ₦100). The tip
+  received stays +₦2,000.00.
 - **Why:** R-1 and a Fintava fact: the bank is Loma Bank, named by the API.
-  R-16 for the Dollar tab.
+  R-16 for the Dollar tab. Rule 5 and R-10 for the debit rows.
+
+### W26 · Transaction history
+- **Now:** debit rows "MTN airtime −₦2,000.00", "Ikeja Electric · Prepaid
+  −₦10,500.00", "Chidinma Okoro · Transfer · GTBank −₦25,000.00", and the
+  summary "Out · September ₦96,820.50".
+- **Instead:** each debit row shows the total that left the wallet:
+  Ikeja Electric −₦10,600.00, the GTBank transfer −₦25,065.00, MTN airtime
+  −₦2,000.00 (its charge is ₦0). "Out · September" is the sum of those
+  totals (keep it an obvious sample).
+- **Why:** rule 5 and R-10: the money that left the wallet includes the
+  charges.
+
+### W27 · Transaction detail
+- **Now:** the drawn example is a tip received (+₦2,000.00), with no charge.
+- **Instead:** keep it. For a debit, the detail shows the amount, Fintava's
+  charge, WAWU's fee (if any) and the total, so the charge behind each W26
+  row is visible here. If you draw a debit example, use the GTBank send:
+  ₦25,000 + (₦40 + ₦25) = ₦25,065.00.
+- **Why:** R-10: the charges must be visible somewhere the person can check.
 
 ### W2 · Wallet · Dollar
 - **Now:** "USD account · Fintava".
@@ -778,9 +809,9 @@ sets one (none today). Legal services are purchases (the default above).
 ### S26 · Fixed-price request
 - **Now:** a row "Fee ₦35,000" (the price), "Continue · ₦35,000", then Pay
   and PIN.
-- **Instead:** call the price row "Price", add Fintava's charge ₦15.75 and
-  Total ₦35,015.75 (here or on the pay step that follows); button "Continue ·
-  ₦35,015.75".
+- **Instead:** on S26 itself, call the price row "Price", add Fintava's
+  charge ₦15.75 and Total ₦35,015.75; button "Continue · ₦35,015.75" (it
+  leads to the PIN, so it shows the total, rule 5).
 - **Why:** R-10 and the purchases default.
 
 ## 9. Inbox
@@ -895,10 +926,17 @@ sets one (none today). Legal services are purchases (the default above).
 
 ### E11 · Called off
 - **Now:** "₦7,500 is back in your Naira wallet."
-- **Instead:** keep the sentence, with the amount as a slot showing what was
-  actually refunded (sample ₦7,500). Don't add "in full" or "everything you
-  paid".
-- **Why:** rule 6.
+- **Instead:** keep the sentence; the amount is the ticket price (sample
+  ₦7,500), filled by the app. Don't add "in full" or "everything you paid".
+- **Why:** the refund default: a refund returns the ticket price, not
+  Fintava's charge.
+
+### E25 · Call it off
+- **Now:** "This refunds real money. All 64 buyers get their money back."
+- **Instead:** "This refunds real money. All 64 buyers get the ticket price
+  back."
+- **Why:** the refund default: Fintava's charge on each ticket isn't
+  returned, so "their money back" promises more than the buyer gets.
 
 ## 11. Settings
 
