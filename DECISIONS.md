@@ -121,8 +121,9 @@ charges are in `docs/fintava/fees.md` (₦40 for a bank send, so the user pays
 ₦40 + ₦25 = ₦65). The fee quote shows the total, read from config, never
 from the canvas. On a purchase (unlock, tip, ticket, paid DM, credits,
 tick, school fees, legal) the buyer pays Fintava's balance-transfer charge
-and no extra WAWU fee, because WAWU's share is the 15% split. This purchase
-rule is the planning session's default (2 Oct 2026); the owner can change it.
+and no extra WAWU fee, because WAWU's share is the 15% split. A refund returns
+the price; Fintava's charge isn't returned. Both are the planning
+session's defaults (2 Oct 2026); the owner can change them.
 
 **R-20 · Money is built on the real Fintava sandbox and ships at launch.**
 The keys are available. No mocks, no stand-ins, no feature flags or
