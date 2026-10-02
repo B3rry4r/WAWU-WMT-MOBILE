@@ -153,6 +153,13 @@ def main() -> int:
     elif not PROGRESS.exists() or PROGRESS.read_text() != progress:
         errors.append("docs/PROGRESS.md is out of date: run python3 scripts/tasks/check_tasks.py --write")
 
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files", "*.md", "*.json", "*.ts", "*.tsx", "*.py"], cwd=ROOT,
+                             capture_output=True, text=True).stdout.split()
+    for rel in tracked:
+        f = ROOT / rel
+        if f.is_file() and re.search(r"^(<{7}|>{7}) ", f.read_text(errors="ignore"), re.M):
+            errors.append(f"{rel} contains merge conflict markers")
     for e in errors:
         print("TASK CHECK FAILED:", e)
     by = Counter(t["owner"] for t in tasks.values())
