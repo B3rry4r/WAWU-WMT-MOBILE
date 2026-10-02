@@ -29,7 +29,7 @@ EXCLUSIONS = ROOT / "contract" / "mobile-exclusions.json"
 
 
 def copy_from_backend(backend: Path) -> None:
-    subprocess.run(["git", "-C", str(backend), "fetch", "-q", "origin", "main"], check=True)
+    subprocess.run(["git", "-C", str(backend), "fetch", "-q", "origin", "main:refs/remotes/origin/main"], check=True)
     text = subprocess.run(["git", "-C", str(backend), "show", "origin/main:contract/openapi.json"],
                           check=True, capture_output=True, text=True).stdout
     sha = subprocess.run(["git", "-C", str(backend), "rev-parse", "--short", "origin/main"],

@@ -166,7 +166,7 @@ Store customerId, walletId and accountNumber when an account opens.
 3. **The PIN is ours** (MONEY-09), as planned. Fintava only has card PINs.
 4. **Tiers exist** (`limits.md`). Create opens **`TIER_2`**
    (`sandbox/07-create-customer.md`); how a wallet reaches `TIER_3` is still a
-   question for Fintava (`sandbox/README.md`, question 19).
+   question for Fintava (`sandbox/README.md`, question 20).
 
 ## Money in
 
@@ -238,7 +238,7 @@ Store customerId, walletId and accountNumber when an account opens.
   (`sandbox/15-freeze-unfreeze.md`). So earnings (R-11) and refunds (R-19)
   sent to a frozen wallet are refused, not held: if a fraud hold or the
   30-day deletion window (R-17) freezes the wallet, that money waits in
-  WAWU's merchant wallet (`BACKEND_GAPS.md` G-7).
+  WAWU's merchant wallet (`BACKEND_GAPS.md` G-10).
 
 **What that changes:**
 
@@ -390,13 +390,17 @@ app (R-20). What the sandbox showed on each, with evidence, is in
 14. Open. Is the 5-minute cache on `/txn/merchant` deliberate, and does `/txn`
     do the same?
 15. Open. Ikeja has two prepaid codes: which one?
-16. Open. Why do bank sends and the airtime, data and electricity purchases
+16. Open. Does a wallet to wallet payment from a customer into WAWU's merchant
+    wallet (a purchase on WAWU) count toward the customer's tier daily limit,
+    the same as a send to another customer? WAWU counts it (Lead ruling, 2 Oct
+    2026, MONEY-04) until you say otherwise.
+17. Open. Why do bank sends and the airtime, data and electricity purchases
     answer `400 "Unable to find customers"`, and cable `201 "service not
     currently available"`? (`sandbox/14-`, `18-` to `21-`.)
-17. Open. Why does the sandbox charge ₦0 for wallet-to-wallet? (Sandbox
+18. Open. Why does the sandbox charge ₦0 for wallet-to-wallet? (Sandbox
     reconciliation only; the dashboard rates are final.)
-18. Open. How do we list money a wallet received? `/txn` and `/txn/merchant`
+19. Open. How do we list money a wallet received? `/txn` and `/txn/merchant`
     list debits only (`sandbox/09-`, `10-`).
-19. Open. How does a wallet move from `TIER_2` to `TIER_3`?
-20. Open. Will the `PENDING` records left by refused bank sends ever resolve?
-21. Open. Create returns `nin: null`: is the NIN stored?
+20. Open. How does a wallet move from `TIER_2` to `TIER_3`?
+21. Open. Will the `PENDING` records left by refused bank sends ever resolve?
+22. Open. Create returns `nin: null`: is the NIN stored?

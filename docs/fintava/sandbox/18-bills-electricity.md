@@ -23,7 +23,7 @@ merchant and the two test customers this task created).
   airtime, which has no meter.
 - Still unknown: the purchase response (token and units), the ₦100 fee,
   and the debit from WAWU's merchant wallet. Unblocked by the same fix as
-  bank sends (question 16 in `README.md`), plus a test meter number.
+  bank sends (question 17 in `README.md`), plus a test meter number.
 
 ### Requests and responses
 

@@ -39,7 +39,7 @@ wallet's tier, but the API does report one: `GET /merchant/balance` returned
 - Still to confirm with Fintava: how a wallet moves from Tier 2 to Tier 3
   (automatic after the BVN selfie check, a dashboard action, or an API call
   that isn't published). No call in the sandbox changed a tier
-  (`sandbox/README.md`, question 19).
+  (`sandbox/README.md`, question 20).
 - Until then: limits come from config (`TIER_LIMITS`, per tier), the app shows
   the user's daily limit and what's left of it, and a send that would pass the
   limit is stopped before the PIN with a clear message. Never hard-code the

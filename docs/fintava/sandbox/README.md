@@ -32,7 +32,7 @@ whatever the sender and the beneficiary (`14-bank-transfer.md`); the cable
 purchase answers HTTP 201 with `"service not currently available"`
 (`21-bills-cable.md`). Nothing was debited. **Unblocked when** a ₦100 `POST
 /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops
-answering "Unable to find customers" (question 16 below). Then re-run
+answering "Unable to find customers" (question 17 below). Then re-run
 `14-` (success, failure, reversal), `18-` to `21-` (purchases) and, with a
 tunnel, `23-` (webhooks).
 
@@ -117,7 +117,7 @@ transaction ids are listed in `13-` and `14-`.
 Results that disagree with `../naira-api.md`, `../fees.md`, `../limits.md`
 or what `DECISIONS.md` assumes. Each is now corrected where it was wrong:
 `naira-api.md` (3, 4, 6, 7, 9 and the questions), `fees.md` (2), `limits.md`
-(5); 1 was settled by the owner; 8 is filed as `BACKEND_GAPS.md` G-7 for the
+(5); 1 was settled by the owner; 8 is filed as `BACKEND_GAPS.md` G-10 for the
 tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
 
 1. **Wallet-to-wallet was free.** `fees.md` lists ₦23.25 below ₦5,000 and
@@ -150,14 +150,14 @@ tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
    the tier-upgrade screens (A17 to A20) might not be needed (corrected
    there by this run). Create with BVN, NIN and address opened `TIER_2` (₦500,000 a day), and
    the selfie is not part of create (`07-`, `08-`). Nothing seen moves a
-   wallet to Tier 3 (question 19). `naira-api.md` says a customer's tier is
+   wallet to Tier 3 (question 20). `naira-api.md` says a customer's tier is
    "unknown" anywhere: it is in the wallet balance, the customer list and
    the customer by id.
 6. **History does not show money received.** `naira-api.md` gives `GET
    /txn?customerId=` and `GET /txn/merchant` as the history. Both list only
    the debits the account made; credits never appear, and `type=CREDIT` is
    ignored (`09-`, `10-`). Received money has to come from webhooks into our
-   own records (question 18).
+   own records (question 19).
 7. **The wallet-to-wallet response is not what the docs say.**
    `naira-api.md`: "The response shows `transaction_fee` and both balances
    after". It shows only the sender's balance after. Its `reference` cannot
@@ -170,7 +170,7 @@ tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
    wallet refuses incoming transfers too (`15-`), so R-11 ("earnings land
    in the wallet automatically") and R-19 refunds cannot pay into it: that
    money has to wait in WAWU's merchant wallet until the wallet is
-   unfrozen. Filed as `BACKEND_GAPS.md` G-7 (MONEY-18, WALLET-16,
+   unfrozen. Filed as `BACKEND_GAPS.md` G-10 (MONEY-18, WALLET-16,
    SETTINGS-06); no ruling changed.
 9. **A refused bank send can still leave a record.** Nothing in the docs or
    `naira-api.md` says so: a `400 "Unable to find customers"` wrote a
@@ -226,22 +226,25 @@ tasks that must handle it. `DECISIONS.md` is the owner's and is unchanged.
     `/txn` do the same? (Not re-tested.)
 15. Ikeja has two prepaid codes (`Ikeja_Electric_Bill_Payment`,
     `Ikeja_Token_Purchase`): which one?
-16. **New.** Why do bank sends and the airtime, data and electricity
+16. Does a wallet-to-wallet payment from a customer into WAWU's merchant
+    wallet count toward the customer's tier daily limit? (Added by MONEY-04
+    on main; WAWU counts it until Fintava says otherwise.)
+17. **New.** Why do bank sends and the airtime, data and electricity
     purchases answer `400 "Unable to find customers"`, and the cable
     purchase `201 "service not currently available"`? What is missing on
     WAWU's sandbox merchant?
-17. **New.** Why does the sandbox charge ₦0 for wallet-to-wallet (is it
+18. **New.** Why does the sandbox charge ₦0 for wallet-to-wallet (is it
     `WalletToWalletDebit: false`)? The owner has ruled the dashboard rates
     (₦15.75 to ₦23.25) final, so this only affects sandbox reconciliation.
-18. **New.** Why do `/txn` and `/txn/merchant` list only debits? How do we
+19. **New.** Why do `/txn` and `/txn/merchant` list only debits? How do we
     list money a wallet received?
-19. **New.** How does a customer wallet move from `TIER_2` to `TIER_3`
+20. **New.** How does a customer wallet move from `TIER_2` to `TIER_3`
     (after the selfie check, from the dashboard, or by an API call), and
     does create always open `TIER_2`?
-20. **New.** A refused bank send leaves a `PENDING` record and uses up its
+21. **New.** A refused bank send leaves a `PENDING` record and uses up its
     `CustomerReference`. Will those records ever resolve, and how should we
     retry?
-21. **New.** `POST /create/customer` returns `nin: null` even when a NIN is
+22. **New.** `POST /create/customer` returns `nin: null` even when a NIN is
     sent. Is the NIN stored?
 
 ## Tier questions in `../limits.md`

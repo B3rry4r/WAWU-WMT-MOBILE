@@ -24,7 +24,7 @@ merchant and the two test customers this task created).
   (`18-`, `19-`, `20-`). It is not about the beneficiary or the sender: it
   looks like a missing setup on Fintava's side for this merchant. **Unblocked
   when** a ₦100 `POST /bank/credit/merchant` to `0123456789`/`000013` stops
-  answering "Unable to find customers" (question 16 in `README.md`).
+  answering "Unable to find customers" (question 17 in `README.md`).
 - **`/bank/credit` accepts a `CustomerReference`, and refuses a repeat**:
   the send with `OPS02R-BC-001` was stored with that reference, and sending
   it again answered `400 ["CustomerReference Already Exists"]` (different

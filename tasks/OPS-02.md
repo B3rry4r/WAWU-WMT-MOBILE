@@ -51,13 +51,13 @@ Builder, 2 Oct 2026, branch `wmt/OPS-02`. About 100 sandbox calls (`dev.fintavap
 ### Re-run (merchant active)
 
 Builder, 2 Oct 2026, branch `wmt/OPS-02-rerun`. 86 calls to `dev.fintavapay.com/api/dev` only (09:39 to 09:47 UTC, re-check 10:18), ₦20 spent, 2 test customers.
-- **Blocker resolved:** merchant `active` since 09:22 UTC. **New narrower blocker:** bank sends and airtime, data, electricity purchases answer `400 "Unable to find customers"`, cable `201 "service not currently available"`. Unblocked when a ₦100 `POST /bank/credit/merchant` to `0123456789`/`000013` stops answering that (question 16).
-- Files: all 25 `docs/fintava/sandbox/` files (re-run on top, first run kept under "First run (merchant inactive)"), sandbox `README.md` (results, 9 contradictions, questions 16 to 21), `naira-api.md`, `fees.md`, `limits.md`, `BACKEND_GAPS.md` G-7, `docs/LOG.md`, this file.
+- **Blocker resolved:** merchant `active` since 09:22 UTC. **New narrower blocker:** bank sends and airtime, data, electricity purchases answer `400 "Unable to find customers"`, cable `201 "service not currently available"`. Unblocked when a ₦100 `POST /bank/credit/merchant` to `0123456789`/`000013` stops answering that (question 17).
+- Files: all 25 `docs/fintava/sandbox/` files (re-run on top, first run kept under "First run (merchant inactive)"), sandbox `README.md` (results, 9 contradictions, questions 17 to 22), `naira-api.md`, `fees.md`, `limits.md`, `BACKEND_GAPS.md` G-10, `docs/LOG.md`, this file.
 - Check 1 (every PLAN call saved): **partly**. Now run to a result: create customer and reads, BVN check, wallet balance and history, wallet-to-wallet (3 directions, duplicate, insufficient funds), freeze/unfreeze, lookups. Run but refused by Fintava: bank send (success, failure, reversal NOT RUN to a result), all four bill purchases. Webhooks NOT RUN: no public URL and no dashboard access.
-- Check 2 (every question answered or 'unknown'): `naira-api.md` questions 1 and 10 answered, 3, 4 and 6 partly, the rest open with evidence; 16 to 21 added.
+- Check 2 (every question answered or 'unknown'): `naira-api.md` questions 1 and 10 answered, 3, 4 and 6 partly, the rest open with evidence; 17 to 22 added.
 - Check 3 (no secret or real BVN committed): staged diff grepped for the key (`grep -F` and every 8-character window: 0) and for unmasked 11-digit runs (0); admin identity masked; test values last 4 only.
 - Findings that change plans: create opens `TIER_2`, returns 201 and `nin: null`, checks nothing; `/bank/credit` takes `CustomerReference` and refuses a repeat; transfer-response reference names swapped; history lists debits only; frozen wallet blocks both ways; refused bank sends leave `PENDING` records and burn the reference; a 2xx is not proof of payment; a 500 can be transient; airtime minimum ₦100; BVN check ₦5 even on failure; wallet-to-wallet ₦0 in the sandbox (owner: dashboard rates stand).
-- Gates (`npm run check`, exit 0): before (branch from e657ad5) tests 32/32, gates 9 run, 23 files scanned, 0/0/0, 187 tasks; after merging main 39365dc: tests 70/70, gates 9 run, 34 files scanned, 0/0/0, 187 tasks (the increase is main's). Docs only.
+- Gates (`npm run check`, exit 0): before (branch from e657ad5) tests 32/32, gates 9 run, 23 files scanned, 0/0/0, 187 tasks; after merging main 0f6b042: tests 70/70, gates 9 run, 34 files scanned, 0/0/0, 187 tasks; lint 0 errors, 2 warnings (duplicate import in main's `src/components/Button.tsx`, not this task). Docs only.
 - No shared-change requests. Not verified by me.
 
 ## Verifier report
