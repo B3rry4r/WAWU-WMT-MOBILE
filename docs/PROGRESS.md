@@ -3,20 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 12 of 165.**
+**Launch tasks done: 13 of 165.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 61 | 50 | 32 | 30 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 1 | 0 | 0 |
-| done | 7 | 5 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
+| done | 7 | 6 | 0 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
-- [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 
 ## Done
 
@@ -32,6 +31,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring (Developer)
 - [SHELL-03](../tasks/SHELL-03.md) Tester builds (Developer)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
+- [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 
 ## Next up
 
@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 2 Oct 2026 · UI-02 merged (lists, cards, sheets, tabs, skeleton, empty and error states; UI-01 fixes: button padding 14/18/24, visible focus ring, no browser outline). Still to match the design, Developer 1's next commit before UI-03: media-card gradient caption (expo-linear-gradient), sheet shadow at the 0.5 scrim token, the selected segment's soft shadow.
 - 2 Oct 2026 · UI-02 built: list, card, row, chip, segmented tab, bottom sheet, skeleton, empty and error components; Button padding 14/18/24, double focus ring, no web outline; 51 new tests; status verifying.
 - 2 Oct 2026 · MONEY-04 merged: the wallet contract (29 money routes, declared and not served yet) is on backend main (PR #24) and mobile types are regenerated from it. MONEY-09 (transaction PIN) can start.
 - 2 Oct 2026 · Builders now replace any stand-in for a shared component as soon as main has it, and verifiers fail a branch that keeps one (BUILDER.md, VERIFIER.md). Fintava fees: the dashboard rates in `docs/fintava/fees.md` are final; the sandbox's ₦0 doesn't change them.
@@ -58,4 +59,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · SHELL-02 built: signed-in session in `src/api/` (tokens in secure storage, one silent refresh on 401, one error shape, query defaults), proven live against the local backend and wawu-id; status verifying.
 - 2 Oct 2026 · SHELL-03 · `eas.json` written (development, preview, production; API and ID addresses per profile, still `.invalid` placeholders until the owner supplies them) and `expo-dev-client` added. No build was run: that needs an Expo login, and the first iOS build needs the owner's Apple login.
 - 2 Oct 2026 · SHELL-01 merged: the app has its five tabs and tab bar. Developer 2 and 3's screen tasks still wait for SHELL-02.
-- 2 Oct 2026 · MONEY-09 (transaction PIN) now depends on MONEY-04 (the contract that says how the PIN is sent) instead of the Fintava client: Fintava has no wallet PIN. MONEY-04 started; MONEY-02 and MONEY-03 being built.
