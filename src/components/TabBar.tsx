@@ -3,7 +3,7 @@ import type { BottomTabBarProps } from 'expo-router/js-tabs';
 
 import { font, layout, radius, space, type, useWawu } from '@/theme';
 
-import { TabIcon, type TabIconName } from './TabIcon';
+import { Icon, type IconName } from './Icon';
 
 /** The locked five tabs. Order and labels are fixed. */
 export const tabs = [
@@ -12,7 +12,7 @@ export const tabs = [
   { route: 'inbox', icon: 'inbox', label: 'Inbox' },
   { route: 'wallet', icon: 'wallet', label: 'Wallet' },
   { route: 'me', icon: 'me', label: 'Me' },
-] as const satisfies readonly { route: string; icon: TabIconName; label: string }[];
+] as const satisfies readonly { route: string; icon: IconName; label: string }[];
 
 const iconSize = space.s2xl;
 const strokeActive = 2.2;
@@ -57,7 +57,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             style={styles.tab}
           >
             <View>
-              <TabIcon
+              <Icon
                 name={tab.icon}
                 size={iconSize}
                 color={color}
