@@ -3,7 +3,7 @@ id: LEGAL-06
 title: Legal: quote, pay to start, delivery, fixed price
 owner: DEV3
 area: LEGAL
-order: 117
+order: 118
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

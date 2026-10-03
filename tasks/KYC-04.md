@@ -3,7 +3,7 @@ id: KYC-04
 title: Open your wallet: account opened, create PIN
 owner: YOU
 area: KYC
-order: 86
+order: 87
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

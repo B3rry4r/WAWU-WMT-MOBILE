@@ -3,7 +3,7 @@ id: MONEY-07
 title: Fintava webhooks
 owner: YOU
 area: MONEY
-order: 53
+order: 54
 priority: launch
 repo: wawu-backend
 type: third-party

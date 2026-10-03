@@ -3,7 +3,7 @@ id: LEGAL-05
 title: Pay legal fees from the wallet (backend)
 owner: DEV3
 area: LEGAL
-order: 109
+order: 110
 priority: launch
 repo: wawu-backend
 type: money-path

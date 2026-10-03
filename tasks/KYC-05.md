@@ -3,7 +3,7 @@ id: KYC-05
 title: Open your wallet: enter your BVN and NIN
 owner: YOU
 area: KYC
-order: 82
+order: 83
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

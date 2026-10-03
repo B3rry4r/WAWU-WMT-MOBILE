@@ -3,7 +3,7 @@ id: HOME-09
 title: TGIF reader
 owner: DEV
 area: HOME
-order: 150
+order: 151
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

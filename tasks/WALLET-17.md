@@ -3,7 +3,7 @@ id: WALLET-17
 title: Hosts receive their share: community credits and event tickets
 owner: YOU
 area: WALLET
-order: 155
+order: 156
 priority: launch
 repo: wawu-backend
 type: money-path

@@ -3,7 +3,7 @@ id: MONEY-10
 title: The ledger
 owner: YOU
 area: MONEY
-order: 62
+order: 63
 priority: launch
 repo: wawu-backend
 type: money-path
