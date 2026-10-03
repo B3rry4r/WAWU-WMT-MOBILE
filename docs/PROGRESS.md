@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 53 | 46 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 26 | 12 | 2 | 0 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 
@@ -71,6 +71,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · FIX-03 · Verified: status review (backend 86b740e, mobile a83f922). Cause reproduced on 48b9043 (run 6: a masked phone tail `+234 *** *** 7788` equal to a fixed PIN); 100 of 100 in a row on the branch at load 3.1 to 8.4; full suite 130/130, 3,144 passed, 0 failed; protected 253/253; gates as main; 5 leak mutants fail the scan. No chance collision left in the scanned text, none from other suites. `unclear`: a reset storing the new PIN unhashed passes every PIN spec (pre-existing). NOT RUN: 30 runs under burners and the key scan (both refused by this session's permissions).
 - 3 Oct 2026 · FIX-03 · Built (backend 86b740e, status verifying): the PIN reset spec's leak scan matched a test PIN in a masked phone's last four digits about once in 30 runs; PINs are now drawn per run from a reserved pool that no test phone, BVN or NIN ends in. 100 passes in a row (30 under load), full suite green, three logging mutations still fail it.
 - 3 Oct 2026 · MONEY-15 transaction history, monthly summary and detail merged (backend PR #44, ad1e515). Three verifier rounds: grouped earnings never drop from a scroll except in the narrow case filed as G-53 (corrected by a refresh).
 - 3 Oct 2026 · MONEY-15 · Verified round 3: status review (backend c0d9a12, mobile 46095e8; neither main moved). Defect 2 is closed: the three year-0000 requests answer 400. 129 forged dates across the cursor, the group key and the month (year 0000 and 10000+, negative years, leap seconds, long fractions) brought 0 unexpected answers on the built server. Blind spot A is closed for writes that commit within Prisma's 5 s timer (a real uncommitted write at page 1, 10 ms to 4.9 s, 14 runs: nothing lost). The margin brought no regression (15 walks at page sizes 1 to 3). New `unclear` finding 4: a writer whose event loop is late reaching the timer commits after 5 s (5.6 s measured), and the loss returns; CONVENTIONS section 6 calls 5 s a hard limit. Full suite 130/130 suites, 3,144 passed, 0 failed; protected 253/253; gates as main; 12 of 14 mutants killed.
@@ -85,4 +86,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · AUTH-05 · Fix round 1: parallel first progress calls never 500 (D1), a repeated email confirm gets the same success (N4), the G-16 script never strands a phone-only account and wawu-id never hands a released marker on as a phone (U1), rollback then redeploy works (N2), 400s in the contract (N3), gaps G-51 (renumbered from G-38) and G-52; status verifying
 - 3 Oct 2026 · AUTH-05 · The sign-up sequence in wawu-id: resume before the phone code, server-held progress after it (email proof, A11 or A12 and A13, each only when next), the reset path for a proven email (G-27), wawu-id's published contract and the app's generated sign-in types (G-5), the G-16 keeper rule as an owner-run script; status verifying
 - 3 Oct 2026 · MONEY-14 PIN reset and fingerprint or face approval merged (backend PR #43, 48b9043). The reset code is texted only to the BVN-proved phone; a device key signs each approval and a refusal uses no PIN try. Real texts wait on Fintava (G-42), and the app side waits on a signing package (G-43). Follow-ups: G-50 (a PIN change should end an open reset), plus two test gaps added to G-48.
-- 3 Oct 2026 · MONEY-13 one wallet gate merged (backend PR #42, c1d23b5). A person without an open wallet gets 409 wallet_not_open or wallet_opening on every gated money route, before the PIN, body or Fintava. Non-blocking findings carried as G-48 (gate test hardening) and G-49 (oversized body 500); G-40 route list completed.
