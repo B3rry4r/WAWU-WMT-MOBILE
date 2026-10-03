@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 50 | 45 | 31 | 31 |
-| building | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 1 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
+| review | 0 | 0 | 0 | 0 |
 | done | 31 | 13 | 2 | 1 |
 
-## Built and verified, waiting for the owner's sign-off
+## Being built (or fixing verifier findings)
 
 - [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue (Developer 2)
 
@@ -71,7 +71,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie
 - **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-05](../tasks/ME-05.md) Profile fields, [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales
-- **Developer 2:** [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts
+- **Developer 2:** [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
