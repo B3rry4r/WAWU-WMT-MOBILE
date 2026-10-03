@@ -84,13 +84,24 @@ installFetch();
 
 const clients: QueryClient[] = [];
 
-/** Renders A26 with a fresh query cache, as a route would. */
-async function boot() {
+/** A token shaped as WAWU ID's: only its `sub` claim is read by the app. */
+function tokenFor(sub: string) {
+  const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return `${part({ alg: 'RS256' })}.${part({ sub })}.signature`;
+}
+
+const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+
+/**
+ * Renders A26 with a fresh query cache, as a route would, or with `shared`:
+ * the app has one cache for every account that signs in on the phone.
+ */
+async function boot(shared?: QueryClient) {
   const { OpenWalletScreen } = require('../OpenWalletScreen') as typeof import('../OpenWalletScreen');
   const kept = require('../keptCheck') as typeof import('../keptCheck');
   const onClose = jest.fn();
   // No garbage-collection timer: a cache timer left running keeps jest from exiting.
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+  const client = shared ?? newClient();
   clients.push(client);
   const wrap = (child: ReactElement) => (
     <QueryClientProvider client={client}>
@@ -125,7 +136,7 @@ beforeEach(() => {
   routes = {};
   mockStored.length = 0;
   mockVault.clear();
-  mockVault.set('wawu.session.access', 'access-1');
+  mockVault.set('wawu.session.access', tokenFor(OWNER));
   mockVault.set('wawu.session.refresh', 'refresh-1');
   serve();
   (require('../keptCheck') as typeof import('../keptCheck')).forgetKeptCheck();
@@ -333,7 +344,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
       await app.client.refetchQueries();
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    expect(app.client.getQueryState(['users', 'me', 'open-wallet'])?.status).toBe('error');
+    expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet', 'me'] })[0]?.state.status).toBe('error');
     expect(app.screen.queryByTestId('open-wallet-error')).toBeNull();
     expect(app.screen.getByText('No connection')).toBeTruthy();
     expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('2219 0000 111');
@@ -446,8 +457,10 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
-    // The closed step writes nothing at all, not even the identity into the query cache.
-    expect(app.client.getQueryData(['money', 'identity'])).toEqual(freshIdentity);
+    // The closed step writes nothing at all, not even the identity into the query cache,
+    // and its reads left with it.
+    expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] })).toHaveLength(0);
+    expect(app.client.getQueryCache().findAll().map((q) => q.state.data)).not.toContainEqual(passedIdentity);
 
     serve({ 'GET /money/identity': ok(passedIdentity) });
     app = await boot();
@@ -471,7 +484,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
       await session.signOut();
     });
     // The same person signs in again before the answer lands.
-    mockVault.set('wawu.session.access', 'access-2');
+    mockVault.set('wawu.session.access', tokenFor(OWNER));
     mockVault.set('wawu.session.refresh', 'refresh-2');
     session.resetSessionForTests();
     await app.act(async () => {
@@ -493,6 +506,79 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.screen.unmount();
     expect(kept.keepCheck(ticket, { identity: passedIdentity, prefill })).toBe(false);
     expect(kept.readKeptCheck(OWNER)).toBeNull();
+  });
+
+  it('with one query cache across a sign-out and a sign-in as someone else, B never sees A’s phone or A’s wallet, even while B’s reads are slow', async () => {
+    const OTHER = '00000000-0000-4000-8000-0000000000b2';
+    const shared = newClient();
+    const session = require('@/api/session') as typeof import('@/api/session');
+    // A, with an open wallet, on A26.
+    serve({ 'GET /money/wallet': ok({ state: 'open' }) });
+    let app = await boot(shared);
+    expect(await app.screen.findByTestId('open-wallet-already-open')).toBeTruthy();
+    await app.screen.unmount();
+    // A26's reads leave with it.
+    expect(shared.getQueryCache().findAll({ queryKey: ['open-wallet'] })).toHaveLength(0);
+    // Put A's answers back in the shared cache, as an app-wide cache would hold them (FIX-04 clears it).
+    shared.setQueryData(['users', 'me', 'open-wallet'], { wawuUserId: OWNER, phone: me.phone });
+    shared.setQueryData(['money', 'wallet', 'state'], 'open');
+    await app.act(async () => {
+      await session.signOut();
+    });
+    // B signs in; B has no wallet and B's reads are held.
+    mockVault.set('wawu.session.access', tokenFor(OTHER));
+    mockVault.set('wawu.session.refresh', 'refresh-b');
+    session.resetSessionForTests();
+    let releaseB = () => undefined as void;
+    const gate = new Promise<void>((resolve) => {
+      releaseB = resolve;
+    });
+    let releaseWallet = () => undefined as void;
+    const walletGate = new Promise<void>((resolve) => {
+      releaseWallet = resolve;
+    });
+    serve();
+    routes['GET /users/me'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { ...me, wawuUserId: OTHER, phone: '+2348099990001' } } } }];
+    routes['GET /money/wallet'] = [{ gate: walletGate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { state: 'not_open' } } } }];
+    app = await boot(shared);
+    expect(app.screen.getByTestId('open-wallet-loading')).toBeTruthy();
+    expect(app.screen.queryByDisplayValue('0803 123 4412')).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-already-open')).toBeNull();
+    // B's account answers; B's wallet read is still held: nothing of A's wallet shows meanwhile.
+    await app.act(async () => {
+      releaseB();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(app.screen.queryByTestId('open-wallet-already-open')).toBeNull();
+    expect(app.screen.getByTestId('open-wallet-loading')).toBeTruthy();
+    await app.act(async () => {
+      releaseWallet();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0809 999 0001');
+    expect(app.screen.queryByTestId('open-wallet-already-open')).toBeNull();
+  });
+
+  it('an account read that is not the signed-in account is never shown', async () => {
+    // The Hub answers as someone else (a stale or crossed answer): A26 waits instead of painting it.
+    serve({ 'GET /users/me': ok({ ...me, wawuUserId: '00000000-0000-4000-8000-0000000000c3', phone: '+2348077770000' }) });
+    const app = await boot();
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(app.screen.getByTestId('open-wallet-loading')).toBeTruthy();
+    expect(app.screen.queryByDisplayValue('0807 777 0000')).toBeNull();
+  });
+
+  it('A26’s reads are dropped when the session ends while it is open', async () => {
+    const app = await boot();
+    await app.screen.findByTestId('open-wallet-phone');
+    expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] }).length).toBeGreaterThan(0);
+    const session = require('@/api/session') as typeof import('@/api/session');
+    await app.act(async () => {
+      await session.signOut();
+    });
+    expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] })).toHaveLength(0);
   });
 
   it('the BVN and NIN are never written to the phone’s storage or the console, and the fields are cleared once the check passes', async () => {

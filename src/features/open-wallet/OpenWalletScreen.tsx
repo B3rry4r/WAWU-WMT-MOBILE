@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { isApiError } from '@/api/errors';
 import { useSession } from '@/api/session';
-import { walletIdentityQuery, type BvnCheck } from '@/api/walletIdentity';
+import type { BvnCheck } from '@/api/walletIdentity';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
@@ -18,12 +18,13 @@ import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
 
-import { ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
+import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
 import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, useKeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
+import { useSessionAccount } from './sessionAccount';
 
 /** design/_gen/auth.js line 54 (A3 and A14): `h1` at 24 (the theme's h1), line 1.15; 6 between title and line; 14 between the parts. */
 const TITLE_LEADING = 1.15;
@@ -33,6 +34,12 @@ const BODY_GAP = 14;
 const SKELETON = { title: 28, line: 19, titleWidth: '70%', lineWidth: '50%', label: 15, labelWidth: '30%' } as const;
 
 const NAV_TITLE = 'Open your wallet';
+
+let visits = 0;
+const nextVisit = () => {
+  visits += 1;
+  return visits;
+};
 
 export type OpenWalletScreenProps = {
   /** Leaves Open your wallet: the back button, and Done on an end. */
@@ -50,11 +57,24 @@ type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' } 
  * without a Nigerian BVN ends at "Not available yet", never an error.
  */
 export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
-  const [account, wallet, identity] = useQueries({ queries: [ownAccountQuery, walletStateQuery, walletIdentityQuery] });
+  const queryClient = useQueryClient();
+  // One visit of the step: its account read is never answered from a cache
+  // another session filled (the app keeps one query cache for every account).
+  const [visit] = useState(nextVisit);
+  const [me] = useQueries({ queries: [ownAccountQuery(visit)] });
+  const owner = me.data?.wawuUserId;
+  const [wallet, identity] = useQueries({ queries: [walletStateQuery(owner), identityQuery(owner)] });
+  const account = me;
   const [ended, setEnded] = useState<Ended | null>(null);
-  const owner = account.data?.wawuUserId;
   const kept = useKeptCheck(owner);
   const { status } = useSession();
+  const signedInAs = useSessionAccount(owner);
+
+  // A26's reads go with it: when it closes and when the session ends.
+  useEffect(() => {
+    if (status === 'signedOut') queryClient.removeQueries({ queryKey: [OPEN_WALLET_KEY] });
+  }, [status, queryClient]);
+  useEffect(() => () => queryClient.removeQueries({ queryKey: [OPEN_WALLET_KEY] }), [queryClient]);
 
   // The BVN's name, date of birth and gender live no longer than this step:
   // gone when the session ends (sign-out, a refused refresh), when another
@@ -90,7 +110,8 @@ export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
     );
   }
 
-  if (!account.data || !wallet.data || !identity.data) return <Loading onClose={onClose} />;
+  // Nothing is shown until the account read is known to be the signed-in one.
+  if (!account.data || !wallet.data || !identity.data || signedInAs !== account.data.wawuUserId) return <Loading onClose={onClose} />;
 
   if (wallet.data === 'open' || wallet.data === 'frozen') {
     return <Ending ended={{ end: 'wallet_open' }} onClose={onClose} />;
@@ -258,7 +279,7 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
       if (!live.current || session.current !== 'signedIn') return;
       setBvn('');
       setNin('');
-      queryClient.setQueryData(walletIdentityQuery.queryKey, check.identity);
+      queryClient.setQueryData(identityQuery(account.wawuUserId).queryKey, check.identity);
       keepCheck(ticket, check);
     } catch (error) {
       if (!live.current) return;

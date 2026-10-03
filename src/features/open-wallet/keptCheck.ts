@@ -30,7 +30,12 @@ let kept: Kept | null = null;
 let era = 0;
 const listeners = new Set<() => void>();
 
-/** Taken when a check is sent; good for one write while nothing is forgotten. */
+/**
+ * Taken when a check is sent. The store checks one thing: that no forget has
+ * happened since the ticket was taken (its `era`). Until then the ticket may
+ * write, more than once; after any forget it never can. The owner it names is
+ * the account the details are kept for, not something the store verifies.
+ */
 export type KeepTicket = { readonly owner: string; readonly era: number };
 
 export function ticketFor(owner: string): KeepTicket {

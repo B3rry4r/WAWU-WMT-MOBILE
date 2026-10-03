@@ -116,7 +116,7 @@ describe('the passed check kept for A5', () => {
     const ticket = ticketFor('owner-a');
     expect(keepCheck(ticket, check)).toBe(true);
     forgetKeptCheck();
-    // A ticket is good for the era it was taken in only, even reused.
+    // A ticket writes only until the next forget; after it, never again.
     expect(keepCheck(ticket, check)).toBe(false);
     expect(readKeptCheck('owner-a')).toBeNull();
   });
@@ -151,5 +151,19 @@ describe('how long a limit says to wait', () => {
     expect(checkFailure(new ApiError('rate_limited', 429, 'You have used today’s BVN checks. Try again later.', 'identity_checks_exhausted'))).toMatchObject({
       body: 'You have used today’s BVN checks. Try again later.',
     });
+  });
+});
+
+describe('whose session it is', () => {
+  it('reads the account id from the token’s sub claim, and nothing from a token it cannot read', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { accountOfToken } = require('../sessionAccount') as typeof import('../sessionAccount');
+    const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    expect(accountOfToken(`${part({ alg: 'RS256' })}.${part({ sub: 'acc-1', email: 'é@x' })}.sig`)).toBe('acc-1');
+    expect(accountOfToken(null)).toBeNull();
+    expect(accountOfToken('not-a-token')).toBeNull();
+    expect(accountOfToken(`a.${part({ sub: '' })}.c`)).toBeNull();
+    expect(accountOfToken(`a.${part({ email: 'x' })}.c`)).toBeNull();
+    expect(accountOfToken('a.%%%.c')).toBeNull();
   });
 });

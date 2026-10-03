@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { fetchWalletIdentity } from '@/api/walletIdentity';
 
 /**
  * The two reads A26 needs besides the identity step (`@/api/walletIdentity`):
@@ -39,14 +40,26 @@ export async function fetchWalletState(): Promise<WalletState> {
   return state as WalletState;
 }
 
-export const ownAccountQuery = {
-  queryKey: ['users', 'me', 'open-wallet'] as const,
-  queryFn: fetchOwnAccount,
-  staleTime: 0,
-};
+/**
+ * A26's reads, all under one key prefix so the step can drop them in one go
+ * (on leaving, and when the session ends). The app has one query cache for
+ * every account that signs in on the phone, so no key here is shared across
+ * accounts:
+ * - whose account it is: keyed by this visit of the step (`visit`), so it is
+ *   never answered from a cache another session filled;
+ * - the wallet and the identity step: keyed by that account's id, and only
+ *   read once it is known.
+ */
+export const OPEN_WALLET_KEY = 'open-wallet' as const;
 
-export const walletStateQuery = {
-  queryKey: ['money', 'wallet', 'state'] as const,
-  queryFn: fetchWalletState,
-  staleTime: 0,
-};
+export function ownAccountQuery(visit: number) {
+  return { queryKey: [OPEN_WALLET_KEY, 'me', visit] as const, queryFn: fetchOwnAccount, staleTime: 0 };
+}
+
+export function walletStateQuery(owner: string | undefined) {
+  return { queryKey: [OPEN_WALLET_KEY, 'wallet', owner ?? ''] as const, queryFn: fetchWalletState, staleTime: 0, enabled: Boolean(owner) };
+}
+
+export function identityQuery(owner: string | undefined) {
+  return { queryKey: [OPEN_WALLET_KEY, 'identity', owner ?? ''] as const, queryFn: fetchWalletIdentity, staleTime: 0, enabled: Boolean(owner) };
+}
