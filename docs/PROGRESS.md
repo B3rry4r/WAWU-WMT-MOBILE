@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 53 | 46 | 32 | 32 |
+| todo | 53 | 46 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 0 | 0 | 0 | 0 |
 | done | 26 | 12 | 2 | 0 |
+
+## Being verified
+
+- [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model (Developer 3)
 
 ## Done
 
@@ -61,13 +65,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN
 - **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
-- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
+- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
-- 3 Oct 2026 · MONEY-15 transaction history, monthly summary and detail merged (backend PR #44). Three verifier rounds: grouped earnings never drop from a scroll except in the narrow case filed as G-53 (corrected by a refresh).
+- 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
+- 3 Oct 2026 · MONEY-15 transaction history, monthly summary and detail merged (backend PR #44, ad1e515). Three verifier rounds: grouped earnings never drop from a scroll except in the narrow case filed as G-53 (corrected by a refresh).
 - 3 Oct 2026 · MONEY-15 · Verified round 3: status review (backend c0d9a12, mobile 46095e8; neither main moved). Defect 2 is closed: the three year-0000 requests answer 400. 129 forged dates across the cursor, the group key and the month (year 0000 and 10000+, negative years, leap seconds, long fractions) brought 0 unexpected answers on the built server. Blind spot A is closed for writes that commit within Prisma's 5 s timer (a real uncommitted write at page 1, 10 ms to 4.9 s, 14 runs: nothing lost). The margin brought no regression (15 walks at page sizes 1 to 3). New `unclear` finding 4: a writer whose event loop is late reaching the timer commits after 5 s (5.6 s measured), and the loss returns; CONVENTIONS section 6 calls 5 s a hard limit. Full suite 130/130 suites, 3,144 passed, 0 failed; protected 253/253; gates as main; 12 of 14 mutants killed.
 - 3 Oct 2026 · MONEY-15 · Round 3 (backend c0d9a12, status verifying): a cursor or group key dated year 0000 is now a 400, not a 500 (defect 2). A scroll groups only unlocks completed by its snapshot less 5 s, Prisma's default transaction timeout that the ledger writes under, so a write in flight at page 1 can no longer move a group (blind spot A). CONVENTIONS section 6 now lists what a refresh still corrects. Full suite 130/130, 0 failed; protected 253/253.
 - 3 Oct 2026 · MONEY-15 · Verified round 2: back to building (backend a622812, mobile 92bf3ea; main 48b9043 merged). Defect 1 closed. Every movement that existed before page 1 showed exactly once on the built server and in 24 stress runs (arrival, settling, an older one settling below the cursor; page sizes 1 to 6; an event after every page), with 4 groups straddling pages and around Lagos midnight. New defect 2 (minor): a forged cursor or group key dated year 0000 is a 500, not a 400. Unclear: a pending row the sweep settles with Fintava's earlier time is shown twice in one scroll. The in-flight write loses a group for one scroll (a window of about 5 s), and a reopened unlock only duplicates. Full suite 130/130, 3,141 passed, 0 failed (an earlier run had 1 flaky MONEY-14 leak check, 3/3 alone). Protected 253/253, gates as main (16 / 12), 9 of 12 own mutants killed (3 equivalent).
@@ -81,4 +86,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · AUTH-05 · The sign-up sequence in wawu-id: resume before the phone code, server-held progress after it (email proof, A11 or A12 and A13, each only when next), the reset path for a proven email (G-27), wawu-id's published contract and the app's generated sign-in types (G-5), the G-16 keeper rule as an owner-run script; status verifying
 - 3 Oct 2026 · MONEY-14 PIN reset and fingerprint or face approval merged (backend PR #43, 48b9043). The reset code is texted only to the BVN-proved phone; a device key signs each approval and a refusal uses no PIN try. Real texts wait on Fintava (G-42), and the app side waits on a signing package (G-43). Follow-ups: G-50 (a PIN change should end an open reset), plus two test gaps added to G-48.
 - 3 Oct 2026 · MONEY-13 one wallet gate merged (backend PR #42, c1d23b5). A person without an open wallet gets 409 wallet_not_open or wallet_opening on every gated money route, before the PIN, body or Fintava. Non-blocking findings carried as G-48 (gate test hardening) and G-49 (oversized body 500); G-40 route list completed.
-- 3 Oct 2026 · MONEY-13 · Verified: no open defect, status review (backend 35b68af on main 6d48c97, mobile f06ce18). On the built Hub with a real login, 9 kinds of person without a wallet got one body per code on all 5 gated routes (180 of 180), and HEAD, trailing slash, case, override headers and a forged user id never got past the gate. Spies saw 0 PIN, argon2, body pipe, opening or Fintava calls on 180 refusals, and a right and a wrong PIN got identical answers with no try used. The holder of sandbox account 1192964482 set and checked a PIN and read the balance (the only sandbox call). 12 of 16 own mutants killed; survivors are coverage limits (a wallet route outside /money without the codes, an array controller path) and two untested header and cache paths. Full suite twice 3,021 passed / 0 failed, protected 253/253, gates identical to main (16 fail / 10 warn), key 0 of 58 windows. Notes: G-40 omits POST /tips and four other Flutterwave routes; an oversized body is a pre-existing 500.
