@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -229,6 +229,31 @@ Verifier, 3 Oct 2026 (fresh session; wrote none of this code). Mobile `wmt/KYC-0
 **Differs for a recorded reason (V5):** unchanged from round 1. The status bar and frame belong to the render. The nav title and heading are A26's own. No Email, Password or NIBSS line (BRIEF A3, A26). The NIN field is added (BRIEF A26). No USSD hints (G-56). No mono tracking (SHARED-CHANGES KYC-05 #2). The "I don't have a Nigerian BVN" link is R-6's "not available yet" end.
 
 **Unclear (unchanged, owner):** G-55 (the phone is read-only; a person whose BVN truly carries another number has no way on). The builder's KYC-03 finding (A6 and A7 need the BVN and NIN again).
+
+## Builder round 3
+
+Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's de27d15, then main `6bc420e` (ME-17) merged (only `docs/PROGRESS.md` conflicted, regenerated). Evidence `$K3` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc05/r3/` (the verifier's `drive.py` and `web-server.js` with my ports, `results.jsonl`, `browser-dumps.jsonl`, shots under `shots-race-before/`, `shots-race-after/`, `shots-r3/`; copied to `build/screens/KYC-05/r3-*`). Mutants: `../mutants-r3.txt`.
+- **The open defect is fixed: a check that answers after A26 has closed, or after the session that sent it ended, is never kept.** There are two guards.
+  - **The store guard (`keptCheck.ts`).** A write needs a ticket taken when the check is sent (`ticketFor(owner)`). Every `forgetKeptCheck` voids every ticket already handed out: sign-out, session end, another account, and leaving the step. So `keepCheck(ticket, check)` refuses a late answer and returns false, whoever calls it.
+  - **The form guard (`OpenWalletScreen.tsx`).** It drops an answer that lands after it unmounted, or while the session is not signed in, and then writes nothing: neither the kept details nor the identity in the query cache.
+- **Header Back stays enabled during a check.** Default (agent), owner may override. Leaving mid-check is the person's choice and the check is charged either way; a late answer is now safe.
+- **Jest** (35 open-wallet tests, 4 new):
+  - an answer after unmount: nothing kept, the cache untouched, and re-entry shows the form;
+  - an answer after a sign-out and the same person signing in again: nothing kept, no "BVN confirmed";
+  - a stray late write with an old ticket: refused;
+  - a ticket voided by a forget: refused, even when reused.
+- **Mutants:** 8 of 8 killed: store accepts a voided ticket, forget voids nothing, form keeps a late answer, both guards off, plus M5, M7 and two forget paths. Every file was restored by sha1.
+- **Browser, the verifier's race cases, light and dark.**
+  - **Before:** an export of de27d15 (`shots-race-before/`). `race_back`: Back at 1 s, the pass lands at 5 s, and re-entry shows "BVN confirmed •••• ••• 0031". `race_signout`: the same, then the session revoked (Hub and refresh 401, sent to `/welcome`), the same person signs in again, and it shows "BVN confirmed".
+  - **After:** this build (`shots-race-after/`). `race_back` re-entry shows the form, 1 POST. `race_signout` after signing in again shows the form, 1 POST. `signout_mounted` shows the form.
+  - The store lives in JS memory only. In the browser, an empty store shows as the form on re-entry: the server's identity holds a passed BVN, so a kept check would show "BVN confirmed". Browser storage after each race: only the two session keys, no sessionStorage, IndexedDB or cookie.
+- **V9:** built Hub from backend main `7601a5f` (still main) on :4961, fresh `k05_test`. Stand-in WAWU ID :4962 (people registered there and signed in on the app's A22). Fintava stand-in started with `env -i`. Web export on :8161 (Metro cache cleared, 0 `wawuafrica.com`), with `X-Forwarded-For` set per scenario. The verifier's `loading`, `empty`, `pass`, `a14`, `unknown`, `hubdown2`, `reentry`, `paste`, `open`, `opening` and `nobvn` all pass in light and dark on this build (`shots-r3/`).
+- **Privacy scan:** 45 distinct typed numbers. 0 hits in a full `k05_test` dump and in the Hub, stand-in and web logs. The positive control finds 43 of them in captured request bodies.
+- **Counts:** `npm run check` exit 0 (merged with 6bc420e): 26 suites 438 tests, gates 9 run, 120 files, 0 fail, 0 warn, 0 accepted, lint clean, 204 tasks.
+- **SHARED-CHANGES KYC-05 #4 corrected.** It no longer claims the screen-side clearing covered every path. It names the late-answer race and the store's ticket, and keeps `onSessionEnd` as hardening for KYC-03's state across screens.
+- **Clean-up:** all four processes stopped (PIDs checked), `k05_test` dropped, the Hub worktree and a temporary mobile worktree (for the "before" export) removed.
+- **Incident:** while discarding a database dump I ran `mv dump.sql /dev/null` as root, which replaced `/dev/null` with a regular file for about a minute. I restored it at once (`mknod -m 666 /dev/null c 1 3`; checked as a character device 1,3). Output any other process wrote to it meanwhile was discarded as intended. The dump held no typed number (scan above).
+- **NOT RUN:** check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
 
 ## Owner sign-off
 
