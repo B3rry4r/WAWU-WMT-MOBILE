@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 58 | 48 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 1 | 0 |
 | done | 18 | 10 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
-
-## Being verified
-
 - [KYC-02](../tasks/KYC-02.md) Selfie match to the BVN photo (You)
 
 ## Done
@@ -64,6 +61,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-02 · Verified round 4: no open defect, status review (backend eb3af98 with main 837d6ec merged, mobile 364e830 with main 78c96c4; neither main moved). OPS-11's rate-limit spec passes 10/10 with only the selfie route and its exact limits added (16 of 17 override mutants killed, the survivor equivalent); oversize selfie answers end within milliseconds of the 4,096-byte cap as a counted 503 (200 MB, endless, declared, chunked, and compressed bombs up to 2 GB; no memory growth), the exact-cap answer still matches; 2,048 px a side passes phone-sized selfies and refuses 2,049 and the 4000x4190 PNG at its header; rounds 1 to 3 hold (100/100 hooked and 0 of 450 natural BVN races, counting, 817 images, 0 leaks); protected 253/253, contract 2,653 passed plus 40/40 on :4001, gates 16 fail / 8 warn (only SELFIE-CHECKS-PER-DAY added). Finding: MONEY-06's check timeout is lost to garbage collection after the headers on main too, so a stalled Fintava body is held for 300 s (reproduced on the selfie route and main's BVN check)
 - 3 Oct 2026 · KYC-02 · Round 4: backend main 837d6ec (OPS-11) and mobile main 78c96c4 merged in; OPS-11's rate-limit spec names the selfie route with its exact limits (10/10); the selfie answer is read as a stream with a 4 KB cap, any status (200 MB, endless and declared-oversize answers end within milliseconds of the cap as a counted 503, against 26 s to never on round 3's code); selfies at most 2,048 px a side; 13 mutants killed. Status verifying (backend eb3af98).
 - 3 Oct 2026 · KYC-02 · Verified round 3: back to building (backend 4475c2b and its local merge with main 837d6ec, mobile 70fb533). Round 2's defects closed: only the exact allowlisted answer is a match (215 socket answers, 200,000 mutations, the strict parser agrees with JSON.parse on 53,082 accepted texts) and every earlier polyglot is refused while 33 Pillow images pass; the BVN binding holds (100/100 hooked, 0 of 450 natural). New: 1, on the merge OPS-11's hub-rate-limits spec fails 2 of 10 (the selfie route's throttle override is not in its list); 2 (low), the answer has no size cap and parses about 45 times slower than JSON.parse (200 MB blocks the Hub 42 s). One sandbox call, refused as before.
 - 3 Oct 2026 · KYC-02 · Round 3: the selfie answer is read by allowlist (HTTP 200, JSON, no duplicate keys, exactly the envelope around one verdict field; anything else a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); every shape both verifiers sent is tested through client and route, plus 28,320 one-extra-key bodies; round 2's reader put back matches 63 of them. Images walked whole (PNG chunks, CRCs and pixel data; JPEG markers and scans); tests use Pillow-made images. Mains merged into both branches (backend 66339b9, mobile 94d202b); verifying.
@@ -78,4 +76,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · OPS-11 · Verified: 2 defects (backend 70db9f0, mobile 2c20e01; main moved to backend d27ad37 and mobile bfdd584 during verification). The trust rule holds through a real nginx (two callers get their own buckets; a forged X-Forwarded-For, through nginx or straight to the port, picks no bucket; every case killed by a mutant), both webhooks take bursts past 20/s and 200/min, every other limit is unchanged, KYC-01's BVN tracker stays correct. Defects: with main merged the branch's own @Throttle list test fails (KYC-01 added one), and the Flutterwave burst test times its cold start and fails under load. Protected 253/253; main's 16 gates; mobile check exits 0. Status building.
 - 2 Oct 2026 · OPS-11 · Rate limits behind nginx built in wawu-backend (`wmt/OPS-11` 70db9f0): the Flutterwave webhook skips every named throttler (30 signed deliveries in a second, 30 x 200; the old bare decorator gives 10 x 429), and `trust proxy` trusts one hop from a loopback peer only (nginx), so each caller has its own 20/s and 200/min and a direct connection's `X-Forwarded-For` is ignored. Port 3001 is closed by ufw per `deploy/provision.sh`; the app still listens on every interface (kept for local Wi-Fi testing). Protected 253/253; the same 16 gates as main. G-20 to verifying. Status verifying.
 - 2 Oct 2026 · AUTH-01 · Fix round 1: dev routes leave for Home or sign in in a release build (F1), tests for the held splash on a slow vault read (F6), keyboard handling and A23 autofocus (F5, F9), gaps G-26 to G-30; verifying.
-- 2 Oct 2026 · AUTH-01 · Sign in, wrong password, forgot password and check your email built (A22 to A25) behind a signed-in/signed-out route guard; wawu-id's reset-link answer now carries the link's real lifetime (additive); 41 tests, 20 revert proofs, real login and reset run on the local stack; verifying.
