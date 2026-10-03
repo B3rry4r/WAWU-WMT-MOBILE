@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 58 | 47 | 32 | 32 |
+| todo | 58 | 46 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 1 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
 | done | 20 | 11 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
+
+## Being verified
+
+- [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end (Developer)
 
 ## Done
 
@@ -55,7 +59,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep
-- **Developer:** [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields
+- **Developer:** [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields, [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
 
@@ -63,6 +67,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · AUTH-05 · The sign-up sequence in wawu-id: resume before the phone code, server-held progress after it (email proof, A11 or A12 and A13, each only when next), the reset path for a proven email (G-27), wawu-id's published contract and the app's generated sign-in types (G-5), the G-16 keeper rule as an owner-run script; status verifying
 - 3 Oct 2026 · AUTH-02 · Fix round 1: the status bar follows the screen in front (D1), A2's 8 px offset (D2), citations (D3), test name (D4), the pick cleared at sign-in and at each signed-out visit (U3), Space and Enter pick on web (U4), G-34 wording; main merged; verifying.
 - 2 Oct 2026 · AUTH-02 · Welcome (A1) and why you're here (A2) built, the app opens on A1 signed out, 'New here? Create an account' on A22 opens A2 and A22 gets its Back; gaps G-34, G-35 (filed as G-33, G-34, renumbered after main took G-33); verifying.
 - 3 Oct 2026 · FIX-01 · Verified: no defect, status review (backend 9ea3b90 on main 13b6ac4, mobile f2342d0 on main 983418c; neither main moved). My own stall server (plain and TLS, separate process): all 34 client methods against headers-then-stall, partial body, drip, chunked and close-delimited bodies and stalled 400/404/500 end at the 400 ms timeout (400 to 435 ms) as the no-headers outcome with the socket closed, with and without forced GC (508/510 per run, the 2 others the selfie cap); main's client hangs on 474 of 476 under GC. Bodies done before the deadline are read, after it time out; 8,000 calls leave 0 timers and 0 sockets, heap flat. Built Hub, 5 s check timeout, forced GC or not: BVN check and KYC-02's u4 selfie stall answer 503 at 5.0 to 5.1 s, counted, socket closed at the deadline; a stalled 400 is a counted 503; main no answer at 60 s. No send becomes resendable (stalled lookups give wait). Contract 2,801 passed, protected 253/253, gates 16 fail / 8 warn as main, mobile check exit 0. Findings: a mid-body reset is still read as empty (unchanged); the builder's spec does not pin the abort when no headers arrive.
@@ -77,4 +82,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · KYC-02 · selfie match to the BVN photo in wawu-backend (`POST`/`GET /money/identity/selfie`, additive migration, 3 a day per person, outcome and time stored, never the image); typed calls in `src/api/walletIdentity.ts`; 2 sandbox calls, both refused and charged ₦10; built, to verify
 - 3 Oct 2026 · OPS-11 · Verified round 3: no open defect (backend f45e657, mobile 8678dad; mains 66339b9 and 94d202b already merged). The Flutterwave burst spec passed 55 of 55 runs at load 7.1 to 12.8 with 0 bursts set aside (spans 211 to 398 ms against 900); the bare decorator fails it 6 of 6, and a forced set-aside cannot hide a 429. The override tests kill all 11 mutants asked (a note: a decorator on the same line as another slips past both). Production code unchanged since round 1/2; contract 110/110 suites, 2134 passed; protected 253/253; main's 16 gates; the production build behind a real nginx passes every trust case. Status review.
 - 3 Oct 2026 · OPS-11 · Round 3 (took over from an interrupted session): the Flutterwave burst tests set aside a burst whose arrivals do not fit one window and send a fresh one (at most 5), failing loudly if none fits (backend `wmt/OPS-11` f45e657, main 66339b9 merged). 45/45 runs at load 7 to 14.4; the bare decorator fails 6/6; full contract 110/110 suites; protected 253/253. Back to verifying.
-- 2 Oct 2026 · OPS-11 · Verified round 2: 1 defect (backend 954ef8f, mobile f9d9b12; checked merged with backend main 368fab0 and mobile 66bdcff). The override-list test now expects KYC-01's @Throttle and catches an unexpected skip or override (mutants). The burst test is timed by arrivals now and no longer fails on a cold start, but it still failed 2 of 68 runs at load 7 or more (span 1003 ms); retry a burst that misses the window instead of failing. Contract 108/108 suites, 2095 passed; protected 253/253; main's 16 gates; mobile check exits 0. Status building.
