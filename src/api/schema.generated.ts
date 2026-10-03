@@ -192,6 +192,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The creator's waiting list: soonest deadline first, with the total waiting. */
+        get: operations["PaidDmController_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's threads, one per person, latest activity first. `as=creator` reads the creator side. */
+        get: operations["PaidDmController_threads"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/threads/{wawuId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One thread: every question with all its reply bubbles. */
+        get: operations["PaidDmController_thread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/questions/{messageId}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a reply bubble to a question, while its window is open. */
+        post: operations["PaidDmController_reply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/settings/privacy/blocked": {
         parameters: {
             query?: never;
@@ -338,16 +406,39 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * GET /uploads/usage — how much space this account has used of its
-         *     allowance.
+         * GET /uploads/usage — how much creator-content space (content/preview and
+         *     content/full) this account has used of its allowance. Identity documents,
+         *     avatars and the other folders are not counted.
          *
          *     Its own endpoint rather than a field on creator state, because storage is
          *     not a creator-only concern: an account that has never subscribed still
-         *     uploads a KYC document and an avatar, and still has a 2GB ceiling. Hanging
+         *     uploads a KYC document and an avatar, and still has a ceiling. Hanging
          *     it off creator state would leave every non-creator unable to see a limit
          *     that applies to them.
          */
         get: operations["StorageController_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/uploads/allowance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * GET /uploads/allowance: the upload count and the storage this account
+         *     may use, what it has used, and both of R-7's levels (free and with a
+         *     tick). Any signed-in account: an account with no CreatorState row has
+         *     used 0 uploads.
+         */
+        get: operations["StorageController_allowance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3144,6 +3235,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/fees/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a send, a withdrawal, a purchase or a bill will cost, before the
+         *     PIN (W10, W17, H14): Fintava's charge plus WAWU's fee from config
+         *     (R-10, R-31), each charge as its own part, the total, and a signed
+         *     quote the paying request can send back. Nothing is reserved and
+         *     Fintava is not asked. A purchase or bill whose total is above
+         *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
+         */
+        get: operations["MoneyFeesController_feeQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -3301,28 +3416,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: WALLET-08 serves it.
          */
         get: operations["MoneyTransferController_recentRecipients"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/fees/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What a send will cost, before the PIN (W10, W17): Fintava's charge plus
-         *     WAWU's fee from config (R-10), the total, and whether it fits today's
-         *     limit. Nothing is reserved; the send repeats totalKobo as expectedTotalKobo.
-         * @description Declared by MONEY-04, not served yet: WALLET-15 serves it.
-         */
-        get: operations["MoneyTransferController_feeQuote"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3514,6 +3607,9 @@ export interface components {
             tx_ref: string;
         };
         RespondDmDto: {
+            text: string;
+        };
+        PaidDmReplyDto: {
             text: string;
         };
         CreateBlockedAccountDto: {
@@ -4639,6 +4735,27 @@ export interface components {
             inKobo: number;
             outKobo: number;
         };
+        FeeQuotePartView: {
+            /** @enum {string} */
+            code: "bank_transfer" | "balance_transfer" | "bill_charge" | "wawu_fee";
+            /** @enum {string} */
+            source: "wawu" | "provider";
+            amountKobo: number;
+        };
+        FeeQuoteView: {
+            /** @enum {string} */
+            kind: "purchase" | "bill" | "wawu_transfer" | "bank_transfer";
+            /** @enum {string|null} */
+            billCategory: "electricity" | "cable" | "airtime" | "data" | null;
+            amountKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            parts: components["schemas"]["FeeQuotePartView"][];
+            totalKobo: number;
+            withinDailyLimit: boolean;
+            remainingTodayKobo: number | null;
+            quoteToken: string;
+            expiresAt: string;
+        };
         CheckedBvnView: {
             last4: string;
             verifiedAt: string;
@@ -4806,6 +4923,21 @@ export interface components {
             usedBytes: number;
             limitBytes: number;
             remainingBytes: number;
+        };
+        AllowanceLevelView: {
+            uploads: number;
+            storageBytes: number;
+        };
+        UploadAllowanceView: {
+            tickHeld: boolean;
+            uploads: {
+                used: number;
+                allowed: number;
+                remaining: number;
+            };
+            storage: components["schemas"]["StorageUsage"];
+            free: components["schemas"]["AllowanceLevelView"];
+            withTick: components["schemas"]["AllowanceLevelView"];
         };
         AdminContentCreatorView: {
             wawuUserId: string;
@@ -5262,6 +5394,56 @@ export interface components {
             /** Format: date-time */
             refundedAt: string | null;
             otherParty: components["schemas"]["DmOtherParty"];
+        };
+        PaidDmQueueItem: {
+            id: string;
+            text: string;
+            amountKobo: number;
+            sentAt: string;
+            deadlineAt: string;
+            sender: components["schemas"]["DmOtherParty"];
+        };
+        PaidDmQueuePage: {
+            items: components["schemas"]["PaidDmQueueItem"][];
+            nextCursor: string | null;
+            waitingTotal: number;
+        };
+        PaidDmThread: {
+            other: components["schemas"]["DmOtherParty"];
+            /** @enum {string} */
+            side: "creator" | "fan";
+            questionCount: number;
+            waitingCount: number;
+            nextDeadlineAt: string | null;
+            lastActivityAt: string;
+            lastText: string;
+            lastTextMine: boolean;
+        };
+        PaidDmThreadPage: {
+            items: components["schemas"]["PaidDmThread"][];
+            nextCursor: string | null;
+        };
+        PaidDmReply: {
+            id: string;
+            text: string;
+            createdAt: string;
+        };
+        PaidDmQuestion: {
+            id: string;
+            text: string;
+            amountKobo: number;
+            /** @enum {string} */
+            status: "awaiting_response" | "responded" | "refunded";
+            mine: boolean;
+            sentAt: string;
+            deadlineAt: string;
+            respondedAt: string | null;
+            replies: components["schemas"]["PaidDmReply"][];
+        };
+        PaidDmThreadDetail: {
+            thread: components["schemas"]["PaidDmThread"];
+            questions: components["schemas"]["PaidDmQuestion"][];
+            nextCursor: string | null;
         };
         JsonObject: {
             [key: string]: (string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | unknown[]) | null)[]) | null)[]) | null)[]) | null)[]) | null;
@@ -6641,15 +6823,6 @@ export interface components {
             /** @enum {string|null} */
             tick: "creator" | "professional" | null;
         };
-        FeeQuoteView: {
-            /** @enum {string} */
-            kind: "wawu_transfer" | "bank_transfer";
-            amountKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            withinDailyLimit: boolean;
-            remainingTodayKobo: number | null;
-        };
         TransferTimelineEntry: {
             /** @enum {string} */
             step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
@@ -6934,6 +7107,107 @@ export interface operations {
             };
         };
     };
+    PaidDmController_queue: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmQueuePage"];
+                };
+            };
+        };
+    };
+    PaidDmController_threads: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+                as?: "fan" | "creator";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmThreadPage"];
+                };
+            };
+        };
+    };
+    PaidDmController_thread: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+                as?: "fan" | "creator";
+            };
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmThreadDetail"];
+                };
+            };
+        };
+    };
+    PaidDmController_reply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaidDmReplyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmQuestion"];
+                };
+            };
+        };
+    };
     BlockedAccountController_list: {
         parameters: {
             query: {
@@ -7177,6 +7451,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorageUsage"];
+                };
+            };
+        };
+    };
+    StorageController_allowance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadAllowanceView"];
                 };
             };
         };
@@ -13206,6 +13499,63 @@ export interface operations {
             };
         };
     };
+    MoneyFeesController_feeQuote: {
+        parameters: {
+            query: {
+                kind: "wawu_transfer" | "bank_transfer" | "purchase" | "bill";
+                /**
+                 * @description In kobo: what the recipient gets on a send, the price on a purchase,
+                 *     the bill's own amount on a bill. Fees are added on top, never taken
+                 *     out of it. Digits only: `100.00` (a naira decimal), `1e4` or `10,000`
+                 *     is a 400, never read as some other number of kobo.
+                 */
+                amountKobo: number;
+                /** @description Required when kind is `bill`; any other kind with it is a 400. */
+                billCategory?: "electricity" | "cable" | "airtime" | "data";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeeQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     ChatController_list: {
         parameters: {
             query?: {
@@ -13498,56 +13848,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecipientView"][];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyTransferController_feeQuote: {
-        parameters: {
-            query: {
-                kind: "wawu_transfer" | "bank_transfer";
-                /** @description What the recipient should get, in kobo. */
-                amountKobo: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeeQuoteView"];
-                };
-            };
-            /** @description reason.code: amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
             /** @description reason.code: wallet_not_open, wallet_opening */
