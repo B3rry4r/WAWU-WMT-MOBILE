@@ -2881,6 +2881,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The wallet as WAWU records it: state, account details, limits, PIN state.
+         *     Never calls Fintava and never carries a balance. With no wallet it answers
+         *     200 with state not_open (R-6), so the Wallet tab can lead to Open your
+         *     wallet; while the account is being opened, state opening (A7); once
+         *     open, the account number Fintava gave (W1, A8).
+         */
+        get: operations["MoneyWalletController_wallet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/wallet/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The end of Open your wallet (A7): opens the person's account at Fintava
+         *     with the BVN and NIN whose check passed (KYC-01), after a selfie that
+         *     matched against that check (KYC-02), A5's name and date of birth, the
+         *     address typed, and the account's email. None of these is stored.
+         *
+         *     Safe to repeat: one account per person, whatever the number of taps.
+         *     Answers the wallet: `open` with its account number, or `opening` while
+         *     Fintava's answer is being confirmed (a lost answer is checked with
+         *     Fintava, never sent again blindly; GET /money/wallet shows when it
+         *     settles). An open wallet is answered as it is, with nothing sent.
+         */
+        post: operations["MoneyWalletController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -2960,28 +3011,6 @@ export interface paths {
         put?: never;
         /** Where to upload one photo, video or PDF for this chat. */
         post: operations["ChatController_presignAttachment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/wallet": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The wallet as WAWU records it: state, account details, limits, PIN state.
-         *     Never calls Fintava and never carries a balance. With no wallet it answers
-         *     200 with state not_open (R-6), so the Wallet tab can lead to Open your wallet.
-         * @description Declared by MONEY-04, not served yet: MONEY-12 serves it.
-         */
-        get: operations["MoneyWalletController_wallet"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4296,7 +4325,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -4370,6 +4399,23 @@ export interface components {
         IdentityOccupationDto: {
             /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
             occupation: string;
+        };
+        OpenNairaWalletDto: {
+            /** @description The BVN whose check passed: 11 digits, no spaces. */
+            bvn: string;
+            /** @description The NIN given with that check: 11 digits, no spaces. */
+            nin: string;
+            /** @description A5's first name, as the BVN check prefilled it. */
+            firstName: string;
+            /** @description A5's last name, as the BVN check prefilled it. */
+            lastName: string;
+            /** @description A5's date of birth, `YYYY-MM-DD`. */
+            dateOfBirth: string;
+            /**
+             * @description The full home address in one line (street, town, state), 5 to 200
+             *     characters with a letter in it. Fintava takes it as one field.
+             */
+            address: string;
         };
         OpenChatDto: {
             /**
@@ -6270,11 +6316,41 @@ export interface components {
             matchedAt: string | null;
             checksLeft: number;
         };
+        WalletAccountView: {
+            accountNumber: string;
+            accountName: string;
+            bankName: string;
+            bankCode: string;
+            licenceLine: string | null;
+            depositInsuranceLine: string | null;
+            openedAt: string;
+        };
+        WalletLimitsView: {
+            tier: string | null;
+            dailyLimitKobo: number;
+            usedTodayKobo: number;
+            remainingTodayKobo: number;
+            resetsAt: string;
+        };
         PinStateView: {
             isSet: boolean;
             changedAt: string | null;
             triesLeft: number;
             lockedUntil: string | null;
+        };
+        BankTransferAccessView: {
+            allowed: boolean;
+            /** @enum {string|null} */
+            blockedBy: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted" | null;
+        };
+        WalletView: {
+            /** @enum {string} */
+            state: "open" | "not_open" | "opening" | "frozen";
+            account: components["schemas"]["WalletAccountView"] | null;
+            limits: components["schemas"]["WalletLimitsView"] | null;
+            pin: components["schemas"]["PinStateView"];
+            bankTransfers: components["schemas"]["BankTransferAccessView"];
+            beneficiaryCount: number;
         };
         ChatPerson: {
             wawuId: string;
@@ -6524,36 +6600,6 @@ export interface components {
             reversal: components["schemas"]["TransferReversalView"] | null;
             createdAt: string;
             completedAt: string | null;
-        };
-        WalletAccountView: {
-            accountNumber: string;
-            accountName: string;
-            bankName: string;
-            bankCode: string;
-            licenceLine: string | null;
-            depositInsuranceLine: string | null;
-            openedAt: string;
-        };
-        WalletLimitsView: {
-            tier: string | null;
-            dailyLimitKobo: number;
-            usedTodayKobo: number;
-            remainingTodayKobo: number;
-            resetsAt: string;
-        };
-        BankTransferAccessView: {
-            allowed: boolean;
-            /** @enum {string|null} */
-            blockedBy: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted" | null;
-        };
-        WalletView: {
-            /** @enum {string} */
-            state: "open" | "not_open" | "opening" | "frozen";
-            account: components["schemas"]["WalletAccountView"] | null;
-            limits: components["schemas"]["WalletLimitsView"] | null;
-            pin: components["schemas"]["PinStateView"];
-            bankTransfers: components["schemas"]["BankTransferAccessView"];
-            beneficiaryCount: number;
         };
         PinResetView: {
             resetId: string;
@@ -12300,6 +12346,75 @@ export interface operations {
             };
         };
     };
+    MoneyWalletController_wallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
+                };
+            };
+        };
+    };
+    MoneyWalletController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenNairaWalletDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
+                };
+            };
+            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: account_not_opened */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     ChatController_list: {
         parameters: {
             query?: {
@@ -12465,25 +12580,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatUpload"];
-                };
-            };
-        };
-    };
-    MoneyWalletController_wallet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletView"];
                 };
             };
         };
