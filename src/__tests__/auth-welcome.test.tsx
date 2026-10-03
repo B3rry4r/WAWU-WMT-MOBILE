@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen as native } from '@testing-library/react-native';
 import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootLayout from '@/app/_layout';
@@ -13,12 +14,18 @@ import Explore from '@/app/(tabs)/explore';
 import Inbox from '@/app/(tabs)/inbox';
 import Wallet from '@/app/(tabs)/wallet';
 import Me from '@/app/(tabs)/me';
-import { resetSessionForTests } from '@/api/session';
+import { resetSessionForTests, signIn, signOut } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
-import { AccountTypeScreen } from '@/features/auth/AccountTypeScreen';
-import { pickedAccountType, resetAccountTypeForTests } from '@/features/auth/accountType';
+import { AccountTypeScreen, pickByKey } from '@/features/auth/AccountTypeScreen';
+import { pickedAccountType, clearAccountType } from '@/features/auth/accountType';
 
 const mockVault = new Map<string, string>();
+
+let mockScheme: 'light' | 'dark' = 'dark';
+jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
+  __esModule: true,
+  default: () => mockScheme,
+}));
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
@@ -47,6 +54,9 @@ const routes = {
 const HEADLINE = 'Get paid for what you know';
 const TITLE = 'What brings you to Who Made This?';
 let requests: string[] = [];
+/** When set, POST /auth/login answers with tokens; otherwise every request fails as if offline. */
+let loginWorks = false;
+const tokens = { data: { accessToken: 'access-1', refreshToken: 'refresh-1' } };
 
 beforeAll(async () => {
   const { unmount } = await renderRouter(routes);
@@ -56,10 +66,16 @@ beforeAll(async () => {
 beforeEach(() => {
   mockVault.clear();
   resetSessionForTests();
-  resetAccountTypeForTests();
+  clearAccountType();
   requests = [];
+  loginWorks = false;
+  mockScheme = 'dark';
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL) => {
-    requests.push(String(input instanceof Request ? input.url : input));
+    const url = String(input instanceof Request ? input.url : input);
+    requests.push(url);
+    if (loginWorks && new URL(url).pathname === '/auth/login') {
+      return new Response(JSON.stringify(tokens), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
     throw new TypeError('Network request failed');
   }) as typeof fetch;
 });
@@ -219,5 +235,120 @@ describe('A2 with a screen after it', () => {
     });
     await fireEvent.press(native.getByRole('button', { name: 'Continue' }));
     expect(onContinue).toHaveBeenCalledWith('earn');
+  });
+});
+
+describe('the status bar follows the screen in front', () => {
+  /**
+   * React Native keeps one entry per mounted StatusBar and merges them in mount order,
+   * the last one winning (`StatusBar._propsStack`, `mergePropsStack`); the merged result,
+   * what the phone is told, is `StatusBar._currentValues`. The root layout's entry carries
+   * the theme's style; A1's light entry must exist only while A1 is in front.
+   */
+  const barStyle = () => (StatusBar as unknown as { _currentValues: { barStyle: { value: string } } | null })._currentValues?.barStyle.value;
+  const themeDefault = (scheme: 'light' | 'dark') => (scheme === 'dark' ? 'light-content' : 'dark-content');
+
+  it.each(['light', 'dark'] as const)('in the %s theme, A1 has light icons, A2 has the theme default, Back to A1 is light again', async (scheme) => {
+    mockScheme = scheme;
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(barStyle()).toBe('light-content'));
+    await press('Create an account');
+    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
+    await waitFor(() => expect(barStyle()).toBe(themeDefault(scheme)));
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(barStyle()).toBe('light-content'));
+  });
+
+  it.each(['light', 'dark'] as const)('in the %s theme, A22 reached from A1 has the theme default, Back to A1 is light again', async (scheme) => {
+    mockScheme = scheme;
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await press('Sign in');
+    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    await waitFor(() => expect(barStyle()).toBe(themeDefault(scheme)));
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(barStyle()).toBe('light-content'));
+  });
+});
+
+describe('the pick is never carried to the next person', () => {
+  const earn = () => screen.getByRole('radio', { name: /want to earn/ });
+
+  it('a sign-in that succeeds forgets the pick', async () => {
+    loginWorks = true;
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await press('Create an account');
+    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
+    await fireEvent.press(earn());
+    expect(pickedAccountType()).toBe('earn');
+    await press('Back');
+    await press('Sign in');
+    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-in-password'), 'a-long-password');
+    await press('Sign in');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(pickedAccountType()).toBeNull();
+  });
+
+  it('after a sign-out the next visitor finds nothing picked on A2', async () => {
+    loginWorks = true;
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await press('Create an account');
+    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
+    await fireEvent.press(earn());
+    // A session that starts by another way than A22 (the sign-up that AUTH-04 adds) keeps the pick until sign-out.
+    await act(async () => {
+      await signIn('lennox@wawu.africa', 'a-long-password');
+    });
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(pickedAccountType()).toBe('earn');
+    await act(async () => {
+      await signOut();
+    });
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    expect(pickedAccountType()).toBeNull();
+    await press('Create an account');
+    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
+    expect(earn().props.accessibilityState.checked).toBe(false);
+  });
+});
+
+describe('A2 layout against the canvas', () => {
+  it('the body starts 10 down from the bar, as auth.js line 10 draws it (pt: 10), with no extra space above the title', async () => {
+    await render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+        <AccountTypeScreen />
+      </SafeAreaProvider>,
+    );
+    let node = native.getByText(TITLE).parent;
+    while (node && !node.props.contentContainerStyle) node = node.parent;
+    const content = StyleSheet.flatten(node?.props.contentContainerStyle);
+    expect(content.paddingTop).toBe(10);
+    const title = StyleSheet.flatten(native.getByText(TITLE).props.style);
+    expect(title.paddingTop ?? 0).toBe(0);
+  });
+});
+
+describe('A2 from a keyboard (web)', () => {
+  const key = (k: string) => ({ nativeEvent: { key: k }, preventDefault: jest.fn() });
+
+  it.each([' ', 'Enter'])('a user can pick a focused card with %p', async (k) => {
+    await renderRouter(routes, { initialUrl: '/account-type' });
+    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
+    await fireEvent(screen.getByRole('radio', { name: /here to discover/ }), 'keyDown', key(k));
+    expect(screen.getByRole('radio', { name: /here to discover/ }).props.accessibilityState.checked).toBe(true);
+    expect(pickedAccountType()).toBe('discover');
+  });
+
+  it('any other key picks nothing', () => {
+    const pick = jest.fn();
+    (pickByKey(pick) as { onKeyDown: (e: ReturnType<typeof key>) => void }).onKeyDown(key('a'));
+    expect(pick).not.toHaveBeenCalled();
   });
 });

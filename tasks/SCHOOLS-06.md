@@ -3,7 +3,7 @@ id: SCHOOLS-06
 title: Enrol and pay, class full
 owner: DEV3
 area: SCHOOLS
-order: 125
+order: 126
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

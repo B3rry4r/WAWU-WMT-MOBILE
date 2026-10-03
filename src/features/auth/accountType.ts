@@ -24,8 +24,14 @@ export function useAccountType(): [AccountType | null, (next: AccountType) => vo
 /** Reads the pick outside a component (the screen that follows A2 sends it with the sign-up). */
 export const pickedAccountType = (): AccountType | null => picked;
 
-/** Clears the pick between tests. */
-export function resetAccountTypeForTests() {
+/**
+ * Forgets the pick. Called when a new visit to the signed-out screens starts (the
+ * welcome screen mounts, as it does after a sign-out) and when a sign-in succeeds, so
+ * one person's pick never reaches the next person's sign-up on a shared phone. The pick
+ * lives in memory only: it survives Back and return within a sign-up, and is lost on a
+ * reload or when Android ends the app (Default (agent), owner may override). It holds no secret.
+ */
+export function clearAccountType() {
   picked = null;
   listeners.forEach((listener) => listener());
 }

@@ -3,7 +3,7 @@ id: HOME-13
 title: Tip a creator
 owner: DEV
 area: HOME
-order: 115
+order: 116
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

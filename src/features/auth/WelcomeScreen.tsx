@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +14,7 @@ import { darkColors, lightColors } from '@/theme/tokens.generated';
 const WORDS = { side: 24, between: 14, title: 34, tracking: -0.04, leading: 1.05, line: 15, lineLeading: 1.45, lineOpacity: 0.8, logo: 130 } as const;
 /**
  * design/_gen/auth.js line 8: the buttons are 10 apart, and the words end 180 above the bottom edge.
- * The buttons are 2 x 54 high with 10 between and 34 of home bar below (kit.js line 38), so the words
+ * The buttons are 2 x 54 high (kit.js line 15, `Btn` large) with 10 between and 34 of home bar below (kit.js line 38), so the words
  * stand 180 - 118 - 34 = 28 above the buttons.
  */
 const BUTTONS = { between: 10, wordsAbove: 28 } as const;
@@ -37,15 +38,17 @@ export type WelcomeScreenProps = {
  * A1: the screen a signed-out user first sees. The cover is always dark, so its
  * words, logo and status bar are always light, whatever the phone's theme. The
  * canvas's cover photo is a stand-in picture; the app draws the brand colour
- * under the same shade until the owner supplies a photo (BACKEND_GAPS G-34).
+ * under the same shade until the owner supplies a photo (BACKEND_GAPS G-35).
  * "and bank it all in one app" is left out of the line under the title: it
- * implies a bank account for everyone, which nothing backs (G-33).
+ * implies a bank account for everyone, which nothing backs (G-34).
  */
 export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
+  /** The welcome screen stays mounted under the screens pushed on it; its light bar must not outlive its turn on screen. */
+  const focused = useIsFocused();
   return (
     <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.accent }]}>
-      <StatusBar style="light" />
+      {focused ? <StatusBar style="light" /> : null}
       <LinearGradient
         pointerEvents="none"
         colors={[...SHADE.opacities.map(shadeAt), darkColors.surfacePage] as [string, string, string]}

@@ -3,7 +3,7 @@ id: WALLET-10
 title: Money in: bank transfers to the account
 owner: YOU
 area: WALLET
-order: 146
+order: 147
 priority: launch
 repo: wawu-backend
 type: money-path
@@ -32,6 +32,8 @@ W15: money sent to the user's account number shows up and notifies them.
 
 Inbound credit webhook to ledger to a 'money in' notification, honouring the user's Z3 switch (SETTINGS-07) and
 sent as a push (INBOX-03).
+
+Money in comes from the ledger (MONEY-10): MONEY-10 marks `account_funded` deliveries `processed` once they are ledger rows, so this task notifies from new `in` rows (`FintavaLedgerEntry`, `category: top_up`, `sourceEventId` names the delivery) with its own marker of what it has notified, never from the event row (`BACKEND_GAPS.md` G-33).
 
 ## Capability checks
 

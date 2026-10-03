@@ -2325,6 +2325,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's communities: rooms they host and rooms they were let into,
+         *     newest activity first, each with its share link, last message and unread
+         *     count. A request still waiting for the host is not listed.
+         */
+        get: operations["CommunityRoomsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a room, the way the app does. Creator accounts only, like
+         *     POST /communities. A private room needs a cover image (`imageUrl`):
+         *     without one the answer is 400 "A private room needs a cover image.".
+         *     The answer carries the room's share link.
+         */
+        post: operations["CommunityRoomsController_createRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/links/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open a `wawu/c/<slug>` link: the room it names, members or not. Capitals
+         *     are accepted. 404 "No community has this link." otherwise.
+         */
+        get: operations["CommunityRoomsController_resolve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The room's share link, made from its name the first time it is asked for. */
+        get: operations["CommunityRoomsController_link"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The caller has read the room up to now; its unread count on
+         *     GET /communities/mine goes to 0. The host or an approved member only
+         *     (403 otherwise). 200, not 201: it moves a marker.
+         */
+        post: operations["CommunityRoomsController_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities": {
         parameters: {
             query?: never;
@@ -2726,6 +2827,37 @@ export interface paths {
          *     per address by the app's throttler.
          */
         post: operations["MoneyIdentityController_checkBvn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/selfie": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The selfie step: whether the selfie has matched the BVN photo, and matches left today. */
+        get: operations["MoneyIdentityController_getSelfie"];
+        put?: never;
+        /**
+         * A6: matches the selfie against the BVN record's photo with Fintava
+         *     (charged per match, a failed one too). A face match, not a liveness
+         *     check. Needs a passed BVN check, and the BVN it passed with
+         *     (`bvn_not_checked` otherwise). A failed match is A16
+         *     (`selfie_not_matched`, with matches left today); the fourth in 24 hours
+         *     is `selfie_checks_exhausted`, and Fintava is not asked. Only an explicit
+         *     match from Fintava passes: an answer with no verdict is
+         *     `provider_unreachable` and still counts. A match counts only for the
+         *     BVN check it was compared against (`bvn_not_checked` if another check
+         *     passed meanwhile). Neither the
+         *     selfie nor the BVN photo is stored or logged. Limited per address by the
+         *     app's throttler, as the BVN check is.
+         */
+        post: operations["MoneyIdentityController_matchSelfie"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4164,7 +4296,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -4192,9 +4324,9 @@ export interface components {
             triesLeft?: number;
             /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
             lockedUntil?: string;
-            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted: seconds to wait before trying again. */
+            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, selfie_checks_exhausted: seconds to wait before trying again. */
             retryAfterSeconds?: number;
-            /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. */
+            /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
             checksLeft?: number;
         };
         MoneyErrorEnvelope: {
@@ -4223,6 +4355,17 @@ export interface components {
             bvn: string;
             /** @description The National Identification Number: 11 digits, no spaces. Fintava needs it to open the account. */
             nin: string;
+        };
+        SelfieMatchDto: {
+            /**
+             * Format: byte
+             * @description The selfie: plain base64 (no `data:` prefix) of a JPEG or PNG, 1 KB to
+             *     about 75 KB (at most 100,000 base64 characters), at most 2,048 pixels
+             *     on each side. A face match against the BVN photo, not a liveness check.
+             */
+            image: string;
+            /** @description The BVN whose check passed: 11 digits, no spaces. */
+            bvn: string;
         };
         IdentityOccupationDto: {
             /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
@@ -4327,6 +4470,11 @@ export interface components {
             expectedTotalKobo: number;
             /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
             note?: string;
+        };
+        FintavaWebhookAck: {
+            /** @enum {string} */
+            outcome: "recorded" | "duplicate";
+            event: string | null;
         };
         AdminUserView: {
             id: string;
@@ -5061,7 +5209,7 @@ export interface components {
         };
         WebhookResult: {
             /** @enum {string} */
-            outcome: "rejected" | "settled" | "in_progress" | "unmatched" | "ignored" | "duplicate";
+            outcome: "duplicate" | "rejected" | "settled" | "in_progress" | "unmatched" | "ignored";
             flow: string | null;
             detail: string | null;
         };
@@ -5878,6 +6026,59 @@ export interface components {
             avatarUrl: string | null;
             verification: components["schemas"]["VerificationState"];
         };
+        CommunityLastMessage: {
+            id: string;
+            text: string | null;
+            imageUrl: string | null;
+            /** Format: date-time */
+            sentAt: string;
+            senderWawuId: string;
+            sender: components["schemas"]["CommunityMessageSender"];
+        };
+        MyCommunity: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+            /** @enum {string} */
+            role: "host" | "member";
+            /** Format: date-time */
+            joinedAt: string | null;
+            lastMessage: components["schemas"]["CommunityLastMessage"];
+            unreadCount: number;
+            /** Format: date-time */
+            lastActivityAt: string | null;
+        };
+        CommunityRoom: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+        };
+        CommunityLinkView: {
+            communityId: string;
+            slug: string;
+            link: string;
+        };
+        CommunityReadView: {
+            communityId: string;
+            /** Format: date-time */
+            lastReadAt: string;
+        };
         CommunityMessage: {
             id: string;
             imageUrl: string | null;
@@ -6065,6 +6266,10 @@ export interface components {
             identity: components["schemas"]["WalletIdentityView"];
             prefill: components["schemas"]["BvnPrefillView"];
         };
+        SelfieMatchView: {
+            matchedAt: string | null;
+            checksLeft: number;
+        };
         PinStateView: {
             isSet: boolean;
             changedAt: string | null;
@@ -6126,11 +6331,6 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
-        };
-        FintavaWebhookAck: {
-            /** @enum {string} */
-            outcome: "duplicate" | "recorded";
-            event: string | null;
         };
         FeeBreakdown: {
             providerFeeKobo: number;
@@ -10959,6 +11159,114 @@ export interface operations {
             };
         };
     };
+    CommunityRoomsController_mine: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyCommunity"][];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_createRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoom"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoom"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityLinkView"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityReadView"];
+                };
+            };
+        };
+    };
     CommunityController_list: {
         parameters: {
             query: {
@@ -11863,6 +12171,84 @@ export interface operations {
                 };
             };
             /** @description reason.code: identity_checks_exhausted */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_getSelfie: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelfieMatchView"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_matchSelfie: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelfieMatchDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelfieMatchView"];
+                };
+            };
+            /** @description reason.code: selfie_already_matched, bvn_not_checked, wallet_already_open */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: selfie_not_matched */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: selfie_checks_exhausted */
             429: {
                 headers: {
                     [name: string]: unknown;

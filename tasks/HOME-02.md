@@ -3,7 +3,7 @@ id: HOME-02
 title: For you feed: video, photo set, book, locked, audio
 owner: DEV
 area: HOME
-order: 83
+order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

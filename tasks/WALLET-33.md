@@ -3,7 +3,7 @@ id: WALLET-33
 title: Crypto through Cardex (first slice)
 owner: YOU
 area: WALLET
-order: 198
+order: 199
 priority: after-launch
 repo: wawu-backend
 type: money-path

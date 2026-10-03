@@ -3,7 +3,7 @@ id: HOME-07
 title: Feed: course, template, creator and professional cards, empty and error
 owner: DEV
 area: HOME
-order: 144
+order: 145
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

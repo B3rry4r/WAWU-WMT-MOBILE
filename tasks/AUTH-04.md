@@ -3,7 +3,7 @@ id: AUTH-04
 title: Sign-up: email and phone
 owner: DEV
 area: AUTH
-order: 50
+order: 51
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

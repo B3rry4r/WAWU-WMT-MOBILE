@@ -3,7 +3,7 @@ id: BILLS-01
 title: Pay a bill: choose biller, meter and amount
 owner: DEV2
 area: BILLS
-order: 68
+order: 69
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

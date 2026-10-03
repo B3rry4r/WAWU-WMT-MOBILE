@@ -3,7 +3,7 @@ id: INBOX-12
 title: Paid message settings, warning, switched off
 owner: DEV2
 area: INBOX
-order: 64
+order: 65
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

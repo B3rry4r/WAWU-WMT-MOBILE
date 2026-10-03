@@ -3,7 +3,7 @@ id: INBOX-04
 title: Inbox: the list, empty, loading
 owner: DEV2
 area: INBOX
-order: 56
+order: 57
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

@@ -113,7 +113,7 @@ describe('signed out, cold start', () => {
     expect(screen.queryByText('Welcome back')).toBeNull();
   });
 
-  it('a user who signs out is taken to sign in', async () => {
+  it('a user who signs out is taken to the welcome screen', async () => {
     mockVault.set(ACCESS_KEY, 'stored-access');
     mockVault.set(REFRESH_KEY, 'stored-refresh');
     await renderRouter(routes);

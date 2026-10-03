@@ -3,7 +3,7 @@ id: SETTINGS-02
 title: About, terms and privacy policy
 owner: DEV
 area: SETTINGS
-order: 91
+order: 92
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
