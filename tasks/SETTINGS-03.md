@@ -3,7 +3,7 @@ id: SETTINGS-03
 title: Change password and sign out for real (WAWU ID)
 owner: DEV
 area: SETTINGS
-order: 87
+order: 88
 priority: launch
 repo: wawu-id
 type: backend-endpoint

@@ -3,7 +3,7 @@ id: INBOX-21
 title: Turn on phone notifications in the app
 owner: DEV2
 area: INBOX
-order: 51
+order: 52
 priority: launch
 repo: wawu-wmt-mobile
 type: flow

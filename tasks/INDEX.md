@@ -29,47 +29,48 @@ Builder and verifier are always different sessions.
 11. [MONEY-02](MONEY-02.md) The PIN sheet · needs UI-01, UI-02 from Developer first
 12. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet · needs UI-02 from Developer first
 13. [MONEY-06](MONEY-06.md) Fintava client
-14. [MONEY-07](MONEY-07.md) Fintava webhooks
-15. [OPS-11](OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy)
-16. [MONEY-09](MONEY-09.md) Transaction PIN
-17. [MONEY-10](MONEY-10.md) The ledger
-18. [MONEY-08](MONEY-08.md) Status checks and the pending sweep
-19. [MONEY-11](MONEY-11.md) Balance
-20. [KYC-01](KYC-01.md) BVN check when someone opens a wallet
-21. [KYC-02](KYC-02.md) Selfie match to the BVN photo
-22. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
-23. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
-24. [KYC-05](KYC-05.md) Open your wallet: enter your BVN and NIN · needs UI-02 from Developer first
-25. [KYC-03](KYC-03.md) Open your wallet: confirm details and address, selfie · needs UI-02 from Developer first
-26. [KYC-04](KYC-04.md) Open your wallet: account opened, create PIN · needs UI-02 from Developer first
-27. [WALLET-15](WALLET-15.md) Fee quotes
-28. [MONEY-17](MONEY-17.md) Pay from wallet
-29. [MONEY-18](MONEY-18.md) Hold, release and refund
-30. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
-31. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
-32. [MONEY-16](MONEY-16.md) Nightly check against Fintava
-33. [MONEY-14](MONEY-14.md) Reset the PIN, and approve with fingerprint or face · needs AUTH-03 from Developer first
-34. [MONEY-15](MONEY-15.md) Transaction history and detail
-35. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02, BILLS-01 from Developer first
-36. [WALLET-14](WALLET-14.md) Saved recipients and payout account
-37. [WALLET-11](WALLET-11.md) Payout bank account · needs UI-02 from Developer first
-38. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02, SETTINGS-01 from Developer first
-39. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01, HOME-02 from Developer first
-40. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
-41. [WALLET-07](WALLET-07.md) Send money to a WAWU user · needs SETTINGS-04 from Developer first
-42. [WALLET-02](WALLET-02.md) Send to a WAWU user · needs UI-02, UI-03 from Developer first
-43. [WALLET-09](WALLET-09.md) Send money to a bank
-44. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
-45. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs INBOX-03, SETTINGS-07 from Developer 2 first
-46. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02, HOME-12, BILLS-02 from Developer first
-47. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02, BILLS-01 from Developer first
-48. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
-49. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
-50. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
-51. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-52. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
-53. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
-54. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+14. [FIX-01](FIX-01.md) Fintava timeout covers the whole answer, garbage collection included
+15. [MONEY-07](MONEY-07.md) Fintava webhooks
+16. [OPS-11](OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy)
+17. [MONEY-09](MONEY-09.md) Transaction PIN
+18. [MONEY-10](MONEY-10.md) The ledger
+19. [MONEY-08](MONEY-08.md) Status checks and the pending sweep
+20. [MONEY-11](MONEY-11.md) Balance
+21. [KYC-01](KYC-01.md) BVN check when someone opens a wallet
+22. [KYC-02](KYC-02.md) Selfie match to the BVN photo
+23. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
+24. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
+25. [KYC-05](KYC-05.md) Open your wallet: enter your BVN and NIN · needs UI-02 from Developer first
+26. [KYC-03](KYC-03.md) Open your wallet: confirm details and address, selfie · needs UI-02 from Developer first
+27. [KYC-04](KYC-04.md) Open your wallet: account opened, create PIN · needs UI-02 from Developer first
+28. [WALLET-15](WALLET-15.md) Fee quotes
+29. [MONEY-17](MONEY-17.md) Pay from wallet
+30. [MONEY-18](MONEY-18.md) Hold, release and refund
+31. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
+32. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
+33. [MONEY-16](MONEY-16.md) Nightly check against Fintava
+34. [MONEY-14](MONEY-14.md) Reset the PIN, and approve with fingerprint or face · needs AUTH-03 from Developer first
+35. [MONEY-15](MONEY-15.md) Transaction history and detail
+36. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02, BILLS-01 from Developer first
+37. [WALLET-14](WALLET-14.md) Saved recipients and payout account
+38. [WALLET-11](WALLET-11.md) Payout bank account · needs UI-02 from Developer first
+39. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02, SETTINGS-01 from Developer first
+40. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01, HOME-02 from Developer first
+41. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
+42. [WALLET-07](WALLET-07.md) Send money to a WAWU user · needs SETTINGS-04 from Developer first
+43. [WALLET-02](WALLET-02.md) Send to a WAWU user · needs UI-02, UI-03 from Developer first
+44. [WALLET-09](WALLET-09.md) Send money to a bank
+45. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
+46. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs INBOX-03, SETTINGS-07 from Developer 2 first
+47. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02, HOME-12, BILLS-02 from Developer first
+48. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02, BILLS-01 from Developer first
+49. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
+50. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
+51. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
+52. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
+53. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
+54. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
+55. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 

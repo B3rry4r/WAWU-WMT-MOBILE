@@ -3,7 +3,7 @@ id: MONEY-17
 title: Pay from wallet
 owner: YOU
 area: MONEY
-order: 90
+order: 91
 priority: launch
 repo: wawu-backend
 type: money-path

@@ -3,7 +3,7 @@ id: EVENTS-04
 title: Host an event: basics, when and where, tickets, review
 owner: DEV3
 area: EVENTS
-order: 52
+order: 53
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

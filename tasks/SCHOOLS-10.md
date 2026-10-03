@@ -3,7 +3,7 @@ id: SCHOOLS-10
 title: Link to a school's own site, with the click recorded
 owner: DEV3
 area: SCHOOLS
-order: 75
+order: 76
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

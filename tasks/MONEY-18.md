@@ -3,7 +3,7 @@ id: MONEY-18
 title: Hold, release and refund
 owner: YOU
 area: MONEY
-order: 92
+order: 93
 priority: launch
 repo: wawu-backend
 type: money-path

@@ -3,7 +3,7 @@ id: INBOX-20
 title: Request money and pay a request
 owner: DEV2
 area: INBOX
-order: 141
+order: 142
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

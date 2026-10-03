@@ -3,7 +3,7 @@ id: MONEY-11
 title: Balance
 owner: YOU
 area: MONEY
-order: 70
+order: 71
 priority: launch
 repo: wawu-backend
 type: money-path
