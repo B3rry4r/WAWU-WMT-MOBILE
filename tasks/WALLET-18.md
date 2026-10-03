@@ -7,7 +7,7 @@ order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -53,7 +53,107 @@ Builder, 3 Oct 2026. Backend `wmt/WALLET-18` **2729634** on main fe1ec6c (unmove
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier, 3 Oct 2026. This is a fresh session that wrote none of this task's code. I checked wawu-backend `wmt/WALLET-18` `2729634` on main `fe1ec6c` (which has not moved) and mobile `wmt/WALLET-18` `dbdfd91` on main `e7dc879`. Each was in a fresh detached worktree: `/home/user/wt/vw18b` and `/home/user/wt/vw18m`. Mobile main has since moved to `42309b2` (KYC-05). Merging it conflicts in `SHARED-CHANGES.md` and `docs/PROGRESS.md` (`git merge-tree`), and that merge is left to the next round.
+- **Databases:** my own `vw18_probe_test`, `vw18_full_test` and `vw18_protected_test`. All are dropped.
+- **Ports:** Hub :4973 and the stand-in WAWU ID :4974. Port :4001 was used once, for the full suite, only after `lsof` showed it free. My mock there was stopped straight after, and `lsof` was empty again.
+- **Fintava:** no call at all. The receipt routes never call Fintava, so the ledger rows came from the ledger's own writer (`LedgerService.record`), the stand-in this brief allows.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw18/` (below, `vw18/`).
+
+**Verdict: 2 open defects (D1, D2) and 1 latent privacy defect (D3). Status is back to building.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | **Backend:** `tsc --noEmit` 0. eslint (no `--fix`) on every added or changed `.ts`: 0. Gates: 9 run, 657 files scanned, **16 fail / 15 warn** / 76 accepted. Main `fe1ec6c` is 16 / 13 on 645 files. The FAIL lines are identical, and the only added warnings are `PROVISIONAL(RECEIPT-LOOKUP-LIMITS)` and `PROVISIONAL(RECEIPT-RENDER-LIMITS)`. `check_baseline.py` passes (108 entries). **Mobile:** `npm run check` exit 0 (typecheck, lint, 26 suites / 431 tests, gates 9 run / 110 files / 0 fail / 0 warn, 205 tasks). | `vw18/tsc.txt`, `vw18/eslint.txt`, `vw18/gates-main.txt`, `vw18/gates-branch.txt`, `vw18/g-main.lst`, `vw18/g-branch.lst`, `vw18/baseline.txt`, `vw18/mobile-check.txt` |
+| V2 Contract | passed | **Full suite as `deploy.yml` runs it:** a fresh migrated and seeded `vw18_full_test`; my mock from `mock-wawu-id/server.js` on :4001, with a keypair made as `deploy.yml` makes it; the CI admin secrets; `npx jest --runInBand --forceExit`. Result: **136 of 136 suites, 3,263 passed, 3 skipped, 0 failed** (21:25 to 21:30 UTC). **Contract:** `npm run contract:build` equals the committed `contract/openapi.json` (order aside). The mobile `contract/openapi.json` is byte-equal to it, `SOURCE_COMMIT` is `2729634`, and the 4 new paths are present. **Dependency:** `npm ci` from the lockfile into an empty `node_modules` installed cleanly (36 s). `@resvg/resvg-js` and the `linux-x64-gnu` binary are 2.6.2, MPL-2.0 (a file-level copyleft, acceptable unmodified). The lock diff is 216 added lines only, and `npm audit` is unchanged from main (11). | `vw18/full.txt`, `vw18/full-start.txt`, `vw18/lsof4001-after.txt`, `vw18/contract-build.txt`, `vw18/openapi.built.json` |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh HEAD` (code `2729634`, lock `origin/main` `fe1ec6c`): **253/253, all 244 required**. No file of the lock or the suite is touched. CI tripwire over the 3,732 added lines outside the checker's files: 0 matches. `hub-rate-limits.contract.spec.ts` passes (in the focused run, 7 suites 93/93). | `vw18/protected.txt`, `vw18/tripwire.txt`, `vw18/focused-specs.txt` |
+| V4 Field trace | passed | **`MoneyReceipt`:** written only by `ReceiptService.codeFor` (the three owner routes); read by `issue` and `lookup`; deleted by the purge (OWNED, `wawuUserId`). **The page:** every field comes from MONEY-15's `detail` on each ask, and nothing is copied or summed. Settling the pending bill row in the database turned the next open of its page from Pending to Completed. **Shared files** (`money.module.ts`, both gate route lists, MONEY-04's served list, the rate-limit spec, `.env.example`, `deploy/README.md`, the purge map): added entries only. Two existing `WALLET.md` lines were reworded to point at these routes, consistent with R-33. **Wallet gate:** runs on all three owner routes (gate specs; mutant V7 below). | `vw18/probe/v9-status-and-miss.txt`, `vw18/backend.diff` |
+| V9 Live seam | passed (Fintava stand-in) | Built Hub on :4973. Three people registered on the stand-in WAWU ID and signed in through its `/auth/login` (no minted token). Their wallets and 12 ledger rows were written by the ledger's own writer. **Covered:** a send to a WAWU user, a bank send, money in from a bank, a tip from a handle-only user, an unlock purchase, two bills, the recipient's own `in` row, and 4 rows with hostile names. **Results:** every `POST .../receipt` returned 200, with image 200 `image/png` and PDF 200 `application/pdf`. Every page matched its row: amount, Lagos date, status, reference and masked sides. All 12 PDFs pass `pypdf` strict as one A4 page and render in PyMuPDF. The sandbox was not called; the builder's `docs/fintava/sandbox/39-wallet18-receipts.md` is the real-movement evidence. | `vw18/probe/` (`seed.js`, `probe.js`, `probe-out.txt`, `public-*.html`, `public-*.headers.txt`, `*.png`, `*.pdf`, `pdf-validate.txt`) |
+
+**Capability checks**
+- **A receipt's code opens a page that matches the transaction: passed.** For example, a bank send's page shows ₦25,000.00, Completed, 27 Sep 2026, 12:02 (Lagos), its reference, From "Lennox E. O." / "Loma Bank •••• 9001" and To "Chidinma O." / "GTBank •••• 6789". The code also opens typed in lower case, hyphenated, with O for 0 and L for 1 (`wmq7-bgll-3mtp`).
+- **A made-up code shows 'not found', never someone else's receipt: passed.** I sent 300 made-up and 300 malformed codes (300 characters), plus 300 asks each for two stale codes: one whose wallet no longer matches and one whose ledger row is gone. All 1,200 got 404 with one byte-identical body (sha `8da1fc6353ce`).
+
+**Focus results**
+- **Privacy on the public page (5 transaction types plus the recipient's side):** I scanned the HTML (attributes, meta and title included) and the response headers. None of these appears:
+  - any of the 3 wallets' full NUBANs, or the other sides' full accounts (`0123456789`, `2234567891`), a meter number or a phone;
+  - the 3 people's emails or phones from the WAWU ID, their WAWU user ids, or the handle;
+  - the note or the link title (`SECRETNOTE`, `SECRETTITLE`);
+  - any surname.
+
+  One exception is D3. The type is the kind only ("Unlock", "Tip", "Bill"), never what was bought. A received payment's image and PDF show the sender only as bank plus last 4. The owner's own full number appears on the owner's own image and PDF only (the builder's default), and never for the other side. The 404 and 200 pages send `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `<meta name="robots" content="noindex, nofollow">`, `Referrer-Policy: no-referrer` and helmet's CSP. There is no CDN in front (nginx only), and `no-store` keeps a future CDN from caching. The masking can't be reversed by combining fields: the public page never shows more than 4 digits of either account, and the owner's full number is only on the owner-shared image and PDF.
+- **Codes:** 200,000 drawn from `newReceiptCode`: all 32 symbols, chi-square 29.4 on 31 degrees of freedom, all unique. Nothing is derived from an id or a time. 20 parallel `POST`s on one row made one code (one row in `MoneyReceipt`), and no code repeats across rows (unique index; 0 duplicates in the probe database).
+- **Throttles:** sent through loopback as nginx sends them, with a varying client-written `X-Forwarded-For` and a fixed nginx-appended peer:
+  - the public page's 11th ask in a minute is 429, misses included, and a fresh address is unaffected;
+  - the image's 11th is 429;
+  - the PDF has its own bucket (10 then 429).
+
+  The left-hand `X-Forwarded-For` entries are never read (`hubTrustProxy` trusts only one loopback hop), so a client cannot spread its asks across made-up addresses. (`vw18/probe/throttle.txt`)
+- **Miss timing:** the body and headers are identical apart from the date and rate-limit counters. Timing is not identical (300 each, medians, `vw18/probe/miss-timing.txt`):
+
+  | Kind of ask | Median |
+  |---|---|
+  | made-up code | 3.0 ms |
+  | malformed code | 3.0 ms |
+  | stale: wallet no longer matches | 3.7 ms |
+  | stale: ledger row gone | 7.0 ms |
+  | a hit, for scale | 7.1 ms |
+
+  So the builder's "after exactly one `MoneyReceipt` lookup" holds only for codes never issued. A code once issued whose row has since gone runs 3 queries. See finding 4.
+- **Owner routes:** B asking for A's row by id got the same 404 body as a missing id, on all three routes. No token gets 401. A received payment's image and PDF show the sender's account as bank plus last 4 only.
+- **Rendering safety:** `<script>`, `&`, both quote kinds, `</text><text>` and `<img onerror>` in a name and a bank name are escaped on the page and drawn as literal text in the PNG and PDF (`vw18/probe/hostile.png`). RTL and bidi-override characters render without spilling into other rows (`rtl.png`). See D1 and D2 for the failures.
+- **Font:** the script rebuilt from the mobile repo's Alan Sans gives glyph tables byte-identical to the committed three (the naira glyph is identical). The only difference is `head.modified`, the build time, so the files are reproducible in content but not byte for byte (finding 5). The OFL licence is copied beside the fonts, the copyright and licence name records are kept, and the family is renamed (Alan Sans declares no Reserved Font Name, so the rename is extra care). `assets/receipt/submark.svg` is byte-identical to the brand pack's `assets/brand/source/submark.svg` (R-37). The receipt colours equal `design/_ds/wawu/tokens/colors.css` and the canvas's `rcpt` greys.
+- **Mutations:** my own 9, none of the builder's 6, against the receipts, gate, rate-limit and money-contract specs (93 tests), each file restored by copy (`vw18/mut/`). **7 killed:**
+  - masking removed entirely (V1b);
+  - the public page's type is the whole description (what was bought shows);
+  - `X-Robots-Tag` dropped;
+  - dates in UTC;
+  - the page's hourly limit 600;
+  - the PDF route without the wallet gate;
+  - the counterparty's full name on the page.
+
+  **2 survived:**
+  - V1, digit runs masked only from 7 digits (no test pins the 5-digit edge);
+  - V2, `escapeXml` without `&`, so an `&` in a name would break the image and the PDF (no test draws a name with `&` or `<`).
+- **Secret scan:** 0 of the key's 58 windows in either branch diff or in any evidence file (`vw18/keyscan.txt`).
+
+**Findings**
+1. **defect: drawing a receipt has no time bound, and it blocks the whole server while it draws.**
+   - **Cause:** `wrap()` and `fit()` in `receipt-render.ts` measure every candidate cut with a fresh `Resvg` instance, one character at a time, synchronously on the event loop. The cost grows with the square of an unbroken string's length.
+   - **Input:** the ledger keeps names and bank names up to 500 characters and references up to 200 (`ledger.service.ts` `clean`).
+   - **Reproduction:** a ledger row whose counterparty name is 500 letters with no space, written with `LedgerService.record` (`vw18/probe/one-row.js 500 17`), then the owner's `GET .../receipt/pdf`.
+
+     | First draw of the row | Time | `/health` asked meanwhile |
+     |---|---|---|
+     | PDF, 500-letter name | 13.9 s | waited 13.6 s |
+     | image, same row (the width cache, cleared past 5,000 entries, was cold again) | 6.2 s | waited 5.9 s |
+     | 200-letter name | 1.1 s | |
+     | 200-character reference | 0.76 s | |
+     | names of 60 or fewer letters | 0.12 to 0.13 s | |
+
+     (`vw18/probe/render-timing.txt`)
+   - **Why it matters:** every other request on the server waits that long. Ten asks a minute per address on each of two routes is enough to keep it busy.
+   - **Close when:** a draw has a bound (cap or pre-cut the printed strings, measure in steps rather than one character at a time, or draw off the event loop), and a test pins it.
+2. **defect: a printed name with a character XML forbids makes the image and the PDF answer 500.**
+   - **Reproduction:** a received transfer whose counterparty name is `Bad\u0001Name\u0008X \uFFFE` (the `ctrl` row in `vw18/probe/seed.js`). `POST .../receipt` and the public page are fine (the page shows "BadNameX"), but `GET .../receipt/image` and `.../receipt/pdf` answer `500`. The log reads `SVG data parsing failed ... a non-XML character '\u{1}'`.
+   - **Close when:** `escapeXml`, or the text it is given, drops or replaces characters outside XML 1.0's range, and a test draws one.
+3. **defect (privacy, latent): a phone or meter number written with spaces or hyphens shows whole on the public page in a company's name.**
+   - **Cause:** `maskDigits` masks only an unbroken run of 5 or more digits. A biller (or `wawu`) side keeps its whole name, so "MTN Airtime 0803 123 4567" is printed as is (`vw18/probe/public-bill.html`). The unbroken "IKEDC Prepaid 45012345678" is masked correctly.
+   - **Why latent:** no writer records a biller row today. The bill tasks will.
+   - **Close when:** digit groups joined by spaces, hyphens, dots or a leading `+` are masked as one run, and a test pins it (mutant V1 also shows that the 5-digit edge is unpinned).
+4. **unclear (owner, low risk):** a stale code (a receipt whose ledger row is gone) takes as long as a hit, about twice a made-up code. Someone who already holds the code can tell it was once issued. Nobody can find a code to ask about (60 bits, 60 asks an hour per address), so I judge this harmless. The builder's report line "after exactly one `MoneyReceipt` lookup" should say it holds for codes never issued.
+5. **Note:** `build-receipt-fonts.py` writes the build time into `head.modified`, so a rebuild is equal in every table but not byte-identical. Setting `SOURCE_DATE_EPOCH` or fixing the timestamp would make it reproducible.
+6. **Note:** two surviving mutants (V1, V2 above) are test gaps. They are not defects in the code as built.
+
+**Diff against the report:** the 33 backend and 11 mobile files match the builder's list. Nothing is missing or extra. No stand-in remains for anything main has.
+
+**NOT RUN**
+- **A bank send's receipt from the sandbox:** the sandbox refuses every payout (question 17). This is unblocked when a sandbox payout succeeds. Covered here from the ledger writer.
+- **The receipt link on the live host:** unblocked when `RECEIPT_VERIFY_BASE_URL` is set on the droplet (G-67).
+- **The prebuilt binary on the droplet:** unblocked by the first deploy (`GET .../receipt/image` answering 200 there).
+- **V5 pictures:** they belong to WALLET-12's screens.
+- **A real Fintava movement in this round:** the brief allowed only a few free GETs and the routes call none, so the builder's sandbox run (doc 39) stands.
+
+**To close:** D1 (bound the draw and keep it off the event loop), D2 (drop non-XML characters before drawing), D3 (mask spaced and hyphenated digit groups), each with a test. Then merge mobile main `42309b2`.
 
 ## Owner sign-off
 
