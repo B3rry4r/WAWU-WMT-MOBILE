@@ -7,7 +7,7 @@ order: 108
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -116,6 +116,118 @@ Builder, 3 Oct 2026. wawu-backend `wmt/MONEY-15` 35e4e33 (from main 6d48c97, whi
 - **NOT RUN:** V9's real sign-in (verifier's pass; the sandbox run signed in at the stand-in WAWU ID). Bank-send and bill rows from the sandbox: payouts refused (question 17). A real delivery: OPS-10. W27 "Report a problem": SUPPORT-01 (G-8). V10: no screen (WALLET-04).
 
 ## Verifier report
+
+### Verifier report, round 3
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code). **Verdict: defect 2 is closed, and no defect is open, so status `review`.** Blind spot A is closed for every write that commits within Prisma's 5 s timer. One new `unclear` finding (finding 4): 5 s is when Prisma's timer is due, not a hard limit on the time from stamp to commit. A writer whose event loop is late reaching that timer commits after it, and the round-2 loss came back once that happened (reproduced in a separate process). CONVENTIONS section 6 states the 5 s as a hard limit.
+
+Checked at backend `wmt/MONEY-15` c0d9a12 (main 48b9043, which has not moved; round 3's own change is `git diff a622812..c0d9a12`) and mobile `wmt/MONEY-15` 46095e8 (mobile main 331a6fa inside). I used fresh detached worktrees `/home/user/wt/vm15b3` and `/home/user/wt/vm15m3`. The container restarted part way through. The lead stopped my Hub and dropped `vm15r3_live_test`. Every check whose output was not saved was run again from a new database: the margin walk, the full suite and every check after it. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vm15r3/` (the rows below name each file). My probe scripts are kept there and are not committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`tsc.log`). eslint 0 on the 13 `.ts` files the branch adds or changes against main (`changed-ts.txt`, `eslint.log`). Gates on main 48b9043: 16 fail / 12 warn / 76 accepted, 631 files. On the branch: 16 / 12 / 76, 636 files. The findings match line for line once line numbers are dropped (`gates-main.log`, `gates-branch.log`, `.norm`), and `check_baseline.py` is clean (`check-baseline.log`). CI tripwire: 0 added lines outside the protected suite's own files match (`tripwire.txt`). Key scan: 58 windows of 8 characters, 0 hits in the backend diff, the backend patch log, the mobile diff and the mobile patch log. Mobile `npm run check` exit 0: typecheck, lint, 21 suites / 377 tests, gates 0 fail / 0 warn on 98 files, 203 tasks (`mobile-check-before.log`). |
+| V2 Contract | passed | Defect 2 is closed (Focus 1). Backend `contract/` is unchanged from round 2 (`git diff a622812 c0d9a12 -- contract/` is empty). Against mobile main 331a6fa, mobile `contract/` changes only `SOURCE_COMMIT` (da76d13 to 48b9043), as in round 2. The history, gate and money-contract specs: 6 suites, 103/103 (`history-baseline.log`). |
+| V3 Regression | passed | `run.sh --fresh c0d9a12` with lock 48b9043: 253/253, all 244 required (`protected.log`). The lock and suite files differ from main by 0 lines. `hub-rate-limits.contract.spec.ts`: 10/10 (`hub-rate-limits.log`). Full suite run as the deploy runs it: a fresh migrated and seeded `vm15r3_full_test`, and `mock-wawu-id/server.js` on :4001 with a keypair made as `deploy.yml` makes it. `lsof` showed :4001 free before (13:16 UTC). My mock was stopped straight after and `lsof` was empty again at 13:22. `npx jest --runInBand --forceExit`: **130/130 suites, 3,144 passed, 3 skipped, 0 failed** (`full.log`, `full.json`). MONEY-14's flaky `pin-reset` leak check passed, so no rerun was needed. |
+| V4 Field trace | passed | Round 3 changes no writer and no field read. The margin walk (Focus 3) checked each group's count against its key's list. It also checked the July summary against its rows: it counts an unlock completed inside the margin at once (in 753,000 = 3 unlocks + 3 transfers), because the summary does not group. |
+| V9 Live seam | passed against the stand-in WAWU ID | Built server (`npm run build`, `node dist/src/main.js` on :4937, no Fintava key or base URL set). People registered and signed in through the stand-in's `POST /auth/login` on :4938, with no minted token. They then read rows that the ledger's own writer (`LedgerService.record`) wrote (`live-tamper.log`, `live-inflight.log`, `live-margin.log`). The real WAWU ID sign-in is NOT RUN (below). |
+
+**Focus 1: defect 2 is closed**
+- Round 2's `live-tamper.js` was run again on the built server (`live-tamper-r2.js`, `live-tamper-r2.log`). All three year-0000 requests now answer 400 with the existing messages: the cursor snapshot and the cursor `at` with `cursor is not one this history gave.`, and the group key snapshot with `group is not a key this history gave.`. The year 0001 and 2099 snapshots answer 200, and `c1.`/`g1.` answer 400.
+- Wider sweep (`live-tamper.js`, `live-tamper.log`), 129 requests. Each of the three fields (cursor snapshot, cursor `at`, group key snapshot) was sent 38 bad values and 5 good ones. **0 unexpected answers.** The Hub log has no 500 and no Postgres error.
+  - Bad values, all answered 400:
+    - year 0000 at other times and offsets (`+01:00`, `-01:00`, `+00:00`, no milliseconds, date only)
+    - `10000-…`, `+010000-…`, `+275760-…`, `+294277-…`, `-000001-…`, `-271821-…`, `-0001-…`, `+000000-…`
+    - leap seconds `23:59:60.000Z` and `.999Z`, and `24:00`
+    - 25, 4 and 2 fraction digits, and none
+    - 30 Feb and month 13
+    - a space or lower-case `t`/`z`, full-width digits, a trailing newline or a leading space
+    - `infinity`, `-infinity`, `epoch`, `now`, `allballs`
+    - a number, `null` and an array
+  - Good values, all answered 200: `0001-01-01T00:00:00.000Z`, `0001-01-01T00:00:04.999Z` (where the group bound is clamped), `0001-12-31…`, `1970-01-01…` and `9999-12-31T23:59:59.999Z`.
+  - `month` is unchanged: 0000, 10000 and -0001 are 400, and 0001 and 9999 are 200.
+
+**Focus 2: blind spot A, a real in-flight write (`live-inflight.js`, `live-inflight.log`, run again after the restart in `live-inflight-run2.log` with the same results)**
+- **A, closed.** A real interactive transaction used Prisma's defaults, as `LedgerConsumerService.finish` does. Inside it, `LedgerService.record(input, tx)` recorded a third unlock and stamped its `completedAt`. Page 1 (`limit=3`) was read over HTTP while that write was still uncommitted, at 10, 1,000, 2,500, 4,000, 4,500, 4,800 and 4,900 ms after the stamp. The transaction then committed and the rest of the scroll was walked.
+  - The two older unlocks were not aged by SQL: the probe waited 6 s instead.
+  - In all 7 runs (and all 7 again in run 2), each of u1, u2 and the 5 transfers showed exactly once, the new unlock did not show, and the group showed 2.
+  - A refresh 5 s later showed the group of 3 in all 7.
+- **B.** A transaction callback that awaits 5.2 s is refused at about 5,206 ms ("A commit cannot be executed on an expired transaction. The timeout for this transaction was 5000"), and no row is written. The timer is real for an ordinary slow write.
+- **C, see finding 4.** A writer in its own process stamps an unlock, waits 4.9 s, then keeps its event loop busy for 600 ms. Prisma commits it, and the stamp-to-commit time was 5,571 ms (5,600 ms in run 2). Page 1 was read 5.2 s after the stamp, while the write was not yet visible. The rest of that scroll showed the 5 transfers and **neither u1 nor u2** (the group of 3 had moved above the cursor). This is round 2's loss.
+- **Every code path that writes a completed unlock** (`completedAt` set, all inside one transaction):
+  - The only assignments are in `LedgerService.recordIn` and `merge`. The stamp is `new Date()` taken inside the transaction callback, after `BEGIN`, so maxWait is not counted.
+  - Callers:
+    - `record` without a transaction: its own `$transaction(fn)`, no options. A retry runs a new transaction and takes a new stamp.
+    - `LedgerConsumerService.finish`: `$transaction(fn)`, no options. It passes `tx` to `record` and `applyReversal`.
+    - `LedgerStatusService` (the sweep): calls `ledger.record(...)` without a transaction.
+  - `applyReversal`, `markAbsentFailed` and `noteDiscrepancy` never set `completedAt`. `merge` clears it when a disagreement reopens a row (blind spot B, documented).
+  - The sweep's raw `UPDATE` (`reschedule`) touches only `statusChecks` and `nextCheckAt`. `account-data-map.ts` only deletes.
+  - No `$transaction` anywhere in `src` passes `timeout`, `maxWait` or an isolation option, and `PrismaService` sets no `transactionOptions`. Prisma 7.9.1's default is `timeout: 5e3`, `maxWait: 2e3`.
+  - The deploy runs one Hub process (one systemd unit), so the stamp and the snapshot come from one clock.
+- **The guard test is real:**
+  - It fails when a writer is changed to pass `timeout: 10000` (G1), when the consumer's `finish` passes `{ timeout: 10_000 }` (G3), and when `PrismaService` sets `transactionOptions` (G4).
+  - It is a text match on 4 files, though, so two things get past it:
+    - `{ timeout }` shorthand, which compiles to a 10 s timeout (G2 survives).
+    - A future caller in another file that passes its own longer transaction into `ledger.record(input, tx)`. Today only the consumer does that.
+
+**Focus 3: no regression from the margin (`live-margin.js`, `live-margin.log`)**
+- Setup: a group of two plus an unlock completed **inside** the 5 s margin just before page 1. Page sizes were 1, 2 and 3, with 1.1 to 3 s between pages, so the margin ran out partway through the scroll. 15 checks, 0 unexpected.
+  - M1, the newest member inside the margin: it is its own row on page 1, the group shows 2 and its key lists 2, and every movement shows exactly once. A refresh shows the group of 3.
+  - M2, the oldest member inside the margin (below the cursor): it is its own row on a later page, the group shows 2/2, and everything shows once.
+  - M3, every member inside the margin: no group in that scroll, and everything shows once even after the margin ran out. A refresh 5 s later shows a group of 2/2.
+- Also: the July summary includes an unlock completed inside the margin straight away. P1, P1b, P1c and the boundary test pass, within the 103/103 above.
+
+**Focus 4: CONVENTIONS section 6**
+- These statements match what I observed:
+  - The bound is the snapshot minus 5 s.
+  - An unlock that lands, settles, or is in flight within Prisma's timer stays its own row.
+  - An unlock completed in the last 5 s is its own row until a refresh.
+  - A time dated year 0000 is a 400.
+  - The two listed cases a refresh corrects (round 2's findings 1 and 3) are described as round 2 reproduced them.
+- One sentence overclaims: "The 5 s is how long a ledger write can run from stamping `completedAt` to committing". C shows 5.57 s. The same is true of the `LEDGER_WRITE_MAX_MS` comment ("the longest a ledger write can take"). Finding 4 covers both.
+
+**Findings**
+- `unclear`, finding 4: the 5 s is when Prisma's timer is due, not a hard limit on the time from stamp to commit.
+  - How Prisma 7.9.1 handles it (`client-engine-runtime` `TransactionManager`): the timeout is a `setTimeout` started after `BEGIN`.
+    - A commit the callback issues before that timer runs is completed: the transaction is then `closing`, and the timer waits for the close.
+    - So stamp to commit can run past 5 s by the commit's own time and by how late the event loop runs the timer. C measured 5,571 ms and 5,600 ms.
+  - What it takes in production (one Hub process, where the writer and the reader share an event loop), all at once:
+    - a ledger write that has already run for nearly 5 s;
+    - an event-loop stall or a slow `COMMIT` at that instant;
+    - a page-1 read whose query runs before the commit is visible;
+    - a group of the same piece and Lagos day below the cursor.
+  - Effect: the same as round 2's blind spot A. A refresh corrects it.
+  - For the owner:
+    - accept it and change the two sentences to say the margin covers writes that finish within Prisma's timer;
+    - or make the bound exact by keying visibility to the database rather than the clock, for example a stored `pg_current_snapshot()` checked with `pg_visible_in_snapshot(xmin, …)`.
+- Round 2's findings 1 (a row whose time moves earlier) and 3 (a reopened unlock) are now documented in CONVENTIONS section 6, and the text matches round 2's reproductions. Finding 2 (blind spot A) is closed except for finding 4.
+
+**Mutations** (`mutate.py`, `mutants/summary.txt`, logs in `mutants/`): 14 of my own, on round 3's code and the guard. Each ran alone, the file was restored by copy and `git status` was clean afterwards. Each was run against the history contract and unit specs (47 tests). **12 killed, 2 survived.**
+- Killed:
+  - R1, a margin of 4.5 s in the query (the constant left at 5 s)
+  - R2, a margin of 5.5 s
+  - R3, `<` for `<=` at the bound
+  - R4, the margin on the first page only
+  - R5, the margin on history pages but not a group key's list
+  - R7, no clamp
+  - R8, year 0 refused only in January
+  - R9, the cursor's `at` not checked for year 0
+  - R10, the group key's snapshot not checked for year 0
+  - G1, `timeout: 10000` in `LedgerService.record`
+  - G3, `timeout: 10_000` in the consumer's `finish`
+  - G4, `transactionOptions` in `PrismaService`
+- Survived:
+  - R6, a clamp at 1970 instead of year 1. Equivalent in practice: no `completedAt` is earlier than 1970, and only a forged snapshot reaches the clamp.
+  - G2, `{ timeout }` shorthand (10 s, compiles). The guard is a text match (Focus 2). Observation, not a defect.
+
+**Capability checks**
+- [x] Searching a recipient's name finds their transfers: the history spec's capability tests pass at c0d9a12 (in the 103/103).
+- [x] Monthly totals equal the sum of that month's rows: the same specs pass. The margin walk's July summary equals its rows, including an unlock completed inside the margin.
+
+**NOT RUN**
+- The real WAWU ID sign-in (V9). Unblocked when a session may call `id.wawuafrica.com`.
+- A sandbox round trip. Not needed: the three routes never call Fintava (the built server ran with no Fintava key). Unblocked by a pass that is allowed one ₦10 round trip on dev.fintavapay.com, if wanted.
+
+Cleanup: my Hub on :4937 (PID 21378, after the restart; the lead stopped the first one), my stand-in on :4938 (21423) and my :4001 stand-in (5234) were stopped by PID, after checking each PID's working directory was this worktree. `lsof` shows :4001, :4937 and :4938 free. Databases `vm15r3_live_test`, `vm15r3_probe_test`, `vm15r3_protected_test` and `vm15r3_full_test` were dropped. The temporary main worktree used for the gate comparison was removed.
 
 ### Verifier report, round 2
 
