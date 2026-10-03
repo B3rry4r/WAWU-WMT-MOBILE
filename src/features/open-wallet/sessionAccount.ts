@@ -11,12 +11,37 @@ import { getAccessToken, useSession } from '@/api/session';
  * that cache app-wide).
  */
 export function accountOfToken(token: string | null): string | null {
-  const payload = token?.split('.')[1];
-  if (!payload) return null;
+  const json = payloadOf(token);
+  if (json === null) return null;
   try {
-    const json = globalThis.atob(payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '='));
-    const sub = (JSON.parse(json) as { sub?: unknown }).sub;
+    const claims: unknown = JSON.parse(json);
+    const sub = typeof claims === 'object' && claims !== null ? (claims as { sub?: unknown }).sub : undefined;
     return typeof sub === 'string' && sub.length > 0 ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/** base64url: the JWT alphabet, `-` and `_` in place of `+` and `/`, padding optional. */
+const BASE64URL = /^[A-Za-z0-9_-]+={0,2}$/;
+
+/**
+ * The token's middle part as text: base64url (RFC 7515 section 2), padding
+ * added back where it was left off, then the bytes read as UTF-8, so a name
+ * such as "Ngozi Ọ̀kọ̀" in the claims comes through whole. Null for anything
+ * that is not a three-part token with a readable middle.
+ */
+function payloadOf(token: string | null): string | null {
+  const parts = token?.split('.');
+  if (!parts || parts.length !== 3 || !BASE64URL.test(parts[1])) return null;
+  const bare = parts[1].replace(/=+$/, '');
+  if (bare.length % 4 === 1) return null;
+  try {
+    const bytes = globalThis.atob(bare.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(bare.length / 4) * 4, '='));
+    // Each byte as %XX, then decodeURIComponent reads them as UTF-8 (and throws on bytes that are not).
+    let escaped = '';
+    for (let i = 0; i < bytes.length; i += 1) escaped += `%${bytes.charCodeAt(i).toString(16).padStart(2, '0')}`;
+    return decodeURIComponent(escaped);
   } catch {
     return null;
   }

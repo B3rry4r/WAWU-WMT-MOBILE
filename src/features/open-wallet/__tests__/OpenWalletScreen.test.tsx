@@ -114,6 +114,18 @@ async function boot(shared?: QueryClient) {
   return { ...rtl, onClose, kept, client };
 }
 
+/**
+ * After the session ends with A26 still mounted, the screen drops its reads and
+ * react-query re-reads for the observers still there: let that settle inside
+ * act, so no update lands after the test.
+ */
+async function settle(app: Awaited<ReturnType<typeof boot>>) {
+  await app.waitFor(() => expect(app.client.isFetching()).toBe(0));
+  await app.act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+}
+
 const checksSent = () => sent.filter((s) => s.method === 'POST' && s.path.endsWith('/money/identity/bvn'));
 
 /**
@@ -401,6 +413,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.act(async () => {
       await session.signOut();
     });
+    await settle(app);
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
   });
 
@@ -417,10 +430,14 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     try {
       await app.act(async () => {
         await session.refreshAccessToken(await session.getAccessToken() as string);
+        // Let the screen's own reaction to the ended session settle inside act.
+        await new Promise((resolve) => setTimeout(resolve, 20));
       });
     } finally {
       globalThis.fetch = hubFetch;
     }
+    // The ended session drops A26's reads; any read that follows settles inside act too.
+    await settle(app);
     expect(refused).toHaveBeenCalled();
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
   });
@@ -483,6 +500,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.act(async () => {
       await session.signOut();
     });
+    await settle(app);
     // The same person signs in again before the answer lands.
     mockVault.set('wawu.session.access', tokenFor(OWNER));
     mockVault.set('wawu.session.refresh', 'refresh-2');
@@ -525,6 +543,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.act(async () => {
       await session.signOut();
     });
+    await settle(app);
     // B signs in; B has no wallet and B's reads are held.
     mockVault.set('wawu.session.access', tokenFor(OTHER));
     mockVault.set('wawu.session.refresh', 'refresh-b');
@@ -559,6 +578,27 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.screen.queryByTestId('open-wallet-already-open')).toBeNull();
   });
 
+  it('a person whose real-shaped token payload holds - and _ (and a non-ASCII name) sees the form with their phone', async () => {
+    const claims = {
+      sub: '6c1f2a9e-4b7d-4e2a-9c3f-8d5e7b1a0f42',
+      email: 'personx@example.test',
+      firstName: 'Ngozi',
+      lastName: 'Ọ̀kọ̀',
+      avatarUrl: 'https://cdn.example.test/u/a.png?v=10',
+      iat: 1791043200,
+      exp: 1791044100,
+    };
+    const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const payload = part(claims);
+    expect(payload).toMatch(/-/);
+    expect(payload).toMatch(/_/);
+    mockVault.set('wawu.session.access', `${part({ alg: 'RS256', typ: 'JWT' })}.${payload}.MEUCIQDx-_sig`);
+    serve({ 'GET /users/me': ok({ ...me, wawuUserId: claims.sub, firstName: 'Ngozi', lastName: 'Ọ̀kọ̀' }) });
+    const app = await boot();
+    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0803 123 4412');
+    expect(app.screen.getByTestId('open-wallet')).toBeTruthy();
+  });
+
   it('an account read that is not the signed-in account is never shown', async () => {
     // The Hub answers as someone else (a stale or crossed answer): A26 waits instead of painting it.
     serve({ 'GET /users/me': ok({ ...me, wawuUserId: '00000000-0000-4000-8000-0000000000c3', phone: '+2348077770000' }) });
@@ -578,6 +618,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.act(async () => {
       await session.signOut();
     });
+    await settle(app);
     expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] })).toHaveLength(0);
   });
 

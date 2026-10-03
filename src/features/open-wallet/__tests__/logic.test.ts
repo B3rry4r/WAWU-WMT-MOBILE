@@ -167,3 +167,71 @@ describe('whose session it is', () => {
     expect(accountOfToken('a.%%%.c')).toBeNull();
   });
 });
+
+/**
+ * Tokens shaped as WAWU ID's: a header, the claims (with a person's name and
+ * email), a signature. The claims are fixed, so the encoded payload is too:
+ * the first holds both base64url-only characters (`-` and `_`) and has no
+ * padding; the second has a non-ASCII `sub` and another padding length.
+ */
+const realClaims = {
+  sub: '6c1f2a9e-4b7d-4e2a-9c3f-8d5e7b1a0f42',
+  email: 'personx@example.test',
+  firstName: 'Ngozi',
+  lastName: 'Ọ̀kọ̀',
+  avatarUrl: 'https://cdn.example.test/u/a.png?v=10',
+  iat: 1791043200,
+  exp: 1791044100,
+};
+const unicodeClaims = { sub: 'Ọ̀kọ̀-100', name: 'Ngozi Ọ̀kọ̀', email: 'p@example.test' };
+const b64url = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+const header = b64url({ alg: 'RS256', typ: 'JWT', kid: 'wawu-id-1' });
+const signature = 'MEUCIQDx-_signature_part';
+
+describe('reading the account from a real-shaped token', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { accountOfToken } = require('../sessionAccount') as typeof import('../sessionAccount');
+
+  it('the test payloads hold what they claim to (base64url-only characters, no padding, other lengths)', () => {
+    const real = b64url(realClaims);
+    expect(real).toContain('-');
+    expect(real).toContain('_');
+    expect(real).not.toContain('=');
+    expect(real.length % 4).toBe(2);
+    expect(b64url(unicodeClaims).length % 4).toBe(3);
+  });
+
+  it('a payload with - and _ and no padding gives its sub', () => {
+    expect(accountOfToken(`${header}.${b64url(realClaims)}.${signature}`)).toBe(realClaims.sub);
+  });
+
+  it('the same payload with its padding written out gives the same sub', () => {
+    const real = b64url(realClaims);
+    expect(accountOfToken(`${header}.${real}${'='.repeat((4 - (real.length % 4)) % 4)}.${signature}`)).toBe(realClaims.sub);
+  });
+
+  it('non-ASCII text in the claims is read as UTF-8, whole', () => {
+    expect(accountOfToken(`${header}.${b64url(unicodeClaims)}.${signature}`)).toBe('Ọ̀kọ̀-100');
+  });
+
+  it('a token that is not a readable three-part token yields no account', () => {
+    const real = b64url(realClaims);
+    const bytes = (values: number[]) => Buffer.from(values).toString('base64url');
+    for (const token of [
+      '',
+      `${header}.${real}`, // two parts
+      `${header}.${real}.${signature}.extra`, // four parts
+      `${header}.${real.replace('-', '+')}.${signature}`, // base64, not base64url
+      `${header}.${real.replace('_', '/')}.${signature}`,
+      `${header}.${real} .${signature}`, // a space
+      `${header}.${real.slice(0, 4 * Math.floor(real.length / 4) + 1)}.${signature}`, // a length base64 cannot have
+      `${header}.${bytes([0xff, 0xfe, 0x7b])}.${signature}`, // bytes that are not UTF-8
+      `${header}.${b64url(['not', 'claims'])}.${signature}`, // JSON that is not an object
+      `${header}.${Buffer.from('null').toString('base64url')}.${signature}`,
+      `${header}.${b64url({ sub: 42 })}.${signature}`, // sub not a string
+      `${header}.${Buffer.from('{"sub":"a"').toString('base64url')}.${signature}`, // cut JSON
+    ]) {
+      expect(accountOfToken(token)).toBeNull();
+    }
+  });
+});
