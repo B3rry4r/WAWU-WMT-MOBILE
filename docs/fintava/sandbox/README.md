@@ -73,6 +73,7 @@ before validation, because the merchant record said `status: "inactive"`.
 | `26-money06-client.md` | the MONEY-06 client, end to end | | 200, 400, 404 | every read call and ₦10 wallet-to-wallet both ways; lookups answer `200 {}` for SUCCESS records too; a timed-out send landed and reconciled as settled |
 | `27-money11-balance.md` | `GET /money/wallet/balance` (the route), end to end | | 200, 503 | the route equals Fintava's read after each of two ₦10 sends; a 50 ms timeout answers `503 provider_unreachable`, never 0 |
 | `28-kyc01-bvn-check.md` | `POST /money/identity/bvn` (the route) and the client's BVN check | | 400, 422 | Fintava's other documented example BVN (`0003`) is refused too; the route answers `422 bvn_not_confirmed`, charged ₦5, nothing stored, BVN in no log line |
+| `30-money10-ledger.md` | the ledger (MONEY-10), end to end | | 200, 404 | two ₦10 round trips: each movement once per side with the right sign (8 rows for 4 movements), whichever arrived first (the sender's record, a lookup, a locally signed webhook); a delivery waiting on Fintava is swept again and lands |
 
 ## Money moved in the re-run
 

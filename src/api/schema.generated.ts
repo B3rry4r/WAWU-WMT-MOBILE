@@ -2325,6 +2325,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's communities: rooms they host and rooms they were let into,
+         *     newest activity first, each with its share link, last message and unread
+         *     count. A request still waiting for the host is not listed.
+         */
+        get: operations["CommunityRoomsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a room, the way the app does. Creator accounts only, like
+         *     POST /communities. A private room needs a cover image (`imageUrl`):
+         *     without one the answer is 400 "A private room needs a cover image.".
+         *     The answer carries the room's share link.
+         */
+        post: operations["CommunityRoomsController_createRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/links/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open a `wawu/c/<slug>` link: the room it names, members or not. Capitals
+         *     are accepted. 404 "No community has this link." otherwise.
+         */
+        get: operations["CommunityRoomsController_resolve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The room's share link, made from its name the first time it is asked for. */
+        get: operations["CommunityRoomsController_link"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The caller has read the room up to now; its unread count on
+         *     GET /communities/mine goes to 0. The host or an approved member only
+         *     (403 otherwise). 200, not 201: it moves a marker.
+         */
+        post: operations["CommunityRoomsController_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities": {
         parameters: {
             query?: never;
@@ -5877,6 +5978,59 @@ export interface components {
             handle: string | null;
             avatarUrl: string | null;
             verification: components["schemas"]["VerificationState"];
+        };
+        CommunityLastMessage: {
+            id: string;
+            text: string | null;
+            imageUrl: string | null;
+            /** Format: date-time */
+            sentAt: string;
+            senderWawuId: string;
+            sender: components["schemas"]["CommunityMessageSender"];
+        };
+        MyCommunity: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+            /** @enum {string} */
+            role: "host" | "member";
+            /** Format: date-time */
+            joinedAt: string | null;
+            lastMessage: components["schemas"]["CommunityLastMessage"];
+            unreadCount: number;
+            /** Format: date-time */
+            lastActivityAt: string | null;
+        };
+        CommunityRoom: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+        };
+        CommunityLinkView: {
+            communityId: string;
+            slug: string;
+            link: string;
+        };
+        CommunityReadView: {
+            communityId: string;
+            /** Format: date-time */
+            lastReadAt: string;
         };
         CommunityMessage: {
             id: string;
@@ -10955,6 +11109,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClosestSearchResult"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_mine: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyCommunity"][];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_createRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoom"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoom"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityLinkView"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityReadView"];
                 };
             };
         };

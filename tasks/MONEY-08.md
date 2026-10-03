@@ -34,6 +34,8 @@ Port the existing reconcile-pending pattern to Fintava's status endpoint, on a s
 
 Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime, data and electricity purchases answer `400 "Unable to find customers"`, and cable answers "service not currently available", with nothing debited (`docs/fintava/sandbox/README.md`, "The blocker"). Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers" (question 17 in `docs/fintava/naira-api.md`). Build and unit-test meanwhile; report the bank-send and bill checks NOT RUN with that reason until then.
 
+Work from the ledger (MONEY-10), not the event rows: MONEY-10 marks `customer_bank_transfer` and `debit_transfer_reversal` deliveries `processed` once applied, so this task settles `pending` ledger rows (`LedgerConsumerService.reconcileEntry` asks Fintava for one) and reads a reversal as the row's `reversed` status (`BACKEND_GAPS.md` G-33).
+
 ## Capability checks
 
 - [ ] A transfer whose webhook is withheld settles correctly within one sweep.
