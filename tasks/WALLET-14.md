@@ -7,7 +7,7 @@ order: 116
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-06, KYC-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -111,6 +111,82 @@ Verifier, 3 Oct 2026, a fresh session that wrote none of this task's code. Check
 Files checked against the report: the backend's 32 files against main (24 of them WALLET-14's own against `35b68af`) and the mobile's 11 match the builder's list (the report names `bvn-name.ts`, its spec, the DTO, enum and error-status edits by what they do); nothing missing or extra. No stand-in remains: `open-wallet-gate.ts` is gone and the routes use MONEY-13's gate.
 
 **To close:** defect 1 (put something of the person into each word's hash, or otherwise stop a key-less reader matching words across people), defect 2 (count what the list shows, or let such rows go), and a test that pins the bank list's hour.
+
+### Verifier report, round 2
+
+Verifier, 3 Oct 2026, a fresh session that wrote none of this task's code. Checked wawu-backend `wmt/WALLET-14` `377ea31` (main `48b9043` merged in `4738953`; WALLET-14's own work judged on `git diff 48b9043...377ea31`, 25 files) and mobile `wmt/WALLET-14` `7755de8`, in fresh detached worktrees `/home/user/wt/vw14b2` and `/home/user/wt/vw14m2`. Backend main did not move. Mobile main moved during this check (`85a4e57` to `331a6fa`, the AUTH-05 merge); merging it in conflicts only in `SHARED-CHANGES.md` and the generated `docs/PROGRESS.md`, nothing of this task. My databases `vw14r2_*` (all containing `test`, all dropped), built Hub on :4955, stand-in WAWU ID on :4956, and :4001 once for the full suite after `lsof` showed it free (my mock, stopped right after). Fintava was a local stand-in with no Fintava key in its environment (the Hub had a dummy key pointed at it): **0 sandbox calls, 0 live calls**. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw14r2/` (below, `vw14r2/`). **Verdict: round 1's two defects are closed; 1 new minor defect, status back to building.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Migration order | passed | WALLET-14's `20261003160000_saved_beneficiaries_payout_account` shares MONEY-14's timestamp. (a) Production case: a database with main `48b9043`'s 80 migrations applied (plus a `WalletIdentity` row), then the branch's `npx prisma migrate deploy`: exit 0, applies exactly the two WALLET-14 migrations, MONEY-14's row and checksum untouched, the existing row reads `bvnNameKeys` null. (b) Fresh database: all 82 apply, exit 0. `prisma migrate status` after each: "Database schema is up to date!", exit 0. The two schema dumps are identical; `migrate diff` against `schema.prisma` shows only main's existing `ContentPiece_specializations_idx` drift on both. The data migration clears `{first,last}`, `v:3`, arrays and JSON null, keeps `v:2`. No rename needed. | `vw14r2/mig-1..4*.txt`, `schema-prod-vs-fresh.diff` |
+| V1 Gates | passed | `tsc --noEmit` 0. Gates 9 run, 638 files, **16 fail / 13 warn** / 76 accepted; main `48b9043` 16 / 12 on 631 files. The 16 FAIL entries are identical, and the one added warning is `PROVISIONAL(BENEFICIARIES-MAX)`. `check_baseline.py` OK (108). Mobile `npm run check` exit 0 before and after this report: typecheck, lint, 20 suites / 371 tests, gates 9 run / 96 files / 0 fail / 0 warn, 203 tasks. Key scan: the 58 eight-character windows of the Fintava key (read with `sed` into the scanner's environment) against both branch diffs, both branches' `git log -p` from main, and every Hub log and probe output of mine: **0 hits**. | `tsc.txt`, `gates-branch.txt`, `gates-main.txt`, `gates-warn-diff.txt`, `mobile-check-*.txt`, `secret-scan.txt` |
+| V2 Contract | passed | Full suite the way `deploy.yml` runs it: fresh migrated and seeded `vw14r2_deploy_test`, my mock from `mock-wawu-id/server.js` on :4001 with a keypair made as `deploy.yml` makes it, the CI admin secrets, `npx jest --runInBand --forceExit`: **130 of 130 suites, 3,147 passed, 3 skipped, 0 failed** (`jest --listTests` lists 130). `npm run contract:build` leaves `contract/openapi.json` byte for byte, and it equals the mobile copy; `sync_contract.py` regenerates the mobile subset and `schema.generated.ts` with `git status` clean. Against main: the same 280 paths; only the five routes and `MoneyErrorReason` differ. | `full-suite-4001.txt`, `contract-vs-main.txt`, `mobile-api-regen.txt` |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh HEAD` (code `377ea31`, lock `origin/main` `48b9043`): **253/253, all 244 required**; `lock-diff.py`: no change. CI tripwire over the 3,278 added lines outside the checker's files: 0 matches. `hub-rate-limits.contract.spec.ts` 10/10, the spec unchanged and no `@Throttle`/`@SkipThrottle` added. Merge with main: both gate specs' route lists are main's 12 plus WALLET-14's 5 (only additions and a longer test title, no assertion removed or loosened). All five routes are gated (409 `wallet_not_open` with no wallet, 401 with no token, 0 Fintava calls). MONEY-14's `src/money/pin` and the gate's source are unchanged. | `protected.txt`, `lock-diff.txt`, `tripwire.txt`, `rate-limits.txt`, `probe-spot.txt` |
+| V4 Field trace | passed | `WalletIdentity.bvnNameKeys` is written only by the BVN check, in the same upsert as `bvnVerifiedAt`, and read only by `PayoutAccountService.matchesBvnName`; no route answers it. Nothing else writes `WalletIdentity.bvnVerifiedAt`; the selfie and opening rows have their own column of that name. Round 1's trace of `MoneyBeneficiary`/`MoneyPayoutAccount` stands. `beneficiaryCount` and the cap both read `visibleBeneficiaries`. | code read, `probe-link.txt` |
+| V9 Live seam | NOT RUN this round | This brief allowed no Fintava calls, and round 2 changes no Fintava call (diff: `bank-account-check.service.ts` only adds single flight around the same `listBanks`). Round 1's V9 (3 sandbox GETs) stands. Unblocked by a round that permits sandbox calls. |
+
+**Round 1 defect 1 (BVN name readable without the key): closed.** On the built Hub, 8 people passed the real `POST /money/identity/bvn` (five named Ada, one with no wallet and no payout account, one Ngozi Ngozi) and 7 saved payout accounts. Each stored value recomputes exactly as `HMAC(key, "name:" + wawuUserId + ":" + bvnVerifiedAt.toISOString() + ":" + WORD)`, with `check = HMAC(key, "name:check:" + wawuUserId + ":" + bvnVerifiedAt)` (8/8). Without the key:
+- 23 distinct stored hashes, and none is held by more than one person.
+- The five ADA keys are all different.
+- 464 unkeyed candidates match no stored hash: SHA-256 of every word in any plain name column or handle, of `name:`+word, and of each row's own bound input.
+- Round 1's voting attack recovers nothing (`?`) for Ada Bello.
+- Every check marker is unique per row and keyed.
+
+`bvnVerifiedAt` is stable: it is written once per passed check at millisecond precision into `TIMESTAMP(3)` and read back equal. It is also unique per check: a second check of the same person and name shares 0 of 3 hashes with the first. Linkage across a person's own checks is therefore impossible, and moot: the row is replaced, and a wallet holder cannot check again (409 `wallet_already_open`).
+
+`matchesBvnName` on a fresh check behaves as in round 1:
+- **true:** `ADA OKORO`, `OKORO ADA`, `ada  okoro`.
+- **false:** `A OKORO`, `ADA OKOROAFOR`, `ADA`, `ADAM SANDBOX`.
+
+It reads **null**, never false, in each of these cases:
+- the round-1 `{first,last}` value;
+- `v:2` with a forged marker;
+- `bvnVerifiedAt` moved 1 ms (another check);
+- another person's keys copied in;
+- a wallet opened under another BVN;
+- no keys;
+- no check;
+- the whole Hub restarted under another `IDENTITY_HASH_KEY` (6 of 6 null, including the earlier `false`; back to true/false under the original key).
+
+No name, BVN or account number appears in any of the 4 Hub logs. Evidence: `probe-link.txt`, `probe-nulls.txt`, `log-privacy.txt`.
+
+**Round 1 defect 2 (a hidden place in the 50): closed.** In each of 3 rounds, a person held 48 bank accounts and 2 saved people (list 50, count 50, a 51st save 409). One saved person was then purged through the real `AccountPurgeService`: their `FintavaWallet` and `UserProfile` were removed, and the `MoneyBeneficiary` row naming them was kept (COUNTERPARTY). After the purge, the list showed 49, the count 49, and there were 50 rows. 20 parallel saves then gave exactly **1 x 201 and 19 x `409 beneficiary_limit_reached`** every round, leaving list 50, count 50 and 51 rows. A mix of 10 people and 10 accounts in parallel, beside a purged person's hidden row, gave the same split. All 50 visible rows deleted: 50 x 200, list and count 0. Duplicates: 20 parallel saves of one account and of one person give one row each, with one id. Evidence: `probe-cap.txt`.
+
+**Round 1 passes, spot-checked** (`probe-spot.txt`):
+- **Isolation.** B sees none of A's rows. B's DELETE of A's id answers 200 and A keeps all 20.
+- **The account name comes from the bank only.** A body carrying `accountName` or `bankName` is 400 on PUT and POST, and the saved name is the bank's.
+- **Unknown bank codes.** `044`, `058` and `000999` give 422 `name_check_failed` on POST and PUT, with 0 name enquiries sent and the payout account unchanged.
+- **Single flight.** 20 parallel saves on a cold cache made 1 `GET /banks`.
+
+**Mutations** (my own 11, none of the builder's, against the WALLET-14, `bvn-name`, purge-map, opening and gate specs; baseline 174/174; the worktree was clean afterwards; `vw14r2/mut/`). **9 killed:**
+- keys bound to the person only (4 tests fail);
+- keys bound to the time only (5);
+- check marker without the time (3);
+- the BVN check keys written under a timestamp other than the stored one (6);
+- the opening's BVN not compared (1);
+- `beneficiaryCount` counting hidden rows (2);
+- no early cap refusal before the bank is asked (1);
+- the purge map's COUNTERPARTY rule removed (1);
+- the stored version not checked (1).
+
+**2 survived:**
+- M8, `.slice(0, 50)` removed from `visibleBeneficiaries`. This is equivalent in practice: the visible rows cannot pass 50 under the lock, and a purged person cannot come back.
+- M11, the existing-row shortcut in `addWawuUser` removed. No test re-saves a purged person; see the finding below.
+
+**Findings**
+1. **defect (minor): re-saving a saved person whose account was deleted answers 201 with a row the list never shows.** `BeneficiaryService.addWawuUser` returns any existing row before it checks that the person has a wallet. Reproduction (`vw14r2/probe/resave.js`, output `probe-resave.txt`):
+   1. A saves person P (201).
+   2. P is purged through `AccountPurgeService`, so their `FintavaWallet` and `UserProfile` go.
+   3. A's list shows 0.
+   4. A posts `{kind:"wawu_user", wawuUserId:P}` again: **201**, with P's row, id and name `Gone Person`. A's list and `beneficiaryCount` stay 0.
+   5. B, who never saved P, posts the same body: **404 `recipient_not_found`** "We could not find that person."
+
+   The app would show "saved" for someone who never appears, contrary to the service's own rule ("a WAWU user is saved only when they have an open wallet") and to the answer anyone else gets. The 409/404 rule is not applied to the existing-row shortcut, and no test pins it (M11 survives). This was already true in round 1. It holds no place in the cap (the cap counts visible rows), and the id it returns can be deleted.
+2. Note: within one row, a word in both the first and the last name gets the same hash (`Ngozi Ngozi`: first[0] equals last[0]). Each part's word count is visible too. Neither says which word, and nothing links across rows or people.
+3. Note: the round-2 data migration keeps `{"v":"2",...}` (a string), which the code reads as null. Only a hand-written value could have that shape.
+4. Note: mobile main moved during this check (above). The branch needs main merged in again before its pull request (`SHARED-CHANGES.md` and `docs/PROGRESS.md` conflict).
+
+**To close:** finding 1. In `addWawuUser`, answer the existing row only while the person has a wallet; otherwise answer as for anyone else (404/409). Add a test that re-saves a purged person. Owner questions 1 to 3 (G-46's rule) stay open and unchanged.
 
 ## Owner sign-off
 
