@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 52 | 46 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 0 | 1 |
 | done | 27 | 12 | 2 | 0 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model (Developer 3)
 
@@ -66,12 +66,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN
 - **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
-- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff
+- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).
 - 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
 - 3 Oct 2026 · WALLET-14 saved recipients and the payout account merged (backend PR #45, a055b4f). Bank names come only from Fintava; a payout account in another name is flagged; BVN name words are stored only as person-bound keyed hashes. Three verifier rounds. G-54 filed (contract build order).
 - 3 Oct 2026 · WALLET-14 · Merged main for the pull request (backend d89f7e5 with main ad1e515, mobile with main 8a58a67), status review: gate route lists hold MONEY-14, MONEY-15 and WALLET-14 routes; one test added (two people saving the same place get their own rows, kills M2); full suite 132 suites 3,196 passed 0 failed, protected 253/253; main's committed contract is not byte-reproducible by its own build (order only).
@@ -86,4 +87,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · MONEY-15 · Verified round 3: status review (backend c0d9a12, mobile 46095e8; neither main moved). Defect 2 is closed: the three year-0000 requests answer 400. 129 forged dates across the cursor, the group key and the month (year 0000 and 10000+, negative years, leap seconds, long fractions) brought 0 unexpected answers on the built server. Blind spot A is closed for writes that commit within Prisma's 5 s timer (a real uncommitted write at page 1, 10 ms to 4.9 s, 14 runs: nothing lost). The margin brought no regression (15 walks at page sizes 1 to 3). New `unclear` finding 4: a writer whose event loop is late reaching the timer commits after 5 s (5.6 s measured), and the loss returns; CONVENTIONS section 6 calls 5 s a hard limit. Full suite 130/130 suites, 3,144 passed, 0 failed; protected 253/253; gates as main; 12 of 14 mutants killed.
 - 3 Oct 2026 · MONEY-15 · Round 3 (backend c0d9a12, status verifying): a cursor or group key dated year 0000 is now a 400, not a 500 (defect 2). A scroll groups only unlocks completed by its snapshot less 5 s, Prisma's default transaction timeout that the ledger writes under, so a write in flight at page 1 can no longer move a group (blind spot A). CONVENTIONS section 6 now lists what a refresh still corrects. Full suite 130/130, 0 failed; protected 253/253.
 - 3 Oct 2026 · MONEY-15 · Verified round 2: back to building (backend a622812, mobile 92bf3ea; main 48b9043 merged). Defect 1 closed. Every movement that existed before page 1 showed exactly once on the built server and in 24 stress runs (arrival, settling, an older one settling below the cursor; page sizes 1 to 6; an event after every page), with 4 groups straddling pages and around Lagos midnight. New defect 2 (minor): a forged cursor or group key dated year 0000 is a 500, not a 400. Unclear: a pending row the sweep settles with Fintava's earlier time is shown twice in one scroll. The in-flight write loses a group for one scroll (a window of about 5 s), and a reopened unlock only duplicates. Full suite 130/130, 3,141 passed, 0 failed (an earlier run had 1 flaky MONEY-14 leak check, 3/3 alone). Protected 253/253, gates as main (16 / 12), 9 of 12 own mutants killed (3 equivalent).
-- 3 Oct 2026 · MONEY-15 · Round 2 (backend a622812, status verifying): a scroll groups as of its snapshot. The cursor and the group key carry the first page's time, and a group's members are the unlocks completed by then, so an unlock landing or settling mid-scroll no longer moves a group across a cursor (defect 1; tests P1, P1b, P1c). Reference order and the exactly-full last page are pinned by tests; `q` is trimmed before its length check. Backend main 48b9043 merged in. Full suite 130/130, 0 failed; protected 253/253.
