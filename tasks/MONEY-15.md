@@ -7,7 +7,7 @@ order: 108
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -52,7 +52,52 @@ Builder, 3 Oct 2026. wawu-backend `wmt/MONEY-15` 35e4e33 (from main 6d48c97, whi
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+### Verifier report (round 1)
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code). **Verdict: 1 open defect; status `building`.** Grouped unlock earnings drop out of a scroll when an unlock of the same piece on the same Lagos day lands or settles between pages (defect 1 below). Everything else asked of the history held: isolation, status truth, the month summary at every Lagos edge, search escaping and both capability checks on the built server.
+
+Checked at backend `wmt/MONEY-15` 35e4e33 (merge-base with main 6d48c97, main has not moved) and mobile `wmt/MONEY-15` 857ca5e (contains mobile main 3304f1e), in fresh detached worktrees `/home/user/wt/vm15b` and `/home/user/wt/vm15m`. MONEY-15's own work judged with `git diff 35b68af...35e4e33` plus the merge (35e4e33 `--cc`: one conflict, both comments kept; MONEY-13's files differ from 35b68af only by the three spec/doc edits named below and the module registration). Evidence in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vm15/` (named per row).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`tsc.log`); eslint on the 21 `.ts` files the branch adds or changes against main: 0 (`eslint.log`). Gates: main 6d48c97 16 fail / 10 warn / 76 accepted on 619 files, branch 16 / 10 / 76 on 628 files; the findings are identical line for line once line numbers are dropped (`gates-main.log`, `gates-branch.log`, `.norm`). CI tripwire: 0 added lines outside the protected suite's own files match `test/protected-routes|src/protected-routes|compareShape|protected-registry` (`tripwire.txt`). Mobile `npm run check` exit 0: typecheck, lint, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks (`mobile-check-before.log`; again exit 0 with this report, the LOG line and the regenerated PROGRESS: `mobile-check-after.log`). Key scan: 58 windows of 8 characters, 0 hits in the backend diff and patch log and the mobile diff and patch log. |
+| V2 Contract | passed | `contract/openapi.json` compared as JSON (key order and enum order normalised) against 35b68af: the only differences are the three operations losing `x-wawu-served: false` and their "Declared by MONEY-04, not served yet" description; path order moves. Mobile `contract/` changes only `SOURCE_COMMIT`. History and gate specs 5 suites 82/82 (`history-gate-specs.log`). Probes over HTTP (`zz-vm15-probe.spec.ts`, `probe-run2.log`, `probe-run3.log`): see Focus below. |
+| V3 Regression | passed | `run.sh --fresh 35e4e33`, lock origin/main 6d48c97: 253/253, all 244 required (`protected.log`); lock files differ from main by 0 lines. Full suite the way the deploy runs it: fresh migrated and seeded `vm15_full_test`, `mock-wawu-id/server.js` on :4001 with a keypair made as `deploy.yml` makes it (`lsof` empty before, mine stopped straight after, empty again), `npx jest --runInBand --forceExit`: 126/126 suites, 3,058 passed, 3 skipped, 0 failed (`full.json`, `full.log`). `hub-rate-limits.contract.spec.ts` 10/10 (`hub-rate-limits.log`). |
+| V4 Field trace | passed | Every field the history reads has a writer: the row and its figures, references, status, link and note by MONEY-10's `LedgerService.record` (send, delivery consumer), `reversed` by `applyReversal` (MONEY-08); the other person's name by MONEY-12's `wallet-opening.service.ts` (`FintavaWallet.accountName`); handle and avatar by `UserProfile`. The quoted fee split (`providerFeeKobo`, `wawuFeeKobo`) and the link have no feature writing them yet (WALLET-07 and the paying features); the history then shows Fintava's own charge and no link, as the builder's default (5) records. Crossing users: A's send to B is named from B's wallet on A's side, and B's delivery-written row names A from A's wallet (`live-check.log`). No screen reads it yet (WALLET-04). |
+| V9 Live seam | passed against the stand-in WAWU ID | The built server (`npm run build`, `node dist/src/main.js` on :4933, Fintava base URL pointed at a closed local port so no Fintava call could succeed): two people registered and signed in through the stand-in WAWU ID's `POST /auth/login` on :4934 (no minted token), got `409 wallet_not_open` before a wallet, then read rows the ledger's writer stored: a receipt reference, fee split 4,000 + 2,500, last 4 `6789`, `Cache-Control: no-store` (`live-check.js`, `live-check.log`: 19 of 19). The real WAWU ID sign-in is NOT RUN: unblocked when a session may call `id.wawuafrica.com` (this pass was told not to). |
+
+**Defect 1: grouped unlock earnings drop out of the scroll when a new or settling unlock of the same piece lands mid-scroll.**
+- Reproduction on the built server (`live-group-skip.js`, `live-group-skip.log`): a creator has 2 completed unlocks of one piece at 09:00 and 09:30 Lagos and 5 transfers from 10:00 to 14:00 Lagos the same day. The whole history reads 5 transfers then "Unlock · Lighting night shoots · 2 buyers". Page 1 (`limit=3`) shows 3 transfers. A third buyer unlocks the piece at 15:00. Following `nextCursor` gives the last 2 transfers and ends. The scroll showed 0 kobo of unlock earnings: the ₦5,000 that existed before page 1 never appears.
+- The same with a pending unlock that the sweep settles between pages (`P1b` in `zz-vm15-probe.spec.ts`, `probe-run2.log`): page 1 shows the pending unlock, it becomes completed, and the 2 older completed unlocks are never shown. `P1` is the arrival case over the spec harness.
+- Why: a group's place in the order is its latest movement's (`occurredAt`, `id`), computed over the whole history on every read. When a newer member arrives or settles, the group moves above the cursor already handed out, so every later page filters it out. The builder's "a row landing mid-scroll shifts nothing" holds for single rows only.
+- Closed when `P1` and `P1b` pass: every movement that existed before page 1 appears in the scroll exactly once (as a row or inside a group), with a mid-scroll unlock of the same piece and day, arriving or settling.
+
+**Focus checks** (probes over HTTP with the real `MoneyModule`, RS256 tokens from the stand-in on :4934, rows from the ledger's writer; `zz-vm15-probe.spec.ts` kept in the evidence folder, not committed)
+- Isolation (`P3`, passed): another person's row id is the same 404 body as a random uuid; their group key returns an empty list; their cursor replayed gives only the caller's own rows; a forged cursor carrying `x' OR 1=1 --` and a 3-element group key are 400; a group key with target `%` matches nothing; searching another person's counterparty name, note, piece title or own name finds nothing; another person's month summary holds only their rows. B finds Zainab (B's counterparty) and not Adaeze (not B's).
+- Truth (`P5`, `P6`, `live-check.log`, passed): each listed status equals the stored one for pending, completed, failed and reversed rows; a reversed and a failed send are out of the summary. Summary at 23:59:59(.999) and 00:00:00 Lagos on both edges of Sep 2026, and on both edges of Feb 2028 (leap, the 29th): Aug 2026 in 1; Sep in 10, out 110; Oct out 1,010; Jan 2028 in 2; Feb in 220; Mar in 2,000 (kobo), each equal to the completed rows found by walking that month one row per page; a pending row on 29 Feb is out. No route returns a balance.
+- Pagination (`P2`, passed): 30 rows on one timestamp, pages of 7, each once; a row added on the same timestamp mid-scroll repeats and skips nothing (it sorts before the cursor, so it is a new row for the next refresh). Limits `0`, `101`, `-1`, `abc`, `1.5` are 400; 100 is served. Repeated query parameters and `q[]=` are 400, never 500 (`P7`). With grouping: defect 1.
+- Search (`P4b`, passed): `0%` finds only "Percent 100% Ltd"; `%%`, `__`, `nt_1` and a double backslash find nothing; `r_s` and `k\s` find their literal text; `ỌLÁ` and `adébáyọ̀` find "Ọlá Adébáyọ̀"; 61 characters is 400 and 60 is served; an SQL-looking term is a plain 200.
+- MONEY-13's specs: only the gated-route lists (plus their test titles) and the coverage spec's declared-route example change (`GET money/transactions` to `GET money/holds`, still a declared route); no assertion weakened. All three history routes carry `@RequireOpenWallet()`; no wallet is 409 `wallet_not_open` on the built server.
+
+**Mutations** (`mutate.py`, logs in `mutants/`; each alone, the file restored by copy, the history contract spec and the unit spec run, 37 tests): 16 of my own, none of the builder's 14. Killed (13): the cursor's `<` as `<=`; reading `limit` rows, not `limit + 1`; the month's end inclusive; the summary adding amounts, not totals; the detail ignoring its id; the last 5 digits; the outer tie-break ascending; a case-sensitive name search; no wallet account-name fallback; money-in rows showing fees; a group key ignoring its day; an untrimmed search; a cursor accepted without its prefix. Survived (3):
+- M5, Fintava's reference before ours in the reference order: no test has a row carrying both, so "ours first", which G-44's fix relies on, is not pinned.
+- M13, `nextCursor` set when the last page is exactly full: the contract says `nextCursor: null` is the last page, and no test has a row count that is a multiple of the page size.
+- M15, an avatar for every kind of counterparty: equivalent, because the profile join only matches `wawu_user`.
+
+**Other findings**
+- `unclear`: `q` is checked for 2 to 60 characters before trimming, so `q=" P "` searches one character ("P", 2 rows in `P4b`). CONVENTIONS section 6 says "2 to 60 characters, trimmed" and does not say which comes first.
+- An own row's id written in capitals passes `ParseUUIDPipe` and answers 404. This reveals nothing; recorded only.
+
+**Capability checks, against the built server** (`live-check.log`)
+- [x] Searching a recipient's name finds their transfers: `Chidinma`, `chidinma okoro`, `OKORO` and `dinma O` each find all 4 transfers with Chidinma Okoro (completed, pending, the October one and the money in written in capitals) and nothing else, across pages of 2; `bayo` finds the send to Bayo, named from his wallet; `filter=money_out` keeps her 3 money-out rows.
+- [x] Monthly totals equal the sum of that month's rows: Aug, Sep and Oct 2026 summaries equal their walked completed rows (Sep: in 50,000, out 2,507,500 with the pending 30 Sep 23:59:59 send left out; the 1 Oct 00:00 Lagos send is October; the 31 Aug 23:59:59 top-up is August). Not ticked for grouped rows mid-scroll: defect 1 is about the list, and the summary itself does not move.
+
+**NOT RUN**
+- The real WAWU ID sign-in (V9): unblocked when a session may call `id.wawuafrica.com`.
+- The sandbox round trip: not repeated. This pass was read-only at Fintava and moved no money; the routes never call Fintava. Unblocked by a pass allowed one ₦10 round trip on dev.fintavapay.com.
+- Bank-send and bill rows from the sandbox: payouts refused (question 17). They were read from the ledger's writer instead.
+
+Cleanup: my stand-ins on :4934 and :4001 and the Hub on :4933 stopped by PID; databases `vm15_probe_test`, `vm15_protected_test`, `vm15_live_test` and `vm15_full_test` dropped.
 
 ## Owner sign-off
 
