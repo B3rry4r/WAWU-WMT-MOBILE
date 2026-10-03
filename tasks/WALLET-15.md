@@ -101,6 +101,8 @@ Verifier, 3 Oct 2026, a fresh session that wrote none of this task's code. Check
 8. Note: leading zeros are accepted (`00500000` is 500000). That is consistent with "digits only" and never reads as another amount.
 9. Note: operator-facing wording. `FEE_QUOTE_SECONDS` errors say "must be a whole number of kobo from 60 to 3600"; it is seconds. Error answers (401, 409) carry no `no-store`, the same as every other gated wallet route on main.
 
+**Main moved during verification:** mobile main went from `e7dc879` to `42309b2` (KYC-05 merged). The only conflict merging it into this branch is the generated `docs/PROGRESS.md` (`git merge-tree`; `BACKEND_GAPS.md` and `docs/LOG.md` merge cleanly), which is regenerated with `npm run tasks -- --write`. Before the pull request, merge it and re-run `npm run check` (WORKFLOW section 8, step 4). Backend main is still `fe1ec6c`.
+
 **NOT RUN** (each named with what unblocks it, above): Fintava's record of the ₦10,000 bank send and of the electricity bill's charges, which needs the payout blocker cleared (question 17), WALLET-09 and OPS-09. The debit totals for the ₦4,999 and ₦5,000 purchases, which need MONEY-17 and a non-zero sandbox `transaction_fee`, or OPS-10. Whether the dashboard can apply WAWU's ₦10 to customer-to-customer sends only, which is OPS-09's second check. No sandbox call was made.
 
 ## Owner sign-off
