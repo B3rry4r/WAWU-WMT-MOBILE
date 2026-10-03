@@ -7,7 +7,7 @@ order: 89
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: building
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -123,6 +123,36 @@ Change password (current and new) in WAWU ID, revoking other sessions; `POST /au
 - The wawu-backend protected-route regression suite (MONEY-01): lives in another repo and this task changes none of its routes.
 - `PASSWORD_NOT_SET` over real HTTP: no route signs in a passwordless account without a texted code (unit spec only).
 - nginx `X-Real-IP` overwrite for the logout address limit: deployment config, not present locally (the local run sets the header itself).
+
+## Verifier report (round 2)
+
+**Verdict: PASS.** Finding 1 is fixed and no defect is open. Fresh verifier, 3 Oct 2026; wawu-id `03b64aa` (fix) against `806cda4` (pre-fix), both in scratch worktrees under `/home/user/lanes/s03v/` (removed after); own DB `s03w_id` (dropped), ports 4881 to 4885 (stopped). Nothing fixed, nothing committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | wawu-id `tsc --noEmit` 0 errors; jest 18 suites / 205 tests, one run had a timeout in `phone-signup.service.spec.ts` under load (my stress was running) and that spec passes alone, 44 of 44; mobile `npm run check` exit 0 (gates 9, 123 files scanned, 0 findings, 205 tasks). |
+| V2 Contract | passed | `git diff dbcb2f8 03b64aa -- contract`: only additions (the single "removed" line is the last enum member gaining a trailing comma before 3 new codes); round 1 already showed the two paths are additive. |
+| V3 Regression | passed | rotation semantics unchanged (own run on fixed code: refresh 200, same token again 401, new token 200 then again 401, one row left, pair shape `accessToken, refreshToken`, expired row 401). |
+| V9 Live seam | passed | builder's `test:session-local` re-run on `s03w_id`: 38 of 38 PASS (includes 12 parallel guesses giving exactly 5 answers, logout enumeration equality, log holds no password or token). |
+| Race (Finding 1 re-check) | passed | below. |
+
+**Finding 1 re-check** (`scratchpad/w/stress.mjs`: fresh account per trial, a stale device token plus the victim's own device; change-password and refresh fired together, every 3rd trial with 3 parallel refreshes of the same token; offsets 0/5/20/50 ms applied to either side; a trial is a survivor if any token other than the one change-password handed back still refreshes afterwards).
+- PRE-FIX (`806cda4`), 25 trials per cell: survivors 12, 11 (0 ms), 3, 10 (5 ms), 8, 17 (20 ms), 0, 24 (50 ms; change-password takes longer than 50 ms, so it is still in flight). Also 314 HTTP 500s from the races (rotation deleting a row that had gone) and 25 mix runs with unexpected statuses. The race reproduces hard.
+- FIXED (`03b64aa`), same stress, 25 trials per cell: **0 of 200 survivors** in every change-password cell, 0 HTTP 5xx, 0 unexpected statuses. A second run (5 per cell) the same.
+- Deadlocks: each trial of a mix on one account (6 refreshes of 3 tokens, change-password, 2 logouts, all at once) finished well inside 15 s: 0 hangs, 0 unexpected statuses, 0 "deadlock" in the server log. Lock ordering is trivial (one row lock per transaction, argon2 outside it).
+- The harder stress does distinguish the lock from no lock live (the builder could not).
+
+**(b) Edited existing test.** `pending-signup-no-session.spec.ts` diff: only the Prisma mock changed (`deleteMany` resolves `{count: 1}`, a `$queryRaw` stub, `$transaction` accepts a callback as well as a list). Every `expect` is untouched, including the 403 case asserting `$transaction` is not called. Nothing weakened.
+
+**Findings**
+1. **Default (agent), owner may override (low).** Sign-out racing a refresh of the SAME token cannot be made safe without a token family (G-91): if the refresh wins, the newer token survives and the logout of the old one finds nothing. My stress shows survivors in that case on the fixed code (about 12 to 25 per 25 where the refresh landed first, 0 once logout is clearly first), and the same on the pre-fix code, so the harness cannot tell it from plain ordering. A thief who refreshes a stolen token before the victim signs out keeps a session, as before; the builder recorded this under G-90. Not a regression, recorded, not failed.
+2. **Default (agent), owner may override (info).** One behaviour change in refresh: a pending-phone 403 now leaves the old token in place (it used to delete it first). Harmless; the 403 has no session either way.
+3. Round 1 findings 2, 3, 4, 5 stand as recorded (all low or info, none a defect).
+
+**NOT RUN**
+- Production `id.wawuafrica.com`, V10 phone check: no deploy or build. Unblocked by: deploying this branch.
+- The repo's own tests cannot demonstrate the lock live at fixed-code timing; the unit revert proof (fake lock off fails) plus my stress above covers it. Not rerun: the builder's unit revert proof (I did not mutate the code).
+- Attack battery beyond the builder's live script: rate-limit atomicity and enumeration equality covered through that script (38 of 38), not re-run through my round 1 `attack.mjs`.
 
 ## Owner sign-off
 
