@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -458,6 +458,93 @@ Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's 997ca72. Main is st
 - **An intermittent test warning, fixed.** Under parallel load, about 1 run in 6 printed React's "not wrapped in act(...)" warning (no failure) in the sign-out and refused-refresh tests. A26 drops its reads when the session ends, and react-query re-reads for the observers still mounted. A `settle` helper now waits for no fetching, inside act. Since then, 0 warnings in 10 runs.
 - **Counts:** `npm run check` exit 0: 26 suites 448 tests (open-wallet 45), gates 9 run, 121 files, 0 fail, 0 warn, 0 accepted, lint clean, 204 tasks.
 - **Not run this round:** browser and V9. No behaviour change for valid tokens, and nothing was started (no processes, databases or worktrees to clean up). Check 1 (SHARED-CHANGES KYC-05 #1) and V10 are NOT RUN, as before.
+
+## Verifier report, round 5
+
+Verifier, 3 Oct 2026. This was a narrow round on round 4's defect 1, at ef47494 (main 6bc420e already in, unchanged; no backend change). Since 997ca72, round 5 touches only `sessionAccount.ts`, the two open-wallet test files and docs.
+
+Evidence `$V5` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk05r5/`:
+- probe `$V5/probe-r5.test.ts` with `$V5/probe-r5.log`;
+- minted tokens `$V5/minted.json`, from `$V5/mint.js` (test keys and made-up people only);
+- mutants `$V5/mutants.txt` (`$V5/mutate.py`);
+- Hermes sources `$V5/hermes-v1/`, `$V5/hermes-v0/`;
+- `npm run check` logs `$V5/check-run1.log` to `-run3.log`.
+
+**Verdict: defect 1 is closed. No defect is open. Status `review`.**
+
+### 1. R4-4 re-applied by me
+
+In `payloadOf`, I dropped `.replace(/-/g, '+').replace(/_/g, '/')`. The builder's suite fails 3 of 45:
+- `a payload with - and _ and no padding gives its sub`;
+- `the same payload with its padding written out gives the same sub`;
+- the A26 screen test for a real-shaped token.
+
+My probe also fails, under both atobs. The file was restored and sha1-checked (`645900c0...`).
+
+### 2. Trying to break the tightened `accountOfToken`
+
+**Real tokens.**
+- Tokens from id.wawuafrica.com: **NOT RUN**. Getting one means signing in to the live service with a real account, and this task's rules forbid calling it. Unblocked by a token from a test account on the live service, decoded on the device or by the owner (shape only).
+- Substitute: 400 tokens minted with wawu-id's own signing library (`@nestjs/jwt` 11.0.2 over `jsonwebtoken` 9.0.3, as `TokensService.issueTokens` uses it). Each has `buildAccessPayload`'s full claim set, RS256, a `keyid`, and an `issuer` on half. Names have Yoruba, Igbo and Hausa letters, an emoji, `O'Brien-Smith` and `~?>`; email, phone and names are null or empty on some.
+- In 102 of the 400, the payload holds `-` or `_`. Payload lengths mod 4 are 0, 2 and 3 (134, 132, 134); none padded.
+- All 400 give their own `sub`, under jest's `atob` and under a Hermes `atob` port (below).
+
+**Malformed tokens.** About 6,100 inputs, under both atobs. None throws, and every one gives null. They include:
+- null and undefined;
+- `.` to `...`; two parts and four parts; whitespace and a newline in the middle part;
+- `+` in the middle; three `=` signs; `=` in the middle; a 200,001-character middle part;
+- `sub` empty, null, an array, or only under `__proto__`; a JSON string;
+- invalid UTF-8 (`C3 28`) and a UTF-8 surrogate (`ED A0 80`);
+- every 7th cut of a real payload;
+- 3,000 random strings over the base64url alphabet, `=+/. %`, `é` and an emoji;
+- 3,000 random byte payloads.
+
+### 3. The builder's three "equivalent" survivors, on the runtime the app ships
+
+RN 0.86.3 builds with Hermes V1 by default (`sdks/hermes-engine/hermes-utils.rb`: `RCT_HERMES_V1_ENABLED != "0"`). That is tag `hermes-v250829098.0.17` (`sdks/.hermesv1version`); the legacy tag is `hermes-v0.17.0`.
+
+There is no Hermes VM in `node_modules`, only `hermesc`, which will not execute. So I read `atob` in both tags. `lib/VM/JSLib/Base64.cpp` and `Base64Util.cpp` are identical in both for decoding:
+- whitespace is skipped;
+- a length of 1 mod 4 raises "Not a valid base64 encoded string length";
+- lengths of 2 or 3 mod 4 are padded as if `=` were there (so unpadded input is accepted);
+- `-` and `_` map to 64 and raise "Found invalid character".
+
+I ported that decoder line for line into the probe and swapped it in for `globalThis.atob`. The probe's sanity checks match the source: `YWI` gives `ab`, `YWJjZ` throws, `YW-j` throws.
+
+| Mutant (sha1-restored after each) | Builder's suite | My probe, jest `atob` | My probe, Hermes port | Judgement |
+|---|---|---|---|---|
+| B-E1 padding not added back | survives | passes | passes | equivalent on Hermes: unpadded input is padded in `base64DecodeOutputLength` |
+| B-E2 the impossible-length check removed | survives | passes | passes | equivalent: Hermes raises on a length of 1 mod 4, and `payloadOf` catches it |
+| B-E3 claims not required to be an object | survives | passes | passes | equivalent on any runtime: `null.sub` throws (caught); an array, string or number has no `sub` |
+
+So the builder's claim holds on Hermes, not only in jest. Each guard is now belt and braces.
+
+My own mutants (`$V5/mutants.txt`), all killed by the builder's suite:
+- R5-1: an empty `sub` accepted;
+- R5-2: the part count only checked to be at least 2;
+- R5-3: a decode error escapes `payloadOf`;
+- R5-4: the bytes read as Latin-1, not UTF-8.
+
+### 4. `npm run check` three times
+
+All three runs exit 0, each with:
+- 26 suites, 448 tests;
+- gates 9 run, 121 files scanned, 0 fail, 0 warn, 0 accepted;
+- 204 tasks.
+
+0 "not wrapped in act" warnings and 0 `console.error` in all three logs. My round-4 logs had `warnIfUpdatesNotWrappedWithActDEV` stacks from `OpenWalletScreen.test.tsx`. Scope: only `src/features/open-wallet/` and docs. 0 em-dashes.
+
+### Pass table (round 5 only; the rest stands as in round 4)
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Mutations | passed: R4-4 killed (3 tests); 4 of my own killed; the 3 survivors are equivalent on Hermes and in jest | `$V5/mutants.txt`, `$V5/probe-r5.log` |
+| Privacy | passed. Round 4's result stands: the change only narrows which tokens give an account, and a real token gives the same `sub` | `$V5/probe-r5.log` |
+| V1 | passed (3 of 3 runs, no act warnings) | `$V5/check-run*.log` |
+| V4, V5, V6, V7, V9 | not rerun. Round 5 changes no behaviour for a valid token (400 minted tokens give the same `sub`); round 4's results stand | round 4 above |
+| V10 | NOT RUN | no device. Hermes behaviour was checked from source and a port, not on a device (OPS-10) |
+
+**NOT RUN:** capability check 1 (SHARED-CHANGES KYC-05 #1); V10; a live id.wawuafrica.com token (above).
 
 ## Owner sign-off
 

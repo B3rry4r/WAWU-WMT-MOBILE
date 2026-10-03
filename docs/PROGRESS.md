@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 50 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 29 | 13 | 2 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 
@@ -67,7 +67,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie
 - **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-05](../tasks/ME-05.md) Profile fields, [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
@@ -76,6 +76,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-05 · Verified round 5: no open defect, status review (mobile ef47494, main 6bc420e already in). Defect 1 closed: R4-4 re-applied fails 3 of 45 of the builder's tests. 400 tokens minted with wawu-id's own signing library and claim set (102 with `-` or `_`) give their `sub`, and ~6,100 malformed or fuzzed tokens give null without throwing, under jest's atob and a line-for-line port of Hermes's atob (V1 and legacy tags read). The builder's 3 surviving mutants are equivalent on Hermes too; 4 own mutants killed. `npm run check` 3 of 3 exit 0, 448 tests, 0 act warnings. NOT RUN: a live id.wawuafrica.com token, check 1, V10.
 - 3 Oct 2026 · KYC-05 · Round 5, status verifying: A26's token reading is tested with real-shaped tokens (a payload with - and _ and no padding, the same padded, a non-ASCII sub read as UTF-8, twelve malformed tokens) and tightened (three parts, base64url, UTF-8, an object with a string sub); R4-4 killed; the verifier's probe passes; sign-out tests settle inside act.
 - 3 Oct 2026 · KYC-05 · Verified round 4: 1 defect, status building (mobile 4021cd5, main 6bc420e already in; Hub fe1ec6c). Round 3's privacy defect closed: `cross_fast`, `cross_account`, `cross_wallet` show A's phone or wallet to B on 801aeaa and only the loading view, then B's own data, on 4021cd5 (both themes); the guard held against an unreadable token `sub`, tokens rotated mid-visit, B signing in while A's reads were in flight, an account read answering for another account, the same phone, and rapid A to B to A. Privacy scan of 94 typed numbers: 0 hits outside request bodies. New defect 1 (tests): mutant R4-4 (token payload decoded without the base64url alphabet) survives all 39 open-wallet tests, though a real-shaped token whose payload holds `-` or `_` then leaves A26 loading for good (jest probe). 4 of 8 own mutants killed, 3 equivalent.
 - 3 Oct 2026 · KYC-05 · Round 4, status verifying: A26 never paints another account's reads (its reads keyed by visit and account, shown only for the token's account, dropped on close and session end); one-cache jest across a sign-out and a sign-in as someone else; 10 of 10 mutants; the verifier's cross cases reproduced on 801aeaa and clean on this build. V9 on backend main fe1ec6c. App-wide cache clear: FIX-04.
@@ -90,4 +91,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-11 payout bank account screen (A21) merged (mobile). Load, save and read back work against the Hub; a pasted number with spaces keeps all ten digits; flagged when the name is not the BVN name. Bank list and pre-save name check wait on WALLET-09 (G-57). G-59 filed (stand-in WAWU ID shape).
 - 3 Oct 2026 · FIX-03 merged (backend PR #50, 7601a5f): the pin-reset leak test draws its PINs from a random pool and keeps test phone tails off it, so a chance collision can no longer fail a deploy. Test files only.
 - 3 Oct 2026 · WALLET-11 · Verified round 2: no open defect, status review (mobile dbd990a, main 0b83be8 already in; Hub c197d58). The paste defect is fixed: real Ctrl+V of spaced, hyphenated, padded, no-break-spaced, dotted, labelled and over-long numbers all hold the ten digits, light and dark; a pasted 1111-111-112 saved and read back. Gates exit 0 (24 suites, 403 tests, 108 files, 0 fail); V4, V5 (round-1 recorded differences only), V6 (12 states by real cause), V9 (sign-in through A22, 7 PUT bodies only bankCode and accountNumber, second person null); 10 of 10 mutants killed, including round 1's survivor. NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11, a device paste.
-- 3 Oct 2026 · WALLET-11 · Round 2, status verifying: a pasted account number with spaces or hyphens is kept whole (no raw maxLength; digits taken out, then ten kept), proved by a real Ctrl+V in the web export before (8 digits) and after (10); the route's back-after-save rule now tested (verifier's surviving mutant killed); WAWU ID's answer shape corrected in the report to `{ data }`; main 0b83be8 merged.
