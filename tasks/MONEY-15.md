@@ -40,7 +40,7 @@ GET history with search, category filter and cursor pages; monthly totals; GET o
 
 ### Builder round 2
 
-Builder, 3 Oct 2026 (the round-1 builder). wawu-backend `wmt/MONEY-15` BACKEND_HASH: round 2 is 6d240fe, then backend main c1d23b5 (MONEY-13 merged, #42) merged in as 39238d4 with no conflict. Mobile `wmt/MONEY-15`: the verifier's 275f50c, then mobile main a3e072c merged in. The `BACKEND_GAPS.md` and sandbox README conflicts kept both sides (main's G-40, G-41, G-48, G-49 and this task's G-44, G-45 in number order), and PROGRESS was regenerated. Every round-1 finding was reproduced first: the new tests below were run against round 1's service, keys and DTO. P1, P1b, P1c and the trim test fail there. The reference-order and full-page tests pass there, because they pin behaviour that was already right.
+Builder, 3 Oct 2026 (the round-1 builder). wawu-backend `wmt/MONEY-15` **a622812**: round 2 is 6d240fe. Backend main c1d23b5 (MONEY-13, #42) was merged in as 39238d4 with no conflict, then main 48b9043 (MONEY-14, #43) as 33b7fac. That second merge had conflicts in `money.module.ts`, `money-contract.spec.ts`, `CONVENTIONS.md` and the two gate specs' test titles; both sides were kept, so the gated-route lists hold MONEY-14's 7 routes and these 3. a622812 is prettier on `money-contract.module.ts` after the merge. The merged `contract/openapi.json` equals a fresh build with enum order ignored. Mobile `wmt/MONEY-15`: the verifier's 275f50c, then mobile main a3e072c and 85a4e57 merged in. The `BACKEND_GAPS.md`, sandbox README and `contract/SOURCE_COMMIT` conflicts kept both sides (main's G-40 to G-43, G-48 and G-49, and this task's G-44 and G-45, in number order), PROGRESS was regenerated, and `sync_contract.py` now copies backend main 48b9043 with no type change. Every round-1 finding was reproduced first: the new tests below were run against round 1's service, keys and DTO. P1, P1b, P1c and the trim test fail there. The reference-order and full-page tests pass there, because they pin behaviour that was already right.
 - **Defect 1, a grouped row vanishing mid-scroll (fixed by a snapshot).**
   - How it works: the first page takes the server's clock (milliseconds) as the scroll's snapshot. The cursor (now `c2.`) carries it beside the last row's (`occurredAt`, id). The group key (now `g2.`) carries the snapshot of the read that showed the row. Every page of one scroll groups as of that snapshot: a group's members are the unlocks whose `completedAt` is at or before it.
   - Effect: an unlock that lands, or a pending one that settles, mid-scroll stays its own row in that scroll. It can no longer move a group across a cursor already handed out. The next refresh groups it. A group's place and `createdAt` stay its latest member's (Lead ruling 3).
@@ -59,12 +59,15 @@ Builder, 3 Oct 2026 (the round-1 builder). wawu-backend `wmt/MONEY-15` BACKEND_H
 - **Mutants**, each alone, the service restored by copy:
   - Killed: M5 (Fintava's reference first), M13 (`>=` for `>`), no as-of check, `<` for `<=` at the snapshot, the cursor's snapshot ignored, the group key's snapshot ignored, and the next cursor taking a new time.
   - Round 1's 14 re-run: 13 killed. `status = 'completed'` in the group test now survives. It is equivalent to the check as it is today: a row's `completedAt` is set only when it completes, cleared when a disagreement reopens it, and an `in` row never becomes `reversed`. It is kept as a guard.
-- **Checks after main c1d23b5 was merged (39238d4):** FULL_SUITE_LINE
-  - `tsc` 0. eslint 0 on every `.ts` the branch changes against main. History, gate and money-contract specs: 6 suites, 100/100.
-  - Protected `run.sh --fresh` (code 39238d4, lock c1d23b5): 253/253, all 244 required, no lock file touched.
-  - Gates 16 fail / 10 warn / 76 accepted on 628 files, the same findings as round 1 and main. `check_baseline.py` clean.
-  - CI tripwire 0. Key scan 0 of 58 windows.
-  - Mobile: `sync_contract.py` moved `SOURCE_COMMIT` to c1d23b5, with no type change. MOBILE_CHECK_LINE
+- **Checks on the merged head a622812 (main 48b9043 inside):**
+  - Full suite (`npx jest --runInBand --forceExit`) on fresh seeded `m15_full4_test`, my WAWU ID stand-in on :4001. :4001 was busy with another session until 12:08 UTC, so the run waited for `lsof` to show it free; my stand-in was stopped straight after, and `lsof` was empty again. Result: 130/130 suites, 3,141 passed, 3 skipped, 0 failed. This includes `hub-rate-limits` and every money, Fintava, KYC and identity spec.
+  - Before the MONEY-14 merge (39238d4, main c1d23b5): 126/126 suites, 3,065 passed, 0 failed.
+  - History, gate and money-contract specs: 6 suites, 100/100.
+  - Protected `run.sh --fresh` (code a622812, lock 48b9043): 253/253, all 244 required, no lock file touched.
+  - `tsc` 0. eslint 0 on every `.ts` the branch changes against main.
+  - Gates 16 fail / 12 warn / 76 accepted on 636 files, the same findings line for line as main 48b9043 (16 / 12 / 76 on 631 files; MONEY-14 brought the 2 new warnings). `check_baseline.py` clean.
+  - CI tripwire 0. Key scan 0 of 58 windows on every commit.
+  - Mobile `npm run check` (main 85a4e57 merged): exit 0, with typecheck 0, lint 0, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, and 203 tasks.
 - **Not run, and what is left:**
   - No new sandbox call: the routes never call Fintava.
   - Two cases the snapshot cannot see. A ledger write still in flight at the very instant page 1 is read: its `completedAt` is stamped before it commits. A completed unlock put back to `pending` by a disagreement (MONEY-08, a stop): its `completedAt` is cleared. Either can still move one group in an open scroll; a refresh shows it right.
