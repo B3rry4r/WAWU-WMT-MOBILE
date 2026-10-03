@@ -81,6 +81,7 @@ before validation, because the merchant record said `status: "inactive"`.
 | `35-money14-pin-reset.md` | `POST /sms/send` (the PIN reset code), twice | | 400, 400 | no text leaves the sandbox for WAWU's merchant: the documented example number with `+234` is refused with `"amount must be greater than or equal to 1"` (a business error, nothing in the request is an amount; G-42); without the country code it is a validation 400 |
 | `36-money15-history.md` | the history routes (MONEY-15) over real ledger rows | | 200 | one ₦10 round trip between A and B; `GET /money/transactions?q=Bayo` finds both movements with B (the delivery-written one named from B's wallet), the month's In and Out equal its completed rows, B gets 404 for A's row; 8 calls, balances unchanged |
 | `37-wallet14-recipients.md` | `PUT /money/payout-account`, `POST /money/beneficiaries` (the routes) | | 200 | the stub `0123456789`/`000013` is saved with the bank's name (`SIMI MICHELLE`) and Fintava's bank code; an old CBN code (`044`) is refused before Fintava is asked; 3 free GETs, nothing sent |
+| `39-wallet18-receipts.md` | the receipt routes (WALLET-18) over a real ledger row, checked against `GET /transaction/reference/{ref}` | | 200 | one ₦10 round trip per run between A and B; the code's public page shows Fintava's amount, status (`SUCCESS` as Completed), reference and time, both sides masked, no full account number; a made-up code is 404; three runs, 20 calls, balances unchanged |
 
 ## Money moved in the re-run
 
