@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: []
 decisions: [R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -51,7 +51,46 @@ Backend `wmt/EVENTS-02` (e8a0d8d, main a055b4f merged in acf062d). Files: `prism
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier session, fresh (did not build this task). Branches as they will land: backend `wmt/EVENTS-02` acf062d (origin/main a055b4f already merged, main unmoved); mobile `wmt/EVENTS-02` with main 9d43d9d merged in by me (generated `docs/PROGRESS.md` conflict, regenerated). Own worktrees, own databases (`*_events_02_verify`), Hub API on :4115, mock WAWU ID on :4116. Evidence logs are in this session's scratchpad (`/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **passed** (no count went up). Backend: `tsc --noEmit` 0 errors (main 0). `scripts/gates/run.py` 9 gates, files scanned 645 (main 643), 16 fail / 13 warn / 76 accepted, exit 1 on both; the finding lists are identical line for line, so nothing new. `check_baseline.py` exit 0 (108 entries). eslint without `--fix` over `{src,apps,libs,test}`: 4,488 problems on main a055b4f and on the branch; `event-options.ts`, `event.service.ts`, `event.controller.ts`, `create-event.dto.ts`, `event-hosting.contract.spec.ts` have 0; `event.contract.spec.ts` has 98, all on main already (the 2-line edit adds none; the builder's "changed files have 0" is not accurate for that file). `npm run contract:build` regenerates `contract/openapi.json` byte-identical (no diff). Mobile `npm run check` exit 0: 21 suites, 377 tests, gates 9 run / 98 files scanned / 0 findings. | `gates-branch.log`, `gates-main.log`, `tsc-branch.log`, `eslint-branch.json`, `eslint-main.json`, `contract-build.log`, `verify-mobile-check.log` |
+| V2 Contract | **failed** (F1). Event specs: event, hosting, admin events 3 suites 105 passed (main: 2 suites 89 passed). Live unexpected-format probes on POST /events (18 inputs): `"5,000"`, 5000.5, `null`, `[5000]`, `sold`, 21 types, 1-letter name, a ₦0 VIP, a priced free tier, blank `location` all 400 and nothing saved; but `priceNaira: ""` is saved as a ₦0 free ticket (201), `true` as ₦1, `"1e3"` as ₦1,000, `"5000"` as ₦5,000 and `quantity: "0x10"` as 16. PUT /events/:id/tickets returns 400 for `""`, `"5000"` and `true`. Full contract suite (`--runInBand`, protected suite apart) on the branch: 131 suites, 8 failed (46 tests), 2,913 passed; 7 of the 8 hard-code the mock on :4001, which another session's mock holds (tokens 401), and `fintava-stall` misses a timing bound (1,020 ms against < 1,000) with no Fintava keys here; all 8 also fail on main. Main's own full run showed 18 more failing suites, all 401s because each worktree's mock generates its own `private.pem` and my one mock serves the branch's key: a harness artefact, not a regression. The coordinator's note about another agent's `pkill` of jest: none of my runs died (each printed its summary). | `be-event-specs.log`, `be-full-branch.log`, `be-full-main.log`, `be-main-rerun.log`, probes in this report |
+| V3 Regression | **passed**. `scripts/protected-routes/run.sh --fresh`, lock from origin/main a055b4f: main a055b4f 253/253, branch acf062d 253/253, each on a fresh migrated and seeded database. | `verify-v3-main.log`, `verify-v3-branch.log` |
+| V4 Field trace | **passed**, with F2 and F3 (unclear). Table below. | this section |
+| V9 Live seam | **passed**. Hub API (built `dist`) on :4115 against my own database; sign-in through the mock WAWU ID's `/auth/login` on :4116 (no injected token; the real WAWU ID is not in this sandbox). Host tick set in my own database for the host. POST /events with Regular ₦5,000 x 100 (no tier) and VIP ₦12,000 x 20 (tier vip), format hybrid, kind conference, category business, address only: 201 `pending`, `location` = the address, `ticketed` true, `priceFromNaira` 5000 (computed by the server from the stored tiers); GET /events/:id and GET /events/:id/tickets read back both rows (regular, vip); both rows in `EventTicketType`; the event is in GET /admin/events/queue (admin signed in with POST /admin/auth/login); a stranger gets 404 on the event. Admin approve, then `?format=hybrid`, `?type=conference`, `?category=business` each list it. ₦0 (R-8): an event with one ₦0 type and no tier stored `free`; after approval a stranger's POST /events/:id/orders returned `{free: true}` and GET /events/tickets/mine shows a valid ticket of tier free; `?type=concert` lists it. GET /events/options returns every category, format and kind with labels ("Business & Finance" is `business`). | `verify-hub.log`, commands in this session |
+
+**Capability check.** "A host submits an event with two ticket types in one request and it goes to review": **passed**, live (V9 above) and in `event-hosting.contract.spec.ts`.
+
+**Diff against the builder's report.** Backend files match, plus `src/event/event.controller.ts` (the new GET /events/options route), which the report implies but does not list. Mobile: task file, `BACKEND_GAPS.md` (G-55), `docs/LOG.md`, `docs/PROGRESS.md`, as reported. No stand-ins (backend-only task; no mobile code).
+
+**The changed test.** `event.contract.spec.ts` "400s on an unknown format or type" sent `hybrid` and `conference` as the unknown values. The task's scope makes both valid, so the old assertion encoded exactly the behaviour this task is told to change; the edit swaps in values that are still unknown (`in_space`, `festival`, checked absent from the enums) and keeps the test's purpose. Legitimate: it is a spec change the task orders, disclosed, not a weakening to get a red check green.
+
+**G-55.** Confirmed: E13 (`design/_gen/events_b.js` form1) asks name, description, host and format; E14 (form2) dates, street address, banner, category; E15 tickets. No step asks the Kind, and `type` stays required in `CreateEventDto`. The gap is real and correctly named.
+
+**Unexpected format checked (V2):** see F1.
+
+### V4 field trace
+
+| Field | Writer | Storage | Readers checked |
+|---|---|---|---|
+| ticket types (name, price, quantity, tier) | POST /events `ticketTypes` (new), PUT /events/:id/tickets (existing) | `EventTicketType`, same write as the event | GET /events/:id/tickets (host and public), `ticketed` and `priceFromNaira` on POST/GET /events/:id and GET /events, POST /events/:id/orders (free ticket issued), GET /events/tickets/mine (tier free). Not in GET /admin/events/queue or /admin/events/:id (F2) |
+| format `hybrid`, kinds `conference`, `concert` | POST /events | `Event.format`, `Event.type` (additive enum values) | GET /events/:id, GET /events filters, admin queue (shows `hybrid`, `conference`), GET /events/options |
+| category | POST /events | `Event.category` | GET /events?category=business, GET /events/options label |
+| location (now optional) | POST /events (from the address when left out), PATCH (follows the address only when it came from it) | `Event.location`, still non-null | GET /events/:id and admin queue: address-only gives the address; nothing gives `''`; PATCH address on an address-derived location follows (1 Old Road to 2 New Road), a typed "Lagos" does not, `''` follows a new address |
+
+### Findings
+
+- **F1 · defect.** POST /events coerces non-numbers in `ticketTypes`, so a ticket price the host never typed is saved. `@Type(() => Number)` on `NewEventTicketTypeDto.priceNaira` and `quantity` (`src/event/dto/create-event.dto.ts`) turns `""` into 0 (saved as a ₦0 `free` ticket, 201), `true` into ₦1, `"1e3"` into ₦1,000, `"5000"` into ₦5,000 and `"0x10"` into 16 seats. A wizard whose price field is empty sends a priced event to review as free, and after approval buyers get free tickets. PUT /events/:id/tickets rejects all of these with 400, so the DTO's "same rules PUT /events/:id/tickets applies" does not hold. The builder's spec covers `"5,000"` (NaN) but none of these. Also, `"5,000"` and `null` come back as "priceNaira must not be greater than 10000000", which names the wrong problem. Unblocked when POST /events refuses a non-integer JSON value for `priceNaira` and `quantity` (400, nothing saved), as PUT does, with a spec for `""`, `"5000"`, `true` and `"0x10"`.
+- **F2 · unclear (owner).** The moderation queue never shows the ticket types: GET /admin/events/queue and /admin/events/:id have no tier, price or quantity (the admin view type says so on purpose, from the time events had no tickets). A reviewer approves an event without seeing what it charges. `event.service.ts`'s comment "the reviewer sees both at once" is not true of the admin API. Not in this task's scope; the owner decides whether the dashboard should show tiers (that would be a new additive field, dashboard task).
+- **F3 · unclear (owner).** GET /events/:id/tickets is public and has no status check, so the tiers of a pending or rejected event are returned to anyone, signed in or not, who has its id (live: 200 with both rows for a pending event). Already true on main for tiers set by PUT; EVENTS-02 makes it true of every ticketed submission. Buying is refused until `published`, and the id is a UUID, so nothing can be bought. The route is protected (web caller), so changing it needs the owner.
+- **F4 · unclear (owner, low).** The new enum values widen `format` and `type` on routes the web reads (GET /events, GET /events/:id, both protected). The task's scope orders it; only new events carry them; V3 is green. CLAUDE.md says nothing the web calls is widened, so the owner should know the web will meet `hybrid`, `conference` and `concert` once app hosts submit them.
+- Report notes (not defects): the builder's file list leaves out `event.controller.ts`; the "changed event files have 0 eslint problems" claim does not cover `event.contract.spec.ts` (98, all pre-existing).
+
+NOT RUN: Fintava (this task moves no money through Fintava; no keys here). Mobile `npm run api` (the contract reaches the app's types after the backend merge). The real WAWU ID login (not in this sandbox; the mock's `/auth/login` was used). V5 to V8 and V10 are not in this task's passes.
+
+Status set to `building`: F1 is an open defect.
 
 ## Owner sign-off
 
