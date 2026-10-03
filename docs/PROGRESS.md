@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 51 | 46 | 32 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 28 | 12 | 2 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 
@@ -74,6 +74,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-05 · Verified: 5 defects, status building. (1) Signing out does not clear the kept BVN prefill (`forgetKeptCheck` has no caller). (2) A pasted BVN or NIN with more than two separators is cut by the raw `maxLength` 13 (`222 345 678 12` keeps 10 digits). (3) With the Hub unreachable during a check, the banner gives way to the load-error screen within 10 s. (4) "Wait a minute" is hard-coded, though the hourly address limit answers `Retry-After-medium` 3448. (5) Mutants M5 and M7 survive. Privacy scan: 0 hits for 66 typed numbers across the DB, logs and browser. V9 bodies exactly `{bvn, nin}` (48). Merged main 2ca65d0; `npm run check` exit 0, 398 tests, 108 files.
 - 3 Oct 2026 · KYC-05 · Built A26 (Open your wallet: phone, BVN, NIN; Continue runs KYC-01's check) with A14 as its state, the Not available yet end, and `useOpenWalletEntry` for the money routes' `409 wallet_not_open`; status verifying. Prefill kept in memory for A5. Driven against a built Hub with a Fintava stand-in in light and dark. The pay sheet's button waits on SHARED-CHANGES KYC-05 #1. Gaps G-55 (no signed-in phone change), G-56 (USSD hints).
 - 3 Oct 2026 · FIX-03 merged (backend PR #50, 7601a5f): the pin-reset leak test draws its PINs from a random pool and keeps test phone tails off it, so a chance collision can no longer fail a deploy. Test files only.
 - 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
@@ -88,4 +89,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-14 · Verified: 2 defects, status building (backend 514d3ad on main 6d48c97 with MONEY-13 35b68af; mobile 4fdc0b5; neither main moved). D1: the BVN name words are hashed with the key alone, the same hash for everyone, so a database reader without the key reads names back by matching them to the plain names beside them (an unwalleted person's first name recovered from 7 people). D2: a saved person whose account is deleted still holds one of the 50 places, hidden and never removable (list 49, save refused). Passed: name-check-only saves (bad codes, refused checks, a body name all refused), other people's rows untouched, the cap exact under 20 parallel saves at 49, one row under 20 parallel duplicates, the match rule on 27 edge cases; full suite on :4001 126 suites / 3,065 passed / 0 failed, protected 253/253, gates 16 fail / 11 warn (+BENEFICIARIES-MAX only), contract byte-stable, 13 of 14 own mutants killed (bank-list hour untested), mobile check exit 0. One stray sandbox BVN lookup by the verifier disclosed.
 - 3 Oct 2026 · WALLET-14 · Lead follow-up (backend 514d3ad, status verifying): merged `wmt/MONEY-13` (35b68af), the five routes now run its wallet gate and the stand-in is deleted (G-47 handled); the 6 suites on :4001 pass 62/62 and the full suite on a fresh database is 3,065 passed, 0 failed; protected 253/253.
 - 3 Oct 2026 · WALLET-14 · Built (backend a53fe14, status verifying): beneficiaries and the payout account served (`/money/beneficiaries`, `/money/payout-account`), each bank account name-checked through Fintava with its real bank code and the bank's name; the BVN check now keeps the BVN name as keyed word hashes, so a payout account in another name is flagged (`matchesBvnName: false`); additive migration, G-46 and G-47 filed, 3 free sandbox name checks.
-- 3 Oct 2026 · FIX-03 · Verified: status review (backend 86b740e, mobile a83f922). Cause reproduced on 48b9043 (run 6: a masked phone tail `+234 *** *** 7788` equal to a fixed PIN); 100 of 100 in a row on the branch at load 3.1 to 8.4; full suite 130/130, 3,144 passed, 0 failed; protected 253/253; gates as main; 5 leak mutants fail the scan. No chance collision left in the scanned text, none from other suites. `unclear`: a reset storing the new PIN unhashed passes every PIN spec (pre-existing). NOT RUN: 30 runs under burners and the key scan (both refused by this session's permissions).

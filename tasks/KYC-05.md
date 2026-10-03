@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -91,7 +91,70 @@ Builder, 3 Oct 2026. Mobile `wmt/KYC-05` on main `0b83be8` (merged; main brought
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier, 3 Oct 2026 (fresh session; wrote none of this code). Mobile `wmt/KYC-05` at 0622ef4 (merge base = main 0b83be8); main then moved to 2ca65d0 (docs only, FIX-03), merged in as bf580d3 (`docs/PROGRESS.md` conflict regenerated). Backend: built Hub from main c197d58 (main is now 7601a5f: two test files only, FIX-03). Evidence `$V` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk05/`: screenshots `$V/shots/`, design renders `$V/design/`, side by sides `$V/side-*.png`, `$V/sheet-*.png`, run results `$V/results.jsonl`, request log `$V/calls.jsonl`, browser dumps `$V/browser-dumps.jsonl`, privacy scan `$V/privacy-scan.txt`, mutants `$V/mutants.txt`, driver `$V/drive.py`.
+
+**Verdict: 5 defects open, status back to `building`.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Privacy | **failed** (defect 1). Passed: 66 distinct BVNs and NINs typed across 53 browser sessions; 0 hits in a full `vk05_test` dump, the Hub log, the stand-in WAWU ID, Fintava stand-in and web-server logs, browser localStorage, sessionStorage, IndexedDB, cookies, console and every URL and navigation (positive control: the same scan finds 61 of them in the captured request bodies). localStorage holds only `wawu.session.access` and `.refresh`. Numbers go only in the POST body, never a URL or route param. `WalletIdentity` holds last 4, a 64-char keyed hash and the verified phone. The confirmed end shows `•••• ••• 0001` only, and the DOM never holds the full number after a pass. Re-entry after Back or Done shows empty fields. `keptCheck` is per account (another owner reads null, jest M2 killed). **But signing out does not clear it** | `$V/privacy-scan.txt`, `$V/browser-dumps.jsonl` |
+| V1 | passed | `npm run check` on 0622ef4: exit 0, 23 suites 398 tests, gates 9 run 108 files scanned 0 fail 0 warn 0 accepted, lint clean, 203 tasks (`$V/check-branch.log`). Merged with main 2ca65d0: exit 0, the same counts, 204 tasks (`$V/check-merged.log`). Scope: only `src/features/open-wallet/`, `src/app/open-wallet.tsx`, task docs, BACKEND_GAPS, SHARED-CHANGES; no `_layout.tsx` or shared component edits. No em-dash in user copy, no hex or colour literal, no USSD code (`565`, `346` absent). Diff matches the builder's file list. No copy of anything on main (`AuthField`, `AuthFrame`, `Banner`, `Button`, `Card`, `IconTile` imported). The phone hint "Must be the number on your BVN" is a literal, but contract CONVENTIONS section 8 (A14) backs it: the server enforces the rule, and the app does not check it itself |
+| V4 | failed (defect 4). The rest passed | Phone: GET `/users/me` `data.phone` (the token's claim, the same one `checkBvn(user.sub, user.phone, ...)` compares), shown `0803 113 0001` for `+2348031130001`, foreign `+447700901123` as stored. Wallet state: GET `/money/wallet` `state` (`open`, `opening` from real `FintavaWallet`, `FintavaWalletOpening` rows). BVN and NIN: the user. Masked digits: the POST answer's `identity.bvn.last4` and `ninLast4`. Every refusal sentence is the server's `message` (A14, not confirmed, limit, unreachable, `phone_not_nigerian`). Banner titles and end copy are the app's own words. **"Wait a minute, then try again." is a hard-coded time with no backing** |
+| V5 | passed, differences classified below | `$V/side-A14-light.png`, `$V/side-A14-dark.png`, `$V/side-A3-A26-light.png`, `$V/side-A3-A26-dark.png` (render left, own 390 px shot right) |
+| V6 | failed (defects 2, 3, 4). The rest passed | Each state in light and dark, by its cause against the built Hub: loading (Hub answers held 6 s) `a26-loading`; empty `a26-empty`; empty Continue (no request, 0 POSTs) `a26-empty-continue`; checking (answer held 5 s, button busy) `a26-checking`; A14 (stand-in record on 080 9999 0000) `a14`; A14 corrected (error clears on the BVN edit) `a14-corrected` then `a14-then-confirmed`; unknown BVN (Fintava 400) `a26-bvn-not-confirmed`; daily limit (4th check, `429 identity_checks_exhausted`) `a26-limit`; address limit (two people, one address, 4 in a minute) `a26-address-throttle`; hourly address limit `a26-address-hourly-limit`; unreachable (Fintava 500, `503`) `a26-unreachable`; offline (browser offline) `a26-check-offline`, banner holds 8 s and after reconnect; Hub unreachable while online `a26-check-hub-unreachable`, `-10s`; load error and Try again `a26-load-error`, `-retried`; not available yet by the link (0 POSTs, no alert role) `a26-not-available-link` and by `phone_not_nigerian` (+44 account) `a26-not-available-server`; wallet open `a26-wallet-open`; opening `a26-wallet-opening`; confirmed `a26-confirmed`; signed out goes to `/welcome` with no Hub call `a26-signed-out`. All `$V/shots/<name>-<theme>.png` |
+| V7 | passed (except check 1, NOT RUN) | Fresh user signed in on A22, then `/open-wallet` pushed in app (no reload): the form; header Back goes to `/`; re-entry has empty fields; numbers typed then Back: gone on return; pass; Done goes to `/`; re-entry and browser Back then Forward show "BVN confirmed" (kept in memory, 1 POST in total). Cold start (reload) after a pass: the form again (prefill gone, G-25 as recorded). The flow stops at "BVN confirmed" with Done (KYC-03 continues to A5). `leadIfNoWallet`: the real Hub's gated `GET /money/transactions` answers `409` with `reason.code` `wallet_not_open` (no wallet) or `wallet_opening` (an opening row); `errors.ts` reads `reason.code`; jest proves only `wallet_not_open` routes (mutant M1, any 409, killed) | `$V/results.jsonl` (`reentry`, `pass`) |
+| V9 | passed | Hub `dist` built from c197d58 on :4963, `vk05_test` fresh, migrated and seeded; stand-in WAWU ID :4964 (users registered on it, signed in through the app's A22, no injected token); Fintava stand-in :4965 (`$V/fintava-standin.js`, made-up numbers, started with `env -i`, no `FINTAVA_API_KEY` in its environment; the Hub had `FINTAVA_BASE_URL` on 127.0.0.1 and a made-up key); web export on :8163 (`EXPO_PUBLIC_*` local, Metro cache cleared: a cached bundle had carried another session's URLs); every request to `*wawuafrica.com` was blocked and counted (0). 48 `POST /money/identity/bvn` bodies, each exactly `{bvn, nin}`, both 11 digits only, no query string (`$V/calls.jsonl` keeps key names and lengths only). 24 `BvnCheckAttempt` rows, 6 verified, 6 `WalletIdentity` rows. The server-only value on screen: the masked last 4 from the check's answer. **WAWU ID shape:** real wawu-id answers login and refresh as `{ data: Session }` and `{ data: TokenPair }` (`auth.controller.ts` `return { data: ... }`, no global interceptor; `contract/identity/openapi.json` `SessionAnswer`, `TokenPairAnswer`, identical to wawu-id main dbcb2f8), and the app reads `payload.data.accessToken`: the app matches the real server. Only the stand-in answers unwrapped, so my pass-through wrapped it as `{data}` |
+| Mutations | failed (defect 5) | 8 mutants on the feature, each restored by sha1 (`$V/mutants.txt`): killed M1 (any 409 opens A26), M2 (kept check not per account), M3 (A14 on the BVN), M6 (mask shows more digits). Survived and equivalent: M4 (fields not cleared on a pass: the form unmounts), M8 (NIN sent ungrouped: `checkBvn` strips spaces). **Survived, not equivalent: M5 and M7** |
+| V10 | NOT RUN | no device; unblocked by a tester build with the backend on the droplet (OPS-10) |
+
+### Capability checks
+
+1. Pay with no wallet lands on A26: **NOT RUN**. No payer exists on main besides `src/app/preview/pay-sheet.tsx`, and `PaySheet` draws nothing in its no-wallet state. Unblocked when SHARED-CHANGES KYC-05 #1 is applied (`onOpenWallet` on `PaySheet`) and the preview passes it.
+2. Enter BVN and NIN, Continue, check runs, prefill kept: passed (V9, `pass` and `reentry`).
+3. A14 then correct and continue: passed (`a14`, `a14-corrected`, `a14-then-confirmed`), by correcting the BVN; the phone is read-only (G-55).
+4. No Nigerian BVN reaches "Not available yet": passed, both ways.
+5. V5: passed with the differences below.
+6. Values from the API or the user: failed on the "Wait a minute" line (defect 4).
+7. States by real cause: failed on defects 2, 3 and 4.
+
+### Findings
+
+**Defect 1 (privacy): signing out leaves the BVN prefill (name, date of birth, gender) in memory.** `forgetKeptCheck` has no caller, and `signOut()` / the session's `drop()` never touch `keptCheck`. Reproduce: `keepCheck('owner-a', check); await signOut(); readKeptCheck('owner-a')` still returns the prefill (verifier probe in jest, then removed). In the app, the same account signing back in within the same process lands on "BVN confirmed" with that prefill held, without a new check. The owner check stops another account reading it, but the brief requires sign-out to clear it.
+
+**Defect 2: pasting a BVN or NIN cuts it short.** Real Ctrl+V in the web export, into both fields, light and dark. The raw `maxLength={GROUPED_ID_LENGTH}` (13) cuts the pasted text before `groupIdNumber` strips separators. Results, each pasted into an empty field:
+
+| Pasted | Field shows | Digits kept |
+|---|---|---|
+| `22234567812`, `2223 4567 812`, `2223-4567-812`, `2223.4567.812` | `2223 4567 812` | 11 |
+| `2223 - 4567 - 812` | `2223 4567` | 8 |
+| `222 345 678 12` | `2223 4567 81` | 10 |
+| `222-345-678-12` | `2223 4567 81` | 10 |
+| `  2223 4567 812  ` (copied with spaces round it) | `2223 4567 8` | 9 |
+
+The field drops the digits without saying so. Continue then asks for 11 digits, so no wrong number is sent (0 POSTs). Evidence: `$V/shots/a26-paste-cut-*`, `results.jsonl` scenario `paste`.
+
+**Defect 3: a Hub that cannot be reached during a check swaps the banner for the load-error screen.** Reproduce: the Hub drops connections (`/__down?on=1`) while the device is online, then tap Continue. At 2 s the "No connection" banner shows over the form. By 10 s the whole screen is "We couldn't open this step" with Try again, and the typed numbers and banner are gone. The cause is in `OpenWalletScreen`: the `catch` runs `invalidateQueries(walletIdentityQuery)`. Its refetch fails after the query retries, and `[account, wallet, identity].find((q) => q.isError)` treats a failed background refetch, with data still present, as a failed load. With the browser itself offline, the query pauses instead and the banner stays (`a26-check-offline`). Evidence: `a26-check-hub-unreachable-*`, `a26-check-hub-unreachable-10s-*`.
+
+**Defect 4 (fact): "Too many tries. Wait a minute, then try again." is hard-coded.** The address limit has two windows (CONVENTIONS section 8: `short` 3 a minute, `medium` 20 an hour, both PROVISIONAL). Reproduce: 21 requests from one address over 7 minutes, then a check from that address. The Hub answers `429` with `Retry-After-medium: 3448` (about 57 minutes), and A26 still says "Wait a minute". Nothing in the app reads the answer's retry time. Evidence: `a26-address-hourly-limit-*`, `$V/medium.log`.
+
+**Defect 5 (tests): two mutants that change behaviour survive the 21 feature tests.**
+- M7 removes the `inFlight` guard, the only same-frame double-tap protection on a charged check. The UI held at 1 POST under a forced second click, but no test covers it.
+- M5 shows "BVN confirmed" for any kept check, instead of only one whose last 4 equal the server's current `identity.bvn.last4`. A pass with another BVN elsewhere would then show stale digits and a stale prefill.
+
+**Differs for a recorded reason (V5, A14 and A26 against A3):**
+- The status bar and device frame are the render's.
+- The nav title "Open your wallet" and the heading "Let's open your wallet" are not drawn. They are A26's own (BRIEF A26; builder default copy).
+- No Email, Password, password hint or NIBSS line: BRIEF A3, A26.
+- The NIN field is added: BRIEF A26.
+- No USSD hint lines: task "Figures on these artboards are not facts", G-56.
+- Phone, BVN and NIN lack the mono tracking (`.04em`): SHARED-CHANGES KYC-05 #2 (the prop does not exist on `TextField`; fenced).
+- The "I don't have a Nigerian BVN" link: R-6 "not available yet" end.
+
+A14's error treatment matches the render in light and dark: the red border on the phone, the icon and the sentence in place of the hint.
+
+**Unclear:**
+- G-55: the phone is read-only. A person whose BVN truly carries another number has no way on in the app until wawu-id has a signed-in phone change. This is recorded as a default; the owner decides.
+- The builder's KYC-03 finding: A6 and A7 need the BVN and NIN again, but this step keeps neither.
 
 ## Owner sign-off
 
