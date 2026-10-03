@@ -27,7 +27,8 @@ export type OpenWalletWay = {
 /**
  * The two ways out of A5 and A6 other than their back button. A26 sits under
  * them on the stack (they are pushed on top of it), so leaving dismisses every
- * Open your wallet screen at once, and restarting dismisses down to A26 (or
+ * Open your wallet screen at once (and, with nothing under them, puts Home
+ * in their place), and restarting dismisses down to A26 (or
  * opens it, when A5 or A6 was reached without it, such as a reload).
  */
 export function useOpenWalletWay(): OpenWalletWay {
@@ -37,8 +38,14 @@ export function useOpenWalletWay(): OpenWalletWay {
     () => ({
       leave: () => {
         const { depth, below } = flowDepth(navigation.getState() as StackState | undefined);
-        if (below && depth > 0) router.dismiss(depth);
-        else router.replace('/');
+        if (below && depth > 0) {
+          router.dismiss(depth);
+          return;
+        }
+        // Opened with nothing under it (a link, a reload): every screen of the flow goes, not only the top one,
+        // so nothing it typed or kept stays mounted under Home.
+        if (depth > 1) router.dismiss(depth - 1);
+        router.replace('/');
       },
       restart: () => router.dismissTo('/open-wallet'),
     }),

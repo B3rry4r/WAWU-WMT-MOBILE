@@ -1,9 +1,13 @@
 import { addressLine, birthDate, detailsProblems, fullName, genderWord, NIGERIAN_STATES, openingName, tidyDetails } from '../details';
 import { forgetKeptCheck, keepAddress, keepCheck, readAddress, readKeptCheck, ticketFor } from '../keptCheck';
-import { flowDepth } from '../leave';
+import { renderHook } from '@testing-library/react-native';
+
+import { flowDepth, useOpenWalletWay } from '../leave';
 import { isSendableSelfie, SELFIE_MIN_BASE64_CHARS } from '../api/opening';
 
-jest.mock('expo-router', () => ({ useRouter: () => ({}), useNavigation: () => ({}) }));
+const mockRouter = { dismiss: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() };
+let mockRoutes: { name: string }[] = [];
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useNavigation: () => ({ getState: () => ({ routes: mockRoutes }) }) }));
 
 const OWNER = '00000000-0000-4000-8000-0000000000b1';
 const check = {
@@ -88,6 +92,15 @@ describe('A5’s address, kept beside the passed check for A7', () => {
     expect(readKeptCheck(OWNER)).toBeNull();
   });
 
+  it('an answer under a ticket from before a forget keeps nothing, even once a new check is kept', () => {
+    keepCheck(ticketFor(OWNER), check);
+    const stale = ticketFor(OWNER);
+    forgetKeptCheck();
+    keepCheck(ticketFor(OWNER), check);
+    expect(keepAddress(stale, { street: 'x st', city: 'Ikeja', state: 'Lagos' })).toBe(false);
+    expect(readAddress(OWNER)).toBeNull();
+  });
+
   it('is never kept without a passed check for the same account', () => {
     expect(keepAddress(ticketFor(OWNER), { street: 'x st', city: 'Ikeja', state: 'Lagos' })).toBe(false);
     keepCheck(ticketFor(OWNER), check);
@@ -120,5 +133,32 @@ describe('leaving Open your wallet', () => {
     expect(flowDepth({ routes: [route('(tabs)'), route('payout-account'), route('open-wallet')] })).toEqual({ depth: 1, below: true });
     expect(flowDepth({ routes: [route('open-wallet-selfie')] })).toEqual({ depth: 1, below: false });
     expect(flowDepth(undefined)).toEqual({ depth: 0, below: false });
+  });
+});
+
+describe('the ways out of A5 and A6', () => {
+  beforeEach(() => Object.values(mockRouter).forEach((fn) => fn.mockClear()));
+  const route = (name: string) => ({ name });
+
+  it('leaving goes back to whatever opened Open your wallet, dismissing all of its screens', async () => {
+    mockRoutes = [route('(tabs)'), route('open-wallet'), route('open-wallet-details'), route('open-wallet-selfie')];
+    const { result } = await renderHook(() => useOpenWalletWay());
+    result.current.leave();
+    expect(mockRouter.dismiss).toHaveBeenCalledWith(3);
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('with nothing under the flow (a link, a reload), every flow screen goes and Home takes their place', async () => {
+    mockRoutes = [route('open-wallet'), route('open-wallet-details'), route('open-wallet-selfie')];
+    const { result } = await renderHook(() => useOpenWalletWay());
+    result.current.leave();
+    expect(mockRouter.dismiss).toHaveBeenCalledWith(2);
+    expect(mockRouter.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('starting again goes down to A26', async () => {
+    const { result } = await renderHook(() => useOpenWalletWay());
+    result.current.restart();
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/open-wallet');
   });
 });
