@@ -3,19 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 34 of 179.**
+**Launch tasks done: 35 of 179.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 56 | 47 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
-| done | 23 | 11 | 1 | 0 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
+| review | 0 | 0 | 0 | 0 |
+| done | 23 | 11 | 2 | 0 |
 
 ## Done
 
@@ -24,6 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-06](../tasks/INBOX-06.md) Free chat between users (Developer 2)
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 - [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs (Developer)
+- [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 - [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
 - [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring (Developer)
 - [OPS-04](../tasks/OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers (You)
