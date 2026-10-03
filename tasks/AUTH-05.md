@@ -7,7 +7,7 @@ order: 46
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [AUTH-03]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -157,6 +157,40 @@ Verifier session, 3 Oct 2026, fresh (wrote and verified none of the earlier roun
 New uncommitted edits on wawu-id c853559 and mobile 679c9d8 (origin/main 85a4e57 already in it). Evidence `/tmp/claude-0/-home-user/96e62beb-c0ce-5c90-a589-b6d7920b563f/scratchpad/AUTH-05/r2/`.
 - **D2 fixed:** `apply` records every row of each set it touched (keeper, released, held) in `g16_phone_members`; `revert` exempts those rows as they were, and still refuses for any row it did not see on the number in any spelling or on the exact old text (rule in `src/auth/g16-revert.ts`, used by the script; 3 unit tests, removing the exemption fails 1, sha1 restored, `revert-proof.txt`). Scratch `a05f2_g16`: a set with a released row and a held phone-only row now reverts, every row byte-identical (`g16-run.txt`); a new row in another spelling of that set's number still blocks the revert with nothing changed (`g16-set5-run.txt`). Real data stays an owner stop.
 - **U3** recorded under Defaults. **Counts:** wawu-id tsc 0; eslint 29, same files as main; jest 17 suites 181 tests; gates 0 fail 20 warn. Mobile `npm run check` exit 0: 377 tests, gates 98 files 0 findings, 203 tasks.
+
+## Verifier report (round 3)
+
+Verifier session, 3 Oct 2026, fresh (wrote and verified none of the earlier rounds). Narrow round: D2 and what its fix touched only; the other passes stand as round 2 recorded them. Checked: wawu-id `wmt/AUTH-05` 9af1d5a (one commit on c853559, base origin/main 873b31f, current); mobile `wmt/AUTH-05` 070de95 (contains origin/main 85a4e57). Own worktrees (branch and origin/main, each `npm ci`) and own databases `a05v3_a` to `a05v3_d` (migrations applied with `prisma migrate deploy`), all dropped and removed at the end; nothing committed or pushed; no server, key or real data touched. Evidence: `/tmp/claude-0/-home-user/96e62beb-c0ce-5c90-a589-b6d7920b563f/scratchpad/AUTH-05-v3/` (paths below are relative to it).
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Diff c853559..9af1d5a | passed | Exactly `scripts/data/g16-duplicate-phones.mjs`, `src/auth/g16-revert.ts`, `src/auth/g16-revert.spec.ts` (122+, 19-). wawu-id tree clean. |
+| wawu-id checks | passed | tsc 0 (`tsc-id.txt`); eslint without `--fix` 29 errors on branch and 29 on origin/main, the same file and rule list, none in the new files (`lint-*.keys`); jest 17 suites, 181 tests, all pass (`jest-id.txt`); gates 0 fail, 20 warn, as round 2 (`gates-id.txt`). |
+| Mobile `npm run check` | passed | Exit 0: 21 suites, 377 tests, gates 98 files 0 findings, 203 tasks (`mobile-check.txt`). |
+| (a) D2 shape reverts | passed | Seed: round 2's sets A to G plus H (two released rows and two held, spellings `080`, spaced `0806 ...`, `+234`, `234`, `+234 ...` spaced), I and J (`seed.mjs`). `report` changes nothing; `apply --owner-approved` released 11 rows across 10 numbers, held rows untouched; `revert --owner-approved` "restored 11 row(s)", exit 0; full dump of `wawu_users`, `refresh_tokens` and the table list identical to before `apply` (sha1 8a99bc1e... both; `a-run.txt`). Set D (round 2's failing case) and H included. |
+| (b) new row, other spelling | passed | After `apply`, a new row with `08061000010` (released `+234`), `+2348061000011` (released `234`), `2348061000001` (released `080`), `0806 100 0004` (set D) and `+234-806-100-0009` (set H): each revert exit 1, "Not reverted: N old number(s) are held by another row now. Nothing changed."; dump and both g16 tables unchanged (`bc-run.txt`). |
+| (c) new row, exact old text | passed | `2348061000004` (D), `08061000001` (A), `+2348061000009` (H): exit 1, nothing changed. With the new rows removed, the revert then restores everything, identical to before `apply` (`bc-run.txt`). |
+| (d) apply twice, revert twice | passed, see U4 | Second `apply`: "released 0 row(s) across 3 number(s)", no row and neither g16 table changed (md5 of both tables equal). First revert restores, identical. Second revert: exit 1, nothing changed, but the message is a raw pg stack trace (`relation "g16_phone_releases" does not exist`), same as `revert` before any `apply` (`d-run.txt`, `f-run.txt`). |
+| (e) `g16_phone_members` | passed | Absent after migrate and after `report`; created by `apply`; kept by a refused revert; dropped by a successful one (`a-run.txt`, `d-run.txt`). No reference in `prisma/` (schema or migrations), `src` (other than the rule file, which takes rows as arguments and is imported by nothing in the app), `test`, `contract`, `deploy`, `.github`, `railway.json`, `package.json` or `dist` beyond the compiled rule (`e-refs.txt`). |
+| (f) refusals | passed | `apply` and `revert` without the flag, with `--owner-approve`, `owner-approved` and `--Owner-Approved`: exit 2, the owner message; a bad mode exit 2 with usage; nothing changed, no g16 table made; after an `apply`, `revert` without the flag exit 2, nothing changed (`f-run.txt`). |
+| (3) Test catches the revert | passed | In my worktree: `src/auth/g16-revert.ts` sha1 55dad04f...; removing `&& !seen.has(...)` (sha1 67fe292b...) makes `g16-revert.spec.ts` fail 1 of 3; restored by copy, sha1 55dad04f... again, `git status` clean, 3 of 3 pass (`revert-proof.txt`). |
+| (4) Nothing runs it | passed | No npm script (no pre/post hook names it; `start:prod` runs only `migrate deploy` and `dist/main.js`), no migration, no deploy, workflow or startup reference; the only mention outside the script is a comment in `released-phone.ts` (`refs.txt`). |
+
+**Findings**
+
+- **D2 · fixed, verified:** a set with a released row and a held phone-only row reverts byte-identical (a), while a later row in any spelling or on the exact old text still blocks it with nothing changed (b, c).
+- **U4 · unclear, low (owner-run tool, fails safe; not a regression, c853559 behaves the same): `revert` when nothing was applied (or a second time) ends in a raw Postgres stack trace** naming `g16_phone_releases`, exit 1, no change. The brief asks for clear messages; a plain "Nothing to revert" would be. Unblocked when the lead accepts it or `revert` answers a plain line when the table is absent.
+- Noted, not this task's change: databases `a05_*` and `a05r1_*` from earlier rounds remain on the local Postgres (not dropped by me; not mine).
+- Real data stays an owner stop (G-16); nothing in this round ran on it.
+
+**NOT RUN.** The script on real data (owner stop). The earlier passes (V1 to V9) were not redone beyond the checks above; round 2's results stand.
+
+**Merge.** wawu-id: no open defect; safe to merge (U4 is a message on an owner-run tool). Mobile: as round 2 (after wawu-id merges and SHARED-CHANGES AUTH-05 #2's `npm run api -- --identity ../wawu-id` runs). Hub: unchanged.
+
+## Notes at hand-over (agent), owner may override
+
+- **U4 (round 3):** the G-16 script's `revert`, run with nothing applied or a second time, ends in a raw Postgres error ("relation g16_phone_releases does not exist"), exits 1 and changes nothing. Not a regression (c853559 did the same). Default (agent): left as is; the script is owner-run only and fails safe.
+- **Merge order (N1):** wawu-id `wmt/AUTH-05` merges first; then run `npm run api -- --identity ../wawu-id` in the mobile repo so `contract/identity/SOURCE_COMMIT` names wawu-id main (SHARED-CHANGES AUTH-05 #2).
 
 ## Owner sign-off
 
