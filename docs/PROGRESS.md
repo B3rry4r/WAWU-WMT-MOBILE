@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 45 | 31 | 31 |
+| todo | 48 | 45 | 31 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 13 | 3 | 1 |
+
+## Being verified
+
+- [WALLET-27](../tasks/WALLET-27.md) Statements (You)
 
 ## Done
 
@@ -76,6 +80,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · WALLET-27 · Builder round 2: statements are rate-limited (5 a minute, 30 an hour per person per address, PROVISIONAL) and capped at 50,000 rows (`400 statement_too_large`, counted first); a row with our and Fintava's references shows ours (M10). Backend b9797a7 with main 1e6b807 merged; status verifying.
+- 3 Oct 2026 · WALLET-27 · Verified: no open defect, status review (backend 5cd55c1 on main fe1ec6c; mobile 33484cf). Capability check passed on the built server through a real sign-in (Sep lists exactly its 6 completed rows, Lagos edges both ways). 70/70 HTTP probes: no way found to read another person's statement (query fields, arrays, headers, paths, swapped or unsigned tokens), no full account number, narration or id in the file; leap day, year end, 366/367 days, empty month, money and CSV rules hold; lines equal the history and its month summary. Full suite 136/136 suites (3,261 passed, 0 failed), protected 253/253, gates main plus one PROVISIONAL warning, tsc 0, mobile check exit 0 (26 suites, 431 tests, 110 files). 14 of 15 mutants killed; M10 (reference order) survives as a test gap. Unclear: load (100k rows, 366 days: 1.3 s, 15.7 MB; 20 concurrent within the global limit: 39 s, 1.6 GB RSS; no per-route throttle or row cap). NOT RUN: PDF (G-68), email (G-69), V10.
+- 3 Oct 2026 · WALLET-27 · Built: `GET /money/statements?from=&to=&format=csv` serves the caller's completed movements for a period of Lagos days (both included) as CSV, from the ledger, no balance (backend 5cd55c1). Stamped PDF NOT RUN (Fintava has no statement, G-68); email NOT RUN (no sender, G-69, owner question). Status verifying.
 - 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
 - 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
 - 3 Oct 2026 · INBOX-08 · Built (backend): paid questions group into one thread per person with every reply bubble, and a creator's waiting list comes back soonest deadline first with the total waiting (`/paid-dm/*`, new `DmReply` table); the live `/dm/respond` is now race-safe. Status verifying.
@@ -88,6 +95,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-05 · Verified round 5: no open defect, status review (mobile ef47494, main 6bc420e already in). Defect 1 closed: R4-4 re-applied fails 3 of 45 of the builder's tests. 400 tokens minted with wawu-id's own signing library and claim set (102 with `-` or `_`) give their `sub`, and ~6,100 malformed or fuzzed tokens give null without throwing, under jest's atob and a line-for-line port of Hermes's atob (V1 and legacy tags read). The builder's 3 surviving mutants are equivalent on Hermes too; 4 own mutants killed. `npm run check` 3 of 3 exit 0, 448 tests, 0 act warnings. NOT RUN: a live id.wawuafrica.com token, check 1, V10.
 - 3 Oct 2026 · KYC-05 · Round 5, status verifying: A26's token reading is tested with real-shaped tokens (a payload with - and _ and no padding, the same padded, a non-ASCII sub read as UTF-8, twelve malformed tokens) and tightened (three parts, base64url, UTF-8, an object with a string sub); R4-4 killed; the verifier's probe passes; sign-out tests settle inside act.
 - 3 Oct 2026 · KYC-05 · Verified round 4: 1 defect, status building (mobile 4021cd5, main 6bc420e already in; Hub fe1ec6c). Round 3's privacy defect closed: `cross_fast`, `cross_account`, `cross_wallet` show A's phone or wallet to B on 801aeaa and only the loading view, then B's own data, on 4021cd5 (both themes); the guard held against an unreadable token `sub`, tokens rotated mid-visit, B signing in while A's reads were in flight, an account read answering for another account, the same phone, and rapid A to B to A. Privacy scan of 94 typed numbers: 0 hits outside request bodies. New defect 1 (tests): mutant R4-4 (token payload decoded without the base64url alphabet) survives all 39 open-wallet tests, though a real-shaped token whose payload holds `-` or `_` then leaves A26 loading for good (jest probe). 4 of 8 own mutants killed, 3 equivalent.
-- 3 Oct 2026 · KYC-05 · Round 4, status verifying: A26 never paints another account's reads (its reads keyed by visit and account, shown only for the token's account, dropped on close and session end); one-cache jest across a sign-out and a sign-in as someone else; 10 of 10 mutants; the verifier's cross cases reproduced on 801aeaa and clean on this build. V9 on backend main fe1ec6c. App-wide cache clear: FIX-04.
-- 3 Oct 2026 · KYC-05 · Verified round 3: 1 defect, status building (mobile 84c0dad, main 6bc420e already in; Hub fe1ec6c). Round 2's defect closed: `race_back` and `race_signout` show "BVN confirmed" on de27d15 and the form on 84c0dad (both themes); two checks in flight, A's check landing after B signs in, and a token renewed mid-check (pass still kept) all behave. New defect 1 (privacy, predates round 3): after an account change A26 first paints the previous account's cached phone and wallet state (one QueryClient, never cleared; `cross_fast`, `cross_account`, `cross_wallet`). Privacy scan of 90 typed numbers: 0 hits outside request bodies. 7 of 9 own mutants killed, 2 equivalent.
-- 3 Oct 2026 · KYC-05 · Round 3, status verifying: a BVN check answering after A26 closed or after its session ended is never kept (store writes need a ticket that every forget voids; the form drops late answers); jest races and 8 of 8 mutants; the verifier's race cases reproduced on de27d15 and clean on this build, light and dark. V9 on backend main 7601a5f.
