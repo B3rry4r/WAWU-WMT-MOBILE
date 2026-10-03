@@ -90,15 +90,21 @@ _Builder session, 2 Oct 2026, branch `wmt/AUTH-02`, built on `origin/wmt/AUTH-01
 
 ### Builder report (fix round 1)
 
-- **Base:** uncommitted on 3b02632, then `origin/main` 176a56d merged (staged, not committed). Main took G-33 (MONEY-10), so this task's rows are now **G-34** (unbacked claims, the pick's Hub field) and **G-35** (cover photo); the Verifier report above still says G-33 and G-34. G-34 rewritten: the Hub takes `accountType: 'user' | 'creator'` on `PATCH /users/me` (`src/api/schema.generated.ts` line 3890), AUTH-04 maps discover to `user` and earn to `creator`; a `creator` save calls `provisionOnRegistration` (wawu-backend `src/user-profile/user-profile.service.ts` line 283, read this round), against R-6. Default (agent): AUTH-04 must not send `creator` until it knows the wallet side effect is intended or removed.
+- **Base:** uncommitted on 3b02632, then `origin/main` 176a56d merged (staged, not committed). Main took G-33 (MONEY-10), so this task's rows are now **G-34** (unbacked claims, the pick's Hub field) and **G-35** (cover photo); the Verifier report above still says G-33 and G-34. G-34 rewritten: the Hub takes `accountType: 'user' | 'creator'` on `PATCH /users/me` (operation `UserProfileController_upsertMe`, `UpdateUserProfileDto` in `src/api/schema.generated.ts`; it was line 3890 then), AUTH-04 maps discover to `user` and earn to `creator`; a `creator` save calls `provisionOnRegistration` (wawu-backend `src/user-profile/user-profile.service.ts` line 283, read this round), against R-6. Default (agent): AUTH-04 must not send `creator` until it knows the wallet side effect is intended or removed.
 - **D1 fixed:** `WelcomeScreen` renders its light `StatusBar` only while `useIsFocused()` (expo-router export) is true, so its entry leaves React Native's StatusBar props stack when A2 or A22 is pushed over it (the root layout's theme entry then wins: `mergePropsStack`, last mounted wins) and comes back on Back. Tests read the merged `StatusBar._currentValues.barStyle`: A1 -> A2 and A1 -> A22, light and dark, each Back to A1 (4 tests). Revert (always light): 2 fail (light theme; in dark the default is light too).
 - **D2 fixed:** A2 passes `contentTop={TITLE.top}` (10, auth.js line 10 `pt: 10`, replacing the kit default 8, kit.js line 35) and the title has no padding of its own. Measured on web 390x844 below the bar: A2 title top 66 (canvas 56 + 10), cards at 145.8 and 249.0; A22 title 74 (56 + 8 + 10, unchanged); A1 unchanged. Test on the constant; revert: 1 fails.
-- **D3:** every file-and-line citation I added re-read against the source: `choice` is auth.js line 9 (two fixed); added kit.js line 15 (`Btn` 54 high) and line 35 (`body` default 8); auth.js 8 and 10, kit.js 38 and 60, schema line 3890 and service line 283 checked correct.
+- **D3:** every file-and-line citation I added re-read against the source: `choice` is auth.js line 9 (two fixed); added kit.js line 15 (`Btn` 54 high) and line 35 (`body` default 8); auth.js 8 and 10, kit.js 38 and 60 and service line 283 checked correct.
 - **D4:** the test is now 'a user who signs out is taken to the welcome screen'.
 - **U3:** `clearAccountType()` runs when A1 mounts (each signed-out visit: cold start and after every sign-out) and after a sign-in on A22 succeeds; Back and return within a visit keeps the pick. Default (agent), owner may override: the pick lives in memory only and is lost on a reload or when Android ends the app; it holds no secret. Tests: sign-in forgets it; a session started another way keeps it until sign-out, after which A2 opens with nothing picked. Reverts: each clear removed, 1 fails each.
 - **U4:** Space and Enter pick a focused card (`pickByKey`, react-native-web's `onKeyDown`; its Pressable presses on Space only for button roles). Tests for both keys and for another key; revert: 2 fail.
 - **Counts:** before this round 20 suites, 356 tests; after (main 176a56d merged) `npm run check` exit 0, lint 0 warnings: 20 suites, 371 tests (auth-welcome 16 to 26, the rest from main), gates 96 files 0 findings, 202 tasks. Pictures: scratchpad `shots-r1/` (A1, A2 none/discover/earn, A22, light and dark), measurements `measure_r1.json`. **Left as recorded:** U1 (G-35), U2, U5 and defaults 1 to 7.
 - **NOT RUN:** the status bar (D1) and the A22 keyboard (U5) on an Android device or emulator, unblocked by an Android build per docs/BUILDS.md; sign-out in a browser (no control yet, unblocked by the task that adds one).
+
+### Builder report (fix round 2)
+
+- **D5:** G-34 now names the operation and schema (`UserProfileController_upsertMe`, `UpdateUserProfileDto`) instead of a line that drifts (it had moved from 3890 to 4022); the fix-round-1 report says the same. The `pickByKey` comment now says react-native-web presses on Space only for a `<button>` element or role `button` (`isValidKeyPress` in `node_modules/react-native-web/dist/modules/usePressEvents/PressResponder.js`). Every other citation re-checked against the current files: auth.js lines 8, 9, 10 and 21; kit.js lines 15, 35, 38 and 60; `user-profile.service.ts` line 283 on wawu-backend origin/main. All are correct.
+- **U7 (recorded in G-34, no code):** read on wawu-backend origin/main. `upsertMe` provisions a wallet on every later save by a `creator` (line 282), and `GET /wallet` opens one for a creator that has none (`wallet.service.ts` line 144), so AUTH-04's default only defers it. `GET /wallet` answers 400 to any account type other than `creator` (lines 136 to 142), so an earner saved as `user` cannot reach that wallet. AUTH-04 and MONEY-12 must settle this.
+- **Checks:** `npm run check` exits 0 with lint at 0 warnings: 20 suites, 371 tests, gates 96 files and 0 findings, 202 tasks. Main had not moved (176a56d). No behaviour changed (one comment only).
 
 ## Verifier report
 
@@ -191,6 +197,86 @@ Accessibility: heading level 1 on A1 and A2; the logo is an image named "Who Mad
 - V9: no API in this task (see the table).
 
 **Status:** `building`, because D1 and D2 are open. D3 and D4 are small enough to ride with the fix. The branch should not merge until D1 is fixed and seen on an Android build or the owner accepts it.
+
+
+## Verifier report (round 2)
+
+_Verifier session (round 2), 3 Oct 2026, branch `wmt/AUTH-02` at fa746f4 (origin/main 176a56d merged, current), checked as it lands (`git diff origin/main...HEAD`, 19 files). I wrote none of the code, did not verify round 1, and changed no code: every revert below was a one-line edit restored by copying the saved file back (sha1 before and after identical, `git status` clean after the run); one temporary extra jest file was run and deleted (kept as evidence). No live server was touched: the dev server and the production export ran with both API addresses on 127.0.0.1 (a local stub that answers only POST /auth/login); every page request was recorded; all servers stopped afterwards. Android only; iOS not applicable. Evidence folder: `/tmp/claude-0/-home-user/96e62beb-c0ce-5c90-a589-b6d7920b563f/scratchpad/AUTH-02-v2/` (EV2 below). Nothing committed. Note: the round-1 report above says G-33 (unbacked claims) and G-34 (cover); after main took G-33 these rows are **G-34** and **G-35** (BACKEND_GAPS has no duplicate number; every code comment cites G-34 and G-35 correctly)._
+
+### Passes
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Build and tests | **passed with one finding** (D5). `npm run check` exit 0: typecheck clean, lint prints no warning, 20 suites / 371 tests pass, gates 9 run, 96 files scanned, 0 findings, 202 tasks. Equal to the builder's counts. `git diff --stat origin/main...HEAD` lists the 19 files the two builder reports name, nothing extra or missing. No em-dash anywhere in the diff, no TODO-type comment, no hex/rgb literal, no "Flutterwave" or WAWU logo in app code; logo only through `<BrandMark>`, icons only through `@/components/icon` (IconTile, Button). Merge sound: no conflict markers, BACKEND_GAPS G-32..G-35 unique (main has G-33). 9 reverts all caught (below). | EV2`check.txt`, EV2`reverts.txt` |
+| V4 Field trace | **passed**; G-34 checked against the backend (below) | below |
+| V5 Picture | **passed** for D1 and D2 as far as the web can show; D1 on a device NOT RUN. Remaining differences are recorded ones (R-37 name and logo, G-34 copy, G-35 cover, U2 wraps, web bottom inset). | EV2`design/`, EV2`shots/cmp-*.png`, EV2`canvas_measure.json`, EV2`app_measure.json` |
+| V6 States | **passed** (no API call, so no loading/empty/error: zero outside requests recorded on every screen). Android keyboard NOT RUN. | EV2`app_measure.json` (`external_requests: []`), EV2`flow_v2.log` |
+| V7 Flow walk | **passed** on web (dev and production export); Android NOT RUN | EV2`flow_v2.log`, EV2`prod.log` |
+| V9 Live seam | **NOT RUN**: this task makes no API call. Unblocked by AUTH-04, the first task in this flow that calls a server. | |
+
+Capability checks, each run by me: A1 Create an account reaches A2 and Sign in reaches A22 (with Back to A1): **passed** (web, jest). A2 pick discover or earn, one at a time, changeable: **passed**. A22 'New here? Create an account' reaches A2, Back returns to A22: **passed**. Values from the API or the user: **passed** (design copy only; the two unbacked claims left out, G-34). States: no data, none needed (above). Picture: see V5. Android: NOT RUN.
+
+### D1 (status bar), re-checked
+- Read `node_modules/react-native/Libraries/Components/StatusBar/StatusBar.js` (RN 0.86.3): each mounted StatusBar pushes an entry on `componentDidMount`, pops it on `componentWillUnmount`, `componentDidUpdate` replaces it at the same index (so a theme change on the root entry never reorders it); `_updatePropsStack` merges in mount order (`mergePropsStack`, last wins) and on Android calls `setStyle` every time. `expo-status-bar` 57.0.1 is a thin wrapper over it (web export is a no-op, so the web cannot show a bar). `useIsFocused` from expo-router 57.0.24 is react-navigation's (`IsFocusedContext` / focus and blur events).
+- So rendering A1's `<StatusBar style="light" />` only while focused removes its entry as soon as A2 or A22 is pushed and puts it back (on top) when A1 is focused again. Confirmed by running, in a temporary jest file (EV2`extra-tests.tsx`, `extra-tests.log`, 5 passed), in light and dark: deep link straight to `/sign-in` and on to A2 (A1 never mounted): theme default, one entry; A1 light (two entries) -> A22 -> A2 by the link: theme default, one entry -> Back -> Back to A1: light; sign in: Home has the theme default, one entry; sign out: A1 light again. The builder's 4 tests pass; the always-light revert fails 2 of them (light theme; in dark the default is light too).
+- App resume: nothing in JS changes on resume (focus and the stack are kept), so the right entry stays on top; whether Android restores the bar after an activity re-creation is a device question, NOT RUN. The bar flips when navigation state changes, which is at the start of the push or pop animation, so for that animation the bar may already show the next screen's style over the outgoing one (U6).
+
+### D2 (A2 offset), re-measured
+Canvas DOM measured inside each phone (render_design's server, EV2`canvas_measure.json`), app at 390x844 light and dark (EV2`app_measure.json`). The canvas phone has a 50 px status row the web has not; numbers below are canvas minus 50.
+- **A2** (preview none, discover, earn; real route): title top 66 = canvas 66 (fixed). First card 145.8 = canvas 115.9 + the title's second line 29.9 (R-37 name, U2). Second card 249.0 against 248.2 (card 93.2 high against 92.4: the title line is 21.75 against the browser's normal 21; under 1 px, not a finding). Cards 10 apart, 350 wide, 20 in, icon tile at the canvas's place; picked/unpicked edge, tint and radio match in both themes (opened every image). Continue 54 high, 20 in; it sits 16 above the bottom on web where the canvas has 34 of home bar (the real inset decides on Android, NOT RUN).
+- **A1**: words 24 in, title 34 / line 35.7 / -1.36 tracking, line under it 15 / 21.75; words end 27.9 above the buttons (canvas 28); buttons 350x54, 10 apart. The whole block sits 18 lower than the canvas (16 against 34 bottom gap, as above) and the line under the title is one line (the G-34 clause is out). Light and dark identical, as in the canvas.
+- **A22**: title 74 = canvas 74; button to link 10 = canvas 10; link 14 px, "Create an account" bold accent, centred, as drawn.
+- Contrast unchanged from round 1 (same colours).
+
+### D3 citations, every one in the changed files
+`auth.js` line 8 (landing: 24 side, gap 14, 34/-0.04em/1.05, 15/.8/1.45, logo 130, 180 bottom, shade .2/.35 at 40%/solid 78%), line 9 (`choice`: 14, 16, 48, 16/13, 1.4, 3, edges 1.5 accent / 1 hairline), line 10 (A2: 26 px, `pt: 10`, gap 20, cards 10); `kit.js` line 15 (`Btn` lg 54), line 35 (`body` default `pt` 8), line 38 (`foot` 34 bottom, gap 10), line 60 (`radio` 6.5 / 1.5): all correct. wawu-backend `src/user-profile/user-profile.service.ts` line 283 (`provisionOnRegistration`) at origin/main e8535d8: correct. **Wrong:** `src/api/schema.generated.ts` line 3890 (D5). D4 (test name) fixed.
+
+### U3 (the pick's life), tried to break it
+Web (EV2`flow_v2.log`): A1 -> A2 pick earn -> Back -> Create: kept. A1 -> Sign in -> A22 -> 'Create an account' -> a second A2: earn shown (kept, sensible: same visit) -> change to discover -> Back (A22) -> Back (A1) -> Create: discover kept. Reload on A2: nothing picked, no Back (recorded default). Jest (temporary file): pick via the A22 link, Back to A22, a failed sign-in keeps it (sensible: same person retrying), a successful one clears it. The builder's tests: sign-in clears; session started another way keeps the pick until sign-out, after which A1 remounts and A2 opens empty. Both clears reverted: 1 test fails each. The pick never leaves memory and no request carries it.
+
+### U4 (keyboard on web)
+On `/account-type`: Tab goes discover then earn (no Back when opened directly); Space on a focused card picks it with no page scroll and **no native click fired** (counted: 0), so no double trigger; Enter picks; "a" and ArrowDown pick nothing (arrow keys do not move between radios, round-1 note stands, web only). The ring (2 px page plus 3.5 px accent) shows on keyboard focus only, browser outline none; a mouse click shows the card's own picked edge only. `radiogroup` "What brings you here" with 2 `radio`, `aria-checked` flips. Reverts: Space removed fails 1, the key handler removed fails 2.
+
+### V7 regression (web)
+Cold start signed out `/` -> `/welcome`, no outside request, no page error. Signed in (stored tokens): `/`, `/welcome`, `/account-type`, `/sign-in` all land on Home. Sign in through the stub from A1 -> A22 -> Home (the only request: POST /auth/login). Production export (`expo export --platform web`, served statically): signed out `/welcome`, `/account-type` open, `/preview/auth`, `/preview/auth?screen=welcome`, `/dev/components`, `/` land on `/welcome`; signed in all six land on Home; never blank, zero outside requests. AUTH-01's sign-in and guard suites pass, A22 layout unchanged apart from the link (title 74, fields and Forgot password where they were).
+
+### Reverts (jest auth-welcome, auth-guard, auth-sign-in: 77 tests; sha1 restored each time)
+| Edit | Failing |
+|------|---------|
+| D1: A1's StatusBar always rendered | 2 |
+| U3: welcome no longer clears on mount | 1 |
+| U3: sign-in no longer clears after success | 1 |
+| U4: Space removed from `pickByKey` | 1 |
+| U4: key handler not spread on the card | 2 |
+| D2: `contentTop={TITLE.top}` removed | 1 |
+| A22 link (`onCreateAccount`) removed | 1 |
+| `welcome` removed from the signed-out guard group | 17 |
+| pick setter made a no-op | 7 |
+
+### G-34 against the backend (V4)
+- `PATCH /users/me` takes `UpdateUserProfileDto.accountType?: 'user' | 'creator' | null` (now `src/api/schema.generated.ts` line **4022**, not 3890). In wawu-backend origin/main, `upsertMe` writes it (null ignored on update, `user` on create) and then, `if (saved.accountType === AccountType.creator)`, calls `this.wallet.provisionOnRegistration(claims)` (line 283), which opens a Flutterwave creator wallet and never throws; `getWallet` also opens one on read for a creator, and refuses a non-creator ("A wallet comes with a creator or professional account..."). So the row is accurate: a `creator` save opens a wallet, against R-6, on the Flutterwave rail rather than Fintava (R-1).
+- The recorded default (AUTH-04 must not send `creator` until the side effect is intended or removed) is safe for AUTH-02, which sends nothing. For AUTH-04 it is only a deferral: the side effect fires on every later profile save of a creator (not only the save that sets the type) and on GET /wallet, and an earner kept as `user` cannot reach the creator wallet path at all. See U7.
+
+### Findings
+
+**Defects (open)**
+- **D5 (low, documentation)**: the line citation `src/api/schema.generated.ts` line 3890 for `accountType` on `PATCH /users/me` is stale after the merge of main: the field is now on line 4022 (line 3890 is in an unrelated DTO). It is in BACKEND_GAPS G-34 (a changed file on this branch, so it lands wrong) and in the fix-round builder report, which says it was checked. Same in kind as round 1's D3. In the same family, `AccountTypeScreen.tsx`'s comment says react-native-web's Pressable presses on Space "only for a button or menu item"; `isValidKeyPress` checks only a `button` tag or the `button` role. Fix: cite line 4022 (or the DTO name `UpdateUserProfileDto` instead of a line) and drop "or menu item".
+
+**Fixed and verified**: D1 (web and jest; device NOT RUN), D2, D3, D4, U3, U4, and the G-34 wording.
+
+**Differs for a recorded reason (accepted, as round 1)**: the app name in A2's title and BrandMark on A1 (R-37); "Free." and "and bank it all in one app" left out (G-34, the task's own list, rule 7); A2 opens with nothing picked (builder default 1); cover colour (G-35); `LeaveDevRoute` to `/welcome` (SHARED-CHANGES AUTH-02 #1); A22 Back only with something behind it; no Continue on the real A2 until AUTH-04 ("Added by later tasks"); the pick held in memory only (fix-round default).
+
+**Unclear**
+- U1, U2, U5 stand as in round 1 (cover, title wraps, A22 with the Android keyboard).
+- **U6 (low, Android)**: the bar changes at the start of the push/pop animation, not at its end, so during the transition the outgoing screen may briefly carry the incoming screen's icon colour (for example dark icons over A1's dark cover while it slides away). Judge on an Android build.
+- **U7 (AUTH-04)**: G-34's default avoids the wallet side effect only until a creator's next profile save or wallet read; AUTH-04 needs the ruling (keep, move to "Open your wallet", or remove `provisionOnRegistration`) before an earner can be saved as `creator`.
+
+### NOT RUN
+- Android device or emulator: the status bar on A1/A2/A22 including resume and transitions (D1, U6), safe areas and the bottom gaps, the A22 keyboard (U5), TalkBack, wraps (U2), hardware Back. Unblocked by an Android build per docs/BUILDS.md.
+- Sign-out in a browser or on a device: no sign-out control yet (jest covers it). Unblocked by the task that adds the control.
+- V9: no API call in this task. Unblocked by AUTH-04.
+
+**Status:** `building`, because D5 is open (a one-line documentation fix). Everything else from round 1 is fixed and verified on web and in jest; the branch is otherwise ready, and D1 still needs to be seen on an Android build.
 
 
 ## Owner sign-off

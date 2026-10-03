@@ -34,9 +34,9 @@ type KeyEvent = { nativeEvent: { key: string }; preventDefault: () => void };
 
 /**
  * Space and Enter pick a focused card, as they pick a radio button in a browser.
- * react-native-web's Pressable presses on Enter for any role but on Space only for
- * a button or menu item (`usePressEvents/PressResponder.js`, `isValidKeyPress`), so
- * a radio needs its own handler. Picking is idempotent, so Enter firing both is harmless.
+ * react-native-web's Pressable presses on Enter for any element but on Space only for
+ * a `<button>` element or role `button` (`modules/usePressEvents/PressResponder.js`,
+ * `isValidKeyPress`), so a radio needs its own handler. Picking is idempotent, so Enter firing both is harmless.
  * The prop exists on the web only (react-native-web's Pressable passes `onKeyDown` on),
  * which is why it is spread rather than typed on the Pressable.
  */
