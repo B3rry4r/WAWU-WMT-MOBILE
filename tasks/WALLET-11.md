@@ -7,7 +7,7 @@ order: 120
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [WALLET-14, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9]
@@ -125,6 +125,77 @@ Verifier, round 1, 3 Oct 2026 (fresh session; wrote none of this task). Mobile `
 **NOT RUN:** choosing a bank and seeing the name before saving on the real Hub (`GET /money/banks` and `POST /money/banks/name-check` answer 404; unblocked when WALLET-09 serves them, G-57; pictured with a labelled stand-in only); reaching A21 from M14 or A11 (neither hub built); a Fintava sandbox run (not needed: no new Fintava call; WALLET-14's V9 covers them); V10 (not in this task's passes).
 
 **Clean-up:** Hub, Fintava stand-in, WAWU ID front and web server stopped by their own PIDs (command line and working directory checked first); `vw11_test` dropped; both worktrees removed.
+
+### Verifier report, round 2
+
+Verifier, round 2, 3 Oct 2026 (fresh session; wrote none of this task). Mobile `wmt/WALLET-11` at `dbd990a` (fresh worktree from `origin/wmt/WALLET-11`). Mobile `origin/main` is `0b83be8`, already merged into the branch (`0c0f5e1`), so the merge check is the branch itself. Hub: backend `origin/main` `c197d58` (`a055b4f` plus SCHOOLS-01, which adds only a migration), built. Evidence in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw11r2/` (below, `vw11r2/`); screenshots in `vw11r2/shots/`.
+
+**Verdict: no open defect, status `review`.** Round 1's defect is fixed, and so is its test gap.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed. `npm run check` exit 0 (typecheck, lint, 24 suites / 403 tests, gates 9 run / 108 files scanned / 0 fail / 0 warn, 203 tasks). `origin/main` `0b83be8` is an ancestor of `dbd990a`, so a merge changes nothing. Round 2 changes three things: it removes `maxLength` from `PayoutAccountScreen.tsx`, adds a test in `payoutAccountScreen.test.tsx`, and adds `payoutAccountRoute.test.tsx`. The scope fence holds. Against main the branch changes 15 files: `src/features/wallet/**`, `src/app/payout-account.tsx`, tests, task docs, BACKEND_GAPS, SHARED-CHANGES and LOG. Nothing in `_layout.tsx`, `src/components/**`, `src/api/**` or the theme. None of these files has an em-dash in user copy, a hex or rgb value, the "Creators only" literal or a `console` call. There is one computed `style={{ maxHeight: height * LIST_SHARE }}` (`BankSheet.tsx:78`), the same as round 1; it is not a defect | `vw11r2/check-branch.txt` |
+| V4 Field trace | passed, unchanged from round 1. Bank = `PayoutAccountView.bankName` (`BankView.name` once picked); number = `.accountNumber` or what the user typed or pasted (digits only, ten kept); name line = `.accountName`; clause = `.matchesBvnName`; before saving, `AccountNameView.accountName` alone. `MoneyPayoutAccount` rows after the run: the 422 and 503 people still hold their earlier account, unchanged | `vw11r2/v4-db.txt`, `vw11r2/v9-drive.txt` |
+| V5 Picture | passed with the round-1 recorded differences only. A21 rendered (`shots/A21-light.png`, `-dark.png`). I took my own screenshots at 390 px, light and dark. I compared A21 with `standin-name-checked-*` (the drawn moment; the bank list and the name check came from Playwright stand-ins, used for V5 only) and with `saved-match-*` (real Hub). Side by side: `vw11r2/v5-compare-light.png`, `-dark.png`. The differences are the ones round 1 recorded (findings 2 and 3 there): no "Creators only" line (G-58), names in the bank's capitals, no .04em tracking on the number, Save grey on an unchanged saved account, label-to-box 1 to 2 pt taller. The fix changes no picture except the paste result (`shots/paste-spaced-number-*.png`) | `vw11r2/shots/` |
+| V6 States | passed. I entered each state through its real cause on the built Hub, light and dark: loading (GET held at the network), empty (`200 null`), saved-match, flagged, no-BVN-name (`null`), no wallet (`409`), opening (`409`; Check again stays while the wallet is still opening and shows the form once it is open), load error (Hub process stopped: "No connection..."; Try again after a restart loads), bank list error (the real 404), name not checkable (the real 404), save refused (`422`: the message shows on the field, Save shut, row unchanged), unreachable (`503`: the message shows above Save, Save stays open, row unchanged). No capture shows "Cannot GET", "Not Found", "undefined", "null" or an em-dash. Montage: `vw11r2/v6-montage-light.png`, `-dark.png` | `vw11r2/v6-drive.txt`, `vw11r2/opening-check.txt`, `vw11r2/shots/` |
+| V9 Live seam | passed. Built Hub `c197d58` on :4973 against a fresh migrated and seeded `vw11r2_test`, the stand-in WAWU ID behind my `{ data }` front on :4974, the web export on :8173 (Chromium 1194, 390 px). Every person signed in through A22 (`POST /auth/login`, no injected token). I loaded, saved, reloaded, edited, saved and reloaded again (`1111111111` LENNOX EMMANUEL true, then `1111111112` LENNOX O EMMANUEL true); each value read back. I captured 7 PUT bodies at the network, all exactly `{"bankCode":"000014","accountNumber":"..."}`; one of them followed a pasted `1111-111-112`. A second person gets `200 null` from the Hub with their own token and sees an empty form with nothing of the first person's account. Fintava ran on a local stand-in only (`vw11r2/fintava-calls.txt`: 1 bank list, 19 name checks, 5 BVN checks, 11 customer look-ups): no sandbox calls, no live calls, no id/api.wawuafrica.com | `vw11r2/v9-setup.txt`, `vw11r2/v9-drive.txt`, `vw11r2/v9-drive-2.txt`, `vw11r2/paste-check.txt` |
+
+**Round 1's defect, re-run first: fixed.** I repeated round 1's reproduction with real Ctrl+V from the clipboard in the web export, signed in as a person with a saved account, light and dark (`vw11r2/paste-check.txt`). The input has no `maxlength` attribute. Each paste went over a select-all of the saved number:
+
+| Pasted | Field holds | Name line | Save |
+|--------|-------------|-----------|------|
+| `0987 654 321` | `0987654321` | the "could not check" line | open |
+| `0987-654-321` | `0987654321` | the same | open |
+| ` 0987654321 ` | `0987654321` | the same | open |
+| `  0987 654 321  ` | `0987654321` | the same | open |
+| `09876543210123` | `0987654321` | the same | open |
+| `0987<nbsp>654<nbsp>321` | `0987654321` | the same | open |
+| `0987.654.321` | `0987654321` | the same | open |
+| `Acct: 0987654321` | `0987654321` | the same | open |
+
+The "could not check" line appears because the Hub does not serve the name check yet (G-57). Other inputs, light and dark:
+- A paste into an empty field holds `0987654321`.
+- Fifteen digits typed key by key hold the first ten.
+- `0987 654-321` typed key by key holds `0987654321`.
+- Five digits, then a pasted `67890 999` at the end, hold `1234567890`.
+
+Round 1 cut the same pastes to `09876543`. With the bank list and name check answered by stand-ins, a pasted `0987 654 321` sends the name check `{"bankCode":"000014","accountNumber":"0987654321"}`, shows the name and opens Save (`vw11r2/standin-drive.txt`). A pasted `1111-111-112` saved, and after a reload it read back as `1111111112` (PUT body above). I did not run this on a phone; React Native's `maxLength` is no longer on the input, so nothing truncates a paste there either.
+
+**Behaviour checks.**
+- Save is shut while the form is empty, partial (5 digits), equal to the saved account, or refused (422). It opens for a complete, changed account when the name could not be asked, and stays open after a 503.
+- Going back after a save, arriving from Home inside the app: a matching save returns to `/`. A flagged save stays on A21 with "SIMI MICHELLE · not the name on your BVN", and the back button then returns to `/` (`vw11r2/v9-drive-2.txt`).
+- A signed-out visit to `/payout-account` lands on `/welcome` with no Hub call.
+- Logs: the Hub log (994 lines) has no BVN, NIN, account number or account name. The browser console has none either.
+
+**Mutations (10, mine, one at a time; each file restored byte for byte; tree clean after): 10 killed.**
+- `digitsOnly` caps before stripping (round 1's bug, in the logic): 3 tests fail.
+- Only spaces stripped: 2 fail.
+- A raw `maxLength={11}` back on the input: 1 fails (the new platform-cut test).
+- The last ten digits kept instead of the first: 2 fail.
+- The route stays after a null-BVN save: 1 fails.
+- A signed-out visit sent to `/sign-in`: 1 fails.
+- Back with nothing behind it does nothing: 1 fails.
+- The saved account compared by number only: 1 fails.
+- A name check before saving claims a BVN match: 5 fail.
+- Round 1's survivor, the route going back even when flagged: now killed (`payoutAccountRoute.test.tsx`, "after a save in another name, the user stays on A21").
+
+Evidence: `vw11r2/mutations.txt`.
+
+**WAWU ID shape (the harness front).** I checked this again. Real WAWU ID (wawu-id `dbcb2f8`, `src/auth/auth.controller.ts` lines 191 and 210) answers login and refresh as `{ data: <token pair> }`, and the mobile `contract/identity/openapi.json` `SessionAnswer` requires `data`. The app reads `payload.data` (`src/api/identity.ts` `readTokenPair`), so the app is right. The stand-in (`wawu-backend` `mock-wawu-id/server.js` line 237, `res.json(tokenPairFor(user))`) is wrong; that is not this task's defect. The builder's round-2 correction to `{ data }` is accurate.
+
+### Round 2 findings
+
+1. **Closed:** round 1's defect 1 (a pasted spaced number cut to 8 digits) and finding 4 (the route had no test).
+2. **differs-for-recorded-reason:** the same V5 differences as round 1's findings 2 and 3, with the same reasons (G-58; SHARED-CHANGES WALLET-11 #1; builder defaults; shared field metrics).
+3. **Noted (harness, not this task):** my first `expo export -p web` without `--clear` reused Metro's cache. The bundle it produced had `EXPO_PUBLIC_API_URL`/`EXPO_PUBLIC_ID_URL` inlined from an earlier build (`localhost:4971`/`:4972`), even though the variables were set to :4973/:4974. With `--clear` the right addresses were inlined. Every capture above comes from the `--clear` export (`vw11r2/export.txt`). Builds pointed at a new address need `--clear`.
+
+**NOT RUN:**
+- Choosing a bank and seeing the name before saving on the real Hub: `GET /money/banks` and `POST /money/banks/name-check` answer 404. Unblocked when WALLET-09 serves them (G-57).
+- Reaching A21 from M14 or A11: neither hub is built yet.
+- A paste on an Android or iOS device: unblocked by a device build of `dbd990a` (V10 is not in this task's passes).
+- A Fintava sandbox run: not needed, because this task adds no Fintava call.
+
+**Clean-up:** I stopped the Hub, the Fintava stand-in, the WAWU ID front and the web server by their own PIDs, after checking each command line and working directory. Ports 4973, 4974 and 8173 are free. `vw11r2_test` is dropped. Both worktrees are removed.
 
 ## Owner sign-off
 
