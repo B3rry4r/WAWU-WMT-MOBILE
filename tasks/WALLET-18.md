@@ -7,7 +7,7 @@ order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -37,6 +37,54 @@ Short code, public verification page, PNG and PDF rendering.
 - [ ] A made-up code shows 'not found', never someone else's receipt.
 
 ## Builder report
+
+### Builder round 2
+
+Builder, 3 Oct 2026. Backend `wmt/WALLET-18` **2108141**: round-2 fixes in 2397eba, then backend main 1e6b807 (WALLET-15 fee quotes, INBOX-08 paid DMs) merged in. Conflicts were only in lists, so both sides were kept: `money.module.ts`, the two gate route lists, MONEY-04's served list. `contract/openapi.json` was regenerated with `contract:build`. Mobile: the verifier's b2d5aba, then main c733413 merged in. SHARED-CHANGES, BACKEND_GAPS and the sandbox README kept both sides' rows. PROGRESS was taken from main and regenerated, and the contract was copied from 2108141.
+- **D1 (drawing unbounded, event loop blocked): fixed.**
+  - Text is now measured from the fonts' own width tables (`receipt-font-metrics.ts`, read from `cmap`, `hmtx`, `hhea` and `head` at boot, with 3% allowed for kerning). Each character is measured once, in one pass; Resvg is never used to measure.
+  - Every printed string is cut to `MAX_PRINTED` (160 characters) before anything is drawn.
+  - The picture is drawn with `renderAsync` on the thread pool. The PNG is now encoded here (rows, then an async deflate) instead of by resvg's own encoder, which ran about 60 ms on the request thread. The PDF's RGB conversion runs 128 rows per tick, then an async deflate.
+  - At the ledger's longest (500-letter names and bank name, 200-character reference), the PNG takes about 70 ms and the PDF about 150 ms, with the machine at a load average of about 6. These were 13.9 s and 6.2 s before.
+  - Tests:
+    - the median of 3 draws stays under 300 ms for each of the image and the PDF, with real Resvg;
+    - with two PDFs and a PNG drawn at once, the event loop never stalls 100 ms (6 runs in a row green);
+    - wrapping 500 characters takes under 20 ms and every line fits;
+    - `clip` holds every string to 160 characters.
+- **D2 (characters XML forbids gave a 500): fixed.** `printable()` drops C0 and C1 controls, U+FFFE, U+FFFF and lone surrogates, and turns tab and line breaks into spaces. Every drawn string and the page go through it (`escapeXml`). Tests: unit (the verifier's `ctrl` string, a lone surrogate, an emoji kept), a draw of the ctrl string with `& <Sons>` as both image and PDF, and an HTTP test where a ledger row named `Bad\u0001Name\u0008X \uFFFE & <Sons>` with bank `Opay\u0002` gives image 200, PDF 200 and a page showing "BadNameX".
+- **D3 (spaced phone numbers shown whole): fixed.** `maskDigits` treats 5 or more digits joined by spaces, hyphens, dots, slashes or brackets, with or without `+`, as one run and keeps only its last 4. It now also covers the bank names on the public page. Tests:
+  - unit, 11 forms (`0803 123 4567`, `0803-123-4567`, `0803.123.4567`, `+234 803 123 4567`, `+2348031234567`, `(0803) 123 4567`, `4501-2345-678/9`, the 5-digit edge `12345`, the 4-digit `1234` left alone);
+  - a public receipt whose names and bank names all carry numbers, where no run on it has more than 4 digits;
+  - HTTP: three biller rows (`MTN Airtime 0803 123 4567`, `Glo +234 805-123-4567`, `IKEDC 4501.2345.6789`) whose pages show `•••• <last 4>` and none of the number's 5-digit windows.
+- **Test gaps closed:** an exact `escapeXml` test with `&` first, and the 5-digit edge.
+- **Mutations:** 6 of 6 killed:
+  - V1 (mask from 7 digits);
+  - V2 (`escapeXml` without `&`);
+  - unbroken runs only;
+  - `printable` a no-op;
+  - no `clip`;
+  - the deflate made synchronous again.
+- **Fonts (optional note 5):** `build-receipt-fonts.py` keeps the source's `head.modified`, so two rebuilds are byte-identical (md5 checked). The committed fonts changed in `head` only.
+- **Finding 4:** the round-1 line about misses should read "one lookup for a code never issued". A code once issued whose row is gone runs 3 queries, as the verifier measured. Left as is (low risk, the code must already be held).
+- **Correction:** round 1 claimed a test that a reference is never cut; it never landed. Round 2's "measuring is linear" test covers it: 500 characters wrapped with every character kept.
+- **Runs (after the merge, 2108141):**
+
+  | Check | Result |
+  |---|---|
+  | `tsc` | 0 |
+  | eslint on changed `.ts` | 0 |
+  | Focused suites (receipts, rate limits, gates, money contract, purge, fees) | 10 suites, 146 passed |
+  | Full suite, fresh seeded `w18_full_test`, stand-in WAWU ID on :4001 | 139 suites, 3,335 passed, 3 skipped, 0 failed |
+  | Protected `--fresh HEAD` (lock origin/main 1e6b807 unchanged) | 253/253 |
+  | Tripwire | 0 added lines |
+  | Gates | main 1e6b807 16 fail / 14 warn, branch 16 / 16 (the two receipt `PROVISIONAL`s) |
+  | Key scan | 0 of 58 windows in each commit |
+  | Mobile `npm run check` | exit 0: typecheck, lint, 28 suites 485 tests, gates 0 fail / 0 warn on 123 files, 205 tasks |
+
+  The :4001 stand-in ran only once `lsof` showed the port free, and was stopped after.
+- **No Fintava call this round:** the fix touches drawing and masking only.
+
+### Builder round 1
 
 Builder, 3 Oct 2026. Backend `wmt/WALLET-18` **2729634** on main fe1ec6c (unmoved); mobile `wmt/WALLET-18` on main e7dc879 (unmoved).
 - **Built (backend, additive, `src/money/receipts/`):** `POST /money/transactions/{id}/receipt` (`ReceiptView`: the code, `wawu/r/<code>`, the MONEY-15 `TransactionView`, headline, both sides, Bank, licence line, the printed rows), `GET .../receipt/image` (white PNG, 1080 px wide, W42) and `GET .../receipt/pdf` (one A4 page, W43), all behind MONEY-13's gate and read through MONEY-15's `detail`, so someone else's row is 404; public `GET /r/{code}` (HTML, no sign-in, no script, `no-store`, `noindex`, `no-referrer`). Table `MoneyReceipt` (migration `20261003202940_money_receipts`, purge map OWNED). The receipt reads the ledger row on every ask, so a status Fintava moves shows as it stands; nothing calls Fintava, nothing is summed. Small edits in others' files: `money.module.ts` (2 controllers, 2 providers), the two MONEY-13 gate route lists and MONEY-04's served list gain the 3 routes, `hub-rate-limits` spec gains the 3 overrides with their exact limits.
