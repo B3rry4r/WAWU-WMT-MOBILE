@@ -73,7 +73,7 @@ type Phase =
   /** A6 while the match runs (charged; the button is busy). */
   | { kind: 'matching' }
   /** A16: the face did not match. Try again while the server says matches are left. */
-  | { kind: 'not_matched'; message: string; checksLeft: number | null }
+  | { kind: 'not_matched'; title: string; line: string; checksLeft: number | null }
   /** A16 with no try left today. */
   | { kind: 'limit'; message: string }
   /** A7: matched, the account opening. */
@@ -323,7 +323,7 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
           onClose={close}
           ring="refused"
           testID="open-wallet-selfie-not-matched"
-          words={<Words title="We couldn't match your face" line={shown.message} live />}
+          words={<Words title={shown.title} line={shown.line} live />}
           foot={
             shown.checksLeft === 0 ? (
               <Button label="Done" variant="white" full onPress={onLeave} testID="open-wallet-selfie-done" />
@@ -366,12 +366,27 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
   }
 }
 
+/** A16's title when the server's sentence does not lead with one. */
+const NOT_MATCHED_TITLE = "We couldn't match your face";
+
+/**
+ * A16 draws the server's refusal as a title and a line: "We couldn't match
+ * your face" over "It must match your BVN photo. Good light, no glasses or
+ * cap". The server answers both as one sentence run (KYC-02's
+ * `SELFIE_NOT_MATCHED_MESSAGE`), so its first sentence is the title and the
+ * rest the line. A one-sentence answer goes under the screen's own title.
+ */
+export function headed(message: string, fallbackTitle: string): { title: string; line: string } {
+  const match = /^(.+?)\.\s+(\S[\s\S]*)$/.exec(message.trim());
+  return match ? { title: match[1], line: match[2] } : { title: fallbackTitle, line: message };
+}
+
 /** Where a refused selfie match leaves A6 (contract CONVENTIONS section 8; every sentence is the server's). */
 function afterSelfieRefusal(error: unknown): Phase | 'restart' | 'open' {
   const message = isApiError(error) ? error.message : 'Something went wrong. Try again.';
   switch (selfieProblem(error)) {
     case 'not_matched':
-      return { kind: 'not_matched', message, checksLeft: checksLeftOf(error) };
+      return { kind: 'not_matched', ...headed(message, NOT_MATCHED_TITLE), checksLeft: checksLeftOf(error) };
     case 'limit': {
       const wait = waitOf(error);
       return { kind: 'limit', message: wait === null ? message : `Try again ${waitPhrase(wait)}.` };

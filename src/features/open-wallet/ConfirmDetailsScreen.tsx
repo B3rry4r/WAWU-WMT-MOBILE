@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { useSession } from '@/api/session';
-import { identityProblem, saveOccupation, type BvnPrefill, type WalletIdentity } from '@/api/walletIdentity';
+import { fetchWalletIdentity, identityProblem, saveOccupation, type BvnPrefill, type WalletIdentity } from '@/api/walletIdentity';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
@@ -19,7 +19,7 @@ import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
 
-import { identityQuery } from './api/account';
+import { OPEN_WALLET_KEY } from './api/account';
 import { birthDate, CITY_MAX, detailsProblems, fullName, genderWord, OCCUPATION_MAX, openingName, STREET_MAX, tidyDetails, type DetailsProblems } from './details';
 import { keepAddress, ticketFor, ticketIsLive, useKeptOpening, type HomeAddress } from './keptCheck';
 import { OpenWalletEnd } from './OpenWalletEnd';
@@ -69,7 +69,14 @@ export function ConfirmDetailsScreen({ onBack, onContinue, onRestart, onLeave }:
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
   const kept = useKeptOpening(owner);
-  const identity = useQuery({ ...identityQuery(owner), enabled: Boolean(owner) && kept !== null });
+  // Its own read of the step, never A26's cached answer: A5 shows nothing until the server confirms the check it holds is the one kept here.
+  const identity = useQuery({
+    queryKey: [OPEN_WALLET_KEY, 'details', owner ?? ''] as const,
+    queryFn: fetchWalletIdentity,
+    staleTime: 0,
+    gcTime: 0,
+    enabled: Boolean(owner) && kept !== null,
+  });
 
   const lost = status === 'signedIn' && owner !== undefined && kept === null;
   // The server holds another check than the one kept here (a newer one, or none): the details are not this check's.

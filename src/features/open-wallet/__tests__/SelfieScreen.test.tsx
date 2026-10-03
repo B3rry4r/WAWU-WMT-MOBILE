@@ -141,6 +141,14 @@ afterEach(async () => {
   clients.splice(0).forEach((client) => client.clear());
 });
 
+describe('A16’s words from the server', () => {
+  it('the server’s first sentence is the title and the rest the line; a single sentence goes under A16’s own title', () => {
+    const { headed } = require('../SelfieScreen') as typeof import('../SelfieScreen');
+    expect(headed(A16, 'Fallback')).toEqual({ title: "We couldn't match your face", line: 'It must match your BVN photo. Good light, no glasses or cap.' });
+    expect(headed('Your face did not match.', "We couldn't match your face")).toEqual({ title: "We couldn't match your face", line: 'Your face did not match.' });
+  });
+});
+
 describe('A6 · Selfie', () => {
   it('a user sees a loading view, then the oval and the brief’s words; nothing says or suggests a liveness check', async () => {
     keepOpening();
@@ -220,8 +228,9 @@ describe('A6 · Selfie', () => {
     await take(app);
     expect(await app.screen.findByTestId('open-wallet-selfie-not-matched')).toBeTruthy();
     expect(app.screen.getByTestId('open-wallet-oval-refused', { includeHiddenElements: true })).toBeTruthy();
+    // The server's sentences, drawn as A16 draws them: the first as the title, the rest under it.
     expect(app.screen.getByText("We couldn't match your face")).toBeTruthy();
-    expect(app.screen.getByText(A16)).toBeTruthy();
+    expect(app.screen.getByText('It must match your BVN photo. Good light, no glasses or cap.')).toBeTruthy();
     expect(openings()).toHaveLength(0);
 
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-selfie-try-again'));
