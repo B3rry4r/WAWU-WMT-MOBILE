@@ -21,11 +21,57 @@ let refreshing: Promise<string | null> | null = null;
 /** Counts session changes (sign in, sign out). A refresh that started in an older one is ignored. */
 let generation = 0;
 const listeners = new Set<() => void>();
+const endListeners = new Set<() => void>();
 
 function setStatus(next: SessionStatus) {
   if (status === next) return;
   status = next;
   listeners.forEach((listener) => listener());
+}
+
+/**
+ * Tells every `onSessionEnd` listener that the signed-in account's session is
+ * over. Runs before the status changes, so nothing renders the new state
+ * while the old account's data is still held. A listener that throws stops
+ * neither the others nor the change itself: the first error is handed back,
+ * and the call that ended the session rejects with it once the change is made.
+ */
+function endSession(): { error: unknown } | null {
+  let failure: { error: unknown } | null = null;
+  endListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      failure ??= { error };
+    }
+  });
+  return failure;
+}
+
+/** The store step, then the listener's failure, if one failed. */
+function settle(stored: Promise<void>, failure: { error: unknown } | null): Promise<void> {
+  return failure
+    ? stored.then(() => {
+        throw failure.error;
+      })
+    : stored;
+}
+
+/**
+ * The account a token belongs to: the `sub` claim of a WAWU ID access token
+ * (a JWT), or null when the token cannot be read that way.
+ */
+function accountOf(accessToken: string): string | null {
+  const payload = accessToken.split('.')[1];
+  if (!payload) return null;
+  try {
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const claims: unknown = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')));
+    const sub = typeof claims === 'object' && claims !== null ? (claims as Record<string, unknown>).sub : undefined;
+    return typeof sub === 'string' && sub ? sub : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -42,17 +88,41 @@ function inStoreOrder<T>(step: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** Memory and status change at once; only the store write waits its turn. */
-function adopt(next: StoredTokens): Promise<void> {
+/**
+ * Memory and status change at once; only the store write waits its turn.
+ * `fresh` is a sign-in: it always ends the session it replaces, if any. A
+ * refresh ends it only when the new token is another account's.
+ */
+function adopt(next: StoredTokens, fresh: boolean): Promise<void> {
+  const previous = tokens;
   tokens = next;
+  const ends = previous !== null && (fresh || accountOf(previous.accessToken) !== accountOf(next.accessToken));
+  const failure = ends ? endSession() : null;
   setStatus('signedIn');
-  return inStoreOrder(() => saveTokens(next));
+  return settle(inStoreOrder(() => saveTokens(next)), failure);
 }
 
 function drop(): Promise<void> {
+  const ended = tokens !== null;
   tokens = null;
+  const failure = ended ? endSession() : null;
   setStatus('signedOut');
-  return inStoreOrder(() => clearTokens());
+  return settle(inStoreOrder(() => clearTokens()), failure);
+}
+
+/**
+ * Calls `listener` each time the signed-in session ends: sign-out, a refresh
+ * the server refused (an expired or revoked session), and a sign-in that
+ * replaces another session (or any token for another account). Whatever is
+ * held for the account that was signed in (cached answers, flow state) is
+ * dropped here, so the next account never sees it. The listener runs
+ * synchronously, before the new status is published. Returns the unsubscribe.
+ */
+export function onSessionEnd(listener: () => void): () => void {
+  endListeners.add(listener);
+  return () => {
+    endListeners.delete(listener);
+  };
 }
 
 /** Reads the stored tokens once. Safe to call from anywhere, any number of times. */
@@ -71,7 +141,7 @@ export async function signIn(identifier: string, password: string): Promise<void
   const next = await loginRequest(identifier.trim(), password);
   generation += 1;
   refreshing = null;
-  await adopt(next);
+  await adopt(next, true);
 }
 
 /** Removes the tokens from memory and from secure storage. */
@@ -113,7 +183,7 @@ export function refreshAccessToken(rejected: string): Promise<string | null> {
     .then(async (next) => {
       // The user signed out, or in as someone else, while this was in flight: the result is stale.
       if (generation !== started) return null;
-      await adopt(next);
+      await adopt(next, false);
       return next.accessToken;
     })
     .catch(async (error: unknown) => {
