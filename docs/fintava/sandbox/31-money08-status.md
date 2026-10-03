@@ -49,6 +49,29 @@ The app logged two lines: the client's warning for the 404 (operation,
 status, our reference and Fintava's message) and the sweep's error for row 4
 (the row id only). No name, account number or key in either.
 
+## Round 2 re-run (3 GETs)
+
+3 Oct 2026, 06:23:21 UTC, sandbox only, same script with
+`STATUS_SANDBOX_CASES=3` (the reference that never existed only), against a
+fresh local database (`m08b_live_test`, dropped afterwards). Round 2 changed
+what "no row in the sender's history" needs: the walk must be complete (the
+last page, an empty page, or a page older than the send's time less 10
+minutes), otherwise the answer is unknown, never absent. This run shows the
+real merchant history still gives a complete walk on the first page, so an
+absent send is still failed in one sweep:
+
+| Call | Answer |
+|---|---|
+| `GET /merchant/balance` | 200 |
+| `GET /transaction/reference/MONEY08-SBX-20261003062321-ABSENT` | 404 "Transaction not found!" |
+| `GET /txn/merchant?page=1&take=99&order=DESC` | 200 (no row for it; the walk ended on this page) |
+
+Sweep result `{"settled":0,"failed_absent":1,"waiting":0,"disagrees":0,"skipped":0}`:
+the row is `failed`, "Fintava has no record of this transfer, so no money
+moved." Every call was a GET to `dev.fintavapay.com`; the key was read with
+`sed` into the command's environment and the output holds none of its 58
+eight-character windows. The app logged the client's 404 warning only.
+
 ## Not run
 
 - A bank send whose webhook is withheld, and one Fintava reports FAILURE
