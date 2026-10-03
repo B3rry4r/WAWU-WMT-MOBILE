@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 46 of 181.**
+**Launch tasks done: 48 of 181.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 50 | 45 | 32 | 31 |
+| todo | 49 | 45 | 31 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 31 | 13 | 2 | 1 |
+| done | 32 | 13 | 3 | 1 |
 
 ## Done
 
@@ -23,6 +23,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 - [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
 - [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring (Developer)
+- [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue (Developer 2)
 - [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model (Developer 3)
 - [OPS-04](../tasks/OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers (You)
 - [SHELL-03](../tasks/SHELL-03.md) Tester builds (Developer)
@@ -55,6 +56,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
+- [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
@@ -67,13 +69,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie
 - **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-05](../tasks/ME-05.md) Profile fields, [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales
-- **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
+- **Developer 2:** [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
+- 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
+- 3 Oct 2026 · INBOX-08 · Built (backend): paid questions group into one thread per person with every reply bubble, and a creator's waiting list comes back soonest deadline first with the total waiting (`/paid-dm/*`, new `DmReply` table); the live `/dm/respond` is now race-safe. Status verifying.
 - 3 Oct 2026 · KYC-05 · Merged to main by the lead (mobile only, 265ed2a). Open your wallet, step 1 (BVN and NIN): a passed check is kept only for the person and session that ran it, and any answer that lands after a session ends writes nothing. Carried forward: check 1 waits on SHARED-CHANGES KYC-05 #1; device not run. OTA update follows.
 - 3 Oct 2026 · KYC-05 · Verified round 7: no open defect, status review (mobile 81669b0 with main e7dc879). Defect 3 closed: a pass landing in the session-end window leaves no A26 cache entry with A's identity (probe Q2), and a refusal or end landing there moves no screen state for B (3 of 3). Audit: no write after an await unchecked against the ticket or session. R6-2 now killed (2 tests), and R7-1 and R7-2 killed. `npm run check` exit 0, 485 tests, 0 act warnings.
 - 3 Oct 2026 · KYC-05 · Round 7, status verifying: a check answer from an ended session writes nothing (ticket checked before the cache write; a refusal under a void ticket moves no screen state); tests with the app's createQueryClient for both, and the start-over's unsubscribe pinned; mutants Q2, Q2b, R6-2 killed; the verifier's probe-r6 passes 4 of 4.
@@ -86,6 +91,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-05 · Round 4, status verifying: A26 never paints another account's reads (its reads keyed by visit and account, shown only for the token's account, dropped on close and session end); one-cache jest across a sign-out and a sign-in as someone else; 10 of 10 mutants; the verifier's cross cases reproduced on 801aeaa and clean on this build. V9 on backend main fe1ec6c. App-wide cache clear: FIX-04.
 - 3 Oct 2026 · KYC-05 · Verified round 3: 1 defect, status building (mobile 84c0dad, main 6bc420e already in; Hub fe1ec6c). Round 2's defect closed: `race_back` and `race_signout` show "BVN confirmed" on de27d15 and the form on 84c0dad (both themes); two checks in flight, A's check landing after B signs in, and a token renewed mid-check (pass still kept) all behave. New defect 1 (privacy, predates round 3): after an account change A26 first paints the previous account's cached phone and wallet state (one QueryClient, never cleared; `cross_fast`, `cross_account`, `cross_wallet`). Privacy scan of 90 typed numbers: 0 hits outside request bodies. 7 of 9 own mutants killed, 2 equivalent.
 - 3 Oct 2026 · KYC-05 · Round 3, status verifying: a BVN check answering after A26 closed or after its session ended is never kept (store writes need a ticket that every forget voids; the form drops late answers); jest races and 8 of 8 mutants; the verifier's race cases reproduced on de27d15 and clean on this build, light and dark. V9 on backend main 7601a5f.
-- 3 Oct 2026 · KYC-05 · Verified round 2: 1 defect, status building (mobile f55585a, main c42595b already in; Hub 7601a5f). Round 1's defects 2 to 5 closed (ten pastes keep 11 digits; the Hub unreachable for 30 s stays a banner with the numbers; waits come from the answer: "in a minute", "in about an hour" from Retry-After-medium 3527, "in about 24 hours"). Defect 1 is closed only while A26 is on screen: tap Back while the check runs, and the answer is kept after A26 has gone, so the BVN name, date of birth and gender survive sign-out, and the same person signing in again sees "BVN confirmed" with no new check. Privacy scan: 0 of 78 numbers anywhere stored or logged.
-- 3 Oct 2026 · KYC-05 · Round 2, status verifying: kept BVN details forgotten on sign-out, session end, account change and leaving A26; pasted BVN and NIN keep all 11 digits (no raw maxLength); a check refused while the Hub is unreachable stays a banner with the numbers; limit banners say the server's wait in words or "later"; M5 and M7 killed (10 of 10 mutants). V9 rerun on backend main 7601a5f. SHARED-CHANGES KYC-05 #3, #4.
-- 3 Oct 2026 · KYC-05 · Verified: 5 defects, status building. (1) Signing out does not clear the kept BVN prefill (`forgetKeptCheck` has no caller). (2) A pasted BVN or NIN with more than two separators is cut by the raw `maxLength` 13 (`222 345 678 12` keeps 10 digits). (3) With the Hub unreachable during a check, the banner gives way to the load-error screen within 10 s. (4) "Wait a minute" is hard-coded, though the hourly address limit answers `Retry-After-medium` 3448. (5) Mutants M5 and M7 survive. Privacy scan: 0 hits for 66 typed numbers across the DB, logs and browser. V9 bodies exactly `{bvn, nin}` (48). Merged main 2ca65d0; `npm run check` exit 0, 398 tests, 108 files.
