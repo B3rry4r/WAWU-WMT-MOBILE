@@ -7,7 +7,7 @@ order: 67
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [MONEY-07, MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
@@ -73,6 +73,112 @@ Builder, 3 Oct 2026. wawu-backend `wmt/MONEY-08` 0eb32a9 on main `e8535d8`; mobi
 - **NOT RUN:** bank sends, their FAILURE and `debit_transfer_reversal`, and bills against the sandbox: the sandbox refuses every payout with `400 "Unable to find customers"` (question 17); unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers". A real (not locally signed) delivery: unblocked by OPS-10 registering the production webhook URL (G-19). V10: no screen.
 
 ## Verifier report
+
+### Verifier report (round 2)
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code and did not verify round 1). **Verdict: round 1's 4 defects are closed, but 2 new defects are open; status back to `building`.** The schedule, the revival, the absent compare-and-set and the cut-off walk all hold under attack, and nothing moves money. The new defects are both places where the round-2 rule ("only certain absence fails a row; any figure difference is a recorded stop") still has a gap: a reversal with other figures, and a history page that is empty while Fintava says more pages follow.
+
+Checked at backend `wmt/MONEY-08` 2c5dee8 and mobile `wmt/MONEY-08` caa870c, in fresh detached worktrees. Neither main moved (backend origin/main e8535d8, mobile origin/main 176a56d), so no merge was needed. Round 1's code (0eb32a9) was exported next to it to reproduce each old defect. Evidence is in the verifier session's scratchpad `vm08r2/` (file names below). The attack spec `vm08r2-attack.contract.spec.ts` (20 tests, built on round 1's harness) is kept there, out of the branch. Round 1's `vm08-attack` and `vm08-backlog` specs were rerun on both commits.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | On a clean export of 2c5dee8: `tsc --noEmit` 0 (`tsc.log`); eslint on the 12 changed `.ts` files exit 0 (`eslint.log`). Gates: main e8535d8 16 fail / 8 warn / 76 accepted on 608 files; branch 16 / 9 / 76 on 611 files. The same 16 fails; the only added warn is `PROVISIONAL(LEDGER-STATUS-CHECK-AFTER)` (`gates-main.json`, `gates-branch.json`). `check_baseline.py`: 108 entries, exit 0. CI tripwire: 0 added lines outside the protected suite's files match `test/protected-routes`, `src/protected-routes`, `compareShape` or `protected-registry`. Key scan: 0 hits for any of the 58 eight-character windows across the backend diff, the mobile diff, the sandbox output and every evidence log, and the staged commit of this report. Mobile `npm run check` at caa870c: exit 0, typecheck 0, lint 0, 19 suites / 345 tests, gates 0 fail / 0 warn on 90 files, 202 tasks (`mobile-check-before.log`). |
+| V2 Contract | passed | No route; contract unchanged. Ledger specs on the branch: status contract 29, ledger contract 25, units 13, status unit 2, all green. A Postgres session in `Africa/Lagos` time (not UTC) runs the same 69 green (`tz-ledger.log`), so the `::timestamp(3)` casts in the claim are not hour-shifted. |
+| V3 Regression | passed | `run.sh --fresh 2c5dee8`, lock origin/main e8535d8: 253/253, all 244 required (`protected.log`); lock files differ from main by 0 lines. Full `test:contract` on fresh seeded `vm08r2_full_test`, mock WAWU ID on :4912: 118 suites, 2,792 passed, 3 skipped, 40 failed, all `fetch failed` in the 4 suites that hard-code `localhost:4001` (`full.json`). Those 4 on fresh seeded `vm08r2_p4001_test` with a mock on :4001 (`lsof` empty before and after; stopped straight after): 4/4 suites, 40/40 (`p4001.json`). So 2,832 passed, 0 failed. OPS-11 `hub-rate-limits` 10/10. Every Fintava spec green. A first full run was discarded: it overlapped a mutant run in the same export. |
+| V6 States | failed (defect 2) | Round 1's 19 answer shapes for our send past the window (`A8`) give the same outcome on 2c5dee8 as on 0eb32a9: only Fintava's 404 "Transaction not found!" plus an empty history fails the row. History walks (`B3`): 8 or 6 pages with our send nowhere: waiting `history_incomplete`, 5 pages read; exactly 5 pages ending with `hasNextPage` false: failed as absent (a complete walk); `since` reached on page 3 of 8: failed as absent after 3 pages; our send on page 5: completed; on page 6: waiting. An empty page while `hasNextPage` is true: defect 2. Bills and references not ours, a day old, never failed (`A9`; `B5` adds category `bill` with no counterparty on a customer wallet: waiting, swept, still pending). |
+| V8 Money attack | failed (defects 1, 2) | Below. |
+| V9 Live seam | passed (partial) | 3 read-only GETs to dev.fintavapay.com (`sandbox.json`). `/transaction/reference/VM08R2-SBX-20261003065725-ABSENT`: 404 "Transaction not found!" with no `data`. `/txn/merchant?page=1&take=1`: 39 pages, `hasNextPage` true. `/txn/merchant?page=40&take=1` (past the end): no rows, `hasNextPage` false. So the real sandbox ends a walk cleanly, and defect 2 needs a malformed page. A built Hub on :4911/:4913 was not run; two Nest apps on one database stood in for two instances. Sign-in leg: no route. |
+
+**Round 1's defects, reproduced on 0eb32a9 and closed on 2c5dee8** (`attack-old.json` against `attack-new.json`, `backlog-old-*.log`, `backlog-new-*.log`)
+
+1. Backlog starvation: closed. A new send with Fintava at SUCCESS and its webhook withheld settled after 5, 39 and never (75 passes) behind 100, 400 and 3,000 waiting rows on 0eb32a9. On 2c5dee8 it settled after 0 extra passes each time (100 Fintava requests a pass, 50 checks).
+   - Right after a restart (`B1a`): 3,000 rows checked 10 times before, all due, and a brand-new instance. Its first pass settled the new row, 50 claims, 100 requests.
+   - Steady state (`B1b`, 150 passes, 3,000 waiting rows, one new SUCCESS send a minute, a new instance at pass 75): 150 of 150 settled in the pass they fell due. At most 50 claims a pass. Every backlog row was asked (0 never), at most 3 times, 61 to 62 minutes apart.
+2. Revival kept apart: closed. `A5`: 0 Fintava calls and `discrepancy` set on 0eb32a9; one call, completed, `discrepancy` null on 2c5dee8. A webhook revival (`B2`, after the verdict): pending, `revivedAt` set, `revivedBy` webhook, `nextCheckAt` null, `statusChecks` 0, no `discrepancy`.
+3. Absent against a racing delivery: closed. `A6` failed the row on 0eb32a9 and leaves it pending on 2c5dee8. `B2`: our bank send past the window, `/txn` held 1.2 s, and a PENDING delivery at +0, 100, 300, 600, 1,000 and 1,150 ms. Consumed: 6 of 6 pending, "seen meanwhile, so not absent". Only stored: 6 of 6 pending. A resend recorded under the same reference: 6 of 6 pending. Control, a delivery naming another reference: 6 of 6 failed as absent, so the check is not over-blocking.
+4. Cut-off walk: closed. `A10` failed after 5 pages on 0eb32a9 and waits (`history_incomplete`) on 2c5dee8. One gap remains: defect 2.
+
+**V8, round 2**
+
+- **Claim and `xmin` (`B1f`).** The claim leaves `updatedAt` unchanged. It moves `xmin` (915069 to 915070), `statusChecks` 0 to 1 and sets `nextCheckAt`. The check reads the version after its own claim, so the claim never defeats its own compare-and-set. Absent is reached through `sweep()`:
+  - 3 of 3 rows on one instance;
+  - 5 of 5 rows with two instances sweeping at once (one instance claimed all 5);
+  - a direct `check()` racing a sweep on the same row, 5 times: always failed once. The loser answers `waiting` with decision `wait`, so it never gives resend advice.
+- **Backoff (`B1e`).** A recent row was asked at minutes 2, 3, 5, 9, 17, 33, 65, 125, 185. That is the 1, 2, 4 ... 60 schedule, capped at 60. A new instance at minute 20 did not re-ask. In every `B1c` run, 0 recent-row checks came sooner than their rest.
+- **Repeated revivals (`B1d`).** The worst case is a send failed as absent and resent at once every time, over 120 passes: 7 revivals, 35 checks, at most 1 check in any pass, one cycle every 17 minutes (the resend window decides it). A revived row is fresh again, but the claim moves its `nextCheckAt`, so it cannot take more than one slot a pass.
+- **Opposite starvation (`B1c`, the fresh-first order; `r2-starve.json`).** 100 old rows fall due at passes 61 to 70, once the fresh queue is steady. The oldest due row is due at pass 60 and Fintava says SUCCESS. Inflow lasts 150 passes, then 60 passes with no inflow. The table gives when the old rows were first asked:
+
+  | New rows a minute | Oldest due row settled | All old rows asked by | New rows' first check after falling due |
+  |---|---|---|---|
+  | 0, 5 (pending at Fintava) | pass 60 | pass 70 | 0 min |
+  | 8 (pending) | pass 60 | pass 139 | 0 min |
+  | 9 (pending) | pass 160 (10 after the inflow stopped) | pass 166 | median 1, max 3 min |
+  | 12 (pending) | pass 180 | pass 187 | median 7, max 11 min |
+  | 30 (pending) | not within the 60 passes after | never | median 26, max 31 min |
+  | 45 (SUCCESS on first check) | pass 60 | pass 81 | 0 min |
+  | 60 (SUCCESS on first check) | pass 180 | pass 181 | median 15, max 30 min |
+
+  A row recorded in the last hour needs 6 checks in that hour. So per instance, older due rows get nothing while either holds: about 8.4 or more new rows a minute stay pending at Fintava for their first hour, or 50 or more new rows a minute need the sweep at all (webhooks down). They get nothing for as long as that lasts, plus up to an hour. The 60-minute cap on the rest does not hold then. Judgement: an acceptable trade-off, not a defect. It needs a sustained overload of 12,000 or more stuck sends a day per instance. In that overload, fresh rows themselves wait 7 to 30 minutes, so no fixed order of 50 slots meets "within one sweep". It moves no money and writes no wrong status. A row Fintava has not settled in an hour is the least likely to settle now, and it is served earliest-due-first once the load drops. Recorded as finding 4.
+- **The webhook amount rule (`B4`, `B4b`, `B4d`; a pending ₦100 bank send with fee ₦30.75).**
+  - These all end pending, with the difference written on `discrepancy`: ₦100.01; ₦99.99; total 1 kobo off; a fee-inclusive amount (130.75 as `amount`); a fee-exclusive total (total 100); a FAILED delivery for ₦200.
+  - The control, same figures, completes.
+  - After a stop the sweep never asks again (0 requests).
+  - Confirm path (no row held, a w2w delivery of ₦10 that Fintava's record calls ₦10.01): both sides pending, noted.
+  - Revival with ₦100.01: stays failed, noted. A resend recorded at ₦10.01 on a ₦10.00 row failed as absent: stays failed, noted.
+  - Two deliveries with different amounts: a PENDING ₦200 then a SUCCESS ₦300 stays pending with both notes.
+  - Matching after mismatching (PENDING ₦200 then SUCCESS ₦100, or SUCCESS ₦200 then SUCCESSFUL ₦100): completed, with the earlier note kept. Mismatching after matching: completed, noted. Both orders end the same.
+  - Race, 5 times: a matching and a mismatching delivery consumed at once with two status checks. Each run: 1 row, completed, noted.
+  - Two deliveries with the same status: finding 1.
+- **MONEY-10's specs.** Round 2 changed none: `ledger.contract.spec.ts` is identical to main, and `ledger-units.spec.ts` differs only by round 1's two added assertions for U-1 (`completed` never becomes `failed`; `pending` may become `failed`). That addition is justified, because U-1 changed that rule (`MAY_BECOME.failed`). No MONEY-10 spec asserted the old "settle and note" behaviour, so none had to change for the new rule. No MONEY-10 spec pins the new rule either; the builder's status spec does.
+- **Old guarantees.**
+  - Never a send. Every request in every attack file was a GET: 154 in round 1's attack spec, 358 in the run of `B1a`, `B1d` to `B1f` and `B2` to `B6`, and every request of the schedule runs.
+  - One row per movement: round 1's `A1` and `A3` (two instances, webhook, checks) are green on 2c5dee8 with no discrepancy, and so is `B4d`'s race.
+  - A failed transfer is reversed once (`A2`, 5 of 5).
+  - An amount difference stops (`A7`, unchanged from round 1).
+  - Absent happens only on the documented 404 plus a complete walk, with the exception in defect 2. It never happens for bills (`A9`, `B5`) or for references that are not ours.
+- **Schedule columns.**
+  - The migration is additive: 4 columns and 1 index; no existing column, index or row is touched.
+  - It applies on a fresh database, and on a main database holding a pending row, which then reads `nextCheckAt` null and `statusChecks` 0.
+  - With MONEY-12 (`wmt/MONEY-12` d056461, `20261003100000_wallet_opening`) it applies in three orders, 78 migrations each: A (main and this, then MONEY-12, applied out of name order), B (main and MONEY-12, then this) and C (all at once). The schema dumps are identical except for pg_dump's random `\restrict` token (`migrations.log`, `schema-mig*.sql`). Drift against the schema is only the old `ContentPiece_specializations_idx`.
+  - A local merge of the two branches (tree 7094234, never pushed) has no conflict, and `tsc --noEmit` on it exits 0 (`merged-tsc.log`).
+  - Nothing grows without bound: no per-row memory in the service; `statusChecks` grows by at most one an hour per row.
+  - `EXPLAIN ANALYZE` of the claim on 213,100 rows (200,000 completed, 12,800 pending, 500 with a disagreement): 9.9 ms (`explain.txt`). The planner uses only the `status` prefix of an index, because `COALESCE(nextCheckAt, ...)` cannot use one: it took `(status, occurredAt)`, and took the new `(status, nextCheckAt)` only when the other was dropped (finding 5).
+- **Spot mutants** (each alone in a clean export, `src/money/ledger` and `src/fintava` specs, 727 tests, every file restored to its sha1, `mut-*.log`):
+  - Killed: `check()` not moving the schedule (5 fail).
+  - Survived, as test gaps: a revival that keeps the old `nextCheckAt` and `statusChecks`; the claim taking rows that hold a disagreement (they then fill slots with no Fintava call); and the walk no longer treating an empty page as complete (defect 2, which no test pins either way).
+
+**Findings**
+
+1. `defect` A reversal with other figures settles silently. `applyReversal` (MONEY-10's, unchanged here) compares nothing. A `debit_transfer_reversal` marks the row `reversed` and stores Fintava's figures in `reversalAmountKobo` and `reversalTotalKobo`, but writes no `discrepancy`. That holds whatever the figures (`B4c`):
+   - ₦200 back for a ₦100 send;
+   - ₦100.01 or ₦99.99 back;
+   - ₦200 back for a send that was `completed`.
+   
+   These all end `reversed` with `discrepancy` null. The round-2 rule, and WORKFLOW section 10 ("our ledger and Fintava disagree, by any amount"), stop a SUCCESS delivery that is 1 kobo off, while a reversal 100 kobo off passes unrecorded. MONEY-16 reads disagreements from `discrepancy`, so it would not see these. Capability check 2 ("reversed exactly once") is this task's.
+   
+   Reproduce: our ₦100 bank send, fee ₦30.75; the status check finds FAILED; then consume a reversal with `amount` 200, `charges` 30.75, `total` 230.75. The row ends `reversed` with `discrepancy` null.
+   
+   A reversal of 100 with charges 0 and total 100 (Fintava keeps its fee) is also unrecorded. Whether a kept fee is a disagreement or the expected behaviour is `unclear` until a real reversal is seen (question 17).
+2. `defect` (latent) An empty history page counts as a complete walk even when Fintava says more pages follow. `findInHistory` (`src/fintava/fintava-client.ts`) returns `null` (complete) on `rows.items.length === 0` regardless of `hasNextPage`. With a 404 lookup, `reconcile` then answers `absent`. The check fails the row ("no money moved") and hands MONEY-06's resend advice: `resend_same_reference` for a wallet-to-wallet send, which is a second payment if the first exists further down.
+   
+   `B3`: page 1 empty with `hasNextPage` true and 8 pages: failed as absent after reading 1 page. Page 3 empty: failed after 3 pages of 8. That is the "an incomplete history walk is unknown, never absent" rule this round set.
+   
+   The real sandbox answers a page past the end with no rows and `hasNextPage` false (`sandbox.json`). So this needs a malformed page plus a 404 for a send that exists, the same class as round 1's defect 4.
+   
+   Reproduce: our merchant send past the window, lookup 404, and `/txn/merchant` answering page 1 with `data: []` and `meta.hasNextPage: true`, `pageCount: 8`. `check` gives `failed_absent`. Removing the empty-page condition survives all 727 specs, so no test pins it.
+3. `unclear` (MONEY-07's area) A second delivery with the same status and another amount never reaches the ledger. The webhook store's unique key is event, reference and status. A SUCCESS ₦100 then a SUCCESS ₦200 for the same send: the route answers 200 and stores nothing for the second, so the row stays `completed` with `discrepancy` null (`B4`: "not stored (MONEY-07 duplicate key)"). Fintava contradicting itself is then lost without a trace. When the mismatching one comes first, the matching one is dropped and the row stays pending with the note (safe side). Another status (SUCCESSFUL, PENDING) is stored and handled as above. This belongs with MONEY-07 (a gap row for it), not this task's code.
+4. `unclear` Under sustained overload the fresh-first order stops checking rows older than an hour (numbers in the `B1c` table). Judged acceptable above. If the owner wants a hard bound, a reserved share of each pass for the earliest due rows gives one. The 60-minute cap ("backoff caps at 60 minutes") holds only while the due demand fits 50 a pass per instance: a never-settling backlog of 3,000 rows per instance with nothing new, or less with inflow. `B1b` measured 61 to 62 minutes at exactly that load.
+5. Note: the new index `(status, nextCheckAt)` is not what the claim uses; either `status`-prefixed index serves it, at 9.9 ms for 12,800 pending rows. It costs an index write on every claim. It is harmless, but it does not do what the migration comment says.
+6. `unclear` A fee-only difference ends differently depending on which source arrives first (`B4b`: our row fee ₦40, Fintava's charges ₦30.75). If the webhook comes first, the row stays `pending` with the note, and the sweep never asks again. If the sweep comes first, the row is `completed` (lookups carry no fee), and the late webhook adds the note. It is noted either way, which is the builder's decision 3. But it means every bank send whose sender records a fee other than Fintava's charges stays `pending` for review once its webhook arrives. The sending features (WALLET-07, WALLET-09) must record Fintava's charge, not the quoted one, or each such send stops.
+
+**NOT RUN**
+
+- Bank sends, their FAILURE and `debit_transfer_reversal`, and bills against the sandbox: the sandbox refuses every payout. Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering `400 "Unable to find customers"` (question 17).
+- A real (not locally signed) delivery: unblocked by OPS-10 registering the production webhook URL (G-19).
+- Two built Hub processes on :4911/:4913: covered in-process by two Nest apps on one database. Unblocked by a round that builds `dist/` from this branch.
+- A history walk cut off, or an empty page with `hasNextPage` true, in the real sandbox: the merchant history has 39 rows and ends cleanly. Unblocked by a sender whose history passes 5 pages between a send and its check.
+- "Ledger equals Fintava balance": the sweep never sums. Unblocked by MONEY-16's reconciliation.
+- V10: no screen.
 
 ### Verifier report (round 1)
 
