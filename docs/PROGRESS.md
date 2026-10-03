@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 51 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 29 | 12 | 2 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
 
