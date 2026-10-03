@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 51 | 46 | 32 | 32 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 27 | 12 | 2 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 
@@ -72,6 +72,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · WALLET-11 · Verified round 1: 1 defect, status building (mobile e8b0027 with main 9d43d9d; Hub a055b4f). An account number pasted with spaces ("0987 654 321") is cut to 8 digits by the field's maxLength before the spaces are stripped. Passed: gates exit 0 on branch and merge (23 suites, 398 tests, 107 files, 0 fail), V4, V5 (recorded differences only), V6 (12 states by real cause, light and dark), V9 (sign-in through A22, load, save, reload, edit; every PUT body only bankCode and accountNumber; second person sees null); 7 of 8 mutants killed (survivor: the route's back-after-save has no test). NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11 (not built).
 - 3 Oct 2026 · WALLET-11 · Built A21 Payout bank (`/payout-account`), status verifying: loads the saved account, bank sheet, account number, the bank's name and the server's BVN match after saving (flag when false, name alone when null), no-wallet, opening, loading and error states; 21 tests, 7 of 7 mutants killed; V9 on the built Hub (real sign-in, PUT and read back); G-57 (bank list and name check unserved, WALLET-09) and G-58 (BVN match before saving, the "Creators only" line) filed; SHARED-CHANGES WALLET-11 #1, #2.
 - 3 Oct 2026 · WALLET-14 saved recipients and the payout account merged (backend PR #45, a055b4f). Bank names come only from Fintava; a payout account in another name is flagged; BVN name words are stored only as person-bound keyed hashes. Three verifier rounds. G-54 filed (contract build order).
 - 3 Oct 2026 · WALLET-14 · Merged main for the pull request (backend d89f7e5 with main ad1e515, mobile with main 8a58a67), status review: gate route lists hold MONEY-14, MONEY-15 and WALLET-14 routes; one test added (two people saving the same place get their own rows, kills M2); full suite 132 suites 3,196 passed 0 failed, protected 253/253; main's committed contract is not byte-reproducible by its own build (order only).
@@ -86,4 +87,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · MONEY-15 · Verified round 3: status review (backend c0d9a12, mobile 46095e8; neither main moved). Defect 2 is closed: the three year-0000 requests answer 400. 129 forged dates across the cursor, the group key and the month (year 0000 and 10000+, negative years, leap seconds, long fractions) brought 0 unexpected answers on the built server. Blind spot A is closed for writes that commit within Prisma's 5 s timer (a real uncommitted write at page 1, 10 ms to 4.9 s, 14 runs: nothing lost). The margin brought no regression (15 walks at page sizes 1 to 3). New `unclear` finding 4: a writer whose event loop is late reaching the timer commits after 5 s (5.6 s measured), and the loss returns; CONVENTIONS section 6 calls 5 s a hard limit. Full suite 130/130 suites, 3,144 passed, 0 failed; protected 253/253; gates as main; 12 of 14 mutants killed.
 - 3 Oct 2026 · MONEY-15 · Round 3 (backend c0d9a12, status verifying): a cursor or group key dated year 0000 is now a 400, not a 500 (defect 2). A scroll groups only unlocks completed by its snapshot less 5 s, Prisma's default transaction timeout that the ledger writes under, so a write in flight at page 1 can no longer move a group (blind spot A). CONVENTIONS section 6 now lists what a refresh still corrects. Full suite 130/130, 0 failed; protected 253/253.
 - 3 Oct 2026 · MONEY-15 · Verified round 2: back to building (backend a622812, mobile 92bf3ea; main 48b9043 merged). Defect 1 closed. Every movement that existed before page 1 showed exactly once on the built server and in 24 stress runs (arrival, settling, an older one settling below the cursor; page sizes 1 to 6; an event after every page), with 4 groups straddling pages and around Lagos midnight. New defect 2 (minor): a forged cursor or group key dated year 0000 is a 500, not a 400. Unclear: a pending row the sweep settles with Fintava's earlier time is shown twice in one scroll. The in-flight write loses a group for one scroll (a window of about 5 s), and a reopened unlock only duplicates. Full suite 130/130, 3,141 passed, 0 failed (an earlier run had 1 flaky MONEY-14 leak check, 3/3 alone). Protected 253/253, gates as main (16 / 12), 9 of 12 own mutants killed (3 equivalent).
-- 3 Oct 2026 · MONEY-15 · Round 2 (backend a622812, status verifying): a scroll groups as of its snapshot. The cursor and the group key carry the first page's time, and a group's members are the unlocks completed by then, so an unlock landing or settling mid-scroll no longer moves a group across a cursor (defect 1; tests P1, P1b, P1c). Reference order and the exactly-full last page are pinned by tests; `q` is trimmed before its length check. Backend main 48b9043 merged in. Full suite 130/130, 0 failed; protected 253/253.
