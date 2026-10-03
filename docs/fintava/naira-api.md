@@ -350,6 +350,14 @@ answers `201 "service not currently available"`, with nothing debited
 be the SMS route for sign-up codes that `docs/PLAN.md` asks for, if the
 price is right.
 
+Sandbox, 3 Oct 2026 (`sandbox/35-money14-pin-reset.md`, MONEY-14): a
+well-formed text to the reference page's example number is refused with
+`400 ["amount must be greater than or equal to 1"]` (a business error; the
+request carries no amount, so the text price for WAWU's sandbox merchant is
+probably unset). A number without `+234` is a nested validation `400` ("to
+must be a valid phone number"). No text has been sent from the sandbox yet
+(BACKEND_GAPS G-42).
+
 ## Cards (after launch)
 
 These are ATM and debit cards.
