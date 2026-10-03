@@ -91,6 +91,35 @@ Backend `wmt/WALLET-14` `ab459bc` (on `377ea31`; backend main still `48b9043`, u
   - Mobile `npm run check` with main `331a6fa` merged: exit 0 (typecheck, lint, 21 suites, 377 tests, gates 0 fail / 0 warn on 98 files, 203 tasks).
 - The verifier's round 2 notes 2 and 3 need no change. A word in both parts of one name hashes the same within that one row, which links nothing across rows. `"v":"2"` as a string only arises from a hand-written value, and it reads as null. NOT RUN is unchanged: `matchesBvnName` on a real sandbox BVN record (question 11).
 
+### Merge with main (lead request, 3 Oct 2026)
+
+Merge only, no new behaviour, and status stays `review`.
+- **Backend `wmt/WALLET-14` `d89f7e5`:**
+  - Merged `origin/main` `ad1e515` (MONEY-15) in `fe22482`, keeping both sides throughout:
+    - `money.module.ts`: MONEY-15's history controller and service, and WALLET-14's saved-accounts controller and services.
+    - Both gate specs: 20 routes each (MONEY-14's, MONEY-15's 3 history routes, and WALLET-14's 5), with both titles joined.
+    - CONVENTIONS section 0.
+    - `SERVED_MONEY_ROUTES` and WALLET.md merged without a conflict.
+  - `npm run contract:build` was then run.
+- **One test-only addition** (`d89f7e5`), as the round 3 verifier suggested: two people saving the same person and the same bank account each get their own row, see only their own, and A removing theirs leaves B's. It kills mutant M2 (an existing-row lookup that ignores the owner): 1 test fails under it.
+- **Checks on `d89f7e5`:**
+  - tsc 0; eslint 0 on the 19 `.ts` files changed against main.
+  - WALLET-14, gate and money-contract specs pass inside the money run: 39 suites, 1,461 of 1,462. The one failure was MONEY-14's `pin-reset.contract.spec.ts` leak scan, which found "1234" once in that run. The same spec then passed 3 of 3 alone and 21 of 21 in the full suite (see the finding below).
+  - Full suite on a fresh `w14_full_test`, my mock on :4001 (`lsof` empty before, stopped after): 132 suites, 3,196 passed, 3 skipped, 0 failed. This includes WALLET-14's 33, the gate's 45, `money-contract` 11, `pin-reset` 21 and `hub-rate-limits` 10.
+  - Protected suite `--fresh HEAD`: 253/253, lock `ad1e515` unchanged. Tripwire: 0 added lines.
+  - Gates: main `ad1e515` 16 fail / 12 warn, branch 16 / 13; the same 16 fails, and the only added warning is `PROVISIONAL(BENEFICIARIES-MAX)`. Baseline OK.
+  - Key scan: 0 of 58 windows in the diff from main.
+- **Mobile:** merged `origin/main` `8a58a67`:
+  - BACKEND_GAPS: G-44 and G-45 from main; G-48 kept as main's newer text; G-53 merged without a conflict.
+  - The sandbox README and LOG keep both sides.
+  - PROGRESS regenerated; contract and types synced from backend `d89f7e5`.
+  - `npm run check`: exit 0 (typecheck, lint, 21 suites, 377 tests, gates 0 fail / 0 warn on 98 files, 203 tasks).
+- **Finding for the lead: main's committed contract is not what its own build makes.**
+  - On a clean checkout of `ad1e515`, `npm run contract:build` rewrites `contract/openapi.json` (4,364 lines changed). The changes are enum value order and object key order only.
+  - This branch's build is stable from run to run (same md5 twice). Compared with main's committed file after sorting enums and ignoring key order, it differs only in WALLET-14's five routes and `MoneyErrorReason`.
+  - So the synced mobile types differ from main's in union and key order elsewhere, with no type change.
+- **Finding for MONEY-14's spec:** `pin-reset.contract.spec.ts`'s leak scan matched "1234" once in a 39-suite run on a shared database, and passed every rerun. The source was not found, and no WALLET-14 code logs, answers or stores that file's PINs. Worth a look if it recurs.
+
 ### Owner questions (the match rule, G-46; the rule is unchanged)
 1. Extra words match: `OKORO ADA CHIDI ENTERPRISES` and `ADA OKORO-BELLO` match Ada Okoro, as does a different Ada Okoro with a middle name. Should a business or joint account naming the person count as their own?
 2. An apostrophe name gives a one-letter word (`O'Brien` is `O` + `BRIEN`), and any initial O satisfies it. Should one-letter words be ignored, or joined to the next word?
