@@ -7,7 +7,7 @@ order: 122
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V6, V9]
@@ -176,6 +176,50 @@ Builder, 3 Oct 2026. Mobile `wmt/FIX-04` `bd57ab8` (code) on the verifier's `7fc
   - A same-session rotation in the browser. Covered in jest. Unblocked by a pass-through control that answers one Hub write 401 while the refresh is accepted.
   - V10, a native build. Unblocked by a development build on an Android phone.
   - A sign-out through the app's own control. There is none yet; unblocked when a Settings or Me screen calls `signOut()`.
+
+## Verifier report, round 2
+
+Verifier, 3 Oct 2026 (same verifier as round 1; wrote none of this code). Mobile `wmt/FIX-04` at 0becc2c (code bd57ab8). It already contains main 6bc420e, which has not moved, so the branch is its own merge with main. Hub `dist` built from backend main fe1ec6c. Before-run: an export of c051e67 (round 1). Evidence `$R` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfx04/r2/`:
+- driver `$R/harness/drive.py` (round 1's, plus `rotation`) and pass-through `$R/harness/web-server.js` (round 1's, plus `/__put401`);
+- results `$R/results.jsonl` (each row names its `variant`), request log `$R/harness/calls.jsonl` (key names, lengths and the token's `sub`), screenshots `$R/shots/`;
+- jest probes `$R/vfx04-probe-r2.test.tsx`, `-r2b` (Q10) and `-r2c` (Q11), with logs `$R/jest-probe-branch.log`, `$R/jest-probe-c051e67.log`, `$R/jest-q10-branch.log`, `$R/jest-probe-mutant-R1.log`, `-R2.log` and `$R/jest-q11-R14.log`;
+- mutants `$R/mutate2.py`, `$R/mutants.jsonl`; check log `$R/check-branch.log`.
+
+**Verdict: defect 1 is closed and finding 2 is closed. No defect is open. Status `review`.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Defect 1 in the browser | passed | `replay`, light and dark. **c051e67:** the driver still reproduces the defect. B's account reads `3333333330` through the Hub and in the `MoneyPayoutAccount` row, and B's A21 shows it. **0becc2c:** the calls are `PUT 401 as A`, then nothing is sent again. B's account stays `2222222220` (Hub and row), A's stays `1111111110`, and B's A21 shows `2222222220` "BAYO SECOND" (`shots/branch-replay-2-*`, `shots/c051e67-replay-2-*`) |
+| Same-session rotation in the browser | passed | `rotation` (new), light and dark. The pass-through answers A's Save 401 once and the refresh is accepted. Calls: `PUT 401 as A`, `refresh 200`, `PUT 200 as A`. A's account becomes `3333333330`, B's is untouched, and there is no error and no sign-out (`shots/branch-rotation-1-*`). The same on c051e67 |
+| Cached-answer leak, rerun | passed | `slow`, B's reads held 3 s: the first frame is the loading skeleton with no A number or name, then B's `2222222220`, "BAYO SECOND", Save disabled. `fast`: `(loading)`, then `2222222220`. Light and dark (`shots/branch-slow-*`, `branch-fast-*`) |
+| Jest probes | passed | 16 of 16 on 0becc2c. On c051e67, P1, P2, Q6, Q7 and Q8 fail, so the probes tell the builds apart. **P1:** A's save held, A signs out, B signs in, then the save answers 401: no write as B. **P2:** the refresh answers with B's token: no write as B. **Q1:** a same-session rotation is sent again once as A and succeeds, with 1 refresh. **Q2:** three overlapping 401s share 1 refresh and all succeed as A. **Q3:** after a restore from the vault, the first request answers 401 and is refreshed and sent again as A. **Q4a/Q4b:** A's refresh lands just before, or just after, B's sign-in completes: never sent as B. **Q5:** sign-out while a refresh is pending: the late refresh does not sign A back in, the vault stays empty, and nothing is sent again. **Q6:** A, then B, then A; A's old save answers 401 and is not sent again. **Q7:** a GET is not sent again as B. **Q8:** two A requests and a refresh answering with B's token: neither is sent as B. **Q9:** a refresh that fails on the network keeps A signed in. **Q10:** 24 orderings of "refresh released" against "B signs in", 0 to 20 microtasks apart: never sent as B (some are sent again as A before B's sign-in completes, which is A's own session). **Q11:** B signs in while A's refresh is pending, then B's own expired request refreshes as B and succeeds |
+| Mutations | passed | Round 1's survivors: the retry rule changed back to "any error, 3 times" is now killed (11 tests fail); the default `staleTime` set to 0 is now killed (1 test fails); round 1's M10 (status published before the listeners) still survives and is still equivalent (see round 1). 14 of my own on the new code, run against `session.test.ts`, `session-cache.test.tsx` and `query-defaults.test.ts`. **Killed (8):** R1 and R2 together (round 1's behaviour); a cross-account refresh does not begin a session; `drop()` does not begin one; the refresh hands back the new token after the session changed; restore does not record the stored token; adopt does not record the new token; `beginSession` keeps the old tokens; a refresh result after the session changed is adopted. **Survived (6), see below** |
+| V1 | passed | `npm run check` on 0becc2c: exit 0; 26 suites, 431 tests; gates 9 run, 110 files scanned, 0 fail, 0 warn, 0 accepted; 205 tasks (`$R/check-branch.log`). Round 2 changes `src/api/session.ts`, `src/api/client.ts` (fenced in for this round by the lead), three test files, the task file, `docs/LOG.md` and `docs/PROGRESS.md`. 0 em-dashes added under `src/` |
+| V6 | passed | Loading, then B's own answer; signed out by a refused refresh; a save after a rotation succeeds; A's save from an ended session ends as signed out. Each by its real cause |
+| V9 | passed | Hub `dist` (fe1ec6c) on :4985 with `vfx04_r2_test` fresh, migrated and seeded. Stand-in WAWU ID on :4986 behind the `{ data }` front. Fintava stand-in on :4987 started with `PATH` and `HOME` only: 32 calls (31 `/name/enquiry`, 1 `/banks`). Exports built with `--clear`, `EXPO_PUBLIC_*` on `localhost:8185`, 0 `wawuafrica.com` in either; Playwright blocked 0. Every sign-in through A22 |
+| V10 | NOT RUN | No device. Unblocked by a development build on an Android phone |
+
+**Surviving mutants, each recorded and none a defect:**
+- R1 (`refreshAccessToken` no longer checks which session the rejected token is from) and R2 (`client.ts` no longer checks before sending again) each survive alone, and are killed together.
+  - The two checks are redundant on purpose: either one alone stops the replay.
+  - Every probe above, including the 24 Q10 orderings, also passes under R1 alone and under R2 alone (`jest-probe-mutant-R1.log`, `-R2.log`).
+  - So each is equivalent to the other for every path I could build. `refreshAccessToken`'s only caller is `client.ts`.
+- R3 and R4 (the client checks only one of the two tokens) survive for the same reason.
+- R12 (`isCurrentSessionToken` ignores being signed out) is equivalent: every path that clears `tokens` also empties `issued`.
+- R14 (`beginSession` keeps a pending refresh) survives the builder's suite. It changes behaviour: if B signs in while A's refresh is pending, B's own first 401 waits on A's refresh, gets null and fails signed out (`jest-q11-R14.log`). The branch does this correctly (Q11 passes), so it is a test gap, not a defect. Q11 is the test that pins it.
+
+### Capability checks
+
+All five pass. Check 3 (no read or save for A in flight lands for B) now passes for saves too: in the browser, and in P1, P2, Q4 to Q8 and Q10.
+
+### NOT RUN
+
+- V10, a native build. Unblocked by a development build on an Android phone.
+- A sign-out through the app's own control. There is none on main yet; unblocked when a Settings or Me screen calls `signOut()`.
+
+### Cleanup
+
+Hub, stand-in WAWU ID, Fintava stand-in and pass-through were stopped by their own PIDs, after checking each command line and cwd. Ports 4985, 4986, 4987 and 8185 are free. Worktrees `vfx04m2`, `vfx04old` and `vfx04hub2` are removed, and `vfx04_r2_test` is dropped. No Fintava sandbox or live call was made, and no call went to `id.wawuafrica.com` or `api.wawuafrica.com`.
 
 ## Owner sign-off
 

@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 51 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 29 | 13 | 2 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 
@@ -76,6 +76,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · FIX-04 · Verified round 2: no open defect, status review (mobile 0becc2c = merged with main 6bc420e; Hub fe1ec6c). Defect 1 closed: on c051e67 A's held save is still sent again as B and B's payout account becomes 3333333330; on the branch it ends at `PUT 401 as A` and B keeps 2222222220, light and dark. A same-session rotation still saves (new `rotation` run). 16 jest probes (overlapping refreshes, restore then 401, sign-out mid-refresh, A to B to A, GET, 24 sign-in orderings) pass, and 5 of them fail on c051e67. Finding 2 closed: round 1's two surviving mutants are now killed. 8 of 14 new mutants killed; 6 survive, all equivalent or recorded as a test gap (R14). Gates exit 0 (26 suites, 431 tests, 110 files, 0 fail). NOT RUN: device, an in-app sign-out control.
 - 3 Oct 2026 · FIX-04 fix round 2: a request is never sent again in a later session (A's held payout save no longer lands in B's account after B signs in); the app's query defaults are pinned by tests; status verifying.
 - 3 Oct 2026 · FIX-04 · Verified: one defect open, status building (mobile c051e67 = merged with main 6bc420e; Hub fe1ec6c). The cached-answer leak is closed: on main B's A21 shows A's 1111111111 with Save enabled, on the branch loading then B's own 2222222220, held 3 s and full speed, light and dark; every session-end path fires and none other does. Defect 1: a save for A in flight when B signs in is sent again with B's token (`refreshAccessToken` hands back whatever token is in memory), so B's payout account became A's typed 3333333330 on the real Hub (main does the same). Finding 2: the app-wide query defaults have no test (2 surviving mutants of 15). Gates exit 0 (25 suites, 413 tests, 109 files, 0 fail); renumber clean. NOT RUN: device, an in-app sign-out control.
 - 3 Oct 2026 · FIX-04 built (mobile branch wmt/FIX-04, not merged): the query cache now empties itself whenever a session ends or the account changes, so one person's cached answers (A21's payout account, A26's phone) are never drawn for the next person; new `onSessionEnd` in the session (SHARED-CHANGES KYC-05 #4); the root layout uses the app's query defaults (row 1); status verifying.
@@ -90,4 +91,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
 - 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).
 - 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
-- 3 Oct 2026 · WALLET-14 saved recipients and the payout account merged (backend PR #45, a055b4f). Bank names come only from Fintava; a payout account in another name is flagged; BVN name words are stored only as person-bound keyed hashes. Three verifier rounds. G-54 filed (contract build order).
