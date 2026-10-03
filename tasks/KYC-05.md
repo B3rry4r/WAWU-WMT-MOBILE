@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -434,6 +434,30 @@ Browser, against the built Hub, light and dark, each also run on 801aeaa for con
 - **Screen-level leaks outside A26.** None seen. The app-wide cache clear (FIX-04, SHARED-CHANGES KYC-05 #5) was not counted here.
 
 **Unclear (unchanged, owner):** G-55 (the phone is read-only). The builder's KYC-03 finding (A6 and A7 need the BVN and NIN again).
+
+## Builder round 5
+
+Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's 997ca72. Main is still `6bc420e` (already in). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc05/` (`probe-r5.log`, `mutants-r5.txt`).
+- **The test gap is closed.** New tests decode real-shaped tokens: header, claims with a person's name, email and avatar URL, signature. They are fixed claims, so each test first asserts what its payload holds.
+  - A payload holding both `-` and `_` with no padding gives its `sub`.
+  - The same payload with its padding written out gives the same `sub`.
+  - A non-ASCII `sub` ("Ọ̀kọ̀-100", beside the name "Ngozi Ọ̀kọ̀") comes back whole, read as UTF-8.
+  - Twelve malformed tokens give no account: empty, two parts, four parts, base64 `+` and `/` in place of base64url, a space, a length base64 cannot have, bytes that are not UTF-8, a JSON array, JSON `null`, a numeric `sub`, cut JSON.
+  - A26 shows the form, with the person's phone, for the real-shaped token (`OpenWalletScreen.test.tsx`).
+- **`accountOfToken` checked against each case, and tightened.** It now takes only a three-part token whose middle is base64url (padding optional). It adds the padding back, reads the bytes as UTF-8 (each byte as `%XX`, then `decodeURIComponent`, which throws on bytes that are not UTF-8), and needs an object with a non-empty string `sub`. Round 4 read the bytes as Latin-1: the `sub` of a real token is ASCII, so it came out right, but a non-ASCII claim did not decode whole. For a real three-part token, behaviour is unchanged (the same `sub`, as the probe shows); only malformed tokens are now refused earlier. So no browser rerun, as the Lead allowed.
+- **The verifier's probe** (`probe-r4.test.tsx`, run in place, then removed):
+  - 997ca72 code: 3 of 3 pass.
+  - 997ca72 code with R4-4: 2 of 3 fail.
+  - This code: 3 of 3 pass.
+- **Mutants:** R4-4 is killed by my suite (3 tests fail). So are: bytes not read as UTF-8, padded tokens refused, alphabet not checked, part count not checked, and no signed-in account check. Three survive and are equivalent in jest:
+  - padding not added back: `atob`'s forgiving decode takes unpadded input;
+  - the impossible-length check removed: `atob` throws on it, which is caught;
+  - claims not required to be an object: `null` throws on `.sub`, which is caught, and an array has no `sub`.
+
+  Each stays as a guard. Files restored by sha1.
+- **An intermittent test warning, fixed.** Under parallel load, about 1 run in 6 printed React's "not wrapped in act(...)" warning (no failure) in the sign-out and refused-refresh tests. A26 drops its reads when the session ends, and react-query re-reads for the observers still mounted. A `settle` helper now waits for no fetching, inside act. Since then, 0 warnings in 10 runs.
+- **Counts:** `npm run check` exit 0: 26 suites 448 tests (open-wallet 45), gates 9 run, 121 files, 0 fail, 0 warn, 0 accepted, lint clean, 204 tasks.
+- **Not run this round:** browser and V9. No behaviour change for valid tokens, and nothing was started (no processes, databases or worktrees to clean up). Check 1 (SHARED-CHANGES KYC-05 #1) and V10 are NOT RUN, as before.
 
 ## Owner sign-off
 
