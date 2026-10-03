@@ -7,7 +7,7 @@ order: 89
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -79,9 +79,50 @@ Change password (current and new) in WAWU ID, revoking other sessions; `POST /au
 7. No "your password was changed" email: the account's email may be unproven (G-27) and no copy exists; a mail is a later add-on, not a launch need.
 8. Other devices' access tokens are not cut off early (G-90); 15 minutes is accepted.
 
+### Builder report (fix round 1)
+
+- **Finding 1 fixed (refresh racing a password change or sign-out).** Rotate, change-password and sign-out now all take the account's row lock (`SELECT ... FOR UPDATE` on `wawu_users`, `TokensService.lockAccount`) inside one transaction. Rotation: under the lock the old token row must still exist (`deleteMany` count 1, else 401), it is removed and the replacement is stored before the lock is released (`issueTokens` takes the transaction client). So a revocation that ran first leaves the rotation refused, and one that runs after sweeps the replacement. The argon2 match stays outside the lock. Normal refresh behaviour is unchanged (same 401 cases, same pair); one difference: if issuing the new pair is refused with 403 PHONE_NOT_CONFIRMED the old token is no longer deleted (the 403 is now raised before the transaction, so it was never reached for that case).
+- **Residual, honest:** a sign-out that names the OLD token while the same device's refresh of that token wins the race leaves the newer token (WAWU ID keeps no token family, G-91). The app's session counter prevents that call pattern; the race test asserts the old token is dead and nothing errors, not that the newer one is. Added to G-90.
+- **Tests.** Unit (`session-security.spec.ts`, 24 tests): "a user who changes the password leaves no working session on a device that was refreshing at that moment" (12 trials with random offsets, exactly one refresh token left), "a user who signs out while that device is refreshing..." (12 trials), normal refresh, and the low finding 3 ("an access token sent to sign-out ends nothing"). Revert proof: with the fake lock turned off the change-password race test fails (1 failed, 23 pass); restored 24 of 24. Live (`test:session-local`): 24 trials each of refresh vs change-password (offsets 0 to 50 ms) and refresh vs sign-out on real Postgres, zero survivors, no errors, 38 of 38 pass. Live revert proof NOT achieved: with the lock removed the live trials still passed (the window is now inside one short transaction and the HTTP trials did not land in it); the unit proof is the one that bites.
+- **Existing test touched, flagged for the verifier:** `src/auth/pending-signup-no-session.spec.ts` mocks Prisma for the refresh path; its mock had to accept the callback form of `$transaction`, a `$queryRaw` and a `{ count: 1 }` from `deleteMany`. No assertion was changed or removed (the 403 case still asserts `$transaction` is not called). 
+- **Counts:** wawu-id 18 suites / 205 tests, `tsc` 0, contract unchanged (`contract:build` byte-identical, 5 contract tests pass), eslint on the new files 0 errors; mobile `npm run check` exit 0 (28 suites, 485 tests, gates 9 / 123 files / 0 findings, 205 tasks).
+
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+**Verdict: FAIL** (one open defect, finding 1). Verifier session, 3 Oct 2026; wawu-id `806cda4` (branch `wmt/SETTINGS-03`), mobile `79a3efc`. Own DB `s03v_id` (dropped), own ports 4871 and 4872 (stopped). Nothing fixed, nothing committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | wawu-id `tsc --noEmit` 0 errors; `jest` 18 suites / 201 tests pass; mobile `npm run check` exit 0 (28 suites, 485 tests, gates 9 / 123 files scanned / 0 findings, 205 tasks). eslint on the touched files: only prettier/type-assertion errors on lines this task did not write (tokens.service.ts 126-143, 234), none in new code. |
+| V2 Contract | passed | `npm run contract:build` regenerates `contract/openapi.json` byte-identical; walked base (dbcb2f8) against head: nothing removed or changed, only 2 paths (`/auth/change-password`, `/auth/logout`), 4 schemas and 3 error codes added. Wrong current password 400, no/garbage/refresh-token bearer 401, new password 7 or 129 chars 400, array/object/null/empty bodies 400, forged-key and HS256-confusion access tokens 401, suspended account 401. |
+| V3 Regression | passed | `git diff dbcb2f8 HEAD` touches no existing route: login, refresh, reset-password code unchanged, tokens.service only gains a method; all 201 wawu-id tests (incl. phone/sign-up suites) pass. The protected-route suite (MONEY-01) is in wawu-backend, not this repo: not applicable here. |
+| V4 Field trace | passed | password hash: written only by change-password (argon2, one transaction with `refresh_tokens` and `password_reset_tokens` deletion), read by login and change-password; new password logs in, old one answers 401 (live script and my run). |
+| V9 Live seam | passed | builder's `npm run test:session-local` re-run by me on `s03v_id`, port 4871: 36 of 36 PASS, real login, real server, real Postgres. |
+
+**Capability checks, as written.** "After changing the password, other devices are signed out": passed for any refresh that is not in flight during the change (3 devices, all old refresh tokens 401; the handed pair works); fails for a refresh in flight (finding 1). "After a user signs out, their old refresh token is refused (G-6)": passed (401 after logout; other devices of the account and of other accounts still refresh).
+
+**My attack battery** (`scratchpad/attack.mjs`, own server, 40+ checks):
+- 40 parallel wrong guesses: exactly 5 answered (400), 35 429 with Retry-After and code RATE_LIMITED; the right password also waits; a fresh login on another address is still held (account-keyed); window expiry releases it.
+- 6 parallel change-password calls: 5 x 200 (all correct current password), 1 x 429, exactly one new password logs in, all three pre-race devices dead.
+- Logout enumeration: live, repeated, access token, forged key (same sub), alg none, HS256 public-key confusion, expired-and-unstored, unknown user, garbage, `a.b.c`: identical status and body (200 `{data:{signedOut:true}}`); live vs dead headers identical. Logout validation errors (array, number, empty, missing, 5000 chars, bad JSON) all 400.
+- Server log after the run holds no password, hash or token; change response carries no hash.
+- Revert proofs (copied aside, mutated, restored byte-identical, 20 of 20 after): no other-session revoke 1 fail; wrong password accepted 5; logout no-op 3; no rate limit 2; keep reset links 1; logout deleting all user tokens 2; dropping the `type !== refresh` check in revokeRefreshToken 0 (finding 3).
+- Tests are named "a user can ..." / "someone cannot ..." style.
+
+**Findings**
+
+1. **defect (security, medium).** A refresh that is already in flight when the password changes survives the revocation. `rotateRefreshToken` reads the stored token, then deletes and issues a new one in separate, non-transactional steps (lines 242-271, existing code); `changePassword`'s `deleteMany` can land in between, and the rotation then inserts a fresh refresh token after the sweep. Reproduced (`scratchpad/attack2.mjs`): change-password and a stale device's refresh started together, the stale device keeps a working, rotatable session in 3 of 6 trials at 0 ms offset and 2 of 6 at 20 ms, 0 of 6 at 50 ms or later (12 of 12 in my first run). A stolen refresh token that is refreshed at the moment the victim changes the password stays alive, which is exactly what this task exists to stop. The builder's tests are sequential, so none exercises this; the same window exists for logout racing a refresh of the same token. Unblocked by: making the rotation and the revoke exclusive (for example a version or generation on the user that issueTokens stamps and rotate re-checks inside the transaction, or the delete in rotate made conditional on the row still existing and the insert in the same transaction), plus a test that fires both at once.
+2. **Default (agent), owner may override (low).** Timing: logout of a live token takes about 62 ms median against 3 to 4 ms for a forged, garbage or already-dead token (argon2 verify only runs for a live match). An attacker without the signing key can only learn that a presented token (one they already hold) was live; no enumeration of other people's tokens. Left as is; if it matters, run a decoy verify on the miss path.
+3. **Default (agent), owner may override (low).** No test fails if the `type !== 'refresh'` guard in `revokeRefreshToken` is dropped (an access token as logout input). Not exploitable (only stored refresh hashes can match), so recorded, not failed.
+4. **Default (agent), owner may override (info).** Changing back to the previous password is allowed (only "same as current" is refused). Matches builder default 6; no password history was asked for.
+5. Builder default 8 (other devices' access tokens live to 15 minutes, G-90) is recorded and accepted; not re-opened.
+
+**NOT RUN**
+- Production `id.wawuafrica.com` and the V10 phone check: no deploy and no build. Unblocked by: deploying this branch.
+- Mobile call-site (the Z2 screen task calls logout and change-password): out of this task's scope (`src/api/**` fenced).
+- The wawu-backend protected-route regression suite (MONEY-01): lives in another repo and this task changes none of its routes.
+- `PASSWORD_NOT_SET` over real HTTP: no route signs in a passwordless account without a texted code (unit spec only).
+- nginx `X-Real-IP` overwrite for the logout address limit: deployment config, not present locally (the local run sets the header itself).
 
 ## Owner sign-off
 
