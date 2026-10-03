@@ -18926,6 +18926,26 @@
      "expectedTotalKobo"
     ]
    },
+   "FintavaWebhookAck": {
+    "type": "object",
+    "properties": {
+     "outcome": {
+      "type": "string",
+      "enum": [
+       "recorded",
+       "duplicate"
+      ]
+     },
+     "event": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "outcome",
+     "event"
+    ]
+   },
    "AdminUserView": {
     "type": "object",
     "properties": {
@@ -22050,12 +22070,12 @@
      "outcome": {
       "type": "string",
       "enum": [
+       "duplicate",
        "rejected",
        "settled",
        "in_progress",
        "unmatched",
-       "ignored",
-       "duplicate"
+       "ignored"
       ]
      },
      "flow": {
@@ -26886,26 +26906,6 @@
     "required": [
      "uploadUrl",
      "key"
-    ]
-   },
-   "FintavaWebhookAck": {
-    "type": "object",
-    "properties": {
-     "outcome": {
-      "type": "string",
-      "enum": [
-       "duplicate",
-       "recorded"
-      ]
-     },
-     "event": {
-      "type": "string",
-      "nullable": true
-     }
-    },
-    "required": [
-     "outcome",
-     "event"
     ]
    },
    "FeeBreakdown": {

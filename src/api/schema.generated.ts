@@ -4471,6 +4471,11 @@ export interface components {
             /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
             note?: string;
         };
+        FintavaWebhookAck: {
+            /** @enum {string} */
+            outcome: "recorded" | "duplicate";
+            event: string | null;
+        };
         AdminUserView: {
             id: string;
             email: string;
@@ -5204,7 +5209,7 @@ export interface components {
         };
         WebhookResult: {
             /** @enum {string} */
-            outcome: "rejected" | "settled" | "in_progress" | "unmatched" | "ignored" | "duplicate";
+            outcome: "duplicate" | "rejected" | "settled" | "in_progress" | "unmatched" | "ignored";
             flow: string | null;
             detail: string | null;
         };
@@ -6326,11 +6331,6 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
-        };
-        FintavaWebhookAck: {
-            /** @enum {string} */
-            outcome: "duplicate" | "recorded";
-            event: string | null;
         };
         FeeBreakdown: {
             providerFeeKobo: number;

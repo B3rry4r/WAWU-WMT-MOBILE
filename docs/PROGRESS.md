@@ -3,21 +3,21 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 26 of 177.**
+**Launch tasks done: 27 of 177.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 60 | 48 | 32 | 32 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| todo | 59 | 48 | 32 | 32 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
-| done | 16 | 10 | 1 | 0 |
+| done | 17 | 10 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [KYC-02](../tasks/KYC-02.md) Selfie match to the BVN photo (You)
 
@@ -47,6 +47,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
+- [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
@@ -62,6 +63,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-02 · Round 3: the selfie answer is read by allowlist (HTTP 200, JSON, no duplicate keys, exactly the envelope around one verdict field; anything else a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); every shape both verifiers sent is tested through client and route, plus 28,320 one-extra-key bodies; round 2's reader put back matches 63 of them. Images walked whole (PNG chunks, CRCs and pixel data; JPEG markers and scans); tests use Pillow-made images. Mains merged into both branches (backend 66339b9, mobile 94d202b); verifying.
 - 3 Oct 2026 · KYC-02 · Verified round 2 (restarted after an interrupted first attempt): back to building (backend dbd7b56 and its local merge with main 66339b9, mobile 27d94b3). Defect 2 closed (0 of 750 natural races and 100 of 100 hooked ones kept a selfie to its own BVN check; round 1's binding fails the same sweep 55 of 300). Defect 1 still open: `match: true` beside `mismatch: true`, a `false` 7 objects below `data`, or `passed: false` is a match on the built app. Defect 3 partly: a file with JPEG or PNG start and end bytes passes whatever is between. Protected 253/253, contract 110 suites 2173 passed (the 40 failures in the 4 :4001 suites pass 40/40 on a free :4001, 1 load timeout passes alone), gates 16 fail / 8 warn (main 16 / 7, plus SELFIE-CHECKS-PER-DAY), mobile check exit 0; 1 sandbox selfie call, 400.
 - 2 Oct 2026 · KYC-02 · Round 2: the selfie answer is read failing closed (only an explicit `true` verdict is a match; an explicit "no" is A16, no verdict is a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); each match is tied to the BVN check it was compared against (two nullable columns, race test); JPEG/PNG ends checked (polyglots refused); masking threshold and cap pinned; mains merged into both branches; verifying.
 - 2 Oct 2026 · KYC-02 · Verified: 3 defects, back to building (backend 60dfe3f, mobile da43e46, mains unmoved). 1: any 2xx without a `false` verdict counts as a match (the documented `{}`, `status: "failed"`, `match: "false"`: 11 shapes); 2: a selfie matched to one BVN can count for a BVN check that passed during the request (2 of 100 natural races); 3 (low): JPEG/PNG polyglots pass the image check. Passed: nothing stored or logged (502 columns, 3 boots), 3 a day (10 at once: Fintava saw 3), production boot 503, protected 253/253, contract 2058 + 185, migration additive and applies with MONEY-10's same-timestamp one in any order. One sandbox selfie (docs example BVN, synthetic image, 422).
@@ -70,10 +72,9 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · AUTH-01 · Sign in, wrong password, forgot password and check your email built (A22 to A25) behind a signed-in/signed-out route guard; wawu-id's reset-link answer now carries the link's real lifetime (additive); 41 tests, 20 revert proofs, real login and reset run on the local stack; verifying.
 - 2 Oct 2026 · INBOX-01 · Round 2: approvals and declines that race now give one outcome and one notification (conditional on the request still pending; parallel tests added); main merged into both branches, gaps renumbered G-31, G-32; contract suite 106 suites, 0 failed. Back to verifying.
 - 2 Oct 2026 · INBOX-01 · Communities backend built (`wmt/INBOX-01`): `GET /communities/mine` with last message and unread, `POST /communities/:id/read`, share links `wawu/c/<slug>` (`GET /communities/:id/link`, `GET /communities/links/:slug`), `POST /communities/rooms` (private needs a cover), and a notification to the requester when a host approves or declines. Two new tables, nothing the web calls changes. G-31, G-32 filed. To verifying.
+- 2 Oct 2026 · MONEY-10 · Verified round 2: PASS, no open defect, status review (backend 11c6602 checked also merged with main 368fab0 locally, mobile f2c3a27). Defects 1 to 3 fixed: a WAWU number at any bank but 090620 or an unknown customerId writes nothing, every bad figure fails at once with no Fintava call, 15 of 16 one-line reverts killed by the builder's specs (the RangeError backstop is untested). Protected 253/253, contract 108/108 suites, gates the same 16 fails as main, migrations identical in both landing orders with INBOX-01 and KYC-02. The G-33 row conflicts with main's G-33 (renumber at merge).
+- 2 Oct 2026 · MONEY-10 · Round 2 (backend 11c6602): the verifier's 3 defects fixed. A wallet is never matched by account number alone (Fintava customerId first; an account at another bank is never a WAWU user, only Fintava's bank 090620 counts); bad figures (non-positive amount or total, negative fee, past 2^53) fail at once with no Fintava call; both mains merged, gap row now G-33, sandbox file 30. Three race guards and the quiet waiting note have tests. To verifying.
+- 2 Oct 2026 · MONEY-10 · Verified: 3 defects, back to building (backend da74274, mobile 35eb611, checked with backend main d27ad37 and mobile main bfdd584 merged locally). Exactly once held across every path in 36 raced movements, two processes sweeping one database applied 180 deliveries once each, and a ₦10 sandbox round trip wrote one row per side. Defects: a wallet matched by account number alone puts another bank's money on an unrelated user; a negative or zero amount never settles; main moved (G-25 and sandbox file 28 now taken by KYC-01).
+- 2 Oct 2026 · MONEY-10 · The ledger built in wawu-backend (`wmt/MONEY-10` da74274): `FintavaLedgerEntry` in BIGINT kobo, one row per wallet side, recorded once by a reference key (any of ours, Fintava's, tagapay, id: G-19), fed from MONEY-07's stored deliveries by a 30-second sweep, confirmed with Fintava when no side is held; a reversal marks the debit reversed, never a second row. Sandbox: two ₦10 round trips, 8 rows for 4 movements, balances back. Never a balance, no route. Gap filed (now G-33). To verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
 - 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
-- 2 Oct 2026 · INBOX-06 · Verified round 2: no defects (backend 8077ee9, mobile e012709). Chat media is held to 512 MB; the branch includes main `ac2a057` and its migrations apply cleanly on a fresh database; read marks hold for two messages in the same millisecond. Contract 99 suites 1964 passed; protected 253/253; the same 16 gates as main; mobile check exits 0. 2 unclear items for the owner (pending upload keys, CHAT-LIMITS). Status review.
-- 2 Oct 2026 · INBOX-06 · Verified: 2 defects (a chat video is not held to the 512 MB upload limit; the backend branch conflicts with main `ac2a057` in the schema and contract), 3 unclear for the owner. Both capability checks pass over HTTP through real wawu-id sign-ins; contract 99 suites 1962 passed after merging main; protected 253/253; the same 16 gates as main; mobile check exits 0. Back to building.
-- 2 Oct 2026 · INBOX-06 · Free chat between two users in wawu-backend: new `/chats` routes (open, list, messages with photos, videos and PDFs, read marks, upload links), a block either way refuses opening and sending (403 `chat_blocked`), sent messages show `sent` then `read`. Additive migration, three new tables. To verifying.
-- 2 Oct 2026 · KYC-01 · Verified: PASS, no defects (backend 7a64a51, mobile 5776ac3, checked with backend main 14a7fb2 and mobile main ca6d6cb merged). Full BVN and NIN in 0 of 823 columns and 0 log lines across six real boots; keyed HMAC confirmed; 14 of 14 mutants killed; 10 parallel checks never passed 3; production boots without settings (BVN check 503); protected 253/253; contract 105 suites, 2054 passed. One sandbox BVN lookup (docs example, refused, 422). Merge note: renumber this branch's BACKEND_GAPS G-21 (main now has G-21 to G-24).
-- 2 Oct 2026 · KYC-01 · BVN check served in wawu-backend (`wmt/KYC-01`): `POST /money/identity/bvn` gives A5's prefill once, A14 as `422 bvn_phone_mismatch`, stores only keyed hashes and last 4 digits (log capture and a whole-database scan prove it), 3 checks a day per person plus a per-caller throttle; production boots with no Fintava settings (503). App calls in `src/api/walletIdentity.ts`. Sandbox: 2 lookups, both refused (no sandbox BVN known). Status verifying.
