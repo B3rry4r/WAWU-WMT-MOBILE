@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -722,6 +722,31 @@ Reachable only by those two session ends, which the UI does not offer today. The
   - a test like Q2 asserts that no A26 entry holds A's identity after the switch.
 
 **NOT RUN:** capability check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
+
+## Builder round 7
+
+Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's a666b92; main `e7dc879` is still in, and main has not moved. Shared files untouched. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc05/` (`probe-r6-r7.log`, `mutants-r7.txt`).
+- **Defect 3 fixed.** In `BvnNinForm.submit`, the ticket is now checked first. `keepCheck(ticket, check)` runs before anything else, and a void ticket returns at once. So a pass whose session has ended writes nothing: no kept details, no `setQueryData` of A's identity into the app's cache, no clearing of the fields.
+- **Audit of the rest of submit and the screen.**
+  - A refusal that lands under a void ticket used to still set the screen's failure banner, or the parent's end ("Not available yet", "Your wallet is open"), which B would then have seen. It now returns first too (`ticketIsLive`, new in `keptCheck.ts`).
+  - The `finally` only clears the form's own busy flags.
+  - The other write after an await is `useSessionAccount`'s token read, which is already dropped when its effect is replaced.
+  - No other awaited write in A26.
+- **Tests** (`OpenWalletScreen.test.tsx`, last block), with the app's real `createQueryClient`. A's check is held and released by a later `onSessionEnd` listener, so it lands after the forget and before React draws anything new.
+  - A pass: no `['open-wallet', 'identity', ...]` entry holds data, nothing in the cache equals A's identity, nothing is kept, and no "BVN confirmed".
+  - A `phone_not_nigerian` refusal: when B's account read answers, B gets B's own form and phone, not A's "Not available yet" or its sentence.
+- **The start-over's unsubscribe, pinned** (the verifier's Q3 and Q4 shapes):
+  - a session end after A26 closed calls nothing of the gone screen (no `removeQueries`);
+  - twenty opens and closes leave no `onSessionEnd` listener behind.
+- **Mutants:** all killed, files restored by sha1.
+  - Q2, round 6's order (cache written before the ticket is checked): 1 test fails.
+  - Q2b, refusal not checked against the ticket: 1 fails.
+  - R6-2, the restart never unsubscribes: 2 fail.
+  - K1, no `onSessionEnd(forgetKeptCheck)`: 5 fail.
+  - K2, forget not voiding tickets: 4 fail.
+- **The verifier's `probe-r6.test.tsx`**, run in place on this code and then removed: 4 of 4 pass. Q2 now finds only the empty identity entry for the new visit, none holding A's last 4.
+- **Counts:** `npm run check` exit 0: 28 suites 485 tests (open-wallet 54), gates 9 run, 123 files, 0 fail, 0 warn, 0 accepted, lint clean, 205 tasks. No "not wrapped in act" warning in 5 runs.
+- **Not run this round:** browser and V9. The change only skips writes for answers from an ended session, proved in jest with the app's real query client and session. Nothing was started. Check 1 (SHARED-CHANGES KYC-05 #1) and V10 are NOT RUN, as before.
 
 ## Owner sign-off
 

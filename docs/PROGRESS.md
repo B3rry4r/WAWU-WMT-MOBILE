@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 50 | 45 | 32 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 30 | 13 | 2 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 
@@ -77,6 +77,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-05 · Round 7, status verifying: a check answer from an ended session writes nothing (ticket checked before the cache write; a refusal under a void ticket moves no screen state); tests with the app's createQueryClient for both, and the start-over's unsubscribe pinned; mutants Q2, Q2b, R6-2 killed; the verifier's probe-r6 passes 4 of 4.
 - 3 Oct 2026 · KYC-05 · Verified round 6: 1 defect, status building (mobile 4a43404 with main e7dc879; Hub fe1ec6c). Defect 2 closed: probe P1 to P5 pass 5 of 5 (failed P1, P3 before); four session ends in a row, a session end after unmount, and 20 mounts with 0 listeners left all behave; the browser switch to B by a refresh answering B's pair and by sign-out shows B only loading, then B's own form, light and dark; the relaxed session-end test still kills R6-3. New defect 3 (privacy): a check answer landing between A26's session-end restart and the re-render is not kept but is still written into the query cache under A's id while B is signed in (probe Q2). `npm run check` 2 of 2 exit 0, 481 tests, 0 act warnings.
 - 3 Oct 2026 · KYC-05 · Round 6, status verifying: kept BVN details now end on every session end (keptCheck subscribes with onSessionEnd, FIX-04), including a sign-in replacing a session and a refresh to another account; A26 starts over on a session end, so A to B to A no longer sticks on loading; tested with the app's createQueryClient (verifier's P1 to P5 pass), mutants K1 to K4 killed; duplicate SHARED-CHANGES KYC-05 #4 row removed.
 - 3 Oct 2026 · KYC-05 · Verified round 5 on the merge with main e7dc879 (FIX-04): 1 defect, status building (supersedes the `review` line below, written before main moved). Merge 797a95a (PROGRESS.md regenerated; SHARED-CHANGES now holds two KYC-05 #4 rows). `npm run check` 3 of 3 exit 0, 476 tests, 0 act warnings; A26's sign-out and refused-refresh tests pass. Defect 2 (privacy): keptCheck does not subscribe to `onSessionEnd`, so after a refresh answering another account, or a sign-in replacing a session, A's kept name, date of birth and gender stay in memory (owner-tagged, never read by B) until B's account read reaches A26 or A26 closes (jest probe P1, P3 with the app's own query client). Not reachable from the UI today. Fix: `onSessionEnd(forgetKeptCheck)` in keptCheck.ts.
@@ -91,4 +92,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-05 · Verified: 5 defects, status building. (1) Signing out does not clear the kept BVN prefill (`forgetKeptCheck` has no caller). (2) A pasted BVN or NIN with more than two separators is cut by the raw `maxLength` 13 (`222 345 678 12` keeps 10 digits). (3) With the Hub unreachable during a check, the banner gives way to the load-error screen within 10 s. (4) "Wait a minute" is hard-coded, though the hourly address limit answers `Retry-After-medium` 3448. (5) Mutants M5 and M7 survive. Privacy scan: 0 hits for 66 typed numbers across the DB, logs and browser. V9 bodies exactly `{bvn, nin}` (48). Merged main 2ca65d0; `npm run check` exit 0, 398 tests, 108 files.
 - 3 Oct 2026 · KYC-05 · Built A26 (Open your wallet: phone, BVN, NIN; Continue runs KYC-01's check) with A14 as its state, the Not available yet end, and `useOpenWalletEntry` for the money routes' `409 wallet_not_open`; status verifying. Prefill kept in memory for A5. Driven against a built Hub with a Fintava stand-in in light and dark. The pay sheet's button waits on SHARED-CHANGES KYC-05 #1. Gaps G-55 (no signed-in phone change), G-56 (USSD hints).
 - 3 Oct 2026 · FIX-04 · Merged to main by the lead (mobile only, f54650c). One person's cached data and in-flight saves never reach the next person on the same phone. Carried forward: test gap R14 (pending refresh across a new session); device and in-app sign-out not run. OTA update follows.
-- 3 Oct 2026 · FIX-04 · Verified round 2: no open defect, status review (mobile 0becc2c = merged with main 6bc420e; Hub fe1ec6c). Defect 1 closed: on c051e67 A's held save is still sent again as B and B's payout account becomes 3333333330; on the branch it ends at `PUT 401 as A` and B keeps 2222222220, light and dark. A same-session rotation still saves (new `rotation` run). 16 jest probes (overlapping refreshes, restore then 401, sign-out mid-refresh, A to B to A, GET, 24 sign-in orderings) pass, and 5 of them fail on c051e67. Finding 2 closed: round 1's two surviving mutants are now killed. 8 of 14 new mutants killed; 6 survive, all equivalent or recorded as a test gap (R14). Gates exit 0 (26 suites, 431 tests, 110 files, 0 fail). NOT RUN: device, an in-app sign-out control.
