@@ -75,6 +75,7 @@ before validation, because the merchant record said `status: "inactive"`.
 | `28-kyc01-bvn-check.md` | `POST /money/identity/bvn` (the route) and the client's BVN check | | 400, 422 | Fintava's other documented example BVN (`0003`) is refused too; the route answers `422 bvn_not_confirmed`, charged ₦5, nothing stored, BVN in no log line |
 | `29-kyc02-selfie.md` | `POST /money/identity/selfie` (the route) and the client's selfie match | | 400, 422 | a synthetic face with the documented example BVN (`8901`): upstream 404, charged ₦10 each time; the route answers `422 selfie_not_matched` (A16), stores outcome and time only, no image or BVN in any log line or column |
 | `30-money10-ledger.md` | the ledger (MONEY-10), end to end | | 200, 404 | two ₦10 round trips: each movement once per side with the right sign (8 rows for 4 movements), whichever arrived first (the sender's record, a lookup, a locally signed webhook); a delivery waiting on Fintava is swept again and lands |
+| `31-money08-status.md` | the pending sweep (MONEY-08), read only | | 200, 404 | webhooks withheld: MONEY-10's real ₦10 sends settle in one sweep by our reference; a reference Fintava has never seen (its own 404, no history row, past the resend window) is failed with no money moved; an amount that differs from Fintava's is recorded and not settled; 8 GETs, nothing sent |
 
 ## Money moved in the re-run
 
