@@ -13,7 +13,6 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { space, useWawu } from '@/theme';
 
 import {
-  ACCOUNT_NUMBER_LENGTH,
   failureMessage,
   isUnconfirmedAccount,
   nameCheckQuery,
@@ -193,13 +192,14 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
             label="Account number"
             testID="payout-number"
             value={form.accountNumber}
+            // No `maxLength` on the raw input: the platform would cut a pasted "0987 654 321" to ten
+            // characters before the spaces are taken out. `digitsOnly` keeps the digits, then caps at ten.
             onChangeText={(typed) => edit({ ...form, accountNumber: digitsOnly(typed) })}
             error={line.kind === 'unconfirmed' ? line.message : undefined}
             loading={line.kind === 'checking'}
             disabled={save.isPending}
             keyboardType="number-pad"
             inputMode="numeric"
-            maxLength={ACCOUNT_NUMBER_LENGTH}
             autoComplete="off"
             autoCorrect={false}
             returnKeyType="done"

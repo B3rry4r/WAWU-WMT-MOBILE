@@ -106,6 +106,28 @@ describe('A21 · Payout bank', () => {
     expect(screen.getByTestId('payout-save')).toBeDisabled();
   });
 
+  it('a user can paste an account number with spaces or hyphens: the field takes it whole and keeps the ten digits', async () => {
+    answers = {
+      [`GET ${PAYOUT}`]: ok(saved),
+      [`POST ${NAME}`]: ok({ bankCode: '000013', bankName: 'GTBANK PLC', accountNumber: '0987654321', accountName: 'LENNOX EMMANUEL' }),
+    };
+    await boot();
+    await screen.findByText('SIMI MICHELLE · matches your BVN');
+    const field = screen.getByTestId('payout-number');
+    // What the platform does with `maxLength` before onChangeText runs (React Native and the browser both cut the raw text).
+    const platform = (raw: string) => (field.props.maxLength === undefined ? raw : raw.slice(0, field.props.maxLength));
+    for (const pasted of ['0987 654 321', '0987-654-321', ' 0987 654 321 ', '0987\u00a0654\u00a0321']) {
+      expect(platform(pasted)).toBe(pasted);
+    }
+    await fireEvent.changeText(field, platform('0987 654 321'));
+    expect(screen.getByTestId('payout-number').props.value).toBe('0987654321');
+    expect(await screen.findByText('LENNOX EMMANUEL')).toBeTruthy();
+    expect(screen.getByTestId('payout-save')).not.toBeDisabled();
+    // A longer paste keeps the first ten digits.
+    await fireEvent.changeText(screen.getByTestId('payout-number'), platform('0987-654-321-99'));
+    expect(screen.getByTestId('payout-number').props.value).toBe('0987654321');
+  });
+
   it('a user with a saved account sees it as the server keeps it, and is not asked to check it again', async () => {
     answers = { [`GET ${PAYOUT}`]: ok(saved) };
     await boot();
