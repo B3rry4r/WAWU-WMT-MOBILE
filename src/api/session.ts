@@ -170,9 +170,7 @@ export async function signIn(identifier: string, password: string): Promise<void
  * (SHARED-CHANGES AUTH-04 #1).
  */
 export async function adoptSession(next: StoredTokens): Promise<void> {
-  generation += 1;
-  refreshing = null;
-  await adopt(next);
+  await adopt(next, true);
 }
 
 /** Removes the tokens from memory and from secure storage. */
