@@ -7,7 +7,7 @@ order: 116
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-06, KYC-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -50,6 +50,32 @@ Builder, 3 Oct 2026. Backend `wmt/WALLET-14` `514d3ad` (main `6d48c97`, unmoved,
 - **NOT RUN:** `matchesBvnName` against a real sandbox BVN record (no sandbox BVN passes, question 11). The sandbox seam (3 calls, above) ran before the MONEY-13 merge; the gate reads only our database, and its HTTP spec covers the five routes.
 - **Defaults (agent), owner may override:** flag, not refuse, a payout account in another name (G-46); match rule (every word of first and last name, any order, middle name not needed); at most 50 beneficiaries, PROVISIONAL; a person holding both ticks shows the creator tick (`MoneyPartyView` has one); bank list kept an hour; a saved WAWU user shows only while they have a wallet; `POST` answers 201 for an existing one too; "Creators only" on A21 not enforced (listed as not a fact).
 - **Findings for other tasks:** WALLET-09's `name-check` and these saves both reveal an account holder's name for any number (Fintava's free check, global throttle only); a per-person limit there would cover both.
+
+### Builder round 2 (3 Oct 2026)
+
+Backend `wmt/WALLET-14` `377ea31`: round 2 fixes on `origin/main` `48b9043` (MONEY-14, on MONEY-13 `c1d23b5`), merged in `4738953` (conflicts in `money.module.ts`, the served-route list, both gate specs' route lists and CONVENTIONS section 0, kept from both sides). Mobile `wmt/WALLET-14` with main `85a4e57` merged (gap, shared-change and sandbox rows kept from both sides; contract and types regenerated from `377ea31`).
+- **Defect 1, the BVN name could be read back without the key: fixed.** Each word is now `HMAC(IDENTITY_HASH_KEY, "name:" + wawuUserId + ":" + bvnVerifiedAt + ":" + WORD)`, stored as `{ v: 2, check, first, last }`; `check` is the same HMAC over `name:check:<wawuUserId>:<bvnVerifiedAt>`. So the same word differs for every person and every check, and a stored hash can no longer be matched to a plain name in another table. Old-scheme keys, keys from another check, and keys under a changed `IDENTITY_HASH_KEY` read as `null`, never `false` (this also covers the verifier's note 4). Migration `20261003170000_bvn_name_keys_bound` clears any old-scheme values at rest.
+  - Proved over HTTP: three people named Ada (one with nothing saved) get three different `ADA` keys, and no key appears in two rows. The verifier's keyless join (each stored key and the people holding it) finds every key held by exactly one person, and no key equals a word hashed on its own. An old-scheme value and a rotated-key value each read as `null`. Unit tests cover the same for two people and two checks of one person.
+  - Mutations, each killed: the binding dropped (5 tests fail), and the `check` comparison dropped (2 fail).
+  - The migration was applied to a database holding one old-shape row and one new-shape row: only the old one was cleared.
+- **Defect 2, a hidden row held one of the 50 places: fixed.** The cap counts exactly the rows the list shows, under the same per-person lock, and `beneficiaryCount` counts them too (`visibleBeneficiaries`).
+  - Test: 49 bank accounts plus one saved person is full (409). That person's wallet then goes, as the purge removes it: the list shows 49, two saves at once give one 201 and one 409, and the list and count are 50. Every visible row can still be removed.
+  - Mutation, killed: going back to counting all rows (1 test fails).
+- **Bank list:** fetched once for saves that arrive together (single flight). Test: 10 parallel first saves make 1 `GET /banks`. A test now pins the hour: just inside it, the list is not fetched again; past it, it is fetched once. The verifier's surviving mutant (expiry ignored) is now killed, and so is "no single flight".
+- **Runs (on `377ea31`):**
+  - tsc 0; eslint 0 on all 19 `.ts` files changed against main.
+  - Money, Fintava, identity, purge, gate and rate-limit specs: 37 suites, 1,413/1,413.
+  - Full suite on a fresh `w14_full_test`, my mock on :4001 (`lsof` empty before, stopped after): 130 suites, 3,147 passed, 3 skipped, 0 failed. This includes the 6 suites wired to :4001 and the specs above: WALLET-14's 31, `bvn-name` 19, gate 45, `hub-rate-limits` 10.
+  - Protected suite `--fresh HEAD`: 253/253, lock `48b9043` unchanged. Tripwire: 0 added lines.
+  - Gates: main `48b9043` 16 fail / 12 warn, branch 16 / 13, the same 16 fails; the one added warning is `PROVISIONAL(BENEFICIARIES-MAX)`. Baseline OK.
+  - `contract:build` is byte-stable, and the contract has the same 280 paths as main; only the five routes and `MoneyErrorReason` differ.
+  - Mobile `npm run check` with main `85a4e57` merged: exit 0 (typecheck, lint, 20 suites, 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks).
+- **Not re-run:** the sandbox seam. Round 2 changes no Fintava call, and the verifier's V9 (3 calls) stands. NOT RUN, as in round 1: `matchesBvnName` on a real sandbox BVN record (question 11).
+
+### Owner questions (the match rule, G-46; the rule is unchanged)
+1. Extra words match: `OKORO ADA CHIDI ENTERPRISES` and `ADA OKORO-BELLO` match Ada Okoro, as does a different Ada Okoro with a middle name. Should a business or joint account naming the person count as their own?
+2. An apostrophe name gives a one-letter word (`O'Brien` is `O` + `BRIEN`), and any initial O satisfies it. Should one-letter words be ignored, or joined to the next word?
+3. Letters with no accent to strip (`Ø`, `Ł`) are dropped, so `Øyvind` reads `YVIND`. That gives a false flag, which is the safe side. Should they be transliterated (`O`, `L`)?
 
 ## Verifier report
 
