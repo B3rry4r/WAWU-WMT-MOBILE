@@ -3093,6 +3093,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W26, W28: search, filter chips, an optional month. W1's recent rows are the first page with limit=3. */
+        get: operations["MoneyHistoryController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W26's In and Out for one month. Declared before transactions/{id} so the literal path wins. */
+        get: operations["MoneyHistoryController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One row as a receipt (W27). Only the wallet's owner can read it. */
+        get: operations["MoneyHistoryController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -3442,66 +3493,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: MONEY-18 serves it.
          */
         get: operations["MoneyPaymentController_hold"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * W26, W28: search, filter chips, an optional month. W1's recent rows are the first page with limit=3.
-         * @description Declared by MONEY-04, not served yet: MONEY-15 serves it.
-         */
-        get: operations["MoneyHistoryController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * W26's In and Out for one month. Declared before transactions/{id} so the literal path wins.
-         * @description Declared by MONEY-04, not served yet: MONEY-15 serves it.
-         */
-        get: operations["MoneyHistoryController_summary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One row as a receipt (W27). Only the wallet's owner can read it.
-         * @description Declared by MONEY-04, not served yet: MONEY-15 serves it.
-         */
-        get: operations["MoneyHistoryController_detail"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4588,6 +4579,178 @@ export interface components {
             outcome: "recorded" | "duplicate";
             event: string | null;
         };
+        WalletBalanceView: {
+            availableKobo: number;
+            asOf: string;
+        };
+        FeeBreakdown: {
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            totalFeeKobo: number;
+        };
+        TransactionCounterpartyView: {
+            /** @enum {string} */
+            kind: "wawu_user" | "bank_account" | "biller" | "wawu";
+            name: string;
+            avatarUrl: string | null;
+            wawuUserId: string | null;
+            bankName: string | null;
+            accountNumberLast4: string | null;
+        };
+        TransactionLinkView: {
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            targetId: string;
+            title: string;
+        };
+        TransactionGroupView: {
+            key: string;
+            count: number;
+            firstAt: string;
+            lastAt: string;
+        };
+        TransactionView: {
+            id: string;
+            /** @enum {string} */
+            direction: "in" | "out";
+            /** @enum {string} */
+            category: "transfer" | "top_up" | "earning" | "purchase" | "bill" | "hold" | "refund" | "reversal";
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            amountKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            description: string;
+            counterparty: components["schemas"]["TransactionCounterpartyView"] | null;
+            link: components["schemas"]["TransactionLinkView"] | null;
+            note: string | null;
+            reference: string;
+            transferId: string | null;
+            paymentId: string | null;
+            group: components["schemas"]["TransactionGroupView"] | null;
+            createdAt: string;
+        };
+        TransactionPage: {
+            items: components["schemas"]["TransactionView"][];
+            nextCursor: string | null;
+        };
+        MonthlySummaryView: {
+            month: string;
+            inKobo: number;
+            outKobo: number;
+        };
+        CheckedBvnView: {
+            last4: string;
+            verifiedAt: string;
+        };
+        WalletIdentityView: {
+            bvn: components["schemas"]["CheckedBvnView"] | null;
+            ninLast4: string | null;
+            occupation: string | null;
+            checksLeft: number;
+        };
+        BvnPrefillView: {
+            firstName: string | null;
+            middleName: string | null;
+            lastName: string | null;
+            dateOfBirth: string | null;
+            /** @enum {string|null} */
+            gender: "male" | "female" | null;
+        };
+        BvnCheckView: {
+            identity: components["schemas"]["WalletIdentityView"];
+            prefill: components["schemas"]["BvnPrefillView"];
+        };
+        SelfieMatchView: {
+            matchedAt: string | null;
+            checksLeft: number;
+        };
+        WalletAccountView: {
+            accountNumber: string;
+            accountName: string;
+            bankName: string;
+            bankCode: string;
+            licenceLine: string | null;
+            depositInsuranceLine: string | null;
+            openedAt: string;
+        };
+        WalletLimitsView: {
+            tier: string | null;
+            dailyLimitKobo: number;
+            usedTodayKobo: number;
+            remainingTodayKobo: number;
+            resetsAt: string;
+        };
+        PinStateView: {
+            isSet: boolean;
+            changedAt: string | null;
+            triesLeft: number;
+            lockedUntil: string | null;
+        };
+        BankTransferAccessView: {
+            allowed: boolean;
+            /** @enum {string|null} */
+            blockedBy: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted" | null;
+        };
+        WalletView: {
+            /** @enum {string} */
+            state: "not_open" | "opening" | "open" | "frozen";
+            account: components["schemas"]["WalletAccountView"] | null;
+            limits: components["schemas"]["WalletLimitsView"] | null;
+            pin: components["schemas"]["PinStateView"];
+            bankTransfers: components["schemas"]["BankTransferAccessView"];
+            beneficiaryCount: number;
+        };
+        ApprovalDeviceView: {
+            registered: boolean;
+            deviceId: string | null;
+            /** @enum {string|null} */
+            biometric: "fingerprint" | "face" | null;
+            registeredAt: string | null;
+            lastUsedAt: string | null;
+        };
+        ApprovalChallengeView: {
+            challengeId: string;
+            challenge: string;
+            deviceId: string;
+            expiresAt: string;
+        };
+        PinResetView: {
+            resetId: string;
+            sentTo: string;
+            resendAvailableAt: string;
+            expiresAt: string;
+        };
+        MoneyPartyView: {
+            wawuUserId: string;
+            displayName: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            /** @enum {string|null} */
+            tick: "creator" | "professional" | null;
+        };
+        BankAccountView: {
+            bankCode: string;
+            bankName: string;
+            accountNumber: string;
+            accountName: string;
+        };
+        BeneficiaryView: {
+            id: string;
+            /** @enum {string} */
+            kind: "wawu_user" | "bank_account";
+            wawuUser: components["schemas"]["MoneyPartyView"] | null;
+            bankAccount: components["schemas"]["BankAccountView"] | null;
+            createdAt: string;
+        };
+        PayoutAccountView: {
+            bankCode: string;
+            bankName: string;
+            accountNumber: string;
+            accountName: string;
+            matchesBvnName: boolean | null;
+            updatedAt: string;
+        };
         AdminUserView: {
             id: string;
             email: string;
@@ -4648,7 +4811,7 @@ export interface components {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string|null} */
-            accountType: "user" | "creator" | null;
+            accountType: "creator" | "user" | null;
             kycStatus: string | null;
             slotsUsed: number | null;
             slotsTotal: number | null;
@@ -4769,7 +4932,7 @@ export interface components {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string|null} */
-            accountType: "user" | "creator" | null;
+            accountType: "creator" | "user" | null;
             kycStatus: string | null;
             slotsUsed: number | null;
             slotsTotal: number | null;
@@ -4849,7 +5012,7 @@ export interface components {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string|null} */
-            accountType: "user" | "creator" | null;
+            accountType: "creator" | "user" | null;
         };
         AdminVerificationQueueItemView: {
             id: string;
@@ -4961,7 +5124,7 @@ export interface components {
             handle: string | null;
             bio: string | null;
             /** @enum {string|null} */
-            accountType: "user" | "creator" | null;
+            accountType: "creator" | "user" | null;
             currentVerification: string;
             category: string;
             regulated: boolean;
@@ -5094,7 +5257,7 @@ export interface components {
             flutterwaveTxRef: string;
             responseWindowHours: number;
             /** @enum {string} */
-            refundStatus: "not_owed" | "owed" | "submitted" | "settled" | "failed";
+            refundStatus: "failed" | "not_owed" | "owed" | "submitted" | "settled";
             refundReference: string | null;
             /** Format: date-time */
             refundedAt: string | null;
@@ -5190,7 +5353,7 @@ export interface components {
             brand: string | null;
             description: string;
             /** @enum {string} */
-            category: "audio_music" | "video_film" | "lighting_studio" | "photography" | "computing" | "art_design" | "gaming_streaming" | "content_creation" | "live_events" | "professional" | "power_accessories";
+            category: "professional" | "audio_music" | "video_film" | "lighting_studio" | "photography" | "computing" | "art_design" | "gaming_streaming" | "content_creation" | "live_events" | "power_accessories";
             subcategory: string;
             priceNaira: number;
             compareAtNaira: number | null;
@@ -5236,7 +5399,7 @@ export interface components {
         ShopOrderView: {
             id: string;
             /** @enum {string} */
-            status: "paid" | "pending" | "refunded" | "failed" | "cancelled";
+            status: "pending" | "failed" | "paid" | "refunded" | "cancelled";
             subtotalNaira: number;
             deliveryNaira: number;
             totalNaira: number;
@@ -5273,7 +5436,7 @@ export interface components {
             brand: string | null;
             description: string;
             /** @enum {string} */
-            category: "audio_music" | "video_film" | "lighting_studio" | "photography" | "computing" | "art_design" | "gaming_streaming" | "content_creation" | "live_events" | "professional" | "power_accessories";
+            category: "professional" | "audio_music" | "video_film" | "lighting_studio" | "photography" | "computing" | "art_design" | "gaming_streaming" | "content_creation" | "live_events" | "power_accessories";
             subcategory: string;
             priceNaira: number;
             compareAtNaira: number | null;
@@ -5340,7 +5503,7 @@ export interface components {
             txRef: string;
             transactionId: string | null;
             /** @enum {string} */
-            status: "rejected" | "settled" | "failed" | "unmatched" | "ignored" | "received";
+            status: "failed" | "rejected" | "settled" | "unmatched" | "ignored" | "received";
             flow: string | null;
             detail: string | null;
             /** Format: date-time */
@@ -5377,7 +5540,7 @@ export interface components {
             txRef: string;
             transactionId: string | null;
             /** @enum {string} */
-            status: "rejected" | "settled" | "failed" | "unmatched" | "ignored" | "received";
+            status: "failed" | "rejected" | "settled" | "unmatched" | "ignored" | "received";
             flow: string | null;
             detail: string | null;
             /** Format: date-time */
@@ -5404,7 +5567,7 @@ export interface components {
         CreatorEarningsRecentSale: {
             id: string;
             /** @enum {string} */
-            source: "content" | "tip" | "dm" | "community_credits" | "subscription";
+            source: "tip" | "content" | "dm" | "community_credits" | "subscription";
             amount: number;
             earningsNaira: number;
         };
@@ -5434,7 +5597,7 @@ export interface components {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string} */
-            accountType: "user" | "creator";
+            accountType: "creator" | "user";
             gates: components["schemas"]["AdminCreatorGatesView"];
             /** Format: date-time */
             createdAt: string;
@@ -5465,7 +5628,7 @@ export interface components {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string|null} */
-            accountType: "user" | "creator" | null;
+            accountType: "creator" | "user" | null;
             /** Format: date-time */
             createdAt: string | null;
             gates: components["schemas"]["AdminCreatorGatesView"];
@@ -5490,7 +5653,7 @@ export interface components {
         };
         AdminFinanceStreamTotalsView: {
             /** @enum {string} */
-            stream: "content" | "dm" | "tips" | "credits" | "verification" | "events" | "shop";
+            stream: "verification" | "content" | "dm" | "tips" | "credits" | "events" | "shop";
             label: string;
             creatorSharePct: number;
             source: string;
@@ -5526,7 +5689,7 @@ export interface components {
         AdminFinanceTransactionView: {
             id: string;
             /** @enum {string} */
-            stream: "content" | "dm" | "tips" | "credits" | "verification" | "events" | "shop";
+            stream: "verification" | "content" | "dm" | "tips" | "credits" | "events" | "shop";
             occurredAt: string;
             creator: components["schemas"]["AdminFinancePartyView"];
             buyer: components["schemas"]["AdminFinancePartyView"];
@@ -5534,7 +5697,7 @@ export interface components {
             wawuShareKobo: number;
             creatorShareKobo: number;
             /** @enum {string} */
-            status: "pending" | "refunded" | "settled" | "failed" | "cancelled";
+            status: "pending" | "failed" | "refunded" | "settled" | "cancelled";
             sourceStatus: string;
             flutterwaveTxRef: string | null;
             flutterwaveTxId: string | null;
@@ -5555,7 +5718,7 @@ export interface components {
         };
         AdminFinanceOwedStreamView: {
             /** @enum {string} */
-            stream: "content" | "dm" | "tips" | "credits" | "verification" | "events" | "shop";
+            stream: "verification" | "content" | "dm" | "tips" | "credits" | "events" | "shop";
             sourceRows: number;
             creatorShareNaira: number;
             sweptAutomatically: boolean;
@@ -5654,7 +5817,7 @@ export interface components {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string|null} */
-            accountType: "user" | "creator" | null;
+            accountType: "creator" | "user" | null;
         };
         AdminEventListItemView: {
             id: string;
@@ -6011,7 +6174,7 @@ export interface components {
             handle: string | null;
             bio: string | null;
             /** @enum {string} */
-            accountType: "user" | "creator";
+            accountType: "creator" | "user";
             /** Format: date-time */
             unpaidWarnedAt: string | null;
             avatarUrl: string | null;
@@ -6352,122 +6515,6 @@ export interface components {
             completedAt: string | null;
             legalRequestId: string | null;
         };
-        WalletBalanceView: {
-            availableKobo: number;
-            asOf: string;
-        };
-        CheckedBvnView: {
-            last4: string;
-            verifiedAt: string;
-        };
-        WalletIdentityView: {
-            bvn: components["schemas"]["CheckedBvnView"] | null;
-            ninLast4: string | null;
-            occupation: string | null;
-            checksLeft: number;
-        };
-        BvnPrefillView: {
-            firstName: string | null;
-            middleName: string | null;
-            lastName: string | null;
-            dateOfBirth: string | null;
-            /** @enum {string|null} */
-            gender: "male" | "female" | null;
-        };
-        BvnCheckView: {
-            identity: components["schemas"]["WalletIdentityView"];
-            prefill: components["schemas"]["BvnPrefillView"];
-        };
-        SelfieMatchView: {
-            matchedAt: string | null;
-            checksLeft: number;
-        };
-        WalletAccountView: {
-            accountNumber: string;
-            accountName: string;
-            bankName: string;
-            bankCode: string;
-            licenceLine: string | null;
-            depositInsuranceLine: string | null;
-            openedAt: string;
-        };
-        WalletLimitsView: {
-            tier: string | null;
-            dailyLimitKobo: number;
-            usedTodayKobo: number;
-            remainingTodayKobo: number;
-            resetsAt: string;
-        };
-        PinStateView: {
-            isSet: boolean;
-            changedAt: string | null;
-            triesLeft: number;
-            lockedUntil: string | null;
-        };
-        BankTransferAccessView: {
-            allowed: boolean;
-            /** @enum {string|null} */
-            blockedBy: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted" | null;
-        };
-        WalletView: {
-            /** @enum {string} */
-            state: "open" | "not_open" | "opening" | "frozen";
-            account: components["schemas"]["WalletAccountView"] | null;
-            limits: components["schemas"]["WalletLimitsView"] | null;
-            pin: components["schemas"]["PinStateView"];
-            bankTransfers: components["schemas"]["BankTransferAccessView"];
-            beneficiaryCount: number;
-        };
-        ApprovalDeviceView: {
-            registered: boolean;
-            deviceId: string | null;
-            /** @enum {string|null} */
-            biometric: "fingerprint" | "face" | null;
-            registeredAt: string | null;
-            lastUsedAt: string | null;
-        };
-        ApprovalChallengeView: {
-            challengeId: string;
-            challenge: string;
-            deviceId: string;
-            expiresAt: string;
-        };
-        PinResetView: {
-            resetId: string;
-            sentTo: string;
-            resendAvailableAt: string;
-            expiresAt: string;
-        };
-        MoneyPartyView: {
-            wawuUserId: string;
-            displayName: string;
-            handle: string | null;
-            avatarUrl: string | null;
-            /** @enum {string|null} */
-            tick: "creator" | "professional" | null;
-        };
-        BankAccountView: {
-            bankCode: string;
-            bankName: string;
-            accountNumber: string;
-            accountName: string;
-        };
-        BeneficiaryView: {
-            id: string;
-            /** @enum {string} */
-            kind: "wawu_user" | "bank_account";
-            wawuUser: components["schemas"]["MoneyPartyView"] | null;
-            bankAccount: components["schemas"]["BankAccountView"] | null;
-            createdAt: string;
-        };
-        PayoutAccountView: {
-            bankCode: string;
-            bankName: string;
-            accountNumber: string;
-            accountName: string;
-            matchesBvnName: boolean | null;
-            updatedAt: string;
-        };
         ChatPerson: {
             wawuId: string;
             name: string;
@@ -6524,65 +6571,9 @@ export interface components {
             uploadUrl: string;
             key: string;
         };
-        FeeBreakdown: {
-            providerFeeKobo: number;
-            wawuFeeKobo: number;
-            totalFeeKobo: number;
-        };
-        TransactionCounterpartyView: {
-            /** @enum {string} */
-            kind: "wawu_user" | "bank_account" | "biller" | "wawu";
-            name: string;
-            avatarUrl: string | null;
-            wawuUserId: string | null;
-            bankName: string | null;
-            accountNumberLast4: string | null;
-        };
-        TransactionLinkView: {
-            /** @enum {string} */
-            kind: "tip" | "verification" | "bill" | "content_unlock" | "credit_pack" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            targetId: string;
-            title: string;
-        };
-        TransactionGroupView: {
-            key: string;
-            count: number;
-            firstAt: string;
-            lastAt: string;
-        };
-        TransactionView: {
-            id: string;
-            /** @enum {string} */
-            direction: "in" | "out";
-            /** @enum {string} */
-            category: "purchase" | "earning" | "reversal" | "transfer" | "top_up" | "bill" | "hold" | "refund";
-            /** @enum {string} */
-            status: "pending" | "failed" | "completed" | "reversed";
-            amountKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            description: string;
-            counterparty: components["schemas"]["TransactionCounterpartyView"] | null;
-            link: components["schemas"]["TransactionLinkView"] | null;
-            note: string | null;
-            reference: string;
-            transferId: string | null;
-            paymentId: string | null;
-            group: components["schemas"]["TransactionGroupView"] | null;
-            createdAt: string;
-        };
-        TransactionPage: {
-            items: components["schemas"]["TransactionView"][];
-            nextCursor: string | null;
-        };
-        MonthlySummaryView: {
-            month: string;
-            inKobo: number;
-            outKobo: number;
-        };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "tip" | "verification" | "bill" | "content_unlock" | "credit_pack" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -6599,7 +6590,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "tip" | "verification" | "bill" | "content_unlock" | "credit_pack" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
             /** @enum {string} */
             status: "refunded" | "held" | "released";
             amountKobo: number;
@@ -6614,11 +6605,11 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "tip" | "verification" | "bill" | "content_unlock" | "credit_pack" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
             targetId: string;
             title: string;
             /** @enum {string} */
-            status: "pending" | "failed" | "completed" | "reversed";
+            status: "pending" | "completed" | "failed" | "reversed";
             priceKobo: number;
             fee: components["schemas"]["FeeBreakdown"];
             totalKobo: number;
@@ -6661,7 +6652,7 @@ export interface components {
         };
         TransferTimelineEntry: {
             /** @enum {string} */
-            step: "failed" | "completed" | "reversed" | "requested" | "sent_to_bank";
+            step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
         };
         TransferReversalView: {
             returnedKobo: number;
@@ -6673,7 +6664,7 @@ export interface components {
             /** @enum {string} */
             kind: "wawu_user" | "bank_account";
             /** @enum {string} */
-            status: "pending" | "failed" | "completed" | "reversed";
+            status: "pending" | "completed" | "failed" | "reversed";
             amountKobo: number;
             fee: components["schemas"]["FeeBreakdown"];
             totalKobo: number;
@@ -7058,10 +7049,10 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        kind: "earning" | "withdrawal" | "reversal";
+                        kind: "earning" | "reversal" | "withdrawal";
                         amount: number;
                         /** @enum {string} */
-                        status: "pending" | "failed" | "completed";
+                        status: "pending" | "completed" | "failed";
                         reference: string;
                         failureReason: string | null;
                         /** Format: date-time */
@@ -9807,10 +9798,10 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        verification: string;
                         name: string;
                         id: string;
                         category: string;
-                        verification: string;
                         tagline: string;
                         handle: string;
                         field: string;
@@ -9823,10 +9814,10 @@ export interface operations {
                         languages: string[];
                     }[] | {
                         items: {
+                            verification: string;
                             name: string;
                             id: string;
                             category: string;
-                            verification: string;
                             tagline: string;
                             handle: string;
                             field: string;
@@ -9863,10 +9854,10 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        verification: string;
                         name: string;
                         id: string;
                         category: string;
-                        verification: string;
                         tagline: string;
                         handle: string;
                         field: string;
@@ -11017,7 +11008,7 @@ export interface operations {
                         handle: string | null;
                         bio: string | null;
                         /** @enum {string} */
-                        accountType: "user" | "creator";
+                        accountType: "creator" | "user";
                         /** Format: date-time */
                         unpaidWarnedAt: string | null;
                         avatarUrl: string | null;
@@ -13071,6 +13062,150 @@ export interface operations {
             };
         };
     };
+    MoneyHistoryController_list: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                filter?: "all" | "money_in" | "money_out" | "bills" | "content";
+                /** @description Only rows from this month, YYYY-MM in Africa/Lagos time (W28 "Bills in September"). */
+                month?: string;
+                /**
+                 * @description Free-text search over the counterparty's name, the description, the
+                 *     note and the reference. Spaces around it are dropped first; what is
+                 *     left must be 2 to 60 characters.
+                 */
+                q?: string;
+                /**
+                 * @description A grouped row's `group.key`: lists the movements it stands for, one per
+                 *     row, instead of the history. Opaque: send it back as given.
+                 */
+                group?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPage"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHistoryController_summary: {
+        parameters: {
+            query: {
+                /** @description YYYY-MM in Africa/Lagos time. */
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlySummaryView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHistoryController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     ChatController_list: {
         parameters: {
             query?: {
@@ -13926,146 +14061,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HoldView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyHistoryController_list: {
-        parameters: {
-            query?: {
-                /** @description Rows per page, 1 to 100. */
-                limit?: number;
-                filter?: "all" | "money_in" | "money_out" | "bills" | "content";
-                /** @description Only rows from this month, YYYY-MM in Africa/Lagos time (W28 "Bills in September"). */
-                month?: string;
-                /** @description Free-text search over the counterparty's name, the description, the note and the reference. */
-                q?: string;
-                /**
-                 * @description A grouped row's `group.key`: lists the movements it stands for, one per
-                 *     row, instead of the history. Opaque: send it back as given.
-                 */
-                group?: string;
-                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
-                cursor?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransactionPage"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyHistoryController_summary: {
-        parameters: {
-            query: {
-                /** @description YYYY-MM in Africa/Lagos time. */
-                month: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlySummaryView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyHistoryController_detail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransactionView"];
                 };
             };
             /** @description reason.code: not_found */
