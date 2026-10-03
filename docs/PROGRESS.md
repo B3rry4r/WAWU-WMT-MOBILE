@@ -70,7 +70,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 3 Oct 2026 · FIX-03 merged (backend PR #50): the pin-reset leak test draws its PINs from a random pool and keeps test phone tails off it, so a chance collision can no longer fail a deploy. Test files only.
+- 3 Oct 2026 · FIX-03 merged (backend PR #50, 7601a5f): the pin-reset leak test draws its PINs from a random pool and keeps test phone tails off it, so a chance collision can no longer fail a deploy. Test files only.
 - 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
 - 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).
 - 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
