@@ -9,6 +9,8 @@ import ComponentsRoute from '@/app/dev/components';
 import ForgotPasswordRoute from '@/app/forgot-password';
 import AuthPreview from '@/app/preview/auth';
 import SignInRoute from '@/app/sign-in';
+import WelcomeRoute from '@/app/welcome';
+import AccountTypeRoute from '@/app/account-type';
 import TabsLayout from '@/app/(tabs)/_layout';
 import Home from '@/app/(tabs)/index';
 import Explore from '@/app/(tabs)/explore';
@@ -41,6 +43,8 @@ jest.mock('expo-secure-store', () => ({
 
 const routes = {
   _layout: RootLayout,
+  welcome: WelcomeRoute,
+  'account-type': AccountTypeRoute,
   'sign-in': SignInRoute,
   'forgot-password': ForgotPasswordRoute,
   'preview/auth': AuthPreview,
@@ -79,10 +83,10 @@ describe('a release build leaves the development-only routes', () => {
     globals.__DEV__ = true;
   });
 
-  it.each(['/preview/auth', '/dev/components'])('a signed-out visitor to %s lands on sign in, not a blank page', async (url) => {
+  it.each(['/preview/auth', '/dev/components'])('a signed-out visitor to %s lands on the welcome screen, not a blank page', async (url) => {
     await renderRouter(routes, { initialUrl: url });
-    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
-    expect(screen.queryByTestId('sign-in-forgot')).not.toBeNull();
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    expect(screen.queryByTestId('welcome-sign-in')).not.toBeNull();
   });
 
   it.each(['/preview/auth', '/dev/components'])('a signed-in visitor to %s lands on Home', async (url) => {
@@ -115,13 +119,14 @@ describe('nothing is drawn until the stored session has been read', () => {
     expect(hide).toHaveBeenCalled();
   });
 
-  it('a signed-out user on a slow keystore sees nothing until the read finishes, then sign in', async () => {
+  it('a signed-out user on a slow keystore sees nothing until the read finishes, then the welcome screen', async () => {
     slowVault();
     await renderRouter(routes);
+    expect(screen.queryByText('Get paid for what you know')).toBeNull();
     expect(screen.queryByText('Welcome back')).toBeNull();
     expect(jest.mocked(SplashScreen.hideAsync)).not.toHaveBeenCalled();
     await act(async () => open());
-    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
   });
 });
@@ -144,7 +149,7 @@ describe('the keyboard', () => {
   });
 
   it('A22 leaves the email field unfocused until the user taps it', async () => {
-    await renderRouter(routes);
+    await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByTestId('sign-in-email')).toBeTruthy());
     expect(screen.getByTestId('sign-in-email').props.autoFocus).toBeFalsy();
   });
