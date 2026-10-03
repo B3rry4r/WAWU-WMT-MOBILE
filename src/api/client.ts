@@ -2,7 +2,7 @@ import createClient, { type Middleware } from 'openapi-fetch';
 
 import { apiBaseUrl } from './env';
 import { networkError, toApiError } from './errors';
-import { getAccessToken, refreshAccessToken } from './session';
+import { getAccessToken, isCurrentSessionToken, refreshAccessToken } from './session';
 import type { paths } from './schema.generated';
 
 export { apiBaseUrl } from './env';
@@ -16,7 +16,10 @@ export { ApiError, isApiError } from './errors';
  *
  * Every screen calls it the same way:
  *   - the signed-in token goes on each request;
- *   - a 401 refreshes the token once, silently, and repeats the request;
+ *   - a 401 refreshes the token once, silently, and repeats the request, but
+ *     only within the session the request was sent in: a request from a
+ *     session that has since ended (sign-out, another account) ends as
+ *     signed out and is never sent again with the new session's token;
  *   - `unwrap` turns any failure into one ApiError (see errors.ts).
  */
 export const api = createClient<paths>({ baseUrl: apiBaseUrl });
@@ -36,7 +39,8 @@ const auth: Middleware = {
     sentWith.delete(id);
     if (!sent || response.status !== 401) return undefined;
     const token = await refreshAccessToken(sent.token);
-    if (!token) return undefined;
+    // Checked again now, just before sending: the session may have changed while the refresh ran.
+    if (!token || !isCurrentSessionToken(sent.token) || !isCurrentSessionToken(token)) return undefined;
     sent.copy.headers.set('authorization', `Bearer ${token}`);
     return fetch(sent.copy);
   },

@@ -3,7 +3,7 @@ id: SETTINGS-08
 title: Delete account in WAWU ID: 30 days, cancelled by signing in
 owner: DEV
 area: SETTINGS
-order: 176
+order: 177
 priority: launch
 repo: wawu-id
 type: backend-endpoint
