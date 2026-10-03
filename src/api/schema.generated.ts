@@ -338,16 +338,39 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * GET /uploads/usage — how much space this account has used of its
-         *     allowance.
+         * GET /uploads/usage — how much creator-content space (content/preview and
+         *     content/full) this account has used of its allowance. Identity documents,
+         *     avatars and the other folders are not counted.
          *
          *     Its own endpoint rather than a field on creator state, because storage is
          *     not a creator-only concern: an account that has never subscribed still
-         *     uploads a KYC document and an avatar, and still has a 2GB ceiling. Hanging
+         *     uploads a KYC document and an avatar, and still has a ceiling. Hanging
          *     it off creator state would leave every non-creator unable to see a limit
          *     that applies to them.
          */
         get: operations["StorageController_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/uploads/allowance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * GET /uploads/allowance: the upload count and the storage this account
+         *     may use, what it has used, and both of R-7's levels (free and with a
+         *     tick). Any signed-in account: an account with no CreatorState row has
+         *     used 0 uploads.
+         */
+        get: operations["StorageController_allowance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3144,6 +3167,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/fees/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a send, a withdrawal, a purchase or a bill will cost, before the
+         *     PIN (W10, W17, H14): Fintava's charge plus WAWU's fee from config
+         *     (R-10, R-31), each charge as its own part, the total, and a signed
+         *     quote the paying request can send back. Nothing is reserved and
+         *     Fintava is not asked. A purchase or bill whose total is above
+         *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
+         */
+        get: operations["MoneyFeesController_feeQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -3301,28 +3348,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: WALLET-08 serves it.
          */
         get: operations["MoneyTransferController_recentRecipients"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/fees/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What a send will cost, before the PIN (W10, W17): Fintava's charge plus
-         *     WAWU's fee from config (R-10), the total, and whether it fits today's
-         *     limit. Nothing is reserved; the send repeats totalKobo as expectedTotalKobo.
-         * @description Declared by MONEY-04, not served yet: WALLET-15 serves it.
-         */
-        get: operations["MoneyTransferController_feeQuote"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4639,6 +4664,27 @@ export interface components {
             inKobo: number;
             outKobo: number;
         };
+        FeeQuotePartView: {
+            /** @enum {string} */
+            code: "bank_transfer" | "balance_transfer" | "bill_charge" | "wawu_fee";
+            /** @enum {string} */
+            source: "wawu" | "provider";
+            amountKobo: number;
+        };
+        FeeQuoteView: {
+            /** @enum {string} */
+            kind: "purchase" | "bill" | "wawu_transfer" | "bank_transfer";
+            /** @enum {string|null} */
+            billCategory: "electricity" | "cable" | "airtime" | "data" | null;
+            amountKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            parts: components["schemas"]["FeeQuotePartView"][];
+            totalKobo: number;
+            withinDailyLimit: boolean;
+            remainingTodayKobo: number | null;
+            quoteToken: string;
+            expiresAt: string;
+        };
         CheckedBvnView: {
             last4: string;
             verifiedAt: string;
@@ -4806,6 +4852,21 @@ export interface components {
             usedBytes: number;
             limitBytes: number;
             remainingBytes: number;
+        };
+        AllowanceLevelView: {
+            uploads: number;
+            storageBytes: number;
+        };
+        UploadAllowanceView: {
+            tickHeld: boolean;
+            uploads: {
+                used: number;
+                allowed: number;
+                remaining: number;
+            };
+            storage: components["schemas"]["StorageUsage"];
+            free: components["schemas"]["AllowanceLevelView"];
+            withTick: components["schemas"]["AllowanceLevelView"];
         };
         AdminContentCreatorView: {
             wawuUserId: string;
@@ -6641,15 +6702,6 @@ export interface components {
             /** @enum {string|null} */
             tick: "creator" | "professional" | null;
         };
-        FeeQuoteView: {
-            /** @enum {string} */
-            kind: "wawu_transfer" | "bank_transfer";
-            amountKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            withinDailyLimit: boolean;
-            remainingTodayKobo: number | null;
-        };
         TransferTimelineEntry: {
             /** @enum {string} */
             step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
@@ -7177,6 +7229,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorageUsage"];
+                };
+            };
+        };
+    };
+    StorageController_allowance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadAllowanceView"];
                 };
             };
         };
@@ -13206,6 +13277,63 @@ export interface operations {
             };
         };
     };
+    MoneyFeesController_feeQuote: {
+        parameters: {
+            query: {
+                kind: "wawu_transfer" | "bank_transfer" | "purchase" | "bill";
+                /**
+                 * @description In kobo: what the recipient gets on a send, the price on a purchase,
+                 *     the bill's own amount on a bill. Fees are added on top, never taken
+                 *     out of it. Digits only: `100.00` (a naira decimal), `1e4` or `10,000`
+                 *     is a 400, never read as some other number of kobo.
+                 */
+                amountKobo: number;
+                /** @description Required when kind is `bill`; any other kind with it is a 400. */
+                billCategory?: "electricity" | "cable" | "airtime" | "data";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeeQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     ChatController_list: {
         parameters: {
             query?: {
@@ -13498,56 +13626,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecipientView"][];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyTransferController_feeQuote: {
-        parameters: {
-            query: {
-                kind: "wawu_transfer" | "bank_transfer";
-                /** @description What the recipient should get, in kobo. */
-                amountKobo: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeeQuoteView"];
-                };
-            };
-            /** @description reason.code: amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
             /** @description reason.code: wallet_not_open, wallet_opening */
