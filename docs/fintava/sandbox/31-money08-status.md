@@ -72,6 +72,33 @@ moved." Every call was a GET to `dev.fintavapay.com`; the key was read with
 `sed` into the command's environment and the output holds none of its 58
 eight-character windows. The app logged the client's 404 warning only.
 
+## Round 3: what a page of history says (3 GETs)
+
+3 Oct 2026, 07:22:03 to 07:22:04 UTC, sandbox only, a read-only script that
+refused any host but `dev.fintavapay.com` and any method but GET, and kept
+only each page's metadata, its row count and its first and last row's time
+(no names, numbers or references). Round 3 trusts a history walk as complete
+only when Fintava says there is no next page, or the walk passed the send's
+time, and every page's figures agree: it is the page asked for, `pageCount`
+is `itemCount` over `take` rounded up, `hasNextPage` is true exactly before
+the last page, the page holds `take` rows before the last and the rest on
+the last, and the totals do not change between pages. Otherwise the walk is
+incomplete and the row waits; it is never failed as absent. This checks that
+rule against real multi-page answers (every earlier recorded history answer,
+in `09-` and `10-`, was a single page; all of them pass it too):
+
+| Call | `page` / `take` | `itemCount` / `pageCount` | `hasNextPage` | Rows |
+|---|---|---|---|---|
+| `GET /txn/merchant?page=1&take=10&order=DESC` | 1 / 10 | 39 / 4 | true | 10, newest first (01:32 down to 20:59 the day before) |
+| `GET /txn/merchant?page=2&take=10&order=DESC` | 2 / 10 | 39 / 4 | true | 10, continuing from page 1 |
+| `GET /txn/merchant?page=4&take=10&order=DESC` | 4 / 10 | 39 / 4 | false | 9 (39 less 30) |
+
+All three are consistent under the rule, so a real walk of WAWU's history is
+still read to its end; the verifier's round 2 GET of page 40 of 39 (no rows,
+no next page) is a page the walk never asks for. Every call was a GET to
+`dev.fintavapay.com`; the key was read with `sed` into the command's
+environment and the output holds none of its eight-character windows.
+
 ## Not run
 
 - A bank send whose webhook is withheld, and one Fintava reports FAILURE
@@ -85,3 +112,11 @@ eight-character windows. The app logged the client's 404 warning only.
 - A fresh ₦10 send with its webhook withheld: not needed for the seam (a
   withheld webhook is the normal state here, with no tunnel), and the run was
   kept read-only. MONEY-10's real sends were settled instead.
+- A history page that is empty while Fintava says more follow, or whose
+  totals change mid-walk (round 3): the real merchant history has 39 rows and
+  answers consistently. Tested with the double's pages
+  (`ledger-status.contract.spec.ts`, round 3). Unblocked by a sender whose
+  history Fintava answers that way.
+- A reversal with other figures than its send (round 3): no reversal can
+  happen while payouts are refused (above). Tested with locally signed
+  documented deliveries.
