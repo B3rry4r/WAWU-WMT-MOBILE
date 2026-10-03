@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -617,6 +617,111 @@ Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's f423dba, which alre
 - **SHARED-CHANGES:** the duplicate `KYC-05 #4` row (status open) is removed; main's "Done in FIX-04" row stays.
 - **Counts:** `npm run check` exit 0: 28 suites 481 tests (open-wallet 50), gates 9 run, 123 files, 0 fail, 0 warn, 0 accepted, lint clean, 205 tasks. No "not wrapped in act" warning in 6 runs of the open-wallet suites.
 - **Not run this round:** browser and V9. The change is the session-end hook and the re-read, proved in jest with the app's real query client and session. Nothing was started, so there is nothing to clean up. Check 1 (SHARED-CHANGES KYC-05 #1) and V10 are NOT RUN, as before.
+
+## Verifier report, round 6
+
+Verifier, 3 Oct 2026. This round was narrow. It ran on `wmt/KYC-05` at 4a43404, which contains main e7dc879 (FIX-04), still current main. Backend main is still fe1ec6c.
+
+Evidence `$V6` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk05r6/`:
+- Jest probes `$V6/probe-r6.test.tsx` with `$V6/probe-r6.log`, and round 5's `probe-fix04.test.tsx` rerun (`$V6/probe-fix04-on-4a43404.log`). Each was run in place, then removed.
+- Mutants `$V6/mutants.txt` (`$V6/mutate.py`).
+- Browser driver `$V6/drive.py` and pass-through `$V6/web-server.js` (round 4's, plus `/__refreshas`, which makes the next refresh answer with another account's pair).
+- Results `$V6/results.jsonl`, screenshots `$V6/shots/r6-*`, privacy scan `$V6/privacy-scan.txt`.
+- `npm run check` logs `$V6/check-1.log`, `-2.log`.
+
+**Verdict: defect 2 is closed. One new defect is open: defect 3 (privacy), a late check answer written into the cache after its session ended (below). Status `building`.**
+
+### 1. Defect 2 on 4a43404
+
+Round 5's probe P1 to P5 passes 5 of 5. It failed P1 and P3 at f423dba (and P2 there hung on loading):
+- P1, a refresh answering B's token: one session end, A's kept details gone, the loading view.
+- P2, A then B then A, with B's account read held: A never gets the old details back.
+- P3, a sign-in that replaces the session: A's details gone.
+- P4, A's check landing after the switch: not kept.
+- P5, B's read answering: B's own phone `•••• 0077`, A's details gone.
+
+`keptCheck.ts` calls `onSessionEnd(forgetKeptCheck)` once, when the module loads. `forgetKeptCheck` bumps the era, so every ticket already out is void (P4, and Q2 below).
+
+The duplicate `KYC-05 #4` row is gone from SHARED-CHANGES; main's "Done in FIX-04" row stays.
+
+### 2. Trying to break the restart
+
+Jest probe, `$V6/probe-r6.log`; all 4 pass:
+- **Q1. Four session ends in a row, A26 mounted throughout.** A passes; then a refresh to B, a refresh to C, a sign-in as D, and a sign-out.
+  - The phone field reads C's `•••• 0003`, then D's `•••• 0004`, then nothing.
+  - 3 account reads for 3 accounts, so no storm.
+  - Nothing is kept for A, B, C or D, and no `console.error`.
+- **Q2. A session end while A's check POST is in flight.** Another `onSessionEnd` listener releases the held answer, so it lands after A26's listener ran but before React re-renders.
+  - Nothing is kept: the ticket is void.
+  - But A's identity answer (BVN last 4 `0111`) is written into the app's query cache under `['open-wallet','identity',A]`, after FIX-04 emptied it, while B is signed in. This is defect 3.
+- **Q3. A session end right after A26 unmounts.** The gone screen's listener does not run (0 `removeQueries` calls from it), no error, nothing kept.
+- **Q4. Listener leak.** 20 mounts and unmounts subscribe 20 times and unsubscribe 20 times; 0 stay live. The store's own subscription happens once, when the module loads.
+
+**The relaxed test** ("A26's reads are dropped when the session ends while it is open"). It now allows a disabled, empty entry for the new visit, but asserts:
+- no A26 entry holds data;
+- none is fetching;
+- `/users/me` was read once.
+
+That still catches any old read left behind: my R6-3 (no removal on a session end, neither in the listener nor in the signed-out effect) fails exactly this test. So the relaxation hides nothing. In the app, the signed-out redirect unmounts A26, and the unmount removes the empty entry too.
+
+**My mutants** (`$V6/mutants.txt`, each restored and sha1-checked):
+
+| Mutant | Builder's suite | Judgement |
+|---|---|---|
+| R6-3, no removal on a session end at all | killed (1 test) | |
+| R6-1, the restart keeps the old reads | survives | equivalent in the app: FIX-04's `createQueryClient` listener, subscribed first, has already reset and cleared the cache |
+| R6-2, the restart never unsubscribes | survives | behaviour-equivalent: a gone screen's `setVisit` is ignored by React, and its `removeQueries` repeats the live one's. The only difference is one closure kept per visit. The code does unsubscribe (Q4). A test like Q4 would pin it; recorded, not a defect |
+
+### 3. Browser, against the merged build
+
+Setup:
+- Hub `dist` from backend main fe1ec6c on :4963, fresh `vk05r6_test` (migrated and seeded).
+- Stand-in WAWU ID :4964, Fintava stand-in :4965 with no key in its environment.
+- Web export of 4a43404 on :8163 (`--clear`, 0 `wawuafrica.com`).
+- Every server started with stdin closed.
+
+Results, light and dark:
+- **`switch_refresh`.** A signs in on A22 and passes the check: "BVN confirmed", `•••• ••• 0080`. With A26 still open, a read gets 401 and the refresh answers B's pair (the pass-through logged `answeredAsOtherAccount` both times). This is FIX-04's "another account's token", with the status still signed in.
+  - A26's frames: confirmed, then loading, then the form with B's phone `•••• 0081`.
+  - No confirmed state and no masked digits for B; the same on re-entry.
+  - `side-switch-refresh-dark.png`: A's confirmed screen left, B's form right.
+- **`switch_signout`.** A passes, the session ends (a refused refresh sends the app to `/welcome`), and B signs in in the same tab and opens A26.
+  - Frames: loading, then B's form with B's phone `•••• 0083`.
+  - No confirmed state or digits.
+- **B never sees A's prefill.** A26 never draws the prefill (the name, date of birth and gender exist only for A5). Nothing of A's check reached B's screen on either path.
+- **V9 bodies and privacy.** 4 check POSTs, each exactly `{bvn, nin}`, 11 digits. The scan of the 8 typed numbers finds 0 hits in:
+  - the database dump;
+  - the Hub, stand-in, pass-through and export logs;
+  - browser storage, console, navigations and request URLs.
+
+  Positive control: 8 of 8 are in the captured request bodies.
+- **Clean-up.** All four processes stopped (PIDs and command lines checked), the ports answer nothing, `vk05r6_test` is dropped and the Hub worktree removed.
+
+### 4. `npm run check`
+
+Two runs on 4a43404. Each exits 0, with:
+- 481 tests;
+- gates 9 run, 123 files scanned, 0 fail, 0 warn, 0 accepted;
+- 0 act warnings.
+
+### Defect 3 (privacy): a check answer that lands after its session ended is still written into the query cache
+
+`BvnNinForm.submit` in `src/features/open-wallet/OpenWalletScreen.tsx` drops a late answer only when the form has unmounted, or when its `session` ref says it is not signed in.
+
+A sign-in that replaces a session, or a refresh answering another account, keeps the status `signedIn`. A26's listener then starts a new visit, but the form stays mounted until React re-renders. An answer landing in that window passes both guards:
+- `keepCheck(ticket, check)` refuses it, because the ticket is void;
+- but `queryClient.setQueryData(identityQuery(A).queryKey, check.identity)` has already run. That writes A's identity (BVN and NIN last 4, verified time) into the app's one cache after FIX-04 emptied it for B.
+
+B cannot read it, because the key is A's id. It stays until A26 closes or the next session ends. This is the same class as defect 2: A's data outliving A's session, which FIX-04 and this task say never happens ("a late answer is dropped").
+
+Reachable only by those two session ends, which the UI does not offer today. The sign-out path is cleaned by the unmount.
+
+- **Reproduction:** `$V6/probe-r6.test.tsx`, test Q2, on 4a43404. `identityEntries` shows `['open-wallet','identity',A]` with `last4` `0111` after the switch to B.
+- **Closed when:**
+  - a voided ticket stops both writes (for example, `if (!keepCheck(ticket, check)) return;` before the `setQueryData`);
+  - a test like Q2 asserts that no A26 entry holds A's identity after the switch.
+
+**NOT RUN:** capability check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
 
 ## Owner sign-off
 
