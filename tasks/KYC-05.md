@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -355,6 +355,85 @@ Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's 801aeaa. Main is st
 - **Counts:** `npm run check` exit 0: 26 suites 442 tests, gates 9 run, 121 files, 0 fail, 0 warn, 0 accepted, lint clean, 204 tasks.
 - **Clean-up:** all four processes stopped (PIDs checked), ports free, `k05_test` dropped, the Hub worktree and a temporary mobile worktree (for the "before" export) removed. `/dev/null` checked as a character device.
 - **NOT RUN:** check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
+
+## Verifier report, round 4
+
+Verifier, 3 Oct 2026 (fresh session; wrote none of this code). Mobile `wmt/KYC-05` at 4021cd5, which already contains mobile main 6bc420e (`git merge-base --is-ancestor origin/main HEAD` true; origin/main has not moved), so the branch and its merge with main are the same tree. Backend: Hub built from main fe1ec6c (still main). "Before" build: a second web export of 801aeaa. Evidence `$V` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk05r4/`: screenshots `$V/shots/<name>-<theme>.png` (4021cd5) and `$V/shots-pre/` (801aeaa), run results `$V/results.jsonl` (each row names its `variant`), request log `$V/calls.jsonl` (key names and lengths only), browser dumps `$V/browser-dumps.jsonl`, privacy scan `$V/privacy-scan.txt`, renders `$V/design/`, side by sides `$V/side-*.png`, mutants `$V/mutants.txt` (`$V/mutate.py`), jest probe `$V/probe-r4.test.tsx` with `$V/probe-r4-new.log` and `$V/probe-r4-mutant.log`, driver `$V/drive.py` (round 3's, plus the round-4 attempts at the end), pass-through `$V/web-server.js` (round 3's, plus `/__meswap` and `/__tokmangle`), `npm run check` logs `$V/check-branch*.log`.
+
+**Verdict: round 3's defect (privacy) is closed. One new defect is open: a surviving mutant on the token reader that the guard depends on (defect 1 below; tests only, the code is right). Status back to `building`.**
+
+### Round 3's defect on the new build
+
+| Check (both themes) | 801aeaa (before) | 4021cd5 (now) | Evidence |
+|---|---|---|---|
+| `cross_fast`: A on A26, Back, session ends, B signs in in the same tab, `/open-wallet` pushed in app; every value of the phone field recorded | `0803 121 0049` (A's), then `0803 121 0050`; dark the same (`122`) | only `0803 131 0050` (B's); dark only `0803 132 0050` | `results.jsonl` |
+| `cross_account`: the same, B's reads held 3 s; A's check (held 20 s) lands while B is on A26 | first paint: the form with A's phone `0803 121 0043` | first paint: the loading view, no phone; then B's `0803 131 0044`; A's late answer changes nothing; re-entry the form; 1 POST | `shots-pre/r3-cross-b-first-paint-*`, `shots/r3-cross-b-first-paint-*` |
+| `cross_wallet`: A has an open wallet, B has none, B's reads held 3 s | first paint: "Your wallet is open" with Done | first paint: the loading view; then B's form and phone | `side-cross-wallet-first-paint-light.png` (before left, now right) |
+
+### Trying to break the guard
+
+Browser, against the built Hub, light and dark, each also run on 801aeaa for contrast (`results.jsonl`, `shots/r4-*`, `shots-pre/r4-*`). A MutationObserver records every distinct frame of A26 (which view, and the phone field's value):
+- **A token whose `sub` cannot be read** (`sub_unreadable`). The pass-through replaces the payload of the access token from sign-in with `not-json`. The Hub refuses it, the app renews it once, and A26 goes loading, then the form with the person's own phone. It does not hang.
+- **Tokens rotated mid-visit, same account** (`rotate_midvisit`). The first read answers 401 (renewal 1); later three reads answer 401 while the form is up (renewal 2; the stored token changed). Frames: loading, the form with the person's phone, then "BVN confirmed" after Continue. The form never drops back to loading.
+- **B signs in while A's reads are in flight** (`b_while_a_inflight`). A has an open wallet. Every Hub answer is held 8 s; A opens A26, the session ends 0.3 s later, B signs in and opens A26 while A's answers are still held. On 801aeaa, B is shown "Your wallet is open" (A's). Now, B's frames are only the loading view, before and after A's answers land, then B's form with B's phone `0803 131 0063`.
+- **The account read answers for a different account** (`other_id`). The pass-through serves A's recorded `/users/me` answer to B's account read. On 801aeaa, B's form shows A's phone `0803 121 0064`. Now, the only frame for 5 s is the loading view (`side-other-id-dark.png`: before left, now right). Back works, and re-entry (a fresh, correct read) shows B's own phone.
+- **B with the same phone as A** (`same_phone`). A is registered as `+2348031310066` with an open wallet; B is the same number written `0803...`. The stand-in WAWU ID compares the strings, so it accepts both (real WAWU ID would not: `normalisePhone` and `phoneVariants`). B's frames: loading, then B's form. "Your wallet is open" is never shown. 801aeaa shows it as B's first frame.
+- **Rapid A to B to A** (`rapid_aba`). A (open wallet) sees "Your wallet is open". The session ends. B signs in and opens A26 with reads held 2.5 s, then leaves before they land. The session ends again and A signs in. B's only frame is loading. A's second visit is loading, then "Your wallet is open". B's held answers landing during A's visit change nothing. On 801aeaa, B's first frame is A's "Your wallet is open", and A's second visit shows B's phone `0803 121 0068`, then A's own.
+- **Guard reads production tokens correctly.** Real WAWU ID's access token carries `sub: user.id` (wawu-id dbcb2f8 `src/auth/tokens.service.ts:76`). The Hub's `/users/me` answers `wawuUserId` from the verified token's `sub` (`user-profile.service.ts:87`, `:175`). So the comparison holds for every real session. `globalThis.atob` exists on RN 0.86 (Hermes), and `accountOfToken` reads `sub` from payloads with Yoruba diacritics, U+2028, and a `\u0000` escape. It returns null for a numeric `sub`, an empty payload, an opaque token, and `a..b`.
+
+### Round 3's passes, spot-checked on this build (both themes)
+
+- **Late-answer races:**
+  - `race_back` and `race_signout`: re-entry shows the form, 1 POST.
+  - `signout_mounted`: the form after signing in again.
+  - `two_checks`: check 2 confirms after 2.4 s, and check 1 landing later leaves `•••• ••• 0041`. Re-entry shows the form.
+  - `two_checks_late_first`: no "BVN confirmed" while check 2 is still running.
+  - `refresh_post401` and `refresh_concurrent`: 1 renewal, and the pass is kept.
+- **Privacy scan:** see the table.
+
+### Pass table
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Privacy | passed. **Another account's data:** every cross case above shows only the signed-in account's phone and wallet state, or the loading view. **BVN and NIN:** 94 distinct numbers typed or pasted across 88 browser sessions (both builds). 0 hits, both raw and grouped 4-4-3, in: a full `vk05r4_test` dump; the Hub, stand-in WAWU ID, Fintava stand-in, pass-through (both builds) and export logs; browser localStorage, sessionStorage, IndexedDB and cookies; console; every navigation; every request URL. Positive control: 90 of 94 are found in captured request bodies (the other 4 were never sent: the "no BVN" pair and `typed`). localStorage only ever held `wawu.session.access` and `.refresh`. The confirmed end shows `•••• ••• NNNN` (`full_bvn_on_screen`, `dom_has_full_numbers` false). Fields are empty on re-entry after Back and after Done. **`keptCheck.ts`** holds the identity (last 4 only) and the prefill for one owner. Every forget voids the tickets. It is forgotten on sign-out, on session end (`signout_mounted`, `race_signout`), on an account change and on leaving | `$V/privacy-scan.txt`, `$V/browser-dumps.jsonl` |
+| V1 | passed | `npm run check` on 4021cd5 (= merged with main 6bc420e): exit 0. Typecheck and lint clean, 26 suites 442 tests, gates 9 run, 121 files scanned, 0 fail, 0 warn, 0 accepted, 204 tasks (`$V/check-branch-2.log`). The first run, made while the Hub was compiling on the same 4 cores, timed out the suite's first test at jest's default 5 s (`$V/check-branch.log`; 1.2 s when idle). Recorded, not a defect. Scope: `git diff --name-only origin/main...HEAD` lists only `src/features/open-wallet/` (with `api/` and `__tests__/`), `src/app/open-wallet.tsx`, the task file, `docs/` (LOG, PROGRESS), BACKEND_GAPS and SHARED-CHANGES. Round 4 adds `sessionAccount.ts` only. No `_layout.tsx`, `src/api/` or `src/components/` edit. 0 em-dashes in the feature or the route. No hex or colour literal. No `565` or `346` |
+| V4 | passed | Phone: `/users/me` `data.phone`, shown only when `data.wawuUserId` equals the token's `sub`. Wallet state: `/money/wallet` `state`, read under that account's id. Masked digits: the check answer's `identity.bvn.last4` and `ninLast4`. Waits come from the answer (`a26-limit-*`: "about 24 hours"; `a26-address-throttle-light`). Round 3's failure (previous account's cached answers) is gone (table above) |
+| V5 | passed; differences classified as in round 1 | `$V/side-A14-light.png`, `-dark.png` (A14 render left, my 390 px `a14` right). `$V/side-A3-light.png`, `-dark.png` (A3 render, `a26-typed`). A14's red phone border, icon and sentence in place of the hint match in both themes. A26's fields, labels, title and line follow A3. The recorded differences are unchanged: status bar and frame; A26's own nav title and heading; no Email, Password or NIBSS line; the NIN field added; no USSD hint (G-56); no mono tracking (SHARED-CHANGES KYC-05 #2); the "no BVN" link (R-6). The new loading view on an account change is the existing skeleton (`side-cross-wallet-first-paint-light.png`) |
+| V6 | passed | Rerun on 4021cd5 against the built Hub, light and dark (`$V/shots/`): loading `a26-loading`; empty `a26-empty`, then Continue (0 POSTs); typed `a26-typed`; checking `a26-checking`; confirmed `a26-confirmed`; A14 `a14`; A14 corrected `a14-corrected`, then `a14-then-confirmed`; unknown BVN `a26-bvn-not-confirmed`; daily limit `a26-limit`; address limit `a26-address-throttle` (light); unreachable (Fintava 500) `a26-unreachable`; offline `a26-check-offline`; Hub unreachable at 2, 12 and 30 s `a26-check-hub-unreachable-*`; load error, then Try again `a26-load-error`, `-retried`; not available by the link (0 POSTs, 0 alert roles) `a26-not-available-link`; by `phone_not_nigerian` `a26-foreign-phone`, `a26-not-available-server`; wallet open `a26-wallet-open`; opening `a26-wallet-opening`; signed out (sent to `/welcome`, 0 Hub calls) `a26-signed-out`. The account-change loading view: `r3-cross-*-first-paint`, `r4-*-first-paint` |
+| V7 | passed except check 1 (NOT RUN) | Fresh user signed in on A22, then `/open-wallet` pushed in app: the form. Back goes to `/`. Re-entry has empty fields. Pass, then Done, then in-app re-entry: the form, 1 POST (`reentry`). Back mid-check, then re-entry: the form (`race_back`). Account changes: above. `leadIfNoWallet`: the built Hub's `GET /money/transactions` for a person with no wallet answers `409`, `reason.code` `wallet_not_open`. `entry.ts` (unchanged since round 1) routes only that code (`logic.test.ts`) |
+| V9 | passed | Hub `dist` built from fe1ec6c on :4963, with a fresh `vk05r4_test` (migrated and seeded). Stand-in WAWU ID :4964; people registered there and signed in through the app's A22. Fintava stand-in :4965, started with `env -i` (no `FINTAVA_API_KEY` in its environment). The Hub had `FINTAVA_BASE_URL` on 127.0.0.1 and a made-up key. Web exports on :8163 with `EXPO_PUBLIC_*` local and `--clear`; 0 `wawuafrica.com` in either bundle. 72 `POST /money/identity/bvn` bodies, each exactly `{bvn, nin}`, 11 digits each, no query string. Rows: 51 `BvnCheckAttempt`, 30 `WalletIdentity`. **WAWU ID shape:** real wawu-id (dbcb2f8, = origin/main) answers login and refresh as `{ data: ... }` (`auth.controller.ts:191`, `:210`; contract `SessionAnswer` requires `data`). The app reads `payload.data` (`src/api/identity.ts`, unchanged). Only the stand-in answers unwrapped (G-59), so the pass-through wraps it as the real server would |
+| Mutations | **failed** (defect 1) | 8 of my own on the round-4 guard (`$V/mutants.txt`), each restored and sha1-checked, run with `--testTimeout=20000`. **Killed (4):** R4-1, the session account trusts the account read; R4-2, the wallet read runs before the account is known; R4-3, closing drops only the account read; R4-7, the pass writes the identity under no account. **Survived, not equivalent (1): R4-4** (defect 1). **Survived, equivalent (3):** R4-5, no `=` padding (WHATWG's forgiving `atob`, in browsers and Node, accepts unpadded input; Hermes's not checked on a device, V10); R4-6, the status check off in `useSessionAccount` (A26 unmounts whenever the session is not signed in, because the route renders `<Redirect>`); R4-8, the `sub` re-read only on a status change (within one mount the session is one account, and WAWU ID never issues a token without a readable `sub`) |
+| V10 | NOT RUN | No device. Unblocked by a tester build with the backend on the droplet (OPS-10) |
+
+### Capability checks
+
+1. Pay with no wallet lands on A26: **NOT RUN**, as in rounds 1 to 3. Unblocked when SHARED-CHANGES KYC-05 #1 (`onOpenWallet` on `PaySheet`) is applied and a payer or the preview passes it.
+2. Enter BVN and NIN, Continue, the check runs, the prefill is kept: passed (`pass`, `rotate_midvisit`, `refresh_post401`, `refresh_concurrent`).
+3. A14, then correct and continue: passed (`a14`).
+4. No Nigerian BVN reaches "Not available yet": passed, both ways.
+5. V5: passed.
+6. Values from the API or the user: passed (round 3's failure closed).
+7. States by their real cause: passed.
+
+### Findings
+
+**Defect 1 (tests): no test pins the base64url decoding that the round-4 guard depends on.** Mutant R4-4 changes `accountOfToken`, in `src/features/open-wallet/sessionAccount.ts`. It drops `.replace(/-/g, '+').replace(/_/g, '/')` and passes the payload to `atob` as is. All 39 open-wallet tests still pass, because the suite's `tokenFor(sub)` payload `{"sub":"..."}` never encodes to `-` or `_`.
+- **Why it matters:** `atob` throws on `-` and `_`. So for any person whose real token payload holds one, the mutated reader returns null, `signedInAs` never matches, and A26 stays on the loading view for good.
+- **Who that is:** WAWU ID's payload carries the person's names and email (`buildAccessPayload`). A `-` or `_` appears for some UTF-8 letters, and for `?`, `~` or `>` at some offsets. Of 600 real-shaped payloads I generated, 2 had one; both had the name "Ngozi Ọ̀kọ̀".
+- **Reproduction:** `$V/probe-r4.test.tsx`, the suite's own harness plus a real-shaped token with `firstName: 'Ngozi Ọ̀kọ̀'`, whose payload holds a `-` or `_`.
+  - On 4021cd5, 3 of 3 pass: `accountOfToken` returns the owner, and A26 shows the form (`$V/probe-r4-new.log`).
+  - With R4-4 applied, 2 of 3 fail: the reader returns null, and A26 is still loading after 3 s (`$V/probe-r4-mutant.log`).
+  - Probe and mutant were removed and the file sha1-checked.
+- **Closed when:** the suite kills R4-4. For example, a test whose token payload holds `-` or `_` (a real-shaped claim set like the probe's) and expects A26's form.
+
+**Checked and not a defect:**
+- **A server answering for another account leaves A26 loading, with no message or time limit** (`other_id`). That is the stated design: nothing is shown unless the account read is the signed-in one. Back works, and re-entry recovers. No real path reaches it, because the Hub derives `wawuUserId` from the token it verified.
+- **The phone is shown as stored** (`08031310066`) when the stand-in WAWU ID holds a phone without `+234` (`same_phone`). Real WAWU ID stores `+234...` (`normalisePhone`), which `localPhone` groups.
+- **Load-error retry.** After a failed account read, Try again also refetches the two account-keyed reads while their key is still `''`, so 2 extra reads go out. They are cached under `''`, never shown, and dropped on close.
+- **`walletIdentityQuery`** in `@/api/walletIdentity` no longer has a reader in the app. A26 now reads the identity through its own `identityQuery(owner)`.
+- **Screen-level leaks outside A26.** None seen. The app-wide cache clear (FIX-04, SHARED-CHANGES KYC-05 #5) was not counted here.
+
+**Unclear (unchanged, owner):** G-55 (the phone is read-only). The builder's KYC-03 finding (A6 and A7 need the BVN and NIN again).
 
 ## Owner sign-off
 
