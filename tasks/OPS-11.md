@@ -7,7 +7,7 @@ order: 54
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [MONEY-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -157,6 +157,53 @@ Unblocks with: when a burst's arrival span is 1 s or more, its premise was not m
 3. Note: the override-list test checks files, not occurrences or values (above).
 
 Round 1 findings 5 to 7 (IPv6 per address, `X-Forwarded-Host`, admin login per caller) and the OPS-10 list stand. NOT RUN, as in round 1: the droplet's `ufw` and nginx config, real IPv6 sockets, V10.
+
+### Round 3 (verifier, 3 Oct 2026)
+
+Verifier report (round 3). A fresh session that wrote none of this task's code and verified no earlier round. Checked backend `wmt/OPS-11` `f45e657` (main `66339b9` merged as `995df38`) and mobile `wmt/OPS-11` `8678dad` (main `94d202b` merged), each in a fresh detached worktree (`/home/user/wt/vo13b`, `/home/user/wt/vo13m`), with two scratch worktrees for mutants and for main (`vo13bx`, `vo13main`, removed afterwards). Neither main moved during verification (backend `66339b9`, mobile `94d202b` at the end). My own databases `vo13_*` (all dropped), ports 4861 (production build), 4862 (mock WAWU ID for the load runs, then nginx), and :4001 for the one full contract run only. Everything I started is stopped. Evidence: `scratchpad/vo13/` of this session. **Verdict: no open defect. Status review.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0; eslint (no `--fix`) on the 6 changed `.ts` files 0. Gates `python3 scripts/gates/run.py`: 9 run / **599 files scanned** / 16 fail / 7 warn / 76 accepted; main `66339b9`: 9 / 597 / 16 / 7 / 76; every FAIL and WARN line identical (`gates_branch.txt`, `gates_main.txt`). CI tripwire: 0 added lines outside the protected suite's own files match `test/protected-routes\|src/protected-routes\|compareShape\|protected-registry`. Mobile `8678dad`: `npm run check` exit 0 (typecheck, lint, 19 suites / 340 tests, gates 9 run / 90 files scanned / 0 fail, 201 tasks) (`mobile_check_before.log`). |
+| V2 Contract | passed | Full `test:contract` on a fresh migrated and seeded `vo13_contract_test`, `lsof -i :4001` empty at 01:01:59, my mock on :4001, stopped straight after (empty again at 01:03:48): **110/110 suites, 2134 passed, 3 skipped, 0 failed** (`contract_full.log`). The flake under load: below (55/55). Unexpected formats: 20 X-Forwarded-For shapes through nginx (V9). |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh f45e657` on `vo13_protected_test`, lock `origin/main` `66339b9`: **253/253, all 244 required** (`protected.log`). `.pipeline`, `src/protected-routes`, `test/protected-routes`, `scripts/protected-routes`: 0 diff against main. |
+| V4 Field trace | passed | No production file changed in round 3 (below), so round 1's trace stands: the caller's address, written by nginx (`$proxy_add_x_forwarded_for`), read by Express `req.ip` through `hubTrustProxy`, used by the global ThrottlerGuard and KYC-01's `bvnCheckTracker`. |
+| V9 Live seam | passed (no sign-in) | `dist/src/main.js` built from `f45e657`, `NODE_ENV=production`, no `FINTAVA_*`, no `IDENTITY_HASH_KEY`, on :4861: `/api/hub/health` 200 (one `FINTAVA_BASE_URL` warning). Behind a real nginx 1.24.0 (Ubuntu package `1.24.0-2ubuntu7.18`, unpacked, run as my process on :4862 with the `location /` block of `deploy/install-services.sh` `write_site` verbatim): the round 2 trust cases 9/9, the limit case on 3 routes, both webhooks (below, `trust_results.txt`). |
+
+**1. The flake fix.**
+- Load: my own full contract suite looping on `vo13_load_test` (mock WAWU ID on :4862, 9 loops) plus 4 CPU burners on 4 cores, other sessions' suites beside them. Each run started only at 1-minute load 7 or more (`burst.sh`).
+- **Block 1: 45 runs of the real spec, 45 passed** (3/3 tests each), load at start 7.14 to 11.63 (`main/summary.txt`). **Block 2: 4 more burners (8), 10 runs, 10 passed**, load 11.19 to 12.82 (`heavy/summary.txt`). **55/55; the set-aside path fired 0 times** (no "set aside" line in any log).
+- Why it never fired: a copy of the spec printing each span (15 runs, load 7.9 to 9.4): main bursts 251 to 398 ms, control 211 to 320 ms, against the 900 ms threshold (`spans/summary.txt`). The round 2 failures (1003 ms) were outliers far beyond this.
+- Can it pass without a burst that fits one window? No. `burstInOneWindow` returns only a burst whose arrivals span under 900 ms, and both tests then assert `span < 1000`; after 5 misses it throws. Arrivals are noted by middleware registered before Nest's body parser and the guard, and `expect(arrivals).toHaveLength(count)` holds every time. @nestjs/throttler 6.5.0's store counts each hit for `ttl` ms after it lands (a timer per hit) and blocks for `ttl` once over the limit; a late timer on a busy machine only makes it stricter, so a burst that fits at arrival can only be refused more, never less.
+- Could the fresh sender or tx_refs hide a regression? No. The throttler key is class, handler, throttler name and `req.ip`, so each attempt is one sender's own bucket, and every attempt is a full 30 from that one sender: escaping a bucket would need 30 senders. The main test asserts 30 x 200 on EVERY burst, set aside or not. Forced proof: a spec copy that always sets aside attempt 1 (`VO13_FORCE`): on the real controller it passes (attempt 1 then 2, 30 x 200 each; control 20 x 200 + 10 x 429 on both); with the bare decorator the main test fails on attempt 1 itself (`20 x 200, 10 x 429` in the set-aside burst) (`forced_real.log`, `forced_mutant.log`). The tx_refs only keep receipts apart; the receipt count is asserted for the fitting burst's tag only, and `a1` to `a5` cannot share a prefix.
+- The control still proves the bare decorator gives exactly 20 x 200 and 10 x 429 on a burst that fits: passed in all 55 runs and in all 6 mutant runs.
+- Retry rule (WORKFLOW section 10, "never skip or retry it to green"): the retry depends on the measured premise (arrival span), never on the result, and a set-aside burst is still asserted. Accepted as making the test deterministic, not retrying to green.
+- **Mutant:** controller line 32 `@SkipThrottle(SKIP_EVERY_HUB_THROTTLER)` to `@SkipThrottle()` in `vo13bx`: sha1 `887333b3a9988529a6c702d6fb315b72b65b03b7` before, `ef606f8bcbc324405e731bbeadc51832e4b1ee2c` mutant, `887333b3a9988529a6c702d6fb315b72b65b03b7` after restore (git blob `58717994b0da`, the branch's). **6/6 runs at load 8.60 to 8.96: the main burst test fails** (10 x 429 on the first burst) and the by-name test fails; the control passes (`mutant/summary.txt`).
+
+**2. The override tests** (`hub-rate-limits.contract.spec.ts`), one mutant at a time, file restored byte-identical each time (sha1 before = after for all; `git status` clean after; `mutate_results.txt`, `mut/*.log`). **11/11 killed:**
+- second override in a listed file: another `@Throttle` on admin `me` (count 2 to 3; also caught by the metadata test); a second `@Throttle` on the BVN method itself (count 1 to 2).
+- looser value: admin login limit 5 to 50; admin refresh ttl 60 s to 500 ms; BVN `medium` limit 20 to 2000 (in `identity-config.ts`); BVN `short` `blockDuration: 10` (all "tightens: false").
+- unknown throttler name: admin login `default`; BVN `long` (both "registered: false").
+- method-level skip: `@SkipThrottle({ short: true })` on the legal catalogue; `@SkipThrottle()` on admin `me`; `@SkipThrottle({ medium: true })` on the Flutterwave handler (a listed file, count 1 to 2).
+
+**3. Production code untouched.** `src/main.ts` (`00db4f4`), `src/hub-app-options.ts` (`b343ee4`) and the Flutterwave controller (`5871799`) have the same blobs at `a0eb924` (round 1), `954ef8f`, `7b9da12` and `f45e657`; `identity-config.ts` changed only in round 2, comment lines only; `deploy/README.md` as round 2. Round 3's two commits touch only the two specs. `npm run build`: no spec code in `dist` (`arrivals`, `burstInOneWindow`, `ARRIVAL_MARGIN` appear in no `dist` file); `dist/src/main.js` calls `applyHubHttpSettings`.
+
+**4. Under load, the other spec too:** `hub-rate-limits.contract.spec.ts` (the 25-in-a-second and 200-a-minute tests), 20 runs at load 7.21 to 9.63: 20/20, 10/10 tests each (`rl/summary.txt`).
+
+**Through nginx** (`trust_results.txt`): (1) two clients in one second: 20 x 200 + 5 x 429 and 20 x 200; (2a) a forger naming a throttled victim is counted as itself (200, 19 left); (2b) 25 forged throttle only the forger, the victim then has 19 left; (3) 20 rotating X-Forwarded-For shapes (60 entries, garbage, `unknown`, IPv6, 4000 characters and more): 20 x 200 + 5 x 429, the 4 addresses named keep full buckets; (4) two X-Forwarded-For lines: the client's own bucket; (5a) direct from 192.0.2.2 naming a throttled client: 200, 19 left; (5b) 25 direct with forged `127.0.0.1`, `::1` and others: 20 x 200 + 5 x 429, a named client untouched; (6) 192.0.2.2 through nginx and direct share one bucket; (7) a loopback peer straight to the app: only the right-most entry counts. Limits: 21 in a second on `/health`, `/events`, `/legal/catalogue`: 20 answered + 1 x 429 with `retry-after-short`, `x-ratelimit-limit-short 20`, `-medium 200`, another client answered. Flutterwave: 30 signed in 331 ms, 30 x 200. Fintava with no `FINTAVA_*`: 30 x 401, 0 x 429. One harness error of mine, rerun: my first limit case mixed two routes in one burst (10 + 11, no 429); the throttler counts per route (class and handler in its key), as on main.
+
+**Findings (round 3)**
+1. Round 2 defect (flaky burst): **fixed.** 55/55 at load 7.14 to 12.82, 0 set-asides; the mutant fails 6/6.
+2. Round 2 note (override list): **answered.** All 11 mutants of the 4 kinds asked fail.
+3. Note, not a defect: both override tests can be stepped round by a decorator on the SAME line as another (`@Get('catalogue') @Throttle({ short: { limit: 999, ttl: 1000 } })`, or the same with `@SkipThrottle(...)`, on the legal controller): the count is a line-start regex, and the metadata test reads only the two listed controllers, so both pass (mutants `X1`, `X2`). Prettier would move the decorator to its own line (eslint reports `prettier/prettier`), which the count then catches, but CI runs no lint (`.github/workflows`: deploy, gates, protected-routes). Closing it fully means reading the throttle metadata of every controller rather than source text. Nothing on the branch today uses that form.
+4. Note: the inherited backend merge `3e217e7` has no commit trailers (the builder said so); the merge itself is clean (parents `954ef8f`, `368fab0`).
+
+Round 1 findings 5 to 7 (IPv6 per address, `X-Forwarded-Host`, admin login per caller) and the OPS-10 list stand.
+
+NOT RUN:
+- The droplet's live `ufw status` and nginx config (no droplet access). Unblocked by: OPS-10 reading them against round 1's list of 5 checks.
+- Real IPv6 sockets and an nginx `[::]` listener: this container has no IPv6 (no non-loopback IPv6 in `os.networkInterfaces()`). Unblocked by: a machine with an IPv6 interface; round 1's injected-peer cases cover the rule meanwhile.
+- V10: not in this task's passes (no app screen).
 
 ## Owner sign-off
 

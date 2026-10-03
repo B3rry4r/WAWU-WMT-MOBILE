@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 59 | 48 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 1 | 0 |
 | done | 17 | 10 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
-
-## Being verified
-
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 
 ## Done
@@ -63,6 +60,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · OPS-11 · Verified round 3: no open defect (backend f45e657, mobile 8678dad; mains 66339b9 and 94d202b already merged). The Flutterwave burst spec passed 55 of 55 runs at load 7.1 to 12.8 with 0 bursts set aside (spans 211 to 398 ms against 900); the bare decorator fails it 6 of 6, and a forced set-aside cannot hide a 429. The override tests kill all 11 mutants asked (a note: a decorator on the same line as another slips past both). Production code unchanged since round 1/2; contract 110/110 suites, 2134 passed; protected 253/253; main's 16 gates; the production build behind a real nginx passes every trust case. Status review.
 - 3 Oct 2026 · OPS-11 · Round 3 (took over from an interrupted session): the Flutterwave burst tests set aside a burst whose arrivals do not fit one window and send a fresh one (at most 5), failing loudly if none fits (backend `wmt/OPS-11` f45e657, main 66339b9 merged). 45/45 runs at load 7 to 14.4; the bare decorator fails 6/6; full contract 110/110 suites; protected 253/253. Back to verifying.
 - 2 Oct 2026 · OPS-11 · Verified round 2: 1 defect (backend 954ef8f, mobile f9d9b12; checked merged with backend main 368fab0 and mobile 66bdcff). The override-list test now expects KYC-01's @Throttle and catches an unexpected skip or override (mutants). The burst test is timed by arrivals now and no longer fails on a cold start, but it still failed 2 of 68 runs at load 7 or more (span 1003 ms); retry a burst that misses the window instead of failing. Contract 108/108 suites, 2095 passed; protected 253/253; main's 16 gates; mobile check exits 0. Status building.
 - 2 Oct 2026 · OPS-11 · Round 2: the verifier's 2 defects fixed (backend `wmt/OPS-11` 954ef8f, main d27ad37 merged). The rate-limit spec expects KYC-01's `@Throttle` on the BVN check beside admin auth; the Flutterwave burst is timed by arrival at the app (the window the throttler counts), after a warm-up, so receipt writes on a busy machine no longer fail it (10 of 10 under load). `bvnCheckTracker`'s comment updated. Contract 107/107 suites, 2066 passed; protected 253/253; gates as main. Back to verifying.
@@ -77,4 +75,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · MONEY-10 · Verified: 3 defects, back to building (backend da74274, mobile 35eb611, checked with backend main d27ad37 and mobile main bfdd584 merged locally). Exactly once held across every path in 36 raced movements, two processes sweeping one database applied 180 deliveries once each, and a ₦10 sandbox round trip wrote one row per side. Defects: a wallet matched by account number alone puts another bank's money on an unrelated user; a negative or zero amount never settles; main moved (G-25 and sandbox file 28 now taken by KYC-01).
 - 2 Oct 2026 · MONEY-10 · The ledger built in wawu-backend (`wmt/MONEY-10` da74274): `FintavaLedgerEntry` in BIGINT kobo, one row per wallet side, recorded once by a reference key (any of ours, Fintava's, tagapay, id: G-19), fed from MONEY-07's stored deliveries by a 30-second sweep, confirmed with Fintava when no side is held; a reversal marks the debit reversed, never a second row. Sandbox: two ₦10 round trips, 8 rows for 4 movements, balances back. Never a balance, no route. Gap filed (now G-33). To verifying.
 - 2 Oct 2026 · SETTINGS-07 fix round 1: test leak and stale test title fixed, real admin reject checked, gaps G-19 to G-22 corrected; back to verify
-- 2 Oct 2026 · SETTINGS-07 · notification switches moneyIn and contentReviews stored and honoured by the senders in wawu-backend (additive migration); communityMessages has no sender (G-19); built, to verify
