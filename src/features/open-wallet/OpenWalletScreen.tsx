@@ -1,0 +1,339 @@
+import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+
+import { isApiError } from '@/api/errors';
+import { checkBvn, walletIdentityQuery, type BvnCheck } from '@/api/walletIdentity';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { KeyValueRow } from '@/components/ListRow';
+import { LoadingView, Skeleton } from '@/components/Skeleton';
+import { ErrorState } from '@/components/StateViews';
+import { Text } from '@/components/Text';
+import { fieldMetrics } from '@/components/TextField';
+import { font, layout, radius, space, type } from '@/theme';
+
+import { AuthField } from '@/features/auth/AuthField';
+import { AuthFrame } from '@/features/auth/AuthFrame';
+import { Banner } from '@/features/auth/Banner';
+
+import { ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
+import { checkFailure, type CheckFailure } from './checkFailure';
+import { keepCheck, useKeptCheck } from './keptCheck';
+import { GROUPED_ID_LENGTH, groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
+import { OpenWalletEnd } from './OpenWalletEnd';
+
+/** design/_gen/auth.js line 54 (A3 and A14): `h1` at 24 (the theme's h1), line 1.15; 6 between title and line; 14 between the parts. */
+const TITLE_LEADING = 1.15;
+const TITLE_GAP = 6;
+const BODY_GAP = 14;
+/** The loading view's title and line blocks, the height of the 24 px title and the 13.5 px line they stand in for. */
+const SKELETON = { title: 28, line: 19, titleWidth: '70%', lineWidth: '50%', label: 15, labelWidth: '30%' } as const;
+
+const NAV_TITLE = 'Open your wallet';
+
+export type OpenWalletScreenProps = {
+  /** Leaves Open your wallet: the back button, and Done on an end. */
+  onClose: () => void;
+};
+
+type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' } | { end: 'no_bvn' };
+
+/**
+ * A26, the first step of Open your wallet (R-6), with A14 as its state: the
+ * account's phone, the BVN and the NIN, then Continue runs the BVN check
+ * (KYC-01). A pass keeps the BVN's name, date of birth and gender in memory
+ * for A5 (`keepCheck`). A BVN registered to another phone puts A14's sentence
+ * under the phone; an unknown BVN puts the server's under the BVN. An account
+ * without a Nigerian BVN ends at "Not available yet", never an error.
+ */
+export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
+  const [account, wallet, identity] = useQueries({ queries: [ownAccountQuery, walletStateQuery, walletIdentityQuery] });
+  const [ended, setEnded] = useState<Ended | null>(null);
+  const kept = useKeptCheck(account.data?.wawuUserId);
+
+  if (ended) return <Ending ended={ended} onClose={onClose} />;
+
+  const failed = [account, wallet, identity].find((query) => query.isError);
+  if (failed) {
+    const retry = () => {
+      void account.refetch();
+      void wallet.refetch();
+      void identity.refetch();
+    };
+    return (
+      <AuthFrame testID="open-wallet-error" navTitle={NAV_TITLE} onBack={onClose}>
+        <ErrorState
+          title="We couldn't open this step"
+          message={isApiError(failed.error) ? failed.error.message : 'Something went wrong. Try again.'}
+          onRetry={retry}
+        />
+      </AuthFrame>
+    );
+  }
+
+  if (!account.data || !wallet.data || !identity.data) return <Loading onClose={onClose} />;
+
+  if (wallet.data === 'open' || wallet.data === 'frozen') {
+    return <Ending ended={{ end: 'wallet_open' }} onClose={onClose} />;
+  }
+  if (wallet.data === 'opening') {
+    return (
+      <OpenWalletEnd
+        testID="open-wallet-opening"
+        tone="warn"
+        icon="Clock"
+        title="Your account is opening"
+        message="Check again in a moment."
+        actionLabel="Done"
+        onAction={onClose}
+      />
+    );
+  }
+
+  const confirmed = kept && kept.identity.bvn && identity.data.bvn?.last4 === kept.identity.bvn.last4 ? kept : null;
+  if (confirmed) return <Confirmed check={confirmed} onClose={onClose} />;
+
+  return (
+    <BvnNinForm
+      account={account.data}
+      onClose={onClose}
+      onEnded={setEnded}
+    />
+  );
+}
+
+function Loading({ onClose }: { onClose: () => void }) {
+  return (
+    <AuthFrame testID="open-wallet-loading" navTitle={NAV_TITLE} onBack={onClose}>
+      <LoadingView label="Loading your details">
+        <View style={styles.body}>
+          <View style={styles.titleBlock}>
+            <Skeleton width={SKELETON.titleWidth} height={SKELETON.title} />
+            <Skeleton width={SKELETON.lineWidth} height={SKELETON.line} />
+          </View>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.skeletonField}>
+              <Skeleton width={SKELETON.labelWidth} height={SKELETON.label} />
+              <Skeleton height={fieldMetrics.height} radius={radius.tile} />
+            </View>
+          ))}
+        </View>
+      </LoadingView>
+    </AuthFrame>
+  );
+}
+
+function Ending({ ended, onClose }: { ended: Ended; onClose: () => void }) {
+  if (ended.end === 'wallet_open') {
+    return (
+      <OpenWalletEnd
+        testID="open-wallet-already-open"
+        tone="in"
+        icon="Wallet"
+        title="Your wallet is open"
+        message="Go back and pay from it."
+        actionLabel="Done"
+        onAction={onClose}
+      />
+    );
+  }
+  return (
+    <OpenWalletEnd
+      testID="open-wallet-not-available"
+      tone="neutral"
+      icon="Globe"
+      title="Not available yet"
+      message={
+        ended.end === 'not_available'
+          ? `${ended.message} Wallets for people without a Nigerian BVN are not available yet.`
+          : 'A Naira wallet needs a Nigerian BVN. Wallets for people without one are not available yet.'
+      }
+      actionLabel="Done"
+      onAction={onClose}
+    />
+  );
+}
+
+function Confirmed({ check, onClose }: { check: BvnCheck; onClose: () => void }) {
+  const bvnLast4 = check.identity.bvn?.last4;
+  const ninLast4 = check.identity.ninLast4;
+  return (
+    <OpenWalletEnd
+      testID="open-wallet-confirmed"
+      tone="in"
+      icon="Check"
+      title="BVN confirmed"
+      message="Your name, date of birth and gender come from your BVN."
+      actionLabel="Done"
+      onAction={onClose}
+    >
+      {bvnLast4 || ninLast4 ? (
+        <Card>
+          {bvnLast4 ? <KeyValueRow label="BVN" value={maskedIdNumber(bvnLast4)} testID="open-wallet-bvn-masked" /> : null}
+          {ninLast4 ? <KeyValueRow label="NIN" value={maskedIdNumber(ninLast4)} testID="open-wallet-nin-masked" /> : null}
+        </Card>
+      ) : null}
+    </OpenWalletEnd>
+  );
+}
+
+type Missing = { bvn?: string; nin?: string };
+
+type FormProps = {
+  account: OwnAccount;
+  onClose: () => void;
+  onEnded: (ended: Ended) => void;
+};
+
+/** A26's form. The BVN and NIN live only in its two fields, and are cleared as soon as a check passes. */
+function BvnNinForm({ account, onClose, onEnded }: FormProps) {
+  const queryClient = useQueryClient();
+  const [bvn, setBvn] = useState('');
+  const [nin, setNin] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<CheckFailure | null>(null);
+  const [missing, setMissing] = useState<Missing>({});
+  /** Set before the first await, so a second tap in the same frame sends nothing (each check is charged). */
+  const inFlight = useRef(false);
+  const ninInput = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const edit = (setter: (value: string) => void, field: 'bvn' | 'nin') => (value: string) => {
+    setter(groupIdNumber(value));
+    setMissing((now) => ({ ...now, [field]: undefined }));
+    // A new BVN answers A14 afresh, so the phone's error goes with the BVN's.
+    setFailure((now) => (now && (now.kind === 'banner' || field === 'bvn') ? null : now));
+  };
+
+  const submit = async () => {
+    if (inFlight.current) return;
+    const gaps: Missing = {
+      bvn: isWholeIdNumber(bvn) ? undefined : 'Enter the 11 digits of your BVN.',
+      nin: isWholeIdNumber(nin) ? undefined : 'Enter the 11 digits of your NIN.',
+    };
+    if (gaps.bvn || gaps.nin) {
+      setMissing(gaps);
+      return;
+    }
+    inFlight.current = true;
+    setBusy(true);
+    setFailure(null);
+    try {
+      const check = await checkBvn({ bvn: idDigits(bvn), nin: idDigits(nin) });
+      setBvn('');
+      setNin('');
+      queryClient.setQueryData(walletIdentityQuery.queryKey, check.identity);
+      keepCheck(account.wawuUserId, check);
+    } catch (error) {
+      const next = checkFailure(error);
+      if (next.kind === 'end') {
+        setBvn('');
+        setNin('');
+        onEnded(next.end === 'wallet_open' ? { end: 'wallet_open' } : { end: 'not_available', message: next.message });
+      } else {
+        setFailure(next);
+      }
+      void queryClient.invalidateQueries({ queryKey: walletIdentityQuery.queryKey });
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  };
+
+  const fieldError = (field: 'phone' | 'bvn') => (failure?.kind === 'field' && failure.field === field ? failure.message : undefined);
+
+  return (
+    <AuthFrame
+      testID="open-wallet"
+      scrollRef={scrollRef}
+      navTitle={NAV_TITLE}
+      onBack={onClose}
+      footer={
+        <>
+          <Button label="Continue" full loading={busy} onPress={() => void submit()} testID="open-wallet-continue" />
+          <Pressable
+            testID="open-wallet-no-bvn"
+            accessibilityRole="link"
+            accessibilityLabel="I don't have a Nigerian BVN"
+            hitSlop={layout.tapMin / 4}
+            disabled={busy}
+            onPress={() => onEnded({ end: 'no_bvn' })}
+            style={styles.link}
+          >
+            <Text variant="kvLabel" tone="accentFg" style={font(700)}>
+              {"I don't have a Nigerian BVN"}
+            </Text>
+          </Pressable>
+        </>
+      }
+    >
+      <View style={styles.body}>
+        <View style={styles.titleBlock}>
+          <Text variant="h1" style={styles.title}>
+            {"Let's open your wallet"}
+          </Text>
+          <Text variant="muted">Your BVN fills in the rest.</Text>
+        </View>
+        {failure?.kind === 'banner' ? (
+          <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="open-wallet-banner" />
+        ) : null}
+        <AuthField
+          scrollRef={scrollRef}
+          label="Phone number"
+          testID="open-wallet-phone"
+          value={localPhone(account.phone)}
+          readOnly
+          hint="Must be the number on your BVN"
+          error={fieldError('phone')}
+        />
+        <AuthField
+          scrollRef={scrollRef}
+          label="BVN"
+          testID="open-wallet-bvn"
+          value={bvn}
+          onChangeText={edit(setBvn, 'bvn')}
+          error={missing.bvn ?? fieldError('bvn')}
+          keyboardType="number-pad"
+          inputMode="numeric"
+          maxLength={GROUPED_ID_LENGTH}
+          autoComplete="off"
+          importantForAutofill="no"
+          textContentType="none"
+          autoCorrect={false}
+          spellCheck={false}
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => ninInput.current?.focus()}
+        />
+        <AuthField
+          scrollRef={scrollRef}
+          label="NIN"
+          testID="open-wallet-nin"
+          inputRef={ninInput}
+          value={nin}
+          onChangeText={edit(setNin, 'nin')}
+          error={missing.nin}
+          keyboardType="number-pad"
+          inputMode="numeric"
+          maxLength={GROUPED_ID_LENGTH}
+          autoComplete="off"
+          importantForAutofill="no"
+          textContentType="none"
+          autoCorrect={false}
+          spellCheck={false}
+          returnKeyType="go"
+          onSubmitEditing={() => void submit()}
+        />
+      </View>
+    </AuthFrame>
+  );
+}
+
+const styles = StyleSheet.create({
+  body: { gap: BODY_GAP },
+  titleBlock: { gap: TITLE_GAP },
+  title: { lineHeight: type.size.h1 * TITLE_LEADING },
+  skeletonField: { gap: space.sm },
+  link: { alignSelf: 'center', paddingVertical: space.xs },
+});
