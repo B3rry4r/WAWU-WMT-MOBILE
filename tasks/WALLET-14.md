@@ -7,7 +7,7 @@ order: 116
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-06, KYC-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -71,6 +71,25 @@ Backend `wmt/WALLET-14` `377ea31`: round 2 fixes on `origin/main` `48b9043` (MON
   - `contract:build` is byte-stable, and the contract has the same 280 paths as main; only the five routes and `MoneyErrorReason` differ.
   - Mobile `npm run check` with main `85a4e57` merged: exit 0 (typecheck, lint, 20 suites, 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks).
 - **Not re-run:** the sandbox seam. Round 2 changes no Fintava call, and the verifier's V9 (3 calls) stands. NOT RUN, as in round 1: `matchesBvnName` on a real sandbox BVN record (question 11).
+
+### Builder round 3 (3 Oct 2026)
+
+Backend `wmt/WALLET-14` `ab459bc` (on `377ea31`; backend main still `48b9043`, unmoved). Mobile `wmt/WALLET-14` with main `331a6fa` (AUTH-05) merged: SHARED-CHANGES rows kept from both sides, PROGRESS regenerated, types regenerated unchanged, and `SOURCE_COMMIT` set to `ab459bc`, whose contract is byte-identical to `377ea31`'s.
+- **Defect 3, re-saving a person whose account was deleted answered 201 with a hidden row: fixed.** `addWawuUser` now checks the person's wallet and profile before it answers an existing row. So a purged person is `404 recipient_not_found` to the person who saved them, exactly as to anyone else, and a person whose wallet alone is gone is `409 recipient_has_no_wallet` to both.
+  - Test (the verifier's reproduction, through the real `AccountPurgeService.purge`): A saves P, P is purged. A's re-save and B's first save then get the same 404 body, and A's list and `beneficiaryCount` stay 0. The 409 case is covered the same way, for both people.
+  - Mutations, each killed:
+    - the old order (existing row first): 1 test fails.
+    - the verifier's M11 (the existing-row shortcut removed): 1 test fails. This needed a new assertion: on a full list, re-saving a person or a bank account already saved answers its row (201, same id, no name check), where without the shortcut it would be `409 beneficiary_limit_reached`.
+- **Runs (on `ab459bc`):**
+  - tsc 0; eslint 0 on the 19 `.ts` files changed against main.
+  - Money, Fintava, identity, purge, gate and rate-limit specs: 37 suites, 1,414/1,414.
+  - Full suite on a fresh `w14_full_test`, my mock on :4001 (`lsof` empty before, stopped after): 130 suites, 3,148 passed, 3 skipped, 0 failed. This includes WALLET-14's 32, `bvn-name` 19, the gate's 45, `hub-rate-limits` 10 and the 6 suites wired to :4001.
+  - Protected suite `--fresh HEAD`: 253/253, lock `48b9043` unchanged. Tripwire: 0 added lines.
+  - Gates 16 fail / 13 warn: the same 16 fails as main `48b9043` (16 / 12); the added warning is `PROVISIONAL(BENEFICIARIES-MAX)`. Baseline OK.
+  - `contract:build` is byte-stable.
+  - Every run above finished before the container restart: its logs and results were on disk afterwards. The restart dropped only the databases, which were dropped anyway.
+  - Mobile `npm run check` with main `331a6fa` merged: exit 0 (typecheck, lint, 21 suites, 377 tests, gates 0 fail / 0 warn on 98 files, 203 tasks).
+- The verifier's round 2 notes 2 and 3 need no change. A word in both parts of one name hashes the same within that one row, which links nothing across rows. `"v":"2"` as a string only arises from a hand-written value, and it reads as null. NOT RUN is unchanged: `matchesBvnName` on a real sandbox BVN record (question 11).
 
 ### Owner questions (the match rule, G-46; the rule is unchanged)
 1. Extra words match: `OKORO ADA CHIDI ENTERPRISES` and `ADA OKORO-BELLO` match Ada Okoro, as does a different Ada Okoro with a middle name. Should a business or joint account naming the person count as their own?
