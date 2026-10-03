@@ -338,16 +338,39 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * GET /uploads/usage — how much space this account has used of its
-         *     allowance.
+         * GET /uploads/usage — how much creator-content space (content/preview and
+         *     content/full) this account has used of its allowance. Identity documents,
+         *     avatars and the other folders are not counted.
          *
          *     Its own endpoint rather than a field on creator state, because storage is
          *     not a creator-only concern: an account that has never subscribed still
-         *     uploads a KYC document and an avatar, and still has a 2GB ceiling. Hanging
+         *     uploads a KYC document and an avatar, and still has a ceiling. Hanging
          *     it off creator state would leave every non-creator unable to see a limit
          *     that applies to them.
          */
         get: operations["StorageController_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/uploads/allowance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * GET /uploads/allowance: the upload count and the storage this account
+         *     may use, what it has used, and both of R-7's levels (free and with a
+         *     tick). Any signed-in account: an account with no CreatorState row has
+         *     used 0 uploads.
+         */
+        get: operations["StorageController_allowance"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4807,6 +4830,21 @@ export interface components {
             limitBytes: number;
             remainingBytes: number;
         };
+        AllowanceLevelView: {
+            uploads: number;
+            storageBytes: number;
+        };
+        UploadAllowanceView: {
+            tickHeld: boolean;
+            uploads: {
+                used: number;
+                allowed: number;
+                remaining: number;
+            };
+            storage: components["schemas"]["StorageUsage"];
+            free: components["schemas"]["AllowanceLevelView"];
+            withTick: components["schemas"]["AllowanceLevelView"];
+        };
         AdminContentCreatorView: {
             wawuUserId: string;
             handle: string | null;
@@ -7177,6 +7215,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorageUsage"];
+                };
+            };
+        };
+    };
+    StorageController_allowance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadAllowanceView"];
                 };
             };
         };
