@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -747,6 +747,73 @@ Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's a666b92; main `e7dc
 - **The verifier's `probe-r6.test.tsx`**, run in place on this code and then removed: 4 of 4 pass. Q2 now finds only the empty identity entry for the new visit, none holding A's last 4.
 - **Counts:** `npm run check` exit 0: 28 suites 485 tests (open-wallet 54), gates 9 run, 123 files, 0 fail, 0 warn, 0 accepted, lint clean, 205 tasks. No "not wrapped in act" warning in 5 runs.
 - **Not run this round:** browser and V9. The change only skips writes for answers from an ended session, proved in jest with the app's real query client and session. Nothing was started. Check 1 (SHARED-CHANGES KYC-05 #1) and V10 are NOT RUN, as before.
+
+## Verifier report, round 7
+
+Verifier, 3 Oct 2026. Narrow round on `wmt/KYC-05` at 81669b0, which contains main e7dc879 (still current). Since a666b92, round 7 changes `OpenWalletScreen.tsx`, `keptCheck.ts` (a new `ticketIsLive`), the screen tests and docs.
+
+Evidence `$V7` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk05r7/`:
+- `probe-r6-on-81669b0.log`: round 6's probe, rerun;
+- `probe-r7.test.tsx` with `probe-r7.log`;
+- `mutants.txt` (`mutate.py`);
+- `check-1.log`.
+
+Each probe was run in place, then removed.
+
+**Verdict: defect 3 is closed. No defect is open. Status `review`.**
+
+### 1. Round 6's probe Q2 on 81669b0
+
+A pass for A lands inside the session-end window: another session-end listener releases it, after A26's own listener ran and before React re-renders. Result:
+- the only A26 cache entry is the new visit's empty `['open-wallet','identity','']`, with no data;
+- no entry holds A's identity (round 6 found last 4 `0111` under A's id);
+- nothing kept, nothing confirmed.
+
+Q1 (four session ends in a row), Q3 (a session end after unmount) and Q4 (20 mounts, 0 listeners left) still pass. 4 of 4.
+
+### 2. My re-audit: every write after an await in A26
+
+**`BvnNinForm.submit` awaits once (`runBvnCheck`).**
+- **On success,** `keepCheck(ticket, check)` runs before anything else. A void ticket returns at once. Only a live ticket clears the fields and sets the identity cache, under the account the check was sent for.
+- **On a refusal,** `ticketIsLive(ticket)` is checked before `checkFailure`. So a stale refusal moves no screen state: no banner, no field error, no `onEnded` (the parent's "Not available yet" or "wallet open" end).
+- **The `finally` block** only resets `inFlight` and `busy`. These are the form's own controls, not account data, and they are ignored on an unmounted form.
+
+My probe `probe-r7.test.tsx` lands a refusal inside the same window. In each case: A26 shows loading as B; no banner; no A14 sentence; no end screen; 0 A26 cache entries with data; nothing kept. 3 of 3. The answers:
+- an A14 refusal;
+- `phone_not_nigerian` (the "Not available yet" end);
+- an unmapped 409. It was meant to be the wallet-open end, but the code is `wallet_open`, so it exercised the banner path. The `end` path is covered by the case before.
+
+**The early return leaves the typed numbers in the fields.** Not a leak: a session end starts a new visit, so A26 draws Loading and the form unmounts with them. A void ticket while the same form stays mounted for the same account is not reachable. `forgetKeptCheck` is called only:
+- on a session end;
+- on `signedOut`;
+- on an owner change;
+- on unmount.
+
+The form exists in none of those states.
+
+**Other async writes:**
+- `useSessionAccount`'s `getAccessToken().then` is guarded by its effect's `current` flag. It reads the live token, never a stored one.
+- A26's reads in flight at a session end are cancelled by FIX-04's reset, and their visit's keys are removed.
+- Navigation (`onClose`) happens only on the person's tap.
+- `entry.ts` pushes only on a `wallet_not_open` answer to the caller's own request.
+
+No write after an await goes unchecked against the ticket or the session. A browser rerun is not needed: every path above is reachable in jest with the app's own query client and session.
+
+### 3. Mutants
+
+`$V7/mutants.txt`: each restored and sha1-checked (`2c39cca6…`); all 3 killed.
+
+| Mutant | Builder's suite |
+|---|---|
+| R6-2: the start-over never unsubscribes | killed (2 tests: a session end after close reaches nothing of the gone screen; 20 opens and closes leave no listener). Round 6's survivor is now pinned |
+| R7-1: the error path not checked against the ticket | killed (1 test) |
+| R7-2: round 6's order (cache written before the ticket check) | killed (1 test) |
+
+### 4. `npm run check`
+
+Exit 0: 485 tests; gates 9 run, 123 files, 0 fail, 0 warn, 0 accepted; 205 tasks; 0 act warnings (`$V7/check-1.log`).
+
+**NOT RUN:** capability check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
 
 ## Owner sign-off
 
