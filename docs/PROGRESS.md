@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 40 of 179.**
+**Launch tasks done: 41 of 179.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 51 | 46 | 32 | 32 |
+| todo | 51 | 46 | 32 | 31 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 27 | 12 | 2 | 0 |
+| done | 27 | 12 | 2 | 1 |
 
 ## Being built (or fixing verifier findings)
 
@@ -27,6 +27,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 - [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
 - [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring (Developer)
+- [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model (Developer 3)
 - [OPS-04](../tasks/OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers (You)
 - [SHELL-03](../tasks/SHELL-03.md) Tester builds (Developer)
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
@@ -66,7 +67,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN
 - **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
-- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
+- **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
 
@@ -74,6 +75,9 @@ From `docs/LOG.md`, newest first.
 
 - 3 Oct 2026 · WALLET-11 · Verified round 1: 1 defect, status building (mobile e8b0027 with main 9d43d9d; Hub a055b4f). An account number pasted with spaces ("0987 654 321") is cut to 8 digits by the field's maxLength before the spaces are stripped. Passed: gates exit 0 on branch and merge (23 suites, 398 tests, 107 files, 0 fail), V4, V5 (recorded differences only), V6 (12 states by real cause, light and dark), V9 (sign-in through A22, load, save, reload, edit; every PUT body only bankCode and accountNumber; second person sees null); 7 of 8 mutants killed (survivor: the route's back-after-save has no test). NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11 (not built).
 - 3 Oct 2026 · WALLET-11 · Built A21 Payout bank (`/payout-account`), status verifying: loads the saved account, bank sheet, account number, the bank's name and the server's BVN match after saving (flag when false, name alone when null), no-wallet, opening, loading and error states; 21 tests, 7 of 7 mutants killed; V9 on the built Hub (real sign-in, PUT and read back); G-57 (bank list and name check unserved, WALLET-09) and G-58 (BVN match before saving, the "Creators only" line) filed; SHARED-CHANGES WALLET-11 #1, #2.
+- 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
+- 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).
+- 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
 - 3 Oct 2026 · WALLET-14 saved recipients and the payout account merged (backend PR #45, a055b4f). Bank names come only from Fintava; a payout account in another name is flagged; BVN name words are stored only as person-bound keyed hashes. Three verifier rounds. G-54 filed (contract build order).
 - 3 Oct 2026 · WALLET-14 · Merged main for the pull request (backend d89f7e5 with main ad1e515, mobile with main 8a58a67), status review: gate route lists hold MONEY-14, MONEY-15 and WALLET-14 routes; one test added (two people saving the same place get their own rows, kills M2); full suite 132 suites 3,196 passed 0 failed, protected 253/253; main's committed contract is not byte-reproducible by its own build (order only).
 - 3 Oct 2026 · WALLET-14 · Verified round 3: no open defect, status review (backend ab459bc on main 48b9043; mobile 6a5a17b with main 331a6fa; neither main moved). Defect 3 closed: a purged person is a byte-identical 404 to the person who saved them and to a stranger (3 rounds, 20 concurrent re-saves all 404, list and count unchanged), a wallet-less one a byte-identical 409; a reopened wallet answers the original row, no duplicate. No regression: full-list re-saves answer their row with no name check, the cap counts the list (1 x 201, 19 x 409 after a purge), duplicates stay one row, isolation holds. Full suite 130/130 suites (3,148 passed, 0 failed), protected 253/253, gates 16 fail / 13 warn (only BENEFICIARIES-MAX added), 6 of 7 mutants killed (survivor: no test has two people save the same person), mobile merge keeps both sides, 0 key windows, 0 Fintava calls.
@@ -84,6 +88,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-14 · Lead follow-up (backend 514d3ad, status verifying): merged `wmt/MONEY-13` (35b68af), the five routes now run its wallet gate and the stand-in is deleted (G-47 handled); the 6 suites on :4001 pass 62/62 and the full suite on a fresh database is 3,065 passed, 0 failed; protected 253/253.
 - 3 Oct 2026 · WALLET-14 · Built (backend a53fe14, status verifying): beneficiaries and the payout account served (`/money/beneficiaries`, `/money/payout-account`), each bank account name-checked through Fintava with its real bank code and the bank's name; the BVN check now keeps the BVN name as keyed word hashes, so a payout account in another name is flagged (`matchesBvnName: false`); additive migration, G-46 and G-47 filed, 3 free sandbox name checks.
 - 3 Oct 2026 · MONEY-15 transaction history, monthly summary and detail merged (backend PR #44, ad1e515). Three verifier rounds: grouped earnings never drop from a scroll except in the narrow case filed as G-53 (corrected by a refresh).
-- 3 Oct 2026 · MONEY-15 · Verified round 3: status review (backend c0d9a12, mobile 46095e8; neither main moved). Defect 2 is closed: the three year-0000 requests answer 400. 129 forged dates across the cursor, the group key and the month (year 0000 and 10000+, negative years, leap seconds, long fractions) brought 0 unexpected answers on the built server. Blind spot A is closed for writes that commit within Prisma's 5 s timer (a real uncommitted write at page 1, 10 ms to 4.9 s, 14 runs: nothing lost). The margin brought no regression (15 walks at page sizes 1 to 3). New `unclear` finding 4: a writer whose event loop is late reaching the timer commits after 5 s (5.6 s measured), and the loss returns; CONVENTIONS section 6 calls 5 s a hard limit. Full suite 130/130 suites, 3,144 passed, 0 failed; protected 253/253; gates as main; 12 of 14 mutants killed.
-- 3 Oct 2026 · MONEY-15 · Round 3 (backend c0d9a12, status verifying): a cursor or group key dated year 0000 is now a 400, not a 500 (defect 2). A scroll groups only unlocks completed by its snapshot less 5 s, Prisma's default transaction timeout that the ledger writes under, so a write in flight at page 1 can no longer move a group (blind spot A). CONVENTIONS section 6 now lists what a refresh still corrects. Full suite 130/130, 0 failed; protected 253/253.
-- 3 Oct 2026 · MONEY-15 · Verified round 2: back to building (backend a622812, mobile 92bf3ea; main 48b9043 merged). Defect 1 closed. Every movement that existed before page 1 showed exactly once on the built server and in 24 stress runs (arrival, settling, an older one settling below the cursor; page sizes 1 to 6; an event after every page), with 4 groups straddling pages and around Lagos midnight. New defect 2 (minor): a forged cursor or group key dated year 0000 is a 500, not a 400. Unclear: a pending row the sweep settles with Fintava's earlier time is shown twice in one scroll. The in-flight write loses a group for one scroll (a window of about 5 s), and a reopened unlock only duplicates. Full suite 130/130, 3,141 passed, 0 failed (an earlier run had 1 flaky MONEY-14 leak check, 3/3 alone). Protected 253/253, gates as main (16 / 12), 9 of 12 own mutants killed (3 equivalent).
