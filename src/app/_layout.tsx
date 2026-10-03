@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { useSession } from '@/api/session';
+import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -18,13 +19,22 @@ const queryClient = new QueryClient();
  * opens Home. Signed out, the tabs do not exist and the signed-out screens (the
  * welcome screen first, then sign-up and sign-in) are the only way in; signing in or out swaps one set for the other at once. Nothing
  * is drawn until the stored session has been read, so a signed-in user never
- * sees sign-in flash by (AUTH-01, SHARED-CHANGES.md).
+ * sees sign-in flash by (AUTH-01, SHARED-CHANGES.md). A signed-in account whose
+ * sign-up has an email step left opens that step before the tabs; the server's
+ * progress decides (AUTH-04, SHARED-CHANGES AUTH-04 #2).
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
   const { dark, colors } = useWawu();
   const { status } = useSession();
-  const ready = status !== 'restoring';
+  const gate = useSignupGate();
+  const signedIn = status === 'signedIn';
+  const ready = status !== 'restoring' && (!signedIn || gate.phase === 'ready');
+
+  useEffect(() => {
+    if (signedIn && gate.phase === 'idle') void refreshSignupGate();
+    if (status === 'signedOut') resetSignupGate();
+  }, [signedIn, status, gate.phase]);
 
   useEffect(() => {
     if ((loaded || error) && ready) SplashScreen.hideAsync();
@@ -36,12 +46,17 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }}>
-        <Stack.Protected guard={status === 'signedIn'}>
+        <Stack.Protected guard={signedIn && gate.needsEmail}>
+          <Stack.Screen name="email-code" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail}>
           <Stack.Screen name="(tabs)" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           <Stack.Screen name="welcome" />
           <Stack.Screen name="account-type" />
+          <Stack.Screen name="sign-up" />
+          <Stack.Screen name="phone-code" />
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>

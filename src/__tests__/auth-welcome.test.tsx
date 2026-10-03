@@ -194,10 +194,11 @@ describe('A2: why you are here', () => {
     expect(pickedAccountType()).toBe('earn');
   });
 
-  it('draws no Continue button while nothing follows A2, and makes no request', async () => {
+  it('draws Continue (AUTH-04 adds A3 behind it), which waits for a pick, and makes no request', async () => {
     await open();
+    expect(screen.getByRole('button', { name: 'Continue' }).props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(earn());
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' }).props.accessibilityState.disabled).toBe(false);
     expect(requests).toEqual([]);
   });
 
