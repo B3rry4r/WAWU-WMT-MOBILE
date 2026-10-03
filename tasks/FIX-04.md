@@ -7,7 +7,7 @@ order: 122
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V6, V9]
@@ -35,7 +35,7 @@ in the session and query layer, so every screen, present and future, is covered 
 
 ## Scope
 
-Fenced files, named by the lead for this task: `src/app/_layout.tsx`, `src/api/session.ts`, `src/api/query.ts`,
+Fenced files, named by the lead for this task: `src/app/_layout.tsx`, `src/api/session.ts`, `src/api/query.ts`, `src/api/client.ts` (added by the lead for fix round 2),
 their tests, and the task and docs files. No feature file, no backend change. `src/features/open-wallet/` is
 KYC-05's (making A26's own queries account-keyed on its branch) and is not touched.
 
@@ -45,6 +45,8 @@ KYC-05's (making A26's own queries account-keyed on its branch) and is not touch
 - [x] The same after A's session is refused (expired, the refresh refused), after a sign-in as B over A's session, and after a refresh that answers with another account's token.
 - [x] A read for A still in flight when B signs in never lands in B's cache or on B's screen; neither does a save (mutation) for A still in flight.
 - [x] On a real Hub, B opening A21 with B's reads held 3 s sees the loading state, then B's own account; never A's (light and dark, 390 px).
+- [x] A request sent in one session is never sent again in the next: a 401 for a token from an ended session ends that request as signed out, for every method, and for a refresh that answers for another account; a token rotated within one session still retries (fix round 2).
+- [x] The app-wide query defaults are pinned by tests: 30 s fresh, at most 2 retries and only for no connection or a server fault, mutations never retried (fix round 2).
 - [x] Other code can learn that the session ended (`onSessionEnd`), as SHARED-CHANGES KYC-05 #4 asked.
 
 ## Builder report
@@ -131,6 +133,49 @@ Verifier, 3 Oct 2026 (fresh session; wrote none of this code). Mobile `wmt/FIX-0
 ### Cleanup
 
 Hub, stand-in WAWU ID, Fintava stand-in and pass-through were stopped by their own PIDs, after checking each command line and cwd. Ports 4985, 4986, 4987 and 8185 are free. The worktrees `vfx04m`, `vfx04main` and `vfx04hub` were removed, and `vfx04_test` was dropped. No Fintava sandbox or live call was made, and no call went to `id.wawuafrica.com` or `api.wawuafrica.com`.
+
+## Builder round 2
+
+Builder, 3 Oct 2026. Mobile `wmt/FIX-04` `bd57ab8` (code) on the verifier's `7fce5ee`; main `6bc420e` has not moved, so the branch is its merge with main. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/fx04/r2/` (`r2/` below).
+
+- **Defect 1, cause:** `refreshAccessToken(rejected)` handed back whatever token was in memory when it was not `rejected`, without asking which session `rejected` came from, so `client.ts` sent A's request again with B's token.
+- **Defect 1, fix.** `src/api/session.ts`:
+  - It keeps a session number and the set of access tokens issued in the current session (the stored one, the sign-in's and each refresh's).
+  - A new session starts at every sign-in and whenever a session ends: sign-out, a refused refresh, or a refresh answering for another account. That replaces `generation`.
+  - `refreshAccessToken` returns null for a token not issued in the current session, so that request ends as signed out.
+  - A refresh whose answer started a new session (another account's token) returns null to the request that asked.
+  - New `isCurrentSessionToken(token)`.
+
+  `src/api/client.ts` (fenced; the lead added it for this round) asks again at the moment of the retry, after the refresh resolves: it sends again only if both the rejected token and the new one belong to the current session. This holds for every method, because it is the one auth middleware.
+- **Tests for defect 1** (`src/__tests__/session-cache.test.tsx`; the fake Hub logs every request with whose token and its status):
+  - P1: A's save held, A signs out, B signs in, the save is answered 401. Only `POST as A 401` is sent, never a write as B.
+  - The same for a read (GET).
+  - P2: a refresh answers with B's token while A's save is in flight. No write is sent as B.
+  - Same-session rotation: the expired save is refreshed and sent again as A, once (`as A 401`, `as A 200`).
+
+  On round 1 (`c051e67`) the first three fail and the rotation passes (`r2/jest-cache-on-c051e67.log`). On main every test in the file fails (`r2/jest-cache-on-6bc420e.log`; the rotation test fails there only because main never empties the cache between tests). On the branch, 11 of 11 pass. `session.test.ts`: the cross-account refresh test now expects null for the request that asked, and still checks that the session became B's.
+- **Finding 2:** new `src/__tests__/query-defaults.test.ts` (14 tests) drives `createQueryClient()` the way a screen does (an observer, fake timers). It pins:
+  - An answer is fresh for 30 s (no fetch at 29 s, a fetch at 31 s).
+  - Network and server failures (and a thrown non-API error) get 3 tries in all; every 4xx kind gets 1.
+  - A mutation is tried once after a network or a server failure.
+
+  Each of the verifier's survivors now dies (`r2/defaults-mutants.log`): retry "any error, 3 times" fails 11; staleTime 0 fails 1; mutations `retry: 3` fails 2.
+- **Browser, the verifier's `replay`** (their driver and pass-through, ports moved to mine: `r2/harness/`, `r2/results.jsonl`, `r2/shots/`). Setup:
+  - Hub built from backend main `fe1ec6c` on a fresh, migrated and seeded `fx04_r2_test` on :4981.
+  - Stand-in WAWU ID on :4982, behind the `{ data }` front on :8181.
+  - Fintava stand-in on :4983 (environment `PATH` and `HOME` only; 23 calls: 1 `/banks`, 22 `/name/enquiry`).
+  - Exports of main and the branch, built with `--clear`; 0 `wawuafrica.com` in either.
+
+  Results:
+  - **main, light and dark:** the PUTs read `401 as A`, then `200 as B`. B's account read with B's own token, and the `MoneyPayoutAccount` row, become `3333333330`. B's A21 shows `3333333330` with "ADA FIRST" (`main-replay-2-*`).
+  - **branch, light and dark:** the PUT reads `401 as A` and nothing follows (the app's one refresh call is the refused one that ended A). B's account stays `2222222220` through the Hub and in the row, A's stays `1111111110`, and B's A21 shows `2222222220` "BAYO SECOND" (`branch-replay-2-*`).
+  - Re-run on the branch, light and dark: B's held A21 first draws the loading skeleton, then B's own account; at full speed `(loading)` then `2222222220`.
+- **Checks:** `npm run check` exit 0 (26 suites, 431 tests; gates 0 fail, 0 warn on 110 files; 205 tasks; `r2/check.log`).
+- **Cleanup:** every process stopped by its own PID after checking its command line and cwd. Ports 4981 to 4983 and 8181 are free. The Hub worktree and the detached main worktree are removed, and `fx04_r2_test` is dropped. No Fintava, `id.wawuafrica.com` or `api.wawuafrica.com` call.
+- **NOT RUN:**
+  - A same-session rotation in the browser. Covered in jest. Unblocked by a pass-through control that answers one Hub write 401 while the refresh is accepted.
+  - V10, a native build. Unblocked by a development build on an Android phone.
+  - A sign-out through the app's own control. There is none yet; unblocked when a Settings or Me screen calls `signOut()`.
 
 ## Owner sign-off
 
