@@ -7,7 +7,7 @@ order: 108
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -37,6 +37,40 @@ GET history with search, category filter and cursor pages; monthly totals; GET o
 - [ ] Monthly totals equal the sum of that month's rows.
 
 ## Builder report
+
+### Builder round 2
+
+Builder, 3 Oct 2026 (the round-1 builder). wawu-backend `wmt/MONEY-15` BACKEND_HASH: round 2 is 6d240fe, then backend main c1d23b5 (MONEY-13 merged, #42) merged in as 39238d4 with no conflict. Mobile `wmt/MONEY-15`: the verifier's 275f50c, then mobile main a3e072c merged in. The `BACKEND_GAPS.md` and sandbox README conflicts kept both sides (main's G-40, G-41, G-48, G-49 and this task's G-44, G-45 in number order), and PROGRESS was regenerated. Every round-1 finding was reproduced first: the new tests below were run against round 1's service, keys and DTO. P1, P1b, P1c and the trim test fail there. The reference-order and full-page tests pass there, because they pin behaviour that was already right.
+- **Defect 1, a grouped row vanishing mid-scroll (fixed by a snapshot).**
+  - How it works: the first page takes the server's clock (milliseconds) as the scroll's snapshot. The cursor (now `c2.`) carries it beside the last row's (`occurredAt`, id). The group key (now `g2.`) carries the snapshot of the read that showed the row. Every page of one scroll groups as of that snapshot: a group's members are the unlocks whose `completedAt` is at or before it.
+  - Effect: an unlock that lands, or a pending one that settles, mid-scroll stays its own row in that scroll. It can no longer move a group across a cursor already handed out. The next refresh groups it. A group's place and `createdAt` stay its latest member's (Lead ruling 3).
+  - Why not anchor the group to its first member (the other option offered): that alone still shows a settling unlock twice (once pending on a page already read, once inside its group). It would also put a group below rows newer than its `createdAt`.
+  - Why the server's clock: the ledger stamps `completedAt` with it (`LedgerService`, `new Date()`), so both sides of the comparison use one clock.
+  - Default (agent), owner may override. Rules in backend `CONVENTIONS.md` section 6, "The scroll's snapshot".
+  - Round 1's `c1.` and `g1.` are refused with a 400. Nothing outside this branch issues them.
+- **Tests added** (`money-history.contract.spec.ts`; each walks every page and counts each movement once, a group counting once for each member listed by its own key):
+  - **P1:** 2 completed unlocks and 5 transfers, page 1 with limit 3, then a third unlock. The 2 old unlocks and 5 transfers each appear exactly once, the group shows 2, and the new unlock waits for the refresh, where the group shows 3.
+  - **P1b:** the same with a pending newest unlock that settles between pages. It appears once (pending, on page 1), and the group of 2 once.
+  - **P1c:** an older pending unlock that settles below the cursor appears once, as its own row, completed.
+  - A group key lists the unlocks completed by its snapshot, that instant included.
+- **M5:** a test for the reference order (ours, then Fintava's, the session, the transaction id, the tagapay one, the row id), one row per step. Ours first is what G-44's fix relies on.
+- **M13:** `nextCursor` was already null when nothing follows (the service reads `limit + 1`). A test now holds it: 6 rows as 3 + 3, the second page without a cursor; `limit=6` without one; `limit=5` with one.
+- **Minor, `q`:** trimmed by the DTO (`@Transform`) before `@MinLength(2)` and `@MaxLength(60)`, so `" P "`, `"   "` and `" a"` are 400 and `"  pe  "` searches "pe". The contract changes only in `q`'s description. The committed contract is round 1's plus that one line, because a fresh `contract:build` reorders enum values (it is equal to a fresh build with enum order ignored).
+- **Mutants**, each alone, the service restored by copy:
+  - Killed: M5 (Fintava's reference first), M13 (`>=` for `>`), no as-of check, `<` for `<=` at the snapshot, the cursor's snapshot ignored, the group key's snapshot ignored, and the next cursor taking a new time.
+  - Round 1's 14 re-run: 13 killed. `status = 'completed'` in the group test now survives. It is equivalent to the check as it is today: a row's `completedAt` is set only when it completes, cleared when a disagreement reopens it, and an `in` row never becomes `reversed`. It is kept as a guard.
+- **Checks after main c1d23b5 was merged (39238d4):** FULL_SUITE_LINE
+  - `tsc` 0. eslint 0 on every `.ts` the branch changes against main. History, gate and money-contract specs: 6 suites, 100/100.
+  - Protected `run.sh --fresh` (code 39238d4, lock c1d23b5): 253/253, all 244 required, no lock file touched.
+  - Gates 16 fail / 10 warn / 76 accepted on 628 files, the same findings as round 1 and main. `check_baseline.py` clean.
+  - CI tripwire 0. Key scan 0 of 58 windows.
+  - Mobile: `sync_contract.py` moved `SOURCE_COMMIT` to c1d23b5, with no type change. MOBILE_CHECK_LINE
+- **Not run, and what is left:**
+  - No new sandbox call: the routes never call Fintava.
+  - Two cases the snapshot cannot see. A ledger write still in flight at the very instant page 1 is read: its `completedAt` is stamped before it commits. A completed unlock put back to `pending` by a disagreement (MONEY-08, a stop): its `completedAt` is cleared. Either can still move one group in an open scroll; a refresh shows it right.
+  - Round 1's NOT RUN items stand.
+
+### Builder round 1
 
 Builder, 3 Oct 2026. wawu-backend `wmt/MONEY-15` 35e4e33 (from main 6d48c97, which did not move; `origin/wmt/MONEY-13` 35b68af merged in as 35e4e33 at the lead's request); mobile `wmt/MONEY-15` (from main 12aa3c9; main 3304f1e merged in, PROGRESS regenerated, `npm run check` exit 0 again: 371 tests, gates 0 fail on 96 files, 203 tasks).
 - **MONEY-13 merged in (lead's request):** a merge commit, no rebase; one conflict, the comment block in `money.module.ts` (both kept). The three history routes now carry `@RequireOpenWallet()` and take `@CurrentWallet()`; the service's own no-wallet check and its `BALANCE_OPENING_MESSAGE` import are gone, so no wallet is the gate's `409 wallet_not_open` / `wallet_opening` in the gate's words (my spec now asserts `NO_WALLET_MESSAGE` and `WALLET_OPENING_MESSAGE` on all three routes). MONEY-13's specs changed on purpose, each because these routes are now served and gated: the gated-route lists in `wallet-gate-coverage.spec.ts` and `wallet-gate.contract.spec.ts` name the three routes (the contract spec then sends them as every kind of person without a wallet), and the coverage spec's example of a declared route moves from `GET money/transactions` to `GET money/holds`. Gate specs 3 suites, 45/45. Contract regenerated after the merge: semantically identical (enum order aside), so the committed file is unchanged. If MONEY-13 changes after its verification, this branch merges it again.
