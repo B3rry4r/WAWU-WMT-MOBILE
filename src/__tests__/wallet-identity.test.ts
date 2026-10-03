@@ -99,3 +99,92 @@ describe('the BVN check calls (KYC-01)', () => {
     expect(calls.walletIdentityQuery.staleTime).toBe(0);
   });
 });
+
+describe('the selfie match calls (KYC-02)', () => {
+  // A made-up image: JPEG magic bytes, then filler (never a photo of anyone).
+  const image = `/9j/4AAQ${'A'.repeat(4000)}`;
+  const matched = { matchedAt: '2026-10-02T20:59:47.000Z', checksLeft: 2 };
+
+  it('a user who takes a selfie that matches gets A7; the BVN and image go in the body, never the URL', async () => {
+    const calls = boot();
+    answer = { status: 200, body: { statusCode: 200, message: 'OK', data: matched } };
+    await expect(
+      calls.matchSelfie({ bvn: '2229 0000 111', image: `data:image/jpeg;base64,${image.slice(0, 50)}\n${image.slice(50)}` }),
+    ).resolves.toEqual(matched);
+    expect(seen).toHaveLength(1);
+    expect(seen[0].method).toBe('POST');
+    expect(seen[0].url).toMatch(/\/api\/hub\/money\/identity\/selfie$/);
+    expect(seen[0].url).not.toMatch(/22290000111|4AAQ/);
+    expect(JSON.parse(seen[0].body)).toEqual({ bvn: '22290000111', image });
+  });
+
+  it('a selfie that does not match is A16 ("not_matched"); the fourth of the day is the retry rule ("limit")', async () => {
+    const calls = boot();
+    answer = refusal(
+      422,
+      'selfie_not_matched',
+      "We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.",
+      { checksLeft: 2 },
+    );
+    const failed = await calls.matchSelfie({ bvn: '22290000111', image }).catch((e: unknown) => e);
+    expect(failed).toMatchObject({
+      status: 422,
+      code: 'selfie_not_matched',
+      message: "We couldn't match your face. It must match your BVN photo. Good light, no glasses or cap.",
+    });
+    expect(calls.selfieProblem(failed)).toBe('not_matched');
+
+    answer = refusal(429, 'selfie_checks_exhausted', 'You have used today’s selfie checks. Try again later.', {
+      retryAfterSeconds: 86000,
+    });
+    const limited = await calls.matchSelfie({ bvn: '22290000111', image }).catch((e: unknown) => e);
+    expect(limited).toMatchObject({ status: 429, code: 'selfie_checks_exhausted' });
+    expect(calls.selfieProblem(limited)).toBe('limit');
+  });
+
+  it('each other refusal of a selfie has its own state', async () => {
+    const calls = boot();
+    const cases: [ReturnType<typeof refusal>, string][] = [
+      [refusal(409, 'selfie_already_matched', 'Your selfie already matches your BVN.'), 'already_matched'],
+      [refusal(409, 'bvn_not_checked', 'Confirm your BVN first.'), 'not_checked'],
+      [refusal(409, 'wallet_already_open', 'Your wallet is already open.'), 'wallet_open'],
+      [refusal(503, 'provider_unreachable', 'We could not check your selfie right now. Try again in a moment.'), 'unreachable'],
+    ];
+    for (const [refused, problem] of cases) {
+      answer = refused;
+      const error = await calls.matchSelfie({ bvn: '22290000111', image }).catch((e: unknown) => e);
+      expect({ problem: calls.selfieProblem(error) }).toEqual({ problem });
+    }
+    answer = { status: 429, body: { statusCode: 429, message: 'ThrottlerException: Too Many Requests', data: null } };
+    expect(calls.selfieProblem(await calls.matchSelfie({ bvn: '22290000111', image }).catch((e: unknown) => e))).toBe('other');
+    answer = 'offline';
+    expect(calls.selfieProblem(await calls.fetchSelfieMatch().catch((e: unknown) => e))).toBe('other');
+  });
+
+  it('an empty or oversized selfie is refused without sending it (each match is charged)', async () => {
+    const calls = boot();
+    answer = { status: 200, body: { statusCode: 200, message: 'OK', data: matched } };
+    for (const bad of ['', '   ', 'data:image/jpeg;base64,', 'A'.repeat(calls.SELFIE_MAX_BASE64_CHARS + 4)]) {
+      await expect(calls.matchSelfie({ bvn: '22290000111', image: bad })).rejects.toMatchObject({ kind: 'validation' });
+    }
+    expect(seen).toHaveLength(0);
+    await expect(calls.matchSelfie({ bvn: '22290000111', image: 'A'.repeat(calls.SELFIE_MAX_BASE64_CHARS) })).resolves.toEqual(
+      matched,
+    );
+    expect(seen).toHaveLength(1);
+  });
+
+  it('reads the selfie step; an unreadable answer is refused', async () => {
+    const calls = boot();
+    answer = { status: 200, body: { statusCode: 200, message: 'OK', data: { matchedAt: null, checksLeft: 3 } } };
+    await expect(calls.fetchSelfieMatch()).resolves.toEqual({ matchedAt: null, checksLeft: 3 });
+    expect(seen[0].method).toBe('GET');
+    expect(seen[0].url).toMatch(/\/api\/hub\/money\/identity\/selfie$/);
+    for (const data of [null, {}, { matchedAt: null }, { matchedAt: 5, checksLeft: 1 }, { matchedAt: null, checksLeft: 'two' }]) {
+      answer = { status: 200, body: { statusCode: 200, message: 'OK', data } };
+      await expect(calls.fetchSelfieMatch()).rejects.toMatchObject({ kind: 'unknown' });
+    }
+    expect(calls.selfieMatchQuery.staleTime).toBe(0);
+    expect(calls.selfieMatchQuery.queryKey).toEqual(['money', 'identity', 'selfie']);
+  });
+});
