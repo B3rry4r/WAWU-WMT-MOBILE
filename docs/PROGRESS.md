@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 57 | 48 | 32 | 32 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
 | done | 20 | 10 | 1 | 0 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
 
@@ -66,6 +66,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · MONEY-08 · Verified round 1: 4 defects, status building (backend 0eb32a9, mobile 20404c1; neither main moved). Never moves money (182 requests, all GET) and exactly once under two instances, webhooks and checks; FAILURE then two reversals: reversed once; every amount difference stops the row. Defects: a backlog starves new rows (a new withheld-webhook send waits 39 sweeps behind 400 waiting rows after a restart, never within 75 behind 3,000); a same-reference resend after absent is written on `discrepancy` and never swept; a PENDING delivery landing during the absent check is overwritten as failed; MONEY-06's 5-page history cut counts as no row, so a send on page 6 is failed as absent. Protected 253/253, contract 2,821 passed (43 on :4001 re-run 71/71), gates 16 fail / 9 warn (+LEDGER-STATUS-CHECK-AFTER), mobile check exit 0.
 - 3 Oct 2026 · MONEY-08 · The pending sweep built in wawu-backend (`wmt/MONEY-08`): every minute, `pending` ledger rows older than 2 minutes are asked about through Fintava's status endpoint (MONEY-06's reconcile and resend rules) and settled when their webhook never came: SUCCESS completed, FAILURE failed (reversed only by Fintava's own reversal, once), Fintava's 404 for our reference past the resend window failed with no money moved, an amount that differs recorded and left for review; nothing is ever sent. A completed row no longer becomes failed (U-1). Read-only sandbox run settled MONEY-10's real sends (`31-money08-status.md`). Gaps G-34, G-35. Status verifying.
 - 3 Oct 2026 · FIX-01 · Verified: no defect, status review (backend 9ea3b90 on main 13b6ac4, mobile f2342d0 on main 983418c; neither main moved). My own stall server (plain and TLS, separate process): all 34 client methods against headers-then-stall, partial body, drip, chunked and close-delimited bodies and stalled 400/404/500 end at the 400 ms timeout (400 to 435 ms) as the no-headers outcome with the socket closed, with and without forced GC (508/510 per run, the 2 others the selfie cap); main's client hangs on 474 of 476 under GC. Bodies done before the deadline are read, after it time out; 8,000 calls leave 0 timers and 0 sockets, heap flat. Built Hub, 5 s check timeout, forced GC or not: BVN check and KYC-02's u4 selfie stall answer 503 at 5.0 to 5.1 s, counted, socket closed at the deadline; a stalled 400 is a counted 503; main no answer at 60 s. No send becomes resendable (stalled lookups give wait). Contract 2,801 passed, protected 253/253, gates 16 fail / 8 warn as main, mobile check exit 0. Findings: a mid-body reset is still read as empty (unchanged); the builder's spec does not pin the abort when no headers arrive.
 - 3 Oct 2026 · FIX-01 · MONEY-06's Fintava timeout now covers headers and body and survives garbage collection (KYC-02 round 4 finding 1): one deadline per request that aborts, cancels the body reader and races fetch, cleared once the body is read. Every client method against a headers-then-stalled body ends at its timeout as the existing timeout error, with and without forced GC (108/108); main's client hangs on the same spec (40 still waiting); built Hub BVN check with a stalled Fintava: 503 at 5.3 s under load, main no answer at 60 s. A stalled 400 on a check is now a counted 503, not a failed match. Contract 2,801 passed, protected 253/253, gates unchanged (16 fail / 8 warn). Status verifying (backend 9ea3b90).
@@ -80,4 +81,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · OPS-11 · Verified round 3: no open defect (backend f45e657, mobile 8678dad; mains 66339b9 and 94d202b already merged). The Flutterwave burst spec passed 55 of 55 runs at load 7.1 to 12.8 with 0 bursts set aside (spans 211 to 398 ms against 900); the bare decorator fails it 6 of 6, and a forced set-aside cannot hide a 429. The override tests kill all 11 mutants asked (a note: a decorator on the same line as another slips past both). Production code unchanged since round 1/2; contract 110/110 suites, 2134 passed; protected 253/253; main's 16 gates; the production build behind a real nginx passes every trust case. Status review.
 - 3 Oct 2026 · OPS-11 · Round 3 (took over from an interrupted session): the Flutterwave burst tests set aside a burst whose arrivals do not fit one window and send a fresh one (at most 5), failing loudly if none fits (backend `wmt/OPS-11` f45e657, main 66339b9 merged). 45/45 runs at load 7 to 14.4; the bare decorator fails 6/6; full contract 110/110 suites; protected 253/253. Back to verifying.
 - 2 Oct 2026 · OPS-11 · Verified round 2: 1 defect (backend 954ef8f, mobile f9d9b12; checked merged with backend main 368fab0 and mobile 66bdcff). The override-list test now expects KYC-01's @Throttle and catches an unexpected skip or override (mutants). The burst test is timed by arrivals now and no longer fails on a cold start, but it still failed 2 of 68 runs at load 7 or more (span 1003 ms); retry a burst that misses the window instead of failing. Contract 108/108 suites, 2095 passed; protected 253/253; main's 16 gates; mobile check exits 0. Status building.
-- 2 Oct 2026 · OPS-11 · Round 2: the verifier's 2 defects fixed (backend `wmt/OPS-11` 954ef8f, main d27ad37 merged). The rate-limit spec expects KYC-01's `@Throttle` on the BVN check beside admin auth; the Flutterwave burst is timed by arrival at the app (the window the throttler counts), after a warm-up, so receipt writes on a busy machine no longer fail it (10 of 10 under load). `bvnCheckTracker`'s comment updated. Contract 107/107 suites, 2066 passed; protected 253/253; gates as main. Back to verifying.
