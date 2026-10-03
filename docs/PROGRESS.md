@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 51 | 44 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 29 | 13 | 2 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
 

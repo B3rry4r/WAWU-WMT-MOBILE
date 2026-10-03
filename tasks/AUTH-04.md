@@ -7,7 +7,7 @@ order: 51
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [AUTH-02, AUTH-03, AUTH-05, UI-02]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -153,6 +153,39 @@ Capability checks: A3 (enter and Continue to A4) passed. A4 (6 digits, resend af
 Phone or emulator, V10, Android safe areas and the system keyboard (web export only; unblocked by a development build on a phone). Real Fintava `/sms/send` and real mail (G-42; a stand-in receiver was used). Screen reader pass and keyboard autofill on a device. PHONE_ALREADY_CONFIRMED live (needs a concurrent confirm race). Sign-out from a screen (none exists yet; token removal and reload used instead).
 
 Status: back to `building` for F1 to F5.
+
+## Verifier report (round 2)
+
+Verified at 5b782ed (fixes in 482f6a7, merged with main 6bc420e). Local stack: wawu-id origin/main dbcb2f8 and Hub origin/main 1e6b807 in worktrees under `/home/user/lanes/a04w/`, own databases `a04w_id` and `a04w_hub` on the system Postgres, a local receiver standing in for Fintava `/sms/send`, mail codes read from the wawu-id log. Config overrides for speed (recorded): resend gap 15 s, lockout 30 s, raised per-IP limits. Web export (`--dev` and production, exported to the scratchpad, never into the repo) driven by Playwright at 390 px light and dark, plus 320 and 360 px. Everything stopped, dropped and removed afterwards. Evidence: `/tmp/claude-0/-home-user/96e62beb-c0ce-5c90-a589-b6d7920b563f/scratchpad/AUTH-04-v2/` (`check.txt`, `reverts.txt`, `f1.py` to `f9.py`, `reg.py`, `a01.py`, `lock*.py`, `walk/`, `shots/sheet-fixes.png`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | `git diff 61553d4..HEAD --stat` (ignoring the main merge) is the builder's set: `phone-code.tsx`, `sign-up.tsx`, `CodeScreen`, `SignUpScreen`, `signInFailure`, `signupFailure`, `signupFlow`, `signupStore`, `LeaveDevRoute`, `auth-signup` and `auth-sign-in` tests, BACKEND_GAPS, docs, this file; nothing extra or missing. `npm run check` exit 0: 25 suites, 474 tests, gates 9 run / 120 files / 0 findings, lint 0 warnings (`check.txt`). Added lines: no em-dashes, no TODO-type comments, no colour literals, no new kit constants, no new icons, no hand-written wawu-id response types. |
+| F1 | fixed | An ended sign-up shows only Start again: no Resend, no countdown, no "We sent a new code" (6 of 6 checks light and dark). Start again returns to A3, the storage is empty and "Enter the code we sent" is gone. |
+| F2 | fixed | Back, edit, Continue inside the gap: A3 says "A code was just sent. Wait 0:12 before sending another, or enter the one we sent." (server seconds, no "Too many tries"), the secret is unchanged, no second text, the link opens A4 and the first code signs in. Same with the request aborted (offline) and with a 500 injected. Light and dark. |
+| F3 | fixed | Measured: 320 px boxes 39.2 wide, 20 to 300, no horizontal scroll; 360 px 45.8 wide, 20 to 340; 390 px 46 wide, 34.5 to 355.5, equal to the kit (and with the email field). Light and dark. |
+| F4 | fixed | Production export: signed out, `/preview/auth`, `/dev/components`, `/preview/pin-sheet` all land on welcome; signed in on the email step they land on the email step; past it (Later) they land on Home. Never blank. Light and dark. |
+| F5 | fixed | A 500 or an aborted request on the sixth digit shows the banner and "Try again"; Try again sends the same code and signs in; instead, the next tapped digit starts a fresh code (1 of 6, banner and button gone) and the right code then signs in. 4 variants x light and dark. |
+| F9 | fixed | Two same-frame clicks (`el.click(); el.click()`) send one request on A3 Continue and one on the code Continue (email-code field path). Light and dark. |
+| Reverts | 14 of 16 fail a test | `reverts.txt`: held secret cleared first (4 fail), ended-state Resend render (1), boxes without `flexShrink` (1), LeaveDevRoute target (1), no Try again (2), next digit not fresh (1), code `inFlight` guard (1), A3 `inFlight` guard (1), PHONE_NOT_CONFIRMED sign-in message (2), not-confirmed body (2), too-soon copy (3), sent-code link (6), link not refreshed on focus (1), Start again keeps secret (2). Survivors: `askAgain` dead guard (builder's note: the control is gone, UI test covers it) and the `sessionStorage` choice (see F13). sha1 before and after identical for all 16. |
+| Regression | passed | Earning, discovering and no-pick users: welcome, A2 pick, A3, A4; reload on `/phone-code` resumes; wrong code then right code; reload on the email step resumes; proved or Later; Home; cold start; tokens cleared then welcome; sign back in. Lockout after four wrong codes shows "Too many tries. Try again in 0:29." ticking, keys inactive (forced click sends no request), the right code works after the wait. Account types on wawu-id: `creator`, `user`, none. Browser requests: wawu-id and the static host only, zero Hub requests. Hub DB: CreatorWallet, FintavaWallet, WalletIdentity 0 rows, KycSubmission unchanged (2 seeded). The receiver saw only `/sms/send`. `attempt` secret: in `sessionStorage` while held, not in `localStorage`, gone when the phone is confirmed and after Start again, not in any URL, console, wawu-id log, Hub log or export log. AUTH-01/02: A1 to sign-in, A22 link and Back, seeded sign-in, signed-in deep links to `/sign-up`, `/phone-code`, `/welcome`, `/sign-in` all land on Home, wrong password banner, a never-confirmed sign-in says to create the account again. |
+
+### Findings
+
+- **F13 unclear (test gap), low.** The web storage choice (`sessionStorage`, `signupStore.ts`) has no test: reverting it to `localStorage` fails nothing (jest runs the native path). Live behaviour is right (above). A test that sets `Platform.OS = 'web'` and checks the store would pin it. Not a product defect.
+- **F11 note (corrects the builder's note), low, design.** Measured: light muted on page 3.15:1 (card 3.42), light danger on page 4.19:1 (card 4.55). Dark muted is also below 4.5: 4.16 on page, 3.82 on card; dark danger 7.12 and 6.54, secondary text 8.21 and 7.54. The builder wrote that dark passes; only the dark danger and secondary text pass. Colours unchanged, the design decides.
+- **Test artefact, not a defect.** Playwright's `click` on an `aria-disabled` key waits for the lock to end, so a plain click appears to bypass keys-off; a forced click shows the keys are inactive and no request is sent.
+- **F7 differs-for-recorded-reason.** `sessionStorage` on web is a sound default: reload resumes, a closed tab forgets (a new browser context shows welcome), nothing in a URL or log. Native stays in the secure store.
+- **F6/F8 unclear, unchanged.** No one-time-code autofill on the keypad-only boxes and the short-window layout follow the drawn design; needs an Android build and an owner call.
+- **F10/G-65 unclear, low.** The server leaves `email_verified` false after the `emailCode` check, so the email step asks for a second mailed code; after a reload it says "Sent to your email address" (seen in the F4 run). wawu-id side, filed.
+- **F12/G-64 differs-for-recorded-reason.** The text says "Your WAWU code is ..." (wawu-id wording, seen in the receiver); filed, not an app string.
+- No open defect.
+
+### NOT RUN
+
+A phone or emulator (V10; web export only). Real Fintava `/sms/send` and real mail (stand-in receiver and log). Screen reader pass. One-time-code autofill on a phone keyboard. PHONE_ALREADY_CONFIRMED live (needs a concurrent confirm race). Sign-out from a screen (none exists; tokens cleared instead).
+
+Status: review.
 
 ## Owner sign-off
 
