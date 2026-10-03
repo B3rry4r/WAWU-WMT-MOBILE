@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 50 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 30 | 13 | 2 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
 
@@ -77,6 +77,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · WALLET-27 · Verified: no open defect, status review (backend 5cd55c1 on main fe1ec6c; mobile 33484cf). Capability check passed on the built server through a real sign-in (Sep lists exactly its 6 completed rows, Lagos edges both ways). 70/70 HTTP probes: no way found to read another person's statement (query fields, arrays, headers, paths, swapped or unsigned tokens), no full account number, narration or id in the file; leap day, year end, 366/367 days, empty month, money and CSV rules hold; lines equal the history and its month summary. Full suite 136/136 suites (3,261 passed, 0 failed), protected 253/253, gates main plus one PROVISIONAL warning, tsc 0, mobile check exit 0 (26 suites, 431 tests, 110 files). 14 of 15 mutants killed; M10 (reference order) survives as a test gap. Unclear: load (100k rows, 366 days: 1.3 s, 15.7 MB; 20 concurrent within the global limit: 39 s, 1.6 GB RSS; no per-route throttle or row cap). NOT RUN: PDF (G-68), email (G-69), V10.
 - 3 Oct 2026 · WALLET-27 · Built: `GET /money/statements?from=&to=&format=csv` serves the caller's completed movements for a period of Lagos days (both included) as CSV, from the ledger, no balance (backend 5cd55c1). Stamped PDF NOT RUN (Fintava has no statement, G-68); email NOT RUN (no sender, G-69, owner question). Status verifying.
 - 3 Oct 2026 · FIX-04 · Merged to main by the lead (mobile only, f54650c). One person's cached data and in-flight saves never reach the next person on the same phone. Carried forward: test gap R14 (pending refresh across a new session); device and in-app sign-out not run. OTA update follows.
 - 3 Oct 2026 · FIX-04 · Verified round 2: no open defect, status review (mobile 0becc2c = merged with main 6bc420e; Hub fe1ec6c). Defect 1 closed: on c051e67 A's held save is still sent again as B and B's payout account becomes 3333333330; on the branch it ends at `PUT 401 as A` and B keeps 2222222220, light and dark. A same-session rotation still saves (new `rotation` run). 16 jest probes (overlapping refreshes, restore then 401, sign-out mid-refresh, A to B to A, GET, 24 sign-in orderings) pass, and 5 of them fail on c051e67. Finding 2 closed: round 1's two surviving mutants are now killed. 8 of 14 new mutants killed; 6 survive, all equivalent or recorded as a test gap (R14). Gates exit 0 (26 suites, 431 tests, 110 files, 0 fail). NOT RUN: device, an in-app sign-out control.
@@ -91,4 +92,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-11 · Round 2, status verifying: a pasted account number with spaces or hyphens is kept whole (no raw maxLength; digits taken out, then ten kept), proved by a real Ctrl+V in the web export before (8 digits) and after (10); the route's back-after-save rule now tested (verifier's surviving mutant killed); WAWU ID's answer shape corrected in the report to `{ data }`; main 0b83be8 merged.
 - 3 Oct 2026 · WALLET-11 · Verified round 1: 1 defect, status building (mobile e8b0027 with main 9d43d9d; Hub a055b4f). An account number pasted with spaces ("0987 654 321") is cut to 8 digits by the field's maxLength before the spaces are stripped. Passed: gates exit 0 on branch and merge (23 suites, 398 tests, 107 files, 0 fail), V4, V5 (recorded differences only), V6 (12 states by real cause, light and dark), V9 (sign-in through A22, load, save, reload, edit; every PUT body only bankCode and accountNumber; second person sees null); 7 of 8 mutants killed (survivor: the route's back-after-save has no test). NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11 (not built).
 - 3 Oct 2026 · WALLET-11 · Built A21 Payout bank (`/payout-account`), status verifying: loads the saved account, bank sheet, account number, the bank's name and the server's BVN match after saving (flag when false, name alone when null), no-wallet, opening, loading and error states; 21 tests, 7 of 7 mutants killed; V9 on the built Hub (real sign-in, PUT and read back); G-57 (bank list and name check unserved, WALLET-09) and G-58 (BVN match before saving, the "Creators only" line) filed; SHARED-CHANGES WALLET-11 #1, #2.
-- 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
