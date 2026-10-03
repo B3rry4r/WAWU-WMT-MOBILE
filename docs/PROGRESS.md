@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 49 | 45 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 1 | 0 |
 | done | 32 | 13 | 3 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying (Developer 2)
 

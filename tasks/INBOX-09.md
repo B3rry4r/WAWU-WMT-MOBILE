@@ -7,7 +7,7 @@ order: 15
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-13]
 passes: [V1, V2, V3, V4, V9]
@@ -115,6 +115,29 @@ Same setup as round 1 (own Postgres :5455, `wawu_hub_test`, seeded; own mock :40
 10. **defect**: the new test does not prove the fix (see the table row): it passes against the old `take: 500` code and never creates more candidates than one default batch. A test that creates more candidates than the cap (or sets the batch below the number of creators and also has paused creators ahead of fresh ones in id order) and fails on the old code is needed; my probe in `evidence/` or `hold/zz-sweep.contract.spec.ts` can serve as the model, but it must also clean up after itself.
 
 Findings carried forward for the owner, unchanged: 2 (G-77 minimum count, basis, at-or-over), 3 (response-stats shows the standing, recorded), 4 (G-78, "shown on the profile" through a new route only), 5 (tracker row written on first evaluation, legacy rows rewritten), 6 (notification not retried if its insert fails), 7 (cold-cache `OpenWalletScreen` timeout, not this task's).
+
+### Verifier round 3 (backend `553d952`, mobile base `f9c0aff`; defects 9 and 10 closed)
+
+Main unchanged (backend `1e6b807`, mobile `c733413`), already an ancestor in both repos; mobile merge with main is clean; G-77 and G-78 still absent from main, so unique. Own fresh seeded Postgres :5455 `wawu_hub_test`, own mock started from the same checkout the specs read. Evidence: `/var/tmp/i09v/` (`c5.log`, `c6.log`, `c6.db`, `alone1.log`, `alone2.log`, `first.log`, `after-first.log`, `after-first.db`, `prot-*`, `mcheck4.log`, `v3-*.out`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 backend | passed | `git diff e52c8e0..553d952` is one file, `src/direct-message/tests/paid-dm-pause.contract.spec.ts` (+119 -36): no production code. `tsc` clean. eslint per file and rule against main: 3,609 errors / 850 warnings against 3,610 / 850, no new pair. Gates 660 files, 16 fail / 15 warn / 76 accepted (same as before, all pre-existing), baseline 108 entries all owned. Full `npm run test:contract` on a freshly seeded DB in the normal order: **138 of 138 suites, 3,329 passed, 3 skipped** (matches the builder). Same DB again with no reseed: 138 of 138, 3,329 passed, 3 skipped. (One earlier full run on a fresh DB showed 1 suite, `marketplace-save`, fail with "mock-wawu-id did not become healthy in time" because I was running the mobile `npm run check` at the same time; it is not caused by the branch, and the two quiet runs are green.) |
+| V1 mobile | passed | `npm run check` exit 0, 28 suites, 485 tests, 123 files scanned, 0 findings. |
+| Defect 9 closed | passed | After the full fresh run the DB holds only the two seeded tracker rows, both `none` (0.00 and 4.20, no end date), 0 `paid_dm_*` notifications, 0 `pause-spec-` questions, 0 `pause_` profiles. The new spec alone, twice: 32 of 32 each. The new spec run first, then `direct-message`, `creator-no-response-tracker`, `notification-wiring` and `blocked-account`: 5 suites, 74 tests, all green, and the tracker still only the two seeded rows at `none`: no order dependence. |
+| Defect 10 closed | passed | With the old `take: 500` sweep body put back in my worktree only (restored from a copy; `git status` clean, no diff), the new 620-creator test FAILS: expected 100 stored fresh creators, received 82 (only 82 of the 100 were reached behind 520 paused ones). With the fix it passes (full runs above). The test cleans up after itself when it fails midway: after the failing run the DB had 2 tracker rows (seeded), 0 `pause-spec-` questions and 0 `paid_dm_*` notifications (its `afterAll` and the suite-wide restore). |
+| V2 contract | passed | Unchanged since round 2 (production code and `contract/openapi.json` identical to `e52c8e0`): additive only, +140 lines, 0 removed, `contract:build` reproduces it. |
+| V3 regression | passed | `run.sh --fresh` on the branch: 253 tests, 244 required, passed. Side by side against main again (35 scenarios, real servers, fresh seeded DBs): the same 25 identical and the same 10 that differ (warned or paused creators and the legacy rows); the 403 only for the four paused cases; every non-paused `POST /dm/:creatorWawuId/send`, `PATCH /creator/dm-settings` and the profile and inbox routes identical to main. |
+| V4 field trace | passed | As round 1; see V9. |
+| V9 live seam | passed | `up.sh --detach` from my worktree against my own wawu-id worktree (`dbcb2f8`) and Postgres :5455, ports 3022 and 3021, Hub built from this branch. Real `POST /auth/login` as `user@test.wawu.dev` and `creator-pro@test.wawu.dev`, no injected token. At 21 of 100 missed: standing `warning`, read twice, one `paid_dm_warning`, fan send 201. At 34 of 113 (30.09%): fan send 403 `paid_messages_paused` with `pausedUntil` 2026-10-10T23:49:09.644Z, `PendingCharge` count unchanged by the refusal, availability `paused: true` with the same instant, creator standing `paused` with the same instant, one `paid_dm_paused`, a fan reading `/paid-dm/standing` gets 403. `up.sh`'s `.env` files were moved out of both worktrees afterwards and never present in any test run (the contract and protected runs happened before it started). |
+
+**Findings.** None open as defects. Round 1 finding 1 (sweep cap), round 2 findings 9 and 10 (test breaks the shared DB, test did not prove the fix) and round 1 finding 8 (contract docs) are closed. Carried forward for the owner, unchanged:
+- 2 (**unclear**, G-77): R-13 names no minimum count or basis. The default minimum of 1 pauses a creator on their first lapsed question (100%) for 7 days. Basis (share of questions sent in 30 days whose outcome is known) and "at or over" (canvas says "over") need the owner's confirmation. `PROVISIONAL(PAID-DM-MIN-QUESTIONS)` present.
+- 3 (**differs-for-recorded-reason**, R-13, SHARED-CHANGES `INBOX-09 #1`): `GET /dm/response-stats` shows the standing for a creator at or over a line; unchanged under 20%.
+- 4 (**unclear**, G-78): "shown on the profile" is met only through the new availability route; the profile routes the web calls still say a paused creator takes paid messages.
+- 5 (**unclear**, minor): a zero tracker row is written on first evaluation; legacy `warned` or `disabled_7d` rows that no longer match the questions are rewritten.
+- 6 (**unclear**, low): a notification insert that fails after the commit is never retried.
+- 7 (**unclear**, not this task's): `OpenWalletScreen.test.tsx` times out with a cold jest cache (wallet task's test).
 
 ## Owner sign-off
 
