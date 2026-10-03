@@ -3,7 +3,7 @@ id: SETTINGS-05
 title: Delete account
 owner: DEV
 area: SETTINGS
-order: 177
+order: 178
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

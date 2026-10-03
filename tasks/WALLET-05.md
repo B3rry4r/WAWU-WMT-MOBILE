@@ -3,7 +3,7 @@ id: WALLET-05
 title: Add money and withdraw
 owner: YOU
 area: WALLET
-order: 151
+order: 152
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

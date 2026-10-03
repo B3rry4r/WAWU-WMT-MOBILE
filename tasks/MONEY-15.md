@@ -3,7 +3,7 @@ id: MONEY-15
 title: Transaction history and detail
 owner: YOU
 area: MONEY
-order: 108
+order: 109
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
