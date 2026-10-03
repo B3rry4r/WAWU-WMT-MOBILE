@@ -7,7 +7,7 @@ order: 79
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-06, KYC-01, KYC-02]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -183,6 +183,135 @@ Builder (round 2, a session that wrote none of round 1), 3 Oct 2026. wawu-backen
 - **N3 left as is**, as instructed: a newer BVN check passing mid-open does not stop it; the open uses the passed, selfie-matched check it read.
 - **Residual (recorded, not a defect):** with more than 1,000 customers, a list that is newest first for its first 1,000 rows but hides a lost create further down, plus a details lookup that misses it, could still be read as absent.
 - **NOT RUN:** the whole Open your wallet against the sandbox (BVN check, selfie, open, one person): unblocked when Fintava names a sandbox BVN its check passes (question 11) and shows its real selfie success body (question 6, G-25). A real stranger's customer for a person's phone in the sandbox: the sandbox has 3 customers, none with a second identity for one phone; proved with a made-up BVN against `1192964482`. V7 on screens and V10: unblocked when KYC-03 and WALLET-01 are built. CI's `ci-check.sh`: tripwire and lock checked by hand; unblocked by the pull request's CI run (no PR opened).
+
+## Verifier report (round 2)
+
+Verifier (round 2), 3 Oct 2026. This is a fresh session: it wrote none of MONEY-12's code and did not verify round 1. I checked wawu-backend `wmt/MONEY-12` `9902ca1` (on main `e8535d8`) and mobile `wmt/MONEY-12` `cb6907b` (on main `176a56d`), in fresh detached worktrees `/home/user/wt/vm12b2` and `/home/user/wt/vm12m2`.
+
+- **Mains:** backend `origin/main` is still `e8535d8`. Mobile `origin/main` moved to `ddafc76` (AUTH-02). A local merge of it into `cb6907b` conflicts only in `BACKEND_GAPS.md` (main's G-34 and G-35 rows beside the branch's G-36 and G-37 rows: keep both) and the generated `docs/PROGRESS.md`. Resolved that way and regenerated, `npm run check` exits 0: 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, 202 tasks (`mobile-check-merged-main.log`). The merge was not pushed.
+- **MONEY-08:** a local merge with `wmt/MONEY-08` `2c5dee8` (still its head) is clean, and tsc gives 0. Opening, Fintava, ledger, balance and money-contract specs: 16 suites, 829/829 (`merge-specs.log`). The migrations apply in either order, and on a fresh database:
+  - MONEY-08's set, then the merge, applies `20261003100000_wallet_opening`;
+  - MONEY-12's set, then the merge, applies `20261003120000_ledger_status_schedule`;
+  - all three databases have 78 migrations and identical `pg_dump` schemas;
+  - the only drift left is main's own `ContentPiece_specializations_idx` (`drift-merge.sql`).
+  Nothing of the merge was pushed.
+- **Databases:** `vm12r2_test`, `_hub`, `_full_test`, `_protected_test`, `_merge_test`, `_m08first`, `_m12first`, `_mergefresh`. All were dropped afterwards.
+- **Ports:**
+  - Hubs on :4921 and :4923 (one database);
+  - the stand-in WAWU ID on :4922;
+  - my Fintava stand-in on an OS-assigned 127.0.0.1 port;
+  - :4001 only for the 5 suites that hard-code it. `lsof` was empty before. My mock ran there and was then stopped (PID checked by its working directory), and `lsof` was empty after.
+  All my processes are stopped.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vm12r2/`:
+  - `ev/`: logs and JSON facts;
+  - `live/`: the stand-in, the skew preload, the Hub launcher and the drive script;
+  - `sbx/`: the sandbox call, masked;
+  - my attack spec `vm12r2-attack.contract.spec.ts`;
+  - round 1's spec as rerun, `vm12-attack.contract.spec.ts`.
+  The specs were run from the backend worktree and removed again. Nothing of them is committed.
+
+**Verdict: no open defect. Status `review`.**
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | **Backend:** tsc 0; eslint 0 on the 22 added or changed `.ts` files (`tsc-branch.txt`, `eslint-branch.txt`). Gates: main `e8535d8` 9 run / 608 files / **16 fail / 8 warn** / 76 accepted; branch 9 / 616 / **16 / 9** / 76. The only added findings are `PROVISIONAL(WALLET-BANK-NAME)` and its file line (`g-main.lst`, `g-branch.lst`). `check_baseline.py`: OK. **Diff against the report:** round 2's 13 backend files and round 2's mobile files are exactly the ones the builder lists. **Key scan** (every 8-character window of the key, 58 windows, read from the file and never printed): 0 hits in the backend branch diff, the mobile branch diff, my staged diff, `sbx/` and `ev/`. The mobile diff has 0 unmasked 11-digit numbers. The backend diff has 9, all made-up spec fixtures (phones `0803123...`, `0800000000x`; a made-up BVN and NIN fixture pair, both ending `0999`). **Mobile:** `npm run check` exit 0: typecheck, lint, 19 suites / 345 tests, gates 9 run / 90 files / 0 fail / 0 warn, 202 tasks (`mobile-check-before.log`). |
+| V2 Contract | passed | **Full test suite** on a fresh, migrated and seeded `vm12r2_full_test`, stand-in WAWU ID :4922: 119 suites, 2,916 tests; 2,873 passed, 3 skipped, 40 failed (`contract-full.json`). The 40 are all `fetch failed` in the 5 suites that hard-code :4001: kyc-submission, privacy-settings, credits-state, account, legal-intake. With my mock on :4001 they pass: 5 suites, 53 passed, 3 skipped (`contract-4001.log`, `lsof-4001-*.txt`). **In all: 2,913 passed, 3 skipped, 0 failed.** **Inside the run:** `wallet-opening` 75/75, production boot 3/3, `fintava-customer-lookup` 25/25, `fintava-stall` 117/117, `money-contract` 11/11, `money-identity` 26/26, `selfie-match` 182/182, `money-balance` 14/14, `account-data-map` 4/4, `hub-rate-limits` **10/10**. **Contract:** `contract:build` rebuilds `contract/openapi.json` byte for byte (sha256 `74e3f2d4...`), equal to mobile's copy. `sync_contract.py` regenerates `openapi.mobile.json` and `schema.generated.ts` with no diff. **Migration:** additive (above). |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh HEAD` (`vm12r2_protected_test`, lock `origin/main` `e8535d8`): **253/253, all 244 required** (`protected.log`). `lock-diff.py e8535d8 HEAD`: "No change". `.pipeline/protected-registry.json` sha256 `767e27bf...` on main and branch. CI tripwire, run as `ci-check.sh` runs it: **0 of 4,089 added lines** match (`outside.diff`). |
+| V4 Field trace | passed | The account number and name come from Fintava's answer (`createCustomer`, or a customer whose `userInfo.bvn` digest equals the opening's `bvnHash`). They are written to `FintavaWallet` and read by `GET /money/wallet` (A8, W1, W15) and the balance (`walletId`). Across people, round 1's crossing is gone: a stranger's record never reaches another person's wallet in any of the 26 record shapes, the 4 reconcile paths or the live run below. |
+| V6 States | passed | Each state was reached through its real cause, in specs and on the built Hubs: <br>- `not_open`, then `open`; <br>- `opening` while a create is lost, in flight, or the Hub was killed; <br>- `409 phone_held_by_other_identity`, then `not_open` on GET and `409 wallet_not_open` on the balance; <br>- `503 provider_unreachable` when the holder's record has no readable `userInfo`, or details name a customer whose read is 404; <br>- balance `409 wallet_opening` while opening; `401` without a token (`live-v9.txt`, `live-race.txt`, attack facts). |
+| V7 Flow walk | passed (backend); screens NOT RUN | **Built Hubs, real sign-in** (`/auth/register` then `/auth/login` on the stand-in WAWU ID): BVN check, selfie, `not_open`, open, `open`, on both Hubs. **Resume:** Hub A was killed while a create Fintava made was in flight, and restarted. A tap on Hub B 10 s later answered `opening` and sent nothing. The sweeps then recorded it: **1 create** in all (`live-restart-*.txt`). Screens: NOT RUN below. |
+| V8 Money | passed | **D1 fixed and attacked (below). One create per person in every race I tried (below).** PIN, insufficient funds, webhook and reversal do not apply to an opening. |
+| V9 Live seam | passed | Built branch Hubs (`node dist/src/main.js`) on :4921 (process `Date` moved **+12 min**) and :4923 (**-12 min**) over one database, signed in through the stand-in's real login. Open on Hub B answered `1145045644`, the account only my stand-in had made; both Hubs then answered it. The two `GET /money/wallet` made **0 Fintava calls**, all answers were `no-store`, and a second open sent nothing (`live-v9.txt`). |
+
+**D1 (adopt only on a BVN match): fixed.**
+
+*The digest* (`getCustomerMatch`, `bvnOf`, `identityStop`):
+- The BVN on Fintava's record counts only as 11 ASCII digits in `userInfo.bvn`, as a string or a safe integer; surrounding whitespace is trimmed. It goes only to `IdentityHasher.hash('bvn', ...)`, the same `bvn:<digits>` HMAC KYC-01 stores. A different person's BVN can therefore never produce the person's digest.
+- The comparison is `===` on two server-side 64-hex HMACs. It is not constant-time, but it is safe: the caller supplies neither value, and the first mismatch makes the row terminal, so there is no oracle to repeat.
+
+*Every shape tried, before the create* (spec G1, each a fresh person, a holder record for their phone; 0 creates in every case):
+
+| Holder record's BVN | Outcome |
+|---|---|
+| The person's BVN as a string, a number, padded with spaces, or with a leading zero as a string | Adopted, correctly: the same BVN |
+| Spaces or dashes inside; a leading-zero BVN served as a number (10 digits left); 12 digits (leading 0 or trailing digit); 10 digits; fullwidth or Arabic-Indic digits; masked `*******1234`; `null`; `""`; `true`; an array; an object; absent; only on the top level; only in `wallet` | `409`, `conflict` / `phone_holder_bvn_unreadable` |
+| The person's NIN; one digit off; a stranger's | `409`, `conflict` / `phone_held_by_other_identity` |
+| `userInfo` missing, or an array | `503 provider_unreachable`, row `failed`, again 503 on retry. Never adopted, never created |
+
+*Every path that can adopt, attacked:*
+- **The reconcile's details lookup:** "already exists" refusal, then a masked holder. `409`, 1 create in all (the refused one).
+- **The list:** details always 404, a list row by phone whose by-id record has a lost leading zero. `409`.
+- **The sweep alone:** three service instances sweeping at once plus 2 taps. Exactly 1 `conflict`; 0 adopted; 0 creates.
+- **Two customers for one phone:** a stranger served by details while the person's own is in the list gives `409`; the person's own served by details is adopted.
+- **A lost create with both customers in the list:** newest first adopts the person's own; oldest first stops (note N4). Never the stranger, 1 create.
+- **Details naming a customer whose read is 404:** `503`, nothing made.
+- **Round 1's attack spec rerun** (adapted only to compile: the removed `realLookup`, and C4's clock moved through `Date`): 12 passed. A1 to A3 now fail exactly at their old bug assertions (409 instead of 200). A4's sweep records `conflict` with no wallet. C3 makes 1 create (`r1-attack-rerun.log`, `r1-attack-facts.json`).
+
+*The stop holds* (23 stopped rows, `provesStopped`). After each stop, all at once:
+- the row aged by a day with `checkedAt` cleared;
+- 6 HTTP taps;
+- 4 opens on a second service instance, standing in for a restart;
+- both sweeps.
+
+Result: all `409 phone_held_by_other_identity`, **0 Fintava calls**, row, failure and attempt unchanged, no wallet, GET `not_open`, balance `409 wallet_not_open`. **Live:** a stranger's customer for the phone gave 409 on Hub A, then 409 on retry on Hub B with 0 Fintava calls, and 0 calls through 31 s of both Hubs' sweeps. A masked holder gave 409 on both Hubs. The person's own old customer (same BVN) was adopted with 0 creates (`live-adopt.txt`).
+
+*G-36:* after a purge, the same person (same BVN and phone) got their old account back with 0 creates. A stranger given the number then got `409`, 0 creates (G3). The same BVN with a new phone still makes a second customer: G-36 as filed, rerun as E1.
+
+**N1 (list order): fixed; the residual is acceptable.**
+- **The list is read to its end:** 10 pages asked for a 1,000-row list served oldest first, found on page 10, 0 extra creates.
+- **The builder's residual, reproduced** (G4 `RESIDUAL`): 1,500 rows; the first 1,000 newest first and older than the attempt; the lost create at row 1,200; details 404 for it. Proved absent, so **2 creates**.
+- **Why it is acceptable:** it needs two Fintava faults at once. Its details lookup must answer its own `404 "Customer not found"` for a customer that exists, and its list must be unsorted beyond row 1,000. For a list sorted newest first throughout, the create cannot sit below rows older than the attempt. With 1,100 customers made after the create (G4 `global`), the first 1,000 rows never reach back past the attempt, so it **waits** (1 create).
+- **The same class:** a list whose `hasNextPage` says false while more rows exist also gives 2 creates (G4 `metaLie`). Recorded as note N5, not a defect.
+
+**N2 (one clock): fixed.**
+- **In-process:** the process `Date` was moved +12 and -12 min while stamping, then the other way while 2 instances swept and tapped. The stamp is within 9 ms of the real time, and **1 create** (G5).
+- **Two real Hubs, +12 and -12 min, one database.** Fintava made the customer, the answer was lost, and the customer was hidden from reads for 40 s (resend window 61.5 s). Taps every 5 s on both Hubs, plus both crons:
+  - opened on the slow Hub: `opening` until 50 s, then `open`, **1 create**;
+  - opened on the fast Hub: the same, **1 create**;
+  - nothing made: the second create came **65.5 s** after the first, past the 61.5 s window, and never early on the fast Hub (`live-skew-*.txt`).
+
+**Round 1 guarantees still hold.**
+
+| Case | Result | Where |
+|------|--------|-------|
+| 24 opens at once, alternating the +12 and -12 min Hubs, create answered after 2.5 s (money timeout 1.5 s), then 10 more | 24 `opening`, then 1 `open` + 9 `opening`; **1 create**, 1 customer; balance `409 wallet_opening` meanwhile | `live-race.txt` |
+| 3 accounts with the same BVN and phone, 8 taps each | 8 `opening`, 16 `409 identity_has_wallet`; 1 create, 1 wallet | r1 B1 |
+| Same BVN, another phone / same phone, another BVN | 409 `identity_has_wallet`, 1 create / nothing sent | r1 B2, B3 |
+| Second service instance plus both sweeps racing, create late | 1 create, `open` | r1 B4 |
+| Hub killed mid-create, restarted | 1 create, recorded by the sweep | `live-restart-*.txt` |
+| Window boundary, Fintava clock 6 min behind | wait / absent at ±50 ms; found by list, nothing resent | r1 C1, C2 |
+
+**Identity and storage:**
+- **Identity read once, NIN required:** missing or empty NIN gives 400; another NIN gives 409 `bvn_not_checked`; nothing is sent (r1 D1, D2).
+- **Nothing in logs or answers:** 320 captured log lines and 23 answers. 0 hits for any BVN, NIN or address sent, any holder-record BVN, or any of 259 digests (every `bvnHash`/`ninHash` and the HMAC of every BVN). 0 unmasked 11-digit runs.
+- **`getCustomerMatch`'s result:** neither the BVN nor the date of birth (G6).
+- **Nothing in columns:** 541 text, JSON and array columns, 0 hits.
+- **Live Hubs:** 3 logs, 0 eleven-digit runs, addresses, dates of birth or 64-hex digests. `vm12r2_hub`'s 541 columns hold none of the BVNs, addresses or dates of birth. Regex hits were only inside 64-hex hashes and `_prisma_migrations` ids and checksums.
+
+**Sandbox (`dev.fintavapay.com` only; masked; the key read from file into the call's environment, never printed).** One read-only call, no create (`sbx/call1-get-customer.txt`):
+
+| # | Sent (UTC) | Call | HTTP | What it showed |
+|---|---|---|---|---|
+| 1 | 07:29:43 | `GET /customers/14acc2fc-2952-43b6-be71-168633aa086c` through the branch's built `getCustomerMatch` | 200, 0.57 s | Still `1192964482`, `john ugochukwu`. The digest function was called once. Its digest equals the HMAC of Fintava's documented example BVN (ending `8901`, `reference/verify-bvn.md`) and differs for that BVN one digit off. The result object carries neither the BVN nor the date of birth |
+
+### Findings
+
+No defect.
+
+**Notes (not defects, not blocking):**
+- **N4, a stop can leave the person's own customer unrecorded.** This happens in two cases (both found by the reconcile; nothing wrong is adopted, and a review clears it under G-37):
+  - a lost create, details missing it, and the list served oldest first with a stranger's older row for the same phone (G2 `both`);
+  - a stranger appearing for the phone while the person's own create is in flight (G2 `stopVsLate`). The original request then answers `200 not_open`.
+- **N5, the list residual (above).** Two Fintava faults at once give a second create: details missing a customer and a list unsorted past 1,000 rows, or `hasNextPage` false while rows remain. A cheap guard for the second case: compare `itemCount` with the rows read.
+- **N6, the create's own answer is not BVN-checked.** A `201` to our create that carries another customer (another BVN) is recorded as it is (G7). Fintava has not been seen doing this: it makes a new customer, and a repeated phone gives 500. The 201 body carries `userInfo.bvn`, so the same digest check would close it.
+- **N3 (round 1)** is left as the builder recorded it.
+
+### NOT RUN
+- **The whole Open your wallet against the sandbox** (BVN check, selfie, open, for one person). Unblocked when Fintava names a sandbox BVN its check passes (question 11) and shows its real selfie success body (question 6, G-25).
+- **A real stranger's customer for a person's phone, and a lost create, in the sandbox:** neither can be made without creating customers. Both were covered against the stand-ins. Unblocked when Fintava gives a sandbox phone held by a second identity.
+- **Whether Fintava's details lookup can answer 404 for an existing customer, and whether its list is sorted newest first beyond 1,000 rows** (N5). Unblocked when Fintava states both.
+- **V7 on screens and V10:** no screen yet. Unblocked when KYC-03 and WALLET-01 are built.
+- **CI's `ci-check.sh` itself:** the tripwire and lock were checked by hand, as CI runs them. Unblocked by the pull request's CI run (no PR opened).
 
 ## Owner sign-off
 

@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 57 | 48 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 1 | 0 |
 | done | 20 | 10 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
-
-## Being verified
-
 - [MONEY-12](../tasks/MONEY-12.md) Open a Fintava account when someone opens a wallet (You)
 
 ## Done
@@ -66,6 +63,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · MONEY-12 · Verified round 2: no open defect, status review (backend 9902ca1 on main e8535d8, which did not move; also merged locally with wmt/MONEY-08 2c5dee8, migrations in either order; mobile cb6907b, mobile main since moved to ddafc76 and merges cleanly apart from the BACKEND_GAPS rows). D1 fixed: a phone's Fintava customer is adopted only when the HMAC of its `userInfo.bvn` equals the person's; 26 record shapes and every adopting path (before the create, details, list, sweep, "already exists") never adopt a stranger, and 23 stopped rows stayed 409 with 0 Fintava calls through taps, a second instance, sweeps and a day's ageing. N1: read to the end; the >1,000-row residual needs two Fintava faults (note). N2: two real Hubs at +12 and -12 min on one database, 1 create each. Full suite 2,913 passed / 0 failed, protected 253/253, gates 16/9 (only WALLET-BANK-NAME), contract byte-stable, 1 read-only sandbox GET. Notes N4 to N6.
 - 3 Oct 2026 · MONEY-12 · Round 2: an existing Fintava customer for the person's phone is adopted only when the keyed hash of the BVN on Fintava's record equals the person's checked BVN; another BVN or none adopts and creates nothing, stops the opening for review (G-37, an owner stop) and answers `409 phone_held_by_other_identity` (D1, the verifier's A1 to A4 now refused). The customer list is read to its end or trusted only newest first (N1), and every opening time is the database's clock (N2). Sandbox: 5 reads, the same phone with another BVN refused, the record's own BVN adopted `1192964482`, no create. Contract 2,913 passed, protected 253/253, gates 16 fail / 9 warn as before, mobile check exit 0. Status verifying (backend 9902ca1).
 - 3 Oct 2026 · MONEY-12 · Verified: 1 defect, back to building (backend d056461 on main e8535d8, also merged locally with wmt/MONEY-08 0eb32a9; mobile 3b500ab; neither main moved). D1: an existing Fintava customer is adopted on the phone alone, never compared with the checked BVN, so a recycled phone, a customer made outside WAWU or a deleted account's number hands one person another's account (spec and live: the stranger's account number and name shown, balance read from it); Fintava's own read carries the full `userInfo.bvn` to compare (sandbox), and a repeated phone was answered 500 with nothing made. Passed: one create under every race (two real Hubs, 3 accounts on one BVN, sweep, server killed mid-create), identity read once, nothing stored or logged, full contract 2,879 passed / 3 skipped / 0 failed, protected 253/253 lock unchanged, gates 16 fail / 9 warn (only PROVISIONAL(WALLET-BANK-NAME) added), contract byte-stable, mobile check exit 0. Notes N1 (list order assumed) and N2 (Hub clocks); G-36 confirmed, owner's call.
 - 3 Oct 2026 · MONEY-12 · Built: `POST /money/wallet/open` opens the person's Fintava account (identity read once, the selfie tied to that exact check), `GET /money/wallet` shows the account number or "opening"; one opening per person (claimed before anything is sent, BVN and phone unique), Fintava asked by phone first, a lost answer reconciled (details 404, the list, the resend window), never resent blindly. Sandbox: a real account opened through the route with the identity steps as stand-ins (`sandbox/32-`). Status verifying.
@@ -80,4 +78,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · KYC-02 · Verified: 3 defects, back to building (backend 60dfe3f, mobile da43e46, mains unmoved). 1: any 2xx without a `false` verdict counts as a match (the documented `{}`, `status: "failed"`, `match: "false"`: 11 shapes); 2: a selfie matched to one BVN can count for a BVN check that passed during the request (2 of 100 natural races); 3 (low): JPEG/PNG polyglots pass the image check. Passed: nothing stored or logged (502 columns, 3 boots), 3 a day (10 at once: Fintava saw 3), production boot 503, protected 253/253, contract 2058 + 185, migration additive and applies with MONEY-10's same-timestamp one in any order. One sandbox selfie (docs example BVN, synthetic image, 422).
 - 2 Oct 2026 · KYC-02 · selfie match to the BVN photo in wawu-backend (`POST`/`GET /money/identity/selfie`, additive migration, 3 a day per person, outcome and time stored, never the image); typed calls in `src/api/walletIdentity.ts`; 2 sandbox calls, both refused and charged ₦10; built, to verify
 - 3 Oct 2026 · OPS-11 · Verified round 3: no open defect (backend f45e657, mobile 8678dad; mains 66339b9 and 94d202b already merged). The Flutterwave burst spec passed 55 of 55 runs at load 7.1 to 12.8 with 0 bursts set aside (spans 211 to 398 ms against 900); the bare decorator fails it 6 of 6, and a forced set-aside cannot hide a 429. The override tests kill all 11 mutants asked (a note: a decorator on the same line as another slips past both). Production code unchanged since round 1/2; contract 110/110 suites, 2134 passed; protected 253/253; main's 16 gates; the production build behind a real nginx passes every trust case. Status review.
-- 3 Oct 2026 · OPS-11 · Round 3 (took over from an interrupted session): the Flutterwave burst tests set aside a burst whose arrivals do not fit one window and send a fresh one (at most 5), failing loudly if none fits (backend `wmt/OPS-11` f45e657, main 66339b9 merged). 45/45 runs at load 7 to 14.4; the bare decorator fails 6/6; full contract 110/110 suites; protected 253/253. Back to verifying.
