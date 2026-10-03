@@ -3,7 +3,7 @@ id: AUTH-06
 title: After sign-up: creator setup, interests, people to follow
 owner: DEV
 area: AUTH
-order: 170
+order: 171
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

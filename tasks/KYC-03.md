@@ -3,7 +3,7 @@ id: KYC-03
 title: Open your wallet: confirm details and address, selfie
 owner: YOU
 area: KYC
-order: 85
+order: 86
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

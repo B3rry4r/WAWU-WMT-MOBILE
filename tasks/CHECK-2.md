@@ -3,7 +3,7 @@ id: CHECK-2
 title: Checkpoint 2: money moves correctly
 owner: YOU
 area: CHECK
-order: 166
+order: 167
 priority: launch
 repo: all
 type: ops

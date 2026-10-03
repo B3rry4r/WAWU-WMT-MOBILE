@@ -3,7 +3,7 @@ id: HOME-01
 title: Today: home screen, loading, TGIF off
 owner: DEV
 area: HOME
-order: 167
+order: 168
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

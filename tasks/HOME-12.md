@@ -3,7 +3,7 @@ id: HOME-12
 title: Unlock from the feed
 owner: DEV
 area: HOME
-order: 124
+order: 125
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

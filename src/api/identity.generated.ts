@@ -572,6 +572,15 @@ export interface operations {
                     "application/json": components["schemas"]["SessionAnswer"];
                 };
             };
+            /** @description Validation: a field missing or of the wrong type. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
             /** @description Wrong password. */
             401: {
                 headers: {
@@ -622,6 +631,15 @@ export interface operations {
                     "application/json": components["schemas"]["TokenPairAnswer"];
                 };
             };
+            /** @description Validation: a field missing or of the wrong type. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -651,6 +669,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResetRequestedAnswer"];
+                };
+            };
+            /** @description Validation: a field missing or of the wrong type, or a `method` other than `sms` or `email`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

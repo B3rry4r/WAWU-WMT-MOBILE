@@ -3,7 +3,7 @@ id: EXPLORE-03
 title: Explore: categories and featured creators
 owner: DEV
 area: EXPLORE
-order: 96
+order: 97
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

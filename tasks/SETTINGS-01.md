@@ -3,7 +3,7 @@ id: SETTINGS-01
 title: Settings, notifications, privacy and blocked
 owner: DEV
 area: SETTINGS
-order: 94
+order: 95
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
