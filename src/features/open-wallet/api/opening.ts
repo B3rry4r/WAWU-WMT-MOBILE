@@ -1,0 +1,127 @@
+import { api } from '@/api/client';
+import { ApiError, isApiError, networkError, toApiError } from '@/api/errors';
+import type { components } from '@/api/schema.generated';
+import { SELFIE_MAX_BASE64_CHARS, type SelfieMatch } from '@/api/walletIdentity';
+
+import { retryAfterOf } from './check';
+import type { WalletState } from './account';
+
+/**
+ * The two charged or bank-facing calls after A26 (KYC-03): A6 sends the
+ * selfie to be matched with the BVN photo, A7 opens the account. Each refusal
+ * keeps what the server said about trying again (`checksLeft`, the wait),
+ * which the shared `ApiError` drops (SHARED-CHANGES KYC-02 #4, KYC-05 #3).
+ * The reads (`fetchSelfieMatch`, `fetchWalletState`) and A5's occupation
+ * (`saveOccupation`) need neither, so the screens call the shared ones.
+ *
+ * **The BVN and the NIN are not sent again** (BACKEND_GAPS G-72). A26 sends
+ * them once, to the BVN check, and nothing on the phone keeps them after that
+ * request. The contract still asks for `bvn` on the selfie match and for
+ * `bvn` and `nin` on the opening (`SelfieMatchDto`, `OpenNairaWalletDto`), so
+ * until the backend takes them from the person's passed check these two
+ * requests are refused (400). The bodies below are what the screens send; the
+ * casts go when the contract drops the two fields.
+ *
+ * The selfie goes in the request body only, once, and nothing here keeps it,
+ * logs it, or puts it in a URL.
+ */
+type Envelope<T> = { statusCode: number; message: string; data: T | null };
+type Reason = components['schemas']['MoneyErrorReason'];
+type WalletView = components['schemas']['WalletView'];
+
+/** An ApiError plus what the refusal said about trying again: the wait in seconds, and matches left today. */
+export type StepRefusal = ApiError & { retryAfterSeconds: number | null; checksLeft: number | null };
+
+function refused(error: ApiError, retryAfterSeconds: number | null, checksLeft: number | null): StepRefusal {
+  return Object.assign(error, { retryAfterSeconds, checksLeft });
+}
+
+/** The matches (or checks) left today that a refusal carried, or null. */
+export function checksLeftOf(error: unknown): number | null {
+  if (!isApiError(error)) return null;
+  const left = (error as Partial<StepRefusal>).checksLeft;
+  return typeof left === 'number' ? left : null;
+}
+
+function unreadable(): ApiError {
+  return new ApiError('unknown', 200, 'Your details could not be read. Try again.');
+}
+
+type Answer = { data?: unknown; error?: unknown; response: Response };
+
+/** Sends one request; a refusal becomes a `StepRefusal`, an answer is the envelope's `data`. */
+async function send(request: Promise<Answer>): Promise<unknown> {
+  let answer: Answer;
+  try {
+    answer = await request;
+  } catch (error) {
+    throw refused(isApiError(error) ? error : networkError(), null, null);
+  }
+  const { data, error, response } = answer;
+  if (!response.ok) {
+    const reason = (error as { reason?: Partial<Reason> } | null)?.reason;
+    const left = reason?.checksLeft;
+    throw refused(toApiError(response.status, error), retryAfterOf(error, response.headers), Number.isSafeInteger(left) ? (left as number) : null);
+  }
+  return (data as Envelope<unknown> | undefined)?.data;
+}
+
+function readSelfie(value: unknown): SelfieMatch {
+  const v = value as Partial<SelfieMatch> | null;
+  if (!v || typeof v !== 'object' || !Number.isSafeInteger(v.checksLeft) || !(v.matchedAt === null || typeof v.matchedAt === 'string')) {
+    throw unreadable();
+  }
+  return { matchedAt: v.matchedAt, checksLeft: v.checksLeft as number };
+}
+
+/**
+ * The smallest selfie the server takes: 1 KB of image (contract
+ * `SelfieMatchDto.image`, "1 KB to about 75 KB"). In base64, 4 characters
+ * carry 3 bytes.
+ */
+const SELFIE_MIN_BYTES = 1024;
+const BASE64_CHARS_PER_3_BYTES = 4;
+const BASE64_BYTES_PER_4_CHARS = 3;
+export const SELFIE_MIN_BASE64_CHARS = Math.ceil(SELFIE_MIN_BYTES / BASE64_BYTES_PER_4_CHARS) * BASE64_CHARS_PER_3_BYTES;
+
+/** True when a capture is plain base64 the server can take: neither too small nor over its limit. */
+export function isSendableSelfie(image: string): boolean {
+  return /^[A-Za-z0-9+/]+={0,2}$/.test(image) && image.length >= SELFIE_MIN_BASE64_CHARS && image.length <= SELFIE_MAX_BASE64_CHARS;
+}
+
+/**
+ * POST /money/identity/selfie (A6): the capture, matched with the BVN photo.
+ * Every match is charged, a failed one too, so a capture the server would
+ * refuse is never sent. Resolves with `matchedAt` set (A7); a 200 without it
+ * is not a match.
+ */
+export async function matchSelfie(image: string): Promise<SelfieMatch> {
+  if (!isSendableSelfie(image)) throw refused(new ApiError('validation', 0, 'That photo could not be used. Take it again.'), null, null);
+  // G-72: no `bvn`; the server is to match against the person's passed check.
+  const body = { image } as unknown as components['schemas']['SelfieMatchDto'];
+  const match = readSelfie(await send(api.POST('/api/hub/money/identity/selfie', { body })));
+  if (match.matchedAt === null) throw unreadable();
+  return match;
+}
+
+export type OpeningInput = { firstName: string; lastName: string; dateOfBirth: string; address: string };
+
+const walletStates: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
+
+function readWallet(value: unknown): WalletState {
+  const state = (value as Partial<WalletView> | null)?.state;
+  if (typeof state !== 'string' || !walletStates.includes(state as WalletState)) throw unreadable();
+  return state as WalletState;
+}
+
+/**
+ * POST /money/wallet/open (A7): A5's name and date of birth from the BVN
+ * check, and the address typed, in one line. Safe to repeat: the server opens
+ * one account per person however many times it is asked. Resolves with the
+ * wallet's state: `open`, or `opening` while the bank's answer is confirmed.
+ */
+export async function openWallet(input: OpeningInput): Promise<WalletState> {
+  // G-72: no `bvn` or `nin`; the server is to take them from the person's passed check.
+  const body = { ...input } as unknown as components['schemas']['OpenNairaWalletDto'];
+  return readWallet(await send(api.POST('/api/hub/money/wallet/open', { body })));
+}

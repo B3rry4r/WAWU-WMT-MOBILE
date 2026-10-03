@@ -10,6 +10,10 @@ import type { BvnCheck } from '@/api/walletIdentity';
  * does not keep it (BACKEND_GAPS G-25), so the app holds it, in memory only:
  * never the secure store, never logged, gone when the app process ends.
  *
+ * A5 adds the home address the person typed (`keepAddress`), which A7 sends
+ * when it opens the account (MONEY-12 takes it once and stores none of it).
+ * It lives in the same place and goes with the rest on every forget.
+ *
  * It belongs to one account. A different person signed in on the same phone
  * reads nothing (`readKeptCheck` compares the owner), and `forgetKeptCheck`
  * drops it once Open your wallet no longer needs it.
@@ -24,7 +28,10 @@ import type { BvnCheck } from '@/api/walletIdentity';
  * It never holds the BVN or the NIN themselves: those live in A26's fields
  * until the check answers, and no longer.
  */
-type Kept = { owner: string; check: BvnCheck };
+/** A5's home address, in its three parts, as the person typed them. */
+export type HomeAddress = { street: string; city: string; state: string };
+
+type Kept = { owner: string; check: BvnCheck; address: HomeAddress | null };
 
 let kept: Kept | null = null;
 /** Bumped by every forget: a ticket from before it can no longer write. */
@@ -55,9 +62,27 @@ export function ticketIsLive(ticket: KeepTicket): boolean {
 /** Keeps the check for the ticket's owner. False, and nothing kept, when the ticket was voided by a forget. */
 export function keepCheck(ticket: KeepTicket, check: BvnCheck): boolean {
   if (ticket.era !== era) return false;
-  kept = { owner: ticket.owner, check: { identity: { ...check.identity }, prefill: { ...check.prefill } } };
+  kept = { owner: ticket.owner, check: { identity: { ...check.identity }, prefill: { ...check.prefill } }, address: null };
   changed();
   return true;
+}
+
+/**
+ * Keeps A5's address beside the passed check of the ticket's owner. False, and
+ * nothing kept, when the ticket was voided by a forget or no check is kept for
+ * that owner (A7 sends it with the check's name and date of birth, never alone).
+ */
+export function keepAddress(ticket: KeepTicket, address: HomeAddress): boolean {
+  if (ticket.era !== era || !kept || kept.owner !== ticket.owner) return false;
+  kept = { ...kept, address: { ...address } };
+  changed();
+  return true;
+}
+
+/** A5's address kept for this account, or null (none typed yet, or another person's). */
+export function readAddress(owner: string | undefined): HomeAddress | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.address;
 }
 
 /** The kept check for this account, or null (none kept, or another person's). */
@@ -94,4 +119,11 @@ export function useKeptCheck(owner: string | undefined): BvnCheck | null {
   const current = useSyncExternalStore(subscribe, () => kept, () => kept);
   if (!current || !owner || current.owner !== owner) return null;
   return current.check;
+}
+
+/** For A5 and A6: the kept check and the address together for this account, re-read when either changes. */
+export function useKeptOpening(owner: string | undefined): { check: BvnCheck; address: HomeAddress | null } | null {
+  const current = useSyncExternalStore(subscribe, () => kept, () => kept);
+  if (!current || !owner || current.owner !== owner) return null;
+  return { check: current.check, address: current.address };
 }

@@ -44,6 +44,12 @@ const nextVisit = () => {
 export type OpenWalletScreenProps = {
   /** Leaves Open your wallet: the back button, and Done on an end. */
   onClose: () => void;
+  /**
+   * The next step, A5 (KYC-03): called as soon as a check passes, and by
+   * Continue when the person comes back to a check that passed. A5 is pushed
+   * on top of A26, so A26 stays mounted and the kept details with it.
+   */
+  onContinue: () => void;
 };
 
 type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' } | { end: 'no_bvn' };
@@ -52,11 +58,11 @@ type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' } 
  * A26, the first step of Open your wallet (R-6), with A14 as its state: the
  * account's phone, the BVN and the NIN, then Continue runs the BVN check
  * (KYC-01). A pass keeps the BVN's name, date of birth and gender in memory
- * for A5 (`keepCheck`). A BVN registered to another phone puts A14's sentence
+ * for A5 (`keepCheck`) and goes on to A5 (`onContinue`). A BVN registered to another phone puts A14's sentence
  * under the phone; an unknown BVN puts the server's under the BVN. An account
  * without a Nigerian BVN ends at "Not available yet", never an error.
  */
-export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
+export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps) {
   const queryClient = useQueryClient();
   // One visit of the step: its account read is never answered from a cache
   // another session filled (the app keeps one query cache for every account).
@@ -143,13 +149,14 @@ export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
   }
 
   const confirmed = kept && kept.identity.bvn && identity.data.bvn?.last4 === kept.identity.bvn.last4 ? kept : null;
-  if (confirmed) return <Confirmed check={confirmed} onClose={onClose} />;
+  if (confirmed) return <Confirmed check={confirmed} onClose={onClose} onContinue={onContinue} />;
 
   return (
     <BvnNinForm
       account={account.data}
       onClose={onClose}
       onEnded={setEnded}
+      onPassed={onContinue}
     />
   );
 }
@@ -206,7 +213,8 @@ function Ending({ ended, onClose }: { ended: Ended; onClose: () => void }) {
   );
 }
 
-function Confirmed({ check, onClose }: { check: BvnCheck; onClose: () => void }) {
+/** A check that passed, seen again on coming back from A5: the masked numbers, Continue to A5, or back out. */
+function Confirmed({ check, onClose, onContinue }: { check: BvnCheck; onClose: () => void; onContinue: () => void }) {
   const bvnLast4 = check.identity.bvn?.last4;
   const ninLast4 = check.identity.ninLast4;
   return (
@@ -216,8 +224,10 @@ function Confirmed({ check, onClose }: { check: BvnCheck; onClose: () => void })
       icon="Check"
       title="BVN confirmed"
       message="Your name, date of birth and gender come from your BVN."
-      actionLabel="Done"
-      onAction={onClose}
+      actionLabel="Continue"
+      onAction={onContinue}
+      navTitle={NAV_TITLE}
+      onBack={onClose}
     >
       {bvnLast4 || ninLast4 ? (
         <Card>
@@ -235,10 +245,12 @@ type FormProps = {
   account: OwnAccount;
   onClose: () => void;
   onEnded: (ended: Ended) => void;
+  /** A check passed and was kept: on to A5. */
+  onPassed: () => void;
 };
 
 /** A26's form. The BVN and NIN live only in its two fields, and are cleared as soon as a check passes. */
-function BvnNinForm({ account, onClose, onEnded }: FormProps) {
+function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
   const queryClient = useQueryClient();
   const [bvn, setBvn] = useState('');
   const [nin, setNin] = useState('');
@@ -294,6 +306,7 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
       setBvn('');
       setNin('');
       queryClient.setQueryData(identityQuery(account.wawuUserId).queryKey, check.identity);
+      onPassed();
     } catch (error) {
       // A refusal under an ended session is the old account's: it moves no screen state either.
       if (!live.current || !ticketIsLive(ticket)) return;

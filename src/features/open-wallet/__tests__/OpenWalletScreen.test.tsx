@@ -100,6 +100,7 @@ async function boot(shared?: QueryClient) {
   const { OpenWalletScreen } = require('../OpenWalletScreen') as typeof import('../OpenWalletScreen');
   const kept = require('../keptCheck') as typeof import('../keptCheck');
   const onClose = jest.fn();
+  const onContinue = jest.fn();
   // No garbage-collection timer: a cache timer left running keeps jest from exiting.
   const client = shared ?? newClient();
   clients.push(client);
@@ -110,8 +111,8 @@ async function boot(shared?: QueryClient) {
       </SafeAreaProvider>
     </QueryClientProvider>
   );
-  await rtl.render(wrap(<OpenWalletScreen onClose={onClose} />));
-  return { ...rtl, onClose, kept, client };
+  await rtl.render(wrap(<OpenWalletScreen onClose={onClose} onContinue={onContinue} />));
+  return { ...rtl, onClose, onContinue, kept, client };
 }
 
 /**
@@ -206,7 +207,12 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.screen.getByText('•••• ••• 0111')).toBeTruthy();
     expect(app.screen.getByText('•••• ••• 0999')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-bvn')).toBeNull();
+    // KYC-03: the pass goes straight on to A5; seen again, the check's end offers Continue (A5) and Back (leave).
+    expect(app.onContinue).toHaveBeenCalledTimes(1);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
+    expect(app.onContinue).toHaveBeenCalledTimes(2);
+    expect(app.onClose).not.toHaveBeenCalled();
+    await app.fireEvent.press(app.screen.getByTestId('auth-back'));
     expect(app.onClose).toHaveBeenCalledTimes(1);
   });
 
