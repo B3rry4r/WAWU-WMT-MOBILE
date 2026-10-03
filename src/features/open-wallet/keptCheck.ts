@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
+import { onSessionEnd } from '@/api/session';
 import type { BvnCheck } from '@/api/walletIdentity';
 
 /**
@@ -66,6 +67,15 @@ export function forgetKeptCheck(): void {
   kept = null;
   changed();
 }
+
+/**
+ * The session drops the kept details itself, on every way a session ends
+ * (FIX-04's `onSessionEnd`): sign-out, a refused refresh, a sign-in that
+ * replaces a session, and a refresh that answers another account's token.
+ * The last two keep the status `signedIn`, so no screen's own check of the
+ * status could see them. Forgetting also voids every ticket already out.
+ */
+onSessionEnd(forgetKeptCheck);
 
 function subscribe(listener: () => void) {
   listeners.add(listener);

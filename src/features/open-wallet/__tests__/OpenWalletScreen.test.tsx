@@ -619,7 +619,11 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
       await session.signOut();
     });
     await settle(app);
-    expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] })).toHaveLength(0);
+    // Nothing read before the session ended is left, and nothing is read as nobody.
+    const left = app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] });
+    expect(left.filter((q) => q.state.data !== undefined)).toHaveLength(0);
+    expect(left.filter((q) => q.state.fetchStatus !== 'idle')).toHaveLength(0);
+    expect(sent.filter((x) => x.path.endsWith('/users/me'))).toHaveLength(1);
   });
 
   it('the BVN and NIN are never written to the phone’s storage or the console, and the fields are cleared once the check passes', async () => {
@@ -645,5 +649,125 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
       expect(kept).not.toContain(secret);
     }
     expect(app.screen.queryByDisplayValue(/0000 111|0000 999/)).toBeNull();
+  });
+});
+
+describe('the kept BVN details end with the session, on every way it ends (FIX-04 onSessionEnd), with the app’s own query client', () => {
+  const B = '00000000-0000-4000-8000-0000000000b2';
+  const pair = (sub: string, n: string) => ok({ accessToken: tokenFor(sub), refreshToken: `refresh-${n}` });
+
+  /** A passes the check on A26, drawn with the app's real query client (`createQueryClient`). */
+  async function passAsA() {
+    const { createQueryClient } = require('@/api/query') as typeof import('@/api/query');
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    const app = await boot(createQueryClient());
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    expect(app.kept.readKeptCheck(OWNER)).not.toBeNull();
+    return app;
+  }
+
+  it('a refresh that answers another account’s token (the status stays signed in) drops A’s details at once, A26 still mounted', async () => {
+    const app = await passAsA();
+    const session = require('@/api/session') as typeof import('@/api/session');
+    let ends = 0;
+    const off = session.onSessionEnd(() => {
+      ends += 1;
+    });
+    routes['GET /users/me'] = ['hold'];
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    let keptRightAfter: unknown = 'not read';
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      keptRightAfter = app.kept.readKeptCheck(OWNER);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    off();
+    expect(ends).toBe(1);
+    expect(session.useSession).toBeDefined();
+    expect(await session.getAccessToken()).toBe(tokenFor(B));
+    expect(keptRightAfter).toBeNull();
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.kept.readKeptCheck(B)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+  });
+
+  it('a sign-in that replaces the session drops A’s details at once, A26 still mounted', async () => {
+    const app = await passAsA();
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['GET /users/me'] = ['hold'];
+    routes['POST /auth/login'] = [pair(B, 'b')];
+    let keptRightAfter: unknown = 'not read';
+    await app.act(async () => {
+      await session.signIn('b@example.test', 'pw-123456');
+      keptRightAfter = app.kept.readKeptCheck(OWNER);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(keptRightAfter).toBeNull();
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.kept.readKeptCheck(B)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+  });
+
+  it('A to B to A without a sign-out: A’s new session never gets the old session’s details back', async () => {
+    const app = await passAsA();
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['GET /users/me'] = ['hold'];
+    routes['POST /auth/refresh'] = [pair(B, 'b'), pair(OWNER, 'a2')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    routes['GET /users/me'] = [];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    await app.waitFor(() => expect(app.screen.queryByTestId('open-wallet-loading')).toBeNull());
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+    await settle(app);
+  });
+
+  it('A’s check answering after a switch to B without a sign-out is not kept', async () => {
+    const { createQueryClient } = require('@/api/query') as typeof import('@/api/query');
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } } }];
+    const app = await boot(createQueryClient());
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['GET /users/me'] = ['hold'];
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    await app.act(async () => {
+      release();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.kept.readKeptCheck(B)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+  });
+
+  it('after a refresh that answers B, A26 shows B’s own form and A’s details are gone', async () => {
+    const app = await passAsA();
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['GET /users/me'] = [ok({ ...me, wawuUserId: B, phone: '+2348039990077' })];
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0803 999 0077');
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    await settle(app);
   });
 });

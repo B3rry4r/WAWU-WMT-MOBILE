@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
-import { useSession } from '@/api/session';
+import { onSessionEnd, useSession } from '@/api/session';
 import type { BvnCheck } from '@/api/walletIdentity';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -60,14 +60,26 @@ export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
   const queryClient = useQueryClient();
   // One visit of the step: its account read is never answered from a cache
   // another session filled (the app keeps one query cache for every account).
-  const [visit] = useState(nextVisit);
-  const [me] = useQueries({ queries: [ownAccountQuery(visit)] });
+  const [visit, setVisit] = useState(nextVisit);
+  // A session can end with A26 still drawn and the status still signed in (a
+  // sign-in that replaces it, a refresh answering another account). Then the
+  // step starts over as a new visit: new keys, so it reads again as whoever
+  // is signed in now, whatever the cache did with the old reads.
+  useEffect(
+    () =>
+      onSessionEnd(() => {
+        queryClient.removeQueries({ queryKey: [OPEN_WALLET_KEY] });
+        setVisit(nextVisit());
+      }),
+    [queryClient],
+  );
+  const { status } = useSession();
+  const [me] = useQueries({ queries: [ownAccountQuery(visit, status === 'signedIn')] });
   const owner = me.data?.wawuUserId;
   const [wallet, identity] = useQueries({ queries: [walletStateQuery(owner), identityQuery(owner)] });
   const account = me;
   const [ended, setEnded] = useState<Ended | null>(null);
   const kept = useKeptCheck(owner);
-  const { status } = useSession();
   const signedInAs = useSessionAccount(owner);
 
   // A26's reads go with it: when it closes and when the session ends.

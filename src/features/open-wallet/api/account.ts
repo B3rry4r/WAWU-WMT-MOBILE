@@ -52,8 +52,9 @@ export async function fetchWalletState(): Promise<WalletState> {
  */
 export const OPEN_WALLET_KEY = 'open-wallet' as const;
 
-export function ownAccountQuery(visit: number) {
-  return { queryKey: [OPEN_WALLET_KEY, 'me', visit] as const, queryFn: fetchOwnAccount, staleTime: 0 };
+/** `signedIn`: false once the session has ended, so a step still drawn reads nothing as nobody. */
+export function ownAccountQuery(visit: number, signedIn = true) {
+  return { queryKey: [OPEN_WALLET_KEY, 'me', visit] as const, queryFn: fetchOwnAccount, staleTime: 0, enabled: signedIn };
 }
 
 export function walletStateQuery(owner: string | undefined) {
