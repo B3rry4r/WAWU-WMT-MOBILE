@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 43 of 180.**
+**Launch tasks done: 44 of 180.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 51 | 46 | 32 | 31 |
+| todo | 51 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 29 | 12 | 2 | 1 |
+| done | 29 | 13 | 2 | 1 |
 
 ## Done
 
@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
+- [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
@@ -63,7 +64,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN
-- **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields
+- **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-05](../tasks/ME-05.md) Profile fields, [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
@@ -71,6 +72,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · ME-17 upload and storage allowance merged (Developer 1; backend PR #51, fe1ec6c). Free accounts: 5 uploads and 1 GB of content; with a tick: 25 and 10 GB (R-7); free pieces count (R-8); KYC, avatar and chat files do not count toward storage.
+- 3 Oct 2026 · ME-17 built (backend branch wmt/ME-17, not merged): 5 uploads and 1 GB free, 25 and 10 GB with a tick (R-7), free pieces counted (R-8), new GET /uploads/allowance; status verifying.
 - 3 Oct 2026 · WALLET-11 payout bank account screen (A21) merged (mobile). Load, save and read back work against the Hub; a pasted number with spaces keeps all ten digits; flagged when the name is not the BVN name. Bank list and pre-save name check wait on WALLET-09 (G-57). G-59 filed (stand-in WAWU ID shape).
 - 3 Oct 2026 · FIX-03 merged (backend PR #50, 7601a5f): the pin-reset leak test draws its PINs from a random pool and keeps test phone tails off it, so a chance collision can no longer fail a deploy. Test files only.
 - 3 Oct 2026 · WALLET-11 · Verified round 2: no open defect, status review (mobile dbd990a, main 0b83be8 already in; Hub c197d58). The paste defect is fixed: real Ctrl+V of spaced, hyphenated, padded, no-break-spaced, dotted, labelled and over-long numbers all hold the ten digits, light and dark; a pasted 1111-111-112 saved and read back. Gates exit 0 (24 suites, 403 tests, 108 files, 0 fail); V4, V5 (round-1 recorded differences only), V6 (12 states by real cause), V9 (sign-in through A22, 7 PUT bodies only bankCode and accountNumber, second person null); 10 of 10 mutants killed, including round 1's survivor. NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11, a device paste.
@@ -84,5 +87,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-14 · Merged main for the pull request (backend d89f7e5 with main ad1e515, mobile with main 8a58a67), status review: gate route lists hold MONEY-14, MONEY-15 and WALLET-14 routes; one test added (two people saving the same place get their own rows, kills M2); full suite 132 suites 3,196 passed 0 failed, protected 253/253; main's committed contract is not byte-reproducible by its own build (order only).
 - 3 Oct 2026 · WALLET-14 · Verified round 3: no open defect, status review (backend ab459bc on main 48b9043; mobile 6a5a17b with main 331a6fa; neither main moved). Defect 3 closed: a purged person is a byte-identical 404 to the person who saved them and to a stranger (3 rounds, 20 concurrent re-saves all 404, list and count unchanged), a wallet-less one a byte-identical 409; a reopened wallet answers the original row, no duplicate. No regression: full-list re-saves answer their row with no name check, the cap counts the list (1 x 201, 19 x 409 after a purge), duplicates stay one row, isolation holds. Full suite 130/130 suites (3,148 passed, 0 failed), protected 253/253, gates 16 fail / 13 warn (only BENEFICIARIES-MAX added), 6 of 7 mutants killed (survivor: no test has two people save the same person), mobile merge keeps both sides, 0 key windows, 0 Fintava calls.
 - 3 Oct 2026 · WALLET-14 · Round 3 (backend ab459bc, status verifying): re-saving a saved person whose account was deleted now answers 404 (or 409 without a wallet) as for anyone else, never a hidden row; the existing-row shortcut is pinned by a full-list re-save test; mobile main 331a6fa merged; full suite 130 suites 3,148 passed 0 failed, protected 253/253.
-- 3 Oct 2026 · WALLET-14 · Verified round 2: 1 minor defect, status building (backend 377ea31 with main 48b9043; mobile 7755de8; mobile main moved to 331a6fa meanwhile). Round 1's defects closed: a keyless join over 8 BVN-checked people links no stored name hash to another person or to any word (0 of 23 hashes shared, 0 of 464 unkeyed candidates), and old-scheme, other-check, other-person and rotated-key values read null; after a real purge of a saved person, list, count and cap agree, and 20 parallel saves at the edge give 1 x 201 and 19 x 409 (3 rounds plus a mixed run). Migrations deploy cleanly onto main's applied set and onto a fresh database, status clean. New: re-saving a saved person whose account was deleted answers 201 with a row the list never shows (anyone else gets 404). Full suite 130/130 suites (3,147 passed), protected 253/253, gates 16 fail / 13 warn (only BENEFICIARIES-MAX added), 9 of 11 mutants killed, 0 key windows, 0 Fintava calls.
-- 3 Oct 2026 · WALLET-14 · Round 2 (backend 377ea31 with main 48b9043, status verifying): BVN name keys bound to the person and the check (a keyless join links nothing; old-scheme or rotated-key values read null), the 50-place cap counts what the list shows, the bank list fetched once for parallel saves and its hour pinned by a test; full suite 130 suites 3,147 passed 0 failed, protected 253/253; mobile `npm run check` exit 0.
