@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 45 | 32 | 31 |
+| todo | 48 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 13 | 2 | 1 |
+
+## Being verified
+
+- [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 
 ## Done
 
@@ -75,6 +79,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · MONEY-17 built (backend and mobile branches wmt/MONEY-17, not merged): `GET /money/payments/quote` and `POST /money/payments` are served: the price from the buyer's wallet to WAWU's merchant wallet with Fintava's quoted charge on top, the 85/15 split of the price recorded, one debit per Idempotency-Key (taken before the PIN, stored answer replayed), a lost answer left pending and settled from the ledger, never resent. Kinds are paid once their features register them (G-70). A real ₦10 sandbox payment went through once; the sandbox charged ₦0 against the quoted ₦23.25 (G-71). Status verifying.
 - 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
 - 3 Oct 2026 · KYC-05 · Merged to main by the lead (mobile only, 265ed2a). Open your wallet, step 1 (BVN and NIN): a passed check is kept only for the person and session that ran it, and any answer that lands after a session ends writes nothing. Carried forward: check 1 waits on SHARED-CHANGES KYC-05 #1; device not run. OTA update follows.
 - 3 Oct 2026 · KYC-05 · Verified round 7: no open defect, status review (mobile 81669b0 with main e7dc879). Defect 3 closed: a pass landing in the session-end window leaves no A26 cache entry with A's identity (probe Q2), and a refusal or end landing there moves no screen state for B (3 of 3). Audit: no write after an await unchecked against the ticket or session. R6-2 now killed (2 tests), and R7-1 and R7-2 killed. `npm run check` exit 0, 485 tests, 0 act warnings.
@@ -89,4 +94,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-05 · Verified round 3: 1 defect, status building (mobile 84c0dad, main 6bc420e already in; Hub fe1ec6c). Round 2's defect closed: `race_back` and `race_signout` show "BVN confirmed" on de27d15 and the form on 84c0dad (both themes); two checks in flight, A's check landing after B signs in, and a token renewed mid-check (pass still kept) all behave. New defect 1 (privacy, predates round 3): after an account change A26 first paints the previous account's cached phone and wallet state (one QueryClient, never cleared; `cross_fast`, `cross_account`, `cross_wallet`). Privacy scan of 90 typed numbers: 0 hits outside request bodies. 7 of 9 own mutants killed, 2 equivalent.
 - 3 Oct 2026 · KYC-05 · Round 3, status verifying: a BVN check answering after A26 closed or after its session ended is never kept (store writes need a ticket that every forget voids; the form drops late answers); jest races and 8 of 8 mutants; the verifier's race cases reproduced on de27d15 and clean on this build, light and dark. V9 on backend main 7601a5f.
 - 3 Oct 2026 · KYC-05 · Verified round 2: 1 defect, status building (mobile f55585a, main c42595b already in; Hub 7601a5f). Round 1's defects 2 to 5 closed (ten pastes keep 11 digits; the Hub unreachable for 30 s stays a banner with the numbers; waits come from the answer: "in a minute", "in about an hour" from Retry-After-medium 3527, "in about 24 hours"). Defect 1 is closed only while A26 is on screen: tap Back while the check runs, and the answer is kept after A26 has gone, so the BVN name, date of birth and gender survive sign-out, and the same person signing in again sees "BVN confirmed" with no new check. Privacy scan: 0 of 78 numbers anywhere stored or logged.
-- 3 Oct 2026 · KYC-05 · Round 2, status verifying: kept BVN details forgotten on sign-out, session end, account change and leaving A26; pasted BVN and NIN keep all 11 digits (no raw maxLength); a check refused while the Hub is unreachable stays a banner with the numbers; limit banners say the server's wait in words or "later"; M5 and M7 killed (10 of 10 mutants). V9 rerun on backend main 7601a5f. SHARED-CHANGES KYC-05 #3, #4.
