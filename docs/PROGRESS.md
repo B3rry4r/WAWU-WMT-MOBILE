@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 50 | 45 | 32 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 30 | 13 | 2 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 
@@ -77,6 +77,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-05 · Round 6, status verifying: kept BVN details now end on every session end (keptCheck subscribes with onSessionEnd, FIX-04), including a sign-in replacing a session and a refresh to another account; A26 starts over on a session end, so A to B to A no longer sticks on loading; tested with the app's createQueryClient (verifier's P1 to P5 pass), mutants K1 to K4 killed; duplicate SHARED-CHANGES KYC-05 #4 row removed.
 - 3 Oct 2026 · KYC-05 · Verified round 5 on the merge with main e7dc879 (FIX-04): 1 defect, status building (supersedes the `review` line below, written before main moved). Merge 797a95a (PROGRESS.md regenerated; SHARED-CHANGES now holds two KYC-05 #4 rows). `npm run check` 3 of 3 exit 0, 476 tests, 0 act warnings; A26's sign-out and refused-refresh tests pass. Defect 2 (privacy): keptCheck does not subscribe to `onSessionEnd`, so after a refresh answering another account, or a sign-in replacing a session, A's kept name, date of birth and gender stay in memory (owner-tagged, never read by B) until B's account read reaches A26 or A26 closes (jest probe P1, P3 with the app's own query client). Not reachable from the UI today. Fix: `onSessionEnd(forgetKeptCheck)` in keptCheck.ts.
 - 3 Oct 2026 · KYC-05 · Verified round 5: no open defect, status review (mobile ef47494, main 6bc420e already in). Defect 1 closed: R4-4 re-applied fails 3 of 45 of the builder's tests. 400 tokens minted with wawu-id's own signing library and claim set (102 with `-` or `_`) give their `sub`, and ~6,100 malformed or fuzzed tokens give null without throwing, under jest's atob and a line-for-line port of Hermes's atob (V1 and legacy tags read). The builder's 3 surviving mutants are equivalent on Hermes too; 4 own mutants killed. `npm run check` 3 of 3 exit 0, 448 tests, 0 act warnings. NOT RUN: a live id.wawuafrica.com token, check 1, V10.
 - 3 Oct 2026 · KYC-05 · Round 5, status verifying: A26's token reading is tested with real-shaped tokens (a payload with - and _ and no padding, the same padded, a non-ASCII sub read as UTF-8, twelve malformed tokens) and tightened (three parts, base64url, UTF-8, an object with a string sub); R4-4 killed; the verifier's probe passes; sign-out tests settle inside act.
@@ -91,4 +92,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · FIX-04 · Merged to main by the lead (mobile only, f54650c). One person's cached data and in-flight saves never reach the next person on the same phone. Carried forward: test gap R14 (pending refresh across a new session); device and in-app sign-out not run. OTA update follows.
 - 3 Oct 2026 · FIX-04 · Verified round 2: no open defect, status review (mobile 0becc2c = merged with main 6bc420e; Hub fe1ec6c). Defect 1 closed: on c051e67 A's held save is still sent again as B and B's payout account becomes 3333333330; on the branch it ends at `PUT 401 as A` and B keeps 2222222220, light and dark. A same-session rotation still saves (new `rotation` run). 16 jest probes (overlapping refreshes, restore then 401, sign-out mid-refresh, A to B to A, GET, 24 sign-in orderings) pass, and 5 of them fail on c051e67. Finding 2 closed: round 1's two surviving mutants are now killed. 8 of 14 new mutants killed; 6 survive, all equivalent or recorded as a test gap (R14). Gates exit 0 (26 suites, 431 tests, 110 files, 0 fail). NOT RUN: device, an in-app sign-out control.
 - 3 Oct 2026 · FIX-04 fix round 2: a request is never sent again in a later session (A's held payout save no longer lands in B's account after B signs in); the app's query defaults are pinned by tests; status verifying.
-- 3 Oct 2026 · FIX-04 · Verified: one defect open, status building (mobile c051e67 = merged with main 6bc420e; Hub fe1ec6c). The cached-answer leak is closed: on main B's A21 shows A's 1111111111 with Save enabled, on the branch loading then B's own 2222222220, held 3 s and full speed, light and dark; every session-end path fires and none other does. Defect 1: a save for A in flight when B signs in is sent again with B's token (`refreshAccessToken` hands back whatever token is in memory), so B's payout account became A's typed 3333333330 on the real Hub (main does the same). Finding 2: the app-wide query defaults have no test (2 surviving mutants of 15). Gates exit 0 (25 suites, 413 tests, 109 files, 0 fail); renumber clean. NOT RUN: device, an in-app sign-out control.

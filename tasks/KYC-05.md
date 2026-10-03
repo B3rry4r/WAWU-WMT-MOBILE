@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -593,6 +593,30 @@ Closed when:
 | Privacy | **failed** (defect 2). The BVN and NIN themselves are unaffected: round 4's scan stands, and nothing here stores them |
 | Mutations | as above (round 5) |
 
+
+## Builder round 6
+
+Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's f423dba, which already holds main `e7dc879` (FIX-04); main has not moved since. `src/api/session.ts` and the other shared files are untouched. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc05/` (`probe-fix04-r6.log`, `mutants-r6.txt`).
+- **Defect 2 fixed.** `keptCheck.ts` subscribes once at module load with `onSessionEnd(forgetKeptCheck)`. FIX-04 fires that on every way a session ends: sign-out, a refused refresh, a sign-in that replaces a session, and a refresh whose token is another account's. The last two leave the status `signedIn`, which A26's own status check could not see. `forgetKeptCheck` still bumps the era, so the tickets already handed out are void and a late answer is refused.
+- **A second fault, found by the folded-in probe P2.** After A to B to A without a sign-out, with B's account read still in flight, A26 stuck on the loading view: FIX-04's reset and clear left the screen's queries gone with nothing re-reading. A26 now starts over as a new visit on `onSessionEnd` (new keys, its old reads removed), so it reads again as whoever is signed in. Its account read runs only while signed in, so a step still drawn after sign-out reads nothing as nobody.
+- **Tests, with the app's own `createQueryClient`** (`OpenWalletScreen.test.tsx`, last block). A passes the check on A26, A26 stays mounted, then:
+  - a refresh answering B's token (status still signed in, one session end): A's details are gone immediately after the call, and B has none;
+  - a sign-in as B that replaces the session: the same;
+  - A to B to A without a sign-out: A's new session never gets the old details back, and A26 loads A's form;
+  - A's check answering after the switch: not kept;
+  - B's reads answering: A26 shows B's own phone, and A's details are gone.
+
+  These are the verifier's P1 to P5 with assertions. Their own `probe-fix04.test.tsx`, run in place on this code and then removed, passes 5 of 5; it failed P1, P2 and P3 before.
+- **Mutants:** all killed, files restored by sha1.
+  - K1, the new subscription removed: 3 tests fail (the refresh-to-B, sign-in-replaces and A to B to A cases).
+  - K2, forget not voiding tickets: 2 fail.
+  - K3, A26 not starting over on a session end: 1 fails.
+  - K4, the account read running with no session: 1 fails.
+  - X3, no signed-in account check: 1 fails.
+- **One test changed, and why.** "A26's reads are dropped when the session ends while it is open" now asserts that no A26 query holds data or is fetching after the sign-out, and that `/users/me` was read once. It no longer asserts that the cache has no entry at all: the screen, still drawn in the test, keeps a disabled empty entry for the new visit. In the app, the signed-out redirect unmounts it.
+- **SHARED-CHANGES:** the duplicate `KYC-05 #4` row (status open) is removed; main's "Done in FIX-04" row stays.
+- **Counts:** `npm run check` exit 0: 28 suites 481 tests (open-wallet 50), gates 9 run, 123 files, 0 fail, 0 warn, 0 accepted, lint clean, 205 tasks. No "not wrapped in act" warning in 6 runs of the open-wallet suites.
+- **Not run this round:** browser and V9. The change is the session-end hook and the re-read, proved in jest with the app's real query client and session. Nothing was started, so there is nothing to clean up. Check 1 (SHARED-CHANGES KYC-05 #1) and V10 are NOT RUN, as before.
 
 ## Owner sign-off
 
