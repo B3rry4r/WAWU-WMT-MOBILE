@@ -192,6 +192,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The creator's waiting list: soonest deadline first, with the total waiting. */
+        get: operations["PaidDmController_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's threads, one per person, latest activity first. `as=creator` reads the creator side. */
+        get: operations["PaidDmController_threads"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/threads/{wawuId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One thread: every question with all its reply bubbles. */
+        get: operations["PaidDmController_thread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/questions/{messageId}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a reply bubble to a question, while its window is open. */
+        post: operations["PaidDmController_reply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/settings/privacy/blocked": {
         parameters: {
             query?: never;
@@ -3541,6 +3609,9 @@ export interface components {
         RespondDmDto: {
             text: string;
         };
+        PaidDmReplyDto: {
+            text: string;
+        };
         CreateBlockedAccountDto: {
             /** Format: uuid */
             blockedWawuId: string;
@@ -5324,6 +5395,56 @@ export interface components {
             refundedAt: string | null;
             otherParty: components["schemas"]["DmOtherParty"];
         };
+        PaidDmQueueItem: {
+            id: string;
+            text: string;
+            amountKobo: number;
+            sentAt: string;
+            deadlineAt: string;
+            sender: components["schemas"]["DmOtherParty"];
+        };
+        PaidDmQueuePage: {
+            items: components["schemas"]["PaidDmQueueItem"][];
+            nextCursor: string | null;
+            waitingTotal: number;
+        };
+        PaidDmThread: {
+            other: components["schemas"]["DmOtherParty"];
+            /** @enum {string} */
+            side: "creator" | "fan";
+            questionCount: number;
+            waitingCount: number;
+            nextDeadlineAt: string | null;
+            lastActivityAt: string;
+            lastText: string;
+            lastTextMine: boolean;
+        };
+        PaidDmThreadPage: {
+            items: components["schemas"]["PaidDmThread"][];
+            nextCursor: string | null;
+        };
+        PaidDmReply: {
+            id: string;
+            text: string;
+            createdAt: string;
+        };
+        PaidDmQuestion: {
+            id: string;
+            text: string;
+            amountKobo: number;
+            /** @enum {string} */
+            status: "awaiting_response" | "responded" | "refunded";
+            mine: boolean;
+            sentAt: string;
+            deadlineAt: string;
+            respondedAt: string | null;
+            replies: components["schemas"]["PaidDmReply"][];
+        };
+        PaidDmThreadDetail: {
+            thread: components["schemas"]["PaidDmThread"];
+            questions: components["schemas"]["PaidDmQuestion"][];
+            nextCursor: string | null;
+        };
         JsonObject: {
             [key: string]: (string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | ((string | number | boolean | components["schemas"]["JsonObject"] | unknown[]) | null)[]) | null)[]) | null)[]) | null)[]) | null;
         };
@@ -6982,6 +7103,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DirectMessage"];
+                };
+            };
+        };
+    };
+    PaidDmController_queue: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmQueuePage"];
+                };
+            };
+        };
+    };
+    PaidDmController_threads: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+                as?: "fan" | "creator";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmThreadPage"];
+                };
+            };
+        };
+    };
+    PaidDmController_thread: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+                as?: "fan" | "creator";
+            };
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmThreadDetail"];
+                };
+            };
+        };
+    };
+    PaidDmController_reply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaidDmReplyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmQuestion"];
                 };
             };
         };
