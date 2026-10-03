@@ -158,6 +158,16 @@ Store customerId, walletId and accountNumber when an account opens.
   record (one opening per person, BVN and phone unique) is what stops a
   second account, and a lost create answer is looked for by phone, never
   sent again blindly.
+- **A customer found by phone is not proof it is the person.**
+  `GET /customers/{id}` carries the record's full BVN (`userInfo.bvn`, 11
+  digits) and date of birth (`sandbox/32-money12-account.md`, round 2).
+  MONEY-12 takes a phone's existing customer as the person's account only
+  when the keyed hash of that BVN equals the person's checked BVN, never
+  keeping the BVN; another BVN, or none, stops the opening for review. A
+  create repeating a phone Fintava already holds was answered
+  `500 ["Something went wrong on our end. Please try again shortly."]` with
+  nothing made (MONEY-12 verifier, call 3), so a recycled number cannot be
+  given a second customer either.
 - **Create runs no identity check and costs nothing.** It accepted a BVN the
   BVN check says does not exist, accepted the same BVN and NIN for a second
   customer, and charged ₦0 (`sandbox/07-create-customer.md`,

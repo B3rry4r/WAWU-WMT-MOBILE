@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 57 | 48 | 32 | 32 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
 | done | 20 | 10 | 1 | 0 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [MONEY-12](../tasks/MONEY-12.md) Open a Fintava account when someone opens a wallet (You)
 
@@ -66,6 +66,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · MONEY-12 · Round 2: an existing Fintava customer for the person's phone is adopted only when the keyed hash of the BVN on Fintava's record equals the person's checked BVN; another BVN or none adopts and creates nothing, stops the opening for review (G-37, an owner stop) and answers `409 phone_held_by_other_identity` (D1, the verifier's A1 to A4 now refused). The customer list is read to its end or trusted only newest first (N1), and every opening time is the database's clock (N2). Sandbox: 5 reads, the same phone with another BVN refused, the record's own BVN adopted `1192964482`, no create. Contract 2,913 passed, protected 253/253, gates 16 fail / 9 warn as before, mobile check exit 0. Status verifying (backend 9902ca1).
 - 3 Oct 2026 · MONEY-12 · Verified: 1 defect, back to building (backend d056461 on main e8535d8, also merged locally with wmt/MONEY-08 0eb32a9; mobile 3b500ab; neither main moved). D1: an existing Fintava customer is adopted on the phone alone, never compared with the checked BVN, so a recycled phone, a customer made outside WAWU or a deleted account's number hands one person another's account (spec and live: the stranger's account number and name shown, balance read from it); Fintava's own read carries the full `userInfo.bvn` to compare (sandbox), and a repeated phone was answered 500 with nothing made. Passed: one create under every race (two real Hubs, 3 accounts on one BVN, sweep, server killed mid-create), identity read once, nothing stored or logged, full contract 2,879 passed / 3 skipped / 0 failed, protected 253/253 lock unchanged, gates 16 fail / 9 warn (only PROVISIONAL(WALLET-BANK-NAME) added), contract byte-stable, mobile check exit 0. Notes N1 (list order assumed) and N2 (Hub clocks); G-36 confirmed, owner's call.
 - 3 Oct 2026 · MONEY-12 · Built: `POST /money/wallet/open` opens the person's Fintava account (identity read once, the selfie tied to that exact check), `GET /money/wallet` shows the account number or "opening"; one opening per person (claimed before anything is sent, BVN and phone unique), Fintava asked by phone first, a lost answer reconciled (details 404, the list, the resend window), never resent blindly. Sandbox: a real account opened through the route with the identity steps as stand-ins (`sandbox/32-`). Status verifying.
 - 3 Oct 2026 · FIX-01 · Verified: no defect, status review (backend 9ea3b90 on main 13b6ac4, mobile f2342d0 on main 983418c; neither main moved). My own stall server (plain and TLS, separate process): all 34 client methods against headers-then-stall, partial body, drip, chunked and close-delimited bodies and stalled 400/404/500 end at the 400 ms timeout (400 to 435 ms) as the no-headers outcome with the socket closed, with and without forced GC (508/510 per run, the 2 others the selfie cap); main's client hangs on 474 of 476 under GC. Bodies done before the deadline are read, after it time out; 8,000 calls leave 0 timers and 0 sockets, heap flat. Built Hub, 5 s check timeout, forced GC or not: BVN check and KYC-02's u4 selfie stall answer 503 at 5.0 to 5.1 s, counted, socket closed at the deadline; a stalled 400 is a counted 503; main no answer at 60 s. No send becomes resendable (stalled lookups give wait). Contract 2,801 passed, protected 253/253, gates 16 fail / 8 warn as main, mobile check exit 0. Findings: a mid-body reset is still read as empty (unchanged); the builder's spec does not pin the abort when no headers arrive.
@@ -80,4 +81,3 @@ From `docs/LOG.md`, newest first.
 - 2 Oct 2026 · KYC-02 · selfie match to the BVN photo in wawu-backend (`POST`/`GET /money/identity/selfie`, additive migration, 3 a day per person, outcome and time stored, never the image); typed calls in `src/api/walletIdentity.ts`; 2 sandbox calls, both refused and charged ₦10; built, to verify
 - 3 Oct 2026 · OPS-11 · Verified round 3: no open defect (backend f45e657, mobile 8678dad; mains 66339b9 and 94d202b already merged). The Flutterwave burst spec passed 55 of 55 runs at load 7.1 to 12.8 with 0 bursts set aside (spans 211 to 398 ms against 900); the bare decorator fails it 6 of 6, and a forced set-aside cannot hide a 429. The override tests kill all 11 mutants asked (a note: a decorator on the same line as another slips past both). Production code unchanged since round 1/2; contract 110/110 suites, 2134 passed; protected 253/253; main's 16 gates; the production build behind a real nginx passes every trust case. Status review.
 - 3 Oct 2026 · OPS-11 · Round 3 (took over from an interrupted session): the Flutterwave burst tests set aside a burst whose arrivals do not fit one window and send a fresh one (at most 5), failing loudly if none fits (backend `wmt/OPS-11` f45e657, main 66339b9 merged). 45/45 runs at load 7 to 14.4; the bare decorator fails 6/6; full contract 110/110 suites; protected 253/253. Back to verifying.
-- 2 Oct 2026 · OPS-11 · Verified round 2: 1 defect (backend 954ef8f, mobile f9d9b12; checked merged with backend main 368fab0 and mobile 66bdcff). The override-list test now expects KYC-01's @Throttle and catches an unexpected skip or override (mutants). The burst test is timed by arrivals now and no longer fails on a cold start, but it still failed 2 of 68 runs at load 7 or more (span 1003 ms); retry a burst that misses the window instead of failing. Contract 108/108 suites, 2095 passed; protected 253/253; main's 16 gates; mobile check exits 0. Status building.

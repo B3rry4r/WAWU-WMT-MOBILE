@@ -242,6 +242,80 @@ Accept: application/json
 Sent 2026-10-03 05:47:44 UTC; the server logged `wallet balance: HTTP 200 in
 305 ms` and answered `{ "availableKobo": 0, "asOf": "2026-10-03T05:47:44.307Z" }`.
 
+## Round 2: a customer is adopted only when its BVN is the person's
+
+3 Oct 2026, 06:44:55 to 06:45:50 UTC, `https://dev.fintavapay.com/api/dev`
+only. 5 calls, all `GET`, none charged; no create was sent and no customer
+was made. The key was read from its file into the call's environment with
+`sed -n 's/^FINTAVA_API_KEY=//p'` and never printed: 0 of its 58
+8-character windows appear in the outputs, logs or the staged diffs.
+
+Why: the round-1 verifier (D1) showed the route recorded any existing
+customer for the person's phone as their wallet, and that Fintava's own
+`GET /customers/{id}` carries the full `userInfo.bvn` to compare with. The
+fix adopts a customer only when the keyed hash (`IDENTITY_HASH_KEY`,
+KYC-01's `bvn:<digits>` scheme) of that BVN equals the opening's
+`bvnHash`; otherwise nothing is adopted or created and the opening stops
+for review (`409 phone_held_by_other_identity`). These calls confirm the
+field and run both outcomes against the real record of account
+`1192964482`.
+
+The built `wmt/MONEY-12` Hub (`node dist/src/main.js` on :4901, database
+`m12b_hub`, stand-in WAWU ID :4902, real `POST /auth/login`, no minted
+token) made calls 2 to 5. As in round 1, the BVN check and the selfie were
+stand-ins written into `m12b_hub` (questions 6 and 11, G-25): the keyed
+hashes and last 4 of the BVN and NIN, the check's time, the proved phone
+(the documented example phone ending `5863`, which `1192964482` holds) and
+one `matched` selfie row tied to that check.
+
+| # | Sent (UTC) | By | Call | HTTP | Result |
+|---|---|---|---|---|---|
+| 1 | 06:44:55.384 | script | `GET /customers/14acc2fc-2952-43b6-be71-168633aa086c` | 200, 0.48 s | still account `1192964482`; **`userInfo.bvn` is the full 11 digits** (last 4 `8901`, equal to Fintava's documented example, compared in memory and printed only as true or false); `userInfo.dateOfBirth` present (10 characters); `userInfo.nin` null |
+| 2 | 06:45:48 | route, person S | `GET /customers/details?phone=*******5863` | 200, 527 ms | the customer for the phone |
+| 3 | 06:45:49 | route, person S | `GET /customers/14acc2fc-2952-43b6-be71-168633aa086c` | 200, 96 ms | its BVN hashed in memory: not S's. Route answered `409 phone_held_by_other_identity`, nothing adopted or created |
+| 4 | 06:45:49 | route, person M | `GET /customers/details?phone=*******5863` | 200, 84 ms | the same customer |
+| 5 | 06:45:49 | route, person M | `GET /customers/14acc2fc-2952-43b6-be71-168633aa086c` | 200, 102 ms | its BVN hashed: M's. Account `1192964482` recorded, no create |
+
+**Person S** holds the number now, with another BVN (made up, last 4
+`0001`, never sent anywhere: it only became a keyed hash in `m12b_hub`).
+
+```text
+POST /api/hub/money/wallet/open  (S's token; BVN *******0001, the phone ending 5863)
+-> 409 {"statusCode":409,"message":"This phone number is already linked to an account we could not match to your BVN, so we have not opened your wallet. Contact support.","data":null,"reason":{"code":"phone_held_by_other_identity"}}
+   Cache-Control: no-store; the answer names neither 1192964482 nor "john ugochukwu"
+FintavaWalletOpening: state conflict, failure phone_held_by_other_identity, attempts 1; FintavaWallet: no row
+GET /api/hub/money/wallet -> 200 state not_open, account null
+```
+
+The stopped row was then deleted by hand, as a review would, to free the
+phone for M (one phone, one opening).
+
+**Person M** is the record's own person: Fintava's documented example BVN
+(last 4 `8901`) and NIN (last 4 `0003`), the same values as round 1.
+
+```text
+POST /api/hub/money/wallet/open  (M's token; BVN *******8901, NIN *******0003)
+-> 200 state open, account 1192964482, name "john ugochukwu", bank Loma Bank, code 090620, Cache-Control: no-store
+FintavaWallet: customerId 14acc2fc-2952-43b6-be71-168633aa086c, walletId 2950137f-aadd-4e02-8544-50d3387c422d, account 1192964482
+GET /api/hub/money/wallet -> 200 the same, no Fintava call
+```
+
+The server's log lines for the two opens, in order (nothing else about
+them was logged):
+
+```text
+DEBUG [FintavaClient] look up customer: HTTP 200 in 527 ms
+DEBUG [FintavaClient] get customer: HTTP 200 in 96 ms
+ERROR [WalletOpeningService] wallet opening: Fintava's customer for this phone is not shown to be this person (phone_held_by_other_identity); nothing adopted or created, it needs review
+DEBUG [FintavaClient] look up customer: HTTP 200 in 84 ms
+DEBUG [FintavaClient] get customer: HTTP 200 in 102 ms
+LOG   [WalletOpeningService] wallet opening: account recorded
+```
+
+**Nothing identity-shaped kept or logged:** the log has no 11-digit run
+and no date of birth; `m12b_hub`'s 541 text, JSON and array columns hold
+none of the BVNs, NINs, the date of birth or the address sent or read.
+
 ## NOT RUN
 
 - **The whole of Open your wallet against the sandbox** (the BVN check, the
