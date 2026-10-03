@@ -3,7 +3,7 @@ id: INBOX-16
 title: Buy WAWU Credits from the wallet (backend)
 owner: DEV2
 area: INBOX
-order: 101
+order: 102
 priority: launch
 repo: wawu-backend
 type: money-path

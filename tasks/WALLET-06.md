@@ -3,7 +3,7 @@ id: WALLET-06
 title: Wallet settings, change and reset the PIN
 owner: YOU
 area: WALLET
-order: 123
+order: 124
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

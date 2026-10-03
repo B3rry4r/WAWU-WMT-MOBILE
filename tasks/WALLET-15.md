@@ -3,7 +3,7 @@ id: WALLET-15
 title: Fee quotes
 owner: YOU
 area: WALLET
-order: 89
+order: 90
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

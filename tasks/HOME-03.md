@@ -3,7 +3,7 @@ id: HOME-03
 title: Content detail: preview, unlocked, comments, share, rate
 owner: DEV
 area: HOME
-order: 138
+order: 139
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

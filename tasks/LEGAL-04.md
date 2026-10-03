@@ -3,7 +3,7 @@ id: LEGAL-04
 title: Legal: book and pay a consultation
 owner: DEV3
 area: LEGAL
-order: 114
+order: 115
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

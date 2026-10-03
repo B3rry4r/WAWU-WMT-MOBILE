@@ -3,7 +3,7 @@ id: EXPLORE-04
 title: Search: creators, communities, no results, failed
 owner: DEV
 area: EXPLORE
-order: 104
+order: 105
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

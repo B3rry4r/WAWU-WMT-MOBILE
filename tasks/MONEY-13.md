@@ -3,7 +3,7 @@ id: MONEY-13
 title: No wallet yet: money screens lead to Open your wallet
 owner: YOU
 area: MONEY
-order: 81
+order: 82
 priority: launch
 repo: wawu-backend
 type: money-path
