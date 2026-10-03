@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -329,6 +329,32 @@ Jest (`$V/probe-keptcheck-r3.test.tsx`: the suite's own harness, run in my workt
 - The pasted number `22234567812` now answers A14 in `paste`. The paste account's phone differs from the stand-in's record for that BVN, so the BVN is right and the phone is wrong. All 20 pastes (10 forms × 2 fields, both themes) keep 11 digits.
 
 **Unclear (unchanged, owner):** G-55 (the phone is read-only). The builder's KYC-03 finding (A6 and A7 need the BVN and NIN again).
+
+## Builder round 4
+
+Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's 801aeaa. Main is still `6bc420e` (already in). Evidence `$K4` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc05/r4/`: the verifier's round-3 `drive.py` and `web-server.js` on my ports, `results.jsonl`, `browser-dumps.jsonl`, `shots-pre/` (before), `shots/` (after). Copied to `build/screens/KYC-05/r4-*`. Mutants: `../mutants-r4.txt`.
+- **The defect is fixed: after A signs out and B signs in, A26 no longer paints A's phone or wallet state.** A26 no longer relies on the app's shared cache being cleared (FIX-04 does that app-wide):
+  - **Keys.** Every A26 read sits under one prefix, `['open-wallet', ...]`. The account read is keyed by this visit of the step, so a cache another session filled never answers it. The wallet and identity reads are keyed by that account's id, and run only once it is known (`api/account.ts`).
+  - **Only the signed-in account.** A26 shows data only when the account read's `wawuUserId` equals the signed-in account: the `sub` claim of the access token the app holds, read and not verified, since the Hub verifies (`sessionAccount.ts`). Anything else stays the loading view.
+  - **Dropped on close.** A26's reads are removed when it closes and when the session ends.
+- **Jest:** 39 open-wallet tests, 4 new.
+  - One `QueryClient` across A (wallet open) signing out and B signing in. A's answers are seeded back under the old shared keys, and B's account and wallet reads are held. B sees the loading view, never A's phone or "Your wallet is open". Then B's own phone shows.
+  - An account read that is not the session's account is never shown.
+  - A26's reads are dropped when the session ends.
+  - The token reader returns nothing for a malformed token.
+- **Mutants:** 10 of 10 killed, files restored by sha1. Six are new: account read not keyed by visit; wallet not keyed by account; no signed-in account check; reads kept on unmount; reads kept on session end; token `sub` ignored. Four carry over: the voided ticket, a late answer kept, M5, M7.
+- **Browser, the verifier's cross cases, light and dark.**
+  - **Before**, on an export of 801aeaa (`shots-pre/r3-cross-*`). `cross_fast`: the phone field went A's number, then B's. `cross_account` (B's reads held 3 s): first paint showed A's phone. `cross_wallet`: B, who has no wallet, first saw "Your wallet is open".
+  - **After**, on this build (`shots/r3-cross-*`). `cross_fast`: only B's number ever appears. `cross_account` and `cross_wallet`: first paint is the loading view, then B's own form and phone; A's late check answer changes nothing for B.
+- **V9:** Hub built from backend main `fe1ec6c` on :4961, fresh `k05_test`. Stand-in WAWU ID :4962 (people registered there and signed in on the app's A22). Fintava stand-in started with `env -i`. Web export on :8161 (Metro cache cleared, 0 `wawuafrica.com`, live calls blocked: 0 attempted).
+  - The verifier's `loading`, `empty`, `pass`, `a14`, `unknown`, `limit`, `hubdown2`, `reentry`, `paste`, `open`, `opening`, `nobvn`, `foreign`, `race_back`, `race_signout` and `signout_mounted` all ran without error in light and dark. The three races still end on the form.
+  - `pass` records neither the form nor "BVN confirmed" on re-entry because its `go_forward` does not navigate in this export (as in round 2); in-app re-entry is covered by `reentry` (form, 1 POST).
+- **Privacy scan:** 56 distinct typed numbers. 0 hits in a full `k05_test` dump or in the Hub, stand-in and web logs; the positive control finds 54 in captured request bodies. Across 44 browser sessions: only the two session keys, no sessionStorage, IndexedDB or cookie.
+- **Store comment fixed.** The ticket's comment now says what the store checks: no forget since the ticket was taken (its `era`). It does not limit writes to one or check the owner.
+- **SHARED-CHANGES KYC-05 #5** cites FIX-04 for the app-wide cache clear; A26 does not depend on it.
+- **Counts:** `npm run check` exit 0: 26 suites 442 tests, gates 9 run, 121 files, 0 fail, 0 warn, 0 accepted, lint clean, 204 tasks.
+- **Clean-up:** all four processes stopped (PIDs checked), ports free, `k05_test` dropped, the Hub worktree and a temporary mobile worktree (for the "before" export) removed. `/dev/null` checked as a character device.
+- **NOT RUN:** check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
 
 ## Owner sign-off
 
