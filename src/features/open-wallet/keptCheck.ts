@@ -47,6 +47,11 @@ function changed() {
   listeners.forEach((listener) => listener());
 }
 
+/** True while no forget has happened since the ticket was taken: an answer under it may still act. */
+export function ticketIsLive(ticket: KeepTicket): boolean {
+  return ticket.era === era;
+}
+
 /** Keeps the check for the ticket's owner. False, and nothing kept, when the ticket was voided by a forget. */
 export function keepCheck(ticket: KeepTicket, check: BvnCheck): boolean {
   if (ticket.era !== era) return false;

@@ -771,3 +771,100 @@ describe('the kept BVN details end with the session, on every way it ends (FIX-0
     await settle(app);
   });
 });
+
+describe('an answer from an ended session writes nothing, and a gone A26 hears no session end', () => {
+  const B = '00000000-0000-4000-8000-0000000000b2';
+  const pair = (sub: string, n: string) => ok({ accessToken: tokenFor(sub), refreshToken: `refresh-${n}` });
+
+  /**
+   * A's check is held; the session ends (a refresh answering B's token) and a
+   * later onSessionEnd listener releases A's answer, so it lands after the
+   * forget but before React has drawn anything new: the narrowest window.
+   */
+  async function answerInsideSessionEnd(answer: Reply, bMe: Answer = 'hold') {
+    const { createQueryClient } = require('@/api/query') as typeof import('@/api/query');
+    const client = createQueryClient();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    routes['POST /money/identity/bvn'] = [{ gate, then: answer }];
+    const app = await boot(client);
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    const session = require('@/api/session') as typeof import('@/api/session');
+    const off = session.onSessionEnd(() => release());
+    routes['GET /users/me'] = [bMe];
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    off();
+    return { app, client };
+  }
+
+  it('a pass landing as the session ends puts none of A’s identity in the app’s cache, and keeps nothing', async () => {
+    const { app, client } = await answerInsideSessionEnd({ status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } });
+    expect(client.getQueryCache().findAll({ queryKey: ['open-wallet', 'identity'] }).filter((q) => q.state.data !== undefined)).toHaveLength(0);
+    expect(client.getQueryCache().findAll().map((q) => q.state.data)).not.toContainEqual(passedIdentity);
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.kept.readKeptCheck(B)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+  });
+
+  it('a refusal landing as the session ends moves no screen state: B, once read, gets B’s own form, not A’s end', async () => {
+    const said = 'A Naira wallet needs a Nigerian phone number on your account.';
+    const { app } = await answerInsideSessionEnd(
+      { status: 422, body: { statusCode: 422, message: said, data: null, reason: { code: 'phone_not_nigerian', message: said } } },
+      ok({ ...me, wawuUserId: B, phone: '+2348039990088' }),
+    );
+    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0803 999 0088');
+    expect(app.screen.queryByTestId('open-wallet-not-available')).toBeNull();
+    expect(app.screen.queryByText(said)).toBeNull();
+    await settle(app);
+  });
+
+  it('a session end after A26 has closed reaches nothing of the gone screen', async () => {
+    const { createQueryClient } = require('@/api/query') as typeof import('@/api/query');
+    const client = createQueryClient();
+    const app = await boot(client);
+    await app.screen.findByTestId('open-wallet-phone');
+    const removeSpy = jest.spyOn(client, 'removeQueries');
+    await app.screen.unmount();
+    const afterUnmount = removeSpy.mock.calls.length;
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await session.signOut();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(removeSpy.mock.calls.length - afterUnmount).toBe(0);
+    removeSpy.mockRestore();
+  });
+
+  it('opening and closing A26 twenty times leaves no session-end listener behind', async () => {
+    const session = require('@/api/session') as typeof import('@/api/session');
+    const real = session.onSessionEnd;
+    let live = 0;
+    const spy = jest.spyOn(session, 'onSessionEnd').mockImplementation((listener: () => void) => {
+      live += 1;
+      const off = real(listener);
+      return () => {
+        live -= 1;
+        off();
+      };
+    });
+    try {
+      for (let i = 0; i < 20; i += 1) {
+        const app = await boot();
+        await app.screen.findByTestId('open-wallet-phone');
+        await app.screen.unmount();
+      }
+    } finally {
+      spy.mockRestore();
+    }
+    expect(live).toBe(0);
+  });
+});

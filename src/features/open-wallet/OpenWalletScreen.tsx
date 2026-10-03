@@ -21,7 +21,7 @@ import { Banner } from '@/features/auth/Banner';
 import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, useKeptCheck } from './keptCheck';
+import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, ticketIsLive, useKeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
@@ -288,13 +288,15 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
     const ticket = ticketFor(account.wawuUserId);
     try {
       const check = await runBvnCheck({ bvn: idDigits(bvn), nin: idDigits(nin) });
-      if (!live.current || session.current !== 'signedIn') return;
+      // An answer whose session has ended (its ticket void) writes nothing at
+      // all: not the kept details, not the cache, not the screen.
+      if (!live.current || session.current !== 'signedIn' || !keepCheck(ticket, check)) return;
       setBvn('');
       setNin('');
       queryClient.setQueryData(identityQuery(account.wawuUserId).queryKey, check.identity);
-      keepCheck(ticket, check);
     } catch (error) {
-      if (!live.current) return;
+      // A refusal under an ended session is the old account's: it moves no screen state either.
+      if (!live.current || !ticketIsLive(ticket)) return;
       const next = checkFailure(error);
       if (next.kind === 'end') {
         setBvn('');
