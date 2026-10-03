@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: building
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -470,7 +470,7 @@ Evidence `$V5` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/
 - Hermes sources `$V5/hermes-v1/`, `$V5/hermes-v0/`;
 - `npm run check` logs `$V5/check-run1.log` to `-run3.log`.
 
-**Verdict: defect 1 is closed. No defect is open. Status `review`.**
+**Verdict: defect 1 is closed. Main then moved to e7dc879 (FIX-04). On the merged tree, one new defect is open (defect 2, privacy, below): A26's kept BVN details are not dropped at a session end that does not pass through sign-out. Status `building`.** (An earlier push of this report, 5bb351a, said `review`. It was written before main moved.)
 
 ### 1. R4-4 re-applied by me
 
@@ -545,6 +545,54 @@ All three runs exit 0, each with:
 | V10 | NOT RUN | no device. Hermes behaviour was checked from source and a port, not on a device (OPS-10) |
 
 **NOT RUN:** capability check 1 (SHARED-CHANGES KYC-05 #1); V10; a live id.wawuafrica.com token (above).
+
+### Merged with main e7dc879 (FIX-04)
+
+**The merge.** Merge commit 797a95a on `wmt/KYC-05` (my merge, by the Lead's instruction).
+- Only `docs/PROGRESS.md` conflicted. I took main's side and regenerated it with `check_tasks.py --write`.
+- `SHARED-CHANGES.md` auto-merged into **two `KYC-05 #4` rows**: line 30, from main, "Done in FIX-04", and line 54, from this branch, still `open`. Defect 2 covers the clean-up.
+
+**Checks on the merged tree.**
+- `npm run check`, 3 runs: each exits 0, with 476 tests, gates 9 run, 123 files, 0 fail, 0 warn, 0 accepted, 205 tasks, and 0 act warnings (`$V5/check-merged-1.log` to `-3.log`).
+- A26's sign-out, refused-refresh, late-answer, one-cache and reads-dropped tests: 5 of 5 pass, 0 act warnings (`$V5/merged-signout-tests.log`).
+- Those suite tests boot A26 with their own `QueryClient`. So I added a probe that uses the app's real one (`createQueryClient` from `@/api/query`, which empties itself on `onSessionEnd`): `$V5/probe-fix04.test.tsx`, `$V5/probe-fix04.log`, `-p5.log`; run in place, then removed.
+
+**What FIX-04 changed underneath.** `onSessionEnd` now fires on four events:
+- sign-out;
+- a refused refresh;
+- a sign-in that replaces a session;
+- a refresh whose token belongs to another account.
+
+The last two keep the status `signedIn`. A26 forgets its kept details on three paths:
+- `status === 'signedOut'`;
+- unmount;
+- an account read for a new owner.
+
+`keptCheck.ts` does not subscribe to `onSessionEnd`.
+
+**Defect 2 (privacy): A26's kept BVN details outlive a session end that does not pass through sign-out.** All four probes start with A passing the check on A26 ("BVN confirmed"; name, date of birth and gender kept for A).
+- **P1: a refresh answers B's token.** Probe P1: `onSessionEnd` fires once, and the session is B's. The app's cache is emptied, so A26 shows the loading view. But `readKeptCheck(A)` still returns A's details (prefill first name "Ada"). They stay in memory through B's session for as long as B's account read has not answered A26.
+- **P3: a sign-in replaces A's session.** Same result: A's details are still kept after the sign-in as B.
+- **P5: B's account read answers.** Then A26 forgets on the owner change, and B sees B's own form and phone.
+- **P4: A's check answers late.** A's check was in flight at the switch to B. Its late answer is not kept: emptying the cache unmounts the form, so its unmount guard drops the answer.
+- **B never reads A's details:** the store compares the owner, `readKeptCheck(B)` is null in every probe, and nothing of A is drawn. So no path hands A's details to B.
+- **But they are not dropped "on every session end"**, which this task claims and SHARED-CHANGES KYC-05 #4 promised: "Once applied, `keptCheck.ts` subscribes at load and calls `forgetKeptCheck`". FIX-04 has now applied that row.
+- **Reach today: none from the UI.** `sign-in` is reachable only signed out (root layout guard), and a refresh answering another account needs WAWU ID to misbehave. It is still in scope, because the session layer now defines both as session ends.
+- **P2 inconclusive.** P2 tried A, then B, then A, with B's account read never answering. It ended on A26's loading view: the probe's never-settling `hold` stayed in flight. I make no finding from it.
+
+Reproduction: `$V5/probe-fix04.test.tsx`, tests P1 and P3, on 797a95a; both fail on `keptForA... toBe(false)`.
+
+Closed when:
+- `keptCheck.ts` subscribes at load with `onSessionEnd(forgetKeptCheck)`, which also voids the tickets out;
+- a test shows `readKeptCheck(A)` is null right after a refresh answering another account, and after a sign-in replacing a session, with A26 still mounted;
+- the duplicate `KYC-05 #4` row is reduced to main's "Done in FIX-04" row.
+
+| Pass (merged tree) | Result |
+|---|---|
+| V1 | passed (3 of 3 runs, 476 tests, 0 act warnings) |
+| Privacy | **failed** (defect 2). The BVN and NIN themselves are unaffected: round 4's scan stands, and nothing here stores them |
+| Mutations | as above (round 5) |
+
 
 ## Owner sign-off
 
