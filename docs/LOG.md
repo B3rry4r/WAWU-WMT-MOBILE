@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 3 Oct 2026 · KYC-05 · Built A26 (Open your wallet: phone, BVN, NIN; Continue runs KYC-01's check) with A14 as its state, the Not available yet end, and `useOpenWalletEntry` for the money routes' `409 wallet_not_open`; status verifying. Prefill kept in memory for A5. Driven against a built Hub with a Fintava stand-in in light and dark. The pay sheet's button waits on SHARED-CHANGES KYC-05 #1. Gaps G-55 (no signed-in phone change), G-56 (USSD hints).
 - 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
 - 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).
 - 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
