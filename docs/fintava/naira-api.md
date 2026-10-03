@@ -166,7 +166,12 @@ Store customerId, walletId and accountNumber when an account opens.
   6 s, and **was still charged ₦10** (`sandbox/05-bvn-selfie.md`). Every
   retry costs money, so the app checks the photo before sending it. The
   backend's route (KYC-02, `sandbox/29-kyc02-selfie.md`) allows 3 a day per
-  person and keeps only the outcome, the time and any confidence score.
+  person and keeps only the outcome, the time and any confidence score. It
+  takes a JPEG or PNG of 1 KB to about 75 KB (100,000 base64 characters), at
+  most 2,048 pixels on each side, exactly as its encoder wrote it (nothing
+  after the end): so the app (KYC-03) downscales and re-encodes the capture
+  before sending it (backend `docs/contract/CONVENTIONS.md`, the selfie
+  section).
 - **Check a phone number:** `GET /compliance/verify/phone-number?phone_number=`
   (local format). ₦5 per call, charged even for "Phone Number not Found"
   (`sandbox/06-phone-check.md`).
