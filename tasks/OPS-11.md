@@ -7,7 +7,7 @@ order: 54
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -50,6 +50,14 @@ webhook is ever turned away with a 429.
 - [ ] Every other route keeps the same 20/s and 200/min limits as before.
 
 ## Builder report
+
+**Round 3** (backend `wmt/OPS-11` f45e657, main 368fab0 merged as 3e217e7 and 66339b9 as 995df38; mobile main 66bdcff and 94d202b merged). This builder took over from a round-3 session cut off by a usage limit: its fix (7b9da12, unpushed) was reviewed, kept, proven here and pushed with one addition.
+- Defect 2 fix (test only; `src/main.ts`, `src/hub-app-options.ts` and the Flutterwave controller are byte-identical to 954ef8f): `burstInOneWindow` in `payment-webhook-throttle.contract.spec.ts` sends a burst, and if its arrivals span 900 ms or more (the 1 s window less 100 ms for the time from arrival to the guard) sets it aside and sends a fresh one (new tx_refs, a new sender with a full bucket), at most 5 attempts; asserts only on a burst that fits; if none fits it throws with every span, never passing. The main test still asserts 200 on every burst sent, set aside or not. The bare-decorator control uses the same helper (still exactly 20 x 200 and 10 x 429). Added here: a set-aside burst is printed (`console.warn`, attempt and span), so CI shows it. Verifier note 3 also answered by 7b9da12: the override test counts each decorator per file, and a new test reads the `@Throttle` metadata on both controllers and asserts every override names a registered throttler and only tightens it (13 OPS-11 tests).
+- Load runs: the real burst spec 45 times on `o11r4_burst_test`, each started only at 1-min load >= 7, beside a looping full contract suite on `o11r4_load_test` (mock WAWU ID on :4842) and four CPU burners (two did not lift load past 4.7 on 4 cores), plus other sessions' suites: **45/45 passed**, load 7.14 to 14.40. One run (40, load 13.6) set a burst aside (945 ms) and passed on the fresh one; no other set-aside.
+- Mutation: controller line 32 to bare `@SkipThrottle()` (sha1 887333b3...b7 before, ef606f8b...2c mutant, 887333b3...b7 after restore; git blob 58717994 = origin's): 6/6 runs at load 11.9 to 13.4 fail the main burst test (10 x 429 on the first burst) and the by-name test; the control passes. No-fit path: spec margin temporarily 1000 ms (sha1 1429634f before and after): both burst tests fail with "None of 5 bursts ... never put to the test".
+- Checks on f45e657: tsc 0; eslint clean on the 6 changed .ts files; OPS-11 specs 13/13; full `test:contract` on fresh migrated and seeded `o11r4_contract_test`, mock on :4001 (free per `lsof`, stopped straight after): **110/110 suites, 2134 passed, 3 skipped, 0 failed**. Protected `run.sh --fresh HEAD`, lock origin/main 66339b9: **253/253, all 244 required**; `.pipeline`, `src/protected-routes`, `test/protected-routes`, `scripts/protected-routes` 0 diff against main. Gates 16 fail / 7 warn / 76 accepted on 599 files, main 66339b9 16 / 7 / 76 on 597: every FAIL and WARN line identical. Tripwire: 0 added lines outside the protected suite match `test/protected-routes|src/protected-routes|compareShape|protected-registry`. Mobile: `npm run check` exit 0 (below).
+- Merges: backend clean. Mobile: BACKEND_GAPS G-19 takes main's MONEY-10 text, G-20 keeps this branch's; `docs/PROGRESS.md` regenerated. Note: the inherited backend merge 3e217e7 carries no commit trailers (made by the interrupted session; not amended, it is now pushed).
+- NOT RUN, as before: the droplet's `ufw status` and nginx config (OPS-10, verifier list); real IPv6 sockets (no IPv6 in this container); V10 (no app screen).
 
 **Round 2** (backend 954ef8f, main d27ad37 merged as 38f5c1f; mobile main bfdd584 merged).
 - Defect 1 fixed: main's `money/identity/money-identity.controller.ts` (`@Throttle(BVN_CHECK_THROTTLE)`, KYC-01) joins admin auth in the spec's expected per-route overrides (both only tighten the limits), title updated. `bvnCheckTracker`'s comment (`src/money/identity/identity-config.ts`) no longer says the app sets no `trust proxy`: with `hubTrustProxy` it returns `req.ip` in every case, kept as a fallback, not removed.
