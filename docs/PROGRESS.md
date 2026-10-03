@@ -3,15 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 38 of 179.**
+**Launch tasks done: 38 of 180.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 54 | 46 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 25 | 12 | 2 | 0 |
+
+## Being verified
+
+- [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 
 ## Done
 
@@ -66,6 +70,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · FIX-03 · Built (backend 86b740e, status verifying): the PIN reset spec's leak scan matched a test PIN in a masked phone's last four digits about once in 30 runs; PINs are now drawn per run from a reserved pool that no test phone, BVN or NIN ends in. 100 passes in a row (30 under load), full suite green, three logging mutations still fail it.
 - 3 Oct 2026 · AUTH-05 sign-up sequence merged (Developer 1; wawu-id PR #5, dbcb2f8). The server enforces the sign-up order; identity contract re-synced to wawu-id main. The G-16 duplicate-phones script runs only when the owner runs it with `--owner-approved`.
 - 3 Oct 2026 · AUTH-05 · Fix round 2: the G-16 script's revert undoes a set with a held phone-only row and still refuses a new row on the number (D2); U3 recorded as a default; status verifying
 - 3 Oct 2026 · AUTH-05 · Fix round 1: parallel first progress calls never 500 (D1), a repeated email confirm gets the same success (N4), the G-16 script never strands a phone-only account and wawu-id never hands a released marker on as a phone (U1), rollback then redeploy works (N2), 400s in the contract (N3), gaps G-51 (renumbered from G-38) and G-52; status verifying
@@ -80,4 +85,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · MONEY-08 · Round 3 (backend 359ad06, status verifying): a reversal applies only with the row's amount, fee and total to the kobo and only to a pending or Fintava-failed send, anything else is written on `discrepancy` and moves nothing; a history walk is complete only when Fintava says no next page or it passed the send's time, with every page's figures consistent (an empty page while more follow waits, never failed as absent); a disagreement ends `pending` and noted in either order (a completed row is put back); MONEY-07's store keys on the SHA-256 of the body (additive migration `20261003140000_fintava_webhook_delivery_key`), so a second body for one status reaches the ledger. 18 of 18 mutants killed; both mains merged (MONEY-12, AUTH-02); gaps renumbered G-38, G-39. Finding: every bank send whose sender records a fee other than Fintava's `charges` stops (G-39).
 - 3 Oct 2026 · MONEY-08 · Verified round 2: round 1's 4 defects closed, 2 new defects, status building (backend 2c5dee8, mobile caa870c; neither main moved). A new send settles in its first pass behind 3,000 waiting rows, after a restart and in steady state (150 of 150, at most 50 checks a pass); revivals stay swept with no discrepancy; absent never wins against a delivery stored or consumed at any of 6 timings; a cut-off walk waits. Defects: a reversal with other figures (₦200 back for ₦100) is marked reversed with nothing on `discrepancy`; an empty history page while Fintava says more pages follow counts as a complete walk, so a 404 becomes absent. Protected 253/253, contract 2,832 passed, gates 16 fail / 9 warn (same fails as main), migrations with MONEY-12 identical in either order.
 - 3 Oct 2026 · MONEY-08 · Round 2 (backend 2c5dee8, status verifying): the sweep's schedule is on the ledger row (additive migration `20261003120000_ledger_status_schedule`), claimed 50 a pass with SKIP LOCKED, fresh rows first, so a new send settles in its first pass behind 3,000 waiting rows and after a restart; a revival goes on `revivedAt`, not `discrepancy`, and stays swept; absent is a compare-and-set (row version, no Fintava sighting, no stored delivery) and needs a complete history walk (MONEY-06 `history_incomplete`); any figure difference through a webhook or revival is a stop that moves no status (MONEY-10 aligned with WORKFLOW section 10). 10 of 10 mutants killed; 3 sandbox GETs.
-- 3 Oct 2026 · MONEY-08 · Verified round 1: 4 defects, status building (backend 0eb32a9, mobile 20404c1; neither main moved). Never moves money (182 requests, all GET) and exactly once under two instances, webhooks and checks; FAILURE then two reversals: reversed once; every amount difference stops the row. Defects: a backlog starves new rows (a new withheld-webhook send waits 39 sweeps behind 400 waiting rows after a restart, never within 75 behind 3,000); a same-reference resend after absent is written on `discrepancy` and never swept; a PENDING delivery landing during the absent check is overwritten as failed; MONEY-06's 5-page history cut counts as no row, so a send on page 6 is failed as absent. Protected 253/253, contract 2,821 passed (43 on :4001 re-run 71/71), gates 16 fail / 9 warn (+LEDGER-STATUS-CHECK-AFTER), mobile check exit 0.

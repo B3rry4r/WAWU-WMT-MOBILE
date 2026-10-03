@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 3 Oct 2026 · FIX-03 · Built (backend 86b740e, status verifying): the PIN reset spec's leak scan matched a test PIN in a masked phone's last four digits about once in 30 runs; PINs are now drawn per run from a reserved pool that no test phone, BVN or NIN ends in. 100 passes in a row (30 under load), full suite green, three logging mutations still fail it.
 - 3 Oct 2026 · AUTH-05 sign-up sequence merged (Developer 1; wawu-id PR #5, dbcb2f8). The server enforces the sign-up order; identity contract re-synced to wawu-id main. The G-16 duplicate-phones script runs only when the owner runs it with `--owner-approved`.
 - 3 Oct 2026 · AUTH-05 · Fix round 2: the G-16 script's revert undoes a set with a held phone-only row and still refuses a new row on the number (D2); U3 recorded as a default; status verifying
 - 3 Oct 2026 · AUTH-05 · Fix round 1: parallel first progress calls never 500 (D1), a repeated email confirm gets the same success (N4), the G-16 script never strands a phone-only account and wawu-id never hands a released marker on as a phone (U1), rollback then redeploy works (N2), 400s in the contract (N3), gaps G-51 (renumbered from G-38) and G-52; status verifying
