@@ -7,7 +7,7 @@ order: 67
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [MONEY-07, MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V6, V8, V9]
@@ -90,6 +90,122 @@ Builder, 3 Oct 2026. wawu-backend `wmt/MONEY-08` 0eb32a9 on main `e8535d8`; mobi
 - **NOT RUN:** bank sends, their FAILURE and `debit_transfer_reversal`, and bills against the sandbox: the sandbox refuses every payout with `400 "Unable to find customers"` (question 17); unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering "Unable to find customers". A real (not locally signed) delivery: unblocked by OPS-10 registering the production webhook URL (G-19). V10: no screen.
 
 ## Verifier report
+
+### Verifier report (round 3)
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code and verified no earlier round). **Verdict: no open defect; status `review`.** Both round-2 defects are closed and were reproduced on 2c5dee8 first. The new webhook key keeps replays to one row and stores a contradicting delivery, which is then noted. A fee-only difference ends the same in both orders. Every round-1 and round-2 guarantee still holds on the merge with backend main. Three `unclear` findings and three notes follow; none of them moves money or loses a disagreement.
+
+Checked at backend `wmt/MONEY-08` 359ad06 and mobile `wmt/MONEY-08` 0846579, in fresh detached worktrees. 359ad06 contains backend main 13a6f77 (`merge-base --is-ancestor` true), so the merge was verified as pushed and no local merge was needed. 0846579 contains mobile main ba3a8a8. Round 2's code (2c5dee8) was exported beside it to reproduce each old defect. Evidence is in the verifier session's scratchpad `vm08r3/` (file names below). The round-3 attack spec `vm08r3-attack.contract.spec.ts` (12 tests, built on round 2's harness) is kept there, out of the branch. Round 1's `vm08-attack` and `vm08-backlog` specs and round 2's `vm08r2-attack` spec were rerun in full on 359ad06.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`tsc.log`). eslint on the 17 `.ts` files the branch changes against main: exit 0 (`eslint.log`). Gates: main 13a6f77 16 fail / 9 warn / 76 accepted on 616 files; branch 16 / 10 / 76 on 619 files. The 16 fails are identical by content. The only added warn is `PROVISIONAL(LEDGER-STATUS-CHECK-AFTER)` in `src/money/ledger/ledger-config.ts`, which is deliberate (`gates-main.json`, `gates-branch.json`). `check_baseline.py`: 108 entries, exit 0. CI tripwire: 0 added lines outside the protected suite's files match `test/protected-routes`, `src/protected-routes`, `compareShape` or `protected-registry`. Key scan: 0 hits for any of the 58 eight-character windows across the backend diff, the mobile diff, the sandbox output and every evidence file (`keyscan.py`), and the staged commit of this report. Mobile `npm run check` at 0846579: exit 0. That run had typecheck 0, lint 0, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, and 202 tasks (`mobile-check-before.log`). |
+| V2 Contract | passed | No route change. `contract/` and the protected lock files (`.pipeline`, `src/protected-routes`, `test/protected-routes`) differ from main by 0 lines. Ledger, webhook and Fintava specs in the full run: status contract 37, ledger contract 25, ledger units 21, status unit 2, webhook route 24, webhook units 17; 26 money and Fintava suites, 1,228 passed. |
+| V3 Regression | passed | `run.sh --fresh 359ad06`, lock origin/main 13a6f77: 253/253, all 244 required (`protected.log`). Full `test:contract` on fresh seeded `vm08r3_full_test` with a mock WAWU ID on :4912 gave 121 suites: 2,936 passed, 3 skipped, 40 failed (`full.json`). All 40 failures are `fetch failed` in the 4 suites that hard-code `localhost:4001` (`account`, `credits-state`, `kyc-submission`, `privacy-settings`). Those 4 then ran on fresh seeded `vm08r3_p4001_test` with a mock on :4001: 4/4 suites, 40/40 (`p4001.json`). `lsof -i :4001` was empty before and after, and the mock was stopped straight after. So 2,976 passed, 0 failed. MONEY-12's `wallet-opening.contract.spec.ts` (the known FIX-02 flake) passed 75/75 in this run. OPS-11 `hub-rate-limits` 10/10. A first full run was discarded: its database name lacked "test", so the protected regression spec refused it (`full-run1-badname.*`). |
+| V6 States | passed | 24 history shapes for our merchant send past the window, lookup 404 (`R2` in `r3-new.json`, against `r3-old.json` on 2c5dee8). See "Round 2's defects" below. |
+| V8 Money attack | passed | Below. |
+| V9 Live seam | passed (partial) | 3 read-only GETs to dev.fintavapay.com (`sandbox.json`): `/txn/merchant` at `take=17`. Page 1 of 3 (39 rows, 17 rows, `hasNextPage` true) and page 3 of 3 (5 rows, `hasNextPage` false) both pass `historyPageConsistent`, the second against page 1's totals. Page 4, past the end, answers 0 rows and `hasNextPage` false and is inconsistent, which the walk never asks for. So the rule accepts the real sandbox's pages at a take other than the recorded ones. A built Hub on :4911/:4913 was not run; two Nest apps on one database stood in for two instances. Sign-in leg: no route. |
+
+**Round 2's defects, reproduced on 2c5dee8 and closed on 359ad06** (`r2spec-old-B3B4.json` against `r2spec-new-B3B4.json`, `r3-old.json` against `r3-new.json`)
+
+1. A reversal with other figures: closed.
+   - On 2c5dee8, round 2's `B4c` gave `reversed` with `discrepancy` null for all 6 cases: ₦200, ₦100.01, ₦99.99, a kept fee (100/0/100), and ₦200 on a completed send.
+   - On 359ad06, every one is noted and the row is left as it was (`failed`, or `completed`); the delivery note reads "not reversed: the reversal disagrees". The control applies.
+   - `R1`, a send Fintava failed (₦100 + ₦30.75): 16 shapes, to the kobo.
+     - Each stays `failed` and noted, with `reversalReference` and `reversalAmountKobo` null: charges ±1 kobo with the total following; the total alone ±1 kobo; the amount alone +1 kobo; the amount −1 kobo; ₦200; `charges`, `total` or `amount` missing; all three missing; `charges: null`; and charges 0 with total 100.
+     - Applied: the same figures as numbers, and as strings `"100.00"`/`"30.75"`/`"130.75"`.
+     - `100.001`: the delivery is `failed` as unreadable and the row is untouched.
+   - `R1b`, each start state:
+     - A pending row: the same figures are reversed; ₦200 stays pending, noted, and is asked 0 times by a sweep and a check 90 minutes on.
+     - A completed row, with the same figures or ₦200: stays `completed`, noted "the send is completed".
+     - A row failed as absent: stays `failed`, noted.
+     - A Fintava-failed row: the same figures are reversed; ₦200 is noted.
+     - A second reversal under another `reversalRef`: noted "already reversed by", and the first reversal's figures are kept. Then the first `reversalRef` with ₦200: noted, and the status stays `reversed`.
+   - Replays (`R1c`). The same bytes answer `duplicate`. A compact and a reordered copy are each stored (`recorded`) and consumed. A noted reversal's `discrepancy` is byte-identical after all three, so the note is not repeated. An applied reversal gives one "marked reversed" and two "was already reversed".
+   - Exactly once under races (`R1d`, 5 runs, start `failed` or `pending`): each run sent 6 HTTP posts at once (3 distinct bodies and 3 byte copies). Those were consumed by two consumers, two consumer sweeps, two status checks and a status sweep, all at once. Each run: 3 stored, 1 "marked reversed", 1 row, `reversed`, `discrepancy` null.
+   - A matching and a contradicting reversal under the same `reversalRef`, consumed at once by two instances (`R1e`, 5 runs): every run ends `reversed` with the ₦200 noted.
+2. An empty or inconsistent history page: closed. These all failed as absent on 2c5dee8 and wait (`waiting` / `history_incomplete`, decision `wait`, row pending, no resend advice) on 359ad06:
+   - page 1 `data: []` with `hasNextPage` true (1 page read);
+   - page 3 empty (3 read);
+   - page 2 answering as page 9 of 8 (past the total);
+   - page 2 answering page 2 of 1, empty;
+   - the last page empty while `itemCount` promises rows;
+   - the total growing across a page boundary, or shrinking, between pages;
+   - `hasNextPage` as the string `"true"`, which 2c5dee8 read as false and so as a complete walk;
+   - `hasNextPage` false on page 1 of 8;
+   - more rows than promised;
+   - `pageCount` not equal to `itemCount`/`take` rounded up;
+   - every page numbered 1;
+   - `since` reached on page 2 when page 2 is empty while more follow;
+   - `take` 0;
+   - a customer's `/txn` page 1 empty with `hasNextPage` true.
+
+   A total growing by 1 on page 3, and a short page 2, already waited on 2c5dee8 (5 pages read) and wait after 3 and 2 pages now.
+
+   Controls still fail as absent: 3 consistent pages; 1 partial page; an empty history, page 1 of 0 and of 1; Fintava using its own `take` of 50, consistently; `since` reached on a consistent page 2. Our send found on an inconsistent page still settles, because it is a positive sighting and its amount is compared.
+
+**V8, round 3**
+
+- **The webhook store (MONEY-07's key).** A delivery is now keyed by the SHA-256 of its raw bytes.
+  - Replays stay one (`R3a`). The same bytes 3 times in a row gave recorded, duplicate, duplicate, 1 row. 10 at once gave 1 recorded, 9 duplicate, 1 row.
+  - Header variants on the same body: upper-case hex and a padded signature are accepted as `duplicate`; `sha512=` prefix, another secret, truncated or empty are 401. Still 1 row, and its `bodySha256` equals sha256 of the posted bytes.
+  - A contradicting body signed with another secret: 401, not stored.
+  - A body carrying its own delivery `id`: the same bytes are `duplicate`. The same id with another amount is stored, and the row goes to `pending`, noted.
+  - Re-serialised copies (pretty, compact, keys reversed) are each stored but move the ledger once, for every event the ledger reads (`R3b`). For `account_funded`, 6 posts at once were consumed by two consumers and two sweeps: 3 stored, 1 in row ₦100, `discrepancy` null. The same holds for `customer_bank_transfer` (1 row completed), `wallet_to_wallet_transfer_v2` (1 out, 1 in) and `virtual_wallet_payment` (1 in row ₦650).
+  - A contradicting second delivery (same event, reference and status, other amount) is stored and noted in both orders (`R3c`). For a bank SUCCESS ₦100 then ₦200, the row is put back to `pending` and noted; ₦200 then ₦100 ends `pending` and noted. For `account_funded` ₦100 then ₦120, and the reverse, the in row ends `pending` and noted, with one row and its first amount kept. On 2c5dee8 round 2's `B4` showed the second SUCCESS "not stored (MONEY-07 duplicate key)".
+  - Only the ledger consumer reads `FintavaWebhookEvent` (`src/money/ledger`), so no other consumer relied on the old key.
+- **The migration `20261003140000_fintava_webhook_delivery_key`.** It is additive: 1 nullable column, backfilled, made unique, and the old unique index turned into a plain one.
+  - On two databases holding 5 MONEY-07 rows (`processed`, `pending`, a `failed` reversal, an `unrecognised` body with a NUL byte, a card row) and a pending ledger row:
+    - A: main 13a6f77's 77 migrations, then this branch's two.
+    - B: main e8535d8's 76, then this branch's two, then MONEY-12's `20261003100000_wallet_opening` last, out of name order.
+  - Every row kept its id, status, note and body (md5 equal before and after), and every `bodySha256` equals `sha256(rawBody)`. The ledger row reads `statusChecks` 0 and `nextCheckAt` null.
+  - On A afterwards, an insert with the same bytes is refused by `FintavaWebhookEvent_bodySha256_key`, and the same (event, reference, status) with another body is accepted.
+  - The schema dumps of A, B and a fresh database with all 79 migrations are identical (`schema-*.sql`). Drift against `schema.prisma` is only the old `ContentPiece_specializations_idx` (`drift-miga.txt`).
+- **Fee-only differences (`R4`).** The row records ₦40, Fintava's `charges` are ₦30.75.
+  - Webhook first, sweep first, and 5 races (consume, two checks and a sweep at once) all end the same way: `pending`, `completedAt` null, noted, and 0 Fintava calls in 3 later sweeps 70 to 210 minutes on.
+  - On 2c5dee8, round 2's `B4b` sweep-first ended `completed`.
+  - The builder's finding stands and is filed as G-39: every bank send whose sender records a fee or total other than Fintava's `charges` and `total` now stops (pending, noted, never settled). The sending features must take the fee from Fintava's quote and keep WAWU's own fee in `wawuFeeKobo` (the column exists). Whether WAWU's ₦25 merchant charge is inside `charges` is unknown until a live send.
+- **Round 1 and round 2 guarantees, rerun on 359ad06.**
+  - Round 1's attack spec: 13/13 (`r1-attack.log`).
+  - Backlog behind 100, 400 and 3,000 waiting rows: settled after 0 extra passes, at most 50 checks a pass, 100 requests (`r1-backlog-*.log`).
+  - Round 2's attack spec: 21/21 in 490 s (`r2spec-new-full.json`):
+    - Restart (`B1a`): the new row is settled in the first pass.
+    - Steady state (`B1b`): 150 of 150 settled in their pass, every backlog row asked, 61 to 62 minutes apart.
+    - Backoff (`B1e`): 2, 3, 5, 9, 17, 33, 65, 125, 185.
+    - Repeated revivals (`B1d`): at most 1 check a pass.
+    - Opposite starvation (`B1c`): the same table as round 2.
+    - Absent against a delivery stored, consumed or resent at 6 timings (`B2`): every row pending; the unrelated control is failed.
+    - Bills (`B5`): never failed.
+  - Never a send: every request in every attack file was a GET (138,242 in round 2's spec; 218 plus 44 in this round's).
+  - Amount stops from every source: `B4` (16 webhook shapes), `B4d` (the confirm path, revivals and the race) and round 1's `A7`, all noted and never settled.
+- **Spot mutants** (my own, each alone in a clean export, `src/money/ledger` and `src/fintava` specs, 793 tests, every file restored to its sha1; `mutants.json`, `mut-*.log`). All 8 were killed:
+  - the walk without the consistency check;
+  - no comparison with page 1's totals;
+  - no row count;
+  - no `hasNextPage` check;
+  - a reversal applied to a completed send;
+  - a held row allowed to complete;
+  - the webhook keyed on event, reference and status again;
+  - the note dedupe turned off.
+
+**Findings**
+
+1. `unclear` A reversal of a `completed` send is now recorded and never applied, so a send that succeeded and then came back ends on arrival order (`R1e`). SUCCESS then reversal gives `completed`, noted "the send is completed". Reversal then SUCCESS gives `reversed`, noted "status reversed vs completed". Both are held for review and neither moves money. But a bank send that settles and is later bounced (MONEY-10's original "settles, then comes back" test, changed in round 3) now stays `completed` in the person's history until review, while Fintava's balance shows the money back. Builder decision 3 chose this; whether a same-figure reversal of a settled send should apply is the owner's call (WORKFLOW section 10).
+2. `unclear` A reversal that matches our row applies to a pending row already holding a disagreement (round 2's `B4c` last case, still so). Example: Fintava said ₦200 for a ₦100 send, then reverses ₦100. The row ends `reversed` with the ₦200 note kept. This is builder decision (4)'s "a failure or a matching reversal still applies". It stays visible to MONEY-16 through the note.
+3. `unclear` (carried from round 2, finding 4) Under sustained overload, the fresh-first order stops checking rows older than an hour. The figures are unchanged (`B1c`).
+4. Note: a direct `check()` racing a sweep on the same absent row now often ends with both answering `waiting` (3 of 5 in `B1f`, 3 of 10 in `R5`), where round 2 saw one of them fail it each time. Each of those rows was failed as absent by the next sweep, once, with `discrepancy` null (`r3-new-R5.json`). It is safe (a wait, never a resend or a double verdict) and live.
+5. Note: `discrepancy` is cut at 1,000 characters (MONEY-10's), so on a row with many notes a later note can fall off. The row stays held, because `discrepancy` is never cleared, and the delivery's own note still says why.
+6. Note: the `duplicate` doc comment in `src/fintava/webhook/fintava-webhook-view.type.ts` still says "this event, with this reference and status, was already stored"; it now means the same bytes. It is a comment only; the contract does not carry it.
+
+**NOT RUN**
+
+- Bank sends, their FAILURE and `debit_transfer_reversal` (so a real reversal's `charges`), and bills against the sandbox: the sandbox refuses every payout. Unblocked when a ₦100 `POST /bank/credit/merchant` to the sandbox stub `0123456789`/`000013` stops answering `400 "Unable to find customers"` (question 17).
+- A real (not locally signed) delivery, so whether Fintava ever re-serialises a retry or sends two bodies for one status: unblocked by OPS-10 registering the production webhook URL (G-19).
+- Whether `charges` includes WAWU's ₦25 merchant charge: unblocked by the first live bank send.
+- An empty or inconsistent history page from the real sandbox: its 39-row history pages consistently at `take` 17 (`sandbox.json`). Unblocked by a sender whose history Fintava answers that way.
+- Two built Hub processes on :4911/:4913: covered in-process by two Nest apps on one database. Unblocked by a round that builds `dist/` from this branch.
+- "Ledger equals Fintava balance": the sweep never sums. Unblocked by MONEY-16's reconciliation.
+- V10: no screen.
 
 ### Verifier report (round 2)
 
