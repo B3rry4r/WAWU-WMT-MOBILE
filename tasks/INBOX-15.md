@@ -3,7 +3,7 @@ id: INBOX-15
 title: Money requests in chat
 owner: DEV2
 area: INBOX
-order: 138
+order: 139
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

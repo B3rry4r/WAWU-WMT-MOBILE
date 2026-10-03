@@ -3,7 +3,7 @@ id: WALLET-07
 title: Send money to a WAWU user
 owner: YOU
 area: WALLET
-order: 136
+order: 137
 priority: launch
 repo: wawu-backend
 type: money-path
