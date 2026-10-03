@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 3 Oct 2026 · FIX-04 built (mobile branch wmt/FIX-04, not merged): the query cache now empties itself whenever a session ends or the account changes, so one person's cached answers (A21's payout account, A26's phone) are never drawn for the next person; new `onSessionEnd` in the session (SHARED-CHANGES KYC-05 #4); the root layout uses the app's query defaults (row 1); status verifying.
 - 3 Oct 2026 · ME-17 upload and storage allowance merged (Developer 1; backend PR #51, fe1ec6c). Free accounts: 5 uploads and 1 GB of content; with a tick: 25 and 10 GB (R-7); free pieces count (R-8); KYC, avatar and chat files do not count toward storage.
 - 3 Oct 2026 · ME-17 built (backend branch wmt/ME-17, not merged): 5 uploads and 1 GB free, 25 and 10 GB with a tick (R-7), free pieces counted (R-8), new GET /uploads/allowance; status verifying.
 - 3 Oct 2026 · WALLET-11 payout bank account screen (A21) merged (mobile). Load, save and read back work against the Hub; a pasted number with spaces keeps all ten digits; flagged when the name is not the BVN name. Bank list and pre-save name check wait on WALLET-09 (G-57). G-59 filed (stand-in WAWU ID shape).

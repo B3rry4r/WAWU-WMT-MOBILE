@@ -3,15 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 44 of 180.**
+**Launch tasks done: 44 of 181.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 51 | 45 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 29 | 13 | 2 | 1 |
+
+## Being verified
+
+- [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 
 ## Done
 
@@ -72,6 +76,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · FIX-04 built (mobile branch wmt/FIX-04, not merged): the query cache now empties itself whenever a session ends or the account changes, so one person's cached answers (A21's payout account, A26's phone) are never drawn for the next person; new `onSessionEnd` in the session (SHARED-CHANGES KYC-05 #4); the root layout uses the app's query defaults (row 1); status verifying.
 - 3 Oct 2026 · ME-17 upload and storage allowance merged (Developer 1; backend PR #51, fe1ec6c). Free accounts: 5 uploads and 1 GB of content; with a tick: 25 and 10 GB (R-7); free pieces count (R-8); KYC, avatar and chat files do not count toward storage.
 - 3 Oct 2026 · ME-17 built (backend branch wmt/ME-17, not merged): 5 uploads and 1 GB free, 25 and 10 GB with a tick (R-7), free pieces counted (R-8), new GET /uploads/allowance; status verifying.
 - 3 Oct 2026 · WALLET-11 payout bank account screen (A21) merged (mobile). Load, save and read back work against the Hub; a pasted number with spaces keeps all ten digits; flagged when the name is not the BVN name. Bank list and pre-save name check wait on WALLET-09 (G-57). G-59 filed (stand-in WAWU ID shape).
@@ -86,4 +91,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-14 saved recipients and the payout account merged (backend PR #45, a055b4f). Bank names come only from Fintava; a payout account in another name is flagged; BVN name words are stored only as person-bound keyed hashes. Three verifier rounds. G-54 filed (contract build order).
 - 3 Oct 2026 · WALLET-14 · Merged main for the pull request (backend d89f7e5 with main ad1e515, mobile with main 8a58a67), status review: gate route lists hold MONEY-14, MONEY-15 and WALLET-14 routes; one test added (two people saving the same place get their own rows, kills M2); full suite 132 suites 3,196 passed 0 failed, protected 253/253; main's committed contract is not byte-reproducible by its own build (order only).
 - 3 Oct 2026 · WALLET-14 · Verified round 3: no open defect, status review (backend ab459bc on main 48b9043; mobile 6a5a17b with main 331a6fa; neither main moved). Defect 3 closed: a purged person is a byte-identical 404 to the person who saved them and to a stranger (3 rounds, 20 concurrent re-saves all 404, list and count unchanged), a wallet-less one a byte-identical 409; a reopened wallet answers the original row, no duplicate. No regression: full-list re-saves answer their row with no name check, the cap counts the list (1 x 201, 19 x 409 after a purge), duplicates stay one row, isolation holds. Full suite 130/130 suites (3,148 passed, 0 failed), protected 253/253, gates 16 fail / 13 warn (only BENEFICIARIES-MAX added), 6 of 7 mutants killed (survivor: no test has two people save the same person), mobile merge keeps both sides, 0 key windows, 0 Fintava calls.
-- 3 Oct 2026 · WALLET-14 · Round 3 (backend ab459bc, status verifying): re-saving a saved person whose account was deleted now answers 404 (or 409 without a wallet) as for anyone else, never a hidden row; the existing-row shortcut is pinned by a full-list re-save test; mobile main 331a6fa merged; full suite 130 suites 3,148 passed 0 failed, protected 253/253.

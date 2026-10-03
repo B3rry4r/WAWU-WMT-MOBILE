@@ -3,7 +3,7 @@ id: HOME-08
 title: Content detail: free video and course layouts
 owner: DEV
 area: HOME
-order: 143
+order: 144
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

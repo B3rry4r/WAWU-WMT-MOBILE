@@ -3,7 +3,7 @@ id: WALLET-13
 title: Earnings breakdown
 owner: YOU
 area: WALLET
-order: 156
+order: 157
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
