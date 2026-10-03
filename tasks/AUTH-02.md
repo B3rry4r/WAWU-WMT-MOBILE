@@ -7,7 +7,7 @@ order: 42
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SHELL-01, UI-02, AUTH-01]
 decisions: [R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -277,6 +277,33 @@ Cold start signed out `/` -> `/welcome`, no outside request, no page error. Sign
 - V9: no API call in this task. Unblocked by AUTH-04.
 
 **Status:** `building`, because D5 is open (a one-line documentation fix). Everything else from round 1 is fixed and verified on web and in jest; the branch is otherwise ready, and D1 still needs to be seen on an Android build.
+
+
+## Verifier report (round 3)
+
+_Verifier session (round 3), 3 Oct 2026, branch `wmt/AUTH-02` at c6b84e2 (origin/main 176a56d, current). I wrote none of the code and did not verify earlier rounds; I changed no code and ran no revert (the change under review is documentation and one comment). Backend read at wawu-backend origin/main e8535d8 with `git show` (that clone's branch not switched). Check output: scratchpad `auth02-v3-check.txt`. Nothing committed._
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Scope of `git diff fa746f4..HEAD` | **passed**: 3 files, BACKEND_GAPS.md (G-34 only), `src/features/auth/AccountTypeScreen.tsx` (the `pickByKey` comment only), tasks/AUTH-02.md. Nothing else. No em-dash added. | `git diff --stat` |
+| No regression | **passed**: the diff of `src/` with comment lines and whitespace removed is empty. | `git diff -w fa746f4..HEAD -- src/` filtered |
+| G-34 against the schema | **passed**: `/api/hub/users/me` `patch` is `UserProfileController_upsertMe`, its body `UpdateUserProfileDto`, which has `accountType?: "user" \| "creator" \| null` (the null is in the round-2 report; the row's `'user' \| 'creator'` names the values AUTH-04 sends). No line number left to drift. | `src/api/schema.generated.ts` |
+| G-34 against the backend | **passed**: `user-profile.service.ts` line 282 `if (saved.accountType === AccountType.creator)`, line 283 `provisionOnRegistration(claims)`, at the end of `upsertMe` (line 171) after any save, whatever field changed. `wallet.service.ts` `getWallet` (route `GET /wallet`, `wallet.controller.ts`): lines 136 to 142 throw `BadRequestException` (400) when the account type is not `creator`; line 144 `openForAccount(claims)` for a creator without a wallet. `provisionOnRegistration` calls `openForAccount` and catches failures; the wallet reads `this.flw` (Flutterwave). | `git show origin/main:src/...` |
+| MONEY-12 and AUTH-04 named | **passed**: `tasks/MONEY-12.md` title "Open a Fintava account when someone opens a wallet", as G-34 describes it; `tasks/AUTH-04.md` exists. | tasks/ |
+| The comment against react-native-web | **passed**: `isValidKeyPress` (PressResponder.js line 66) returns `key === 'Enter' \|\| isSpacebar && isButtonish`, `isButtonish` = element type `button` or role `button`; the comment says exactly that. | `node_modules/react-native-web/dist/modules/usePressEvents/PressResponder.js` lines 63 to 72 |
+| Design citations | **passed**: auth.js 8 (landing), 9 (`choice`), 10 (A2 `type`, `pt: 10`), 21 (`signIn`); kit.js 15 (`Btn`, lg 54), 35 (`body`, `pt ?? 8`), 38 (`foot`, 34 bottom, gap 10), 60 (`radio`, 6.5 / 1.5): each is the line named. | `design/_gen/` |
+| `npm run check` | **passed**: exit 0; typecheck clean; lint prints no warning; 20 suites, 371 tests; gates 9 run, 96 files, 0 findings; 202 tasks. Equal to the builder's counts. | scratchpad `auth02-v3-check.txt` |
+
+### Findings
+- **Defects:** none. D5 fixed and verified. U7 is now recorded in G-34 with AUTH-04 and MONEY-12 named, and every claim in it matches the backend.
+- **Differs for a recorded reason:** as in round 2 (R-37 name and logo, G-34 copy left out, G-35 cover, builder defaults).
+- **Unclear:** U1, U2, U5, U6 stand as in round 2 (Android build needed). U7 is the owner's and AUTH-04's / MONEY-12's to settle, not AUTH-02's.
+
+### NOT RUN
+- Everything on an Android device or emulator (D1 status bar, U6, U5 keyboard, safe areas, TalkBack, U2 wraps, hardware Back), unblocked by an Android build per docs/BUILDS.md. Sign-out in a browser, unblocked by the task that adds the control. V9, no API call in this task (AUTH-04).
+- Not re-run this round: the picture comparison, flow walk and reverts (no behaviour changed since round 2, which ran them).
+
+**Status:** `review`. No open defect. D1 still wants a look on an Android build before merge, as round 2 said.
 
 
 ## Owner sign-off
