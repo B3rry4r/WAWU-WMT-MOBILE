@@ -4360,8 +4360,8 @@ export interface components {
             /**
              * Format: byte
              * @description The selfie: plain base64 (no `data:` prefix) of a JPEG or PNG, 1 KB to
-             *     about 75 KB (at most 100,000 base64 characters). A face match against
-             *     the BVN photo, not a liveness check.
+             *     about 75 KB (at most 100,000 base64 characters), at most 2,048 pixels
+             *     on each side. A face match against the BVN photo, not a liveness check.
              */
             image: string;
             /** @description The BVN whose check passed: 11 digits, no spaces. */
