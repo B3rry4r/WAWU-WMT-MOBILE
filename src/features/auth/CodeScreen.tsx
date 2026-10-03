@@ -134,10 +134,11 @@ export function CodeScreen({
   const onDigit = (digit: string) => {
     if (keysOff) return;
     // After a wrong code the next digit starts a fresh one, so there is nothing to delete first.
-    const base = phase.kind === 'wrong' ? '' : digits;
+    const base = phase.kind === 'wrong' || (notice && digits.length >= CODE_LENGTH) ? '' : digits;
     if (base.length >= CODE_LENGTH) return;
     const next = base + digit;
     setDigits(next);
+    setNotice(null);
     setPhase({ kind: 'entering' });
     setSentNote(false);
     if (!extra && next.length === CODE_LENGTH) void submit(next, '');
@@ -154,7 +155,7 @@ export function CodeScreen({
   };
 
   const askAgain = async () => {
-    if (busy || resend.seconds > 0 || locked) return;
+    if (busy || resend.seconds > 0 || locked || phase.kind === 'dead') return;
     setNotice(null);
     setBusy(true);
     try {
@@ -209,6 +210,11 @@ export function CodeScreen({
           {phase.kind === 'dead' ? (
             <View style={styles.continue}>
               <Button label="Start again" full onPress={() => onRestart?.()} testID={`${testID}-restart`} />
+            </View>
+          ) : null}
+          {!extra && notice && digits.length === CODE_LENGTH && phase.kind !== 'dead' ? (
+            <View style={styles.continue}>
+              <Button label="Try again" full loading={busy} onPress={() => void submit(digits, '')} testID={`${testID}-retry`} />
             </View>
           ) : null}
           <Keypad inactive={keysOff} onDigit={onDigit} onDelete={onDelete} onClear={onClear} />
@@ -278,7 +284,7 @@ export function CodeScreen({
               <Icon name="CircleAlert" size={LINE.icon} color={colors.danger} strokeWidth={LINE.stroke} />
               <Text variant="errorLine">{problem}</Text>
             </View>
-          ) : resend.seconds > 0 ? (
+          ) : phase.kind === 'dead' ? null : resend.seconds > 0 ? (
             <Text variant="muted" tone="textMuted" style={{ fontSize: LINE.resend }} testID={`${testID}-resend-wait`}>
               {`Resend in ${clock(resend.seconds)}`}
             </Text>
@@ -327,8 +333,8 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   head: { gap: HEAD.apart, paddingTop: HEAD.top },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: HEAD.middleGap },
-  boxes: { flexDirection: 'row', justifyContent: 'center', gap: BOX.apart },
-  box: { width: BOX.width, height: BOX.height, borderRadius: radius.input, alignItems: 'center', justifyContent: 'center' },
+  boxes: { flexDirection: 'row', justifyContent: 'center', gap: BOX.apart, alignSelf: 'stretch' },
+  box: { width: BOX.width, flexShrink: 1, minWidth: 0, height: BOX.height, borderRadius: radius.input, alignItems: 'center', justifyContent: 'center' },
   line: { flexDirection: 'row', alignItems: 'center', gap: LINE.apart },
   continue: { paddingBottom: space.md },
   later: { paddingVertical: space.sm },

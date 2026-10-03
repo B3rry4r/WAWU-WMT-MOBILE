@@ -95,8 +95,11 @@ export function signupFailure(error: unknown): SignupFailure {
     case 'SMS_NOT_CONFIGURED':
     case 'SMS_SEND_FAILED':
       return plain("We couldn't send the code", 'Try again in a moment.', 'warning');
-    case 'RATE_LIMITED':
     case 'PHONE_CODE_RESEND_TOO_SOON': {
+      const left = typeof error.retryAfterSeconds === 'number' && error.retryAfterSeconds > 0 ? ` Wait ${clock(error.retryAfterSeconds)} before sending another, or` : ' Wait a moment, or';
+      return plain('A code was just sent', `${left} enter the one we sent.`.trim(), 'warning');
+    }
+    case 'RATE_LIMITED': {
       const wait = typeof error.retryAfterSeconds === 'number' && error.retryAfterSeconds > 0 ? ` Try again in ${clock(error.retryAfterSeconds)}.` : ' Try again in a little while.';
       return plain('Too many tries', `Wait before asking for another code.${wait}`, 'warning');
     }

@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
-import { space } from '@/theme';
+import { layout, space } from '@/theme';
 
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
@@ -26,6 +26,8 @@ export type SignUpScreenProps = {
   /** Starts the sign-up. Resolves when the code has been texted (the route opens A4); rejects with an ApiError. */
   onContinue: (values: SignUpValues) => Promise<void>;
   onBack?: () => void;
+  /** A sign-up is waiting for its code: A3 offers to go back and enter it. */
+  onEnterSentCode?: () => void;
   /** What the fields start with (a preview, never the app). */
   initial?: Partial<SignUpValues>;
   /** A refusal to show at first (a preview, never the app). */
@@ -39,7 +41,7 @@ type Missing = { email?: string; phone?: string; password?: string };
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, initialFailure }: SignUpScreenProps) {
   const [email, setEmail] = useState(initial?.email ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [password, setPassword] = useState(initial?.password ?? '');
@@ -88,7 +90,16 @@ export function SignUpScreen({ onContinue, onBack, initial, initialFailure }: Si
       scrollRef={scrollRef}
       onBack={onBack}
       navTitle="Create your account"
-      footer={<Button label="Continue" full loading={busy} onPress={() => void submit()} testID="sign-up-submit" />}
+      footer={
+        <>
+          <Button label="Continue" full loading={busy} onPress={() => void submit()} testID="sign-up-submit" />
+          {onEnterSentCode ? (
+            <Pressable testID="sign-up-sent-code" accessibilityRole="link" accessibilityLabel="Enter the code we sent" hitSlop={layout.tapMin / 4} onPress={onEnterSentCode} style={styles.sent}>
+              <Text variant="linkStrong">Enter the code we sent</Text>
+            </Pressable>
+          ) : null}
+        </>
+      }
     >
       <View style={styles.body}>
         <View style={styles.titleBlock}>
@@ -156,4 +167,5 @@ export function SignUpScreen({ onContinue, onBack, initial, initialFailure }: Si
 const styles = StyleSheet.create({
   body: { gap: BODY_GAP, paddingTop: space.sm },
   titleBlock: { gap: TITLE.apart },
+  sent: { alignSelf: 'center' },
 });

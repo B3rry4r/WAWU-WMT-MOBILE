@@ -17,13 +17,13 @@ import { refreshSignupGate, setSignupProgress } from './signupGate';
 import { clearSignup, heldSignup, loadSignup, saveSignup, setStarted, started } from './signupStore';
 
 /**
- * A3 Continue. A new sign-up replaces the one before it, so the old secret is
- * dropped first. WAWU ID's answer carries the number as it stored it and the
+ * A3 Continue. A new sign-up replaces the one before it, but only when the
+ * server answers with a new secret: a refused, offline or failed Continue keeps
+ * the old secret, whose code may still be live. WAWU ID's answer carries the number as it stored it and the
  * `attempt`; both are kept (secure store) for A4, resend and resume.
  * `accountType` goes to WAWU ID only: never to the Hub (G-34, R-6).
  */
 export async function startSignup(values: { email: string; phone: string; password: string }, pick: AccountType | null): Promise<void> {
-  await clearSignup();
   const accountType = wireAccountType(pick);
   const answer = await signupRequest({
     email: values.email,

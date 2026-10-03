@@ -6,8 +6,8 @@ import { Platform } from 'react-native';
  * and the `attempt` secret `POST /auth/signup` returned (SHARED-CHANGES
  * AUTH-05 F1). Both live in the secure store, so quitting the app between A3 and A4 does
  * not lose them; the `attempt` is never written to a log, a URL or a route
- * parameter. The browser build used for development keeps them in localStorage,
- * as the session tokens do (`src/api/tokenStore.ts`).
+ * parameter. The browser build (a development and preview target) keeps them in
+ * sessionStorage: for the tab only, so a reload resumes and a closed tab forgets.
  *
  * Cleared when the code is confirmed, when the server says the sign-up is gone,
  * when a new sign-up starts, and when someone signs in (`clearSignup`).
@@ -18,17 +18,19 @@ export const SIGNUP_PHONE_KEY = 'wawu.signup.phone';
 export const SIGNUP_ATTEMPT_KEY = 'wawu.signup.attempt';
 
 const onWeb = Platform.OS === 'web';
+/** The browser build keeps the secret for the tab only (sessionStorage): it survives a reload, not a closed tab, and is not shared with other tabs. */
+const webStore = () => globalThis.sessionStorage;
 
 async function read(key: string): Promise<string | null> {
-  if (onWeb) return globalThis.localStorage?.getItem(key) ?? null;
+  if (onWeb) return webStore()?.getItem(key) ?? null;
   return SecureStore.getItemAsync(key);
 }
 async function write(key: string, value: string): Promise<void> {
-  if (onWeb) return globalThis.localStorage?.setItem(key, value);
+  if (onWeb) return webStore()?.setItem(key, value);
   return SecureStore.setItemAsync(key, value);
 }
 async function remove(key: string): Promise<void> {
-  if (onWeb) return globalThis.localStorage?.removeItem(key);
+  if (onWeb) return webStore()?.removeItem(key);
   return SecureStore.deleteItemAsync(key);
 }
 

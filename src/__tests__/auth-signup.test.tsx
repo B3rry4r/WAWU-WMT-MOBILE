@@ -1,8 +1,10 @@
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
 import RootLayout from '@/app/_layout';
 import AccountTypeRoute from '@/app/account-type';
 import EmailCodeRoute from '@/app/email-code';
+import AuthPreview from '@/app/preview/auth';
 import ForgotPasswordRoute from '@/app/forgot-password';
 import PhoneCodeRoute from '@/app/phone-code';
 import SignInRoute from '@/app/sign-in';
@@ -371,6 +373,7 @@ describe('A15: a wrong code', () => {
     await press('Start again');
     await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
     expect(mockVault.has(SIGNUP_ATTEMPT_KEY)).toBe(false);
+    expect(screen.queryByRole('link', { name: 'Enter the code we sent' })).toBeNull();
   });
 
   it('a locked number shows the wait the server names, ticking down, keys off until it ends', async () => {
@@ -432,6 +435,16 @@ describe('resume after quitting', () => {
     answers['POST /auth/signup/resume'] = ok({ step: 'phone', phone: '+2348031234412', expiresIn: 500, resendIn: 12, emailCodeRequired: false });
     await renderRouter(routes, { initialUrl: '/phone-code' });
     await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+  });
+
+  it('a browser reloaded on the code address has a Back button that opens A3, where the sent code can still be entered', async () => {
+    hold();
+    answers['POST /auth/signup/resume'] = ok({ step: 'phone', phone: '+2348031234412', expiresIn: 500, resendIn: 12, emailCodeRequired: false });
+    await renderRouter(routes, { initialUrl: '/phone-code' });
+    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+    await press('Back');
+    await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
+    expect(screen.getByRole('link', { name: 'Enter the code we sent' })).toBeTruthy();
   });
 
   it('the code address with no sign-up left sends the user to A3', async () => {
@@ -560,5 +573,161 @@ describe('the email step', () => {
   it('a signed-out visitor to /email-code lands on the welcome screen', async () => {
     await renderRouter(routes, { initialUrl: '/email-code' });
     await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+  });
+});
+
+describe('fix round 1', () => {
+  const globals = globalThis as unknown as { __DEV__: boolean };
+
+  it('F1: a sign-up that has ended offers Start again and no Resend, so nothing false is said about a text', async () => {
+    await toA4();
+    answers['POST /auth/phone/verify/confirm'] = refuse(400, 'PHONE_CODE_INVALID');
+    for (let round = 0; round < 4; round += 1) await typeDigits(round === 0 ? '481902' : '222222');
+    await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
+    expect(screen.queryByRole('button', { name: 'Resend code' })).toBeNull();
+    expect(screen.queryByText(/Resend in/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start again' })).toBeTruthy();
+    expect(callsTo('/auth/phone/verify/start')).toEqual([]);
+  });
+
+  it.each([
+    ['too soon after the first text', refuse(429, 'PHONE_CODE_RESEND_TOO_SOON', { retryAfterSeconds: 13 }), 'A code was just sent'],
+    ['an hourly limit', refuse(429, 'RATE_LIMITED', { retryAfterSeconds: 3600 }), 'Too many tries'],
+    ['a server fault', refuse(500, 'X'), 'Something went wrong on our side'],
+    ['no connection', null, 'No connection'],
+  ])('F2: a Continue on A3 refused for %s keeps the sign-up already waiting for its code, and the user can still enter it', async (_name, refusal, title) => {
+    await toA4();
+    await press('Back');
+    await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
+    if (refusal) answers['POST /auth/signup'] = refusal;
+    else delete answers['POST /auth/signup'];
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText(title)).toBeTruthy());
+    expect(mockVault.get(SIGNUP_ATTEMPT_KEY)).toBe('secret-attempt-1');
+    expect(mockVault.get(SIGNUP_PHONE_KEY)).toBe('+2348031234412');
+    await press('Enter the code we sent', 'link');
+    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(callsTo('/auth/phone/verify/confirm')[0].body.attempt).toBe('secret-attempt-1');
+  });
+
+  it('F2: A3 offers the sent code only while a sign-up is held: it appears on coming back from A4 and goes after Start again', async () => {
+    await toA4();
+    answers['POST /auth/phone/verify/confirm'] = refuse(400, 'PHONE_CODE_INVALID');
+    await press('Back');
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Enter the code we sent' })).toBeTruthy());
+    await press('Enter the code we sent', 'link');
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+    for (let round = 0; round < 4; round += 1) await typeDigits(round === 0 ? '481902' : '222222');
+    await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
+    await press('Start again');
+    await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
+    expect(screen.queryByRole('link', { name: 'Enter the code we sent' })).toBeNull();
+  });
+
+  it('F2: the too-soon answer names the wait in the server\'s figure', async () => {
+    await toA4();
+    await press('Back');
+    answers['POST /auth/signup'] = refuse(429, 'PHONE_CODE_RESEND_TOO_SOON', { retryAfterSeconds: 13 });
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText(/Wait 0:13 before sending another/)).toBeTruthy());
+  });
+
+  it('F3: the six boxes shrink to fit a narrow phone instead of running off both edges', async () => {
+    await toA4();
+    const row = StyleSheet.flatten(screen.getByTestId('phone-code-boxes').props.style);
+    expect(row.alignSelf).toBe('stretch');
+    const box = screen.getByTestId('phone-code-boxes').children[0] as unknown as { props: { style: object } };
+    expect((StyleSheet.flatten(box.props.style) as { flexShrink?: number }).flexShrink).toBe(1);
+  });
+
+  it('F4: in a release build a signed-in user on the email step who opens a development route lands on the email step, not a blank page', async () => {
+    mockVault.set(ACCESS_KEY, 'access-new');
+    mockVault.set(REFRESH_KEY, 'refresh-new');
+    answers['GET /auth/signup/progress'] = progress('email');
+    answers['POST /auth/signup/email/start'] = ok({ email: 'lennox@wawu.africa', expiresIn: 600, resendIn: 9 });
+    globals.__DEV__ = false;
+    try {
+      await renderRouter({ ...routes, 'preview/auth': AuthPreview }, { initialUrl: '/preview/auth' });
+      await waitFor(() => expect(screen.getByText('Sent to lennox@wawu.africa')).toBeTruthy());
+    } finally {
+      globals.__DEV__ = true;
+    }
+  });
+
+  it.each([
+    ['a server fault', refuse(500, 'X'), 'Something went wrong on our side'],
+    ['no connection', null, 'No connection'],
+  ])('F5: after %s on the sixth digit the user is told, can tap Try again, and the keypad still works', async (_name, refusal, title) => {
+    await toA4();
+    if (refusal) answers['POST /auth/phone/verify/confirm'] = refusal;
+    else delete answers['POST /auth/phone/verify/confirm'];
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByText(title)).toBeTruthy());
+    answers['POST /auth/phone/verify/confirm'] = session;
+    await press('Try again');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(callsTo('/auth/phone/verify/confirm').length).toBe(2);
+    expect(callsTo('/auth/phone/verify/confirm')[1].body.code).toBe('481902');
+  });
+
+  it('F5: after a failed check a tapped digit starts a fresh code', async () => {
+    await toA4();
+    delete answers['POST /auth/phone/verify/confirm'];
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByText('No connection')).toBeTruthy());
+    await typeDigits('7');
+    expect(screen.getByLabelText('Code, 1 of 6 digits entered')).toBeTruthy();
+    expect(screen.queryByText('No connection')).toBeNull();
+  });
+
+  it('F9: two quick taps on A3 Continue send one sign-up', async () => {
+    await toA3();
+    await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
+    await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
+    const button = screen.getByRole('button', { name: 'Continue' });
+    await act(async () => {
+      fireEvent.press(button);
+      fireEvent.press(button);
+    });
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+    expect(callsTo('/auth/signup').length).toBe(1);
+  });
+
+  it('F9: two quick taps on Continue of the code screen send one check', async () => {
+    await toA4({ emailCodeRequired: true });
+    await typeDigits('481902');
+    await fireEvent.changeText(screen.getByTestId('phone-code-extra'), '123456');
+    const button = screen.getByRole('button', { name: 'Continue' });
+    await act(async () => {
+      fireEvent.press(button);
+      fireEvent.press(button);
+    });
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(callsTo('/auth/phone/verify/confirm').length).toBe(1);
+  });
+
+  it('F12: a sign-in by email of a sign-up never confirmed (the server answers EMAIL_NOT_VERIFIED), with nothing held here, says how to get a new code', async () => {
+    answers['POST /auth/login'] = refuse(403, 'EMAIL_NOT_VERIFIED');
+    await renderRouter(routes, { initialUrl: '/sign-in' });
+    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-in-password'), 'hunter2hunter2');
+    await press('Sign in');
+    await waitFor(() => expect(screen.getByText("Your account isn't confirmed yet")).toBeTruthy());
+    expect(screen.getByText(/create your account again to get a new code/)).toBeTruthy();
+  });
+
+  it('F12: a sign-in refused as phone not confirmed, with no sign-up held here, says how to get a new code', async () => {
+    answers['POST /auth/login'] = refuse(403, 'PHONE_NOT_CONFIRMED');
+    await renderRouter(routes, { initialUrl: '/sign-in' });
+    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-in-password'), 'hunter2hunter2');
+    await press('Sign in');
+    await waitFor(() => expect(screen.getByText("Your phone isn't confirmed yet")).toBeTruthy());
+    expect(screen.getByText('Create your account again to get a new code.')).toBeTruthy();
   });
 });

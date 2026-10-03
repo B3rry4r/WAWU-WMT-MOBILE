@@ -48,9 +48,10 @@ function PhoneCode() {
       restartAfter={RESTART_AFTER}
       onRestart={() => {
         void clearSignup();
-        router.replace('/sign-up');
+        if (router.canGoBack()) router.back();
+        else router.replace('/sign-up');
       }}
-      onBack={router.canGoBack() ? () => router.back() : undefined}
+      onBack={() => (router.canGoBack() ? router.back() : router.replace('/sign-up'))}
     />
   );
 }
