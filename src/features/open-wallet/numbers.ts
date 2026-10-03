@@ -10,7 +10,12 @@ export const ID_DIGITS = 11;
 /** The groups A3 draws a BVN in ("2234 5678 901"); the NIN is drawn the same way (A18, "5621 8834 902"). */
 const ID_GROUPS = [4, 4, 3] as const;
 
-/** Digits only, at most 11: what a paste or a typed space leaves. */
+/**
+ * Digits only, at most 11: what a paste or a typed space leaves. The fields
+ * set no `maxLength`: the platform would cut a pasted "2223 - 4567 - 812"
+ * before the separators are stripped, so the digits are taken first and
+ * capped here.
+ */
 export function idDigits(typed: string): string {
   return typed.replace(/\D+/g, '').slice(0, ID_DIGITS);
 }
@@ -32,9 +37,6 @@ export function groupIdNumber(typed: string): string {
 export function isWholeIdNumber(typed: string): boolean {
   return idDigits(typed).length === ID_DIGITS && typed.replace(/[\d\s]/g, '') === '';
 }
-
-/** The longest a grouped number gets: 11 digits and 2 spaces. */
-export const GROUPED_ID_LENGTH = ID_DIGITS + ID_GROUPS.length - 1;
 
 /**
  * Shows only the last 4 digits the server answered, the way the canvas masks

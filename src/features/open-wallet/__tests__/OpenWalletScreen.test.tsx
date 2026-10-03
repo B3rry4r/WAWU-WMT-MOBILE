@@ -18,7 +18,7 @@ jest.mock('expo-secure-store', () => ({
   }),
 }));
 
-type Answer = { status: number; body: unknown } | 'offline' | 'hold';
+type Answer = { status: number; body: unknown; headers?: Record<string, string> } | 'offline' | 'hold';
 type Sent = { method: string; path: string; body: string };
 
 const OWNER = '00000000-0000-4000-8000-0000000000a1';
@@ -38,7 +38,7 @@ const refusal = (status: number, code: string, message: string, extra: Record<st
 const me = { wawuUserId: OWNER, phone: '+2348031234412', email: 'ada@example.com', firstName: 'Ada', lastName: 'Eze' };
 const freshIdentity = { bvn: null, ninLast4: null, occupation: null, checksLeft: 3 };
 const passedIdentity = { bvn: { last4: '0111', verifiedAt: '2026-10-03T10:00:00.000Z' }, ninLast4: '0999', occupation: null, checksLeft: 2 };
-const prefill = { firstName: 'Ada', middleName: 'B', lastName: 'Eze', dateOfBirth: '1992-10-04', gender: 'female' };
+const prefill = { firstName: 'Ada', middleName: 'B', lastName: 'Eze', dateOfBirth: '1992-10-04', gender: 'female' as const };
 
 const A14 = "This isn't the number on your BVN. Use that one.";
 
@@ -61,7 +61,7 @@ function installFetch() {
     if (!answer) throw new Error(`no answer for ${key}`);
     if (answer === 'offline') throw new TypeError('Network request failed');
     if (answer === 'hold') return new Promise<Response>(() => undefined);
-    return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json', ...answer.headers } });
   }) as typeof fetch;
 }
 
@@ -94,15 +94,24 @@ async function boot() {
     </QueryClientProvider>
   );
   await rtl.render(wrap(<OpenWalletScreen onClose={onClose} />));
-  return { ...rtl, onClose, kept };
+  return { ...rtl, onClose, kept, client };
 }
 
 const checksSent = () => sent.filter((s) => s.method === 'POST' && s.path.endsWith('/money/identity/bvn'));
 
+/**
+ * Types or pastes into a field as the platform would: a `maxLength` on the
+ * field cuts the text before `onChangeText` sees it (react-native and the
+ * browser both do), so a test catches a limit that drops pasted digits.
+ */
+async function typeInto(field: ReturnType<typeof rtl.screen.getByTestId>, text: string) {
+  const max = field.props.maxLength;
+  await rtl.fireEvent.changeText(field, typeof max === 'number' ? text.slice(0, max) : text);
+}
+
 async function typeNumbers(app: Awaited<ReturnType<typeof boot>>, bvn = BVN, nin = NIN) {
-  const { fireEvent, screen } = app;
-  await fireEvent.changeText(await screen.findByTestId('open-wallet-bvn'), bvn);
-  await fireEvent.changeText(screen.getByTestId('open-wallet-nin'), nin);
+  await typeInto(await app.screen.findByTestId('open-wallet-bvn'), bvn);
+  await typeInto(app.screen.getByTestId('open-wallet-nin'), nin);
 }
 
 beforeEach(() => {
@@ -114,6 +123,7 @@ beforeEach(() => {
   mockVault.set('wawu.session.refresh', 'refresh-1');
   serve();
   (require('../keptCheck') as typeof import('../keptCheck')).forgetKeptCheck();
+  (require('@/api/session') as typeof import('@/api/session')).resetSessionForTests();
 });
 
 afterEach(async () => {
@@ -182,7 +192,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('2219 0000 222');
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
 
-    await app.fireEvent.changeText(app.screen.getByTestId('open-wallet-bvn'), BVN);
+    await typeInto(app.screen.getByTestId('open-wallet-bvn'), BVN);
     expect(app.screen.queryByText(A14)).toBeNull();
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
     expect(await app.screen.findByTestId('open-wallet-confirmed')).toBeTruthy();
@@ -226,7 +236,8 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
-    expect(await app.screen.findByText(limit)).toBeTruthy();
+    // The wait is the server's own figure (reason.retryAfterSeconds 3600), in words.
+    expect(await app.screen.findByText('Try again in about an hour.')).toBeTruthy();
     expect(app.screen.getByText("You've used today's checks")).toBeTruthy();
     expect(app.screen.getByTestId('open-wallet-nin').props.value).toBe('7019 0000 999');
 
@@ -243,9 +254,18 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const app = await boot();
     await typeNumbers(app);
     const button = app.screen.getByTestId('open-wallet-continue');
-    await app.fireEvent.press(button);
-    await app.fireEvent.press(button);
+    // Both taps in the same frame, through the press handler the platform
+    // calls: the button has not re-rendered as busy yet, so only the
+    // in-flight guard can stop the second.
+    await app.act(async () => {
+      button.props.onClick({ nativeEvent: {} });
+      button.props.onClick({ nativeEvent: {} });
+    });
     await app.waitFor(() => expect(checksSent()).toHaveLength(1));
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(checksSent()).toHaveLength(1);
   });
 
   it('a user whose wallet is already open, or still opening, is told so instead of the form', async () => {
@@ -274,6 +294,133 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.screen.getByText('No connection. Check your internet and try again.')).toBeTruthy();
     await app.fireEvent.press(app.screen.getByText('Try again'));
     expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
+  });
+
+  it('a user who pastes a BVN or NIN with spaces, dashes or dots round the digits keeps all 11 digits', async () => {
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    const app = await boot();
+    const bvnField = await app.screen.findByTestId('open-wallet-bvn');
+    for (const pasted of ['2219 - 0000 - 111', '  2219 0000 111  ', '221-900-001-11', '221 900 001 11', '2219.0000.111']) {
+      await typeInto(app.screen.getByTestId('open-wallet-bvn'), '');
+      await typeInto(app.screen.getByTestId('open-wallet-bvn'), pasted);
+      expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('2219 0000 111');
+    }
+    expect(bvnField.props.maxLength).toBeUndefined();
+    await typeInto(app.screen.getByTestId('open-wallet-nin'), '7019 - 0000 - 999 ');
+    expect(app.screen.getByTestId('open-wallet-nin').props.value).toBe('7019 0000 999');
+    // More than 11 digits keeps the first 11, as typing past the end would.
+    await typeInto(app.screen.getByTestId('open-wallet-nin'), '701900009991234');
+    expect(app.screen.getByTestId('open-wallet-nin').props.value).toBe('7019 0000 999');
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    expect(JSON.parse(checksSent()[0].body)).toEqual({ bvn: BVN, nin: NIN });
+  });
+
+  it('a refused check never turns into a failed load: with the Hub unreachable the banner and the typed numbers stay, even when every read then fails', async () => {
+    routes['POST /money/identity/bvn'] = ['offline'];
+    const app = await boot();
+    await typeNumbers(app);
+    serve({ 'GET /users/me': 'offline', 'GET /money/wallet': 'offline', 'GET /money/identity': 'offline' });
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    expect(await app.screen.findByText('No connection')).toBeTruthy();
+    await app.act(async () => {
+      await app.client.refetchQueries();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(app.client.getQueryState(['users', 'me', 'open-wallet'])?.status).toBe('error');
+    expect(app.screen.queryByTestId('open-wallet-error')).toBeNull();
+    expect(app.screen.getByText('No connection')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('2219 0000 111');
+    expect(app.screen.getByTestId('open-wallet-nin').props.value).toBe('7019 0000 999');
+    // Only the one check was sent; nothing re-read the identity on its own.
+    expect(checksSent()).toHaveLength(1);
+  });
+
+  it('the address limit says how long to wait from the answer’s Retry-After headers, and "later" when there is none', async () => {
+    const throttled = (headers?: Record<string, string>): Answer => ({
+      status: 429,
+      body: { statusCode: 429, message: 'ThrottlerException: Too Many Requests', data: null },
+      headers,
+    });
+    routes['POST /money/identity/bvn'] = [
+      throttled({ 'Retry-After-short': '60', 'Retry-After-medium': '3448' }),
+      throttled({ 'Retry-After-short': '42' }),
+      throttled(),
+    ];
+    const app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    expect(await app.screen.findByText('Try again in about an hour.')).toBeTruthy();
+    expect(app.screen.getByText('Too many tries')).toBeTruthy();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    expect(await app.screen.findByText('Try again in under a minute.')).toBeTruthy();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    expect(await app.screen.findByText('Try again later.')).toBeTruthy();
+    expect(app.screen.queryByText(/Wait a minute/)).toBeNull();
+  });
+
+  it('"BVN confirmed" shows only for a kept check whose last 4 digits are the server’s current ones', async () => {
+    const kept = require('../keptCheck') as typeof import('../keptCheck');
+    serve({ 'GET /money/identity': ok(passedIdentity) });
+    kept.keepCheck(OWNER, { identity: { ...passedIdentity, bvn: { last4: '9999', verifiedAt: '2026-10-02T10:00:00.000Z' } }, prefill });
+    let app = await boot();
+    expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+    await app.screen.unmount();
+
+    kept.keepCheck(OWNER, { identity: passedIdentity, prefill });
+    app = await boot();
+    expect(await app.screen.findByTestId('open-wallet-confirmed')).toBeTruthy();
+  });
+
+  it('the kept BVN details are forgotten when the user signs out', async () => {
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    const app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    expect(app.kept.readKeptCheck(OWNER)).not.toBeNull();
+    const session = require('@/api/session') as typeof import('@/api/session');
+    await app.act(async () => {
+      await session.signOut();
+    });
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+  });
+
+  it('the kept BVN details are forgotten when the session ends because the refresh is refused', async () => {
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    const app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    const session = require('@/api/session') as typeof import('@/api/session');
+    const refused = jest.fn(async () => new Response(JSON.stringify({ statusCode: 401, message: 'invalid refresh token' }), { status: 401 }));
+    const hubFetch = globalThis.fetch;
+    globalThis.fetch = refused as typeof fetch;
+    try {
+      await app.act(async () => {
+        await session.refreshAccessToken(await session.getAccessToken() as string);
+      });
+    } finally {
+      globalThis.fetch = hubFetch;
+    }
+    expect(refused).toHaveBeenCalled();
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+  });
+
+  it('the kept BVN details are forgotten when Open your wallet is left, and when another account opens it', async () => {
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    let app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    await app.screen.unmount();
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+
+    app.kept.keepCheck('someone-else', { identity: passedIdentity, prefill });
+    app = await boot();
+    await app.screen.findByTestId('open-wallet-phone');
+    expect(app.kept.readKeptCheck('someone-else')).toBeNull();
   });
 
   it('the BVN and NIN are never written to the phone’s storage or the console, and the fields are cleared once the check passes', async () => {

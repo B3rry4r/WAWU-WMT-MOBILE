@@ -1,9 +1,10 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
-import { checkBvn, walletIdentityQuery, type BvnCheck } from '@/api/walletIdentity';
+import { useSession } from '@/api/session';
+import { walletIdentityQuery, type BvnCheck } from '@/api/walletIdentity';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
@@ -18,9 +19,10 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
 
 import { ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
+import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { keepCheck, useKeptCheck } from './keptCheck';
-import { GROUPED_ID_LENGTH, groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
+import { forgetKeptCheck, keepCheck, readKeptCheck, useKeptCheck } from './keptCheck';
+import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 
 /** design/_gen/auth.js line 54 (A3 and A14): `h1` at 24 (the theme's h1), line 1.15; 6 between title and line; 14 between the parts. */
@@ -50,11 +52,27 @@ type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' } 
 export function OpenWalletScreen({ onClose }: OpenWalletScreenProps) {
   const [account, wallet, identity] = useQueries({ queries: [ownAccountQuery, walletStateQuery, walletIdentityQuery] });
   const [ended, setEnded] = useState<Ended | null>(null);
-  const kept = useKeptCheck(account.data?.wawuUserId);
+  const owner = account.data?.wawuUserId;
+  const kept = useKeptCheck(owner);
+  const { status } = useSession();
+
+  // The BVN's name, date of birth and gender live no longer than this step:
+  // gone when the session ends (sign-out, a refused refresh), when another
+  // account is signed in, and when Open your wallet is left (KYC-03's A5 is
+  // pushed on top of A26, so it reads them while A26 is still mounted).
+  useEffect(() => {
+    if (status === 'signedOut') forgetKeptCheck();
+  }, [status]);
+  useEffect(() => {
+    if (owner && readKeptCheck(owner) === null) forgetKeptCheck();
+  }, [owner]);
+  useEffect(() => () => forgetKeptCheck(), []);
 
   if (ended) return <Ending ended={ended} onClose={onClose} />;
 
-  const failed = [account, wallet, identity].find((query) => query.isError);
+  // Only a read that never answered is a failed load. A later refetch that
+  // fails keeps the data it had, so a refused check never becomes this view.
+  const failed = [account, wallet, identity].find((query) => query.isError && query.data === undefined);
   if (failed) {
     const retry = () => {
       void account.refetch();
@@ -220,7 +238,7 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
     setBusy(true);
     setFailure(null);
     try {
-      const check = await checkBvn({ bvn: idDigits(bvn), nin: idDigits(nin) });
+      const check = await runBvnCheck({ bvn: idDigits(bvn), nin: idDigits(nin) });
       setBvn('');
       setNin('');
       queryClient.setQueryData(walletIdentityQuery.queryKey, check.identity);
@@ -234,7 +252,6 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
       } else {
         setFailure(next);
       }
-      void queryClient.invalidateQueries({ queryKey: walletIdentityQuery.queryKey });
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -296,7 +313,6 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
           error={missing.bvn ?? fieldError('bvn')}
           keyboardType="number-pad"
           inputMode="numeric"
-          maxLength={GROUPED_ID_LENGTH}
           autoComplete="off"
           importantForAutofill="no"
           textContentType="none"
@@ -316,7 +332,6 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
           error={missing.nin}
           keyboardType="number-pad"
           inputMode="numeric"
-          maxLength={GROUPED_ID_LENGTH}
           autoComplete="off"
           importantForAutofill="no"
           textContentType="none"

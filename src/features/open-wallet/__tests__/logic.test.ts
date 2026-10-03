@@ -1,9 +1,11 @@
 import { ApiError } from '@/api/errors';
 
+import { retryAfterOf } from '../api/check';
 import { checkFailure } from '../checkFailure';
 import { isNoWallet, OPEN_WALLET_PATH, useOpenWalletEntry } from '../entry';
 import { forgetKeptCheck, keepCheck, readKeptCheck } from '../keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from '../numbers';
+import { waitPhrase } from '../wait';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -104,5 +106,37 @@ describe('the passed check kept for A5', () => {
     expect(readKeptCheck(undefined)).toBeNull();
     forgetKeptCheck();
     expect(readKeptCheck('owner-a')).toBeNull();
+  });
+});
+
+describe('how long a limit says to wait', () => {
+  it('a user is told the server’s wait in words, and "later" when it gave none', () => {
+    expect(waitPhrase(null)).toBe('later');
+    expect(waitPhrase(0)).toBe('later');
+    expect(waitPhrase(42)).toBe('in under a minute');
+    expect(waitPhrase(60)).toBe('in a minute');
+    expect(waitPhrase(150)).toBe('in 3 minutes');
+    expect(waitPhrase(300)).toBe('in about 5 minutes');
+    expect(waitPhrase(1260)).toBe('in about 20 minutes');
+    expect(waitPhrase(3448)).toBe('in about an hour');
+    expect(waitPhrase(5400)).toBe('in about 2 hours');
+    expect(waitPhrase(86400)).toBe('in about 24 hours');
+  });
+
+  it('the wait is the body’s reason.retryAfterSeconds, else the longest Retry-After header', () => {
+    expect(retryAfterOf({ reason: { code: 'identity_checks_exhausted', message: 'x', retryAfterSeconds: 18000 } }, new Headers({ 'Retry-After-short': '60' }))).toBe(18000);
+    expect(retryAfterOf({ statusCode: 429 }, new Headers({ 'Retry-After-short': '60', 'Retry-After-medium': '3448' }))).toBe(3448);
+    expect(retryAfterOf(null, new Headers({ 'Retry-After': '120' }))).toBe(120);
+    expect(retryAfterOf(undefined, new Headers({ 'Retry-After-short': 'soon' }))).toBeNull();
+    expect(retryAfterOf({}, new Headers())).toBeNull();
+  });
+
+  it('the address limit with no figure says "Try again later.", never a made-up time', () => {
+    expect(checkFailure(new ApiError('rate_limited', 429, 'ThrottlerException: Too Many Requests'))).toMatchObject({ body: 'Try again later.' });
+    const counted = Object.assign(new ApiError('rate_limited', 429, 'Used.', 'identity_checks_exhausted'), { retryAfterSeconds: 7200 });
+    expect(checkFailure(counted)).toMatchObject({ title: "You've used today's checks", body: 'Try again in about 2 hours.' });
+    expect(checkFailure(new ApiError('rate_limited', 429, 'You have used today’s BVN checks. Try again later.', 'identity_checks_exhausted'))).toMatchObject({
+      body: 'You have used today’s BVN checks. Try again later.',
+    });
   });
 });
