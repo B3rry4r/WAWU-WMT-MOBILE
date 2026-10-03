@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 57 | 47 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 1 | 0 |
 | done | 21 | 11 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
-
-## Being verified
-
 - [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
 
 ## Done
@@ -68,6 +65,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · FIX-02 · Verified: no open defect, status review (backend 82c139a on main 13a6f77; mobile 8a2ca01). Test-only diff, no expect, test or skip changed (counts equal per file). The 503 is only ever the claiming tap whose own lookup missed its deadline (all lookups failing: 2 claims, 2 503s; Fintava 1.2 s slow inside the timeout: 192 taps, 0 503s; 2.5 s stall: 503 at 2 s, none at production's 15 s), and unmodified main 503s the same way pinned to one CPU (4 of 10). Mutants M1 to M4 (lookup errors ignored, blind resend, answer not late, window ignored) all caught. Per-request server closes with open connections on main in all six specs, none on the fix; minimal repro 540 of 630 reset vs 0. Opening spec 24 of 24 at load 15.9 to 19.7, 10 of 10 pinned, others 3 of 3 each; full suite on :4001 twice 2,913 passed / 0 failed, merged with main cdcb2bc 2,976 / 0; protected 253/253, gates 16/9 as main, tsc 0, mobile check exit 0. Notes: both mains moved (merge before the PR; mobile only PROGRESS conflicts); the real-spec reset not reproduced here in 80 runs (CI log and builder evidence stand).
 - 3 Oct 2026 · FIX-02 · Backend main 13a6f77's deploy unblocked at the cause. read ECONNRESET: the specs gave supertest an unlistened app, so the first concurrent tap to finish closed the per-request server and the kernel reset the taps still queued (main 1 of 10 runs at load 8 to 10; minimal repro 540 of 630 reset, 0 listening); the app now listens once per file in the opening spec and the five others that send requests at once. The 503 behind the one-line fix: the claiming tap's lookup timed out at the spec's 300 ms during a 0.5 to 0.9 s CPU stall of the in-process stand-in (5 of 6 at load 15 to 20; a 900 ms injected stall reproduces it), the product's correct answer to an unanswered lookup, so the spec's timeouts are 2 s and late answers 500 ms past them, no assertion changed. Opening spec 50 of 50 at load 17.5 to 20.7; full suite twice 2,873 passed, only the four :4001-hardcoded suites refused (port rule); protected 253/253, gates unchanged (16 fail / 9 warn). Status verifying (backend 82c139a).
 - 3 Oct 2026 · AUTH-02 · Fix round 1: the status bar follows the screen in front (D1), A2's 8 px offset (D2), citations (D3), test name (D4), the pick cleared at sign-in and at each signed-out visit (U3), Space and Enter pick on web (U4), G-34 wording; main merged; verifying.
 - 2 Oct 2026 · AUTH-02 · Welcome (A1) and why you're here (A2) built, the app opens on A1 signed out, 'New here? Create an account' on A22 opens A2 and A22 gets its Back; gaps G-34, G-35 (filed as G-33, G-34, renumbered after main took G-33); verifying.
@@ -82,4 +80,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-02 · Verified round 3: back to building (backend 4475c2b and its local merge with main 837d6ec, mobile 70fb533). Round 2's defects closed: only the exact allowlisted answer is a match (215 socket answers, 200,000 mutations, the strict parser agrees with JSON.parse on 53,082 accepted texts) and every earlier polyglot is refused while 33 Pillow images pass; the BVN binding holds (100/100 hooked, 0 of 450 natural). New: 1, on the merge OPS-11's hub-rate-limits spec fails 2 of 10 (the selfie route's throttle override is not in its list); 2 (low), the answer has no size cap and parses about 45 times slower than JSON.parse (200 MB blocks the Hub 42 s). One sandbox call, refused as before.
 - 3 Oct 2026 · KYC-02 · Round 3: the selfie answer is read by allowlist (HTTP 200, JSON, no duplicate keys, exactly the envelope around one verdict field; anything else a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); every shape both verifiers sent is tested through client and route, plus 28,320 one-extra-key bodies; round 2's reader put back matches 63 of them. Images walked whole (PNG chunks, CRCs and pixel data; JPEG markers and scans); tests use Pillow-made images. Mains merged into both branches (backend 66339b9, mobile 94d202b); verifying.
 - 3 Oct 2026 · KYC-02 · Verified round 2 (restarted after an interrupted first attempt): back to building (backend dbd7b56 and its local merge with main 66339b9, mobile 27d94b3). Defect 2 closed (0 of 750 natural races and 100 of 100 hooked ones kept a selfie to its own BVN check; round 1's binding fails the same sweep 55 of 300). Defect 1 still open: `match: true` beside `mismatch: true`, a `false` 7 objects below `data`, or `passed: false` is a match on the built app. Defect 3 partly: a file with JPEG or PNG start and end bytes passes whatever is between. Protected 253/253, contract 110 suites 2173 passed (the 40 failures in the 4 :4001 suites pass 40/40 on a free :4001, 1 load timeout passes alone), gates 16 fail / 8 warn (main 16 / 7, plus SELFIE-CHECKS-PER-DAY), mobile check exit 0; 1 sandbox selfie call, 400.
-- 2 Oct 2026 · KYC-02 · Round 2: the selfie answer is read failing closed (only an explicit `true` verdict is a match; an explicit "no" is A16, no verdict is a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); each match is tied to the BVN check it was compared against (two nullable columns, race test); JPEG/PNG ends checked (polyglots refused); masking threshold and cap pinned; mains merged into both branches; verifying.

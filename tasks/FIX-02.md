@@ -7,7 +7,7 @@ order: 80
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: [MONEY-12]
 decisions: [R-25]
 passes: [V1, V2, V3]
@@ -65,7 +65,48 @@ Builder, 3 Oct 2026, branch `wmt/FIX-02` in both repos: wawu-backend `82c139a` o
 
 ## Verifier report
 
-_Verifier: fill in._
+Verifier, 3 Oct 2026. Fresh session that wrote none of this. Detached worktrees `/home/user/wt/vfx02b` (wawu-backend `82c139a` on main `13a6f77`) and `/home/user/wt/vfx02m` (mobile `8a2ca01`). Databases `vfx02_*_test`, mock WAWU ID on :4941 for spec loops and on :4001 only for the full suites (free before, stopped right after). Every database is dropped, every burner killed by its PID and every throwaway worktree removed. No Fintava, WAWU ID or production call. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfx02/` (abbreviated `vfx02/` below).
+
+**Verdict: no open defect. Status `review`.** The diff is test-only and loosens nothing. The reset's cause and fix hold. The `503` is the product answering correctly for a Fintava lookup that did not answer before its deadline, and no tap gets a `503` while Fintava answers within the timeout.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed. Backend: `tsc --noEmit` exit 0; gates 16 fail / 9 warn / 76 accepted on 616 files, output byte-identical to main `13a6f77`; eslint on the 6 files the same as main (5 at 0, `payment-webhook` 27 errors / 3 warnings on both). Mobile `npm run check` exit 0: 20 suites, 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks | `vfx02/tsc.log`, `vfx02/gates-vfx02b*.log`, `vfx02/mobile-check.log` |
+| V2 Contract | passed. Full suite as the deploy runs it (`npx jest --runInBand --forceExit`, fresh migrated and seeded DB, mock on :4001 with a keypair made as `deploy.yml` makes it): `82c139a` twice, 119/119 suites, 2,913 passed, 3 skipped, **0 failed** each; the branch merged locally with today's main `cdcb2bc` once, 121/121 suites, 2,976 passed, 3 skipped, **0 failed** | `vfx02/full-A-82c139a.log`, `full-B-82c139a.log`, `full-D-merged.log` |
+| V3 Regression | passed. `scripts/protected-routes/run.sh --fresh HEAD`: 253/253, all 244 required, lock origin/main unchanged (the diff touches no lock, suite or registry file); CI tripwire 0 of 44 added lines | `vfx02/protected.log`, `vfx02/diff.patch` |
+
+Focus checks:
+
+1. **Only tests changed, nothing loosened.** `git diff 13a6f77..82c139a`: 6 files, all `*.spec.ts`, 44 added and 7 removed lines. The removed lines are the old doc comment and `TIMEOUT_MS = 300`, `LATE_MS = 700`. No added or removed line contains `expect`, `it(`, `describe`, a matcher, `.skip`, `.only`, `.todo`, `xit` or `xdescribe`. Per file, the `expect` and `it(` counts are identical on both commits (opening 275/51, money-identity 122/26, selfie-match 194/31, money-pin 86/21, community-rooms 104/29, payment-webhook 61/14), with 0 skip/only/todo on both. No em-dash added. Coverage of the listen fix is complete: every other spec with `Promise.all` and an unlistened app runs its concurrency at service level (ledger, ledger-status) or only logs in to the mock. That includes MONEY-08's new `ledger-status` spec on today's main.
+2. **The `503` is not a product defect.** Code (`wallet-opening.service.ts` `open()`): `503 provider_unreachable` comes from only three places. (a) Fintava unconfigured. (b) The request that just claimed an attempt, when its own pre-create lookup (details, plus the by-id read when found) gives no answer: the row goes `failed` (`lookup_unavailable`) and nothing is sent. (c) The claimer's create refused with a kind that is neither "may have opened" nor about the details. A tap that finds the row `opening` returns the view, and one that finds it `unknown` reconciles (every Fintava error inside `reconcile` is `wait`). A tap that loses the claim returns the view. None of them can `503`. Experiments in a throwaway copy, my own fault injector (`vfx02/inject-setup.js`):
+   - E1, every lookup fails in the double tap: 15 taps, 2 lookups (attempts 1 and 2), exactly 2 `503`s, 13 `200`s, 0 creates. So `503`s equal claims.
+   - E2, a 900 ms event-loop stall during the claimer's lookup at the 2 s timeout: lookup ok in 921 ms, 1 create, test passes.
+   - E3, the same with a 2,500 ms stall: that claimer `503` (lookup `timed out` at 2,541 ms), row `failed` attempt 1. The next claimer's lookup took 7 ms and made **exactly 1 create**.
+   - E4, Fintava healthy but slow (every read answered 1.2 s late, inside 2 s), 3 runs of the 4 concurrent-tap tests (double tap, 3 accounts × 8 taps, same BVN two phones, second instance): 192 taps, lookups 1,202 to 2,436 ms, **0 `503`**, all 5 tests pass.
+   - E5, production's read timeout (15 s, `FINTAVA_DEFAULTS.readTimeoutMs`) with the 2,500 ms stall: no `503`, lookup ok in 2,537 ms.
+
+   Production: `.env.example` and `deploy/README.md` leave `FINTAVA_TIMEOUT_MS` / `FINTAVA_MONEY_TIMEOUT_MS` empty, so they default to 15 s and 30 s. A stall long enough to `503` there is an outage, not load. The `503` is also not new: unmodified main `13a6f77` pinned to one contended CPU failed the double tap with `503` in 4 of 10 runs (`vfx02/main-pinfull.summary`); the fix passed 10 of 10 under the same pinning (`vfx02/fix-pinfull.summary`).
+3. **The longer timeout masks nothing.** The stand-in arms its late timer when the request arrives, after the client armed its deadline, and `LATE_MS = TIMEOUT_MS + 500` expires later, so the deadline always fires first. The late test asserts it every run (`opening`, row `unknown`). Mutants, each run against the fixed spec (`vfx02/mut*.patch`, `mut*-1.log`):
+   - M1, the pre-create lookup's error handling removed (an unanswered lookup treated as none): caught by "when the lookup before a create cannot be read".
+   - M2, a lost answer marked `failed`, so the next tap resends blindly: caught by 26 tests, the late-answer test and the CI test among them.
+   - M3, `LATE_MS` inside the deadline: caught by the 2 tests that assert lateness ("a create that lands after the timeout", "details too slow").
+   - M4, the resend window ignored: caught by 3 window tests.
+4. **ECONNRESET.** Mechanism, my own minimal repro (`vfx02/mini-reset.js`, Node 22.22.2, supertest 7.2.2, 30 rounds of 1 fast and 20 slow requests): unlistened 540 of 630 reset, listening 0 of 630. Supertest calls `listen(0)` only when `app.address()` is empty and closes only a server it opened itself. Hazard count (`vfx02/hazard-others.txt`, `hz-*.txt`), with `http.Server.close()` instrumented:
+   - On `13a6f77`, the six specs close a per-request server mid-test 290 / 59 / 551 / 98 / 90 / 24 times (opening, money-identity, selfie-match, money-pin, community-rooms, payment-webhook), and close with connections still open in every one of them (up to 8 open, money-pin).
+   - On `82c139a`, only at teardown (1 or 2 closes per file), always with 0 open.
+
+   Under load: opening spec on `82c139a`, **24 of 24 valid runs passed at load 15.9 to 19.7** (`vfx02/fix-load.summary`). 10 of 10 pinned to a contended CPU, and 5 of 5 on the local merge with main `cdcb2bc` (`merged-load.summary`). The five other specs 3 of 3 each at load 16.3 to 19.1 (`others-*.summary`). 0 `ECONNRESET` in any `82c139a` run (the full-suite logs carry only the MONEY-06 stand-in's canned `read ECONNRESET` 500 body, `MONEY06-W-1`). Burners: 12 free and 3 pinned to CPU 0, PIDs in `vfx02/burn.pids.used`, all killed.
+5. **Mobile.** The 123 tasks at order 80 to 202 each changed only `order: N` to `N+1`, FIX-02 sits at 80 after MONEY-12 (79), and there are no duplicate orders. `check_tasks.py` passes, and `--write` on `8a2ca01` produces no diff, so INDEX and PROGRESS are as generated.
+
+Findings:
+- `note` **Both mains moved during verification.** Backend main is `cdcb2bc` (MONEY-08) and mobile main is `1906f63`. Backend: no file overlap with FIX-02 and the lock is unchanged. The local merge passed the full suite (on a database migrated from the merged tree) and the opening spec 5 of 5 under load. Mobile: a trial merge conflicts only in the generated `docs/PROGRESS.md`; after `check_tasks.py --write`, `check_tasks.py` exits 0. WORKFLOW 8.3 applies before the pull request: merge main into `wmt/FIX-02` in both repos and regenerate.
+- `note` **The reset was not reproduced in the real spec in this session.** On `13a6f77` I got 0 `read ECONNRESET` in 80 valid runs: 20 full and 40 single-test at load 15 to 16, plus 10 pinned, of which 4 failed with the double-tap `503` and none with a reset. 8 pinned single-test runs are void: they hit jest's default 5 s test timeout on `13a6f77`, an artifact of pinning, and that loop was stopped. The real-spec reset stands on the CI log (`deploy_test.log` line 645) and the builder's `fx02b/orig-4.*`. The mechanism stands on the minimal repro and the hazard counts above.
+- `note` **The contract suite is not parallel-safe on one database.** I ran two specs at once on `vfx02_spec_test` (my error), and each failed one lost-answer test: run 11 of `fix-load` ("a second service instance ... one create": row `unknown`) and the first hazard run ("a create that lands after the timeout": `opening`). Each process's sweep reconciles every `unknown` row in the database against its own Fintava stand-in and stamps `checkedAt`, so the owning run's taps are throttled. Both runs are excluded. The same tests passed in all 39 isolated runs. This is known (`package.json` `_comment:test:contract`), and production servers share one real Fintava, so it is not a product issue.
+- `note` (pre-existing, unchanged by FIX-02): "a second service instance ... create late" and the 3-account race do not themselves assert that the answer was late; M3 left them green. They are race tests for "one create", and lateness holds by the timer order above. The window-boundary test's name says "50 ms before" while it ages the row to the window minus 2 s, as the builder noted.
+
+NOT RUN:
+- CI's own run of `wmt/FIX-02`: no pull request is open. Unblocked by opening the pull request (after merging main in, per the first note), whose `deploy.yml` test job runs the suite on a GitHub runner.
+- Real-spec reset reproduced by this verifier on `13a6f77`: see the second note. Unblocked by a run on a runner with the CI's core count (2 vCPU), or by the existing CI log, which already shows it.
 
 ## Owner sign-off
 
