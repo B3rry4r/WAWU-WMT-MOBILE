@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 42 of 180.**
+**Launch tasks done: 43 of 180.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 52 | 46 | 32 | 31 |
+| todo | 51 | 46 | 32 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 28 | 12 | 2 | 1 |
+| done | 29 | 12 | 2 | 1 |
 
 ## Done
 
@@ -57,6 +57,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
+- [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
 
 ## Next up
@@ -70,7 +71,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · WALLET-11 payout bank account screen (A21) merged (mobile). Load, save and read back work against the Hub; a pasted number with spaces keeps all ten digits; flagged when the name is not the BVN name. Bank list and pre-save name check wait on WALLET-09 (G-57). G-59 filed (stand-in WAWU ID shape).
 - 3 Oct 2026 · FIX-03 merged (backend PR #50, 7601a5f): the pin-reset leak test draws its PINs from a random pool and keeps test phone tails off it, so a chance collision can no longer fail a deploy. Test files only.
+- 3 Oct 2026 · WALLET-11 · Verified round 2: no open defect, status review (mobile dbd990a, main 0b83be8 already in; Hub c197d58). The paste defect is fixed: real Ctrl+V of spaced, hyphenated, padded, no-break-spaced, dotted, labelled and over-long numbers all hold the ten digits, light and dark; a pasted 1111-111-112 saved and read back. Gates exit 0 (24 suites, 403 tests, 108 files, 0 fail); V4, V5 (round-1 recorded differences only), V6 (12 states by real cause), V9 (sign-in through A22, 7 PUT bodies only bankCode and accountNumber, second person null); 10 of 10 mutants killed, including round 1's survivor. NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11, a device paste.
+- 3 Oct 2026 · WALLET-11 · Round 2, status verifying: a pasted account number with spaces or hyphens is kept whole (no raw maxLength; digits taken out, then ten kept), proved by a real Ctrl+V in the web export before (8 digits) and after (10); the route's back-after-save rule now tested (verifier's surviving mutant killed); WAWU ID's answer shape corrected in the report to `{ data }`; main 0b83be8 merged.
+- 3 Oct 2026 · WALLET-11 · Verified round 1: 1 defect, status building (mobile e8b0027 with main 9d43d9d; Hub a055b4f). An account number pasted with spaces ("0987 654 321") is cut to 8 digits by the field's maxLength before the spaces are stripped. Passed: gates exit 0 on branch and merge (23 suites, 398 tests, 107 files, 0 fail), V4, V5 (recorded differences only), V6 (12 states by real cause, light and dark), V9 (sign-in through A22, load, save, reload, edit; every PUT body only bankCode and accountNumber; second person sees null); 7 of 8 mutants killed (survivor: the route's back-after-save has no test). NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11 (not built).
+- 3 Oct 2026 · WALLET-11 · Built A21 Payout bank (`/payout-account`), status verifying: loads the saved account, bank sheet, account number, the bank's name and the server's BVN match after saving (flag when false, name alone when null), no-wallet, opening, loading and error states; 21 tests, 7 of 7 mutants killed; V9 on the built Hub (real sign-in, PUT and read back); G-57 (bank list and name check unserved, WALLET-09) and G-58 (BVN match before saving, the "Creators only" line) filed; SHARED-CHANGES WALLET-11 #1, #2.
 - 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
 - 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).
 - 3 Oct 2026 · SCHOOLS-01 · Schools data model built (backend `wmt/SCHOOLS-01`): School, SchoolCourse, CourseIntake, additive migration `20261003180000_schools`, no rating (R-32); status verifying
@@ -80,8 +86,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-14 · Round 3 (backend ab459bc, status verifying): re-saving a saved person whose account was deleted now answers 404 (or 409 without a wallet) as for anyone else, never a hidden row; the existing-row shortcut is pinned by a full-list re-save test; mobile main 331a6fa merged; full suite 130 suites 3,148 passed 0 failed, protected 253/253.
 - 3 Oct 2026 · WALLET-14 · Verified round 2: 1 minor defect, status building (backend 377ea31 with main 48b9043; mobile 7755de8; mobile main moved to 331a6fa meanwhile). Round 1's defects closed: a keyless join over 8 BVN-checked people links no stored name hash to another person or to any word (0 of 23 hashes shared, 0 of 464 unkeyed candidates), and old-scheme, other-check, other-person and rotated-key values read null; after a real purge of a saved person, list, count and cap agree, and 20 parallel saves at the edge give 1 x 201 and 19 x 409 (3 rounds plus a mixed run). Migrations deploy cleanly onto main's applied set and onto a fresh database, status clean. New: re-saving a saved person whose account was deleted answers 201 with a row the list never shows (anyone else gets 404). Full suite 130/130 suites (3,147 passed), protected 253/253, gates 16 fail / 13 warn (only BENEFICIARIES-MAX added), 9 of 11 mutants killed, 0 key windows, 0 Fintava calls.
 - 3 Oct 2026 · WALLET-14 · Round 2 (backend 377ea31 with main 48b9043, status verifying): BVN name keys bound to the person and the check (a keyless join links nothing; old-scheme or rotated-key values read null), the 50-place cap counts what the list shows, the bank list fetched once for parallel saves and its hour pinned by a test; full suite 130 suites 3,147 passed 0 failed, protected 253/253; mobile `npm run check` exit 0.
-- 3 Oct 2026 · WALLET-14 · Verified: 2 defects, status building (backend 514d3ad on main 6d48c97 with MONEY-13 35b68af; mobile 4fdc0b5; neither main moved). D1: the BVN name words are hashed with the key alone, the same hash for everyone, so a database reader without the key reads names back by matching them to the plain names beside them (an unwalleted person's first name recovered from 7 people). D2: a saved person whose account is deleted still holds one of the 50 places, hidden and never removable (list 49, save refused). Passed: name-check-only saves (bad codes, refused checks, a body name all refused), other people's rows untouched, the cap exact under 20 parallel saves at 49, one row under 20 parallel duplicates, the match rule on 27 edge cases; full suite on :4001 126 suites / 3,065 passed / 0 failed, protected 253/253, gates 16 fail / 11 warn (+BENEFICIARIES-MAX only), contract byte-stable, 13 of 14 own mutants killed (bank-list hour untested), mobile check exit 0. One stray sandbox BVN lookup by the verifier disclosed.
-- 3 Oct 2026 · WALLET-14 · Lead follow-up (backend 514d3ad, status verifying): merged `wmt/MONEY-13` (35b68af), the five routes now run its wallet gate and the stand-in is deleted (G-47 handled); the 6 suites on :4001 pass 62/62 and the full suite on a fresh database is 3,065 passed, 0 failed; protected 253/253.
-- 3 Oct 2026 · WALLET-14 · Built (backend a53fe14, status verifying): beneficiaries and the payout account served (`/money/beneficiaries`, `/money/payout-account`), each bank account name-checked through Fintava with its real bank code and the bank's name; the BVN check now keeps the BVN name as keyed word hashes, so a payout account in another name is flagged (`matchesBvnName: false`); additive migration, G-46 and G-47 filed, 3 free sandbox name checks.
-- 3 Oct 2026 · FIX-03 · Verified: status review (backend 86b740e, mobile a83f922). Cause reproduced on 48b9043 (run 6: a masked phone tail `+234 *** *** 7788` equal to a fixed PIN); 100 of 100 in a row on the branch at load 3.1 to 8.4; full suite 130/130, 3,144 passed, 0 failed; protected 253/253; gates as main; 5 leak mutants fail the scan. No chance collision left in the scanned text, none from other suites. `unclear`: a reset storing the new PIN unhashed passes every PIN spec (pre-existing). NOT RUN: 30 runs under burners and the key scan (both refused by this session's permissions).
-- 3 Oct 2026 · FIX-03 · Built (backend 86b740e, status verifying): the PIN reset spec's leak scan matched a test PIN in a masked phone's last four digits about once in 30 runs; PINs are now drawn per run from a reserved pool that no test phone, BVN or NIN ends in. 100 passes in a row (30 under load), full suite green, three logging mutations still fail it.
