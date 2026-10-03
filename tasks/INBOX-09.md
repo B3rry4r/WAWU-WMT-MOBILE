@@ -7,7 +7,7 @@ order: 15
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-13]
 passes: [V1, V2, V3, V4, V9]
@@ -49,6 +49,8 @@ Builder, 3 Oct 2026, branch `wmt/INBOX-09` in both repos (wawu-backend `5d72d9b`
 - **Filed:** G-77 (owner: minimum questions before the share counts, at-or-over, which questions count), G-78 (web and the profile routes still show a paused creator as on; the app reads the new routes; two new notification kinds). SHARED-CHANGES `INBOX-09 #1` (contract and the one live-route refusal).
 - **Provisional (owner):** `PROVISIONAL(PAID-DM-MIN-QUESTIONS)` default 1: a creator's first missed question reads as 100% and pauses them (R-13 read literally). Owner to name a minimum (G-77).
 - **Not done:** `PATCH /creator/dm-settings` is not gated (the send refusal holds whatever the settings say, and gating it changes a protected route); refund and money handling untouched (INBOX-17); the screens I8, I21 to I23 are INBOX-11 and INBOX-12 (G-78). `npm run api` not run (it copies backend main, which lacks these routes until merge).
+
+**Builder addendum (round 2, 3 Oct 2026, backend `e52c8e0`):** verifier finding 1 fixed: `PaidDmPauseService.sweep()` now pages both candidate lists by keyset (ordered by creator id, `PAID_DM_SWEEP_BATCH`, default 200, or a parameter) until exhausted, and skips creators whose pause has not ended, so no creator is starved; the per-creator row lock and transitions are unchanged. New test: 12 creators with batch 5 are all paused in one run, three overlapping runs (batch 5, 5, 3) change nothing and send nothing twice, 7 new creators behind 12 paused ones are all reached, and a sweep after the pauses end writes every one back (31 tests in the spec). Contract: the 403 `paid_messages_paused` is documented on `POST /dm/{creatorWawuId}/send` and the errors on the two new routes (additive: 12 lines added, 0 removed, through `@ApiResponse`, regenerated with `npm run contract:build`; finding 8). Finding 5 wording corrected: a zero row is inserted on a creator's first evaluation, and a legacy `warned`/`disabled_7d` row with no matching questions is reset to `none`. Findings 2, 4, 6 stay with G-77 and G-78 (the notification is not retried if its one insert fails); 7 is not this task's. Mobile check: exit 0 on the second run (the first hit the cold-cache OpenWalletScreen timeout, finding 7). Gates after: tsc 0; eslint 4,459 (3,609 errors, 850 warnings); gates 16 fail, 15 warn, 76 accepted on 660 files; baseline 108 owned; `test:contract` seeded `wawu_hub_test`, mock started from the same checkout: 138 of 138 suites, 3,328 passed, 3 skipped; protected routes `--fresh`: 244 required passed.
 
 ## Verifier report
 
