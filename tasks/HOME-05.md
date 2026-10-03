@@ -3,7 +3,7 @@ id: HOME-05
 title: Feed: creator and professional cards, media details
 owner: DEV
 area: HOME
-order: 80
+order: 81
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

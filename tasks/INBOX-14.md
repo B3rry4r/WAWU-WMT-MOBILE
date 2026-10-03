@@ -3,7 +3,7 @@ id: INBOX-14
 title: Private communities, hosting, join requests
 owner: DEV2
 area: INBOX
-order: 173
+order: 174
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

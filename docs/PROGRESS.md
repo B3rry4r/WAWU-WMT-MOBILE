@@ -3,19 +3,23 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 32 of 178.**
+**Launch tasks done: 32 of 179.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 57 | 47 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
 | done | 21 | 11 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
+
+## Being verified
+
+- [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
 
 ## Done
 
@@ -64,6 +68,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · FIX-02 · Backend main 13a6f77's deploy unblocked at the cause. read ECONNRESET: the specs gave supertest an unlistened app, so the first concurrent tap to finish closed the per-request server and the kernel reset the taps still queued (main 1 of 10 runs at load 8 to 10; minimal repro 540 of 630 reset, 0 listening); the app now listens once per file in the opening spec and the five others that send requests at once. The 503 behind the one-line fix: the claiming tap's lookup timed out at the spec's 300 ms during a 0.5 to 0.9 s CPU stall of the in-process stand-in (5 of 6 at load 15 to 20; a 900 ms injected stall reproduces it), the product's correct answer to an unanswered lookup, so the spec's timeouts are 2 s and late answers 500 ms past them, no assertion changed. Opening spec 50 of 50 at load 17.5 to 20.7; full suite twice 2,873 passed, only the four :4001-hardcoded suites refused (port rule); protected 253/253, gates unchanged (16 fail / 9 warn). Status verifying (backend 82c139a).
 - 3 Oct 2026 · AUTH-02 · Fix round 1: the status bar follows the screen in front (D1), A2's 8 px offset (D2), citations (D3), test name (D4), the pick cleared at sign-in and at each signed-out visit (U3), Space and Enter pick on web (U4), G-34 wording; main merged; verifying.
 - 2 Oct 2026 · AUTH-02 · Welcome (A1) and why you're here (A2) built, the app opens on A1 signed out, 'New here? Create an account' on A22 opens A2 and A22 gets its Back; gaps G-34, G-35 (filed as G-33, G-34, renumbered after main took G-33); verifying.
 - 3 Oct 2026 · MONEY-12 · Verified round 2: no open defect, status review (backend 9902ca1 on main e8535d8, which did not move; also merged locally with wmt/MONEY-08 2c5dee8, migrations in either order; mobile cb6907b, mobile main since moved to ddafc76 and merges cleanly apart from the BACKEND_GAPS rows). D1 fixed: a phone's Fintava customer is adopted only when the HMAC of its `userInfo.bvn` equals the person's; 26 record shapes and every adopting path (before the create, details, list, sweep, "already exists") never adopt a stranger, and 23 stopped rows stayed 409 with 0 Fintava calls through taps, a second instance, sweeps and a day's ageing. N1: read to the end; the >1,000-row residual needs two Fintava faults (note). N2: two real Hubs at +12 and -12 min on one database, 1 create each. Full suite 2,913 passed / 0 failed, protected 253/253, gates 16/9 (only WALLET-BANK-NAME), contract byte-stable, 1 read-only sandbox GET. Notes N4 to N6.
@@ -78,4 +83,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-02 · Round 3: the selfie answer is read by allowlist (HTTP 200, JSON, no duplicate keys, exactly the envelope around one verdict field; anything else a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); every shape both verifiers sent is tested through client and route, plus 28,320 one-extra-key bodies; round 2's reader put back matches 63 of them. Images walked whole (PNG chunks, CRCs and pixel data; JPEG markers and scans); tests use Pillow-made images. Mains merged into both branches (backend 66339b9, mobile 94d202b); verifying.
 - 3 Oct 2026 · KYC-02 · Verified round 2 (restarted after an interrupted first attempt): back to building (backend dbd7b56 and its local merge with main 66339b9, mobile 27d94b3). Defect 2 closed (0 of 750 natural races and 100 of 100 hooked ones kept a selfie to its own BVN check; round 1's binding fails the same sweep 55 of 300). Defect 1 still open: `match: true` beside `mismatch: true`, a `false` 7 objects below `data`, or `passed: false` is a match on the built app. Defect 3 partly: a file with JPEG or PNG start and end bytes passes whatever is between. Protected 253/253, contract 110 suites 2173 passed (the 40 failures in the 4 :4001 suites pass 40/40 on a free :4001, 1 load timeout passes alone), gates 16 fail / 8 warn (main 16 / 7, plus SELFIE-CHECKS-PER-DAY), mobile check exit 0; 1 sandbox selfie call, 400.
 - 2 Oct 2026 · KYC-02 · Round 2: the selfie answer is read failing closed (only an explicit `true` verdict is a match; an explicit "no" is A16, no verdict is a counted 503, so no selfie passes until Fintava shows its success body, G-25 edited); each match is tied to the BVN check it was compared against (two nullable columns, race test); JPEG/PNG ends checked (polyglots refused); masking threshold and cap pinned; mains merged into both branches; verifying.
-- 2 Oct 2026 · KYC-02 · Verified: 3 defects, back to building (backend 60dfe3f, mobile da43e46, mains unmoved). 1: any 2xx without a `false` verdict counts as a match (the documented `{}`, `status: "failed"`, `match: "false"`: 11 shapes); 2: a selfie matched to one BVN can count for a BVN check that passed during the request (2 of 100 natural races); 3 (low): JPEG/PNG polyglots pass the image check. Passed: nothing stored or logged (502 columns, 3 boots), 3 a day (10 at once: Fintava saw 3), production boot 503, protected 253/253, contract 2058 + 185, migration additive and applies with MONEY-10's same-timestamp one in any order. One sandbox selfie (docs example BVN, synthetic image, 422).

@@ -3,7 +3,7 @@ id: WALLET-11
 title: Payout bank account
 owner: YOU
 area: WALLET
-order: 119
+order: 120
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

@@ -3,7 +3,7 @@ id: BILLS-04
 title: Pay bills from the wallet (backend)
 owner: DEV2
 area: BILLS
-order: 113
+order: 114
 priority: launch
 repo: wawu-backend
 type: money-path

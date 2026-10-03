@@ -3,7 +3,7 @@ id: EVENTS-07
 title: Buy event tickets from the wallet (backend)
 owner: DEV3
 area: EVENTS
-order: 102
+order: 103
 priority: launch
 repo: wawu-backend
 type: money-path

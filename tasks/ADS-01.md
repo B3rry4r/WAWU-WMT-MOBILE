@@ -3,7 +3,7 @@ id: ADS-01
 title: TGIF sponsored card
 owner: DEV2
 area: ADS
-order: 175
+order: 176
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

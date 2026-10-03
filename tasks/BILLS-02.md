@@ -3,7 +3,7 @@ id: BILLS-02
 title: Pay a bill: review, PIN, token, failures
 owner: DEV2
 area: BILLS
-order: 117
+order: 118
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

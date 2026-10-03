@@ -3,7 +3,7 @@ id: WALLET-10
 title: Money in: bank transfers to the account
 owner: YOU
 area: WALLET
-order: 147
+order: 148
 priority: launch
 repo: wawu-backend
 type: money-path

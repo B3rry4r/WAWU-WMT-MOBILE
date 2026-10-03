@@ -3,7 +3,7 @@ id: HOME-06
 title: Content detail: previews, fair ratings, counts
 owner: DEV
 area: HOME
-order: 82
+order: 83
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
