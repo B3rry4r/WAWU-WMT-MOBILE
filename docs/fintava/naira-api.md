@@ -149,6 +149,15 @@ Store customerId, walletId and accountNumber when an account opens.
   **`TIER_2`**, visible only in reads: `data.tier` on the wallet balance and
   `wallet.tier` on `/customers/list` and `/customers/{id}`
   (`sandbox/07-create-customer.md`, `sandbox/08-wallet-balance.md`).
+- **Finding a customer by phone:** `GET /customers/details?phone=` (local
+  format) answers the record without the wallet; a phone Fintava has no
+  customer for is `404 ["Customer not found"]` in the business shape
+  (`sandbox/32-money12-account.md`). Account opening (MONEY-12) asks this
+  before every create and reads only that exact answer as "none": Fintava
+  refuses neither a repeated create nor a repeated BVN, so WAWU's own
+  record (one opening per person, BVN and phone unique) is what stops a
+  second account, and a lost create answer is looked for by phone, never
+  sent again blindly.
 - **Create runs no identity check and costs nothing.** It accepted a BVN the
   BVN check says does not exist, accepted the same BVN and NIN for a second
   customer, and charged ₦0 (`sandbox/07-create-customer.md`,
