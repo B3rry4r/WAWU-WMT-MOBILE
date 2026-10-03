@@ -54,6 +54,8 @@ const expired = new Set<string>();
 let refreshAnswersAs: Person | null = null;
 /** Answers held until a test releases them, keyed `METHOD path person`. */
 const holds = new Map<string, Promise<void>>();
+/** Every request the fake Hub answered: `METHOD path as <whose token> <status>`. */
+const hub: string[] = [];
 
 function hold(key: string) {
   let release: () => void = () => undefined;
@@ -102,7 +104,11 @@ function installFetch() {
     const person = owners.get(token);
     const held = person ? holds.get(`${request.method} ${path} ${person}`) : undefined;
     if (held) await held;
-    if (!person || expired.has(token)) return json(401, { statusCode: 401, message: 'Unauthorized', data: null });
+    if (!person || expired.has(token)) {
+      hub.push(`${request.method} ${path} as ${person ?? 'nobody'} 401`);
+      return json(401, { statusCode: 401, message: 'Unauthorized', data: null });
+    }
+    hub.push(`${request.method} ${path} as ${person} 200`);
     if (path === '/api/hub/users/me') return json(200, { statusCode: 200, message: 'ok', data: { name: person } });
     if (path === '/api/hub/money/payout-account') return json(200, { statusCode: 200, message: 'ok', data: payoutOf(person) });
     return json(404, { statusCode: 404, message: 'Not found', data: null });
@@ -201,6 +207,7 @@ beforeEach(async () => {
   holds.clear();
   refreshAnswersAs = null;
   frames.length = 0;
+  hub.length = 0;
 });
 
 describe("one account's cached answers are never drawn for the next (FIX-04)", () => {
@@ -304,5 +311,65 @@ describe("one account's cached answers are never drawn for the next (FIX-04)", (
     await act(async () => releaseB());
     await waitFor(() => expect(screen.getByDisplayValue(people.B.account)).toBeTruthy());
     expect(screen.queryByDisplayValue(people.A.account)).toBeNull();
+  });
+});
+
+describe("a request from one session is never sent again in the next (FIX-04 round 2)", () => {
+  /** Requests the fake Hub took with B's token for anything but B's own reads. */
+  const writesAsB = () => hub.filter((line) => !line.startsWith('GET') && line.includes(' as B '));
+
+  it("A's save still in flight when A signs out and B signs in is answered 401 and ends there: it is never sent with B's token", async () => {
+    await aIsCached();
+    owners.forEach((_, token) => expired.add(token));
+    const releaseA = hold('POST /api/hub/users/me A');
+    await press('probe-save');
+    await signOutNow();
+    await signInAs('B');
+    await waitFor(() => expect(screen.getByTestId('probe-name').props.children).toBe('B'));
+
+    await act(async () => releaseA());
+    await act(settled);
+    await act(settled);
+    expect(hub.filter((line) => line.startsWith('POST'))).toEqual(['POST /api/hub/users/me as A 401']);
+    expect(writesAsB()).toEqual([]);
+    expect(screen.getByTestId('probe-name').props.children).toBe('B');
+  });
+
+  it("A's read still in flight across the switch is answered 401 and is not read again as B on A's behalf", async () => {
+    await aIsCached();
+    owners.forEach((_, token) => expired.add(token));
+    const releaseA = hold('GET /api/hub/users/me A');
+    await press('probe-reload');
+    await signOutNow();
+    await signInAs('B');
+    await waitFor(() => expect(screen.getByTestId('probe-name').props.children).toBe('B'));
+    const readsAsB = hub.filter((line) => line === 'GET /api/hub/users/me as B 200').length;
+
+    await act(async () => releaseA());
+    await act(settled);
+    await act(settled);
+    expect(hub.filter((line) => line === 'GET /api/hub/users/me as B 200')).toHaveLength(readsAsB);
+    expect(hub).toContain('GET /api/hub/users/me as A 401');
+  });
+
+  it("a refresh that answers with B's token while A's save is in flight does not send A's save as B", async () => {
+    await aIsCached();
+    const aToken = [...owners.keys()].find((t) => t.includes('.'));
+    expired.add(aToken ?? '');
+    refreshAnswersAs = 'B';
+    await press('probe-save');
+    await act(settled);
+    expect(hub.filter((line) => line.startsWith('POST'))).toEqual(['POST /api/hub/users/me as A 401']);
+    expect(writesAsB()).toEqual([]);
+  });
+
+  it('within one session a rotated token still works: an expired save is refreshed and sent again as the same person, once', async () => {
+    await aIsCached();
+    const aToken = [...owners.keys()].find((t) => t.includes('.'));
+    expired.add(aToken ?? '');
+    await press('probe-save');
+    await act(settled);
+    expect(hub.filter((line) => line.startsWith('POST'))).toEqual(['POST /api/hub/users/me as A 401', 'POST /api/hub/users/me as A 200']);
+    expect(screen.getByTestId('probe-name').props.children).toBe('A');
   });
 });

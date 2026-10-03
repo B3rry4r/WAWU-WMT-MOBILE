@@ -18,8 +18,19 @@ let status: SessionStatus = 'restoring';
 let tokens: StoredTokens | null = null;
 let restoring: Promise<void> | null = null;
 let refreshing: Promise<string | null> | null = null;
-/** Counts session changes (sign in, sign out). A refresh that started in an older one is ignored. */
-let generation = 0;
+/**
+ * Counts sessions. A new one starts at every sign-in, and when a session ends
+ * (sign-out, a refused refresh, a refreshed token for another account); a
+ * refresh within one session keeps it. A refresh that started in an older
+ * session is ignored.
+ */
+let session = 0;
+/**
+ * Every access token issued in the current session (the stored one, the
+ * sign-in's, each refresh's). A request whose token is not one of them was
+ * sent in an older session: it is never sent again with this session's token.
+ */
+let issued = new Set<string>();
 const listeners = new Set<() => void>();
 const endListeners = new Set<() => void>();
 
@@ -88,6 +99,13 @@ function inStoreOrder<T>(step: () => Promise<T>): Promise<T> {
   return run;
 }
 
+/** Starts a new session: nothing sent in the one before can use its tokens. */
+function beginSession() {
+  session += 1;
+  issued = new Set();
+  refreshing = null;
+}
+
 /**
  * Memory and status change at once; only the store write waits its turn.
  * `fresh` is a sign-in: it always ends the session it replaces, if any. A
@@ -97,6 +115,8 @@ function adopt(next: StoredTokens, fresh: boolean): Promise<void> {
   const previous = tokens;
   tokens = next;
   const ends = previous !== null && (fresh || accountOf(previous.accessToken) !== accountOf(next.accessToken));
+  if (fresh || ends) beginSession();
+  issued.add(next.accessToken);
   const failure = ends ? endSession() : null;
   setStatus('signedIn');
   return settle(inStoreOrder(() => saveTokens(next)), failure);
@@ -105,6 +125,7 @@ function adopt(next: StoredTokens, fresh: boolean): Promise<void> {
 function drop(): Promise<void> {
   const ended = tokens !== null;
   tokens = null;
+  if (ended) beginSession();
   const failure = ended ? endSession() : null;
   setStatus('signedOut');
   return settle(inStoreOrder(() => clearTokens()), failure);
@@ -131,6 +152,7 @@ export function restoreSession(): Promise<void> {
     // A sign-in that finished while the read was pending wins over what was stored.
     if (status !== 'restoring') return;
     tokens = stored;
+    if (stored) issued.add(stored.accessToken);
     setStatus(stored ? 'signedIn' : 'signedOut');
   });
   return restoring;
@@ -139,15 +161,11 @@ export function restoreSession(): Promise<void> {
 /** Signs in with email or phone and password. Rejects with an ApiError and stores nothing on failure. */
 export async function signIn(identifier: string, password: string): Promise<void> {
   const next = await loginRequest(identifier.trim(), password);
-  generation += 1;
-  refreshing = null;
   await adopt(next, true);
 }
 
 /** Removes the tokens from memory and from secure storage. */
 export async function signOut(): Promise<void> {
-  generation += 1;
-  refreshing = null;
   await drop();
 }
 
@@ -165,30 +183,44 @@ function isRefusal(error: unknown): boolean {
 }
 
 /**
+ * Whether `token` was issued in the current session. The API client asks this
+ * again at the moment it would send a request a second time, so a request from
+ * an older session is never sent with this session's token.
+ */
+export function isCurrentSessionToken(token: string): boolean {
+  return tokens !== null && issued.has(token);
+}
+
+/**
  * Called when a request using `rejected` came back 401. Returns the token to
- * retry with, or null when the session is over.
+ * retry with, or null when the request must end as signed out.
  *
- * Refreshes at most once however many requests fail together: they share one
- * call, and a request that failed with a token another request has since
- * replaced just takes the new one. A refresh the server refuses signs the user
- * out; any other failure (offline, server error, rate limit) keeps the tokens and throws.
- * A result that arrives after the user signed out or in again is ignored.
+ * A token from an older session (the user signed out, or in as someone else,
+ * after the request was sent) gets null: the request belonged to that session
+ * and is never sent again as the current one. Within the session it refreshes
+ * at most once however many requests fail together: they share one call, and
+ * a request that failed with a token another request has since replaced just
+ * takes the new one. A refresh the server refuses signs the user out; any
+ * other failure (offline, server error, rate limit) keeps the tokens and
+ * throws. A result that arrives after the session changed is ignored, and a
+ * refresh that answers for another account starts a new session, so the
+ * request that asked gets null.
  */
 export function refreshAccessToken(rejected: string): Promise<string | null> {
-  if (!tokens) return Promise.resolve(null);
+  if (!tokens || !issued.has(rejected)) return Promise.resolve(null);
   if (tokens.accessToken !== rejected) return Promise.resolve(tokens.accessToken);
   if (refreshing) return refreshing;
-  const started = generation;
+  const started = session;
   const attempt: Promise<string | null> = refreshRequest(tokens.refreshToken)
     .then(async (next) => {
       // The user signed out, or in as someone else, while this was in flight: the result is stale.
-      if (generation !== started) return null;
+      if (session !== started) return null;
       await adopt(next, false);
-      return next.accessToken;
+      return session === started ? next.accessToken : null;
     })
     .catch(async (error: unknown) => {
       if (isRefusal(error)) {
-        if (generation === started) await drop();
+        if (session === started) await drop();
         return null;
       }
       throw error;
@@ -222,6 +254,7 @@ export function resetSessionForTests() {
   tokens = null;
   restoring = null;
   refreshing = null;
-  generation = 0;
+  session = 0;
+  issued = new Set();
   storeChain = Promise.resolve();
 }

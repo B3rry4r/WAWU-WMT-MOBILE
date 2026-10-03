@@ -408,7 +408,7 @@ describe('the session tells its listeners when it ends (FIX-04)', () => {
     expect(await session.getAccessToken()).toBe('access-3');
   });
 
-  it('a refresh for the same account does not end the session; one that answers for another account does', async () => {
+  it('a refresh for the same account does not end the session; one that answers for another account does, and the request that asked gets no token', async () => {
     mockVault.set('wawu.session.access', jwtFor('account-a', 1));
     mockVault.set('wawu.session.refresh', 'refresh-a');
     const { session } = boot();
@@ -423,8 +423,10 @@ describe('the session tells its listeners when it ends (FIX-04)', () => {
 
     const sameAccount = next.accessToken;
     next = { accessToken: jwtFor('account-b', 3), refreshToken: 'refresh-b' };
-    await expect(session.refreshAccessToken(sameAccount)).resolves.toBe(next.accessToken);
+    // The request that asked was A's: it is not sent again as B (FIX-04 round 2), but the session is now B's.
+    await expect(session.refreshAccessToken(sameAccount)).resolves.toBeNull();
     expect(ended).toHaveBeenCalledTimes(1);
+    expect(await session.getAccessToken()).toBe(next.accessToken);
   });
 
   it('a listener that throws stops neither the others nor the sign-out, which then reports it; an unsubscribed one is not called', async () => {
