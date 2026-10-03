@@ -18,7 +18,9 @@ jest.mock('expo-secure-store', () => ({
   }),
 }));
 
-type Answer = { status: number; body: unknown; headers?: Record<string, string> } | 'offline' | 'hold';
+type Reply = { status: number; body: unknown; headers?: Record<string, string> };
+/** `gate`: the answer waits until the test opens it (a check that answers late). */
+type Answer = Reply | 'offline' | 'hold' | { gate: Promise<void>; then: Reply };
 type Sent = { method: string; path: string; body: string };
 
 const OWNER = '00000000-0000-4000-8000-0000000000a1';
@@ -57,8 +59,12 @@ function installFetch() {
     const path = new URL(request.url).pathname;
     sent.push({ method: request.method, path, body: await request.clone().text() });
     const key = keyOf(request.method, path);
-    const answer = routes[key]?.shift() ?? fallback[key];
+    let answer = routes[key]?.shift() ?? fallback[key];
     if (!answer) throw new Error(`no answer for ${key}`);
+    if (typeof answer === 'object' && 'gate' in answer) {
+      await answer.gate;
+      answer = answer.then;
+    }
     if (answer === 'offline') throw new TypeError('Network request failed');
     if (answer === 'hold') return new Promise<Response>(() => undefined);
     return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json', ...answer.headers } });
@@ -362,13 +368,13 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
   it('"BVN confirmed" shows only for a kept check whose last 4 digits are the server’s current ones', async () => {
     const kept = require('../keptCheck') as typeof import('../keptCheck');
     serve({ 'GET /money/identity': ok(passedIdentity) });
-    kept.keepCheck(OWNER, { identity: { ...passedIdentity, bvn: { last4: '9999', verifiedAt: '2026-10-02T10:00:00.000Z' } }, prefill });
+    kept.keepCheck(kept.ticketFor(OWNER), { identity: { ...passedIdentity, bvn: { last4: '9999', verifiedAt: '2026-10-02T10:00:00.000Z' } }, prefill });
     let app = await boot();
     expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
     await app.screen.unmount();
 
-    kept.keepCheck(OWNER, { identity: passedIdentity, prefill });
+    kept.keepCheck(kept.ticketFor(OWNER), { identity: passedIdentity, prefill });
     app = await boot();
     expect(await app.screen.findByTestId('open-wallet-confirmed')).toBeTruthy();
   });
@@ -417,10 +423,76 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.screen.unmount();
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
 
-    app.kept.keepCheck('someone-else', { identity: passedIdentity, prefill });
+    app.kept.keepCheck(app.kept.ticketFor('someone-else'), { identity: passedIdentity, prefill });
     app = await boot();
     await app.screen.findByTestId('open-wallet-phone');
     expect(app.kept.readKeptCheck('someone-else')).toBeNull();
+  });
+
+  it('a pass that answers after the user left the step mid-check is never kept, and re-entry shows the form', async () => {
+    let open = () => undefined as void;
+    const gate = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } } }];
+    let app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.waitFor(() => expect(checksSent()).toHaveLength(1));
+    // Header Back while the check is running: the step closes.
+    await app.screen.unmount();
+    await app.act(async () => {
+      open();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    // The closed step writes nothing at all, not even the identity into the query cache.
+    expect(app.client.getQueryData(['money', 'identity'])).toEqual(freshIdentity);
+
+    serve({ 'GET /money/identity': ok(passedIdentity) });
+    app = await boot();
+    expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+  });
+
+  it('a pass that answers after the session that sent it ended is never kept, even when the same person signs in again', async () => {
+    let open = () => undefined as void;
+    const gate = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } } }];
+    const app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.waitFor(() => expect(checksSent()).toHaveLength(1));
+    const session = require('@/api/session') as typeof import('@/api/session');
+    await app.act(async () => {
+      await session.signOut();
+    });
+    // The same person signs in again before the answer lands.
+    mockVault.set('wawu.session.access', 'access-2');
+    mockVault.set('wawu.session.refresh', 'refresh-2');
+    session.resetSessionForTests();
+    await app.act(async () => {
+      await session.restoreSession();
+    });
+    await app.act(async () => {
+      open();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
+  });
+
+  it('even a stray late write is refused by the store once the step forgot', async () => {
+    const kept = require('../keptCheck') as typeof import('../keptCheck');
+    const ticket = kept.ticketFor(OWNER);
+    const app = await boot();
+    await app.screen.findByTestId('open-wallet-phone');
+    await app.screen.unmount();
+    expect(kept.keepCheck(ticket, { identity: passedIdentity, prefill })).toBe(false);
+    expect(kept.readKeptCheck(OWNER)).toBeNull();
   });
 
   it('the BVN and NIN are never written to the phone’s storage or the console, and the fields are cleared once the check passes', async () => {

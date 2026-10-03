@@ -21,7 +21,7 @@ import { Banner } from '@/features/auth/Banner';
 import { ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, keepCheck, readKeptCheck, useKeptCheck } from './keptCheck';
+import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, useKeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 
@@ -214,6 +214,21 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
   const [missing, setMissing] = useState<Missing>({});
   /** Set before the first await, so a second tap in the same frame sends nothing (each check is charged). */
   const inFlight = useRef(false);
+  // A check can answer after this form has gone (header Back mid-check) or
+  // after the session that sent it has ended: such an answer is dropped here,
+  // and the store refuses it too (its ticket is void once anything forgot).
+  const { status } = useSession();
+  const session = useRef(status);
+  useEffect(() => {
+    session.current = status;
+  }, [status]);
+  const live = useRef(true);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
   const ninInput = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -237,13 +252,16 @@ function BvnNinForm({ account, onClose, onEnded }: FormProps) {
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
+    const ticket = ticketFor(account.wawuUserId);
     try {
       const check = await runBvnCheck({ bvn: idDigits(bvn), nin: idDigits(nin) });
+      if (!live.current || session.current !== 'signedIn') return;
       setBvn('');
       setNin('');
       queryClient.setQueryData(walletIdentityQuery.queryKey, check.identity);
-      keepCheck(account.wawuUserId, check);
+      keepCheck(ticket, check);
     } catch (error) {
+      if (!live.current) return;
       const next = checkFailure(error);
       if (next.kind === 'end') {
         setBvn('');

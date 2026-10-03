@@ -3,7 +3,7 @@ import { ApiError } from '@/api/errors';
 import { retryAfterOf } from '../api/check';
 import { checkFailure } from '../checkFailure';
 import { isNoWallet, OPEN_WALLET_PATH, useOpenWalletEntry } from '../entry';
-import { forgetKeptCheck, keepCheck, readKeptCheck } from '../keptCheck';
+import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor } from '../keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from '../numbers';
 import { waitPhrase } from '../wait';
 
@@ -100,11 +100,24 @@ describe('the passed check kept for A5', () => {
   };
 
   it('belongs to the account that ran it, and is gone once forgotten', () => {
-    keepCheck('owner-a', check);
+    expect(keepCheck(ticketFor('owner-a'), check)).toBe(true);
     expect(readKeptCheck('owner-a')?.prefill.firstName).toBe('Ada');
     expect(readKeptCheck('owner-b')).toBeNull();
     expect(readKeptCheck(undefined)).toBeNull();
     forgetKeptCheck();
+    expect(readKeptCheck('owner-a')).toBeNull();
+  });
+
+  it('a check answer that arrives after anything was forgotten is refused, never kept', () => {
+    const early = ticketFor('owner-a');
+    forgetKeptCheck();
+    expect(keepCheck(early, check)).toBe(false);
+    expect(readKeptCheck('owner-a')).toBeNull();
+    const ticket = ticketFor('owner-a');
+    expect(keepCheck(ticket, check)).toBe(true);
+    forgetKeptCheck();
+    // A ticket is good for the era it was taken in only, even reused.
+    expect(keepCheck(ticket, check)).toBe(false);
     expect(readKeptCheck('owner-a')).toBeNull();
   });
 });
