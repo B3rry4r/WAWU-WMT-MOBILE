@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 50 | 45 | 32 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 29 | 13 | 2 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 
@@ -76,6 +76,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · KYC-05 · Verified round 3: 1 defect, status building (mobile 84c0dad, main 6bc420e already in; Hub fe1ec6c). Round 2's defect closed: `race_back` and `race_signout` show "BVN confirmed" on de27d15 and the form on 84c0dad (both themes); two checks in flight, A's check landing after B signs in, and a token renewed mid-check (pass still kept) all behave. New defect 1 (privacy, predates round 3): after an account change A26 first paints the previous account's cached phone and wallet state (one QueryClient, never cleared; `cross_fast`, `cross_account`, `cross_wallet`). Privacy scan of 90 typed numbers: 0 hits outside request bodies. 7 of 9 own mutants killed, 2 equivalent.
 - 3 Oct 2026 · KYC-05 · Round 3, status verifying: a BVN check answering after A26 closed or after its session ended is never kept (store writes need a ticket that every forget voids; the form drops late answers); jest races and 8 of 8 mutants; the verifier's race cases reproduced on de27d15 and clean on this build, light and dark. V9 on backend main 7601a5f.
 - 3 Oct 2026 · KYC-05 · Verified round 2: 1 defect, status building (mobile f55585a, main c42595b already in; Hub 7601a5f). Round 1's defects 2 to 5 closed (ten pastes keep 11 digits; the Hub unreachable for 30 s stays a banner with the numbers; waits come from the answer: "in a minute", "in about an hour" from Retry-After-medium 3527, "in about 24 hours"). Defect 1 is closed only while A26 is on screen: tap Back while the check runs, and the answer is kept after A26 has gone, so the BVN name, date of birth and gender survive sign-out, and the same person signing in again sees "BVN confirmed" with no new check. Privacy scan: 0 of 78 numbers anywhere stored or logged.
 - 3 Oct 2026 · KYC-05 · Round 2, status verifying: kept BVN details forgotten on sign-out, session end, account change and leaving A26; pasted BVN and NIN keep all 11 digits (no raw maxLength); a check refused while the Hub is unreachable stays a banner with the numbers; limit banners say the server's wait in words or "later"; M5 and M7 killed (10 of 10 mutants). V9 rerun on backend main 7601a5f. SHARED-CHANGES KYC-05 #3, #4.
@@ -90,4 +91,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-11 · Verified round 1: 1 defect, status building (mobile e8b0027 with main 9d43d9d; Hub a055b4f). An account number pasted with spaces ("0987 654 321") is cut to 8 digits by the field's maxLength before the spaces are stripped. Passed: gates exit 0 on branch and merge (23 suites, 398 tests, 107 files, 0 fail), V4, V5 (recorded differences only), V6 (12 states by real cause, light and dark), V9 (sign-in through A22, load, save, reload, edit; every PUT body only bankCode and accountNumber; second person sees null); 7 of 8 mutants killed (survivor: the route's back-after-save has no test). NOT RUN: bank list and pre-save name on the real Hub (G-57), entry from M14 or A11 (not built).
 - 3 Oct 2026 · WALLET-11 · Built A21 Payout bank (`/payout-account`), status verifying: loads the saved account, bank sheet, account number, the bank's name and the server's BVN match after saving (flag when false, name alone when null), no-wallet, opening, loading and error states; 21 tests, 7 of 7 mutants killed; V9 on the built Hub (real sign-in, PUT and read back); G-57 (bank list and name check unserved, WALLET-09) and G-58 (BVN match before saving, the "Creators only" line) filed; SHARED-CHANGES WALLET-11 #1, #2.
 - 3 Oct 2026 · SCHOOLS-01 schools data model merged (Developer 3; backend PR #46, c197d58). Additive migration only; no routes yet.
-- 3 Oct 2026 · SCHOOLS-01 · Verified: no defect, status review (backend 101785b = b4e6716 with main a055b4f merged, schema append conflict resolved as main's file plus the schools block; mobile with main 68c68ba). Migration applies fresh (83) and onto a seeded main database (row counts unchanged, schema dump 0 lines removed), CHECKs and cascade probed directly, oversell test fails with its CHECK dropped; protected 253/253 before and after; gates 16 fail / 13 warn on both; full suite identical to main except the 4 new passing tests; 2 unclear (SCHOOLS-02 hidden column has no named migration; SCHOOLS-04 seats-left wording).

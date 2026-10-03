@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -254,6 +254,81 @@ Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's de27d15, then main 
 - **Clean-up:** all four processes stopped (PIDs checked), `k05_test` dropped, the Hub worktree and a temporary mobile worktree (for the "before" export) removed.
 - **Incident:** while discarding a database dump I ran `mv dump.sql /dev/null` as root, which replaced `/dev/null` with a regular file for about a minute. I restored it at once (`mknod -m 666 /dev/null c 1 3`; checked as a character device 1,3). Output any other process wrote to it meanwhile was discarded as intended. The dump held no typed number (scan above).
 - **NOT RUN:** check 1 (SHARED-CHANGES KYC-05 #1) and V10, as before.
+
+## Verifier report, round 3
+
+Verifier, 3 Oct 2026 (fresh session; wrote none of this code). Mobile `wmt/KYC-05` at 84c0dad, which already contains mobile main 6bc420e (`git merge-base --is-ancestor origin/main HEAD` true; origin/main has not moved), so the branch and its merge with main are the same tree. Backend: Hub built from main fe1ec6c. Pre-fix comparison: a second export of de27d15. Evidence `$V` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk05r3/`: screenshots `$V/shots/<name>-<theme>.png` (84c0dad) and `$V/shots-pre/` (de27d15), run results `$V/results.jsonl` (each row names its `variant`), request log `$V/calls.jsonl` (key names and lengths only), browser dumps `$V/browser-dumps.jsonl`, privacy scan `$V/privacy-scan.txt`, renders `$V/design/`, side by sides `$V/side-*.png`, mutants `$V/mutants.txt` (`$V/mutate.py`), jest probes `$V/probe-keptcheck-r3.test.tsx` with `$V/probe-new.log` and `$V/probe-pre.log`, driver `$V/drive.py` (round 2's, plus the round-3 races at the end), pass-through `$V/web-server.js` (round 2's, plus per-check holds and one-shot 401s), `npm run check` log `$V/check-branch.log`.
+
+**Verdict: round 2's defect is closed. One new defect is open (privacy, defect 1 below; it predates round 3). Status back to `building`.**
+
+### Round 2's defect on the new build
+
+| Check | de27d15 (before) | 84c0dad (now) | Evidence |
+|---|---|---|---|
+| `race_back`: Back 1 s into a held check, the pass lands after A26 has gone, in-app re-entry | "BVN confirmed •••• ••• 0031" (light and dark), so the driver still reproduces | the form, 1 POST (light and dark) | `shots-pre/a26-race-reentry-*`, `shots/a26-race-reentry-*` |
+| `race_signout`: the same, then the session ends (refused refresh, sent to `/welcome`), the same person signs in again in the same tab | "BVN confirmed •••• ••• 0032" | the form, 1 POST | `shots-pre/a26-race-signout-resignin-*`, `shots/a26-race-signout-resignin-*` |
+| `signout_mounted` (round 1's path) | not rerun | the form after signing in again | `shots/a26-after-session-end-resignin-*` |
+| Round 2's jest probe (deferred answer, unmount, release, `signOut()`) | both cases fail: `readKeptCheck(OWNER)` returns `Ada B Eze`, `1992-10-04`, `female` | passes (ported to `ticketFor`) | `$V/probe-pre.log`, `$V/probe-new.log` |
+
+### Trying to break the ticket scheme
+
+Browser, against the built Hub, both themes unless noted (`results.jsonl`, `shots/r3-*`):
+- **Two checks in flight** (`two_checks`). Check 1 held 12 s, Back, re-enter, check 2 held 2 s. Check 2 shows "BVN confirmed" after 2.4 s. When check 1 lands 10 s later, the screen is unchanged (`•••• ••• 0041`). After Done, in-app re-entry shows the form. 2 POSTs.
+- **The other order** (`two_checks_late_first`). Check 1 held 4 s lands while check 2 (8 s) is still running on the new form. Nothing shows: the form stays busy, with no "BVN confirmed". Check 2 then confirms.
+- **A's check lands after B signs in** (`cross_account`). A's check is held 20 s. A taps Back and the session ends. B signs in (no reload) and is on A26 6.1 s before A's answer arrives. When it lands, B still has the form with B's phone, and nothing is confirmed. Re-entry shows the form. 1 POST. **This run found defect 1:** B's first paint showed A's phone.
+- **Token renewed mid-check, the session continues; the pass must still be kept.**
+  - `refresh_post401`: the check itself answers 401 (an expired access token). The app calls `/id/auth/refresh` once, sends the check again and shows "BVN confirmed". Session keys are intact.
+  - `refresh_concurrent`: while the check is held 6 s, the reads on screen get 401 and the token is renewed (1 refresh). The pass is kept and "BVN confirmed" shows, 1 POST.
+  - So renewal never ends the session, and it does not void the ticket.
+
+Jest (`$V/probe-keptcheck-r3.test.tsx`: the suite's own harness, run in my worktree, then removed). 7 of 7 behave as below:
+- Two checks: check 2 lands first and is kept; check 1 lands later and does not overwrite it. The reverse order: check 1 is dropped, check 2 is kept.
+- A refused refresh (`signOut()`) while the check runs on screen: the answer is dropped, nothing is kept, and the identity cache is untouched.
+- **Reused ticket:** a ticket writes again inside its own era, which contradicts the doc comment "good for one write". No product path reuses one: `submit` takes one ticket per send and `inFlight` blocks a second send. Recorded, not a defect.
+- **Forged ticket:** `{ owner, era: <current> }` is accepted, while an older or newer era is refused. The store trusts its callers, and its only caller is the mounted form. Not a defect.
+- A fresh ticket written while A26 is not mounted still survives `signOut()`. The store does not listen to the session itself (that is SHARED-CHANGES KYC-05 #4), and no product code takes a ticket outside the mounted form. Not a defect.
+
+**Clears racing with writes:** JS is single-threaded, so the only interleaving is an answer landing between `setStatus('signedOut')` and React's commit. In that window the write goes through, but the commit then unmounts A26 (the route renders `<Redirect>`), and the unmount forgets it. Every browser run above ended with nothing kept.
+
+### Pass table
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Privacy | **failed** (defect 1: another account's phone and wallet state on screen). Passed for the BVN and NIN: 90 distinct numbers typed or pasted across 68 browser sessions (both builds). A full `vk05r3_test` dump and the Hub, stand-in WAWU ID, Fintava stand-in, pass-through (both builds) and export logs held 0 of them. So did browser localStorage, sessionStorage, IndexedDB, cookies, console, every navigation and every request URL, both raw and grouped 4-4-3. Positive control: 86 of 90 are found in captured request bodies; the other 4 were never sent (the "no BVN" link pair and `typed`). localStorage only ever held `wawu.session.access` and `.refresh`. The confirmed end shows `•••• ••• NNNN`; `full_bvn_on_screen` and `dom_has_full_numbers` are false. Fields are empty on re-entry after Back and after Done (`reentry`). `keptCheck` holds identity (last 4 only) and prefill for one owner, and the late-answer paths above keep nothing | `$V/privacy-scan.txt`, `$V/browser-dumps.jsonl` |
+| V1 | passed | `npm run check` on 84c0dad (= merged with main 6bc420e): exit 0. Typecheck and lint clean, 26 suites 438 tests, gates 9 run, 120 files scanned, 0 fail, 0 warn, 0 accepted, 204 tasks (`$V/check-branch.log`). Scope (`git diff --name-only origin/main...HEAD`): only `src/features/open-wallet/` (with `api/` and `__tests__/`), `src/app/open-wallet.tsx`, the task file, `docs/` (LOG, PROGRESS), BACKEND_GAPS and SHARED-CHANGES; no `_layout.tsx`, `src/api/` or `src/components/` edit. 0 em-dashes in the feature or the route; no hex or colour literal; no `565` or `346` |
+| V4 | **failed** (defect 1) | Otherwise as round 2. Phone: `/users/me` `data.phone`. Wallet state: `/money/wallet` `state`. Masked digits: the check answer's `identity.bvn.last4` and `ninLast4`. Waits come from the answer: the daily limit gives "Try again in about 24 hours."; the short address window gives "Try again in a minute." (`a26-limit-*`, `a26-address-throttle-light`). But after an account change, the first values A26 paints are the previous account's cached `/users/me` and `/money/wallet` answers |
+| V5 | passed; differences classified as in round 1 | `$V/side-A14-light.png`, `-dark.png` (A14 render left, my 390 px `a14` right), `$V/side-A3-light.png`, `-dark.png` (A3 render, `a26-typed`). A14's red phone border, icon and sentence in place of the hint match in both themes. The A26 fields, labels, title and line follow A3's style. Recorded differences are unchanged: the status bar and frame; the nav title and heading are A26's own; no Email, Password or NIBSS line; the NIN field added; no USSD hint (G-56); no mono tracking (SHARED-CHANGES KYC-05 #2); the "no BVN" link (R-6) |
+| V6 | passed (the state set); signed out passes; defect 1 adds a wrong first state after an account change | Rerun on 84c0dad against the built Hub, light and dark (`$V/shots/`): loading `a26-loading`; empty `a26-empty`, then Continue (0 POSTs); typed `a26-typed`; checking `a26-checking`; confirmed `a26-confirmed`; A14 `a14`; A14 corrected `a14-corrected`, then `a14-then-confirmed`; unknown BVN `a26-bvn-not-confirmed`; daily limit `a26-limit`; address limit `a26-address-throttle` (light); unreachable (Fintava 500) `a26-unreachable`; offline `a26-check-offline`, `-back-online`; Hub unreachable at 2, 12 and 30 s `a26-check-hub-unreachable-*`; load error, then Try again `a26-load-error`, `-retried`; not available by the link (0 POSTs, 0 alert roles) `a26-not-available-link`; by `phone_not_nigerian` `a26-foreign-phone`, `a26-not-available-server`; wallet open `a26-wallet-open`; opening `a26-wallet-opening`; signed out (sent to `/welcome`, 0 Hub calls) `a26-signed-out`. The hourly address window was not refilled this round: round 2 passed it, and `check.ts` and `wait.ts` are unchanged since |
+| V7 | passed except defect 1 and check 1 (NOT RUN) | Fresh user signed in on A22, then `/open-wallet` pushed in app: the form. Back goes to `/`; re-entry has empty fields; numbers typed then Back are gone on return. Pass, Done, in-app re-entry: the form, 1 POST (`reentry`). Back mid-check, then re-entry: the form (`race_back`). `leadIfNoWallet`: the built Hub's `GET /money/transactions` for a person with no wallet answers `409`, `reason.code` `wallet_not_open`. `entry.ts` routes only that code, as tested in `logic.test.ts` |
+| V9 | passed | Hub `dist` built from fe1ec6c on :4963, `vk05r3_test` fresh, migrated and seeded. Stand-in WAWU ID :4964; people registered there and signed in through the app's A22. Fintava stand-in :4965 started with `env -i PATH=...` (no `FINTAVA_API_KEY` in its environment); the Hub had `FINTAVA_BASE_URL` on 127.0.0.1 and a made-up key. Web exports on :8163 with `EXPO_PUBLIC_*` local and the Metro cache cleared (`--clear`); 0 `wawuafrica.com` in either bundle. 70 `POST /money/identity/bvn` bodies reached the pass-through, each exactly `{bvn, nin}`, 11 digits each, no query string. Rows: 49 `BvnCheckAttempt`, 28 `WalletIdentity`. **WAWU ID shape:** real wawu-id (dbcb2f8, = origin/main) answers login and refresh as `{ data: ... }` (`auth.controller.ts:191`, `:210`; contract `SessionAnswer` requires `data`). The app reads `payload.data` (`src/api/identity.ts`, unchanged from main), so the app reads what the real server sends. Only the stand-in answers unwrapped (G-59), so the pass-through wraps it |
+| Mutations | passed | 9 of my own (`$V/mutants.txt`), each restored and sha1-checked. **Killed (7):** the store accepts an older ticket; a forget with nothing kept voids no ticket; the form's unmount guard off; the ticket taken when the answer lands instead of when it is sent; leaving the step forgets nothing; the sign-out effect never fires; the kept check stored under the wrong owner. **Survived, equivalent (2):** the form's session guard off (A26 is unmounted whenever the session is not signed in, because the route renders `<Redirect>`, and the store's era refuses the write anyway); the catch path's unmount guard off (it sets state only on unmounted components, which React ignores) |
+| V10 | NOT RUN | No device. Unblocked by a tester build with the backend on the droplet (OPS-10) |
+
+### Capability checks
+
+1. Pay with no wallet lands on A26: **NOT RUN**, as in rounds 1 and 2. Unblocked when SHARED-CHANGES KYC-05 #1 (`onOpenWallet` on `PaySheet`) is applied and a payer or the preview passes it.
+2. Enter BVN and NIN, Continue, the check runs, the prefill is kept: passed (`pass`, `refresh_post401`, `refresh_concurrent`).
+3. A14, then correct and continue: passed (`a14`).
+4. No Nigerian BVN reaches "Not available yet": passed, both ways.
+5. V5: passed.
+6. Values from the API or the user: **failed** (defect 1).
+7. States by their real cause: passed.
+
+### Findings
+
+**Defect 1 (privacy): after an account change, A26 first shows the previous account's phone and wallet state.** It predates round 3: the de27d15 export does the same. The app has one `QueryClient` (`src/app/_layout.tsx:13`), and nothing clears it on sign-out or sign-in. A26 reads `ownAccountQuery` (`['users', 'me', 'open-wallet']`) and `walletStateQuery` (`['money', 'wallet', 'state']`). Both keys carry nothing of the person, both use `staleTime: 0` and the default `gcTime` (5 minutes). So the next person to open A26 within that time is first painted the cached answers of the person before, while the refetch runs.
+- **Full speed** (`cross_fast`, both themes). A signs in and opens A26 (`0803 131 0049`), then taps Back. The session ends (a refused refresh sends the app to `/welcome`). B signs in in the same tab, with no reload, and `/open-wallet` is pushed in app. The phone field's values, in order: `0803 131 0049` (A's), then `0803 131 0050` (B's). The pre-fix build does the same (`0803 121 0049`, then `0803 121 0050`).
+- **Slow answers** (`cross_account`, B's reads held 3 s). B's A26 shows A's phone, under "Phone number" with the hint "Must be the number on your BVN", for the whole wait: `r3-cross-b-first-paint-light.png`, `-dark.png`.
+- **Wallet state** (`cross_wallet`). A has an open wallet (a real `FintavaWallet` row); B has none. With B's reads held 3 s, B's A26 shows "Your wallet is open. Go back and pay from it." with Done until B's answer arrives (`r3-cross-wallet-b-first-paint-*`, `shots-pre/r3-cross-wallet-b-first-paint-light.png`). B tapping Done then leaves A26 without ever seeing the form.
+- **Why the suite never showed it:** its `boot()` makes a new `QueryClient` for every render, so no test shares a cache across a sign-out.
+- **Closed when** A26 never paints another account's answers. Within the fence, A26's own two queries could be dropped when it leaves or when the session ends (for example `gcTime: 0`, or removing them on the same paths that call `forgetKeptCheck`). The shared `walletIdentityQuery` holds the previous person's last 4 the same way, though A26 shows it only beside a kept check of the same owner. The root cause is app-wide (no cache clear on a session change), and the fix there is in `_layout.tsx` or `session.ts`, which are fenced: a SHARED-CHANGES row. Test: one `QueryClient` kept across `signOut()` and a sign-in as another `wawuUserId`, asserting that the first frame of A26 never shows the first person's phone or "Your wallet is open".
+
+**Checked and not a defect:**
+- The ticket can be reused inside its era, and a hand-made ticket for the current era is accepted (see above). No product caller does either. The comment on `ticketFor`, "good for one write", overstates what the store checks.
+- Header Back stays live during a check (the builder's round-3 default): the late answer is dropped, and the check is still counted on the server (`BvnCheckAttempt`), as the builder says.
+- The pasted number `22234567812` now answers A14 in `paste`. The paste account's phone differs from the stand-in's record for that BVN, so the BVN is right and the phone is wrong. All 20 pastes (10 forms × 2 fields, both themes) keep 11 digits.
+
+**Unclear (unchanged, owner):** G-55 (the phone is read-only). The builder's KYC-03 finding (A6 and A7 need the BVN and NIN again).
 
 ## Owner sign-off
 
