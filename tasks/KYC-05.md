@@ -7,7 +7,7 @@ order: 84
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [UI-02, MONEY-03, MONEY-13, KYC-01]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -155,6 +155,24 @@ A14's error treatment matches the render in light and dark: the red border on th
 **Unclear:**
 - G-55: the phone is read-only. A person whose BVN truly carries another number has no way on in the app until wawu-id has a signed-in phone change. This is recorded as a default; the owner decides.
 - The builder's KYC-03 finding: A6 and A7 need the BVN and NIN again, but this step keeps neither.
+
+## Builder round 2
+
+Builder, 3 Oct 2026. Mobile `wmt/KYC-05` from the verifier's 2d4776d (main 2ca65d0 in), then main `c42595b` (WALLET-11) merged: conflicts only in `docs/PROGRESS.md` (regenerated), BACKEND_GAPS and SHARED-CHANGES (both sides kept). Evidence `$K2` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc05/` (`shots-r2/`, also `build/screens/KYC-05/r2/`; `drive-log.jsonl`, `medium-r2.log`, `mutants-r2.txt`, `drive.py`).
+- **Defect 1 fixed (privacy).** A26 forgets the kept BVN details (`forgetKeptCheck`) when the session becomes signed out (`useSession`: sign-out, and a refused refresh, which drops the session), when another account opens it, and whenever A26 unmounts (Back, Done, the signed-out redirect). KYC-03's A5 is pushed on top of A26, so it still reads them inside the flow. Default (agent), owner may override: leaving the step forgets them, so re-entry shows the form, not "BVN confirmed" (V9 `leave`: Done, then an in-app push back to `/open-wallet` with no reload, form shown, 1 POST in total, `a26-reentry-after-done-*`). The session itself does not notify features (fenced): SHARED-CHANGES KYC-05 #4 asks for `onSessionEnd` as hardening for KYC-03's multi-screen state. Tests: sign-out, a refused refresh, unmount and another account each null the kept check. There is no sign-out button on main to drive in the browser.
+- **Defect 2 fixed.** The BVN and NIN fields set no `maxLength`. `groupIdNumber` takes the digits first, then caps at 11. The jest helper `typeInto` applies a field's `maxLength` before `onChangeText`, as the platform does. Real Ctrl+V in Chromium, round-1 build (`a26-paste-before-*`): `2223 - 4567 - 812` gave 8 digits, `222 345 678 12` and `222-345-678-12` 10, ` 2223 4567 812 ` 9, the NIN `7019 - 0000 - 999` 8. This build (`a26-paste-after-*`): all 8 pastes keep 11 digits. The pasted BVN then passes (`a26-paste-after-confirmed-*`).
+- **Defect 3 fixed.** Only a read that never answered (`isError` with no data) is a failed load. A refused check no longer refetches the identity. V9: the Hub drops every connection while the browser stays online (`/__down`). At 2 s and at 12 s the form shows the "No connection" banner with both numbers typed and no error view (`a26-check-hub-unreachable-*`, `-12s-*`). Jest: every read fails and a full refetch runs after the refused check, and the banner and numbers stay.
+- **Defect 4 fixed.** The wait comes from the answer: `reason.retryAfterSeconds` (contract `MoneyErrorReason`), else the longest `Retry-After*` header (the throttler's `Retry-After-short` and `-medium`), shown in words by `wait.ts` ("in under a minute", "in 3 minutes", "in about 20 minutes", "in about an hour", "in about 24 hours"). With no figure the banner says "Try again later."; nothing is invented. `unwrap` drops both extras (fenced), so A26 sends the check through `src/features/open-wallet/api/check.ts` (`runBvnCheck`, the typed client) until SHARED-CHANGES KYC-05 #3 puts `retryAfterSeconds` on `ApiError`. V9 results:
+  - Address `short` window: "Try again in a minute." (`a26-address-throttle-*`).
+  - Hourly window, after 21 requests over 7 minutes from one client address (`medium-r2.log`: `retry-after-medium: 3600`): "Try again in about an hour." (`a26-address-hourly-limit-*`).
+  - The person's 4th check (`retryAfterSeconds` about 86,400): "Try again in about 24 hours." (`a26-limit-*`).
+- **Defect 5 fixed.** M7: two presses in the same frame through the platform's press handler send 1 POST. M5: a kept check whose last 4 differ from the server's current ones shows the form; a match shows "BVN confirmed". The 10 mutants were each restored by sha1, and all 10 were killed: M5, M7, the 3 forget paths, `maxLength` 13, any query error as a failed load, a hard-coded wait, headers ignored, body wait ignored (`mutants-r2.txt`).
+- **V9 rerun.** Built Hub from backend main `7601a5f` on :4961 (`k05_test`, fresh, migrated, seeded). Stand-in WAWU ID :4962 (11 people registered there and signed in on the app's A22). Fintava stand-in on an OS-assigned port (made-up numbers). Web export on :8161 (Metro cache cleared, `EXPO_PUBLIC_*` local, 0 `wawuafrica.com` in the bundle). The pass-through still wraps the stand-in's unwrapped token pair (BACKEND_GAPS G-59, filed by WALLET-11). It now also sets `X-Forwarded-For` per run, as nginx does, so the light, dark and hourly runs count as separate addresses. Every state from round 1 was re-shot in light and dark (28 shots per theme, `shots-r2/`).
+- **Privacy:** 0 hits for any number typed, in a full `k05_test` dump or in the Hub, stand-in or web logs. The only hits are the driver's own record of the strings it pasted. Browser after a check: only the two session keys; no sessionStorage, IndexedDB or cookie.
+- **Counts:** `npm run check` exit 0 (merged with c42595b): 26 suites 434 tests (open-wallet 31), gates 9 run, 120 files, 0 fail, 0 warn, 0 accepted, lint clean, 204 tasks.
+- **Clean-up:** every process I started is stopped (PIDs checked), the database is dropped, and the Hub worktree is removed.
+- **Filed:** SHARED-CHANGES KYC-05 #3 (`ApiError.retryAfterSeconds`) and #4 (`onSessionEnd`). #2 notes it is the same `mono` prop as WALLET-11 #1 (c).
+- **NOT RUN:** sign-out in the browser (no sign-out control on main; jest covers it; unblocked by the Settings sign-out row). Check 1 and V10 as in round 1.
 
 ## Owner sign-off
 
