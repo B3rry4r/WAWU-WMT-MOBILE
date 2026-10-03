@@ -7,7 +7,7 @@ order: 108
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -37,6 +37,34 @@ GET history with search, category filter and cursor pages; monthly totals; GET o
 - [ ] Monthly totals equal the sum of that month's rows.
 
 ## Builder report
+
+### Builder round 3
+
+Builder, 3 Oct 2026 (the builder of rounds 1 and 2). wawu-backend `wmt/MONEY-15` **c0d9a12**, round 3 on a622812. Backend main is still 48b9043, so no merge was needed. Mobile `wmt/MONEY-15`: the verifier's edbeeb6, then mobile main 331a6fa (AUTH-05) merged in, with PROGRESS regenerated; no other conflict.
+- **Defect 2 (year 0000 answered 500):** `isIso` in `history-keys.ts` now refuses a time dated year 0000, so the cursor's `at`, the cursor's snapshot and the group key's snapshot are all checked before any query. Postgres has no year 0; `checkedMonth` already refused it for months.
+  - Tests: the verifier's three requests (a cursor snapshot of 0000, a cursor `at` of 0000, a group key snapshot of 0000) each answer 400 with the existing message. The same three dated 0001 answer 200. Unit cases were added for both keys.
+  - Year 0001 minus the 5 s window (below) would be year 0000, so that bound is clamped at 0001-01-01. A mutant without the clamp fails the 0001 test with a 500.
+- **Blind spot A (a write in flight at page 1), closed:** a scroll now groups only the unlocks completed at or before its snapshot minus `LEDGER_WRITE_MAX_MS`. That is 5,000 ms, Prisma's default interactive-transaction `timeout`: Prisma rolls back a transaction that runs longer.
+  - Where the 5 s comes from: `LedgerService.record` and `LedgerConsumerService` write inside `prisma.$transaction(fn)` with no options, and `PrismaService` sets no `transactionOptions`. A new unit test fails if `ledger.service.ts`, `ledger-consumer.service.ts`, `ledger-status.service.ts` or `prisma.service.ts` ever passes `timeout`, `maxWait` or `transactionOptions`, so the constant cannot silently drift from the setting.
+  - So a write stamped before page 1 and committed after it stays its own row in that scroll, and its group keeps its members and its place.
+  - Cost: an unlock completed in the last 5 s shows as its own row until a later refresh. Default (agent), owner may override.
+  - Test: the verifier's R6 shape. Two unlocks and 5 transfers, page 1, then a third unlock stamped 4 s before the snapshot. Each earlier movement shows exactly once and the group shows 2. A margin of 0 or 1 s fails it, and so does grouping by the snapshot itself.
+  - Spec setups recorded "a moment ago" are now aged by 60 s (an `age()` helper) before they are read as history. P1, P1b and P1c age their setup before page 1 and again before the refresh check; all three stay green. The group-key boundary test moved to snapshot minus 5 s, inclusive.
+- **CONVENTIONS section 6 rewritten** without the overclaim. It lists two things a refresh still corrects:
+  - **A row whose time moves earlier mid-scroll** (the verifier's finding 1). MONEY-10's merge keeps the earliest time, and MONEY-08 settles a pending row with Fintava's time. This is a duplicate today, and not about grouping. It could be a loss only if a completed row's time ever crossed Lagos midnight into a day with a group of the same piece.
+  - **A reopened unlock** (blind spot B). If its group was already shown, its money can show twice in that scroll.
+  - "Shows exactly once" is now stated only for the other cases.
+- **Mutants** (each alone, the file restored by copy): a 0 s margin, a 1 s margin, grouping by the snapshot instead of the bound, year 0000 allowed, and no clamp. All 5 killed.
+- **Checks:**
+  - `tsc` 0; eslint 0 on every `.ts` the branch changes against main.
+  - History, gate and money-contract specs: 6 suites, 103/103 (history 47).
+  - Protected `run.sh --fresh` (code c0d9a12, lock 48b9043): 253/253, all 244 required, no lock file touched.
+  - Gates 16 fail / 12 warn / 76 accepted on 636 files, line for line as main 48b9043; `check_baseline.py` clean.
+  - CI tripwire 0; key scan 0 of 58 windows.
+  - Contract unchanged: a fresh build equals the committed file, enum order aside.
+  - Full suite (`npx jest --runInBand --forceExit`) on fresh seeded `m15_full5_test`, my WAWU ID stand-in on :4001. The run waited until `lsof` showed :4001 free (12:50 UTC); the stand-in was stopped straight after and `lsof` was empty again. Result: 130/130 suites, 3,144 passed, 3 skipped, 0 failed. That includes `hub-rate-limits` and every money, Fintava, KYC and identity spec.
+  - Mobile `npm run check` (main 331a6fa merged): exit 0, with typecheck 0, lint 0, 21 suites / 377 tests, gates 0 fail / 0 warn on 98 files, and 203 tasks.
+- **Not run:** no sandbox call (the routes never call Fintava). Round 1's NOT RUN items stand.
 
 ### Builder round 2
 
