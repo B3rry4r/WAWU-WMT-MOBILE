@@ -7,7 +7,7 @@ order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -202,6 +202,67 @@ Verifier, 3 Oct 2026. This is a fresh session that wrote none of this task's cod
 - **A real Fintava movement in this round:** the brief allowed only a few free GETs and the routes call none, so the builder's sandbox run (doc 39) stands.
 
 **To close:** D1 (bound the draw and keep it off the event loop), D2 (drop non-XML characters before drawing), D3 (mask spaced and hyphenated digit groups), each with a test. Then merge mobile main `42309b2`.
+
+### Verifier report, round 2
+
+Verifier, 3 Oct 2026. This is the same session as the round-1 report: a verifier that wrote none of this task's code. It was a narrow round on backend `wmt/WALLET-18` `2108141` (fixes in `2397eba`, then main `1e6b807` merged in) and mobile `04d2626` (main `c733413` merged in). Both mains are unmoved, and I used fresh detached worktrees `/home/user/wt/vw18b2` and `/home/user/wt/vw18m2`.
+- **Databases:** `vw18r2_*` (all contain `test`). All are dropped.
+- **Ports:** Hub :4973 and the stand-in WAWU ID :4974. Port :4001 was used once, for the full suite, only after `lsof` showed it free. My mock there was stopped straight after, and `lsof` was empty again.
+- **Sign-in:** people registered and signed in at the stand-in's `/auth/login`; no token was minted.
+- **Ledger rows:** written by `LedgerService.record`.
+- **Fintava:** no call.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw18r2/` (below, `vw18r2/`).
+
+**Verdict: D1 and D2 are closed. D3 is still open (privacy, latent), and one new minor defect (D4) was found. Status is back to building.**
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| D1 time bound | **closed** | **Single draws** at the ledger's longest values (500-letter name, 500-letter bank name, 200-character reference), each the first draw of that row: PDF 200 in 314 ms, with `/health` pinged every 10 ms meanwhile at a 5.6 ms median and 79 ms max. Image 200 in 150 ms, with `/health` at most 5.8 ms. These were 13.9 s and 6.2 s in round 1. **10 at once** (10 different maximum-length rows, first draws): 10 PDFs in 1.04 s with `/health` at most 128 ms; 10 images in 0.58 s with `/health` at most 62 ms. No probe crashed, and every answer was 200. **Cap and width tables:** I tried 500 full-width Ｗ, 500 W, 300 U+FDFD, emoji ZWJ families and flags, 495 combining marks, RTL with bidi overrides, 500 zero-width characters, CJK, and mixed wide words. Every image and PDF answered 200 in 56 to 206 ms. Nothing was inked in either 55 px side margin except the emoji row (finding 3). **Metrics:** the measured width is never below the drawn ink in 11 samples (ratio 0.35 to 0.99; Latin about 0.95). | `vw18r2/probe/d1-timing.txt`, `d1d2-rows.txt`, `margins.txt`, `metrics-vs-drawn.txt`, `*.png` |
+| D2 forbidden characters | **closed** | **Through the ledger** (rows with every C0 control but NUL, DEL and C1, U+FFFE, U+FFFF, lone high and low surrogates, and a mix, in the name, the bank name and the reference): image 200, PDF 200, page 200. No forbidden character appears raw in the page source. "Bad N. S.", "BadName" and "REF X" are shown, and `&`, `<` and `>` are escaped. NUL cannot reach a row at all: Postgres refuses it at the ledger write. Lone surrogates arrive as U+FFFD after the database round trip, so I also called `receiptPng`, `receiptPdf` and `receiptPage` directly with every class in every field (including unpaired `\uD800`, `\uDBFF`, `\uDC00`, `\uDFFF`). Results: PNG and PDF produced, the page carries no forbidden character, and no raw `<b>`. | `vw18r2/probe/d1d2-rows.txt`, `d2-direct.txt`, `public-c0.html` and others |
+| D3 masking | **still open** (finding 1) | 33 rows checked on the public page: 20 biller names, 4 bank names, 3 person names, 2 legitimate texts, and others. **Masked correctly:** spaces, NBSP, hyphens, dots, slashes, brackets, `+234 (0) 803 123 4567`, two numbers side by side (one mask, only the second's last 4), `O8O3 l23 4567`, an account inside a bank name (`GTBank 0123456789` and `012 345 6789`), and a phone first in a person's name. **Not masked:** see finding 1. | `vw18r2/probe/d3-public.txt`, `public-d3_*.html` |
+| The merge | passed | `money.module.ts`, both gate route lists, MONEY-04's served list, the schema, the purge map and the rate-limit spec were each diffed against both parents. Against main `1e6b807`, the only changes are WALLET-18's additions. Against `2397eba`, the only changes are main's additions (WALLET-15's fee quote, INBOX-08's `DmReply`). The removed lines are only the old test titles, merged into one. The receipts migration still sorts last. Mobile: `SHARED-CHANGES.md`, `BACKEND_GAPS.md`, `LOG.md` and the sandbox README against `c733413` are additions only. | `vw18r2/backend.diff`, `vw18r2/mobile.diff` |
+| V1 Gates | passed | `tsc` 0. eslint on changed `.ts`: 0. Gates: 9 run, 669 files, **16 fail / 16 warn** against main `1e6b807`'s 16 / 14 on 656 files. The FAIL lines are identical, and the only added warnings are `PROVISIONAL(RECEIPT-LOOKUP-LIMITS)` and `PROVISIONAL(RECEIPT-RENDER-LIMITS)`. `check_baseline.py` passes. Mobile `npm run check`: exit 0 (28 suites / 485 tests, gates 9 run / 123 files / 0 fail / 0 warn, 205 tasks) on the second run. The first run timed out once in main's KYC-05 `OpenWalletScreen` test (5 s, load average about 4); that is not this task's code. | `vw18r2/gates-*.txt`, `g-*.lst`, `mobile-check.txt`, `mobile-check2.txt` |
+| V2 Contract | passed | **Full suite as `deploy.yml` runs it:** fresh migrated and seeded `vw18r2_full_test`; my mock from `mock-wawu-id/server.js` on :4001, with a keypair made as `deploy.yml` makes it; the CI admin secrets. Result: **139 of 139 suites, 3,335 passed, 3 skipped, 0 failed** (22:11 to 22:16 UTC). **Contract:** `npm run contract:build` output is byte-equal to the committed `contract/openapi.json`. The mobile copy is byte-equal too, with `SOURCE_COMMIT` `2108141`. | `vw18r2/full.txt`, `vw18r2/openapi.built.json` |
+| V3 Regression | passed | `run.sh --fresh HEAD` (code `2108141`, lock `origin/main` `1e6b807`): **253/253, all 244 required**. The lock and suite files are untouched. Tripwire over 4,182 added lines: 0 matches. | `vw18r2/protected.txt`, `vw18r2/tripwire.txt` |
+| Mutations | 4 of 6 killed | **Round 1's survivors are now killed:** V1 (mask from 7 digits) and V2 (`escapeXml` without `&`). **My 4 new ones:** N1 (`printable` keeps lone surrogates) and N3 (the PDF page drawn synchronously on the event loop) were killed. Two survived, both test gaps: N2 (`MAX_PRINTED` 160 to 2000: the `clip` test reads the constant it checks) and N4 (`KERNING_ALLOWANCE` 1.03 to 0.8: no test compares the width table with what resvg draws, because "every line fits" is measured with the same table). | `vw18r2/mut/summary.txt`, `*.log` |
+| V9 seam | passed | **Real sign-in at the stand-in:** A asking for C's row by id on all three routes got 404 with a body identical to a missing id. A made-up code got 404 "Receipt not found". A's own PDF got 200. | `vw18r2/probe/cross-owner.txt` |
+| Key scan | passed | 0 of 58 windows across both branch diffs, the round-2 diffs and all 127 evidence files. | `vw18r2/keyscan.txt` |
+
+**Findings**
+1. **defect (privacy, latent): D3 is narrower but still open.** These forms of a phone or account number show whole on the public page (`vw18r2/probe/d3-public.txt`):
+   - **Separators outside the mask's set** (`[\s.\-/()]`):
+     - underscore: `0803_123_4567`;
+     - comma: `0803,123,4567`;
+     - en dash: `0803 – 123 – 4567`;
+     - middle dot: `0803·123·4567`;
+     - colon: `0803:123:4567`;
+     - zero-width space between groups.
+   - **Digits that are not ASCII** (`\d` matches only 0 to 9):
+     - full-width: `０８０３１２３４５６７`;
+     - Arabic-Indic: `٠٨٠٣١٢٣٤٥٦٧`;
+     - Persian: `۰۸۰۳۱۲۳۴۵۶۷`;
+     - Devanagari;
+     - superscript;
+     - circled;
+     - mathematical bold.
+   - **Same in other places:** a bank name (`GTBank ０１２３４５６７８９`) and the first word of a person's name (`０８０３１２３４５６７ J. D.`, `0803_123_4567 J.`).
+   - **Groups split by letters:** `0803x123x4567` and `acct0123x456x789` also show whole (each group is under 5 digits). The owner may judge that form out of scope.
+   - **Why latent:** no writer records a biller row yet, and today's bank and person names come from NIBSS and BVN records.
+   - **Close when:** digits are folded first (NFKC plus `\p{Nd}`), any run of non-letters (punctuation, symbols, format characters) between digit groups joins them, and the unit test gains these forms.
+2. **defect (minor, new): a name with stacked combining marks is drawn over the rest of the receipt.**
+   - **Reproduction:** a received transfer whose sender name is `A` plus 495 combining accents (the `combining` row in `vw18r2/probe/seed2.js`).
+   - **Result:** the marks rise from the headline and the From row up through the date, "TRANSACTION RECEIPT" and "Transfer", past the top edge (`vw18r2/probe/combining.png`).
+   - **Why:** the width table bounds each line's width, but nothing bounds a line's height.
+   - **Realism:** bank and BVN names do not carry such marks.
+   - **Close when:** marks beyond one or two per base character are dropped (or each value is clipped to its row), and a test pins it.
+3. **Note:** the emoji row's value runs about 16 pt past the right content edge into the card's padding (still inside the card), and characters the font lacks are drawn as solid boxes (`emoji.png`, `wideFull.png`, `bismillah.png`). This is cosmetic, and no writer produces such names today.
+4. **Note:** 10 PDFs drawn at once raised the Hub's memory from 173 MB to about 640 MB (about 45 MB per PDF in flight), and it stayed there afterwards. No limit caps how many draws run at once across addresses. It is worth sizing against the droplet.
+5. **Note:** masking also reshapes numbers that are not personal, but only inside names (`IKEDC token 2026-10-03 ₦5,000.00` shows as `•••• 1003 ₦5,•••• 0000`). The page's own amount, date and reference are never masked: every row showed ₦1,234.56 and 1 Oct 2026, 11:00.
+6. **Note:** the two surviving mutants (N2, N4) are test gaps, not defects in the code.
+
+**NOT RUN:** as round 1 (a bank send's receipt from the sandbox, the live host's link, the binary on the droplet, V5). No Fintava call was needed: round 2 changes drawing and masking only.
+
+**To close:** D3 (fold digits and join groups across any non-letter separator) and D4 (bound mark stacking or clip each row), each with a test; and pin `MAX_PRINTED`'s value and the width table against the drawn width (N2, N4).
 
 ## Owner sign-off
 
