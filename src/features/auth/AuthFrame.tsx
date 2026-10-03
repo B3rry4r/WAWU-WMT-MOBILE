@@ -20,8 +20,8 @@ export type AuthFrameProps = {
   onBack?: () => void;
   /** No bar at all (A24 has none). */
   bare?: boolean;
-  /** Pinned under the content, above the keyboard: the screen's buttons. */
-  footer: ReactNode;
+  /** Pinned under the content, above the keyboard: the screen's buttons. A screen with none (A2 until the sign-up screens exist) leaves it out. */
+  footer?: ReactNode;
   children: ReactNode;
   /** Space above the content, where a screen sits lower than the form screens (A24). */
   contentTop?: number;
@@ -65,7 +65,7 @@ export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop
       >
         {children}
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>{footer}</View>
+      {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>{footer}</View> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
     </KeyboardAvoidingView>
   );
 }

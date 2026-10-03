@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 30 of 178.**
+**Launch tasks done: 31 of 178.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 58 | 48 | 32 | 32 |
+| todo | 58 | 47 | 32 | 32 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
-| done | 20 | 10 | 1 | 0 |
+| done | 20 | 11 | 1 | 0 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -39,6 +39,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
+- [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here (Developer)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
@@ -54,7 +55,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep
-- **Developer:** [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here, [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content
+- **Developer:** [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end, [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content, [ME-05](../tasks/ME-05.md) Profile fields
 - **Developer 2:** [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue, [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-02](../tasks/INBOX-02.md) Live updates for chat
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model
 
@@ -62,6 +63,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 3 Oct 2026 · AUTH-02 · Fix round 1: the status bar follows the screen in front (D1), A2's 8 px offset (D2), citations (D3), test name (D4), the pick cleared at sign-in and at each signed-out visit (U3), Space and Enter pick on web (U4), G-34 wording; main merged; verifying.
+- 2 Oct 2026 · AUTH-02 · Welcome (A1) and why you're here (A2) built, the app opens on A1 signed out, 'New here? Create an account' on A22 opens A2 and A22 gets its Back; gaps G-34, G-35 (filed as G-33, G-34, renumbered after main took G-33); verifying.
 - 3 Oct 2026 · FIX-01 · Verified: no defect, status review (backend 9ea3b90 on main 13b6ac4, mobile f2342d0 on main 983418c; neither main moved). My own stall server (plain and TLS, separate process): all 34 client methods against headers-then-stall, partial body, drip, chunked and close-delimited bodies and stalled 400/404/500 end at the 400 ms timeout (400 to 435 ms) as the no-headers outcome with the socket closed, with and without forced GC (508/510 per run, the 2 others the selfie cap); main's client hangs on 474 of 476 under GC. Bodies done before the deadline are read, after it time out; 8,000 calls leave 0 timers and 0 sockets, heap flat. Built Hub, 5 s check timeout, forced GC or not: BVN check and KYC-02's u4 selfie stall answer 503 at 5.0 to 5.1 s, counted, socket closed at the deadline; a stalled 400 is a counted 503; main no answer at 60 s. No send becomes resendable (stalled lookups give wait). Contract 2,801 passed, protected 253/253, gates 16 fail / 8 warn as main, mobile check exit 0. Findings: a mid-body reset is still read as empty (unchanged); the builder's spec does not pin the abort when no headers arrive.
 - 3 Oct 2026 · FIX-01 · MONEY-06's Fintava timeout now covers headers and body and survives garbage collection (KYC-02 round 4 finding 1): one deadline per request that aborts, cancels the body reader and races fetch, cleared once the body is read. Every client method against a headers-then-stalled body ends at its timeout as the existing timeout error, with and without forced GC (108/108); main's client hangs on the same spec (40 still waiting); built Hub BVN check with a stalled Fintava: 503 at 5.3 s under load, main no answer at 60 s. A stalled 400 on a check is now a counted 503, not a failed match. Contract 2,801 passed, protected 253/253, gates unchanged (16 fail / 8 warn). Status verifying (backend 9ea3b90).
 - 3 Oct 2026 · KYC-02 · Verified round 4: no open defect, status review (backend eb3af98 with main 837d6ec merged, mobile 364e830 with main 78c96c4; neither main moved). OPS-11's rate-limit spec passes 10/10 with only the selfie route and its exact limits added (16 of 17 override mutants killed, the survivor equivalent); oversize selfie answers end within milliseconds of the 4,096-byte cap as a counted 503 (200 MB, endless, declared, chunked, and compressed bombs up to 2 GB; no memory growth), the exact-cap answer still matches; 2,048 px a side passes phone-sized selfies and refuses 2,049 and the 4000x4190 PNG at its header; rounds 1 to 3 hold (100/100 hooked and 0 of 450 natural BVN races, counting, 817 images, 0 leaks); protected 253/253, contract 2,653 passed plus 40/40 on :4001, gates 16 fail / 8 warn (only SELFIE-CHECKS-PER-DAY added). Finding: MONEY-06's check timeout is lost to garbage collection after the headers on main too, so a stalled Fintava body is held for 300 s (reproduced on the selfie route and main's BVN check)
@@ -75,5 +78,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · OPS-11 · Verified round 3: no open defect (backend f45e657, mobile 8678dad; mains 66339b9 and 94d202b already merged). The Flutterwave burst spec passed 55 of 55 runs at load 7.1 to 12.8 with 0 bursts set aside (spans 211 to 398 ms against 900); the bare decorator fails it 6 of 6, and a forced set-aside cannot hide a 429. The override tests kill all 11 mutants asked (a note: a decorator on the same line as another slips past both). Production code unchanged since round 1/2; contract 110/110 suites, 2134 passed; protected 253/253; main's 16 gates; the production build behind a real nginx passes every trust case. Status review.
 - 3 Oct 2026 · OPS-11 · Round 3 (took over from an interrupted session): the Flutterwave burst tests set aside a burst whose arrivals do not fit one window and send a fresh one (at most 5), failing loudly if none fits (backend `wmt/OPS-11` f45e657, main 66339b9 merged). 45/45 runs at load 7 to 14.4; the bare decorator fails 6/6; full contract 110/110 suites; protected 253/253. Back to verifying.
 - 2 Oct 2026 · OPS-11 · Verified round 2: 1 defect (backend 954ef8f, mobile f9d9b12; checked merged with backend main 368fab0 and mobile 66bdcff). The override-list test now expects KYC-01's @Throttle and catches an unexpected skip or override (mutants). The burst test is timed by arrivals now and no longer fails on a cold start, but it still failed 2 of 68 runs at load 7 or more (span 1003 ms); retry a burst that misses the window instead of failing. Contract 108/108 suites, 2095 passed; protected 253/253; main's 16 gates; mobile check exits 0. Status building.
-- 2 Oct 2026 · OPS-11 · Round 2: the verifier's 2 defects fixed (backend `wmt/OPS-11` 954ef8f, main d27ad37 merged). The rate-limit spec expects KYC-01's `@Throttle` on the BVN check beside admin auth; the Flutterwave burst is timed by arrival at the app (the window the throttler counts), after a warm-up, so receipt writes on a busy machine no longer fail it (10 of 10 under load). `bvnCheckTracker`'s comment updated. Contract 107/107 suites, 2066 passed; protected 253/253; gates as main. Back to verifying.
-- 2 Oct 2026 · OPS-11 · Verified: 2 defects (backend 70db9f0, mobile 2c20e01; main moved to backend d27ad37 and mobile bfdd584 during verification). The trust rule holds through a real nginx (two callers get their own buckets; a forged X-Forwarded-For, through nginx or straight to the port, picks no bucket; every case killed by a mutant), both webhooks take bursts past 20/s and 200/min, every other limit is unchanged, KYC-01's BVN tracker stays correct. Defects: with main merged the branch's own @Throttle list test fails (KYC-01 added one), and the Flutterwave burst test times its cold start and fails under load. Protected 253/253; main's 16 gates; mobile check exits 0. Status building.
