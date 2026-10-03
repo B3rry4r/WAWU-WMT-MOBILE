@@ -3,7 +3,7 @@ id: CHECK-1
 title: Checkpoint 1: the app talks to the real backend, screens match the design
 owner: YOU
 area: CHECK
-order: 128
+order: 129
 priority: launch
 repo: all
 type: ops

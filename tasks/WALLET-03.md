@@ -3,7 +3,7 @@ id: WALLET-03
 title: Send to a bank, not enough money, failed send
 owner: YOU
 area: WALLET
-order: 145
+order: 146
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

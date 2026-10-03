@@ -3,7 +3,7 @@ id: WALLET-35
 title: Statements: ask for a statement by email
 owner: YOU
 area: WALLET
-order: 185
+order: 186
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
