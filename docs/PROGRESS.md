@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 48 | 37 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 34 | 20 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts (Developer)
 
@@ -82,7 +82,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN
-- **Developer:** [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy
+- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account
 - **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 

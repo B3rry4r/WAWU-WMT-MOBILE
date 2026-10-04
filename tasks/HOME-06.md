@@ -7,7 +7,7 @@ order: 83
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -122,6 +122,47 @@ Defaults 2, 3 and 4 below are superseded by these lines:
 V9 (no screen yet); full `test:contract` side-by-side by test name (environment, see V2); the account purge end to end (mock refuses WAWU ID deletion, as the builder said); wallet-unlocked buyers (G-125); a third round with origin/main merged in (branch is behind, finding 6).
 
 Result: status set back to `building` for finding 1 (and 6).
+
+## Verifier report (round 2)
+
+**Verdict: PASS** (round-1 finding 1 and 6 closed; no code defect; two low documentation findings below for the builder or lead to correct before merge). Fresh verifier session, 4 Oct 2026. Backend `wmt/HOME-06` at 4ce079a (origin/main c4d17bb merged), mobile branch at 1f55b31. Evidence: `/home/user/lanes/h06/w_bb.txt`, `w_nb2.txt`, `w_v3.log`, `w_contract_branch.log`, `w_contract_main.log`, `w_mobile_check.log`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | backend `tsc --noEmit` exit 0; mobile `npm run check` exit 0 (206 tasks); `contract:build` regenerated gives a file byte-identical to the committed one, and against origin/main it is 267 lines added, 0 removed, no existing path or schema key changed or removed (new paths: `/content/{id}/detail`, `/rating`, `/preview`). |
+| V2 Contract | passed | new spec 29/29. Mutations (file copied aside, restored byte for byte, md5 checked): new controller unregistered = 24 failed (the other 5 are the legacy-route tests, which correctly still pass because that route is main's); purchase check off = 1 failed; own-piece check off = 1; block check off = 2; `ON CONFLICT` removed = 4 (the race tests); legacy blend changed to last star = 2. Full `test:contract` below. |
+| V3 Regression | passed, and now covers the change | `scripts/protected-routes/run.sh --fresh HEAD`: "all 244 required tests passed" (`w_v3.log`). The black-box below is what that suite cannot see. |
+| V4 Field trace | passed | `ContentPiece` is read by the new service (3 `findUnique`), never written (grep of the diff: no `contentPiece.update/create/upsert/delete`, only the migration's FK). The legacy `rate()` is the only writer of `ratingPct`. |
+| V9 Live seam | NOT RUN | no mobile screen calls the routes yet (HOME-02, HOME-03). Black-box over real HTTP with real mock-WAWU-ID tokens instead. |
+
+### Finding 1 (round 1) closed: the web's `POST /content/:id/rate` behaves exactly as on origin/main
+
+- `git diff origin/main` on `content-piece.service.ts` shows only `stampUpdated` (two call sites, a new private method); `rate()` has no changed line. `content-piece.controller.ts` and `dto/` (the rate DTO) show no change (only the new `set-preview.dto.ts` is added). The module diff adds the new controller, service and `BlockedAccountModule`.
+- Black-box, two hubs (origin/main build on :3981, branch build on :3982), two copies of one seeded database, one mock WAWU ID, same tokens and requests, 27 cases: unauthenticated; buyer rating 5 then 1 (re-rate); second buyer; first rating ever on an unrated piece; non-buyer of a PAID piece; pending-purchase payer; non-buyer on free (twice); buyer on free; creator on own paid and own free; buyer and creator on a PENDING piece; buyer on a REMOVED piece; missing id; bad uuid; rating 0, 6, 2.5, "4"; no body; extra forged fields (`ratingPct`, `average`); caller blocked by the creator; caller who blocked the creator; seeded buyer on a seeded paid course; non-buyer on a seeded free video. Result: 27 of 27 SAME status and SAME full body (timestamps masked). After EVERY step the `ratingPct` read from the database and from `GET /content/:id` was identical on both hubs (final 98, 96, 73, 85, 98, 100, 100, null, 60 on both). The branch wrote 0 `ContentRating` rows through the legacy route. Non-buyers, pending payers, creators, pending and removed pieces and blocked callers all got 201 on both, as on main.
+- New routes never write `ContentPiece`: md5 of every `ContentPiece` row of the run's creator, before and after all calls to `GET /detail`, `PUT /rating` (including 14 parallel users, 14 parallel taps by one user) and `PUT /preview`: UNCHANGED. Only the later legacy `POST /rate` by a blocked buyer changes it (201, `ratingPct` moves), as on main.
+
+### Regression sample of what round 1 verified (all still true)
+
+Block hiding: for a person blocked by the creator, one who blocked the creator, and a stranger on pending and removed pieces, `detail`, `PUT rating` and `PUT preview` answered the same 404 `Content not found` as a random missing id (18 of 18 identical; unauthenticated 401). A buyer blocked after buying keeps `detail` (200) and `GET /content/:id`, `PUT rating` is 404. Races: 14 buyers at once gave 14 rows and 14 distinct users, average from rows (3.143, shown as 3.1); one buyer tapping 14 times at once gave one row, all 200. Forged `average`, `count`, `ratingPct`, `userWawuId` in the body: 400 "property average should not exist"; rating 0, 6, "5", null, `{}`: 400; direct SQL with stars 0, 6, -1 refused by the CHECK and a duplicate by the unique index. Locked URL: `detail` keys are contentId, contentType, updatedAt, purchasedAt, buyerCount, studentCount, freePreview, lessons, rating; the string "SECRET" from `fullAssetUrl` is absent for a non-buyer, lessons carry no URL. Preview: non-creator and buyer 404; 0, negative, float, 999999, the whole piece (84 of 84), wrong kind for the type, on free content, unknown key: 400; lessons 4 of 4 refused, 2 ok with `isFree` true for 1 and 2 only; video seconds ok, video pages 400. Counts: a buyer with two completed purchases counts once, pending and failed not counted, `studentCount` null for a pdf and a free course. Creator, non-buyer (failed payment) and pending payer on `PUT rating`: 403 each.
+
+### Owner-decision records
+
+- **G-122, G-123, G-127 are honest.** Checked against behaviour: pieces rated before HOME-06 keep `ratingPct` while `detail.rating` says average null count 0 (true); the new route leaves `ratingPct` alone (md5 proof); the legacy route does not hide blocked callers (201 both ways, proof above); each names the owner decision that unblocks it.
+- **Finding 2 (low, defect): the LOG line is false after round 2.** `docs/LOG.md` line 6 (and its copy in `docs/PROGRESS.md`) still says "the web's `POST /content/:id/rate` now needs a purchase for paid pieces and keeps one rating per person". Round 2 restored the route to main's behaviour, so a reader is told the opposite of the truth. To correct: drop that clause (the web route is unchanged) and run `npm run tasks -- --write`. Also `SHARED-CHANGES.md` HOME-06 #1 says "268 lines added"; it is 267. Default (agent), owner may override: the builder or lead corrects both before merge.
+- **Finding 3 (low, defect): SHARED-CHANGES HOME-06 #3 / G-126 is not "exact" and omits one consequence.** Scratch merge of `origin/wmt/SETTINGS-04` into the branch in a throwaway worktree (`/home/user/lanes/h06v2/merge`, since removed): the merge is CLEAN (no conflict; `content-piece.module.ts` and `content-piece.service.ts` auto-merge, SETTINGS-04's `assertVisible` lands inside `rate()`). `tsc` 0 after `prisma generate`. `data-export-map.spec.ts` then fails (`ContentRating` undecided), as G-126 says. Applying the section as described (one entry in `EXPORT_SECTIONS`, `models: ['ContentRating']`, `findMany` where `userWawuId` is the requester, select `contentId`, `stars`, `createdAt`, `updatedAt`, newest first; I used the key `piecesRated` because the text gives none) makes `data-export-map.spec.ts` 5/5 and `tsc` 0. But (a) the text gives no key name and no code, so the claim of "exact text" is not met; (b) after that merge HOME-06's own spec "the web rating route is unchanged: a non-buyer, a pending-payment buyer, the creator and a blocked person all still get 201" FAILS (`expected 201, got 404`), because SETTINGS-04 hides blocked callers inside the legacy `rate()`. #3 and G-127 name the behaviour change but not that this spec must be adjusted by whoever merges second once the owner decides. To correct: add the key and snippet, and one sentence that the blocked-caller case in that test changes with the owner's G-127 decision. (`data-export.contract.spec.ts` failures in that scratch tree came from my older mock lacking SETTINGS-04's mock additions, not from the section.)
+
+### Full `test:contract`, branch vs clean origin/main c4d17bb (own DBs `h06w_*`, own mocks on :4983 and :4984, run concurrently; :4001 belongs to another session and was left alone)
+
+- Branch: 144 suites, 143 passed, 1 failed; 3225 passed, 3 skipped, 244 failed. All 244 failures are `protected-routes.regression.spec.ts`, which refuses a database name without "test" or "protected" (`h06w_contract_branch`); main fails the same 244 for the same reason. The same suite passes 244/244 via `run.sh --fresh` above, so this is my database name, not the code.
+- Main: 143 suites, 134 passed, 9 failed; 3149 passed, 3 skipped, 291 failed = the same 244 plus 47 in account, blocked-account, credits-state, fintava-stall, kyc-submission, notification, privacy-settings, saved-item.
+- Compared by test name: 0 tests fail only on the branch; 47 fail only on main. `fintava-stall` passes alone on the branch (120/120).
+- **Finding 4 (unclear, not a branch defect): the main-only failures reproduce on a clean main in this setup and I could not explain them.** The same suites pass on the branch tree and fail in the main tree on fresh databases and a mock started in each tree's own directory (A/B repeated: branch 42/42, main 11 failed, branch 42/42, main 11 failed; a clean `git worktree` of origin/main also failed). A built main hub verifies the same mock tokens (200 on `/credits`), so main's code is fine; the failing part is the in-process jest harness in a tree other than `wawu-backend` (tests read `mock-wawu-id/private.pem` beside the tree). Builder's round 2 saw the same 43 on main. It does not affect this task (nothing fails only on the branch) but the main-side counts are not a clean baseline.
+
+### NOT RUN
+
+V9 (no screen yet); account purge end to end (mock refuses WAWU ID deletion); wallet-unlocked buyers (G-125, no unlock writes a `Purchase` yet); a clean main baseline for the 47 main-only failures (finding 4); `data-export.contract.spec.ts` in the scratch merge (needs SETTINGS-04's mock).
+
+Result: status `review`.
 
 ## Owner sign-off
 
