@@ -39,7 +39,7 @@ CSV export; stamped PDF if Fintava provides it; emailed to the user.
 
 ### Builder round 4
 
-Builder, 4 Oct 2026 (the builder of rounds 1 to 3). wawu-backend `wmt/WALLET-27` **fd1fa75** (round 4 on 9f884dc); mobile `wmt/WALLET-27` on the verifier's 58c07d9. Neither main moved: backend is 9a370c0 and mobile 9a0c1be. The container restarted part-way through the checks, so the full suite was run again from the start.
+Builder, 4 Oct 2026 (the builder of rounds 1 to 3). wawu-backend `wmt/WALLET-27` **5c36881**: round 4 is fd1fa75 on 9f884dc, then backend main e6bd701 (HOME-05) merged in with no conflict. Mobile `wmt/WALLET-27`: the verifier's 58c07d9, then mobile main f8130cd (ME-06) merged in. `BACKEND_GAPS.md` keeps G-95 and main's G-110 to G-113; PROGRESS was taken from main and regenerated. Both mains moved while round 4 was being checked. The container restarted part-way through the checks, so the checks were run again from the start.
 - **Defect 2: the route's own 400s no longer count against the person.**
   - The controller now checks the period with `checkedPeriod` before `StatementRateLimiter.take`. A day not on the calendar, `from` after `to`, a future `to` and more than 366 days are all 400 before the person is counted. The DTO's 400s were already refused before the handler.
   - `take` now returns a one-shot give-back. `400 statement_too_large` gives its place back (lead ruling); it only touches the windows it was counted in, and a second call does nothing.
@@ -57,15 +57,18 @@ Builder, 4 Oct 2026 (the builder of rounds 1 to 3). wawu-backend `wmt/WALLET-27`
   - Giving a place back twice gives back one.
 - **Mutants** (each alone, file restored by copy): all 5 killed. They are: the period not checked before `take`, no give-back, `Math.floor` in the limiter, `Math.floor` in the busy answer, and a give-back that works twice.
 - **Main finding A filed as BACKEND_GAPS G-95** (medium): the throttler's `resetBlockdRequest` clears every caller's timers, so one address can push other people into 429 on every route. It is not fixed here; a lead task owns it.
-- **Checks on fd1fa75:**
+- **Checks on fd1fa75, then on the merged head 5c36881:**
   - `tsc --noEmit` 0; eslint 0 on every changed `.ts`.
   - Statement, rate-limit and money-contract specs: 4 suites, 59/59.
-  - Protected `run.sh --fresh fd1fa75` (lock origin/main 9a370c0): 253/253, all 244 required, no lock file touched.
-  - Full suite: fresh migrated and seeded `w27_full8_test`, with my WAWU ID stand-in on :4001 for the whole run (free before; started 06:14:25 UTC, stopped 06:23:15, `lsof` empty after): 143 suites, 3,422 passed, 3 skipped, **1 failed**. The failure was `fintava-stall` "a balance whose body lands at half the timeout is read" (`unavailable`), a timing test from FIX-01, at load average 7.9 with other sessions' jest runs on the machine. The spec passes 120/120 alone, twice right after. This branch does not touch `src/fintava`. Finding for the lead: the timing test is load-sensitive (WORKFLOW section 10: a flaky suite is fixed, not retried); I did not change it.
-  - Gates: 16 fail / 24 warn / 76 accepted on 681 files, line for line as round 3 (main 9a370c0 is 16 / 21; the three are the statement PROVISIONALs). `check_baseline.py` is clean.
-  - `contract:build`: only the operation's summary text changed. Against main, the contract still only adds the route, `StatementView` and the three codes.
+  - Protected suite: `run.sh --fresh fd1fa75` (lock 9a370c0) was 253/253, and `run.sh --fresh 5c36881` (lock origin/main e6bd701) is **253/253**. All 244 required passed both times; no lock file touched.
+  - Statement, rate-limit and money-contract specs on 5c36881: 59/59.
+  - Full suite on 5c36881, as deploy runs it: fresh migrated and seeded `w27_full9_test`, with my WAWU ID stand-in on :4001 for the whole run. :4001 was free before; the stand-in started 06:36:40 UTC and stopped 06:43:42, and `lsof` was empty after. Result: **144/144 suites, 3,448 passed, 3 skipped, 0 failed**, at load average 9.0.
+  - Full suite on fd1fa75: fresh migrated and seeded `w27_full8_test`, with my WAWU ID stand-in on :4001 for the whole run (free before; started 06:14:25 UTC, stopped 06:23:15, `lsof` empty after): 143 suites, 3,422 passed, 3 skipped, **1 failed**. The failure was `fintava-stall` "a balance whose body lands at half the timeout is read" (`unavailable`), a timing test from FIX-01, at load average 7.9 with other sessions' jest runs on the machine. The spec passes 120/120 alone, twice right after. This branch does not touch `src/fintava`. Finding for the lead: the timing test is load-sensitive (WORKFLOW section 10: a flaky suite is fixed, not retried); I did not change it.
+  - Gates on 5c36881: 16 fail / 27 warn / 76 accepted on 687 files. Main e6bd701 is 16 / 24 / 76 on 679, the same line for line plus the three statement PROVISIONALs (`STATEMENT-RATE-LIMITS`, `STATEMENT-CONCURRENCY`, `STATEMENT-MAX-DAYS`). `check_baseline.py` is clean.
+  - Mobile `contract/` stays as main has it (backend 9a370c0). `sync_contract.py` would copy backend main e6bd701 (HOME-05's types), but the statement route is not on backend main, so this branch takes nothing from it; it reaches the app's types when the backend branch merges.
+  - `contract:build`: round 4 changed only the operation's summary text. After the merge a rebuild equals the committed file. Against main, the contract still only adds the route, `StatementView` and the three codes.
   - CI tripwire: 0 added lines. Key scan: 0 of 58 windows.
-  - Mobile `npm run check`: exit 0, with typecheck 0, lint 0, 29 suites / 556 tests, gates 0 fail / 0 warn on 135 files, and 205 tasks.
+  - Mobile `npm run check` (main f8130cd merged): exit 0, with typecheck 0, lint 0, 33 suites / 602 tests, gates 0 fail / 0 warn on 157 files, and 205 tasks.
 - **Not changed:** round 1's NOT RUN items (G-68, G-69 and its owner question, V10) and finding G-44. Verifier finding B (text after a valid bearer token is ignored) and observation D are not this task's, and no action was asked. No sandbox call.
 
 ### Builder round 3
