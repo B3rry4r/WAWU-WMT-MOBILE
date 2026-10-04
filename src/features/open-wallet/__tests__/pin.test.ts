@@ -20,8 +20,8 @@ describe('A9 and A10’s words and answers', () => {
     });
   });
 
-  it('a PIN already set goes on as done; a refusal starts again with its sentence; no answer asks where the PIN stands', () => {
-    expect(afterPinRefusal(new ApiError('conflict', 409, 'You already have a transaction PIN.', 'pin_already_set'))).toEqual({ kind: 'done' });
+  it('a PIN already set is never "set": the earlier one stands; a refusal starts again with its sentence; no answer asks where the PIN stands', () => {
+    expect(afterPinRefusal(new ApiError('conflict', 409, 'You already have a transaction PIN.', 'pin_already_set'))).toEqual({ kind: 'already' });
     expect(afterPinRefusal(new ApiError('conflict', 409, 'Your account is still being opened. Check again in a moment.', 'wallet_opening'))).toEqual({
       kind: 'again',
       line: 'Your account is still being opened. Check again in a moment.',

@@ -62,10 +62,10 @@ function tokenFor(sub: string) {
 
 const clients: QueryClient[] = [];
 
-async function boot() {
+async function boot(given?: QueryClient) {
   const { CreatePinScreen } = require('../CreatePinScreen') as typeof import('../CreatePinScreen');
-  const props = { onBack: jest.fn(), onDone: jest.fn(), onNotOpen: jest.fn() };
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const props = { onBack: jest.fn(), onDone: jest.fn(), onNotOpen: jest.fn(), onLeave: jest.fn() };
+  const client = given ?? new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   const invalidated: unknown[] = [];
   const invalidate = client.invalidateQueries.bind(client);
@@ -216,12 +216,66 @@ describe('A10 · Confirm PIN', () => {
     expect(pinPosts()).toHaveLength(1);
   });
 
-  it('a PIN the server already holds (BACKEND_GAPS G-41) goes on as if A10 were done', async () => {
+  it('a PIN the server already held, unknown to this screen, is never shown as set: the earlier PIN stands', async () => {
     routes['POST /money/pin'] = [refusal(409, 'pin_already_set', 'You already have a transaction PIN.')];
     const app = await ready();
     await type(app, '2749');
     await type(app, '2749');
+    expect(await app.screen.findByTestId('open-wallet-pin-already-set')).toBeTruthy();
+    expect(app.screen.getByText('You already have a transaction PIN')).toBeTruthy();
+    expect(app.screen.getByText(/the one you just entered was not saved\. Your earlier PIN is the one that approves payments\./)).toBeTruthy();
+    expect(app.onDone).not.toHaveBeenCalled();
+    expect(allText(app)).not.toContain('\u2014');
+    await app.fireEvent.press(app.screen.getByText('Done'));
+    expect(app.onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('P4: two different entries while the server already holds a PIN end on the earlier PIN, never as set', async () => {
+    routes['POST /money/pin'] = [refusal(409, 'pin_already_set', 'You already have a transaction PIN.')];
+    const app = await ready();
+    await type(app, '1111');
+    await type(app, '2222');
+    expect(await app.screen.findByTestId('open-wallet-pin-already-set')).toBeTruthy();
+    expect(app.onDone).not.toHaveBeenCalled();
+    expect(JSON.parse(pinPosts()[0].body)).toEqual({ pin: '1111', pinConfirmation: '2222' });
+  });
+
+  it('P3: no answer to the set and none to the wallet read: A10 stays with Try again, never a new entry, and no second PIN is sent', async () => {
+    routes['POST /money/pin'] = ['offline', refusal(409, 'pin_already_set', 'You already have a transaction PIN.')];
+    routes['GET /money/wallet'] = [view(), 'offline', 'offline', view({ pin: pinState(true) })];
+    const app = await ready();
+    await type(app, '2749');
+    await type(app, '2749');
+    expect(await app.screen.findByTestId('open-wallet-pin-check-again')).toBeTruthy();
+    expect(app.screen.getByText("We couldn't check whether your PIN was set. No connection. Check your internet and try again.")).toBeTruthy();
+    // Still A10, keys off: no new PIN can be chosen while the first may be set.
+    expect(app.screen.getByTestId('open-wallet-pin-confirm')).toBeTruthy();
+    expect(app.screen.getByText('2 of 2')).toBeTruthy();
+    expect(app.screen.getByRole('button', { name: '5' }).props.accessibilityState?.disabled).toBe(true);
+    await type(app, '5555');
+    await type(app, '5555');
+    expect(pinPosts()).toHaveLength(1);
+    expect(app.onDone).not.toHaveBeenCalled();
+    // Try again repeats only the read: still no answer, then the answer says the PIN is set.
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-pin-check-again'));
+    expect(await app.screen.findByTestId('open-wallet-pin-check-again')).toBeTruthy();
+    expect(app.onDone).not.toHaveBeenCalled();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-pin-check-again'));
     await app.waitFor(() => expect(app.onDone).toHaveBeenCalledTimes(1));
+    expect(pinPosts()).toHaveLength(1);
+    expect(sent.filter((x) => x.method === 'GET' && x.path.endsWith('/money/wallet')).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('Back while it is not known whether the PIN was set goes to A8 (which reads the wallet), not to A9', async () => {
+    routes['POST /money/pin'] = ['offline'];
+    routes['GET /money/wallet'] = [view(), 'offline'];
+    const app = await ready();
+    await type(app, '2749');
+    await type(app, '2749');
+    expect(await app.screen.findByTestId('open-wallet-pin-check-again')).toBeTruthy();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-pin-back'));
+    expect(app.onBack).toHaveBeenCalledTimes(1);
+    expect(app.screen.queryByTestId('open-wallet-pin-create')).toBeNull();
   });
 
   it('a user who arrives with a PIN already set skips A9 and A10', async () => {
@@ -289,6 +343,75 @@ describe('A10 · Confirm PIN', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     expect(app.onDone).not.toHaveBeenCalled();
+  });
+});
+
+describe('A9 and A10 when the session changes while signed in (KYC-04 round 2)', () => {
+  const B = '00000000-0000-4000-8000-0000000000b2';
+  const pair = (sub: string, n: string) => ok({ accessToken: tokenFor(sub), refreshToken: `refresh-${n}` });
+  const session = () => require('@/api/session') as typeof import('@/api/session');
+  const realClient = () => (require('@/api/query') as typeof import('@/api/query')).createQueryClient();
+  async function readyWith(client: QueryClient) {
+    const app = await boot(client);
+    await app.waitFor(() => expect(app.screen.getByRole('button', { name: '1' }).props.accessibilityState?.disabled).toBeFalsy());
+    return app;
+  }
+
+  it('P1: a refresh that answers another account mid-A9 drops what was typed and leaves the flow; nothing of A reaches B’s PIN', async () => {
+    const app = await readyWith(realClient());
+    await type(app, '27');
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session().refreshAccessToken((await session().getAccessToken()) as string);
+    });
+    await app.waitFor(() => expect(app.onLeave).toHaveBeenCalledTimes(1));
+    expect(app.screen.getByLabelText('0 of 4 digits entered')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-pin-create')).toBeTruthy();
+    // Were the screen still drawn, B starts from nothing and a set ends normally.
+    await app.waitFor(() => expect(app.screen.getByRole('button', { name: '1' }).props.accessibilityState?.disabled).toBeFalsy());
+    await type(app, '1358');
+    await type(app, '1358');
+    await app.waitFor(() => expect(app.onDone).toHaveBeenCalledTimes(1));
+    expect(pinPosts().map((x) => JSON.parse(x.body))).toEqual([{ pin: '1358', pinConfirmation: '1358' }]);
+  });
+
+  it('P6: a sign-in as another account on A10 drops A9’s entry: back on A9, and four digits send nothing', async () => {
+    const app = await readyWith(realClient());
+    await type(app, '2749');
+    expect(app.screen.getByTestId('open-wallet-pin-confirm')).toBeTruthy();
+    routes['POST /auth/login'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session().signIn('b@example.test', 'pw-123456');
+    });
+    await app.waitFor(() => expect(app.onLeave).toHaveBeenCalledTimes(1));
+    expect(app.screen.getByTestId('open-wallet-pin-create')).toBeTruthy();
+    expect(app.screen.getByText('1 of 2')).toBeTruthy();
+    await app.waitFor(() => expect(app.screen.getByRole('button', { name: '1' }).props.accessibilityState?.disabled).toBeFalsy());
+    await type(app, '2749');
+    expect(pinPosts()).toHaveLength(0);
+    expect(app.screen.getByTestId('open-wallet-pin-confirm')).toBeTruthy();
+  });
+
+  it('a session change while A’s PIN is being set never leaves the screen on "Setting your PIN", and A’s late answer moves nothing', async () => {
+    let release!: () => void;
+    routes['POST /money/pin'] = [{ gate: new Promise<void>((resolve) => (release = resolve)), then: ok(pinState(true), 201) }];
+    const app = await readyWith(realClient());
+    await type(app, '2749');
+    await type(app, '2749');
+    expect(await app.screen.findByTestId('open-wallet-pin-setting')).toBeTruthy();
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session().refreshAccessToken((await session().getAccessToken()) as string);
+    });
+    await app.waitFor(() => expect(app.onLeave).toHaveBeenCalledTimes(1));
+    expect(app.screen.queryByTestId('open-wallet-pin-setting')).toBeNull();
+    expect(app.screen.getByLabelText('0 of 4 digits entered')).toBeTruthy();
+    await app.act(async () => release());
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(app.onDone).not.toHaveBeenCalled();
+    expect(pinPosts()).toHaveLength(1);
   });
 });
 

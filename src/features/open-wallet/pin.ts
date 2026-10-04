@@ -28,8 +28,12 @@ export const PIN_PURPOSE = 'It approves every payment and transfer.';
 
 /** Where A10's answer leaves the step. */
 export type PinOutcome =
-  /** The PIN is set (or one already was, BACKEND_GAPS G-41): back to where Open your wallet started. */
-  | { kind: 'done' }
+  /**
+   * The server already holds a PIN (`409 pin_already_set`) though this screen
+   * arrived with none: the earlier PIN stands and the one just typed was not
+   * saved. Never shown as "set" (BACKEND_GAPS G-116 for how to reset it).
+   */
+  | { kind: 'already' }
   /** Start again at A9, with the server's sentence under the dots. `wrongPin`: the two entries differed (W11's wrong-PIN look). */
   | { kind: 'again'; line: string; wrongPin: boolean }
   /** No answer that says whether the PIN was set (no connection, a server fault): read the wallet to find out. */
@@ -40,14 +44,35 @@ const FALLBACK_LINE = "We couldn't set your PIN. Try again.";
 /**
  * A refused or unanswered `POST /money/pin` (contract CONVENTIONS sections 3
  * and 5). Every sentence shown is the server's own `message`. Both entries are
- * dropped whatever the answer, so every outcome but `done` starts again at A9.
+ * dropped whatever the answer: a refusal starts again at A9, `already` ends
+ * the step with what the server holds, and `unknown` asks the wallet first.
  */
 export function afterPinRefusal(error: unknown): PinOutcome {
   if (!isApiError(error)) return { kind: 'unknown', line: FALLBACK_LINE };
-  if (error.code === 'pin_already_set') return { kind: 'done' };
+  if (error.code === 'pin_already_set') return { kind: 'already' };
   if (error.code === 'pin_mismatch') return { kind: 'again', line: error.message, wrongPin: true };
   if (error.kind === 'network' || error.kind === 'server' || error.kind === 'unknown') return { kind: 'unknown', line: error.message || FALLBACK_LINE };
   return { kind: 'again', line: error.message || FALLBACK_LINE, wrongPin: false };
+}
+
+/**
+ * A10 when the server already held a PIN this screen did not know of (KYC-04
+ * round 2, Default (agent), owner may override; BRIEF section 12, A10). True
+ * whether that PIN was set on another visit, on another phone, or by the same
+ * request sent twice by the network: the PIN set first is the one that works.
+ */
+export const ALREADY_SET = {
+  title: 'You already have a transaction PIN',
+  message: 'A PIN was already set on this account, so the one you just entered was not saved. Your earlier PIN is the one that approves payments.',
+} as const;
+
+/**
+ * A10 when the set got no answer and the wallet read that would say whether
+ * it was set got none either: the read's own words (for example "No
+ * connection. Check your internet and try again.") after what is not known.
+ */
+export function unconfirmedLine(said: string | null): string {
+  return `We couldn't check whether your PIN was set. ${said ?? 'Try again.'}`;
 }
 
 /** The account number as A8 draws it, "812 345 6789": 3, 3 and 4 for a NUBAN, otherwise as sent. Copy takes the digits as sent. */

@@ -155,6 +155,19 @@ describe('A8 · Wallet open', () => {
     expect(app.screen.getByText('₦300,000 a day')).toBeTruthy();
   });
 
+  it('a limit of 0 (or one that is not whole kobo) is no limit: no Limit row, never "₦0 a day"', async () => {
+    fallback['GET /money/wallet'] = view({ limits: { tier: null, dailyLimitKobo: 0, usedTodayKobo: 0, remainingTodayKobo: 0, resetsAt: '2026-10-05T00:00:00.000Z' } });
+    let app = await boot();
+    expect(await app.screen.findByTestId('open-wallet-account')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-account-limit')).toBeNull();
+    expect(allText(app)).not.toContain('₦0');
+    await app.screen.unmount();
+    fallback['GET /money/wallet'] = view({ limits: { tier: null, dailyLimitKobo: 12.5, usedTodayKobo: 0, remainingTodayKobo: 0, resetsAt: '2026-10-05T00:00:00.000Z' } });
+    app = await boot();
+    expect(await app.screen.findByTestId('open-wallet-account')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-account-limit')).toBeNull();
+  });
+
   it('the long legal bank name wraps in the Bank row instead of pushing the label out', async () => {
     fallback['GET /money/wallet'] = view({ account: { ...ACCOUNT, bankName: LONG_BANK } });
     const app = await boot();

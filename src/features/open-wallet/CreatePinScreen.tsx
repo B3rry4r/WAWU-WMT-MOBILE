@@ -4,8 +4,8 @@ import { AccessibilityInfo, ActivityIndicator, StyleSheet, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
-import { onSessionEnd } from '@/api/session';
-import { IconButton } from '@/components/Button';
+import { onSessionEnd, useSession } from '@/api/session';
+import { Button, IconButton } from '@/components/Button';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { ALERT, DOTS } from '@/components/pin-sheet/kit';
@@ -16,7 +16,8 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { OPEN_WALLET_KEY } from './api/account';
 import { fetchOpenedWallet, openedWalletQuery, setTransactionPin } from './api/wallet';
-import { afterPinRefusal, lengthLine, PIN_LENGTH, PIN_PURPOSE } from './pin';
+import { OpenWalletEnd } from './OpenWalletEnd';
+import { afterPinRefusal, ALREADY_SET, lengthLine, PIN_LENGTH, PIN_PURPOSE, unconfirmedLine } from './pin';
 import { useSessionAccount } from './sessionAccount';
 
 /**
@@ -33,15 +34,28 @@ const STEPS = 2;
 const CREATE_TITLE = 'Create your transaction PIN';
 const CONFIRM_TITLE = 'Enter it again';
 
-type Step = 'create' | 'confirm';
 type Line = { text: string; wrongPin: boolean };
-type Phase = 'entering' | 'setting' | 'done';
+/**
+ * - entering: the keypad is live
+ * - setting: `POST /money/pin` is out; keys off
+ * - checking: the set got no answer, so the wallet is read to learn whether the PIN was set; keys off
+ * - unchecked: that read got no answer either; only Try again (the read once more), never a new entry
+ * - already: the server already held a PIN this screen did not know of; the earlier one stands
+ * - done: set; the flow is ending
+ */
+type Phase = 'entering' | 'setting' | 'checking' | 'unchecked' | 'already' | 'done';
 
 export type CreatePinScreenProps = {
   /** Back from A9 to A8. */
   onBack: () => void;
   /** The PIN is set (or one already was): back to where Open your wallet started. */
   onDone: () => void;
+  /**
+   * The session ended with the screen still drawn and the app still signed in
+   * (a sign-in that replaced it, a refresh that answered another account):
+   * nothing of this visit goes on for the new account, so the flow is left.
+   */
+  onLeave: () => void;
   /** The wallet is not open (a link or a reload with no account): A8 says where it stands. */
   onNotOpen: () => void;
 };
@@ -59,42 +73,61 @@ export type CreatePinScreenProps = {
  * URL. An answer that lands after the session ended, or after the screen
  * closed, changes nothing.
  */
-export function CreatePinScreen({ onBack, onDone, onNotOpen }: CreatePinScreenProps) {
+export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePinScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
-  const signedIn = useSessionAccount(undefined);
+  const { status: sessionStatus } = useSession();
+  /** How many sessions have ended while this screen was drawn: each one starts it over, as another visit. */
+  const [ends, setEnds] = useState(0);
+  const signedIn = useSessionAccount(String(ends));
   const owner = signedIn ?? undefined;
   const wallet = useQuery(openedWalletQuery(owner));
 
-  const [step, setStep] = useState<Step>('create');
   const [digits, setDigits] = useState('');
   const [line, setLine] = useState<Line | null>(null);
   const [phase, setPhase] = useState<Phase>('entering');
-  /** A9's four digits, held only until A10's request is sent. */
-  const first = useRef<string | null>(null);
+  /**
+   * A9's four digits, held only until A10's request is sent. Holding them is
+   * what puts the screen on A10: with them dropped (a send, Back, a session
+   * end) it is A9 again.
+   */
+  const [first, setFirst] = useState<string | null>(null);
   /** Set before the request, so a second tap in the same frame sends nothing. */
   const inFlight = useRef(false);
-  /** False once this screen closed or the session ended: an answer after that moves nothing. */
-  const live = useRef(true);
+  /** This visit: bumped when the session ends or the screen closes. An answer from an earlier visit moves nothing. */
+  const visit = useRef(0);
+  /** Why the set got no answer, kept for the line if the wallet then says the PIN was not set. */
+  const lost = useRef<string | null>(null);
+  const handed = useRef(false);
   useEffect(() => {
-    live.current = true;
     const stop = onSessionEnd(() => {
-      live.current = false;
-      first.current = null;
+      // Everything of the account that was signed in goes: the digits, A9's entry, the step, the phase, the line.
+      visit.current += 1;
+      setFirst(null);
+      lost.current = null;
+      inFlight.current = false;
+      handed.current = false;
+      setDigits('');
+      setLine(null);
+      setPhase('entering');
+      setEnds((n) => n + 1);
     });
     return () => {
-      live.current = false;
-      first.current = null;
+      visit.current += 1;
       stop();
     };
   }, []);
+  // Still signed in after the session ended, so another account (or a new session) now holds the app: leave the flow.
+  // Signed out, the route itself sends the visitor away.
+  useEffect(() => {
+    if (ends > 0 && sessionStatus === 'signedIn') onLeave();
+  }, [ends, sessionStatus, onLeave]);
 
   const pinIsSet = wallet.data?.pinIsSet === true;
   const state = wallet.data?.state;
   const notOpen = state === 'not_open' || state === 'opening';
   // A PIN set before (BACKEND_GAPS G-41): nothing to create, go on as if A10 were done. No wallet: A8 says where it stands.
-  const handed = useRef(false);
   useEffect(() => {
     if (phase !== 'entering' || handed.current) return;
     if (pinIsSet) {
@@ -107,60 +140,86 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen }: CreatePinScreenPr
   }, [pinIsSet, notOpen, phase, onDone, onNotOpen]);
 
   const startAgain = (next: Line) => {
-    setStep('create');
+    setFirst(null);
     setDigits('');
     setLine(next);
     setPhase('entering');
     AccessibilityInfo.announceForAccessibility(next.text);
   };
 
-  const finish = () => {
-    handed.current = true;
-    setPhase('done');
+  const askAgain = () => {
     // Every money read is asked again on the way out, so where the flow started (the pay sheet, the Wallet tab) sees the open wallet.
     void client.invalidateQueries({ queryKey: ['money'] });
     void client.invalidateQueries({ queryKey: [OPEN_WALLET_KEY] });
+  };
+  const finish = () => {
+    handed.current = true;
+    setPhase('done');
+    askAgain();
     onDone();
   };
 
+  /**
+   * The set got no answer: the wallet read says whether the PIN was set. Set,
+   * the PIN typed twice in this visit is the one (this screen arrived with
+   * none). Not set, the person starts again at A9. No answer to the read
+   * either: A10 stays, and Try again reads again; a new entry is never
+   * offered while the PIN may be set.
+   */
+  const check = async (mine: number) => {
+    setPhase('checking');
+    setLine(null);
+    try {
+      const now = await fetchOpenedWallet();
+      if (visit.current !== mine) return;
+      if (now.pinIsSet) {
+        finish();
+        return;
+      }
+      startAgain({ text: lost.current ?? unconfirmedLine(null), wrongPin: false });
+    } catch (error) {
+      if (visit.current !== mine) return;
+      const said = unconfirmedLine(isApiError(error) ? error.message : null);
+      setPhase('unchecked');
+      setLine({ text: said, wrongPin: false });
+      AccessibilityInfo.announceForAccessibility(said);
+    }
+  };
+
   const submit = async (second: string) => {
-    const entered = first.current;
-    first.current = null;
+    const entered = first;
+    setFirst(null);
     if (inFlight.current || entered === null) return;
     inFlight.current = true;
+    const mine = visit.current;
     setPhase('setting');
     try {
       await setTransactionPin(entered, second);
-      if (!live.current) return;
+      if (visit.current !== mine) return;
       finish();
     } catch (error) {
-      if (!live.current) return;
+      if (visit.current !== mine) return;
       const outcome = afterPinRefusal(error);
-      if (outcome.kind === 'done') {
-        finish();
+      if (outcome.kind === 'already') {
+        // Never "set": the server kept a PIN from before, and the one just typed was not saved.
+        handed.current = true;
+        setPhase('already');
+        askAgain();
         return;
       }
       if (outcome.kind === 'again') {
         startAgain({ text: outcome.line, wrongPin: outcome.wrongPin });
         return;
       }
-      // No answer that says whether it was set: the wallet read does. Set means this PIN, typed twice, is the one.
-      try {
-        const now = await fetchOpenedWallet();
-        if (!live.current) return;
-        if (now.pinIsSet) {
-          finish();
-          return;
-        }
-      } catch {
-        if (!live.current) return;
-      }
-      startAgain({ text: outcome.line, wrongPin: false });
+      lost.current = outcome.line;
+      await check(mine);
     } finally {
-      inFlight.current = false;
+      if (visit.current === mine) inFlight.current = false;
     }
   };
 
+  // A10 while A9's entry is held, and while its request is out or its outcome is being learned.
+  const step = first !== null || phase === 'setting' || phase === 'checking' || phase === 'unchecked' || phase === 'done' ? 'confirm' : 'create';
   const keysOff = phase !== 'entering' || !wallet.data || pinIsSet || notOpen;
   const onDigit = (d: string) => {
     if (keysOff || digits.length >= PIN_LENGTH) return;
@@ -170,10 +229,9 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen }: CreatePinScreenPr
       return;
     }
     if (step === 'create') {
-      first.current = next;
+      setFirst(next);
       setDigits('');
       setLine(null);
-      setStep('confirm');
       AccessibilityInfo.announceForAccessibility(CONFIRM_TITLE);
       return;
     }
@@ -187,11 +245,15 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen }: CreatePinScreenPr
     if (!keysOff) setDigits('');
   };
   const back = () => {
-    if (phase === 'setting') return;
+    if (phase === 'setting' || phase === 'checking') return;
+    // While it is not known whether the PIN was set, Back goes to A8, which reads the wallet before offering anything.
+    if (phase === 'unchecked') {
+      onBack();
+      return;
+    }
     if (step === 'confirm') {
-      first.current = null;
+      setFirst(null);
       setDigits('');
-      setStep('create');
       return;
     }
     onBack();
@@ -199,19 +261,29 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen }: CreatePinScreenPr
 
   const stepNo = step === 'create' ? 1 : STEPS;
   const failed = wallet.isError && wallet.data === undefined;
-  const filled = phase === 'setting' || phase === 'done' ? PIN_LENGTH : digits.length;
+  const filled = phase === 'entering' ? digits.length : PIN_LENGTH;
   const missed = line?.wrongPin === true && digits.length === 0 && phase === 'entering';
   const ring = missed ? colors.danger : colors.borderStrong;
 
-  let status: React.ReactNode = null;
-  if (!failed && (!wallet.data || phase !== 'entering')) {
-    status = (
-      <ActivityIndicator
-        color={colors.accentFg}
-        accessibilityLabel={wallet.data ? 'Setting your PIN' : 'Loading'}
-        testID={wallet.data ? 'open-wallet-pin-setting' : 'open-wallet-pin-loading'}
+  if (phase === 'already') {
+    return (
+      <OpenWalletEnd
+        testID="open-wallet-pin-already-set"
+        tone="warn"
+        icon="LockKeyhole"
+        title={ALREADY_SET.title}
+        message={ALREADY_SET.message}
+        actionLabel="Done"
+        onAction={onDone}
       />
     );
+  }
+
+  let status: React.ReactNode = null;
+  if (!failed && (!wallet.data || phase === 'setting' || phase === 'checking' || phase === 'done')) {
+    const label = !wallet.data ? 'Loading' : phase === 'checking' ? 'Checking your PIN' : 'Setting your PIN';
+    const id = !wallet.data ? 'open-wallet-pin-loading' : phase === 'checking' ? 'open-wallet-pin-checking' : 'open-wallet-pin-setting';
+    status = <ActivityIndicator color={colors.accentFg} accessibilityLabel={label} testID={id} />;
   } else if (line) {
     status = (
       <View style={styles.alert} accessible accessibilityRole="alert" accessibilityLiveRegion="polite" testID="open-wallet-pin-line">
@@ -221,6 +293,14 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen }: CreatePinScreenPr
         </Text>
       </View>
     );
+    if (phase === 'unchecked') {
+      status = (
+        <>
+          {status}
+          <Button label="Try again" icon="RotateCw" variant="secondary" size="md" onPress={() => void check(visit.current)} testID="open-wallet-pin-check-again" />
+        </>
+      );
+    }
   }
 
   return (
