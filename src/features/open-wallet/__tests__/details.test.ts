@@ -1,5 +1,5 @@
 import { addressLine, birthDate, detailsProblems, fullName, genderWord, NIGERIAN_STATES, openingName, tidyDetails } from '../details';
-import { forgetKeptCheck, keepAddress, keepCheck, readAddress, readKeptCheck, ticketFor } from '../keptCheck';
+import { forgetKeptCheck, keepAddress, keepCheck, readAddress, readHandle, readKeptCheck, ticketFor } from '../keptCheck';
 import { renderHook } from '@testing-library/react-native';
 
 import { flowDepth, useOpenWalletWay } from '../leave';
@@ -13,6 +13,7 @@ const OWNER = '00000000-0000-4000-8000-0000000000b1';
 const check = {
   identity: { bvn: { last4: '0111', verifiedAt: '2026-10-03T10:00:00.000Z' }, ninLast4: '0999', occupation: null, checksLeft: 2 },
   prefill: { firstName: 'Ada', middleName: 'B', lastName: 'Eze', dateOfBirth: '1992-10-04', gender: 'female' as const },
+  checkHandle: 'v1.k03-test-handle',
 };
 const typed = { street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos', occupation: 'Filmmaker', agreed: true };
 
@@ -75,6 +76,15 @@ describe('A5: the "From your BVN" card', () => {
 
 describe('A5’s address, kept beside the passed check for A7', () => {
   beforeEach(() => forgetKeptCheck());
+
+  it('the check handle is kept beside the check, for that account only, never inside the check itself, and goes on every forget', () => {
+    keepCheck(ticketFor(OWNER), check);
+    expect(readHandle(OWNER)).toBe('v1.k03-test-handle');
+    expect(readHandle('someone-else')).toBeNull();
+    expect(readKeptCheck(OWNER)).not.toHaveProperty('checkHandle');
+    forgetKeptCheck();
+    expect(readHandle(OWNER)).toBeNull();
+  });
 
   it('is kept for the account whose check passed, and read by no one else', () => {
     expect(keepCheck(ticketFor(OWNER), check)).toBe(true);
@@ -156,9 +166,12 @@ describe('the ways out of A5 and A6', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith('/');
   });
 
-  it('starting again goes down to A26', async () => {
+  it('starting again forgets the kept check (its handle no longer serves) and goes down to A26', async () => {
+    keepCheck(ticketFor(OWNER), check);
     const { result } = await renderHook(() => useOpenWalletWay());
     result.current.restart();
+    expect(readKeptCheck(OWNER)).toBeNull();
+    expect(readHandle(OWNER)).toBeNull();
     expect(mockRouter.dismissTo).toHaveBeenCalledWith('/open-wallet');
   });
 });

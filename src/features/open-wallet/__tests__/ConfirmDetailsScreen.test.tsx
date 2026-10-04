@@ -65,9 +65,9 @@ function tokenFor(sub: string) {
 const clients: QueryClient[] = [];
 
 /** Seeds what A26 keeps when a check passes, as A26 does: under a ticket for the account. */
-function keepPassedCheck(check = { identity, prefill }) {
+function keepPassedCheck(check: { identity: typeof identity; prefill: Prefill; checkHandle?: string } = { identity, prefill }) {
   const kept = require('../keptCheck') as typeof import('../keptCheck');
-  kept.keepCheck(kept.ticketFor(OWNER), check);
+  kept.keepCheck(kept.ticketFor(OWNER), { checkHandle: 'v1.k03-test-handle', ...check });
   return kept;
 }
 

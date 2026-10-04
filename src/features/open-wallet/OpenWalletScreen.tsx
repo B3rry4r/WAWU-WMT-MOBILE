@@ -4,7 +4,6 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { isApiError } from '@/api/errors';
 import { onSessionEnd, useSession } from '@/api/session';
-import type { BvnCheck } from '@/api/walletIdentity';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
@@ -21,7 +20,7 @@ import { Banner } from '@/features/auth/Banner';
 import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, ticketIsLive, useKeptCheck } from './keptCheck';
+import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, ticketIsLive, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
@@ -214,7 +213,7 @@ function Ending({ ended, onClose }: { ended: Ended; onClose: () => void }) {
 }
 
 /** A check that passed, seen again on coming back from A5: the masked numbers, Continue to A5, or back out. */
-function Confirmed({ check, onClose, onContinue }: { check: BvnCheck; onClose: () => void; onContinue: () => void }) {
+function Confirmed({ check, onClose, onContinue }: { check: KeptCheck; onClose: () => void; onContinue: () => void }) {
   const bvnLast4 = check.identity.bvn?.last4;
   const ninLast4 = check.identity.ninLast4;
   return (

@@ -44,9 +44,10 @@ beforeEach(() => {
 describe('the BVN check calls (KYC-01)', () => {
   it('a user who enters their BVN and NIN gets A5’s prefill; the numbers go in the body, never the URL', async () => {
     const calls = boot();
-    answer = { status: 200, body: { statusCode: 200, message: 'OK', data: { identity, prefill } } };
+    // KYC-03: the answer also carries the sealed check handle (contract BvnCheckView.checkHandle).
+    answer = { status: 200, body: { statusCode: 200, message: 'OK', data: { identity, prefill, checkHandle: 'v1.sealed' } } };
     const result = await calls.checkBvn({ bvn: '2219 0000 111', nin: '70190000999' });
-    expect(result).toEqual({ identity, prefill });
+    expect(result).toEqual({ identity, prefill, checkHandle: 'v1.sealed' });
     expect(seen).toHaveLength(1);
     expect(seen[0].method).toBe('POST');
     expect(seen[0].url).toMatch(/\/api\/hub\/money\/identity\/bvn$/);

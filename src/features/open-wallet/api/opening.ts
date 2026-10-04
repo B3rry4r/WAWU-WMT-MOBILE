@@ -14,16 +14,16 @@ import type { WalletState } from './account';
  * The reads (`fetchSelfieMatch`, `fetchWalletState`) and A5's occupation
  * (`saveOccupation`) need neither, so the screens call the shared ones.
  *
- * **The BVN and the NIN are not sent again** (BACKEND_GAPS G-72). A26 sends
- * them once, to the BVN check, and nothing on the phone keeps them after that
- * request. The contract still asks for `bvn` on the selfie match and for
- * `bvn` and `nin` on the opening (`SelfieMatchDto`, `OpenNairaWalletDto`), so
- * until the backend takes them from the person's passed check these two
- * requests are refused (400). The bodies below are what the screens send; the
- * casts go when the contract drops the two fields.
+ * **The BVN and the NIN are not sent again** (BACKEND_GAPS G-72, served). A26
+ * sends them once, to the BVN check, and nothing on the phone keeps them
+ * after that request. The check answers `checkHandle` (the numbers sealed
+ * under a server key, unreadable here, good for 30 minutes), which A26 keeps
+ * in memory with the prefill (`keptCheck.ts`) and these two calls send in
+ * their place. A handle that no longer serves is `409 bvn_not_checked`: the
+ * person runs the BVN check again.
  *
- * The selfie goes in the request body only, once, and nothing here keeps it,
- * logs it, or puts it in a URL.
+ * The selfie and the handle go in the request body only, once; nothing here
+ * keeps them, logs them, or puts them in a URL.
  */
 type Envelope<T> = { statusCode: number; message: string; data: T | null };
 type Reason = components['schemas']['MoneyErrorReason'];
@@ -95,16 +95,14 @@ export function isSendableSelfie(image: string): boolean {
  * refuse is never sent. Resolves with `matchedAt` set (A7); a 200 without it
  * is not a match.
  */
-export async function matchSelfie(image: string): Promise<SelfieMatch> {
+export async function matchSelfie(image: string, checkHandle: string): Promise<SelfieMatch> {
   if (!isSendableSelfie(image)) throw refused(new ApiError('validation', 0, 'That photo could not be used. Take it again.'), null, null);
-  // G-72: no `bvn`; the server is to match against the person's passed check.
-  const body = { image } as unknown as components['schemas']['SelfieMatchDto'];
-  const match = readSelfie(await send(api.POST('/api/hub/money/identity/selfie', { body })));
+  const match = readSelfie(await send(api.POST('/api/hub/money/identity/selfie', { body: { image, checkHandle } })));
   if (match.matchedAt === null) throw unreadable();
   return match;
 }
 
-export type OpeningInput = { firstName: string; lastName: string; dateOfBirth: string; address: string };
+export type OpeningInput = { firstName: string; lastName: string; dateOfBirth: string; address: string; checkHandle: string };
 
 const walletStates: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
 
@@ -121,7 +119,5 @@ function readWallet(value: unknown): WalletState {
  * wallet's state: `open`, or `opening` while the bank's answer is confirmed.
  */
 export async function openWallet(input: OpeningInput): Promise<WalletState> {
-  // G-72: no `bvn` or `nin`; the server is to take them from the person's passed check.
-  const body = { ...input } as unknown as components['schemas']['OpenNairaWalletDto'];
-  return readWallet(await send(api.POST('/api/hub/money/wallet/open', { body })));
+  return readWallet(await send(api.POST('/api/hub/money/wallet/open', { body: { ...input } })));
 }

@@ -60,8 +60,9 @@ export async function checkBvn(input: { bvn: string; nin: string }): Promise<Bvn
     }),
   )) as unknown as Envelope<BvnCheck>;
   const data = body?.data;
-  if (!data || typeof data.prefill !== 'object' || data.prefill === null) throw unreadable();
-  return { identity: readIdentity(data.identity), prefill: data.prefill };
+  if (!data || typeof data.prefill !== 'object' || data.prefill === null || typeof data.checkHandle !== 'string') throw unreadable();
+  // KYC-03: the sealed check, held in memory only and sent back in place of the BVN and NIN.
+  return { identity: readIdentity(data.identity), prefill: data.prefill, checkHandle: data.checkHandle };
 }
 
 /** PUT /money/identity/occupation, A5's typed occupation. Needs a passed BVN check first. */

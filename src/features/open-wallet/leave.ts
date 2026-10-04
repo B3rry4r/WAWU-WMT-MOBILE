@@ -1,6 +1,8 @@
 import { useNavigation, useRouter } from 'expo-router';
 import { useMemo } from 'react';
 
+import { forgetKeptCheck } from './keptCheck';
+
 /** The route names of Open your wallet's screens (`src/app`): A26, A5, and A6 with A7 and A16. */
 const FLOW_ROUTES: readonly string[] = ['open-wallet', 'open-wallet-details', 'open-wallet-selfie'];
 
@@ -47,7 +49,11 @@ export function useOpenWalletWay(): OpenWalletWay {
         if (depth > 1) router.dismiss(depth - 1);
         router.replace('/');
       },
-      restart: () => router.dismissTo('/open-wallet'),
+      // The kept check no longer serves (gone, stale, or its handle refused): forget it, so A26 asks for a new check.
+      restart: () => {
+        forgetKeptCheck();
+        router.dismissTo('/open-wallet');
+      },
     }),
     [router, navigation],
   );

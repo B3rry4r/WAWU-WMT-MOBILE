@@ -4551,24 +4551,40 @@ export interface components {
         };
         SelfieMatchDto: {
             /**
+             * @description The BVN whose check passed: 11 digits, no spaces. Leave it out and send
+             *     `checkHandle` instead (KYC-03); one of the two, never both.
+             */
+            bvn?: string;
+            /**
+             * @description The `checkHandle` the passed BVN check answered, in place of `bvn`
+             *     (KYC-03): the server takes the BVN from it. One of the two, never both.
+             */
+            checkHandle?: string;
+            /**
              * Format: byte
              * @description The selfie: plain base64 (no `data:` prefix) of a JPEG or PNG, 1 KB to
              *     about 75 KB (at most 100,000 base64 characters), at most 2,048 pixels
              *     on each side. A face match against the BVN photo, not a liveness check.
              */
             image: string;
-            /** @description The BVN whose check passed: 11 digits, no spaces. */
-            bvn: string;
         };
         IdentityOccupationDto: {
             /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
             occupation: string;
         };
         OpenNairaWalletDto: {
-            /** @description The BVN whose check passed: 11 digits, no spaces. */
-            bvn: string;
-            /** @description The NIN given with that check: 11 digits, no spaces. */
-            nin: string;
+            /**
+             * @description The BVN whose check passed: 11 digits, no spaces. Leave it and `nin` out
+             *     and send `checkHandle` instead (KYC-03); never both.
+             */
+            bvn?: string;
+            /** @description The NIN given with that check: 11 digits, no spaces. Left out with `checkHandle`. */
+            nin?: string;
+            /**
+             * @description The `checkHandle` the passed BVN check answered, in place of `bvn` and
+             *     `nin` (KYC-03): the server takes both from it. Never with them.
+             */
+            checkHandle?: string;
             /** @description A5's first name, as the BVN check prefilled it. */
             firstName: string;
             /** @description A5's last name, as the BVN check prefilled it. */
@@ -4777,6 +4793,7 @@ export interface components {
         BvnCheckView: {
             identity: components["schemas"]["WalletIdentityView"];
             prefill: components["schemas"]["BvnPrefillView"];
+            checkHandle: string;
         };
         SelfieMatchView: {
             matchedAt: string | null;

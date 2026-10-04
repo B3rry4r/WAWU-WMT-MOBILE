@@ -27,6 +27,8 @@ type Sent = { method: string; path: string; body: string };
 
 const OWNER = '00000000-0000-4000-8000-0000000000d1';
 /** A made-up capture: plain base64 of the right size, never a real face. */
+/** A sealed check handle as the BVN check answered it (opaque to the app). */
+const HANDLE = 'v1.k03-test-handle';
 const IMAGE = `/9j/${'A'.repeat(3000)}`;
 
 let sent: Sent[] = [];
@@ -74,7 +76,7 @@ const clients: QueryClient[] = [];
 /** What A26 and A5 keep before A6: the passed check and the address, under tickets for the account. */
 function keepOpening(options: { withAddress?: boolean; check?: { identity: typeof identity; prefill: typeof prefill } } = {}) {
   const kept = require('../keptCheck') as typeof import('../keptCheck');
-  kept.keepCheck(kept.ticketFor(OWNER), options.check ?? { identity, prefill });
+  kept.keepCheck(kept.ticketFor(OWNER), { checkHandle: HANDLE, ...(options.check ?? { identity, prefill }) });
   if (options.withAddress !== false) kept.keepAddress(kept.ticketFor(OWNER), address);
   return kept;
 }
@@ -183,14 +185,15 @@ describe('A6 · Selfie', () => {
     expect(allText(app)).not.toMatch(/blink|liveness|alive/i);
 
     expect(matches()).toHaveLength(1);
-    // G-72: the selfie alone; the BVN is not asked for again or kept to be sent.
-    expect(JSON.parse(matches()[0].body)).toEqual({ image: IMAGE });
+    // G-72: the selfie and the sealed check handle; the BVN is never asked for again or kept.
+    expect(JSON.parse(matches()[0].body)).toEqual({ image: IMAGE, checkHandle: HANDLE });
     expect(openings()).toHaveLength(1);
     expect(JSON.parse(openings()[0].body)).toEqual({
       firstName: 'Ada',
       lastName: 'Eze',
       dateOfBirth: '1992-10-04',
       address: '14 Admiralty Way, Lekki, Lagos',
+      checkHandle: HANDLE,
     });
 
     await app.act(async () => release());
@@ -279,13 +282,22 @@ describe('A6 · Selfie', () => {
     expect(openings()).toHaveLength(0);
   });
 
-  it('today’s server refuses a match sent without the BVN (G-72): the user sees its words, nothing opens', async () => {
+  it('a handle the server no longer takes (expired, another check passed) sends the user back to A26 for a new check, nothing opens', async () => {
     keepOpening();
-    routes['POST /money/identity/selfie'] = [{ status: 400, body: { statusCode: 400, message: ['bvn must be 11 digits'], data: null } }];
+    routes['POST /money/identity/selfie'] = [refusal(409, 'bvn_not_checked', 'Check your BVN again to continue.')];
     const app = await boot();
     await take(app);
-    expect(await app.screen.findByText('bvn must be 11 digits')).toBeTruthy();
+    await app.waitFor(() => expect(app.onRestart).toHaveBeenCalledTimes(1));
     expect(openings()).toHaveLength(0);
+  });
+
+  it('a build that kept no handle (none answered) cannot go on: back to A26, nothing sent', async () => {
+    const kept = require('../keptCheck') as typeof import('../keptCheck');
+    kept.keepCheck(kept.ticketFor(OWNER), { identity, prefill, checkHandle: '' });
+    kept.keepAddress(kept.ticketFor(OWNER), address);
+    const app = await boot();
+    await app.waitFor(() => expect(app.onRestart).toHaveBeenCalled());
+    expect(sent).toHaveLength(0);
   });
 
   it('a capture that cannot be used is never sent; a cancelled one changes nothing', async () => {

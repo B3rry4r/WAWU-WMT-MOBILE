@@ -42,6 +42,9 @@ const freshIdentity = { bvn: null, ninLast4: null, occupation: null, checksLeft:
 const passedIdentity = { bvn: { last4: '0111', verifiedAt: '2026-10-03T10:00:00.000Z' }, ninLast4: '0999', occupation: null, checksLeft: 2 };
 const prefill = { firstName: 'Ada', middleName: 'B', lastName: 'Eze', dateOfBirth: '1992-10-04', gender: 'female' as const };
 
+/** A sealed check handle as the server answers it (opaque to the app). */
+const HANDLE = 'v1.k03-test-handle';
+
 const A14 = "This isn't the number on your BVN. Use that one.";
 
 function keyOf(method: string, path: string) {
@@ -191,7 +194,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
   });
 
   it('a user can enter their BVN and NIN and tap Continue: the check runs and the BVN’s name, date of birth and gender are kept for A5', async () => {
-    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     await typeNumbers(app, '2219 0000111', '70190000999');
     expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('2219 0000 111');
@@ -203,6 +206,9 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(JSON.parse(checksSent()[0].body)).toEqual({ bvn: BVN, nin: NIN });
     expect(app.kept.readKeptCheck(OWNER)?.prefill).toEqual(prefill);
     expect(app.kept.readKeptCheck('someone-else')).toBeNull();
+    // KYC-03: the sealed handle the check answered is kept beside it, in memory only.
+    expect(app.kept.readHandle(OWNER)).toBe(HANDLE);
+    expect(mockStored).toEqual([]);
     // Shown back masked to the last 4 digits the server answered, never the typed numbers.
     expect(app.screen.getByText('•••• ••• 0111')).toBeTruthy();
     expect(app.screen.getByText('•••• ••• 0999')).toBeTruthy();
@@ -216,8 +222,19 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('a pass that answers no check handle (G-72) is not a pass the next steps can use: nothing is kept and A5 does not open', async () => {
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    const app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    expect(await app.screen.findByTestId('open-wallet-banner')).toBeTruthy();
+    expect(app.screen.getByText('Your details could not be read. Try again.')).toBeTruthy();
+    expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    expect(app.onContinue).not.toHaveBeenCalled();
+  });
+
   it('A14: a user whose BVN is registered to another phone sees the server’s sentence on the phone, can correct the number and continue', async () => {
-    routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 }), ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 }), ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     await typeNumbers(app, '22190000222');
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -332,7 +349,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
   });
 
   it('a user who pastes a BVN or NIN with spaces, dashes or dots round the digits keeps all 11 digits', async () => {
-    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     const bvnField = await app.screen.findByTestId('open-wallet-bvn');
     for (const pasted of ['2219 - 0000 - 111', '  2219 0000 111  ', '221-900-001-11', '221 900 001 11', '2219.0000.111']) {
@@ -397,19 +414,19 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
   it('"BVN confirmed" shows only for a kept check whose last 4 digits are the server’s current ones', async () => {
     const kept = require('../keptCheck') as typeof import('../keptCheck');
     serve({ 'GET /money/identity': ok(passedIdentity) });
-    kept.keepCheck(kept.ticketFor(OWNER), { identity: { ...passedIdentity, bvn: { last4: '9999', verifiedAt: '2026-10-02T10:00:00.000Z' } }, prefill });
+    kept.keepCheck(kept.ticketFor(OWNER), { identity: { ...passedIdentity, bvn: { last4: '9999', verifiedAt: '2026-10-02T10:00:00.000Z' } }, prefill, checkHandle: HANDLE });
     let app = await boot();
     expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
     await app.screen.unmount();
 
-    kept.keepCheck(kept.ticketFor(OWNER), { identity: passedIdentity, prefill });
+    kept.keepCheck(kept.ticketFor(OWNER), { identity: passedIdentity, prefill, checkHandle: HANDLE });
     app = await boot();
     expect(await app.screen.findByTestId('open-wallet-confirmed')).toBeTruthy();
   });
 
   it('the kept BVN details are forgotten when the user signs out', async () => {
-    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -424,7 +441,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
   });
 
   it('the kept BVN details are forgotten when the session ends because the refresh is refused', async () => {
-    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -449,7 +466,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
   });
 
   it('the kept BVN details are forgotten when Open your wallet is left, and when another account opens it', async () => {
-    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     let app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -457,7 +474,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await app.screen.unmount();
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
 
-    app.kept.keepCheck(app.kept.ticketFor('someone-else'), { identity: passedIdentity, prefill });
+    app.kept.keepCheck(app.kept.ticketFor('someone-else'), { identity: passedIdentity, prefill, checkHandle: HANDLE });
     app = await boot();
     await app.screen.findByTestId('open-wallet-phone');
     expect(app.kept.readKeptCheck('someone-else')).toBeNull();
@@ -468,7 +485,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const gate = new Promise<void>((resolve) => {
       open = resolve;
     });
-    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } } }];
+    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill, checkHandle: HANDLE } } } }];
     let app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -497,7 +514,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const gate = new Promise<void>((resolve) => {
       open = resolve;
     });
-    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } } }];
+    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill, checkHandle: HANDLE } } } }];
     const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -528,7 +545,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const app = await boot();
     await app.screen.findByTestId('open-wallet-phone');
     await app.screen.unmount();
-    expect(kept.keepCheck(ticket, { identity: passedIdentity, prefill })).toBe(false);
+    expect(kept.keepCheck(ticket, { identity: passedIdentity, prefill, checkHandle: HANDLE })).toBe(false);
     expect(kept.readKeptCheck(OWNER)).toBeNull();
   });
 
@@ -639,7 +656,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
         logged.push(args.map(String).join(' '));
       }),
     );
-    routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 }), ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 }), ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -665,7 +682,7 @@ describe('the kept BVN details end with the session, on every way it ends (FIX-0
   /** A passes the check on A26, drawn with the app's real query client (`createQueryClient`). */
   async function passAsA() {
     const { createQueryClient } = require('@/api/query') as typeof import('@/api/query');
-    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill })];
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot(createQueryClient());
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -743,7 +760,7 @@ describe('the kept BVN details end with the session, on every way it ends (FIX-0
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } } }];
+    routes['POST /money/identity/bvn'] = [{ gate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill, checkHandle: HANDLE } } } }];
     const app = await boot(createQueryClient());
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
@@ -811,7 +828,7 @@ describe('an answer from an ended session writes nothing, and a gone A26 hears n
   }
 
   it('a pass landing as the session ends puts none of A’s identity in the app’s cache, and keeps nothing', async () => {
-    const { app, client } = await answerInsideSessionEnd({ status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill } } });
+    const { app, client } = await answerInsideSessionEnd({ status: 200, body: { statusCode: 200, message: 'OK', data: { identity: passedIdentity, prefill, checkHandle: HANDLE } } });
     expect(client.getQueryCache().findAll({ queryKey: ['open-wallet', 'identity'] }).filter((q) => q.state.data !== undefined)).toHaveLength(0);
     expect(client.getQueryCache().findAll().map((q) => q.state.data)).not.toContainEqual(passedIdentity);
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();

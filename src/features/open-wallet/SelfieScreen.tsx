@@ -14,7 +14,7 @@ import { canvasNormalLineHeight, font, layout, space } from '@/theme';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
 
 import { fetchWalletState, OPEN_WALLET_KEY } from './api/account';
-import { checksLeftOf, matchSelfie, openWallet } from './api/opening';
+import { checksLeftOf, matchSelfie, openWallet, type OpeningInput } from './api/opening';
 import { waitOf } from './api/check';
 import { addressLine, openingName } from './details';
 import { ticketFor, ticketIsLive, useKeptOpening, type KeepTicket } from './keptCheck';
@@ -110,7 +110,8 @@ export function SelfieScreen({ onBack, onLeave, onRestart, capture }: SelfieScre
   const kept = useKeptOpening(owner);
   const naming = kept ? openingName(kept.check.prefill) : null;
   const address = kept?.address ?? null;
-  const usable = Boolean(kept && naming && address);
+  const handle = kept?.handle ?? null;
+  const usable = Boolean(kept && naming && address && handle);
   const selfie = useQuery({
     queryKey: [OPEN_WALLET_KEY, 'selfie', owner ?? ''] as const,
     queryFn: fetchSelfieMatch,
@@ -135,7 +136,7 @@ export function SelfieScreen({ onBack, onLeave, onRestart, capture }: SelfieScre
       />
     );
   }
-  if (!owner || !kept || !naming || !address || !selfie.data) {
+  if (!owner || !kept || !naming || !address || !handle || !selfie.data) {
     return (
       <CameraPage
         onClose={onBack}
@@ -152,7 +153,7 @@ export function SelfieScreen({ onBack, onLeave, onRestart, capture }: SelfieScre
       owner={owner}
       camera={camera}
       alreadyMatched={selfie.data.matchedAt !== null}
-      opening={{ ...naming, address: addressLine(address) }}
+      opening={{ ...naming, address: addressLine(address), checkHandle: handle }}
       onBack={onBack}
       onLeave={onLeave}
       onRestart={onRestart}
@@ -165,7 +166,8 @@ type SelfieProps = {
   camera: SelfieCapture;
   /** A selfie already matched the current check (the person came back): go straight to the opening. */
   alreadyMatched: boolean;
-  opening: { firstName: string; lastName: string; dateOfBirth: string; address: string };
+  /** What the opening sends; `checkHandle` also goes to the selfie match, in place of the BVN. */
+  opening: OpeningInput;
   onBack: () => void;
   onLeave: () => void;
   onRestart: () => void;
@@ -245,7 +247,7 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
       const ticket = ticketFor(owner);
       setPhase({ kind: 'matching' });
       try {
-        await matchSelfie(taken.image);
+        await matchSelfie(taken.image, opening.checkHandle);
         if (!current(ticket)) return;
         void open();
       } catch (error) {
