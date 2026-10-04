@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 49 | 39 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 32 | 18 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
 
