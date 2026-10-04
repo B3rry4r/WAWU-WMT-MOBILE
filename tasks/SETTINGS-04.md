@@ -62,7 +62,7 @@ Branch `wmt/SETTINGS-04` in `wawu-backend` (from main 1e6b807) and in this repo 
 5. Email goes through WAWU ID like the unpaid-account warning: the Hub names the user and the link, WAWU ID owns the address and wording.
 6. Not in the file, and the file says so: name, email and phone (WAWU ID), wallet transactions and statements, identity documents and checks, PINs, device keys, uploaded files, replies and messages other people wrote, follower lists, who viewed the profile, legal and health records. Reasons per model are in `EXPORT_EXCLUDED`.
 
-**Gaps filed.** G-95 (WAWU ID email route), G-96 (identity fields and statements not in the export), G-97 (`HUB_PUBLIC_URL` in production). Shared change: `SETTINGS-04 #1` (contract regenerated; mobile `contract/` and `schema.generated.ts` to be synced after merge, not done here: both are fenced).
+**Gaps filed.** G-95 (WAWU ID email route), G-130 (identity fields and statements not in the export), G-97 (`HUB_PUBLIC_URL` in production). Shared change: `SETTINGS-04 #1` (contract regenerated; mobile `contract/` and `schema.generated.ts` to be synced after merge, not done here: both are fenced).
 
 **NOT RUN.** Real email delivery (G-95: a wawu-id task adding `POST /internal/users/:userId/data-export`). V9 against the real login path (the contract specs use the mock WAWU ID only). Any phone check. WALLET-08's recipient search (its own task; it must filter with `hiddenFrom`). The seven `blocked-account.contract.spec.ts` tests that hardcode :4001 fail here as on main (env).
 
@@ -262,3 +262,5 @@ Real email delivery (G-95); V9 on the real login (mock WAWU ID only); backend ga
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+Bridging note: on merging main, this task's gap row G-96 (what the export holds) was renumbered G-130, because main's G-96 belongs to FIX-05. Text above that says G-96 for the export means G-130. G-95 and G-97 are unchanged.
