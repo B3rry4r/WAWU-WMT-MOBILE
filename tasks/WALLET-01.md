@@ -60,6 +60,8 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 - W1: Scan (opens W24): added by WALLET-20 after launch; not built at launch (BRIEF, "Not built at launch")
 - W1: the WAWU card row (opens W29): added by WALLET-22 after launch; not built at launch (BRIEF, "Not built at launch")
 
+**Lead note (4 Oct 2026, from KYC-04):** a money action here that answers `409 pin_not_set` opens A9 (route `open-wallet-pin`, KYC-04) and comes back to this screen once the PIN is set; it never shows the bare error.
+
 ## Capability checks
 
 - [ ] **W1**: a user can copy the account number; Send (W7); Add money (W15); open Settings (W35); pay a bill from a bills tile (S2); See all transactions (W26).
