@@ -4,7 +4,7 @@ Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
 - 4 Oct 2026 · lead · Mobile jest `testTimeout` raised to 20 s in package.json: under machine load (load average 7 to 11 with five agents running) first tests that load a screen's modules timed out at the 5 s default in A26 and M9, though every one passes alone. No test or product code changed.
-- 4 Oct 2026 · ME-06 · Merged to main by the lead (Developer 1's task): edit profile and social links. OTA update follows.
+- 4 Oct 2026 · ME-06 · Merged to main by the lead (e881d85, Developer 1's task): edit profile and social links. OTA update follows.
 - 4 Oct 2026 · ME-06 · Edit profile (M8) and Social links (M9) built on `wmt/ME-06`, mobile only: name, handle, bio, location, avatar, cover, social links with drag to reorder, saved to `/users/me` and `/users/me/profile-fields`; status verifying; five SHARED-CHANGES rows and G-110 to G-113 filed.
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
 - 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.
