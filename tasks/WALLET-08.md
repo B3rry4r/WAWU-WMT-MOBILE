@@ -7,7 +7,7 @@ order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -183,6 +183,91 @@ Verifier, 4 Oct 2026, independent (wrote none of this). Backend `wmt/WALLET-08` 
 - **The 120-an-hour window itself.** I sent 20 in a minute (21st 429) and read the constants from the spec; I did not wait an hour for the 121st. Unblocked by: a clock the throttler reads (none exists) or a 61-minute run; the spec pins `ttl: 3_600_000`.
 - **Real Fintava, real nginx.** The route calls neither. Address behaviour was tried from loopback with one `X-Forwarded-For` entry, which is what nginx writes (`hubTrustProxy` trusts one loopback hop); a real proxy hop is the OPS-11 spec's.
 - **Screens.** None (V5 to V7, V10 are not in this task's passes).
+
+## Verifier report, round 2
+
+Verifier, 4 Oct 2026, independent. Backend `wmt/WALLET-08` d01d019 (origin/main 38bbe4c), mobile 8d4cc64. Fresh detached worktrees, own databases `vw08r2_*_test`, the built Hub on :4989 and the stand-in WAWU ID on :4990, Fintava base pointed at a dead local port (no Fintava call), full suite and protected suite in their own network namespace (mock on :4001 inside it only). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw08r2/`.
+
+**Verdict: D1, D2 and D3 are closed; 1 minor test defect open (D4). Status `building`.** The per-person limit holds under every evasion I tried, and statements behave exactly as before.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| 1. D1 per-person limit | passed | Built Hub, real HTTP, `X-Forwarded-For` written as nginx writes it (below). |
+| 2. Statements unchanged | passed | Differential: 299,894 takes, 19,337 refusals, 59,626 give-backs, identical; two built Hubs, identical transcript (below). |
+| 3. D2 contract | passed | Contract diff against 38bbe4c: recipients paths, new schemas, one enum value only. |
+| 4. D3 pinned caps and digits | passed | M14, M24, M19 now killed. |
+| 5. G-133, G-134 | passed | Closed honestly; G-134 has a checkable target. |
+| 6. Regression | passed | Numbers below. |
+
+### 1. D1, the per-person limit (`h/d1a.mjs`, `d1b.mjs`, `d1c.mjs`; outputs `d1a-output.txt`, `d1b-output.txt`, `d1c-output.txt`)
+
+- **My round-1 reproduction, one account, 30 addresses in one /64:** requests 1 to 20 answer 200, **21 to 30 answer 429** `recipient_search_rate_limited`, every one with `retryAfterSeconds` 60 and a `Retry-After: 60` header equal to it; the body has the one error shape with `reason`, `Cache-Control: no-store`.
+- **Two accounts, one address X:** A 15 and G 5 answer 200 from X (20); both are then refused from X with a 429 that has no `reason` (the per-address limit, still in force). From other addresses A has exactly 5 left (the 6th is the person's 429) and G exactly 15 (the 16th).
+- **Evasion, all failed to get past 20:**
+  - Token refresh and several sessions: for one person, a login, a refreshed token, a second login and a token minted with the stand-in key (all four carry the same `sub`): 20 searches spread over them, all 200; the 21st through the refreshed token and through the minted one: 429. The counter is the verified `sub`, not the session.
+  - Concurrent burst: 25 parallel requests from 25 addresses with a new token each: **20 answer 200, 5 answer 429**. The count is taken synchronously in the handler, so nothing slips through before it is seen (60 parallel from one address: 20 and 40, per address).
+  - Window edge: 20 at t0 (all 200, the 21st 429), wait 60.2 s, 25 parallel: **20 and 5**. A new window gives exactly 20, not 40.
+  - `/money/RECIPIENTS/?q=`, `HEAD`, a trailing `&`: all counted in the same bucket (8 + 6 + 6, then the 21st normal request is 429). `recent` and `GET /money/wallet` are not limited by it.
+- **400s are not counted:** 30 searches with `q=a` answer 400, then 20 valid ones answer 200 and the 21st is 429. A refusal by the token guard or the wallet gate never reaches the counter (409 and 401 answers, round 1 and the builder's 90-refusal test).
+- **Retry-After:** 60 on the first refusal, **30 thirty seconds later** (body and header agree, rounded up). The hour and the day on a moved clock are the builder's: 3,234 and 71,939 exact, and 1 ms before the hour ends is 1.
+- **The limiter against an independent model** (my own re-implementation of "fixed window from the first search in it, longest wait rounded up, at least 1", `vscratch.spec.ts.txt`, a scratch spec not committed): 8 seeds, 480,000 operations including every boundary (59,999, 60,000, 60,001, 3,599,999 ... 86,400,000 ms): 473,828 counted and 6,172 refused, **every answer and every retry value identical**.
+- **Walk cost now:** 500 a day per account is about 165 people a day per account at the 3.0 requests a person I measured in round 1 (6,000 of 6,000 in 18,108 requests), 20 a minute, and an account needs an open wallet. The per-address limit and the per-person limit now both bind. Many accounts still multiply it. A fixed window lets a person do 20 at the end of a minute and 20 at the start of the next (40 in a few seconds, shown above), and about 2 x 500 across a day edge (the 120 an hour holds in between); that is what "fixed windows" in the builder's report says.
+- **In memory, one process:** `deploy/install-services.sh` has one `ExecStart=/usr/bin/node` and no cluster or pm2, so one counter. A restart clears it (G-133 says so).
+
+### 2. WALLET-27's statements, before and after
+
+- **Spec files unchanged:** `git diff 38bbe4c d01d019 --stat -- src/money/statements` is one file, `statement-config.ts` (+18, -87); no file under `statements/tests` and no other statement file changed; `statement.controller` is unchanged. The statement specs pass: 37 suites, 962/962 in `src/money` and `hub-rate-limits` (`money-statement.contract` 26, `statement-units` 11).
+- **Differential test of the two classes**, origin/main's `StatementRateLimiter` (copied in) against d01d019's, on a shared moved clock: 8 seeds, 50,000 operations each, random users, steps from 0 to 3 s with window edges (59,999, 60,000, 60,001, 3,599,999, 3,600,000, 3,600,001 ms) and jumps of up to two hours, give-backs (and a second give-back of the same take), prunes: **299,894 takes, 19,337 refusals, 59,626 give-backs; every outcome identical** (the `MoneyError` class, code, status, and the whole response body with `retryAfterSeconds`), and `size` equal after every step. Figures identical: 5 a minute and 30 an hour.
+- **Two Hubs, one transcript** (`h/stmt.mjs`, `stmt-branch.txt`, `stmt-main.txt`; a Hub built from d01d019 and one from origin/main, the same database, each run with new people): 5 requests answer 200 and the 6th `429 statement_rate_limited` with `retryAfterSeconds` 60 (`ra=40` after 20.3 s, so the rounding up is the same); 4 bad periods, a bad format and a future date answer 400 and then 5 valid ones answer 200 and the 6th is 429 (400s not counted); 8 `400 statement_too_large` on a 50,001-row period, then 5 valid and the 6th is 429 (given back); **30 heavy statements at once from 6 people (45,000 rows each): 18 answered 200 and 12 answered `503 statement_busy` on the d01d019 Hub, 21 and 9 on the main Hub, and on both the 6th request of every one of the 6 people is `429` (the 503s counted)**. `diff stmt-branch.txt stmt-main.txt` is empty (even the retry seconds). No difference found.
+
+### 3. D2, the contract
+
+`contract:build` leaves `contract/openapi.json` unchanged (sha256 `562a1767...`), equal to the mobile copy. Against 38bbe4c the differing paths are only: `/money/recipients` and `/money/recipients/recent` (served, tags, operationId, the declared-only fields gone, `x-wawu-max-items`, `maxItems` 20 and 10 on the 200 arrays, and on the search the new `400` as `MoneyPlainErrorEnvelope` and `429` as `MoneyErrorEnvelope`), the new schema `MoneyPlainErrorEnvelope`, the new `recipient_search_rate_limited` value in the `MoneyErrorReason.code` enum and one description sentence on `retryAfterSeconds`. No other route's schema changed; the `maxItems` found elsewhere in the file (14 request-body fields) are the same as on main. `@MaxItems` is an `ApiExtension` and the enrich change reads it only where present.
+
+### 4. D3
+
+The caps are literals (25 people give exactly 20, 13 recent give exactly 10, the constants are asserted equal to 20 and 10), and a test reads fullwidth, Arabic-Indic, Eastern Arabic-Indic, Devanagari, a mix with ASCII and superscripts as text. **M14 (search cap 21), M24 (recent cap 11) and M19 (NFKC before the phone parse) are each killed (1 test fails)** (`mutants-r2.json`).
+
+### 5. The gaps
+
+G-133 is closed and says what is left (memory, one process, which the deploy confirms). G-134 names a target I can check: the name in one lower-case column, a `pg_trgm` index, and `EXPLAIN` on 300,000 wallets showing an index scan and a median under 50 ms. Its reason for not indexing the handle alone is right: the same condition reads `accountName` too.
+
+### 6. Regression
+
+| Check | Result |
+|---|---|
+| `tsc`, eslint, prettier | `tsc --noEmit` 0; `eslint --no-fix` 0 on the 21 changed `.ts` files; prettier clean on them (`tsc.log`, `eslint.log`) |
+| Specs (host) | `src/money` and `hub-rate-limits`: 37 suites, **962/962** (`hub-rate-limits` 22, `recipient-throttle` 10, `money-recipient` 41, `receipt-units` 43) |
+| Full suite, fresh DB, own namespace | 153 suites, 3,669 passed, 12 failed, 3 skipped (`ns/full.txt`). The 12 are `hub-rate-limits` (11, needs a non-loopback IPv4 interface, there is none in the namespace) and `receipt-units` "under 300 ms" (363 ms while my mutants ran; 43/43 on the host). Both passed on the host, so 3,681 passed, 3 skipped, 0 failed. |
+| Protected `run.sh --fresh HEAD` | **253/253, all 244 required**, lock ref origin/main 38bbe4c, lock-file diff empty |
+| Gates | main 722 files **16 fail / 33 warn / 76 accepted**; branch 730 files **16 fail / 34 warn / 76 accepted**; the 16 FAIL lines identical; the one added warn is `PROVISIONAL(RECIPIENT-SEARCH-RATE)`; baseline ok |
+| Tripwire | 0 of 2,484 added lines match the protected-suite pattern |
+| `contract:build` | equal to the committed contract and to the mobile copy |
+| Mobile `npm run check` | exit 0 (36 suites, 666 tests, gates 0 fail 0 warn, 207 tasks) |
+| Secret scan | 58 windows: backend diff 0 hits (133,156 bytes), mobile diff 0 hits (83,129 bytes) |
+
+### Defect
+
+- **D4 (defect, minor, tests): nothing pins that a window starts again.** Mutant L9 (`PersonWindowLimiter.take` never resets a window) passes all 51 recipient tests and all 37 statement tests. It is not equivalent: an expired window with a full count gives a negative wait, which is not a refusal, so after the first minute the 20-a-minute (and 5-a-minute) limit is never enforced again, only the hour and the day. The shipped code is right (live: after 60.2 s, 25 parallel give 20 and 5; the model run above), the tests would not catch a change. The pre-existing statements spec had the same gap (the shared class made it shared). **Fix:** one test of a second minute: 20 at t0 pass, the 21st is refused, at t0 + 61 s exactly 20 pass again and the 21st is refused, on the moved clock, for the recipient search and (one line) for statements.
+
+### Mutants of my own, round 2 (`mut2.py`, `mut3.py`, recipient specs 51 tests, statements specs 37)
+
+12 valid mutants: **10 killed, 2 survived** (L10 is a no-op I wrote by mistake, not counted).
+Killed: M14, M24, M19 (above); L1 counting before the 400 is read (28 fail); L2 one shared counter for everyone (22); L3 day limit 501 (2); L4 hour limit 121 (2); L5 the `Retry-After` header dropped (2); L7 minute limit 21 (4); L8 the per-address `@Throttle` removed (2).
+Survived: **L9** (D4); **L6** retry rounding ceil to floor passes the recipient specs (their waits are whole seconds, 3,234 and 71,939) but **is killed by the statements spec** (1 test), and the class is shared, so the rounding is pinned.
+
+### Incident (mine, disclosed)
+
+While seeding round-2 statement tests (16 people with 45,000 ledger rows each, 720,000 rows) the database grew to 557 MB on a volume that had 14 MB free, and the shared PostgreSQL cluster stopped (`could not write to file pg_wal/xlogtemp ... No space left on device`). Another session's restart had already failed on the same error. I dropped my database (1.5 GB free afterwards) and ran `pg_ctlcluster 16 main start`; the cluster recovered ("database system is ready to accept connections", 14:12 UTC). Any session that held a connection between about 14:05 and 14:12 UTC saw connection errors. After that I seeded 6 people with 45,000 rows and dropped the database after each Hub run.
+
+### NOT RUN
+
+- **V9 with a real sign-in against the real WAWU ID** (unchanged): tokens minted with the stand-in's key, plus two stand-in logins and a refresh for the evasion test. Unblocked by: the Hub with a real `WAWU_ID_BASE_URL` and `WAWU_ID_INTERNAL_SERVICE_KEY` (OPS-10 deploy), a real sign-in, then a search.
+- **Recent from a real send** (unchanged). Unblocked by: WALLET-07 serving `POST /money/transfers/wawu`.
+- **The hour and the day over real time.** Proved on a moved clock (the builder's test, and 480,000 model operations of mine), not by waiting an hour or a day. Unblocked by nothing short of a 24-hour run.
+- **The round-1 live attack battery against d01d019** (phone spellings, injection, leak scan, block timing). Not re-run: it sends 100+ searches from one account and would now meet the person limit; `recipient-query.ts` and the SQL in `recipient.service.ts` are unchanged (the diff touches only the call and the signature) and the 41 recipient tests pass. Unblocked by: the same scripts in `../vw08/h/` with one account per 20 searches.
+- **The statements hour window (30 an hour) over HTTP.** It needs 6 or more minutes of real time per Hub. Covered by the differential run (the hour window is in it) and the unchanged statements spec.
+- **A multi-process counter.** Not applicable on the droplet's single process; G-133 states it.
 
 ## Owner sign-off
 

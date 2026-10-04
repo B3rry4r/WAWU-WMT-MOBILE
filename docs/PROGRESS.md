@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 36 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 37 | 22 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 
@@ -95,6 +95,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · WALLET-08 · Verified round 2 (independent, backend d01d019): D1, D2, D3 closed; the per-person search limit (20 a minute, 120 an hour, 500 a day) holds against one account on 30 addresses (20 pass, 10 refused), a refreshed token and a second session (same count), 25 parallel (20 and 5) and a window edge (20 and 5), 400s not counted, Retry-After 60 then 30; statements identical to origin/main (299,894 random operations on the old and new limiter, and two built Hubs, same transcript incl. 12 of 30 busy 503s counted); contract differs from main only in the recipients paths and new schemas; full suite, protected 253/253, gates, `npm run check` all as before; 1 minor test defect open (D4: nothing pins that a window starts again, mutant L9 survives); status building. Also: my 720,000-row seed filled the disk and stopped the shared PostgreSQL for about 7 minutes (14:05 to 14:12 UTC); dropped it and restarted the cluster.
 - 4 Oct 2026 · WALLET-08 · Builder round 2, verifying (backend wmt/WALLET-08 d01d019): a per-person search limit (20 a minute, 120 an hour, 500 a day, `429 recipient_search_rate_limited` with Retry-After), the contract declares the search's 400 and 429 and the arrays' maximums, caps and non-ASCII digits pinned in tests; G-133 closed, G-134 filed.
 - 4 Oct 2026 · WALLET-08 · Verified (independent, backend 6dab9c8): rulings 1 to 5, 7 and 8 hold under attack (no phone, account number, email, BVN or NIN in 38 scanned responses; a blocked hit is byte for byte and in timing an unknown number; phone exact in 7 spellings; 25 of 31 own mutants killed); tsc 0, protected 253/253 with the lock unchanged, gates 16 fail as on main plus the one PROVISIONAL, contract and mobile copy equal, `npm run check` exit 0; 2 defects open (D1 no per-caller limit, so ruling 6 is not met and one account can walk about 950 people a day per address and without limit across addresses; D2 contract omits 400 and 429) and 1 minor test defect (D3 caps not pinned); status building.
 - 4 Oct 2026 · WALLET-08 · Builder done, verifying (backend wmt/WALLET-08 6dab9c8): `GET /money/recipients` and `/recent` served behind the wallet gate: open wallets only, exact phone in four spellings, name and @handle by beginning (2 characters), blocked either way hidden, 5 fields only, search 20 a minute and 120 an hour per address; G-132, G-133.
@@ -109,4 +110,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · WALLET-27 · Merged to main by the lead (068abc3): account statements with per-person limits; backend PR #61 (5236f12).
 - 4 Oct 2026 · SETTINGS-04 · Built (backend, status verifying): a block now hides people both ways on search, Explore, profiles, the feed, pieces, comments, rooms, the directory, events and EVG; data export fulfilled by a signed, expiring link emailed through WAWU ID (real inbox NOT RUN until WAWU ID adds the route, G-131); 41 new tests with revert proofs, V3 244 of 244, contract suite 0 new failures against main.
 - 4 Oct 2026 · HOME-06 · Built on `wmt/HOME-06` (backend, owner DEV), verifying: `GET /content/:id/detail` (free preview, updated and purchased dates, buyer and student counts, rating state), `PUT /content/:id/rating` and `PUT /content/:id/preview`; the web's `POST /content/:id/rate` is unchanged (protected route); the new rating rules live only on `PUT /content/:id/rating`.
-- 4 Oct 2026 · WALLET-18 · Verified round 5: no defect open, status review (backend 5008664 with main c4d17bb; mobile be87619 with main 26cf830; both mains have since moved). D3 closed: all 73 round-4 rows show at most 4 digits (the 5 finding rows now show the real last four, `•••• 4567` and `•••• 4512`), plus 234 new attack rows (every noncharacter U+FDD0 to U+FDEF, U+FFFE, bidi controls, ZWJ, variation selectors, keycaps, NFKC forms) with no U+FDD0 in any page, image or PDF line. The table matches UCD 17.0 entry for entry, and the generator refuses any file but the pinned one and is byte-identical from the download. Fail closed holds on a real Hub with 12 characters taken out of its table, and in 612,000 differential fuzz strings; 17 of 19 own mutants killed (the 2 survivors: a circled-one value no test shows, and one equivalent). Note N1 for the lead: an unknown number character counts as one digit, so a future character that folds into 2 or more digits could let one extra digit show.
