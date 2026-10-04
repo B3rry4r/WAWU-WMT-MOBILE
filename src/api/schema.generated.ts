@@ -1311,6 +1311,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/{id}/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContentDetailController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rate, or change your rating. Always one rating per person. */
+        put: operations["ContentDetailController_rate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The creator sets how much of their own piece is free to preview. */
+        put: operations["ContentDetailController_setPreview"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/feed": {
         parameters: {
             query?: never;
@@ -4177,6 +4227,11 @@ export interface components {
         RateContentDto: {
             rating: number;
         };
+        SetPreviewDto: {
+            freePages?: number | null;
+            freeSeconds?: number | null;
+            freeLessons?: number | null;
+        };
         SetMediaDto: {
             /**
              * @description The pictures of a photo set, in the order they are shown. Replaces the
@@ -5909,6 +5964,37 @@ export interface components {
         };
         FollowingCount: {
             count: number;
+        };
+        FreePreview: {
+            pages: number | null;
+            seconds: number | null;
+            lessons: number | null;
+        };
+        DetailLesson: {
+            id: string;
+            title: string;
+            order: number;
+            durationLabel: string | null;
+            isFree: boolean;
+        };
+        RatingState: {
+            average: number | null;
+            count: number;
+            myRating: number | null;
+            canRate: boolean;
+            /** @enum {string|null} */
+            cannotRateReason: "own_content" | "not_purchased" | null;
+        };
+        ContentDetail: {
+            contentId: string;
+            contentType: string;
+            updatedAt: string;
+            purchasedAt: string | null;
+            buyerCount: number;
+            studentCount: number | null;
+            freePreview: components["schemas"]["FreePreview"];
+            lessons: components["schemas"]["DetailLesson"][];
+            rating: components["schemas"]["RatingState"];
         };
         DmSendInitResponse: {
             flutterwaveConfig: {
@@ -9784,6 +9870,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentEngagement"];
+                };
+            };
+        };
+    };
+    ContentDetailController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentDetail"];
+                };
+            };
+        };
+    };
+    ContentDetailController_rate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateContentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingState"];
+                };
+            };
+        };
+    };
+    ContentDetailController_setPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPreviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreePreview"];
                 };
             };
         };

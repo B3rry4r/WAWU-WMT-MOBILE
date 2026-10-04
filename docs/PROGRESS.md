@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 59 of 182.**
+**Launch tasks done: 60 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 47 | 37 | 30 | 31 |
+| todo | 47 | 36 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 35 | 21 | 4 | 1 |
+| done | 35 | 22 | 4 | 1 |
 
 ## Done
 
@@ -62,6 +62,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
 - [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details (Developer)
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
+- [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts (Developer)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 - [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
 - [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people (Developer)
@@ -80,7 +81,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN
-- **Developer:** [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy
+- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy
 - **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
@@ -88,9 +89,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · HOME-06 · Merged to main by the lead (MERGEHASH, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
 - 4 Oct 2026 · SETTINGS-04 · Merged to main by the lead (9d0e1e4, Developer 1's task): data export, and blocking that hides people on every read; backend PR #62 (dfaa53b); its export-email gap renumbered G-95 to G-131.
 - 4 Oct 2026 · WALLET-27 · Merged to main by the lead (068abc3): account statements with per-person limits; backend PR #61 (5236f12).
 - 4 Oct 2026 · SETTINGS-04 · Built (backend, status verifying): a block now hides people both ways on search, Explore, profiles, the feed, pieces, comments, rooms, the directory, events and EVG; data export fulfilled by a signed, expiring link emailed through WAWU ID (real inbox NOT RUN until WAWU ID adds the route, G-131); 41 new tests with revert proofs, V3 244 of 244, contract suite 0 new failures against main.
+- 4 Oct 2026 · HOME-06 · Built on `wmt/HOME-06` (backend, owner DEV), verifying: `GET /content/:id/detail` (free preview, updated and purchased dates, buyer and student counts, rating state), `PUT /content/:id/rating` and `PUT /content/:id/preview`; the web's `POST /content/:id/rate` is unchanged (protected route); the new rating rules live only on `PUT /content/:id/rating`.
 - 4 Oct 2026 · FIX-05 · Merged to main by the lead (e2d3c14): per-caller rate-limit store, so one address flooding the server never pushes another into 429; backend PR #60 (c4d17bb).
 - 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
 - 4 Oct 2026 . WALLET-27 . Verified round 4: both defects fixed, no defect open, status review (backend 5c36881 on main e6bd701; mobile 68dff0c). Defect 2 fixed: 25 route 400s (five kinds x5, including `statement_too_large`) none counted, then 5 x 200 then 429. Give-back safe: a 60-request too_large flood held the server to 2 statement queries at once (too_large runs only a capped COUNT inside a build-slot, never the full build) and the per-person limiter still 429'd the burst; 503 still counts (controller gives back only for too_large). Defect 3 fixed: CONVENTIONS section 12 matches the code, no round-2 throttle text left. X4 now killed; two new mutants survive as test gaps (503-counts untested; give-back window guard untested). Passed: protected 253/253; gates main 16/24 vs branch 16/27 (only the 3 statement PROVISIONALs new); contract:build clean; tsc/eslint/tripwire/key-scan clean; mobile check exit 0 (33 suites/602). Full suite 137/144 suites (3,405 passed) with all WALLET-27 surface green; 7 unrelated suites (43 tests) could not run because another session holds port :4001 for its own WAWU ID stand-in (environment, not a branch defect; builder's own run was 144/144).
@@ -101,5 +104,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-27 · Builder round 2: statements are rate-limited (5 a minute, 30 an hour per person per address, PROVISIONAL) and capped at 50,000 rows (`400 statement_too_large`, counted first); a row with our and Fintava's references shows ours (M10). Backend b9797a7 with main 1e6b807 merged; status verifying.
 - 3 Oct 2026 · WALLET-27 · Verified: no open defect, status review (backend 5cd55c1 on main fe1ec6c; mobile 33484cf). Capability check passed on the built server through a real sign-in (Sep lists exactly its 6 completed rows, Lagos edges both ways). 70/70 HTTP probes: no way found to read another person's statement (query fields, arrays, headers, paths, swapped or unsigned tokens), no full account number, narration or id in the file; leap day, year end, 366/367 days, empty month, money and CSV rules hold; lines equal the history and its month summary. Full suite 136/136 suites (3,261 passed, 0 failed), protected 253/253, gates main plus one PROVISIONAL warning, tsc 0, mobile check exit 0 (26 suites, 431 tests, 110 files). 14 of 15 mutants killed; M10 (reference order) survives as a test gap. Unclear: load (100k rows, 366 days: 1.3 s, 15.7 MB; 20 concurrent within the global limit: 39 s, 1.6 GB RSS; no per-route throttle or row cap). NOT RUN: PDF (G-68), email (G-69), V10.
 - 3 Oct 2026 · WALLET-27 · Built: `GET /money/statements?from=&to=&format=csv` serves the caller's completed movements for a period of Lagos days (both included) as CSV, from the ledger, no balance (backend 5cd55c1). Stamped PDF NOT RUN (Fintava has no statement, G-68); email NOT RUN (no sender, G-69, owner question). Status verifying.
-- 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
-- 4 Oct 2026 · lead · Mobile jest `testTimeout` raised to 20 s in package.json: under machine load (load average 7 to 11 with five agents running) first tests that load a screen's modules timed out at the 5 s default in A26 and M9, though every one passes alone. No test or product code changed.
