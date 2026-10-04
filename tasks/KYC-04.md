@@ -7,7 +7,7 @@ order: 88
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -396,6 +396,58 @@ Closed when:
 - A real Fintava sandbox opening (G-25, questions 6 and 11): the stand-in answered.
 
 Clean-up: the Hub, stand-in WAWU ID, Fintava stand-in and pass-through stopped (PIDs and command lines checked), `vk04r2_test` dropped, the three worktrees removed.
+
+## Builder round 3
+
+Builder, 4 Oct 2026. Mobile `wmt/KYC-04` from the verifier's edfdccb, with `origin/main` 7d0e538 merged in first as 7e7a7df (BACKEND_GAPS: both sides' rows kept, sorted by number; PROGRESS regenerated). Backend main is 38bbe4c (WALLET-18); the seam Hub was built from it, no backend change. Evidence `$K3` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc04/r3/`:
+- shots `$K3/shots/<name>-<theme>.png`;
+- the verifier's driver with my ports and the changed scenarios (`$K3/drive.py`), the pass-through (`$K3/web-server.js`), runs `$K3/results.jsonl` and `$K3/runall.log`, request log `$K3/calls.jsonl`;
+- mutants `$K3/mutate3.py` with `$K3/mutants.txt` and `$K3/mutate3.out`; jest logs `$K3/../r3-jest*.log`.
+
+**Defect 1, fixed as ruled: the already-set sentence is true in both cases.** The app cannot tell (a) this person's own set landed first and its answer arrived twice (the typed PIN IS the stored one) from (b) a PIN set earlier or on another phone. The end now reads, under the same title "You already have a transaction PIN" and with Done: "Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments." It never says the typed PIN was not saved, nor that it was.
+- Wording recorded in BRIEF section 12, A10 (Default (agent), owner may override; round 2's wording is replaced) and in G-116's text, which no longer claims the old sentence is true.
+- **Proof, jest:** `CreatePinScreen.test.tsx` "a 409 pin_already_set ends on a sentence that is true...": one `409` after one typed pair shows the exact sentence, none of `not saved`, `was not`, `did not save`, no em-dash, no digit of the PIN, `onDone` not called until Done, and `invalidateQueries(['money'])` called. Mutant M13 (the sentence says "The one you typed was not saved.") is killed by it.
+- **Proof, seam (`dup_answer`, light and dark, both `ok`):** A9 and A10 with 8642, the pass-through lets the Hub set it (201) and drops that answer, the browser re-sends, the Hub answers 409. Hub saw `[201 (answer dropped), 409]`; the screen carries the new sentence and not "not saved"; the stored hash verifies 8642. Shots `$K3/shots/dup-answer-{light,dark}.png`. `already_set` (a PIN set through the API while A9 shows, then 2749 twice): the same sentence, hash still 1111, Done to `/`.
+
+**Finding 2, fixed as ruled: A8 and A9 never offer or open on a stale wallet.**
+- **A8** (`WalletOpenScreen.tsx`): it stays mounted under A9, so it now notes when it loses focus (`useIsFocused`) and, on coming back, reads the wallet again. While that read is in flight (and on any in-flight read while it is in front) it shows its loading view, never the cached "Create your transaction PIN". A read that fails shows A8's error view with Try again, never the cached offer. A read that says a PIN is set shows Done, as in round 1. First arrival still reads once, and being in front again with no trip away reads nothing more.
+- **A9** (`CreatePinScreen.tsx`): it shares A8's cache entry, so it opened with live keys on A8's cached wallet while its own read ran. Now only a settled read counts: while A9's read is in flight it shows "Loading" with the keys off, if the read fails it shows the "We couldn't open this step" view with Try again (keys off), and only a read that answers moves on (set: the flow ends; not open: A8; not set: the keys come on).
+- **Proof, jest:** `WalletOpenScreen.test.tsx` 3 new (return with a gated read: loading view, offer absent, then Done after "set", `onCreatePin` not called; return with "not set" offers Create again, and a failed return read offers nothing stale and says why; no read without a trip away). `CreatePinScreen.test.tsx` 2 new (a cached wallet with a held read: loading, keys `aria-disabled`, 2749 typed twice sends 0 POSTs, then "set" ends with 0 POSTs; a failed read behind a cached wallet keeps the keys off and Try again brings them on). Mutants X3 to X6 and X8 (below) killed.
+- **Proof, seam (light and dark, all `ok`):**
+  - `unchecked_back`: the set landed, its answer and the re-read were lost; Back goes to A8, which shows Done (not the offer), `GET /money/pin` `isSet` true.
+  - `unchecked_back_fast` (the Hub answers 6 s late): A8's loading view shows (`$K3/shots/a8-return-loading-{light,dark}.png`), the offer is never in the page text, then Done; hash 8642.
+  - `unchecked_back_notset` (the Hub down for the set and the read, nothing set): Back with a 5 s Hub shows A8's loading view, then A8 offers Create; Create opens A9 on a slow Hub with `open-wallet-pin-loading` and every key `aria-disabled`, a forced tap leaves "0 of 4 digits entered"; the keys come on only when the read answers, 2468 twice sets it (hash 2468, 1357 never stored). Shot `a9-loading-on-return-*.png`.
+
+**Finding 3, fixed: Back during "Checking your PIN" looks and acts disabled.** `IconButton` already has a `disabled` prop (glyph in the disabled text colour, `accessibilityState={{ disabled: true }}`, the Pressable disabled), and the screen passed it for "Setting your PIN" only. It now passes it for both (`waiting`). No shared change, no SHARED-CHANGES row. Proof, jest: `accessibilityState.disabled` true, the glyph drawn in `textDisabled`, a press moves nothing, and it is enabled again once the check has answered and in plain entry (mutant X1 killed). Proof, seam (`checking_back`, light and dark): the button is `disabled` with `aria-disabled="true"`, its glyph stroke `#B4B3BB` (the disabled grey) and a forced click leaves the path unchanged until the check answers.
+
+**Finding 4, fixed: the two-line line keeps its icon beside its text.** The wrong-PIN line (W11, and this screen's mismatch) is a row of the icon and its text; the text was `flexShrink: 1` and centred, so once the sentence wrapped to two lines the text box filled the row and the icon sat at the far left gutter. The text is no longer centred inside that box: a one-line sentence still sits centred as a whole (the row centres it, as W11 does), a wrapped one starts beside its icon. Proof, jest: the row is the same row (`row`, `center`, `center`) and its text has `flexShrink: 1` and is not `center`-aligned (mutant X7 killed). Proof, seam: `a10-unknown-light.png` and `-dark.png` (390 px at 2x), the icon at the left of "We couldn't check whether your PIN was set. No connection..." on both lines.
+
+**Finding 5, fixed: the second entry leaves React state when the request has answered.** `submit` now clears `digits` the moment the set has answered (landed or refused), in every end state, before it acts on the answer; `startAgain` still clears it too. The dots read from the phase, not from `digits`, so nothing on screen changes. Proof, jest: with `useState` watched for the calls that come from `CreatePinScreen.tsx`, the latest render holds no 4-digit string in the unknown, already-set and done states, and a control test shows `2749` held while "Setting your PIN" is out (mutant X2 killed, 2 tests fail).
+
+**Tests that kill M4 and M6 (the verifier's survivors), and four more that had survived everything.**
+- M4 (a session end leaves `inFlight` set): "a session end while A's set is out frees the screen for B": B's own two entries are sent (`{6060, 6060}` is the 2nd POST) and A's late 201 then moves nothing.
+- M6 (a read from an earlier visit acts on "set"): "a wallet read of an earlier visit that says set acts on nothing": a sign-in as B while A's read is out, then A's read answers "set": no `onDone`, no money invalidation, still A9.
+- Also killed now: M3 (the `['money']` invalidation on the already-set end, in the 409 test), M5 (A's sentence shown to B after a session end), M7 (a failed read of an earlier visit draws its Try again), M8 (leave on a sign-out: it must not, the route sends the visitor away).
+
+**Mutants (jest suites CreatePinScreen, pin and WalletOpenScreen, `$K3/mutants.txt`):** M1 to M15, V4, V6 and V10 all KILLED (M1 to M15: 15 of 15; V4, V6, V10: 3 of 3), and 8 new round 3 mutants X1 to X8 killed (X1 Back disabled only while setting, X2 second entry kept, X3 A9 trusts the cached wallet, X4 A8 never re-reads, X5 A8 shows the cached offer while reading, X6 a failed return read answered with cached data, X7 centred line text, X8 a failed read behind a cached wallet leaves the keys live). M13's anchor was changed to the new sentence. The first pass left M3, M5, M7 and M8 alive; they were killed by tests added afterwards and re-run (4 of 4).
+
+**V9 against the real seam, light and dark, 40 runs (20 scenarios per theme), all `ok`:** `full`, `dup_answer`, `lost_press`, `unchecked_back`, `unchecked_back_fast`, `unchecked_back_notset`, `checking_back`, `lost_retry`, `already_set`, `lost_reread_fails`, `lost_reread_fails_mismatch`, `server_error`, `lost_reread_ok`, `post401_same`, `post401_switch`, `switch_a9_bopen`, `switch_a10_bopen`, `switch_unchecked`, `late_after_switch_bopen`, `signout_mid`.
+- **Setup:** a Hub `dist` from backend main 38bbe4c on :4951 with a fresh `k04r3_test`, migrated and seeded (`npm ci` was needed: the copied `node_modules` lacked `@resvg/resvg-js`); the stand-in WAWU ID on :4952, sign-in through the app's A22; a Fintava stand-in (made-up numbers); this branch's web export on :8151, 0 `wawuafrica.com` in it.
+- **Results:** browser storage held only `wawu.session.access` and `.refresh` (no sessionStorage, IndexedDB or cookie) in all 40; 0 blocked requests; 0 requests to `wawuafrica.com` or `fintavapay.com`; the only console error is the 500 that `server_error` causes. Every set ended with one POST per A10 and the stored hash was the first PIN typed.
+
+**A8's re-read was reshaped after the first seam pass (lint refused a state set inside an effect):** "away" is now remembered while rendering and the effect only reads and clears it. The jest suites, the A8 mutants (X4 to X6 re-run on the new code, all killed) and the seam were run again on the final code: 16 runs (`full`, `dup_answer`, `unchecked_back`, `unchecked_back_fast`, `unchecked_back_notset`, `checking_back`, `already_set`, `lost_retry`, light and dark), all `ok`, storage only the two session keys, 0 blocked requests.
+
+**Counts and checks.** `npm run check` exit 0: typecheck and lint clean, 40 suites, 725 tests (open-wallet 177, up from 163), gates 9 run, 183 files, 0 fail, 0 warn, 0 accepted, 206 tasks (`$K3/check-r3.log`). Secret scan: every 8-character window of the Fintava key against the staged diff: 0 hits.
+
+**Clean-up:** the Hub, stand-in WAWU ID, Fintava stand-in and pass-through stopped (PIDs and command lines checked), `k04r3_test` dropped, the backend worktree removed.
+
+**Filed:** nothing new. G-116's text and BRIEF section 12 changed (above). No SHARED-CHANGES row: the shared `IconButton` already has `disabled`.
+
+**NOT RUN:**
+- V10 on a device (OPS-10), and with it OkHttp's own re-send of a dropped POST: the seam used Chromium's.
+- Capability check 8 on screen (the pay sheet and the Wallet tab returns): waits on SHARED-CHANGES KYC-05 #1 or WALLET-01.
+- A real Fintava sandbox opening (G-25, questions 6 and 11): the stand-in answered.
+- The platform (hardware) back during "Checking your PIN": the ruling covered the on-screen Back; the native back gesture is the navigator's and is not changed here.
 
 ## Owner sign-off
 

@@ -1022,13 +1022,17 @@ here is redrawn.
   use the same line without the red ring, in the server's words (for example
   "No connection. Check your internet and try again." when no answer came
   and the PIN turned out not to be set).
-- **A PIN the server already holds (KYC-04 round 2, Default (agent), owner may
-  override):** when the set answers that a PIN already exists on the account
-  and the screen did not know of one, A10 ends with the canvas's result layout
-  (warning tone, the lock): "You already have a transaction PIN" over "A PIN
-  was already set on this account, so the one you just entered was not saved.
-  Your earlier PIN is the one that approves payments." and Done. It never
-  says the PIN just typed is set. A way to reset that earlier PIN (W37) is
+- **A PIN the server already holds (KYC-04 round 3, Default (agent), owner may
+  override; round 2's wording is replaced):** when the set answers that a PIN
+  already exists on the account and the screen did not know of one, A10 ends
+  with the canvas's result layout (warning tone, the lock): "You already have
+  a transaction PIN" over "Your account has a transaction PIN. If you just set
+  it, it is the one you typed. If you set one before, that earlier PIN still
+  approves payments." and Done. The app cannot tell the two causes apart: this
+  person's own set landed first and its answer arrived twice (the typed PIN IS
+  the stored one), or a PIN was set earlier or on another phone. The sentence
+  is true in both, and it never says the typed PIN was not saved, nor that
+  the PIN was just set. A way to reset a PIN the person does not know (W37) is
   added once WALLET-06 builds it (BACKEND_GAPS G-116).
 - **No answer, and no answer to the check either (KYC-04 round 2, Default
   (agent)):** A10 stays, keys off, with the line "We couldn't check whether

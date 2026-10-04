@@ -19,6 +19,26 @@ jest.mock('expo-secure-store', () => ({
     mockVault.delete(key);
   }),
 }));
+// A8 stays mounted under A9 and A10; the navigator says whether it is the screen in front. A test moves that by hand.
+let mockFocused = true;
+const mockFocusListeners = new Set<() => void>();
+const setFocused = (value: boolean) => {
+  mockFocused = value;
+  mockFocusListeners.forEach((listener) => listener());
+};
+jest.mock('expo-router', () => {
+  const { useSyncExternalStore } = jest.requireActual('react') as typeof import('react');
+  return {
+    useIsFocused: () =>
+      useSyncExternalStore(
+        (listener: () => void) => {
+          mockFocusListeners.add(listener);
+          return () => mockFocusListeners.delete(listener);
+        },
+        () => mockFocused,
+      ),
+  };
+});
 jest.mock('../copy', () => ({
   copyText: jest.fn(async (value: string) => {
     if (!mockCopyWorks) return false;
@@ -28,7 +48,7 @@ jest.mock('../copy', () => ({
 }));
 
 type Reply = { status: number; body: unknown };
-type Answer = Reply | 'offline' | 'hold';
+type Answer = Reply | 'offline' | 'hold' | { gate: Promise<void>; then: Reply };
 
 const OWNER = '00000000-0000-4000-8000-0000000000e1';
 /** Made-up account details, in the shape the server answers (MONEY-12). Never a real account. */
@@ -49,8 +69,12 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const path = new URL(request.url).pathname;
   sent.push({ method: request.method, path });
   const key = `${request.method} ${path.replace(/^\/api\/hub/, '')}`;
-  const answer = routes[key]?.shift() ?? fallback[key];
+  let answer = routes[key]?.shift() ?? fallback[key];
   if (!answer) throw new Error(`no answer for ${key}`);
+  if (typeof answer === 'object' && 'gate' in answer) {
+    await answer.gate;
+    answer = answer.then;
+  }
   if (answer === 'offline') throw new TypeError('Network request failed');
   if (answer === 'hold') return new Promise<Response>(() => undefined);
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
@@ -81,6 +105,7 @@ async function boot() {
 const allText = (app: Awaited<ReturnType<typeof boot>>) => JSON.stringify(app.screen.toJSON());
 
 beforeEach(() => {
+  mockFocused = true;
   sent = [];
   routes = {};
   mockStored.length = 0;
@@ -224,6 +249,66 @@ describe('A8 · Wallet open', () => {
     expect(app.screen.getByText('Your account is opening')).toBeTruthy();
     await app.fireEvent.press(app.screen.getByText('Done'));
     expect(app.onDone).toHaveBeenCalledTimes(1);
+  });
+
+  const walletGets = () => sent.filter((x) => x.method === 'GET' && x.path.endsWith('/money/wallet')).length;
+  const goAway = async (app: Awaited<ReturnType<typeof boot>>) => {
+    await app.act(async () => setFocused(false));
+  };
+  const comeBack = async (app: Awaited<ReturnType<typeof boot>>) => {
+    await app.act(async () => setFocused(true));
+  };
+
+  it('Finding 2: coming back (Back from A10’s unknown state) reads the wallet again, and shows the loading view, never the cached offer, until it answers', async () => {
+    // A9 and A10 were up: the PIN was set meanwhile (the lost request landed), so the second read says so.
+    let release!: () => void;
+    routes['GET /money/wallet'] = [view(), { gate: new Promise<void>((resolve) => (release = resolve)), then: view({ pin: pinState(true) }) }];
+    fallback = {};
+    const app = await boot();
+    expect(await app.screen.findByText('Create your transaction PIN')).toBeTruthy();
+    expect(walletGets()).toBe(1);
+    await goAway(app);
+    // Still the account while it is behind A9: nothing flashes under the slide.
+    expect(app.screen.getByText('Create your transaction PIN')).toBeTruthy();
+    await comeBack(app);
+    await app.waitFor(() => expect(walletGets()).toBe(2));
+    expect(app.screen.getByTestId('open-wallet-account-loading')).toBeTruthy();
+    expect(app.screen.queryByText('Create your transaction PIN')).toBeNull();
+    await app.act(async () => release());
+    // The read says a PIN is set: Done, as on arrival (round 1).
+    expect(await app.screen.findByText('Done')).toBeTruthy();
+    expect(app.screen.queryByText('Create your transaction PIN')).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-account-loading')).toBeNull();
+    await app.fireEvent.press(app.screen.getByText('Done'));
+    expect(app.onDone).toHaveBeenCalledTimes(1);
+    expect(app.onCreatePin).not.toHaveBeenCalled();
+  });
+
+  it('Finding 2: a return whose read says no PIN yet offers Create your transaction PIN again, and a return whose read fails offers nothing stale', async () => {
+    routes['GET /money/wallet'] = [view(), view(), 'offline'];
+    fallback = {};
+    const app = await boot();
+    expect(await app.screen.findByText('Create your transaction PIN')).toBeTruthy();
+    await goAway(app);
+    await comeBack(app);
+    await app.waitFor(() => expect(walletGets()).toBe(2));
+    expect(await app.screen.findByText('Create your transaction PIN')).toBeTruthy();
+    await goAway(app);
+    await comeBack(app);
+    // The re-read got no answer: A8 does not offer a PIN it cannot vouch for.
+    expect(await app.screen.findByTestId('open-wallet-account-error')).toBeTruthy();
+    expect(app.screen.queryByText('Create your transaction PIN')).toBeNull();
+    expect(app.screen.getByText('No connection. Check your internet and try again.')).toBeTruthy();
+  });
+
+  it('Finding 2: the first time A8 is drawn it reads once, and being in front again without having been away reads nothing more', async () => {
+    const app = await boot();
+    expect(await app.screen.findByText('Create your transaction PIN')).toBeTruthy();
+    await comeBack(app);
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(walletGets()).toBe(1);
   });
 
   it('the Copy button is the kit’s: sunken pill, 32 high', async () => {

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useIsFocused } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 
@@ -58,11 +59,33 @@ export function WalletOpenScreen({ onCreatePin, onDone, onNoWallet }: WalletOpen
   const wallet = useQuery(openedWalletQuery(owner));
   const state = wallet.data?.state;
 
+  // A9 and A10 sit on top of this screen, which stays mounted under them. Whatever the cache held when they opened
+  // (a PIN not yet set) may be out of date by the time the person comes back (Back from A10's unknown state, where
+  // the PIN may have been set), so every return reads the wallet again, and the loading view shows until it answers.
+  const focused = useIsFocused();
+  const [away, setAway] = useState(false);
+  const { refetch } = wallet;
+  // Behind A9 (not in front): remembered while rendering, so the first frame back is already the loading view.
+  if (!focused && !away) setAway(true);
+  useEffect(() => {
+    if (!focused || !away) return undefined;
+    let current = true;
+    void refetch().finally(() => {
+      if (current) setAway(false);
+    });
+    return () => {
+      current = false;
+    };
+  }, [focused, away, refetch]);
+
   useEffect(() => {
     if (state === 'not_open') onNoWallet();
   }, [state, onNoWallet]);
 
-  if (wallet.isError && wallet.data === undefined) {
+  // While it is read again, never the cached offer: the loading view.
+  if (focused && (away || wallet.isFetching)) return <Loading />;
+  // A read that failed is not answered with what the cache held before it.
+  if (wallet.isError) {
     return (
       <AuthFrame testID="open-wallet-account-error" onBack={onDone}>
         <ErrorState

@@ -124,8 +124,10 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
     if (ends > 0 && sessionStatus === 'signedIn') onLeave();
   }, [ends, sessionStatus, onLeave]);
 
-  const pinIsSet = wallet.data?.pinIsSet === true;
-  const state = wallet.data?.state;
+  // Only a read that has settled counts: while it is in flight, or when it failed, what the cache holds (A8's read, from before) is not trusted.
+  const read = wallet.isFetching || wallet.isError ? undefined : wallet.data;
+  const pinIsSet = read?.pinIsSet === true;
+  const state = read?.state;
   const notOpen = state === 'not_open' || state === 'opening';
   // A PIN set before (BACKEND_GAPS G-41): nothing to create, go on as if A10 were done. No wallet: A8 says where it stands.
   useEffect(() => {
@@ -194,14 +196,24 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
     const mine = visit.current;
     setPhase('setting');
     try {
-      await setTransactionPin(entered, second);
+      let refusal: unknown = null;
+      let landed = false;
+      try {
+        await setTransactionPin(entered, second);
+        landed = true;
+      } catch (error) {
+        refusal = error;
+      }
       if (visit.current !== mine) return;
-      finish();
-    } catch (error) {
-      if (visit.current !== mine) return;
-      const outcome = afterPinRefusal(error);
+      // The request has answered, whatever it said: the second entry goes now, not when the screen closes.
+      setDigits('');
+      if (landed) {
+        finish();
+        return;
+      }
+      const outcome = afterPinRefusal(refusal);
       if (outcome.kind === 'already') {
-        // Never "set": the server kept a PIN from before, and the one just typed was not saved.
+        // The server holds a PIN this screen did not know of. Which one it is cannot be told here: say only what is true either way.
         handed.current = true;
         setPhase('already');
         askAgain();
@@ -220,7 +232,7 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
 
   // A10 while A9's entry is held, and while its request is out or its outcome is being learned.
   const step = first !== null || phase === 'setting' || phase === 'checking' || phase === 'unchecked' || phase === 'done' ? 'confirm' : 'create';
-  const keysOff = phase !== 'entering' || !wallet.data || pinIsSet || notOpen;
+  const keysOff = phase !== 'entering' || !read || pinIsSet || notOpen;
   const onDigit = (d: string) => {
     if (keysOff || digits.length >= PIN_LENGTH) return;
     const next = digits + d;
@@ -244,8 +256,9 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
   const onClear = () => {
     if (!keysOff) setDigits('');
   };
+  const waiting = phase === 'setting' || phase === 'checking';
   const back = () => {
-    if (phase === 'setting' || phase === 'checking') return;
+    if (waiting) return;
     // While it is not known whether the PIN was set, Back goes to A8, which reads the wallet before offering anything.
     if (phase === 'unchecked') {
       onBack();
@@ -260,7 +273,8 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
   };
 
   const stepNo = step === 'create' ? 1 : STEPS;
-  const failed = wallet.isError && wallet.data === undefined;
+  const failed = phase === 'entering' && wallet.isError && !wallet.isFetching;
+  const loading = phase === 'entering' && !read && !failed;
   const filled = phase === 'entering' ? digits.length : PIN_LENGTH;
   const missed = line?.wrongPin === true && digits.length === 0 && phase === 'entering';
   const ring = missed ? colors.danger : colors.borderStrong;
@@ -280,9 +294,9 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
   }
 
   let status: React.ReactNode = null;
-  if (!failed && (!wallet.data || phase === 'setting' || phase === 'checking' || phase === 'done')) {
-    const label = !wallet.data ? 'Loading' : phase === 'checking' ? 'Checking your PIN' : 'Setting your PIN';
-    const id = !wallet.data ? 'open-wallet-pin-loading' : phase === 'checking' ? 'open-wallet-pin-checking' : 'open-wallet-pin-setting';
+  if (!failed && (loading || phase === 'setting' || phase === 'checking' || phase === 'done')) {
+    const label = loading ? 'Loading' : phase === 'checking' ? 'Checking your PIN' : 'Setting your PIN';
+    const id = loading ? 'open-wallet-pin-loading' : phase === 'checking' ? 'open-wallet-pin-checking' : 'open-wallet-pin-setting';
     status = <ActivityIndicator color={colors.accentFg} accessibilityLabel={label} testID={id} />;
   } else if (line) {
     status = (
@@ -307,7 +321,7 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
     <View testID={step === 'create' ? 'open-wallet-pin-create' : 'open-wallet-pin-confirm'} style={[styles.page, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.nav}>
         <View style={styles.side}>
-          <IconButton icon="ChevronLeft" label="Back" onPress={back} disabled={phase === 'setting'} testID="open-wallet-pin-back" />
+          <IconButton icon="ChevronLeft" label="Back" onPress={back} disabled={waiting} testID="open-wallet-pin-back" />
         </View>
         <View style={styles.navMiddle} />
         <View style={styles.side}>
@@ -369,5 +383,5 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: DOTS.apart },
   dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
   alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ALERT.apart },
-  alertText: { flexShrink: 1, textAlign: 'center' },
+  alertText: { flexShrink: 1 },
 });

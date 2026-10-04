@@ -30,8 +30,11 @@ export const PIN_PURPOSE = 'It approves every payment and transfer.';
 export type PinOutcome =
   /**
    * The server already holds a PIN (`409 pin_already_set`) though this screen
-   * arrived with none: the earlier PIN stands and the one just typed was not
-   * saved. Never shown as "set" (BACKEND_GAPS G-116 for how to reset it).
+   * arrived with none. The app cannot tell whether this person's own request
+   * landed first (the network sent it twice, so the PIN typed IS the stored
+   * one) or a PIN was set earlier or on another phone, so the words say only
+   * what is true in both (`ALREADY_SET`). Never shown as "your PIN is set"
+   * or as "not saved" (BACKEND_GAPS G-116 for how to reset it).
    */
   | { kind: 'already' }
   /** Start again at A9, with the server's sentence under the dots. `wrongPin`: the two entries differed (W11's wrong-PIN look). */
@@ -57,13 +60,16 @@ export function afterPinRefusal(error: unknown): PinOutcome {
 
 /**
  * A10 when the server already held a PIN this screen did not know of (KYC-04
- * round 2, Default (agent), owner may override; BRIEF section 12, A10). True
- * whether that PIN was set on another visit, on another phone, or by the same
- * request sent twice by the network: the PIN set first is the one that works.
+ * round 3, Default (agent), owner may override; BRIEF section 12, A10). The
+ * app cannot tell two causes apart, and each makes one sentence true, so the
+ * words say what holds in both: (a) this person's own set landed first and
+ * its answer arrived twice, so the stored PIN is the one just typed; (b) a PIN
+ * was set earlier or on another phone, so that one still approves payments.
+ * It never says the typed PIN was not saved, and never that it was.
  */
 export const ALREADY_SET = {
   title: 'You already have a transaction PIN',
-  message: 'A PIN was already set on this account, so the one you just entered was not saved. Your earlier PIN is the one that approves payments.',
+  message: 'Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.',
 } as const;
 
 /**
