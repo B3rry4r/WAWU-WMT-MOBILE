@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 48 | 38 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 32 | 20 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
 
@@ -88,6 +88,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 . WALLET-27 . Verified round 4: both defects fixed, no defect open, status review (backend 5c36881 on main e6bd701; mobile 68dff0c). Defect 2 fixed: 25 route 400s (five kinds x5, including `statement_too_large`) none counted, then 5 x 200 then 429. Give-back safe: a 60-request too_large flood held the server to 2 statement queries at once (too_large runs only a capped COUNT inside a build-slot, never the full build) and the per-person limiter still 429'd the burst; 503 still counts (controller gives back only for too_large). Defect 3 fixed: CONVENTIONS section 12 matches the code, no round-2 throttle text left. X4 now killed; two new mutants survive as test gaps (503-counts untested; give-back window guard untested). Passed: protected 253/253; gates main 16/24 vs branch 16/27 (only the 3 statement PROVISIONALs new); contract:build clean; tsc/eslint/tripwire/key-scan clean; mobile check exit 0 (33 suites/602). Full suite 137/144 suites (3,405 passed) with all WALLET-27 surface green; 7 unrelated suites (43 tests) could not run because another session holds port :4001 for its own WAWU ID stand-in (environment, not a branch defect; builder's own run was 144/144).
 - 4 Oct 2026 · WALLET-27 · Builder round 4: a statement's own 400s (bad day, order, future, over 366 days, too large) no longer count against the person's 5 a minute; CONVENTIONS section 12 describes the limiter and the two-at-once cap as built; `retryAfterSeconds` rounding held by a test; G-95 filed (the throttler library clears every caller's timers). Backend 5c36881 (main e6bd701 merged), mobile main f8130cd merged; status verifying.
 - 4 Oct 2026 · WALLET-27 · Verified round 3: defect 1 fixed, 2 new small defects, status building (backend 9f884dc on main 9a370c0; mobile ce5a7c3). Fixed: 100,000 forged random-`sub` statements from one address now get 200 × 401 then 99,800 × 429, no database work, RSS back to 174 MB, `/health` never above 435 ms for 17 min after. Defect 2: the route's own 400s (`2026-02-30`, `from` after `to`, a future `to`, over 366 days, `statement_too_large`) count against the person's 5 a minute, so 5 wrong ranges lock statements for a minute; DTO 400s and gate refusals do not count. Defect 3: CONVENTIONS section 12 still describes round 2's `@Throttle` with an address-plus-`sub` bucket. Passed: at most 2 statement queries at once (10 at once: all 200, peak 737 MB); limiter windows and sweep; full suite 143/143 (3,421 passed, 0 failed); protected 253/253; gates main plus the three statement PROVISIONALs; contract equals `contract:build`; tripwire 0; key scan 0. Mutants: 3 of 4 killed (X4, retry rounded down, survives). Main findings: one address can make the global throttler 429 other addresses (`@nestjs/throttler` clears every caller's timers when one block ends; also on main 9a370c0); text after a valid bearer token is ignored (passport-jwt parsing, harmless, also on main).
 - 4 Oct 2026 · WALLET-27 · Builder round 3: the statement route no longer overrides the global per-address throttlers (forged-token flood now 429 like any route); 5 a minute and 30 an hour per verified person counted after sign-in check (`429 statement_rate_limited`, bounded map); at most 2 statements built at once (`503 statement_busy` after 5 s). Backend 9f884dc with main 9a370c0 merged; status verifying.
@@ -102,4 +103,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · HOME-05 · Builder (Developer): creator and professional cards on `GET /feed/entries`, `creator` and `media` on feed cards, photo-set frames, durations and page counts (`GET`/`PUT /content/:id/media`), table `ContentFrame`; built on wmt/HOME-04; gaps G-100 to G-103; status verifying
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
 - 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.
-- 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (4b50e4c, Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.

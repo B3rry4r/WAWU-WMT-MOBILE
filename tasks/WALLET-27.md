@@ -7,7 +7,7 @@ order: 186
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -175,6 +175,35 @@ Builder, 3 Oct 2026. wawu-backend `wmt/WALLET-27` **5cd55c1** on main fe1ec6c (m
 - **Findings:** the receiver's line carries Fintava's reference, not ours (G-44, MONEY-15's), so the two people's statements show different references for one transfer.
 
 ## Verifier report
+
+### Verifier report, round 4
+
+Verifier, 4 Oct 2026 (the verifier of rounds 1 to 3; wrote none of this code). Backend `wmt/WALLET-27` **5c36881** (round 4 fd1fa75 on 9f884dc, then backend main e6bd701 merged in); mobile **68dff0c**. Fresh built hub (`node dist/src/main.js`, trust proxy as in production) on :4993, my WAWU ID stand-in on :4994, probe DB `vw27r4_probe_test`. The container had restarted, so I rebuilt and reran from the start. Evidence: `/tmp/.../scratchpad/vw27r3/` (round-4 files are named `r4-*`).
+
+**Verdict: both defects are fixed; no defect is open; status review.** Two test gaps and one environment limitation are noted below, none blocking.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Defect 2: the route's own 400s do not count | **fixed.** One person (a 50,001-row wallet) sent each of the five 400s five times: `2026-02-30`, `from` after `to`, a future `to`, 367 days, and `statement_too_large` (the full month). All 25 were 400. Then five one-day requests were 200 and the sixth was `429 statement_rate_limited`. So none of the 25 counted and the 5-a-minute limit still holds. | `r4-defect2.out` |
+| Give-back cannot be abused | **confirmed safe.** `statement_too_large` is thrown inside `StatementSlots.run`, so it competes for the same 2 build-slots as a real statement and never runs the full build (only a capped `COUNT ... LIMIT 50,001`). A 60-request too_large flood from one person held the server to **2 statement queries at once** (pg sampled every 8 ms: max 2), and the per-person limiter still answered 429 to 36 of the 60 because `take()` counts before the async build returns and gives back. The person's 5-a-minute for real statements was intact afterwards (5 x 200 then 429). So no unbounded statements while a real one builds. | `r4-abuse.out`, `r4-pgpeak.out` |
+| 503 statement_busy still counts | **confirmed** by the controller: the catch calls `giveBack()` only for `statement_too_large`, so a 503 does not give its place back. (A regression here is untested: see test gap A.) | `money-statement.controller.ts` |
+| Defect 3: CONVENTIONS section 12 matches the code | **fixed.** Section 12 describes the global per-address limits (unchanged on this route), `StatementRateLimiter` (5 a minute / 30 an hour, fixed windows per verified wawuUserId, counted after the guard and gate, swept map, `retryAfterSeconds` rounded up), what counts (a statement served, a 503) and what does not (the DTO's 400s, the period's 400s, `statement_too_large`, the gate's 409s, the token's 401), and `StatementSlots` (2 at once, wait 5 s, then 503). Every line matches `statement-config.ts` and the controller. No `@Throttle`, `STATEMENT_THROTTLE`, `statementTracker`, `bearerSubject` or address-plus-`sub` bucket remains anywhere in the doc or `src/`. | CONVENTIONS section 12 |
+| X4 (my round-3 mutant) killed | **killed.** `Math.ceil` -> `Math.floor` in the limiter's `retryAfterSeconds` now fails the suite (1 failed). The builder added the test (asked 500 ms into a minute: 60, not 59; and the busy wait 1.5 s: 2). | `r4-mutants/X4.log` |
+| Two new mutants of mine | **both SURVIVED (test gaps, not defects).** M-A: the catch gives the place back for `statement_busy` as well as `statement_too_large` (so a 503 would stop counting) passes all 59 tests, so the "503 counts" ruling is not pinned by a test. M-B: dropping the give-back's own-window guard (`now.starts[i] === starts[i]`) passes all 59, so a give-back landing after its window rolled over is never exercised. | `r4-mutants/summary.txt`, `M-A.log`, `M-B.log` |
+| Statement, rate-limit, money-contract specs | passed. Baseline 4 suites, **59/59**, against a fresh migrated `vw27r4_specs_test`, WAWU ID on :4994. | `r4-baseline.log` |
+| Protected suite | passed. `run.sh --fresh 5c36881` (lock origin/main, 95d8bd4 by run time): **253/253, all 244 required**; no lock file in the diff. | `r4-protected.out` |
+| Gates | passed, exactly as expected. Main e6bd701: **16 fail / 24 warn / 76 accepted** on 679 files. Branch: **16 / 27 / 76** on 687. The diff is only the three statement PROVISIONALs (`STATEMENT-RATE-LIMITS`, `STATEMENT-CONCURRENCY`, `STATEMENT-MAX-DAYS`); 16 fail is unchanged. `check_baseline.py` clean. | `r4-gates-main.out`, `r4-gates-branch.out` |
+| contract:build, tsc, eslint | passed. `contract:build` leaves the tree clean; `tsc --noEmit` 0; eslint 0 on every changed `.ts`. | `r4-contract-build.out`, `r4-tsc.out`, `r4-eslint.out` |
+| Tripwire, key scan | passed. Tripwire 0 added lines (nothing touches the protected registry, `compareShape`, or `.pipeline`). Key scan: 0 of 58 live-key windows in the backend diff, the mobile diff and my outputs; the generic-secret grep hits are benign HOME-05 test fixtures (a random `whsec_local_...`, an error string, a `'stand-in'` password). | `r4-tripwire.out`, `r4-b.diff`, `r4-m.diff` |
+| Mobile `npm run check` | passed: **exit 0**, typecheck 0, lint 0, **33 suites / 602 tests**, gates 0 fail / 0 warn on 157 files, 205 tasks. | `r4-mobile-check.out` |
+| Full suite, the way deploy runs it | **partially run (environment-blocked), no branch defect.** Fresh migrated and seeded `vw27r4_full_test`: **137 of 144 suites passed, 3,405 tests passed, 3 skipped**. The 7 that failed (43 tests: kyc-submission, notification, account, saved-item, credits-state, privacy-settings, blocked-account) are unrelated to WALLET-27 and all fail for one reason (finding C). | `r4-full-suite.log` |
+
+**Findings (none blocking)**
+- **A. Test gap: the "503 statement_busy counts" ruling is not tested.** Mutant M-A (the controller also gives the place back on `statement_busy`) passes all 59 statement, rate-limit and money-contract tests. The round-4 ruling says a busy answer counts as one of the person's 5; a refactor that made 503 stop counting would not be caught. Suggest a test: fill both slots, force a 503 for a person, and show it uses one of their 5. Low severity (behaviour is correct today).
+- **B. Test gap: the give-back's own-window guard is not exercised.** Mutant M-B (drop `now.starts[i] === starts[i]` from the give-back) passes all 59. The guard stops a give-back from decrementing a window that has since rolled over. It is defensive and correct; it is simply untested. Very low severity.
+- **C. Environment limitation, not a branch defect: 7 unrelated suites could not run here.** Those 7 suites sign in through a WAWU ID stand-in they expect on **:4001**, and the app under test must verify tokens against that same stand-in's key. Another Claude Code session on this shared machine holds `0.0.0.0:4001` for the whole window with its own mock, whose `/auth/login` returns no token for the seeded users, so every token is rejected (401/403) in exactly those 7 suites and nowhere else. The sanctioned ways to give my own stand-in port 4001 in isolation were each refused by this environment's permission system (a matching DB role, switching to the `postgres` OS user for the socket, and a process-local `connect()` redirect), so I could not reproduce the single-stand-in-on-:4001 layout the deploy uses. The 137 suites that did run include every WALLET-27 surface (statements, rate limits, money) and the HOME-05 feed-cards suite, all green. The builder's identical full run on 5c36881, with their own stand-in on :4001, was 144/144 (3,448 passed, 0 failed). I am confident the 7 would pass with a correct stand-in; they should be re-run on a machine where :4001 is free, or with a per-session stand-in port.
+
+**Still standing from earlier rounds / NOT RUN:** round 1's PDF (G-68), email (G-69) and V10; main finding A (one address 429s others, now filed as BACKEND_GAPS G-95); verifier finding B (text after a valid bearer token ignored, harmless, also on main) and observation D. No Fintava call (the route never calls Fintava). The 5 s slot wait never ran out over HTTP; the 503 path is shown at unit level.
 
 ### Verifier report, round 3
 
