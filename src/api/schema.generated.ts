@@ -3527,6 +3527,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/about": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The bank, the licence line and the support address, from config. */
+        get: operations["AboutController_about"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/policies/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `terms` or `privacy`; `available: false` until the owner fills it in. */
+        get: operations["AboutController_policy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -4924,6 +4958,16 @@ export interface components {
         PayoutAccountDto: {
             bankCode: string;
             accountNumber: string;
+        };
+        PolicySectionDto: {
+            heading: string;
+            body: string;
+        };
+        PutPolicyDto: {
+            title: string;
+            /** @description The date the owner gives the text, YYYY-MM-DD. */
+            effectiveDate: string;
+            sections: components["schemas"]["PolicySectionDto"][];
         };
         OpenChatDto: {
             /**
@@ -6649,6 +6693,23 @@ export interface components {
             recipientCount: number;
             deliveredCount: number;
             suppressedByPreference: number;
+        };
+        AboutView: {
+            bankName: string;
+            licenceLine: string | null;
+            supportEmail: string | null;
+        };
+        PolicySectionView: {
+            heading: string;
+            body: string;
+        };
+        PolicyView: {
+            /** @enum {string} */
+            slug: "terms" | "privacy";
+            available: boolean;
+            title: string | null;
+            effectiveDate: string | null;
+            sections: components["schemas"]["PolicySectionView"][];
         };
         AccountDeletionResponse: {
             deletionScheduledAt: string;
@@ -14553,6 +14614,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    AboutController_about: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AboutView"];
+                };
+            };
+        };
+    };
+    AboutController_policy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyView"];
                 };
             };
         };
