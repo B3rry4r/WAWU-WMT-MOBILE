@@ -93,7 +93,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (MERGEHASH, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
+- 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
 - 4 Oct 2026 · SETTINGS-02 · Built, awaiting verification: About, Terms and Privacy policy (Z9 to Z11) on new public Hub routes `GET /about` and `GET /policies/:slug`; the owner's text and bank lines come from the Hub, with a "Not available yet" state until filled in.
 - 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
