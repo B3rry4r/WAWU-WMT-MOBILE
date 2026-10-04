@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 38 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 20 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 
@@ -88,6 +88,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · WALLET-18 · Verified round 4: 1 latent privacy defect still open, status building (backend 23c4ed3 with main e6bd701; mobile ebf1085 with main 2874688). D5 closed (the 200-character reference receipt and its link fit one A4 page at scale 1.005, 36 pt left under it). R3, R4 and 4 new mutants killed (6 of 6). Memory plateaus across 20 bursts of 30 PDFs on the whole Hub (peaks 415 to 444 MB, back to 322 MB at rest). D3: all 52 earlier rows and 17 of 21 new ones masked (Roman, Hangzhou, post-14 decimal digits, mixed No and Nd, x runs); left are 12 digit characters added after Unicode 14 (Kaktovik 0 to 9, two Yangqin signs) that the UCD 14 table misses. Full suite 144 suites 3,469 passed 0 failed (run in its own network namespace because another session's orphaned stand-in held :4001); protected 253/253; gates 16 fail / 27 warn (only the three RECEIPT PROVISIONALs added); 0 key windows, 0 Fintava calls.
 - 4 Oct 2026 · WALLET-18 fix round 4 (backend wmt/WALLET-18 23c4ed3, main e6bd701 merged): every Unicode digit (a UCD-generated table for circled, dingbat, Ethiopic and other number characters) and x-joined numbers are masked, and the PDF scales to fit its A4 page with a 200-character reference; status verifying.
 - 4 Oct 2026 · WALLET-18 · Verified round 3: 1 privacy defect still open (latent) and 1 new minor defect, status building (backend f1a9d59 with main 9a370c0; mobile 604c066 with main 9a0c1be; neither main moved). D4 closed (495 combining marks stay in their row, at most 2 per character on the page). The draw cap holds: PDFs finish in pairs, 220 at once give 142 x 200 and 78 x 503 at 10.8 s with Retry-After 5, no 500, /health at most 160 ms, memory peaks flat at about 460 to 500 MB. D3 narrowed: every Nd script, NFKC forms, combining and bidi marks, mixed scripts and 500-digit runs are masked, but circled-dingbat and Ethiopic digits (Unicode No) and x with spaces or doubled still show whole. New: in the PDF a reference of 170 or more characters pushes the receipt and its Check it at footer off the A4 page. Full suite 143 suites 3,438 passed 0 failed; protected 253/253; gates 16 fail / 24 warn (only the three RECEIPT PROVISIONALs added); 2 of 4 own mutants killed (clip and Retry-After untested); 0 key windows, 0 Fintava calls.
 - 4 Oct 2026 · WALLET-18 fix round 3 (backend wmt/WALLET-18 f1a9d59, main 9a370c0 merged): numbers in names masked at the root (digits in any script, joined by any non-letter), at most 2 combining marks and each line clipped to its box, at most 2 receipts drawn at once (503 with Retry-After after 10 s), the reference drawn whole; status verifying.
@@ -102,4 +103,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · HOME-05 · Builder (Developer): creator and professional cards on `GET /feed/entries`, `creator` and `media` on feed cards, photo-set frames, durations and page counts (`GET`/`PUT /content/:id/media`), table `ContentFrame`; built on wmt/HOME-04; gaps G-100 to G-103; status verifying
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
 - 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.
-- 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (4b50e4c, Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.

@@ -7,7 +7,7 @@ order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -453,6 +453,55 @@ Verifier, 4 Oct 2026. This is the same verifier session as rounds 1 and 2, and i
 **NOT RUN:** as round 1 (a bank send's receipt from the sandbox, the live host's link, the binary on the droplet, V5).
 
 **To close:** finding 1 (fold every Unicode digit value; ask the owner about spaced or doubled x), finding 2 (fit the card on the PDF page), and tests for R3 and R4.
+
+### Verifier report, round 4
+
+Verifier, 4 Oct 2026. This is the same verifier session as rounds 1 to 3, and it wrote none of this task's code. It was a narrow round on backend `wmt/WALLET-18` `23c4ed3` (fixes `d8bc16b`, comment `4f27119`, main `e6bd701` merged in) and mobile `ebf1085` (main `2874688` merged in). Both mains are unmoved, and I used fresh detached worktrees `/home/user/wt/vw18b4` and `/home/user/wt/vw18m4`.
+- **Processes:** my own Hub (:4973) and stand-in WAWU ID (:4974), each checked by PID and working directory before it was stopped.
+- **Databases:** `vw18r4_*`. All are dropped.
+- **Sign-in:** through the stand-in's `/auth/login`.
+- **Ledger rows:** written by `LedgerService.record`.
+- **Fintava:** no call.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw18r4/` (below, `vw18r4/`).
+
+**Verdict: D5, R3, R4 and the memory question are closed. D3 is down to 12 characters added after Unicode 14 (finding 1), so one latent privacy defect stays open. Status stays building.**
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| D3 masking | **open, 12 characters** (finding 1) | **Rows:** 73 on the public page and in the owner's printed lines: all 52 round-2 and round-3 rows plus 21 new ones. **How counted:** with my own table of every character with a numeric value 0 to 9 in **UCD 17.0** (1,294; `UnicodeData.txt` from unicode.org), not the builder's. **All 52 earlier rows** show at most 4 digits: the round-3 leaks (negative circled, dingbat, sans-serif dingbat, double circled, Ethiopic, dingbat person and bank names, `0803 x 123 x 4567`, `0803xx123xx4567`, `0803x 1234567`) are now `•••• 4567`. **Also masked:** Roman numerals (Nl), upper and small; Hangzhou numerals; post-14 decimal digits (outlined, Garay, Kawi, Tolong Siki; these come from Node 22's own Unicode 17); No and Nd mixed in one run; `xXx` runs; full-width `ｘ`; small Roman ten `ⅹ` as the joiner. **Values of 10 or more do not fold to a digit:** `⑩ ⑪` become `10 11`, `Ⅻ` becomes `XII`, Kaktovik 10 and 11 stay as they are. **Not masked:** the 4 rows in finding 1. **Out of scope by ruling:** Cyrillic `х` as a joiner and CJK ideographs (letters, note 2). The page's amount is ₦1,234.56 on all 73 rows. **Builder's table:** every one of its 499 entries agrees with UCD 17. | `vw18r4/probe/d3-results.txt`, `d3-unit.txt`, `post14.txt`, `seed4.js`, `d3r4.js`, `d3unit.js` |
+| D5 PDF page | **closed** | **Method:** read from the PDF's own content stream and link annotation, with the Hub given a public host (`RECEIPT_VERIFY_BASE_URL`) so the link is drawn. **`refWide`:** one page; the receipt box spans 72.0 pt from the top to 36.0 pt above the bottom, at scale 1.005; the link rect (y 58.9 to 74.0) sits on the "Check it at" line. `refWideSpaces` (1.054) and `refFull` (1.238) behave the same. **Short receipts** keep 1.25 and 72 pt (`refPlain`, `max`, `combining`). The page drawn from the PDF shows the whole 200-character reference and the footer (`refWideL-pdf-page.png`). | `vw18r4/probe/pdf-geometry.txt`, `pdfgeo.py` |
+| R3, R4 and new mutants | **6 of 6 killed** | Focused baseline 7 suites, 125/125. **Killed:** R3 (the per-line clip removed); R4 (503 without `Retry-After`); and four of my own: M5 (PDF fit with no room under it), M6 (footer link placed at the old 1.25 scale), M7 (Nl letter numbers left out of the fold), M8 (only a lowercase x joins). | `vw18r4/mut/run.txt`, `mut/*.log` |
+| Memory, whole Hub | **plateaus** | **Setup:** a fresh `node dist/src/main.js` with RSS read from the Hub's own PID, 20 bursts of 30 PDFs, no forced garbage collection. **Results:** all 600 answered 200. Idle RSS was 247 MB. Peaks per burst were 415 to 444 MB, with no trend. Three seconds after each burst the Hub held 361 to 428 MB, in no order (425, 415, 370, 362, 399, ..., 428, 400, 381, 399). Thirty seconds after the last burst it was back to 322 MB. `/health` median 1.7 to 5.4 ms, max 81 ms. No error line in the Hub log. | `vw18r4/probe/mem20.txt`, `mem20.js` |
+| The merge | passed | Against main `e6bd701`, the only removed lines in the shared files are the old test titles. **Migrations:** main's new `20261004100000_content_frames` sorts after `money_receipts`. A database built from `e6bd701`'s migrations, then deployed from this branch, applies only `money_receipts` and gets the table. **Mobile:** contains main `2874688`. | `vw18r4/backend.diff`, `mobile.diff` |
+| V1 Gates | passed | `tsc` 0. eslint on the branch's changed `.ts`: 0. Gates: 9 run, 697 files, **16 fail / 27 warn** against main `e6bd701`'s 16 / 24 on 679 files. The FAIL lines are identical, and the only added warnings are the three `PROVISIONAL(RECEIPT-*)` lines. `check_baseline.py` passes. | `vw18r4/gates-*.txt`, `g-*.lst` |
+| V2 Contract | passed | **Full suite as `deploy.yml` runs it:** fresh migrated and seeded `vw18r4_full_test`, the stand-in on :4001 with an `openssl` keypair, and the CI admin secrets. **144 suites: 3,469 passed, 3 skipped, 0 failed.** **How it ran:** :4001 was held for over an hour by an orphaned stand-in from another session (`wt/vk03b3`, PPID 1), which I left alone. So the suite ran in its own network namespace (`unshare -n`, Postgres through a relay), where :4001 could only be mine: empty before the start, my PID as the listener at the start and after jest, empty after stop. 143 suites passed there. The one that needs a non-loopback interface (`hub-rate-limits`, 10 tests) cannot run in a loopback-only namespace and passed 10/10 on the host network. **Contract:** `contract:build` output is byte-equal to the committed `contract/openapi.json`. The mobile copy is byte-equal too, with `SOURCE_COMMIT` `23c4ed3`. **Mobile `npm run check`:** exit 0 (33 suites / 602 tests, gates 9 run / 157 files / 0 fail / 0 warn, 205 tasks). The first attempt timed out one unrelated test (`OpenWalletScreen` A26, 20 s, load average 17 from other sessions); alone it passed 34/34. | `vw18r4/full.txt`, `port4001.txt`, `full-ratelimits-host.txt`, `fullsuite-ns.sh`, `fullsuite-inner.sh`, `mobile-check*.txt` |
+| V3 Regression | passed | `run.sh --fresh HEAD` (code `23c4ed3`, lock `origin/main` `e6bd701`): **253/253, all 244 required**. Tripwire over 5,627 added lines: 0 matches. | `vw18r4/protected.txt`, `tripwire.txt` |
+| Key scan | passed | 0 of 58 windows in `d8bc16b`, `4f27119`, `23c4ed3`, both branch diffs, the round-4 diff and all evidence files. | `vw18r4/keyscan.txt` |
+
+**Findings**
+1. **defect (privacy, latent, narrow): 12 digit characters from Unicode 15 to 17 are still shown whole.**
+   - **The gap:** the table is built from Python 3.11's UCD 14.0, but the runtime is Unicode 17. These 12 `No`/`Nl` characters have a digit value in UCD 17 and are missing from it:
+     - Kaktovik numerals zero to nine, U+1D2C0 to U+1D2C9;
+     - Yangqin signs U+16FF4 (1) and U+16FF6 (2).
+
+     The builder named this gap in round 4; the ruling covers every Unicode digit, and the runtime already treats these as numbers.
+   - **Examples:**
+     - `MTN 𝋀𝋈𝋀𝋃𝋁𝋂𝋃𝋄𝋅𝋆𝋇` shows all 11 digits on the public page and in the image and PDF lines;
+     - `MTN 0803𝋁𝋂𝋃𝋄𝋅𝋆𝋇` shows 11;
+     - a bank name `GTBank 𝋀…𝋉` shows 10;
+     - `MTN 080312345𖿴𖿶` shows `•••• 2345𖿴𖿶` (6).
+
+     Mixed with other digits, the mask is also wrong: `MTN 𝋀8𜳰3𝋁2𜳳4𝋅6𜳷` shows `𝋀•••• 3467`, where the real last four are 4567.
+   - **Why latent:** no writer produces biller rows yet, and a reader needs a font that draws these glyphs.
+   - **Close when:** the table is built from UCD 17 (or the same Unicode version as the runtime, for example from a pinned `UnicodeData.txt`), with a test that fails when `UNICODE_DIGIT_VERSION` is older than `process.versions.unicode`. Add Kaktovik and Yangqin rows to the unit forms.
+2. **Note, out of scope by ruling (for the owner):**
+   - A Cyrillic `х` between groups (`0803 х 123 х 4567`) keeps the groups apart, since it is "another letter", though it looks like x.
+   - CJK numerals are letters (Lo) and are never folded (`〇八〇三一二三四五六七` shows as written). Only `〇` (U+3007, Nl) folds. Masking them would also change ordinary Chinese names.
+3. **Note:** the coordinator's warning holds. :4001 was taken by another session's orphaned stand-in for this whole round. A run inside its own network namespace makes :4001 private to that run, so this cannot happen. Only the rate-limit suite then needs the host network.
+
+**NOT RUN:** as round 1 (a bank send's receipt from the sandbox, the live host's link, the binary on the droplet, V5).
+
+**To close:** finding 1 (regenerate the table from UCD 17 and add the version test).
 
 ## Owner sign-off
 
