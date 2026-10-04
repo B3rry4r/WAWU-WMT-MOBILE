@@ -7,7 +7,7 @@ order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -37,6 +37,77 @@ Short code, public verification page, PNG and PDF rendering.
 - [ ] A made-up code shows 'not found', never someone else's receipt.
 
 ## Builder report
+
+### Builder round 3
+
+Builder, 4 Oct 2026 (resumed after a container restart; the worktrees were intact). Backend `wmt/WALLET-18` **25de8bb**: the round-3 fixes are in 066b1eb, then backend main aa11bcc (INBOX-09) merged in cleanly. Mobile: the verifier's f4d0ddb, then main d60edd3 merged in.
+- **Merge conflicts (mobile):** BACKEND_GAPS kept both sides' rows (G-77 and G-78 are INBOX-09's; G-66 and G-67 stay this task's). PROGRESS was taken from main and regenerated, and the contract was copied from 25de8bb.
+
+**D3: phone and account numbers in names. Fixed at the root.**
+- **Digits are folded first** (`foldDigits`): NFKC, so full-width, superscript, circled and mathematical digits become ordinary ones. Then every other Unicode decimal digit (`\p{Nd}`: Arabic-Indic, Persian, Devanagari, ...) becomes 0 to 9 by its value.
+- **One number:** digits joined by anything that is not a letter count as one number. That covers spaces, NBSP, underscores, commas, dashes, dots, colons, middle dots, zero-width and format characters, and any symbol. A single `x` or `X` between two digits joins them too. With 5 or more digits, only the last 4 show (`•••• 4567`).
+- **Where it applies:**
+  - on the public page, every name, bank name and biller name (and so the person-name initials path);
+  - on the owner's image and PDF, the other side's name, its bank name and the headline.
+  - The page's own amount, date and reference are never passed through it, so they always show as recorded.
+- **Out of scope:** digits split by letters other than a single x or X (`0803ab123ab4567`, `acct 0803 ref 1234567`) are separate numbers.
+- **Decision:** a date or an amount written into a name is reshaped as a number (`IKEDC token 2026-10-03 ₦5,000.00 Ref 12` becomes `IKEDC token •••• 0000 Ref 12`). Default (agent), owner may override.
+- **Tests:**
+  - unit, all 24 forms the round-2 verifier listed (`tests/d3-forms.ts`), each checked for its exact output and with the verifier's metric (at most 4 digits visible once digits are folded and letters ignored);
+  - the three person-name forms;
+  - the date decision;
+  - the other side masked on the owner's view;
+  - HTTP: the verifier's `d3_*` rows written through `LedgerService.record`, 27 rows (biller names, bank names, person names), each one's public page checked on its From and To fields, with the amount still `₦1,234.56`.
+
+**D4: stacked combining marks. Fixed.**
+- `printable()` now applies NFC and keeps at most 2 combining marks (`\p{M}`) on any one character.
+- Each drawn line is clipped to its own box: the content width, from 1.15 em above the baseline to 0.4 em below.
+- **Tests:**
+  - unit, the marks limit;
+  - pixels: the image's first 60 points (mark, title, date) are byte-identical with and without the verifier's `combining` name;
+  - HTTP: that row's image and PDF answer 200, and its page has no run of 3 marks.
+
+**Memory: drawings capped at 2 at once.**
+- A process-wide `DrawLimiter` runs at most `RECEIPT_RENDER_CONCURRENCY` draws at once. The setting defaults to 2 (1 to 8; `PROVISIONAL(RECEIPT-RENDER-CONCURRENCY)`, in `.env.example` and `deploy/README.md`).
+- Other requests wait first come, first served, for up to 10 s, then get 503 "Receipts are busy right now. Try again in a few seconds." with `Retry-After: 5`, documented on both routes.
+- The PDF now rasterises the receipt only. The A4 page and its hairline edge are drawn by the PDF itself, which halves the pixels.
+- **Measured** (10 PDFs at once, 3 bursts, with a garbage collection between):
+
+  | Draws allowed at once | Peak memory | After each burst |
+  |---|---|---|
+  | 10 | 363 MB | 302 to 357 MB |
+  | 2 | 273 MB | 243 to 250 MB |
+
+  The server was 164 MB at rest after the first draw. Memory does not grow from burst to burst. The roughly 80 MB above rest that stays is the native allocator's retained arenas, not live buffers.
+- **Tests:**
+  - unit: at most 2 at once and first come, first served; a request with no slot within the wait gets the 503 busy refusal; a failed draw frees its slot; the setting is 2, 1 to 8, and anything else stops the app;
+  - HTTP: 8 at once (4 PDFs, 4 images) all answer 200 with a peak of exactly 2.
+
+**Test gaps closed**
+- N2: the cap test asserts the literal 160.
+- N4: 7 samples drawn by resvg (`tests/drawn-width.ts`, the ink's bounding box). The width table is never narrower, and within 15% for Latin text.
+- **Reference:** the 200-character reference is now drawn whole, on as many lines as it takes. Round 2 cut it after 3 lines. Tested.
+- **Event-loop test:** made robust to a busy machine. It takes the best of 3 tries, so a drawing on the event loop still fails every try.
+- **Mutations:** 8 of 8 killed: N2 (cap 2000), N4 (allowance 0.8), no NFKC, ASCII separators only, no x join, marks unlimited, no draw cap, the other side unmasked on the image.
+
+**Emoji:** characters the font lacks still draw as the font's empty box, but each line is now clipped at the content edge, so nothing overruns. Recorded rather than fixed: no writer produces such names today.
+
+**Runs (after the merge, 25de8bb)**
+
+| Check | Result |
+|---|---|
+| `tsc` | 0 |
+| eslint on changed `.ts` | 0 |
+| Receipts, rate limits, gates, money contract, purge | 123 passed |
+| Full suite, fresh seeded `w18_full_test`, stand-in WAWU ID on :4001 (waited until `lsof` showed it free; another session held it about 25 minutes; stopped after) | 140 suites, 3,382 passed, 3 skipped, 0 failed |
+| Protected `--fresh HEAD` (lock origin/main aa11bcc unchanged) | 253/253 |
+| Tripwire | 0 added lines |
+| Gates | main aa11bcc 16 fail / 15 warn, branch 16 / 18 (the three receipt `PROVISIONAL`s; `RECEIPT-RENDER-CONCURRENCY` is new) |
+| `contract:build` | unchanged by the merge |
+| Key scan | 0 of 58 windows in each commit |
+| Mobile `npm run check` | exit 0: 28 suites, 485 tests, gates 0 fail / 0 warn on 123 files, 205 tasks |
+
+**Fintava:** no call this round.
 
 ### Builder round 2
 

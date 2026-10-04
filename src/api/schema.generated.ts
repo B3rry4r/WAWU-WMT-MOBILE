@@ -209,6 +209,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/standing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The creator's own standing on unanswered paid questions: warned, paused, and when it ends (R-13). */
+        get: operations["PaidDmController_standing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/creators/{wawuId}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether a creator's paid messages are switched off, and until when (I8). Any signed-in user. */
+        get: operations["PaidDmController_availability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/paid-dm/threads": {
         parameters: {
             query?: never;
@@ -5499,6 +5533,24 @@ export interface components {
             nextCursor: string | null;
             waitingTotal: number;
         };
+        PaidDmStanding: {
+            /** @enum {string} */
+            state: "ok" | "warning" | "paused";
+            acceptingPaidMessages: boolean;
+            unansweredPct: number;
+            unanswered: number | null;
+            questions: number | null;
+            warnAtPct: number;
+            pauseAtPct: number;
+            windowDays: number;
+            pauseDays: number;
+            pausedUntil: string | null;
+        };
+        PaidDmAvailability: {
+            creatorWawuId: string;
+            paused: boolean;
+            pausedUntil: string | null;
+        };
         PaidDmThread: {
             other: components["schemas"]["DmOtherParty"];
             /** @enum {string} */
@@ -7081,6 +7133,13 @@ export interface operations {
                     "application/json": components["schemas"]["DmSendInitResponse"];
                 };
             };
+            /** @description Refused: the creator has not enabled paid messages, a block stands between the two, or (reason.code paid_messages_paused, with reason.pausedUntil) the creator left too many paid questions unanswered and paid messages are switched off until pausedUntil (R-13). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     DirectMessageController_sendVerify: {
@@ -7219,6 +7278,67 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaidDmQueuePage"];
                 };
+            };
+        };
+    };
+    PaidDmController_standing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmStanding"];
+                };
+            };
+            /** @description The caller is not a creator account. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaidDmController_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmAvailability"];
+                };
+            };
+            /** @description wawuId is not a UUID. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The account has no creator state. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -13742,6 +13862,13 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
+            /** @description Receipts are busy right now. Try again in a few seconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     MoneyReceiptController_pdf: {
@@ -13790,6 +13917,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
+            };
+            /** @description Receipts are busy right now. Try again in a few seconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
