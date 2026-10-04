@@ -7,7 +7,7 @@ order: 185
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -37,6 +37,88 @@ Short code, public verification page, PNG and PDF rendering.
 - [ ] A made-up code shows 'not found', never someone else's receipt.
 
 ## Builder report
+
+### Builder round 5
+
+Builder, 4 Oct 2026. Backend `wmt/WALLET-18` **5008664**. In order: backend main 95d8bd4 (KYC-03) merged in (9412423, clean); the fix (**295aa30**); backend main c4d17bb (FIX-05) merged in (5008664, clean). Mobile: main 26cf830 merged in (2796b99). PROGRESS was regenerated and the contract was copied from 5008664. `contract:build` gives the same bytes, and the contract did not change in either merge. Only D3 finding 1 was worked on.
+
+**D3, finding 1: the 12 digits added after Unicode 14. Fixed two ways, by the lead's ruling.**
+- **1. The table now comes from Unicode 17.0.0, the runtime's version.**
+  - `scripts/receipt/build-digit-table.py` no longer uses Python's `unicodedata` (14.0 on Python 3.11, 15.1 on 3.13). It reads `UnicodeData.txt` 17.0.0 from unicode.org and checks it against a pinned SHA-256 (`2e1efc1d...d96470c`, the same file the round 4 verifier downloaded). The URL and checksum are in the generator and in the generated file's header. A file with another checksum is refused and nothing is written. The output is the same byte for byte from a download, from a local copy, and under Python 3.10 or 3.11.
+  - `OTHER_DIGITS` has 511 entries: the 499 it had, all unchanged, plus exactly the 12 from the finding (Kaktovik 0 to 9, U+1D2C0 to U+1D2C9; Yangqin signs U+16FF4 = 1 and U+16FF6 = 2).
+  - New `OTHER_NUMBERS`: the other 643 `No`/`Nl` characters (fractions and numbers of 10 or more), stored as 81 ranges. These are known not to be digits.
+  - **Test:** fails when `UNICODE_DIGIT_VERSION` is older than `process.versions.unicode`.
+  - **Test:** the table's 1,154 characters are exactly the runtime's `\p{No}` and `\p{Nl}`, with none missing and none extra.
+- **2. Fail closed.**
+  - A character the runtime calls a number (`\p{N}`) is treated as a digit of unknown value when it is not a decimal digit and is not in either table list. In practice that means a character from a newer Unicode than the table. This check runs before NFKC and again after it.
+  - An unknown digit counts toward its number like any other digit, so five of them still make a number. It is never shown.
+  - **Default (agent), owner may override:** an unknown digit that falls in the last four, or in a number shorter than 5 digits, shows as `•`. It keeps its place, and no other digit moves up to fill it.
+    - With Kaktovik 1 and 5 removed from the table, the mixed row shows `•••• 4•67`, where the real last four are 4567.
+    - A number ending in an unknown digit shows `•••• 456•`.
+    - `Flat` followed by one unknown digit shows `Flat •`.
+    - Only digits whose value the table knows are ever shown.
+  - **Masking marker:** while masking, an unknown digit is held as the noncharacter U+FDD0. Unicode reserves these for a program's internal use. A U+FDD0 already present in a name is first replaced with U+FFFD, so it can never be read as a digit.
+  - **For testing:** `digitMasking(table)` builds the fold and the mask over any table. `foldDigits` and `maskDigits` are the same functions as before, built over the shipped table.
+- **Unchanged:**
+  - Values of 10 or more still never fold to one digit: `⑩ ⑪` become `10 11`, `Ⅻ` becomes `XII`, Kaktovik 10 and 19 stay as written.
+  - The page's own amount is untouched (₦1,234.56 on all 73 probe rows).
+
+**Proving tests (`receipt-units.spec.ts`, new block "the digit table keeps up with the runtime (round 5)", 5 tests; `d3-forms.ts`, 6 new rows)**
+
+| Test | What it proves |
+|---|---|
+| Version not older than the runtime | `17.0.0` against Node's `17.0`. The comparison itself is checked too: `14.0.0` against `17.0` is older, and `17.0.0` against `17.0.1` is older. |
+| The table equals the runtime's No/Nl set | 1,154 characters, 0 missing, 0 extra. None is unknown today. |
+| The 12 characters | Each is in the table with its value, folds to that value, and six in a row mask as `•••• dddd`. Kaktovik 10 and 19 stay as written. |
+| Fail closed, worked cases | A table with Kaktovik 1 and 5 removed. All Kaktovik 11 digits give `•••• 4•67`. Digits mixed with outlined digits give `•••• 4•67`. An unknown digit in the middle gives `•••• 4567`. An unknown last digit gives `•••• 456•`. Six unknown digits give `•••• ••••`. Short numbers give `Flat •, Shop 12•`. A U+FDD0 in the input becomes U+FFFD. |
+| Fail closed, every character | For each of the 1,154 No/Nl characters, a table without it hides that character alone (`MTN •`) and inside a number (`MTN •••• 4567`). |
+| D3 forms (unit and HTTP) | 6 new rows from the verifier's finding: all Kaktovik, `0803` then Kaktovik, a GTBank name in Kaktovik 0 to 9, Yangqin at the end, mixed Kaktovik and outlined, and Yangqin plus Kaktovik. Each gives its exact masked output and at most 4 visible digits, in the unit test and through `LedgerService.record` and the public page in the HTTP test. |
+
+**Mutations:** 6 of 6 killed:
+- M1: the old UCD 14 table (6 tests fail).
+- M2: only the version string set back to 14.0.0 (the version test fails).
+- M3: no fail closed (2 tests fail).
+- M4: unknown digits dropped from the shown four, so other digits move up (1 test fails).
+- M5: an unknown digit guessed as 0 (2 tests fail).
+- M6: the final hide of short-number unknowns removed (2 tests fail).
+
+**The verifier's probes, rerun on this build**
+- **Unit probe:** `vw18r4/probe/d3unit.js`, pointed at this build's `dist`. 0 of 29 cases show more than 4 digits, against 3 in round 4. Only the 4 finding rows changed. For example, the mixed row now shows `•••• 4567` (round 4: `𝋀•••• 3467`), and the Yangqin row shows `•••• 4512`.
+- **HTTP probe:** `seed4.js` and `d3r4.js`, pointed at this build's Hub on :4971 and the stand-in on :4972.
+  - All 73 D3 rows, on the public page and in the owner's image and PDF lines: 0 show more than 4 digits, against 4 in round 4.
+  - Diffed against `vw18r4/probe/d3-results.txt`, only the 5 finding rows changed (4 biller rows and the GTBank bank name). The other 68 rows are identical.
+  - The amount is ₦1,234.56 on all 73 rows.
+  - The seed's only error is the `nul` row, which Postgres refuses. Round 4 had the same error.
+
+**Runs (backend 5008664 unless marked)**
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | 0 |
+| eslint on the changed `.ts` | 0 |
+| Receipts, gate, money contract and rate-limit specs (fresh `w18r5_focus_test`, stand-in on :4972) | 7 suites, 141 passed. At 295aa30, before FIX-05 added rate-limit tests, it was 130: round 4's 125 plus the 5 new tests. |
+| Full suite, fresh seeded `w18r5_full_test`, stand-in on :4001 (free right before start, confirmed as the listener, alive to the end, stopped after) | **145 suites: 3,504 passed, 3 skipped, 0 failed.** |
+| Protected `--fresh HEAD` (lock unchanged) | 253/253, all 244 required. The lock was read at origin/main 030d789; its files are the same at c4d17bb and on this branch. |
+| Tripwire | 0 matches in 6,025 added lines (branch against main c4d17bb, the protected suite's own files excluded) |
+| Gates | Branch 16 fail / 27 warn. The FAIL lines are identical to main's. Against main 95d8bd4 (16 / 24), the only added warnings are the three receipt `PROVISIONAL`s, as in round 4. Main has since gained 6 of its own (statement and data export), so main dfaa53b reads 16 / 30. `check_baseline.py` passes. |
+| `contract:build` | byte-equal to the committed contract |
+| Key scan | 0 of 58 windows in 295aa30, both merges (9412423, 5008664), the whole branch diff, the mobile merge and the mobile report commit |
+| Mobile `npm run check` | exit 0: 36 suites, 666 tests, gates 0 fail / 0 warn on 171 files, 206 tasks. An earlier attempt timed out `OpenWalletScreen` A26 at 20 s, with the load average at 12 from my backend suite; this run was at load 4. |
+
+**Full suite, for the record:** four runs.
+1. At 295aa30, on the host: 2 failures in `fintava-stall.spec.ts` (1,214 ms against a 1,000 ms bound, with the load average at 12 from my mobile check). That suite then passed 120/120 alone.
+2. At 295aa30, in its own network namespace (the `vw18r4` scripts), after another session's stand-in took :4001: 144 suites passed. Only `hub-rate-limits` failed, since it needs a non-loopback interface.
+3. At 5008664, on the host: 1 failure, the round 2 bound "drawing ... under 300 ms" at 303 ms (load 12 from other sessions). That test draws an already-built document, so no masking code runs in it. It then passed 3 of 3 alone.
+4. At 5008664, the run in the table: 0 failed. For that run, :4001 was free right before start (read from `/proc/net/tcp`), my PID was the listener, and the stand-in was alive at the end and stopped after.
+
+**Fintava:** no call.
+
+**Mains moved again during the round:** backend main is now 030d789 (after dfaa53b: WALLET-27 statements, SETTINGS-04, HOME-06) and mobile main is 6de2fd9. This branch has c4d17bb and 26cf830, as the coordinator named. A trial merge of backend dfaa53b conflicts in 5 files: `src/money/money.module.ts`, `docs/contract/WALLET.md`, the two wallet-gate specs and the rate-limit spec. Mobile `BACKEND_GAPS.md` conflicts too. Not merged here.
+
+**NOT RUN:**
+- As round 1: a bank send's receipt from the sandbox, the live host's link, the binary on the droplet, V5.
+- No Hub run was done with a table older than its runtime. Fail closed is proven at the function level, by injecting a table.
+- The verifier's two probes ran at 295aa30. Between 295aa30 and 5008664 only FIX-05's three files changed (`app.module.ts`, the throttler store and its spec), so the masking code was the same.
 
 ### Builder round 4
 
