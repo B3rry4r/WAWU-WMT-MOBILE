@@ -1013,6 +1013,15 @@ here is redrawn.
 - **Now:** no mismatch state drawn.
 - **Instead:** a mismatch uses the PIN sheet's wrong-PIN line in W11's style;
   KYC-04 records its wording here.
+- **Wording (KYC-04, 4 Oct 2026):** the line is the server's own sentence for
+  `pin_mismatch`: "The two PINs do not match. Enter the same PIN twice." It
+  sits under the dots with W11's CircleAlert in the danger colour, and the
+  empty dots are ringed in danger until the first digit is typed again. The
+  screen goes back to step 1 ("1 of 2", "Create your transaction PIN"),
+  because neither entry is kept once the request is answered. Other refusals
+  use the same line without the red ring, in the server's words (for example
+  "No connection. Check your internet and try again." when no answer came
+  and the PIN turned out not to be set).
 - **Why:** every state needs a real look; the canvas's own style is used.
 
 ### A11 · Creator setup
