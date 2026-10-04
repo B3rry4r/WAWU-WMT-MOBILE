@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 36 | 30 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 37 | 22 | 4 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 
@@ -95,6 +95,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · MONEY-17 · Round 4 built, status verifying (backend d840c73 on main 38bbe4c): the round 3 verifier's three defects fixed. A paid payment the feature cannot deliver is retried on the check's backoff (1, 2, 4 ... 60 minutes; was every minute for ever) and goes to review after 72 hours with the item still claimed, and a paid kind nothing registers goes to review at once; a PIN locked when a held-up check's result is recorded answers 423, a right PIN included (was 200), and a late wrong result no longer extends the lock; the webhook consumer tells the payment after its transaction commits, so a payment in review or backoff settles from a webhook (3 of 3 stuck before, 0 after). Both migrations renamed after main's newest. No API change.
 - 4 Oct 2026 · MONEY-17 · Verified round 3: 3 defects, status building (backend 20b4c4b on main c4d17bb, mobile 1a31f66). Round 2's three defects hold as ruled (R2-1: 200 rounds of 20 keys at once on once-only items, 0 double debits, 0 payments claimed while one for the item was open; R2-2: 0 uncoded 409 in 8,000 taps; R2-3: 40 right PINs all pass, 40 wrong give exactly 5 counted, another person's request under 0.5 s). Open: a paid-but-undelivered payment is retried every minute for ever with no backoff or review (the lead's ruling on decision (c)); a PIN compare held up over 30 s lets 10 wrong tries be compared and a right PIN pass a lock (120 accounts' checks queued ahead of it); a payment whose ledger rows Fintava's webhook completed is not settled (it waits for its hourly check, or for ever under review). Full suite 146/146 twice, protected suite 253/253, 13 of 16 mutants killed.
 - 4 Oct 2026 · MONEY-17 · Round 3 built, status verifying (backend 20b4c4b on main c4d17bb): the round 2 verifier's three defects fixed. The item stays claimed until the delivery is recorded and the feature's "already owned" rule is read again inside the claim (100 rounds of 20 keys at once: 0 double debits, were 2), the loser of a race is told `payment_in_progress` with a code (0 uncoded in 4,000 taps, were 980 of 2,000), and a PIN check reserves a slot, compares with nothing held and records the result (40 right PINs at once: 40 pass, no lock; 40 wrong: exactly 5 counted and the lock; another person's `GET /money/pin` 94 to 341 ms, was 4 to 7.5 s). Additive migration: two columns on `TransactionPin`. No API change.
 - 4 Oct 2026 · MONEY-17 · Verified round 2: 3 defects, status building (backend cade35b with main e6bd701, mobile 255bff2). Round 1's four defects closed (a lost answer stays pending until Fintava says, the sweep no longer starves, no ₦0.00 shortfall, the three-at-once test forces both orders). New: 20 keys at once can still debit a buyer twice for an owned item (2 rounds in 20), the losing tap gets 409 "That record already exists." instead of payment_in_progress (Prisma 7 meta), and the serialized PIN check lets one person's burst stall others for up to 5 s. Full suite 144/144, protected 253/253.
@@ -109,4 +110,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
 - 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
 - 4 Oct 2026 · SETTINGS-04 · Merged to main by the lead (9d0e1e4, Developer 1's task): data export, and blocking that hides people on every read; backend PR #62 (dfaa53b); its export-email gap renumbered G-95 to G-131.
-- 4 Oct 2026 · WALLET-27 · Merged to main by the lead (068abc3): account statements with per-person limits; backend PR #61 (5236f12).
