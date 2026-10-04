@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 47 | 38 | 30 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 33 | 20 | 4 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN (You)
 
@@ -90,6 +90,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.
+- 4 Oct 2026 · KYC-04 · Builder round 2 on `wmt/KYC-04`: A10 never ends as set on a PIN the server held before (a lost answer with a failed check stays on A10 with Try again; `409 pin_already_set` says the earlier PIN stands, G-116), and A9 and A10 drop everything and leave the flow on any session change; 7 new tests fail on round 1's code, 10 of 10 mutants killed; status verifying.
 - 4 Oct 2026 · KYC-04 · Open your wallet step 3 built on `wmt/KYC-04`, mobile only: A7 hands the open account to A8 (bank name, account name and number with Copy from `GET /money/wallet`, Limit row only when the server sends one), A9 and A10 set the transaction PIN (`POST /money/pin`, a mismatch in W11's wrong-PIN look, wording in the brief), then back where the flow started; G-114, G-115, SHARED-CHANGES KYC-04 #1, #2, R1; status verifying.
 - 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
 - 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
@@ -103,4 +104,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-03 · Round 2, status verifying: G-72 closed with a sealed check handle (backend `wmt/KYC-03` 51c1e10, main 9a370c0 merged in). The passed BVN check answers `checkHandle` (AES-256-GCM, key from IDENTITY_HASH_KEY by HKDF, 30 minutes, nothing stored); the selfie match and the opening take it in place of the BVN and NIN. The app keeps it in memory with the check and sends it; A6, A7 and A16 now reach the real Hub (Fintava stand-in only for Fintava). Backend: 18 handle tests, 10 mutants killed, protected 253/253, gates as main; 6 backend suites bound to :4001 not run here.
 - 3 Oct 2026 · KYC-03 · Built (mobile): Open your wallet steps 2 and 3. A26's pass goes to A5 (the BVN's name, date of birth and gender, then home address, occupation and consent; the occupation is saved, the address kept in memory), then A6 (selfie) with A7 (matched, the account opening) and A16 (no match). The BVN and NIN are never re-asked or kept: today's Hub refuses the match and the opening without them (G-72), so no account opens from the app until the backend takes them from the passed check. Gaps G-72, G-73; SHARED-CHANGES KYC-03 #1 (camera), R1. Status verifying.
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
-- 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.

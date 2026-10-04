@@ -7,7 +7,7 @@ order: 88
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -100,7 +100,7 @@ Builder, 4 Oct 2026. Mobile `wmt/KYC-04` from main `2c99b2f` (main has not moved
 - **After A10, back where the flow started:** jest on the real Expo Router (stand-in Wallet tab and payer screens calling the real `useOpenWalletEntry().open`, stand-in flow screens moving with the real `useOpenWalletWay`): from the Wallet tab, back on `/wallet` with the Wallet tab selected; from a payer screen with its pay sheet open, back on it with the sheet still open. In the browser the flow ends on Home (`after-a10-home-*`). **NOT RUN on screen** for the pay sheet and the Wallet tab: neither has a way into the flow on main (pay sheet: SHARED-CHANGES KYC-05 #1; Wallet tab and W5: WALLET-01, which owns "after A10 lands on W5"). The browser harness cannot stand in: its history push rebuilds the stack from the URL (A26's own Back then lands on Home too), so `wallet-tab` runs in `results.jsonl` failed for the harness, not the app. On the way out the app asks every `['money']` read again.
 - **V5:** for the verifier; not claimed. `side-*` are mine.
 - **Values:** bank name, account name and number, limit, PIN state: `GET /money/wallet`; every refusal sentence the server's; "Four digits." from `PIN_LENGTH` (the PIN sheet's, the contract's `^[0-9]{4}$`). "It approves every payment and transfer." is kept, backed by contract CONVENTIONS section 5 (the PIN on every request that moves money, held by the backend's coverage test; a biometric approval stands in for it, MONEY-14); listed for the verifier. Gaps: G-114 (Limit row: the canvas's balance cap has nothing behind it; the contract has a daily limit, null today, G-7), G-115 (the bank name is the Hub's provisional `WALLET_BANK_NAME`, owner to set on the droplet).
-- **V6 states, each by its cause, light and dark:** A8 loading (Hub answers held 6 s, `a8-loading`); A8 error (the Hub drops connections, `a8-error`), Try again recovers; A9 loading (`a9-loading`), A9 error (`a9-error`), Try again recovers; A10 setting (answer held 5 s, keys off, `a10-setting`); empty: A9 with nothing typed, A8 with no Limit row; a lost answer (`lost`: the Hub set the PIN, the pass-through dropped its answer): the app read the wallet, found the PIN set and ended, 1 POST; no wallet (`no-wallet`): `/open-wallet-account` by link goes to A26. Jest: opening, unreadable, refusals, keys off while setting, PIN set on arrival.
+- **V6 states, each by its cause, light and dark:** A8 loading (Hub answers held 6 s, `a8-loading`); A8 error (the Hub drops connections, `a8-error`), Try again recovers; A9 loading (`a9-loading`), A9 error (`a9-error`), Try again recovers; A10 setting (answer held 5 s, keys off, `a10-setting`); empty: A9 with nothing typed, A8 with no Limit row; a lost answer (`lost`: the Hub set the PIN, the pass-through dropped its answer): the app read the wallet, found the PIN set and ended, 1 POST (corrected in round 2: that run ended through `pin_already_set`, see below); no wallet (`no-wallet`): `/open-wallet-account` by link goes to A26. Jest: opening, unreadable, refusals, keys off while setting, PIN set on arrival.
 - **Privacy:** PINs typed (6 values) 0 hits in a full `k04_test` dump, the Hub, stand-in WAWU ID, Fintava stand-in and pass-through logs; `TransactionPin` holds 8 argon2id hashes only. Browser after every run: only the two session keys, no sessionStorage, IndexedDB or cookie; 0 console errors; 0 requests to `wawuafrica.com` or `fintavapay.com` (0 in the bundle). The PIN lives in screen memory only; both entries are dropped when the request answers, on Back from A10, on unmount and on a session end. Jest: a late answer after sign-out or after the screen closed moves nothing.
 - **V9:** Hub `dist` from backend main 95d8bd4 on :4951, fresh `k04_test` (migrated, seeded); stand-in WAWU ID :4952 (people registered there, signed in on A22, no injected token); Fintava stand-in (KYC-03's, made-up numbers, `env -i`); web export of this branch on :8151. Rows: 10 wallets opened, 8 PINs set, 10 BVN checks, 10 selfie matches. No sandbox or live Fintava call.
 - **Mutants:** 11 on the new logic, 10 killed (flow end leaving A9, A8 on top of A26, late answer after session end, mismatch look, Limit row with no limit, bank name typed in, PIN set on arrival, copy grouped, A7 not handing over, lost answer not checked). 1 equivalent: M9 (first entry kept after Back from A10): A9's next four digits overwrite it and unmount clears it, so nothing observable changes.
@@ -231,6 +231,91 @@ Closed when A9 and A10 start over on every `onSessionEnd`. Starting over means:
 - The A7 hand-over frame ("Matched to your BVN, Your account is open") as a picture. It lasts one render before A8 replaces it; A7 itself is KYC-03's and was verified there.
 
 Clean-up: the Hub, stand-in WAWU ID, Fintava stand-in and pass-through stopped (PIDs and command lines checked), `vk04_test` dropped, both worktrees removed.
+
+## Builder round 2
+
+Builder, 4 Oct 2026. Mobile `wmt/KYC-04` from the verifier's eece9fc (mobile main still 2c99b2f, nothing to merge). Code commit 44c6cd7. Backend main moved to c4d17bb (FIX-05, per-caller rate-limit store), and the seam Hub was built from it. No backend change. Evidence `$K2` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc04/r2/`:
+- shots `$K2/shots/<name>-<theme>.png` and `$K2/sheet-r2-states.png`;
+- the verifier's driver with my ports and two added scenarios (`$K2/drive.py`) and the verifier's pass-through (`$K2/web-server.js`);
+- runs `$K2/results.jsonl`, request log `$K2/calls.jsonl`;
+- mutants `$K2/mutants2.txt` (`mutate2.py`), the new tests run on the round-1 code `$K2/old-code-run.txt`, `npm run check` `$K2/check-r2.log`.
+
+**Defect 1, fixed as ruled.** `409 pin_already_set` is never shown as "the PIN you just typed is set".
+
+(a) **A set that got no answer.** A10 reads the wallet.
+- If the read says the PIN is set, the flow ends: this screen arrived with none, so the PIN typed twice is the one set.
+- If it says not set, the person starts again at A9 with the line.
+- If the read gets no answer either, A10 stays: "2 of 2", the keys off, and W11's line "We couldn't check whether your PIN was set." followed by the read's own words. A Try again under it repeats only the read, never a new entry, until a read answers.
+- Back from that state goes to A8, which reads the wallet before offering anything.
+
+(b) **`409 pin_already_set` to a screen that knew of no PIN.** The step ends on the canvas's result layout (warning tone, lock): "You already have a transaction PIN" over "A PIN was already set on this account, so the one you just entered was not saved. Your earlier PIN is the one that approves payments." with Done.
+- The sentence is true however the earlier PIN got there: another phone, an earlier visit, or the network sending the same request twice (the verifier's finding 3).
+- There is no reset screen or route in the app (W37 is WALLET-06's, `todo`), so this is filed as **BACKEND_GAPS G-116**.
+- The wording is recorded in `docs/designer/BRIEF.md` (section 12, A10), Default (agent), owner may override.
+
+A PIN known to be set on arrival still goes on as done (G-41), unchanged.
+
+**Defect 2, fixed as ruled.** On every `onSessionEnd` (sign-out, refused refresh, a sign-in that replaces a session, a refresh answering another account), A9 and A10 drop:
+- the typed digits;
+- A9's entry (now state, and the step is derived from it: while it is held the screen is A10);
+- the phase, the line and the in-flight mark.
+
+They also void the visit, so an answer or a re-read from before the end moves nothing, and nothing is sent or re-sent for the new account. The screen re-reads as whoever is signed in. While still signed in it leaves the flow (`useOpenWalletWay().leave`, a new `onLeave` prop); signed out, the route sends the person to `/welcome`, as before. It is never left on "Setting your PIN".
+
+**(c) The arrow.** Kept. The canvas source passes `iconRight: 'ArrowRight'` (auth.js line 45), and the shared `Button` already has `iconRight`, so nothing is forked. The render shows none only because the kit's `Btn` ignores it.
+
+**(d) A limit of 0.** A new test: a limit of 0, or one that is not whole kobo, shows no Limit row and never "₦0 a day".
+
+**(e) Correction to round 1.** The `lost` run did not take the re-read path. Chromium re-sent the POST when the pass-through destroyed the socket, and the Hub answered that re-send `409`. So round 1's "1 POST" was wrong: `$K/calls.jsonl` holds 2 POSTs per run. Round 2's `lost_reread_ok` and `lost_retry` lose every answer, so they do take the re-read path.
+
+**Tests.**
+- Jest: 7 new or changed in `CreatePinScreen.test.tsx`, 1 in `WalletOpenScreen.test.tsx`, 1 in `pin.test.ts`. They cover:
+  - the already-set end;
+  - P4 (1111 then 2222 answered 409: the already-set end, not done);
+  - P3 (no answer, then no answer to the read: A10 stays with Try again, the keys are off, 5555 typed twice sends nothing, 1 POST in all, and Try again ends only once a read says set);
+  - Back from that state to A8;
+  - P1 with the app's real query client (a refresh answering B mid-A9: "0 of 4", A9, `onLeave`, then B's own `{1358, 1358}` ends normally);
+  - P6 (a sign-in as B on A10: back on A9, four digits send 0 POSTs);
+  - a session change while setting (the spinner goes, and A's late 201 calls nothing).
+- **On the round-1 code** (dbc4e33's `CreatePinScreen.tsx` and `pin.ts`, restored by `cmp`), 7 of these fail, P1, P3, P4 and P6 among them. On this code all pass.
+- **Mutants (10, all killed):**
+  - the verifier's V6 (failed re-read treated as set), V10 (a session end keeps A9's entry) and V4 (a 0 limit shown);
+  - `pin_already_set` as a plain refusal;
+  - no leave on a session change;
+  - digits kept;
+  - phase kept (stuck "Setting");
+  - an earlier visit's answer acting;
+  - Back from the unknown state to A9;
+  - keys live while unknown.
+
+**V9 against the real seam, light and dark, all `ok`.**
+- **Setup:**
+  - a Hub `dist` from backend main c4d17bb on :4951 with a fresh `k04_r2_test`, migrated and seeded;
+  - the stand-in WAWU ID on :4952, with sign-in on A22;
+  - a Fintava stand-in;
+  - this branch's web export on :8151, with 0 `wawuafrica.com` in it.
+- **Scenarios:**
+  - `full`.
+  - `lost_retry` (every set answer lost and the Hub down for the read): `a10-unchecked-*`, keys `aria-disabled`, 4 taps refused, 1 POST. Connection back and Try again: `/`, and the hash verifies 8642.
+  - `already_set` (a PIN set through the API while A9 shows, as another phone would; then 2749 twice): `a10-already-set-*`. The hash is still 1111, not 2749, and Done goes to `/`.
+  - The verifier's `lost_reread_fails` and `_mismatch`: the screen stays on `/open-wallet-pin`, the second PIN is never sent (1 POST), and the hash is 8642.
+  - `server_error` (the Hub 500s on the set and the read): `a10-server-error-*` with Try again. The table is restored, Try again shows "not set", A9 again, and 3141 sets (2 POSTs).
+  - `lost_reread_ok`: ends, hash 8642.
+  - `switch_a9_bopen` and `late_after_switch_bopen` (a refresh answering B): the flow is left to `/` with no flow screen. After 20 s B has no PIN row and nothing is stuck. A's late answer sets A's PIN only.
+- **Results:** browser storage held only the two session keys, 0 blocked requests, and the only console errors are the 500s that `server_error` causes. My first run of four scenarios failed in the harness, not the app: its key taps waited on keys the app now turns off. The driver now counts a refused tap, and the four were rerun.
+- **Note:** after the container restart my Hub first came up with the Fintava stand-in's old port, which gave a BVN check 503. I restarted it and reran.
+
+**Counts and checks.** `npm run check` exit 0: 40 suites, 711 tests (open-wallet 163), gates 9 run, 183 files, 0 fail, 0 warn, 0 accepted, 205 tasks. Secret scan: 58 eight-character windows of the Fintava key against `git diff origin/main...HEAD`: 0 hits; 0 PEM blocks.
+
+**Filed:** BACKEND_GAPS G-116. BRIEF section 12, A10: the already-set and the unknown-state wording.
+
+**Not built (Lead):** nothing for `409 pin_not_set` from a payment.
+
+**NOT RUN:**
+- Capability check 8 on screen (pay sheet: SHARED-CHANGES KYC-05 #1; Wallet tab: WALLET-01).
+- V10 (OPS-10).
+- A real Fintava sandbox opening (questions 6 and 11, G-25).
+- A sign-out from a button: none on main. Jest and `signout_mid` from round 1 cover a sign-out.
 
 ## Owner sign-off
 
