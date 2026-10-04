@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 38 | 30 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 20 | 4 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 
@@ -88,6 +88,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · MONEY-17 · Round 2 built, status verifying (backend cade35b on main e6bd701): a lost answer stays pending until Fintava itself says, one open payment per item, the sweep no longer starves, no ₦0.00 shortfall, the payment quote bound to its item, PIN checks one at a time, the deploy-suite timing tests steadied.
 - 4 Oct 2026 · MONEY-17 · Verified: 4 defects, status building (backend ff0323b on main 44fdd7d, mobile 6fd30ed). A lost answer whose Fintava record lags past the resend window is failed as "No money left your wallet", and paying again debits twice for one item; the payment sweep takes the 50 oldest due payments, so 50 waiting for review starve every newer one; Fintava's own "not enough" answers "You need ₦0.00 more"; the three-at-once spec is timing-dependent. Check 1 (₦1,023.25, 850/150) and check 2 passed on the built Hub; trial merge with backend main 1e6b807 clean, specs green.
 - 3 Oct 2026 · MONEY-17 built (backend and mobile branches wmt/MONEY-17, not merged): `GET /money/payments/quote` and `POST /money/payments` are served: the price from the buyer's wallet to WAWU's merchant wallet with Fintava's quoted charge on top, the 85/15 split of the price recorded, one debit per Idempotency-Key (taken before the PIN, stored answer replayed), a lost answer left pending and settled from the ledger, never resent. Kinds are paid once their features register them (G-70). A real ₦10 sandbox payment went through once; the sandbox charged ₦0 against the quoted ₦23.25 (G-71). Status verifying.
 - 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
@@ -102,4 +103,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · AUTH-04 · Merged to main by the lead (2061390, Developer 1's task): sign-up with email and phone. Its gaps G-77, G-78 are renumbered G-93, G-94 (INBOX-09 merged first). OTA update follows.
 - 4 Oct 2026 · KYC-05 · Lead fix: A26's test file gets a 20 s test limit; its first test (cold module load) timed out at jest's 5 s default under machine load in 4 runs by three agents and the lead. No product code changed.
 - 4 Oct 2026 · INBOX-09 · Merged to main by the lead (e8d9c9c, Developer 2's task): paid questions pause for creators who stop replying, backend PR #54 (aa11bcc); mobile contract synced. Owner questions G-77, G-78 carried forward.
-- 3 Oct 2026 · INBOX-09 · Built (backend): a creator is warned once at 20% of paid questions unanswered over 30 days and paid messages switch off for 7 days at 30% (R-13, all from config); the live send refuses a paused creator with `paid_messages_paused`, and new `GET /paid-dm/standing` and `/paid-dm/creators/:wawuId/availability` serve the creator and the fan (I8). Owner questions G-77, web gap G-78. Verifying.
