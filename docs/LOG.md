@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 4 Oct 2026 · INBOX-02 · Fix round 1 built: exact catch-up paging, quiet publish, non-live upgrades answered as before, 1001 on SIGTERM, a feed that probes itself, send-buffer and unsigned-socket limits; verifying again.
 - 4 Oct 2026 · INBOX-02 · Built, now verifying: live chat updates, a WebSocket at `/api/hub/live` fed by Postgres LISTEN/NOTIFY, plus `GET /live/catch-up` (wawu-backend `wmt/INBOX-02`; 22 socket tests, gates unchanged).
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
