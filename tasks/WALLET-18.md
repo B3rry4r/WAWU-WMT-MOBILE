@@ -7,7 +7,7 @@ order: 184
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -334,6 +334,63 @@ Verifier, 3 Oct 2026. This is the same session as the round-1 report: a verifier
 **NOT RUN:** as round 1 (a bank send's receipt from the sandbox, the live host's link, the binary on the droplet, V5). No Fintava call was needed: round 2 changes drawing and masking only.
 
 **To close:** D3 (fold digits and join groups across any non-letter separator) and D4 (bound mark stacking or clip each row), each with a test; and pin `MAX_PRINTED`'s value and the width table against the drawn width (N2, N4).
+
+### Verifier report, round 3
+
+Verifier, 4 Oct 2026. This is the same verifier session as rounds 1 and 2, and it wrote none of this task's code. It was a narrow round on backend `wmt/WALLET-18` `f1a9d59` (fixes in `066b1eb`, main `9a370c0` merged in) and mobile `604c066` (main `9a0c1be` merged in). Both mains are unmoved, and I used fresh detached worktrees `/home/user/wt/vw18b3` and `/home/user/wt/vw18m3`.
+- **After the container restart:** I started my own processes. These were Hub :4973 and the stand-in WAWU ID :4974, each tracked by PID and checked by working directory before it was stopped. Port :4001 was used once, for the full suite, only after `lsof` showed it free; my mock there was stopped straight after, and `lsof` was empty again.
+- **Databases:** `vw18r3_*`. All are dropped.
+- **Sign-in:** through the stand-in's `/auth/login`.
+- **Ledger rows:** written by `LedgerService.record`.
+- **Fintava:** no call.
+- **Disk:** the disk filled during this round (other sessions' data). I removed only my own earlier-round worktrees (`vw18b`, `vw18m`, `vw18b2`, `vw18m2`, `vw18bmain*`) and my Python venv to free room. Their evidence stays in `vw18/` and `vw18r2/`.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw18r3/` (below, `vw18r3/`).
+
+**Verdict: D4 and the memory finding are closed. D3 is narrower again but still open (latent), and a new minor defect D5 (the PDF cut off at the page) was found. Status is back to building.**
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| D3 masking | **still open, narrower** (finding 1) | 51 rows checked on the public page and in the owner's printed lines (headline and the other side, which the image and PDF draw): every round-2 `d3_*` row plus 22 new ones. Counted by folding every character that has a Unicode digit value (788 of them, any category) and ignoring letters. **Masked correctly (at most 4 digits visible):** all round-2 forms; digits with combining marks between them; RLM, RLO and bidi isolates between or around groups; mixed scripts (`٠٨٠3 １２３ ४५६७`, `0٨0۳-१２3–4⁵67`); `0803X123X4567`; `+ 234 803 …`; `0803½1234567`; `0803…123…4567`; a 500-digit run; a 500-character comma-separated run; two numbers side by side. **Not masked:** see finding 1. The page's amount (₦1,234.56) and date are untouched on every row. | `vw18r3/probe/d3-results.txt`, `seed3.js`, `d3r3.js`, `public-d3*.html` |
+| D4 marks | **closed** | `A` plus 495 combining marks: image 200, PDF 200, page 200. The page's longest run of marks is 2, and the picture keeps the marks inside the From row; nothing reaches the header or date (`vw18r3/probe/combining.png`). Emoji, RTL, zero-width, CJK and full-width rows leave no ink in either 55 px side margin (the round-2 emoji overrun is gone). | `vw18r3/probe/d4-ref.txt`, `d4-ref-geometry.txt` |
+| Draw cap | **passed** | **Ordering:** one PDF alone took 200 ms. In a burst of 10 PDFs at once, all answered 200 in 1.23 s, finishing in pairs (344/350, 564/580, 796/806, 1012/1034, 1220/1229 ms), so 2 draw at a time. **Load:** 3 bursts of 30, then 120, then 3 more of 30 all answered 200. 220 at once gave 142 x 200 and 78 x 503, the 503s answered at 10.77 to 10.79 s with `Retry-After: 5` and the body "Receipts are busy right now. Try again in a few seconds.". There was no 500 in any burst and no error line in the Hub log. **`/health`:** median 1.3 to 6 ms during the bursts, max 9.6 to 87.6 ms, and 160 ms with 220 queued. **Memory:** peaks per 30-burst were 461, 470, 458, 489, 488 and 481 MB, and 498 MB for 120. Three seconds after each burst the Hub held 394, 417, 440, then 444, 443 and 470 MB. Peaks do not grow burst over burst (round 2 reached about 640 MB with 10 at once), though what stays after a burst drifts up slowly (note 4). **A failed draw frees its slot:** checked directly on `DrawLimiter` (4 failing draws leave 0 in flight, then 3 draws run; a third request with two slots held 800 ms and a 500 ms wait gets `ReceiptBusyError` 503), and mutant R1 below. | `vw18r3/probe/cap.txt`, `cap503.txt`, `limiter-direct.txt` |
+| 200-character reference | **image passed; PDF fails** (finding 2) | **Image:** the whole reference (200 W's) is drawn on 11 lines inside the card, with no ink in either side margin (`refWide.png`). The page shows all 200 characters. **PDF:** the same receipt runs off the bottom of the A4 page (image box 72 to 984.5 pt on an 842 pt page), so the end of the reference and the "Check it at wawu/r/<code>" footer are cut (`refWide-pdf-page.png`). | `vw18r3/probe/d4-ref-geometry.txt`, `pdf-overflow-threshold.txt` |
+| The merge | passed | `money.module.ts`, both gate lists, MONEY-04's list, the schema, the purge map, the rate-limit spec, `.env.example` and `deploy/README.md`: against main `9a370c0`, the only removed lines are the old test titles, merged into one; against `066b1eb`, nothing is removed. Main's `20261004020000_content_engagement` sorts after `20261003202940_money_receipts`. A database built from main `9a370c0`'s migrations, then deployed from this branch, applies only `money_receipts` and gets the table. Mobile's merge against `9a0c1be` keeps both sides. | `vw18r3/backend.diff`, `vw18r3/mobile.diff` |
+| V1 Gates | passed | `tsc` 0. eslint on the branch's changed `.ts`: 0. Gates: 9 run, 690 files, **16 fail / 24 warn** against main `9a370c0`'s 16 / 21 on 673 files. The FAIL lines are identical, and the only added warnings are `PROVISIONAL(RECEIPT-LOOKUP-LIMITS)`, `(RECEIPT-RENDER-LIMITS)` and `(RECEIPT-RENDER-CONCURRENCY)`. `check_baseline.py` passes. Mobile `npm run check`: exit 0 (29 suites / 556 tests, gates 9 run / 135 files / 0 fail / 0 warn, 205 tasks). | `vw18r3/gates-*.txt`, `g-*.lst`, `mobile-check.txt` |
+| V2 Contract | passed | **Full suite as `deploy.yml` runs it:** fresh migrated and seeded `vw18r3_full_test`; my mock on :4001 with a keypair made as `deploy.yml` makes it; the CI admin secrets. Result: **143 of 143 suites, 3,438 passed, 3 skipped, 0 failed** (02:15 to 02:21 UTC). **Contract:** `npm run contract:build` output is byte-equal to the committed `contract/openapi.json`. The mobile copy is byte-equal too, with `SOURCE_COMMIT` `f1a9d59`. | `vw18r3/full.txt`, `contract-build.txt` |
+| V3 Regression | passed | `run.sh --fresh HEAD` (code `f1a9d59`, lock `origin/main` `9a370c0`): **253/253, all 244 required**. Tripwire over 4,825 added lines: 0 matches. | `vw18r3/protected.txt`, `tripwire.txt` |
+| Mutations | 2 of 4 killed | Focused baseline 7 suites, 119/119. **Killed:** R1 (a failed draw keeps its slot) and R2 (masking only from 6 digits). **Survived, both test gaps:** R3 (the per-line `clipPath` removed: no test needs it now that marks are limited) and R4 (the 503 sent without `Retry-After`: no HTTP test makes a real 503; the header works, as measured above). | `vw18r3/mut/` |
+| Key scan | passed | 0 of 58 windows across both branch diffs, the round-3 diff and all 130 evidence files. | `vw18r3/keyscan.txt` |
+
+**Findings**
+1. **defect (privacy, latent): D3 still shows some numbers whole.** On the public page and the owner's image and PDF:
+   - **Digit characters `foldDigits` does not fold.** These are Unicode "other number" (`No`) digits that NFKC leaves alone, 69 characters in all:
+     - negative circled `⓿❶ … ❾`;
+     - circled sans-serif `➀ … ➈`;
+     - negative circled sans-serif `➊ … ➒`;
+     - double circled `⓵ … ⓽`;
+     - Ethiopic `፩ … ፱`.
+
+     Examples: `MTN ⓿❽⓿❸❶❷❸❹❺❻❼` and a person `⓿❽⓿❸❶❷❸❹❺❻❼ Ada Obi` show all 11 digits, and a bank name `GTBank ⓿❶❷❸❹❺❻❼❽❾` shows all 10.
+   - **x-split numbers outside the one form the code joins** (a single x directly between digits). With spaces (`MTN 0803 x 123 x 4567`) or doubled (`0803xx123xx4567`), the whole number shows. `0803x 1234567` shows as `0803x •••• 4567`. The ruling keeps x-split digits in scope but does not say whether spaces or a doubled x around it count, so that boundary is for the owner.
+   - **Why latent:** no writer produces biller rows yet, and bank and BVN names do not carry these characters.
+   - **Close when:** any character with a Unicode digit value is folded (for example a table for the `No` digits, or counting every `\p{N}` as a digit for the mask), the x join tolerates spaces and repeats if the ruling covers them, and the unit forms gain these cases.
+   - **Out of scope by ruling:** digits split by other letters (`0803 Ada 1234567` shows `0803 Ada •••• 4567`). A number deliberately split across fields (first name `0803`, bank name `123 Bank`, account ending 4567) shows each field's group, never more than 4 digits in one; groups that are separate in the record cannot be known to be one number.
+2. **defect (minor, new): in the PDF, a long reference pushes the receipt off the bottom of the A4 page.** The reference is now drawn whole (up to 200 characters) and the card grows with it, but the PDF places it at 72 pt from the top at a fixed 1.25 scale with no fit.
+   - **What is lost:** the end of the reference and the "Check it at wawu/r/<code>" footer (and the licence line).
+   - **Thresholds** for a money-out receipt (card height from `receiptCard`):
+     - normal names: the bottom goes off the page from 170 alphanumeric characters (200 reach 878 of 842 pt);
+     - wide letters: from 115 characters;
+     - a three-line name with an alphanumeric reference: from 115 characters.
+   - **Reproduction:** an out row with `customerReference` of 200 `W` (`refWide` in `vw18r3/probe/seed3.js`), then `GET .../receipt/pdf`; see `vw18r3/probe/refWide-pdf-page.png`. The PNG of the same row is complete.
+   - **Why latent:** real references are about 30 characters, but the ledger keeps up to 200.
+   - **Close when:** the PDF scales the card to fit the page (or adds a page), with a test at the ledger's longest reference.
+3. **Note:** the masking decision for dates and amounts written into a name (`IKEDC token •••• 0000 Ref 12`) is recorded as the builder's default, and the page's own fields are untouched.
+4. **Note, memory:** with 2 drawing slots, peaks are flat (about 460 to 500 MB in this run, starting from 378 MB after earlier probes). What the Hub keeps after a burst crept from 394 to 470 MB over 7 bursts with no forced garbage collection. That is not a leak I could show, but it is worth watching on the droplet.
+5. **Note:** the two surviving mutants (R3, R4) are test gaps.
+
+**NOT RUN:** as round 1 (a bank send's receipt from the sandbox, the live host's link, the binary on the droplet, V5).
+
+**To close:** finding 1 (fold every Unicode digit value; ask the owner about spaced or doubled x), finding 2 (fit the card on the PDF page), and tests for R3 and R4.
 
 ## Owner sign-off
 

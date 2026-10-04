@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 40 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 18 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 
@@ -86,6 +86,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · WALLET-18 · Verified round 3: 1 privacy defect still open (latent) and 1 new minor defect, status building (backend f1a9d59 with main 9a370c0; mobile 604c066 with main 9a0c1be; neither main moved). D4 closed (495 combining marks stay in their row, at most 2 per character on the page). The draw cap holds: PDFs finish in pairs, 220 at once give 142 x 200 and 78 x 503 at 10.8 s with Retry-After 5, no 500, /health at most 160 ms, memory peaks flat at about 460 to 500 MB. D3 narrowed: every Nd script, NFKC forms, combining and bidi marks, mixed scripts and 500-digit runs are masked, but circled-dingbat and Ethiopic digits (Unicode No) and x with spaces or doubled still show whole. New: in the PDF a reference of 170 or more characters pushes the receipt and its Check it at footer off the A4 page. Full suite 143 suites 3,438 passed 0 failed; protected 253/253; gates 16 fail / 24 warn (only the three RECEIPT PROVISIONALs added); 2 of 4 own mutants killed (clip and Retry-After untested); 0 key windows, 0 Fintava calls.
 - 4 Oct 2026 · WALLET-18 fix round 3 (backend wmt/WALLET-18 f1a9d59, main 9a370c0 merged): numbers in names masked at the root (digits in any script, joined by any non-letter), at most 2 combining marks and each line clipped to its box, at most 2 receipts drawn at once (503 with Retry-After after 10 s), the reference drawn whole; status verifying.
 - 3 Oct 2026 · WALLET-18 · Verified round 2: 1 privacy defect still open (latent) and 1 new minor defect, status building (backend 2108141 with main 1e6b807; mobile 04d2626 with main c733413; neither main moved). D1 closed: at the ledger's longest values the first PDF takes 0.31 s and the image 0.15 s (13.9 s and 6.2 s before), /health at most 79 ms meanwhile, 10 PDFs at once in 1.04 s with /health at most 128 ms. D2 closed: every class XML forbids, through the ledger and called directly, gives 200 and no raw character. D3 still open: underscore, comma, en dash, middle dot, colon and zero-width separators, and full-width, Arabic-Indic and other non-ASCII digits, leave a phone or account whole on the public page. D4: stacked combining marks in a name are drawn over the header and date. Merge keeps both sides; full suite 139 suites 3,335 passed 0 failed; protected 253/253; gates 16 fail / 16 warn (only the two RECEIPT PROVISIONALs added); round 1's survivors killed, 2 of 4 new mutants survive (cap value, width table vs drawn width); 0 key windows, 0 Fintava calls.
 - 3 Oct 2026 · WALLET-18 fix round 2 (backend wmt/WALLET-18 2108141, main 1e6b807 merged): drawing a receipt is bounded and off the event loop (font width tables, 160-character cap, renderAsync, async PNG and PDF encoding), characters XML forbids no longer give a 500, and spaced or +234 phone numbers keep only their last 4 digits on the public page; status verifying.
@@ -100,4 +101,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · INBOX-09 · Merged to main by the lead (e8d9c9c, Developer 2's task): paid questions pause for creators who stop replying, backend PR #54 (aa11bcc); mobile contract synced. Owner questions G-77, G-78 carried forward.
 - 3 Oct 2026 · INBOX-09 · Built (backend): a creator is warned once at 20% of paid questions unanswered over 30 days and paid messages switch off for 7 days at 30% (R-13, all from config); the live send refuses a paused creator with `paid_messages_paused`, and new `GET /paid-dm/standing` and `/paid-dm/creators/:wawuId/availability` serve the creator and the fan (I8). Owner questions G-77, web gap G-78. Verifying.
 - 3 Oct 2026 · AUTH-04 · Fix round 1, status verifying: the ended sign-up offers only Start again, a failed Continue keeps the held code secret, the code boxes fit 320 px, a release build no longer shows a blank page to a user on the email step, a failed sixth digit has Try again, double taps tested; G-64 and G-65 filed.
-- 3 Oct 2026 · AUTH-04 · Built A2 Continue, A3 sign-up, A4 and A15 phone code, and the email step (status verifying): the app texts the code through wawu-id, keeps the sign-up secret in the secure store, resumes after quitting, counts down the server's own resend and lockout seconds, and opens the email step before Home. 457 tests, gates 0 findings; live walk on a local wawu-id and Hub 32 of 32 (earning and discovering user).
