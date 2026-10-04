@@ -20,13 +20,16 @@ export class ApiError extends Error {
   readonly status: number;
   /** Machine code from the server (for example EMAIL_NOT_VERIFIED, or a money route's `reason.code` such as provider_unreachable), when sent. */
   readonly code?: string;
+  /** Seconds the server asks the caller to wait (WAWU ID sends it with every 429), when sent. */
+  readonly retryAfterSeconds?: number;
 
-  constructor(kind: ApiErrorKind, status: number, message: string, code?: string) {
+  constructor(kind: ApiErrorKind, status: number, message: string, code?: string, retryAfterSeconds?: number) {
     super(message);
     this.name = 'ApiError';
     this.kind = kind;
     this.status = status;
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -64,7 +67,8 @@ function reasonCode(reason: unknown): string | undefined {
  * Both backends answer errors as `{ statusCode, message, code? }`; the Hub adds
  * `data: null`, and validation failures send `message` as a list of sentences.
  * Money routes put their code in `reason.code` instead, which becomes `code`
- * here, so every screen branches on the one field.
+ * here, so every screen branches on the one field. WAWU ID's 429s carry
+ * `retryAfterSeconds`, kept as is so a screen counts down the server's figure.
  * `status` is the HTTP status of the response (it wins over `statusCode`, which
  * WAWU ID sets to 404 on a 401 for a missing account).
  */
@@ -77,7 +81,9 @@ export function toApiError(status: number, body: unknown): ApiError {
       ? raw
       : '';
   const code = typeof record.code === 'string' ? record.code : reasonCode(record.reason);
-  return new ApiError(kindOf(status), status, message || 'Something went wrong. Try again.', code);
+  const wait = record.retryAfterSeconds;
+  const retryAfterSeconds = typeof wait === 'number' && Number.isFinite(wait) && wait >= 0 ? wait : undefined;
+  return new ApiError(kindOf(status), status, message || 'Something went wrong. Try again.', code, retryAfterSeconds);
 }
 
 /** The request never reached the server (offline, DNS, timeout). */

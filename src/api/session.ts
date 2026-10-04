@@ -164,6 +164,15 @@ export async function signIn(identifier: string, password: string): Promise<void
   await adopt(next, true);
 }
 
+/**
+ * Takes a session the server already issued (the sign-up's phone code confirm
+ * answers with the first one) the way a sign-in does. Added by AUTH-04
+ * (SHARED-CHANGES AUTH-04 #1).
+ */
+export async function adoptSession(next: StoredTokens): Promise<void> {
+  await adopt(next, true);
+}
+
 /** Removes the tokens from memory and from secure storage. */
 export async function signOut(): Promise<void> {
   await drop();
