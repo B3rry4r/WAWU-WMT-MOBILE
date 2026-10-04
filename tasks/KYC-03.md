@@ -7,7 +7,7 @@ order: 86
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [KYC-05, MONEY-03, MONEY-12, MONEY-13, KYC-01, KYC-02, UI-02]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -306,6 +306,127 @@ Builder, 4 Oct 2026. Mobile `wmt/KYC-03` (0c14b21, then the fix below); backend 
   - A real Fintava sandbox selfie or opening (questions 6 and 11, G-25).
   - A handle's real 30 minutes in the browser (driven by a key change, as the verifier did).
   - The full backend suite this round: only the spec tests changed since the verifier's 142/142 run.
+
+## Verifier report, round 3
+
+Verifier, 4 Oct 2026. Narrow round on mobile `wmt/KYC-03` at e698d94 and backend `wmt/KYC-03` at 442bf98, each in a fresh detached worktree (`/home/user/wt/vk03m3`, `/home/user/wt/vk03b3`). Evidence `$V3` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk03/r3/`. Every `vk03r3_*` database (all `*_test`) was dropped at the end, and every process I started was stopped.
+
+**Both mains moved during this round.** Mobile main is now f8130cd (ME-06) and backend main is now e6bd701 (HOME-05), so the branch heads were verified as given, without them.
+- A trial merge (`git merge-tree`) of backend e6bd701 into 442bf98 is clean.
+- Mobile f8130cd into e698d94 conflicts in `BACKEND_GAPS.md` and `SHARED-CHANGES.md` (rows added at the same place: this branch's G-98, ME-06's G-110 to G-113 and ME-06 #1 to #5) and the generated `docs/PROGRESS.md`. Those are bookkeeping conflicts only: no file under `src/` or `contract/` overlaps.
+
+**Verdict: defect 1 is closed, item 6 works, and BM3 is now killed. No defect is open. Status `review`.**
+
+### 1. Defect 1: a refused handle, in the browser
+
+Setup:
+- a Hub built from 442bf98 on :4943 with a fresh `vk03r3_v9_test`;
+- the mock WAWU ID on :4944, with sign-in on the app's own screen;
+- my Fintava stand-in;
+- the web export of e698d94 behind my pass-through on :8143. Round 3 adds `/__holdopen` and `/__release`, which hold an opening before it is forwarded;
+- driver `drive3.py`.
+
+Each refusal is the real Hub's `409 bvn_not_checked`. It is produced by restarting the Hub with another IDENTITY_HASH_KEY, which gives the same answer as an expired handle, or for A5 by clearing the person's `bvnVerifiedAt`.
+
+**18 of 18 scenarios pass, light and dark** (`results.jsonl`, `shots/r3-*`, `sheet-r3-verifier.png`):
+
+| Scenario | Where the refusal lands | A26 shows | After a new pass |
+|---|---|---|---|
+| `expired-a6` | the match | "We need a new BVN check" with "Check your BVN again to continue. Your home address and occupation are kept.", BVN and NIN empty | A5 holds "9 Verifier Crescent, Surulere", Lagos, Lagos, Photographer, with consent unticked (A5's own error line showed it). The account then opens |
+| `refused-a5` | A5's occupation save | the same title with the save's own sentence, "Confirm your BVN first. Your home address and occupation are kept." | A5 filled in, then open |
+| `expired-a7` | the first opening (held at the pass-through while the key changed; 1 released) | the banner | A5 filled in |
+| `expired-a7-retry` | A7's Try again, after a Fintava 401 | the banner | A5 filled in |
+| `check-details-expired` | the opening sent again after "Check my details" | the banner | A5 holds the *corrected* street |
+| `two-refusals` | the match, twice, with a new pass between | the banner both times | filled in both times, then open |
+| `leave-come-back` | the match, then Back from A26 | the banner, then on leaving 0 flow test ids and no typed address in the DOM, at `/` | coming back: no banner and an empty street. The occupation shown is the server's saved one, as before round 3 |
+| `reload-with-notice` | the match, then a reload | the banner, then after the reload no banner | an empty street |
+
+- Every match body was `{checkHandle, image}` and every opening `{address, checkHandle, dateOfBirth, firstName, lastName}`.
+- After all 22 runs, browser storage held only `wawu.session.access` and `.refresh`. Session storage, IndexedDB and cookies were empty, with no `data:` images and no file input left behind.
+- 0 requests to blocked hosts, 0 console errors.
+- My first `check-details` and `check-details-expired` runs in each theme (4 runs) failed in my own harness: it ticked a box that was already ticked (unclear R3-1). They were rerun as `RUN=2` and pass.
+
+### 2. Breaking `expireKeptCheck`
+
+Probe `zz-vk03r3-probe.test.tsx` ran in place and was then removed. It passed 11 of 11 (`probe.log`). The route's restart was emulated exactly as `leave.ts` does it, with `expireKeptCheck(notice ?? null)`.
+
+- **Q1, A to B while A26 shows A's notice**, both through a refresh that answers B and through a sign-in as B:
+  - no banner appears, and no part of A's sentence, street, city, occupation, name or handle is on screen;
+  - `isKeptFor`, `readAddress` and `readOccupation` are empty for A and for B;
+  - B's own pass then carries nothing of A.
+- **Q2, sign-out while the notice shows:** everything is forgotten. Signing in again as A shows no banner and keeps no address. There is no sign-out control in this build, so this case was run in jest only, with the real session module.
+- **Q3, leaving with the notice shown, then coming back:** nothing kept, no banner.
+- **Q4, two refusals in a row through the real A6:**
+  - The first 409 restarts with its sentence, then A6 (now holding nothing) restarts without words, and the first sentence survives.
+  - After a new pass, the second 409's sentence *replaces* the first.
+  - The address and occupation wait through both.
+  - The match bodies carried the first handle, then the second.
+- **Q5, late answers after an expiry:**
+  - a: a match answering 200 after an expiry sends no opening, so never one with a null handle, and shows no A7.
+  - b: A5's save answering 200 after an expiry calls no Continue and keeps no address.
+  - c: A5's save answering 409 after an expiry does not restart a second time with its own words. The first sentence stays.
+- **Q6, the store:** a pass for B after A's expiry carries none of A's address or occupation.
+- **Q7:** across every probe, only `wawu.session.*` keys reached secure storage.
+- **Q5d (recorded, not a defect):** a stale restart without words that lands while a new A26 check is in flight voids that check's ticket. The charged pass is then dropped silently and the form stays. Round 2's `forgetKeptCheck` did the same. Such a restart comes only from A5 or A6 in the moment before `dismissTo` unmounts them, which is before a person could type two 11-digit numbers, so I found no way to reach it.
+
+### 3. Item 6: "Check my details" after `422 account_not_opened`
+
+- A7 shows "Check my details" with Done under it, in light and dark.
+- **The happy path, `check-details`:**
+  - "Check my details" goes back to A5, which still holds the address, occupation and tick.
+  - I changed the street to "11 Corrected Road, Yaba" and pressed Continue. A6 went straight to the opening, and the account opened.
+  - Requests: 1 BVN check, **1 selfie match** and 2 openings. The second opening's address was "11 Corrected Road, Yaba, Lagos, Lagos".
+- **With the handle expired, `check-details-expired`:** the second opening's 409 takes the defect-1 path. After a new pass, A5 holds the corrected street.
+- `identity_has_wallet` and `phone_held_by_other_identity` keep Done only. I read this in the code; neither was driven live.
+
+### 4. BM3
+
+My BVN-only mutant (the handle path compares the sealed BVN, not the NIN) is now **killed**: 1 failed, 18 passed, 19 total. The failing test is the new "a handle from an earlier check is refused once a check of the same BVN with another NIN has passed". Evidence: `b-mutants3.txt`, file restored and sha1-checked.
+
+### 5. Mutants of my own on the round-3 paths: 5 of 5 killed
+
+Each was run against the probe and the four open-wallet test files, and every file was restored and sha1-checked (`m-mutants3.txt`).
+
+| Mutant | Tests |
+|---|---|
+| RM1 `expireKeptCheck` leaves the tickets live (no `era` bump) | 2 failed of 109 |
+| RM2 A6's selfie read served from an earlier visit (`gcTime: 0` removed) | 3 failed |
+| RM3 A5's 409 on save does not keep what was typed | 4 failed |
+| RM4 the first refusal sentence sticks (`notice ?? kept.notice` swapped) | 3 failed |
+| RM5 `keepCheck` carries over without comparing the owner | 4 failed |
+
+### 6. Regression
+
+- **Mobile `npm run check`:** exit 0, 32 of 32 suites, 620 of 620 tests, gates 9 run on 149 files with 0 fail, 0 warn and 0 accepted, 205 tasks (`m-check.log`). The A26 or A5 cold-start timeout did not recur in this run.
+- **Backend `src/money` and `src/fintava` specs** (identity, opening, gate, ledger, pin and the Fintava client): 40 of 40 suites and 1,505 tests, on a fresh `vk03r3_spec_test` (`b-money-specs.log`).
+- **Backend full suite, as deploy runs it:** fresh `vk03r3_full_test`, migrated and seeded, then `jest --runInBand --forceExit --no-cache`. My mock WAWU ID ran on :4001, started only once `lsof` showed the port free (two other sessions held it first) and stopped afterwards. **142 of 142 suites: 3,404 passed, 3 skipped, 0 failed** (`b-full.log`, `b-full.json`).
+- **Protected:** `run.sh --fresh HEAD` gave 253 of 253, all 244 required (`b-protected.log`). `ci-check.sh 9a370c0 442bf98 0` reports "No change: the branch is checked against exactly the lock on the base", 253 of 253 (`b-cicheck.log`).
+- **Backend gates:** 9 run on 675 files, 16 fail, 21 warn, 76 accepted, the same as main; baseline exit 0 (`b-gates.txt`).
+- **Typecheck and lint:** `tsc --noEmit` exit 0, and ESLint on the one changed spec found 0 problems.
+- **Contract:** `contract:build` leaves the tree clean, and the mobile `contract/openapi.json` equals the backend's.
+- **Key scan:** every 8-character window of the Fintava key, and private or live key patterns, 0 hits in both diffs from their mains (backend 57 KB, mobile 251 KB). The round-3 mobile diff adds no em-dash.
+- **Privacy:** 72 BVN and NIN values typed this round, raw and grouped 4-4-3, gave 0 hits in a full dump of `vk03r3_v9_test` (238 KB) and in the Hub, mock, stand-in, pass-through and request logs. There were no handle-shaped strings, no base64 JPEG runs and no typed address in the dump or the server logs (`privacy-scan.txt`). The only address hits are my own `results.jsonl`, which records what the driver read back from A5.
+
+### Findings
+
+**No defect is open.**
+
+**Unclear R3-1: on web, A5's consent box does not say whether it is ticked.**
+- **Cause:** react-native-web 0.21.3 no longer reads `accessibilityState`, and the box sets only that (`ConfirmDetailsScreen.tsx`). On web, the element with `role="checkbox"` therefore has no `aria-checked`.
+- **Effect:** a screen reader on the web build cannot hear the tick. A phone build reads `accessibilityState` and is unaffected. The same cause dropped the box's `disabled` state on web.
+- **Age:** this predates round 3; the box has been there since round 1.
+- **Fix:** add `aria-checked` beside `accessibilityState`, as the design-system Showcase does.
+
+**Note:** the A5 refusal's banner carries the occupation route's sentence ("Confirm your BVN first."), not the handle's ("Check your BVN again to continue."). Both are the server's own words under the same title, as built.
+
+**Before merge:** mobile main f8130cd must be merged into the branch (the bookkeeping conflicts above), and backend main e6bd701 (clean).
+
+**NOT RUN:**
+- V10 and the phone camera (SHARED-CHANGES KYC-03 #1, OPS-10).
+- A real Fintava sandbox selfie or opening (questions 6 and 11, G-25).
+- A handle's real 30 minutes in the browser: a key change was used instead.
+- A sign-out and an A-to-B switch in the browser: there is no sign-out control in this build, and a sign-in reload empties memory anyway. Both were run in jest (Q1, Q2).
+- `identity_has_wallet` and `phone_held_by_other_identity` live.
 
 ## Owner sign-off
 

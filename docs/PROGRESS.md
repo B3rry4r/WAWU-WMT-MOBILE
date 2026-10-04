@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 48 | 40 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 32 | 18 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
 
@@ -77,7 +77,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN
 - **Developer:** [ME-06](../tasks/ME-06.md) Edit profile and social links, [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details, [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts
 - **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
@@ -86,6 +86,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · KYC-03 · Verified round 3 (mobile e698d94, backend 442bf98), status review: no defect open. A refused handle at A5, A6, A7 or A7's Try again lands on A26 with the banner and the server's sentence, and A5 comes back filled in (18 of 18 browser scenarios, light and dark). The kept address never crossed accounts, sign-out, leaving or a reload, and never reached storage (11 probes). Check my details opened with 1 selfie match; BM3 killed; 5 of 5 new mutants killed. Backend full suite 3,404 passed 0 failed, protected 253/253; mobile check exit 0. Both mains moved: mobile f8130cd conflicts in BACKEND_GAPS, SHARED-CHANGES and PROGRESS only.
 - 4 Oct 2026 · KYC-03 · Round 3, status verifying: defect 1 fixed. A handle the server refuses (409 bvn_not_checked at A5, A6, A7 or A7's Try again) now returns to A26 with the server's sentence in a banner, and A5's address and occupation are kept in memory so A5 comes back filled in after the new check. A refused opening (422) offers Check my details, which needs no second selfie. The backend has a test for the NIN on the handle path (442bf98). G-98 filed. V9 passed light and dark against the real Hub.
 - 4 Oct 2026 · KYC-03 · Verified round 2 (mobile 62478c6, backend 51c1e10), status building: 1 defect. A handle the server refuses (409 bvn_not_checked, e.g. after its 30 minutes) drops the person on an empty A26 with no word of why. The handle held: 38 forged, tampered, expired, replayed and cross-user handles refused alike, none reaching Fintava, 0 numbers or handles in DB or logs. Backend full suite 3,403 passed 0 failed (the :4001 suites too), protected 253/253, lock unchanged, gates as main, contract reproduced; mobile check exit 0; 14 mutants (1 test gap). Evidence and 6 unclear items in the task file.
 - 4 Oct 2026 · KYC-03 · Round 2, status verifying: G-72 closed with a sealed check handle (backend `wmt/KYC-03` 51c1e10, main 9a370c0 merged in). The passed BVN check answers `checkHandle` (AES-256-GCM, key from IDENTITY_HASH_KEY by HKDF, 30 minutes, nothing stored); the selfie match and the opening take it in place of the BVN and NIN. The app keeps it in memory with the check and sends it; A6, A7 and A16 now reach the real Hub (Fintava stand-in only for Fintava). Backend: 18 handle tests, 10 mutants killed, protected 253/253, gates as main; 6 backend suites bound to :4001 not run here.
@@ -100,4 +101,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · INBOX-09 · Built (backend): a creator is warned once at 20% of paid questions unanswered over 30 days and paid messages switch off for 7 days at 30% (R-13, all from config); the live send refuses a paused creator with `paid_messages_paused`, and new `GET /paid-dm/standing` and `/paid-dm/creators/:wawuId/availability` serve the creator and the fan (I8). Owner questions G-77, web gap G-78. Verifying.
 - 3 Oct 2026 · AUTH-04 · Fix round 1, status verifying: the ended sign-up offers only Start again, a failed Continue keeps the held code secret, the code boxes fit 320 px, a release build no longer shows a blank page to a user on the email step, a failed sixth digit has Try again, double taps tested; G-64 and G-65 filed.
 - 3 Oct 2026 · AUTH-04 · Built A2 Continue, A3 sign-up, A4 and A15 phone code, and the email step (status verifying): the app texts the code through wawu-id, keeps the sign-up secret in the secure store, resumes after quitting, counts down the server's own resend and lockout seconds, and opens the email step before Home. 457 tests, gates 0 findings; live walk on a local wawu-id and Hub 32 of 32 (earning and discovering user).
-- 3 Oct 2026 · SETTINGS-03 · Built (wawu-id): `POST /auth/change-password` (current password checked, rate limited, every other refresh token ended, this device gets a new pair) and `POST /auth/logout` (revokes the presented refresh token, G-6); gaps G-90 to G-92; verifier next.
