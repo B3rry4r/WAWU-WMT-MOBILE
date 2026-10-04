@@ -94,12 +94,12 @@ function cameraGiving(...results: CaptureResult[]): SelfieCapture & { taps: () =
   };
 }
 
-async function boot(capture: SelfieCapture = cameraGiving()) {
+async function boot(capture: SelfieCapture = cameraGiving(), reuse?: QueryClient) {
   const { SelfieScreen } = require('../SelfieScreen') as typeof import('../SelfieScreen');
   const kept = require('../keptCheck') as typeof import('../keptCheck');
   const props = { onBack: jest.fn(), onLeave: jest.fn(), onRestart: jest.fn() };
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
-  clients.push(client);
+  const client = reuse ?? new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+  if (!reuse) clients.push(client);
   const wrap = (child: ReactElement) => (
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>{child}</SafeAreaProvider>
@@ -288,6 +288,8 @@ describe('A6 · Selfie', () => {
     const app = await boot();
     await take(app);
     await app.waitFor(() => expect(app.onRestart).toHaveBeenCalledTimes(1));
+    // The server's own sentence goes with the user, for A26 to show (never a silent restart).
+    expect(app.onRestart).toHaveBeenCalledWith('Check your BVN again to continue.');
     expect(openings()).toHaveLength(0);
   });
 
@@ -361,6 +363,54 @@ describe('A6 · Selfie', () => {
     expect(app.screen.getByText(said)).toBeTruthy();
     expect(openings()).toHaveLength(2);
     expect(matches()).toHaveLength(1);
+    // The bank refused the details sent: A5 can correct them, or the user can stop here.
+    expect(app.screen.getByText('Check my details')).toBeTruthy();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
+    expect(app.onBack).toHaveBeenCalledTimes(1);
+    expect(app.onLeave).toHaveBeenCalledTimes(1);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-secondary'));
+    expect(app.onLeave).toHaveBeenCalledTimes(2);
+    expect(app.onRestart).not.toHaveBeenCalled();
+  });
+
+  it('back from "Check my details", the kept check and handle open the account again with no second selfie', async () => {
+    const kept = keepOpening();
+    routes['POST /money/wallet/open'] = [refusal(422, 'account_not_opened', 'Your account could not be opened. Check your details and try again.')];
+    let app = await boot();
+    await take(app);
+    expect(await app.screen.findByTestId('open-wallet-not-opened')).toBeTruthy();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
+    expect(app.onBack).toHaveBeenCalledTimes(1);
+    await app.screen.unmount();
+    // A5 kept the check and the handle; the person corrects the street and continues.
+    expect(kept.readHandle(OWNER)).toBe(HANDLE);
+    kept.keepAddress(kept.ticketFor(OWNER), { ...address, street: '15 Admiralty Way' }, 'Filmmaker');
+    fallback['GET /money/identity/selfie'] = ok({ matchedAt: '2026-10-03T10:05:00.000Z', checksLeft: 2 });
+    // The same app (the same query cache), a moment on A5 later: the first visit's "not matched" is not reused.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    app = await boot(cameraGiving(), app.client);
+    expect(app.screen.queryByTestId('open-wallet-selfie-take')).toBeNull();
+    expect(await app.screen.findByTestId('open-wallet-opened')).toBeTruthy();
+    expect(matches()).toHaveLength(1);
+    expect(openings()).toHaveLength(2);
+    const again = JSON.parse(openings()[1].body) as { address: string; checkHandle: string };
+    expect(again.checkHandle).toBe(HANDLE);
+    expect(again.address).toContain('15 Admiralty Way');
+  });
+
+  it('accounts the bank will never open for this person (a wallet already, a phone held by another) end with Done only', async () => {
+    keepOpening();
+    routes['POST /money/wallet/open'] = [refusal(409, 'identity_has_wallet', 'This BVN already has a wallet.')];
+    const app = await boot();
+    await take(app);
+    expect(await app.screen.findByTestId('open-wallet-not-opened')).toBeTruthy();
+    expect(app.screen.queryByText('Check my details')).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-end-secondary')).toBeNull();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
+    expect(app.onLeave).toHaveBeenCalledTimes(1);
+    expect(app.onBack).not.toHaveBeenCalled();
   });
 
   it('a check the server no longer holds sends the user back to A26, from the match or from the opening', async () => {
@@ -371,10 +421,25 @@ describe('A6 · Selfie', () => {
     await app.waitFor(() => expect(app.onRestart).toHaveBeenCalledTimes(1));
     await app.screen.unmount();
 
+    expect(app.onRestart).toHaveBeenCalledWith('Check your BVN again first.');
+    await app.screen.unmount();
+
     routes['POST /money/wallet/open'] = [refusal(409, 'bvn_not_checked', 'Check your BVN again first.')];
     app = await boot();
     await take(app);
     await app.waitFor(() => expect(app.onRestart).toHaveBeenCalledTimes(1));
+    expect(app.onRestart).toHaveBeenCalledWith('Check your BVN again first.');
+    await app.screen.unmount();
+
+    // A7's Try again, after an opening that could not run, meets the same refusal.
+    routes['POST /money/wallet/open'] = [refusal(503, 'provider_unreachable', 'The bank is not answering. Try again in a moment.'), refusal(409, 'bvn_not_checked', 'Check your BVN again to continue.')];
+    app = await boot();
+    await take(app);
+    expect(await app.screen.findByTestId('open-wallet-open-failed')).toBeTruthy();
+    expect(app.onRestart).not.toHaveBeenCalled();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-open-retry'));
+    await app.waitFor(() => expect(app.onRestart).toHaveBeenCalledTimes(1));
+    expect(app.onRestart).toHaveBeenCalledWith('Check your BVN again to continue.');
   });
 
   it('with nothing kept for this account, or no address from A5, the user is sent back to A26 and nothing is read', async () => {

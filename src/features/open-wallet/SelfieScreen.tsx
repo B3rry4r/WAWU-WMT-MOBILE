@@ -81,15 +81,17 @@ type Phase =
   /** A7 when the opening could not be asked for or did not go through: try it again. */
   | { kind: 'open_failed'; note: Note }
   /** The end of Open your wallet: the account is open, or the bank refused it. */
-  | { kind: 'ended'; end: 'open' } | { kind: 'ended'; end: 'refused'; message: string };
+  | { kind: 'ended'; end: 'open' }
+  /** `fixable`: the bank refused the details sent (`account_not_opened`), so A5 can correct them and ask again. */
+  | { kind: 'ended'; end: 'refused'; message: string; fixable: boolean };
 
 export type SelfieScreenProps = {
   /** Back to A5 (the X before anything was opened). */
   onBack: () => void;
   /** Leaves Open your wallet altogether (Done at an end, the X once the opening was sent). */
   onLeave: () => void;
-  /** Back to A26 for a new BVN check. */
-  onRestart: () => void;
+  /** Back to A26 for a new BVN check, with the server's sentence for A26 to show. */
+  onRestart: (notice?: string) => void;
   /** How this build takes the selfie; the platform's own unless a test hands one in. */
   capture?: SelfieCapture;
 };
@@ -116,6 +118,8 @@ export function SelfieScreen({ onBack, onLeave, onRestart, capture }: SelfieScre
     queryKey: [OPEN_WALLET_KEY, 'selfie', owner ?? ''] as const,
     queryFn: fetchSelfieMatch,
     staleTime: 0,
+    // Never answered from an earlier visit: back from A5 ("Check my details"), a stale "not matched" would offer a second, charged selfie.
+    gcTime: 0,
     enabled: Boolean(owner) && usable,
   });
 
@@ -170,7 +174,7 @@ type SelfieProps = {
   opening: OpeningInput;
   onBack: () => void;
   onLeave: () => void;
-  onRestart: () => void;
+  onRestart: (notice?: string) => void;
 };
 
 function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRestart }: SelfieProps) {
@@ -202,7 +206,7 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
     } catch (error) {
       if (!current(ticket)) return;
       const next = afterOpenRefusal(error);
-      if (next === 'restart') onRestart();
+      if ('restart' in next) onRestart(next.restart);
       else setPhase(next);
     }
   };
@@ -253,8 +257,8 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
       } catch (error) {
         if (!current(ticket)) return;
         const next = afterSelfieRefusal(error);
-        if (next === 'restart') onRestart();
-        else if (next === 'open') void open();
+        if (next === 'open') void open();
+        else if ('restart' in next) onRestart(next.restart);
         else setPhase(next);
       }
     } finally {
@@ -283,8 +287,11 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
         icon="CircleAlert"
         title="We couldn't open your account"
         message={shown.message}
-        actionLabel="Done"
-        onAction={onLeave}
+        actionLabel={shown.fixable ? 'Check my details' : 'Done'}
+        // Back to A5 with the check, its handle and the matched selfie kept: asking again needs no new selfie.
+        onAction={shown.fixable ? onBack : onLeave}
+        secondaryLabel={shown.fixable ? 'Done' : undefined}
+        onSecondary={shown.fixable ? onLeave : undefined}
       />
     );
   }
@@ -368,6 +375,9 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
   }
 }
 
+/** Back to A26 for a new check, carrying the server's sentence for A26's banner. */
+type Restart = { restart: string };
+
 /** A16's title when the server's sentence does not lead with one. */
 const NOT_MATCHED_TITLE = "We couldn't match your face";
 
@@ -384,7 +394,7 @@ export function headed(message: string, fallbackTitle: string): { title: string;
 }
 
 /** Where a refused selfie match leaves A6 (contract CONVENTIONS section 8; every sentence is the server's). */
-function afterSelfieRefusal(error: unknown): Phase | 'restart' | 'open' {
+function afterSelfieRefusal(error: unknown): Phase | Restart | 'open' {
   const message = isApiError(error) ? error.message : 'Something went wrong. Try again.';
   switch (selfieProblem(error)) {
     case 'not_matched':
@@ -396,7 +406,7 @@ function afterSelfieRefusal(error: unknown): Phase | 'restart' | 'open' {
     case 'already_matched':
       return 'open';
     case 'not_checked':
-      return 'restart';
+      return { restart: message };
     case 'wallet_open':
       return { kind: 'ended', end: 'open' };
     case 'unreachable':
@@ -410,13 +420,14 @@ function afterSelfieRefusal(error: unknown): Phase | 'restart' | 'open' {
 }
 
 /** Where a refused opening leaves A7 (contract CONVENTIONS section 9). Asking again is always safe: one account per person. */
-function afterOpenRefusal(error: unknown): Phase | 'restart' {
+function afterOpenRefusal(error: unknown): Phase | Restart {
   const message = isApiError(error) ? error.message : 'Something went wrong. Try again.';
   const code = isApiError(error) ? error.code : undefined;
-  if (code === 'bvn_not_checked') return 'restart';
+  if (code === 'bvn_not_checked') return { restart: message };
   if (code === 'selfie_required') return { kind: 'ready', note: { title: 'Take your selfie again', body: message } };
   if (code === 'wallet_already_open') return { kind: 'ended', end: 'open' };
-  if (code === 'account_not_opened' || code === 'identity_has_wallet' || code === 'phone_held_by_other_identity') return { kind: 'ended', end: 'refused', message };
+  if (code === 'account_not_opened') return { kind: 'ended', end: 'refused', message, fixable: true };
+  if (code === 'identity_has_wallet' || code === 'phone_held_by_other_identity') return { kind: 'ended', end: 'refused', message, fixable: false };
   if (isApiError(error) && error.kind === 'network') return { kind: 'open_failed', note: { title: 'No connection', body: message } };
   return { kind: 'open_failed', note: { title: "We couldn't open your account", body: message } };
 }
@@ -495,7 +506,8 @@ const styles = StyleSheet.create({
   navTitle: { ...font(700), flex: 1, textAlign: 'center', fontSize: NAV.title, letterSpacing: NAV.tracking * NAV.title },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: PAGE.between, paddingBottom: PAGE.lift },
   preview: { position: 'absolute', left: OVAL.ring, top: OVAL.ring, overflow: 'hidden' },
-  words: { alignItems: 'center', paddingHorizontal: layout.gutter },
+  /** A16's two sentences fit one line at 390 px, as drawn: the words run nearly edge to edge. */
+  words: { alignItems: 'center', paddingHorizontal: space.sm },
   wordsTitle: { ...font(700), fontSize: PAGE.title, lineHeight: canvasNormalLineHeight(PAGE.title), textAlign: 'center' },
   wordsLine: { fontSize: PAGE.line, lineHeight: canvasNormalLineHeight(PAGE.line), opacity: PAGE.lineOpacity, marginTop: PAGE.lineGap, textAlign: 'center' },
   foot: { minHeight: FOOT_ROW, justifyContent: 'center', paddingHorizontal: layout.gutter },

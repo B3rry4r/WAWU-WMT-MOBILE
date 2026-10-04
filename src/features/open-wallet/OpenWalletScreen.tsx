@@ -20,7 +20,7 @@ import { Banner } from '@/features/auth/Banner';
 import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor, ticketIsLive, useKeptCheck, type KeptCheck } from './keptCheck';
+import { forgetKeptCheck, isKeptFor, keepCheck, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
@@ -101,7 +101,8 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
     if (status === 'signedOut') forgetKeptCheck();
   }, [status]);
   useEffect(() => {
-    if (owner && readKeptCheck(owner) === null) forgetKeptCheck();
+    // Another account's kept details go; this account's (A5's address waiting for a new check) stay.
+    if (owner && !isKeptFor(owner)) forgetKeptCheck();
   }, [owner]);
   useEffect(() => () => forgetKeptCheck(), []);
 
@@ -273,6 +274,8 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
       live.current = false;
     };
   }, []);
+  // Back from A6 or A7 because the server refused the check's handle: its sentence, until a new check passes.
+  const notice = useCheckNotice(account.wawuUserId);
   const ninInput = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -357,6 +360,14 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
           </Text>
           <Text variant="muted">Your BVN fills in the rest.</Text>
         </View>
+        {failure?.kind !== 'banner' && notice ? (
+          <Banner
+            tone="warning"
+            title="We need a new BVN check"
+            body={notice.addressKept ? `${notice.notice} Your home address and occupation are kept.` : notice.notice}
+            testID="open-wallet-check-again"
+          />
+        ) : null}
         {failure?.kind === 'banner' ? (
           <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="open-wallet-banner" />
         ) : null}

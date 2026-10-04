@@ -1,6 +1,6 @@
 import { addressLine, birthDate, detailsProblems, fullName, genderWord, NIGERIAN_STATES, openingName, tidyDetails } from '../details';
-import { forgetKeptCheck, keepAddress, keepCheck, readAddress, readHandle, readKeptCheck, ticketFor } from '../keptCheck';
-import { renderHook } from '@testing-library/react-native';
+import { expireKeptCheck, forgetKeptCheck, isKeptFor, keepAddress, keepCheck, readAddress, readHandle, readKeptCheck, readOccupation, ticketFor, useCheckNotice } from '../keptCheck';
+import { act, renderHook } from '@testing-library/react-native';
 
 import { flowDepth, useOpenWalletWay } from '../leave';
 import { isSendableSelfie, SELFIE_MIN_BASE64_CHARS } from '../api/opening';
@@ -117,11 +117,77 @@ describe('A5’s address, kept beside the passed check for A7', () => {
     expect(keepAddress(ticketFor('someone-else'), { street: 'x st', city: 'Ikeja', state: 'Lagos' })).toBe(false);
   });
 
-  it('a new check that passes starts with no address', () => {
+  it('a new check that passes for the same account keeps what was typed on A5; one for another account starts empty', () => {
     keepCheck(ticketFor(OWNER), check);
-    keepAddress(ticketFor(OWNER), { street: 'x st', city: 'Ikeja', state: 'Lagos' });
+    keepAddress(ticketFor(OWNER), { street: 'x st', city: 'Ikeja', state: 'Lagos' }, 'Tailor');
     keepCheck(ticketFor(OWNER), check);
+    expect(readAddress(OWNER)).toEqual({ street: 'x st', city: 'Ikeja', state: 'Lagos' });
+    expect(readOccupation(OWNER)).toBe('Tailor');
+    keepCheck(ticketFor('someone-else'), check);
+    expect(readAddress('someone-else')).toBeNull();
+    expect(readOccupation('someone-else')).toBeNull();
     expect(readAddress(OWNER)).toBeNull();
+  });
+});
+
+describe('a check whose handle the server refused (409 bvn_not_checked)', () => {
+  beforeEach(() => forgetKeptCheck());
+  const home = { street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' };
+
+  it('forgets the check and the handle, keeps the address and occupation with the server’s sentence, and voids every ticket out', () => {
+    keepCheck(ticketFor(OWNER), check);
+    keepAddress(ticketFor(OWNER), home, 'Filmmaker');
+    const before = ticketFor(OWNER);
+    expireKeptCheck('Check your BVN again to continue.');
+    expect(readKeptCheck(OWNER)).toBeNull();
+    expect(readHandle(OWNER)).toBeNull();
+    expect(readAddress(OWNER)).toEqual(home);
+    expect(readOccupation(OWNER)).toBe('Filmmaker');
+    expect(isKeptFor(OWNER)).toBe(true);
+    // An answer from before (a late selfie match, a late check) writes nothing.
+    expect(keepCheck(before, check)).toBe(false);
+    expect(keepAddress(before, { ...home, street: 'late st' })).toBe(false);
+    expect(readAddress(OWNER)).toEqual(home);
+  });
+
+  it('nothing can be typed in beside no check: the address waits for a new one to pass', () => {
+    keepCheck(ticketFor(OWNER), check);
+    expireKeptCheck(null);
+    expect(keepAddress(ticketFor(OWNER), home)).toBe(false);
+  });
+
+  it('a new check that passes brings A5’s address and occupation back, and the sentence goes', async () => {
+    keepCheck(ticketFor(OWNER), check);
+    keepAddress(ticketFor(OWNER), home, 'Filmmaker');
+    expireKeptCheck('Check your BVN again to continue.');
+    const { result } = await renderHook(() => useCheckNotice(OWNER));
+    expect(result.current).toEqual({ notice: 'Check your BVN again to continue.', addressKept: true });
+    await act(async () => {
+      keepCheck(ticketFor(OWNER), { ...check, checkHandle: 'v1.k03-test-handle-2' });
+    });
+    expect(result.current).toBeNull();
+    expect(readHandle(OWNER)).toBe('v1.k03-test-handle-2');
+    expect(readAddress(OWNER)).toEqual(home);
+    expect(readOccupation(OWNER)).toBe('Filmmaker');
+  });
+
+  it('the sentence is for this account only, and says nothing of an address when none was typed', async () => {
+    keepCheck(ticketFor(OWNER), check);
+    expireKeptCheck('Check your BVN again to continue.');
+    const mine = await renderHook(() => useCheckNotice(OWNER));
+    expect(mine.result.current).toEqual({ notice: 'Check your BVN again to continue.', addressKept: false });
+    const theirs = await renderHook(() => useCheckNotice('someone-else'));
+    expect(theirs.result.current).toBeNull();
+  });
+
+  it('the session end, or leaving the flow, still forgets it all', () => {
+    keepCheck(ticketFor(OWNER), check);
+    keepAddress(ticketFor(OWNER), home, 'Filmmaker');
+    expireKeptCheck('Check your BVN again to continue.');
+    forgetKeptCheck();
+    expect(readAddress(OWNER)).toBeNull();
+    expect(readOccupation(OWNER)).toBeNull();
+    expect(isKeptFor(OWNER)).toBe(false);
   });
 });
 
@@ -166,12 +232,17 @@ describe('the ways out of A5 and A6', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith('/');
   });
 
-  it('starting again forgets the kept check (its handle no longer serves) and goes down to A26', async () => {
+  it('starting again forgets the kept check and its handle, keeps the address with the server’s sentence, and goes down to A26', async () => {
     keepCheck(ticketFor(OWNER), check);
+    keepAddress(ticketFor(OWNER), { street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' }, 'Filmmaker');
     const { result } = await renderHook(() => useOpenWalletWay());
-    result.current.restart();
+    result.current.restart('Check your BVN again to continue.');
     expect(readKeptCheck(OWNER)).toBeNull();
     expect(readHandle(OWNER)).toBeNull();
+    expect(readAddress(OWNER)).toEqual({ street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' });
+    expect(readOccupation(OWNER)).toBe('Filmmaker');
+    const notice = await renderHook(() => useCheckNotice(OWNER));
+    expect(notice.result.current?.notice).toBe('Check your BVN again to continue.');
     expect(mockRouter.dismissTo).toHaveBeenCalledWith('/open-wallet');
   });
 });

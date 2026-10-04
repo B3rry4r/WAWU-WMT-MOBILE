@@ -135,6 +135,7 @@ async function settle(app: Awaited<ReturnType<typeof boot>>) {
   });
 }
 
+const allTextOf = (app: Awaited<ReturnType<typeof boot>>) => JSON.stringify(app.screen.toJSON());
 const checksSent = () => sent.filter((s) => s.method === 'POST' && s.path.endsWith('/money/identity/bvn'));
 
 /**
@@ -468,6 +469,47 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     await settle(app);
     expect(refused).toHaveBeenCalled();
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+  });
+
+  it('a handle refused at A6 or A7 lands here with the server’s sentence; a new pass keeps A5’s address and the sentence goes', async () => {
+    routes['POST /money/identity/bvn'] = [ok({ identity: passedIdentity, prefill, checkHandle: HANDLE }), ok({ identity: passedIdentity, prefill, checkHandle: 'v1.k03-test-handle-2' })];
+    const app = await boot();
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    // A5 kept the address; A6 then met 409 bvn_not_checked and the route restarted with the server's words.
+    app.kept.keepAddress(app.kept.ticketFor(OWNER), { street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' }, 'Filmmaker');
+    await app.act(async () => app.kept.expireKeptCheck('Check your BVN again to continue.'));
+
+    expect(await app.screen.findByTestId('open-wallet-check-again')).toBeTruthy();
+    expect(app.screen.getByText('We need a new BVN check')).toBeTruthy();
+    expect(app.screen.getByText('Check your BVN again to continue. Your home address and occupation are kept.')).toBeTruthy();
+    expect(allTextOf(app)).not.toMatch(/\u2014/);
+    expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('');
+
+    await typeNumbers(app);
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-confirmed');
+    expect(app.onContinue).toHaveBeenCalledTimes(2);
+    expect(app.screen.queryByTestId('open-wallet-check-again')).toBeNull();
+    expect(app.kept.readHandle(OWNER)).toBe('v1.k03-test-handle-2');
+    expect(app.kept.readAddress(OWNER)).toEqual({ street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' });
+    expect(app.kept.readOccupation(OWNER)).toBe('Filmmaker');
+    expect(mockStored).toEqual([]);
+  });
+
+  it('a restart with no sentence (nothing was kept) shows the form without a banner, and what waits is still forgotten on leaving', async () => {
+    const kept = require('../keptCheck') as typeof import('../keptCheck');
+    kept.keepCheck(kept.ticketFor(OWNER), { identity: passedIdentity, prefill, checkHandle: HANDLE });
+    kept.keepAddress(kept.ticketFor(OWNER), { street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' });
+    kept.expireKeptCheck(null);
+    const app = await boot();
+    await app.screen.findByTestId('open-wallet-phone');
+    expect(app.screen.queryByTestId('open-wallet-check-again')).toBeNull();
+    // Kept for this account across A26's mount; gone when A26 goes.
+    expect(app.kept.readAddress(OWNER)).not.toBeNull();
+    await app.screen.unmount();
+    expect(app.kept.readAddress(OWNER)).toBeNull();
   });
 
   it('the kept BVN details are forgotten when Open your wallet is left, and when another account opens it', async () => {

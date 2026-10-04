@@ -43,6 +43,8 @@ const CONSENT = { box: 22, corner: 7, tick: 14, tickStroke: 3, ring: 1.5, betwee
 const SKELETON = { card: 176, label: 15, labelWidth: '30%' } as const;
 
 const NAV_TITLE = 'Confirm your details';
+/** The server's own sentence for a check it no longer holds (backend CONVENTIONS section 8), for the same case seen here first. */
+const CHECK_AGAIN = 'Check your BVN again to continue.';
 
 export type ConfirmDetailsScreenProps = {
   /** Back to A26, which still holds the passed check. */
@@ -50,7 +52,7 @@ export type ConfirmDetailsScreenProps = {
   /** On to A6 once the details are saved and kept. */
   onContinue: () => void;
   /** Back to A26 for a new BVN check: nothing kept for this account, or the server holds another check. */
-  onRestart: () => void;
+  onRestart: (notice?: string) => void;
   /** Leaves Open your wallet (an end with nowhere further to go). */
   onLeave: () => void;
 };
@@ -82,7 +84,9 @@ export function ConfirmDetailsScreen({ onBack, onContinue, onRestart, onLeave }:
   // The server holds another check than the one kept here (a newer one, or none): the details are not this check's.
   const stale = Boolean(kept && identity.data && identity.data.bvn?.last4 !== kept.check.identity.bvn?.last4);
   useEffect(() => {
-    if (lost || stale) onRestart();
+    if (lost) onRestart();
+    // A newer check passed elsewhere: this one's details no longer open the account.
+    else if (stale) onRestart(CHECK_AGAIN);
   }, [lost, stale, onRestart]);
 
   if (identity.isError && identity.data === undefined) {
@@ -113,7 +117,7 @@ export function ConfirmDetailsScreen({ onBack, onContinue, onRestart, onLeave }:
     );
   }
 
-  return <DetailsForm owner={owner} prefill={kept.check.prefill} identity={identity.data} address={kept.address} onBack={onBack} onContinue={onContinue} onRestart={onRestart} />;
+  return <DetailsForm owner={owner} prefill={kept.check.prefill} identity={identity.data} address={kept.address} occupation={kept.occupation} onBack={onBack} onContinue={onContinue} onRestart={onRestart} />;
 }
 
 function Loading({ onBack }: { onBack: () => void }) {
@@ -178,23 +182,25 @@ type FormProps = {
   owner: string;
   prefill: BvnPrefill;
   identity: WalletIdentity;
-  /** The address typed before, when the person comes back from A6. */
+  /** The address typed before, when the person comes back from A6 or from a new BVN check. */
   address: HomeAddress | null;
+  /** The occupation typed before, kept with the address (the server's, when it has one, wins). */
+  occupation: string | null;
   onBack: () => void;
   onContinue: () => void;
-  onRestart: () => void;
+  onRestart: (notice?: string) => void;
 };
 
 type Failure = { title: string; body: string };
 
-function DetailsForm({ owner, prefill, identity, address, onBack, onContinue, onRestart }: FormProps) {
+function DetailsForm({ owner, prefill, identity, address, occupation: keptOccupation, onBack, onContinue, onRestart }: FormProps) {
   const { colors } = useWawu();
   const consentRing = useFocusRing();
   const scrollRef = useRef<ScrollView>(null);
   const [street, setStreet] = useState(address?.street ?? '');
   const [city, setCity] = useState(address?.city ?? '');
   const [state, setState] = useState<string | null>(address?.state ?? null);
-  const [occupation, setOccupation] = useState(identity.occupation ?? '');
+  const [occupation, setOccupation] = useState(identity.occupation ?? keptOccupation ?? '');
   const [agreed, setAgreed] = useState(false);
   const [picking, setPicking] = useState(false);
   const [problems, setProblems] = useState<DetailsProblems>({});
@@ -231,13 +237,16 @@ function DetailsForm({ owner, prefill, identity, address, onBack, onContinue, on
     const ticket = ticketFor(owner);
     try {
       await saveOccupation(details.occupation);
-      if (!live.current || !keepAddress(ticket, details.address)) return;
+      if (!live.current || !keepAddress(ticket, details.address, details.occupation)) return;
       onContinue();
     } catch (error) {
       if (!live.current || !ticketIsLive(ticket)) return;
       const message = isApiError(error) ? error.message : 'Something went wrong. Try again.';
-      if (identityProblem(error) === 'not_checked') onRestart();
-      else if (isApiError(error) && error.kind === 'validation') setProblems({ occupation: message });
+      if (identityProblem(error) === 'not_checked') {
+        // What was typed waits for the new check; the server's sentence goes to A26.
+        keepAddress(ticket, details.address, details.occupation);
+        onRestart(message);
+      } else if (isApiError(error) && error.kind === 'validation') setProblems({ occupation: message });
       else if (isApiError(error) && error.kind === 'network') setFailure({ title: 'No connection', body: message });
       else setFailure({ title: "We couldn't save your details", body: message });
     } finally {

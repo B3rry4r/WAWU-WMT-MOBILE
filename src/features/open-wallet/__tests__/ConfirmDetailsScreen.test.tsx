@@ -156,6 +156,7 @@ describe('A5 · Confirm your details', () => {
     expect(occupationSaves()).toHaveLength(1);
     expect(JSON.parse(occupationSaves()[0].body)).toEqual({ occupation: 'Filmmaker' });
     expect(app.kept.readAddress(OWNER)).toEqual({ street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' });
+    expect(app.kept.readOccupation(OWNER)).toBe('Filmmaker');
     // Nothing of it goes to the phone's storage, and the address is never sent to the server here.
     expect(mockStored).toEqual([]);
     expect(sent.some((s) => s.body.includes('Admiralty'))).toBe(false);
@@ -202,6 +203,7 @@ describe('A5 · Confirm your details', () => {
   it('with no passed check kept for this account (a restarted app, another account), the user is sent back to A26', async () => {
     const app = await boot();
     await app.waitFor(() => expect(app.onRestart).toHaveBeenCalled());
+    expect(app.onRestart).toHaveBeenCalledWith();
     expect(sent.filter((s) => s.path.endsWith('/money/identity'))).toHaveLength(0);
   });
 
@@ -210,6 +212,8 @@ describe('A5 · Confirm your details', () => {
     fallback['GET /money/identity'] = ok({ ...identity, bvn: { last4: '0222', verifiedAt: '2026-10-03T11:00:00.000Z' } });
     const app = await boot();
     await app.waitFor(() => expect(app.onRestart).toHaveBeenCalled());
+    // A26 says why, in the server's words for the same case.
+    expect(app.onRestart).toHaveBeenCalledWith('Check your BVN again to continue.');
     expect(app.screen.queryByTestId('open-wallet-details')).toBeNull();
   });
 
@@ -257,8 +261,26 @@ describe('A5 · Confirm your details', () => {
 
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-details-continue'));
     await app.waitFor(() => expect(app.onRestart).toHaveBeenCalled());
+    expect(app.onRestart).toHaveBeenCalledWith('Check your BVN first.');
     expect(app.onContinue).not.toHaveBeenCalled();
-    expect(app.kept.readAddress(OWNER)).toBeNull();
+    // What was typed waits for the new check (A5 comes back filled in).
+    expect(app.kept.readAddress(OWNER)).toEqual({ street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' });
+    expect(app.kept.readOccupation(OWNER)).toBe('Filmmaker');
+  });
+
+  it('after a refused handle and a new check that passed, A5 comes back with the address and occupation typed before', async () => {
+    const kept = keepPassedCheck({ identity: { ...identity, occupation: null }, prefill });
+    kept.keepAddress(kept.ticketFor(OWNER), { street: '2 Allen Avenue', city: 'Ikeja', state: 'Lagos' }, 'Tailor');
+    kept.expireKeptCheck('Check your BVN again to continue.');
+    keepPassedCheck({ identity: { ...identity, occupation: null }, prefill, checkHandle: 'v1.k03-test-handle-2' });
+    fallback['GET /money/identity'] = ok({ ...identity, occupation: null });
+    const app = await boot();
+    expect(await app.screen.findByTestId('open-wallet-details')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-street').props.value).toBe('2 Allen Avenue');
+    expect(app.screen.getByTestId('open-wallet-city').props.value).toBe('Ikeja');
+    expect(app.screen.getByText('Lagos')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-occupation').props.value).toBe('Tailor');
+    expect(app.onRestart).not.toHaveBeenCalled();
   });
 
   it('a second tap while saving sends nothing more', async () => {
