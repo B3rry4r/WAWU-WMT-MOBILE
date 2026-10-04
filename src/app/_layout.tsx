@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
+import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -20,13 +21,22 @@ SplashScreen.preventAutoHideAsync();
  * sees sign-in flash by (AUTH-01, SHARED-CHANGES.md). The query cache is the
  * app's one `queryClient` (`@/api/query`): its defaults live there, and it is
  * emptied whenever the session ends, so one account's answers are never drawn
- * for the next (FIX-04).
+ * for the next (FIX-04). A signed-in account whose sign-up has an email step
+ * left opens that step before the tabs; the server's progress decides (AUTH-04,
+ * SHARED-CHANGES AUTH-04 #2).
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
   const { dark, colors } = useWawu();
   const { status } = useSession();
-  const ready = status !== 'restoring';
+  const gate = useSignupGate();
+  const signedIn = status === 'signedIn';
+  const ready = status !== 'restoring' && (!signedIn || gate.phase === 'ready');
+
+  useEffect(() => {
+    if (signedIn && gate.phase === 'idle') void refreshSignupGate();
+    if (status === 'signedOut') resetSignupGate();
+  }, [signedIn, status, gate.phase]);
 
   useEffect(() => {
     if ((loaded || error) && ready) SplashScreen.hideAsync();
@@ -38,12 +48,17 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }}>
-        <Stack.Protected guard={status === 'signedIn'}>
+        <Stack.Protected guard={signedIn && gate.needsEmail}>
+          <Stack.Screen name="email-code" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail}>
           <Stack.Screen name="(tabs)" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           <Stack.Screen name="welcome" />
           <Stack.Screen name="account-type" />
+          <Stack.Screen name="sign-up" />
+          <Stack.Screen name="phone-code" />
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>

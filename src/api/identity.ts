@@ -1,6 +1,6 @@
 import { identityBaseUrl } from './env';
 import { ApiError, networkError, toApiError } from './errors';
-import type { operations } from './identity.generated';
+import type { components, operations } from './identity.generated';
 
 /**
  * WAWU ID (the sign-in service) is a separate server from the Hub. Its calls
@@ -26,20 +26,28 @@ type Answer<O extends keyof operations> = operations[O] extends {
 
 export type TokenPair = Answer<'refresh'>['data'];
 
-async function post<O extends keyof operations>(path: string, body: Request<O>): Promise<Partial<Answer<O>> | null> {
+async function call<A>(method: 'GET' | 'POST', path: string, body?: unknown, token?: string): Promise<Partial<A> | null> {
   let response: Response;
   try {
     response = await fetch(`${identityBaseUrl}${path}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(body),
+      method,
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch {
     throw networkError();
   }
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) throw toApiError(response.status, payload);
-  return payload as Partial<Answer<O>> | null;
+  return payload as Partial<A> | null;
+}
+
+function post<O extends keyof operations>(path: string, body: Request<O>): Promise<Partial<Answer<O>> | null> {
+  return call<Answer<O>>('POST', path, body);
 }
 
 function readTokenPair(payload: { data?: Partial<TokenPair> } | null): TokenPair {
@@ -76,4 +84,88 @@ export async function forgotPasswordRequest(identifier: string): Promise<ResetLi
   const payload = await post<'forgotPassword'>('/auth/forgot-password', { identifier, method: 'email' });
   const seconds: unknown = payload?.data?.expiresInSeconds;
   return { expiresInSeconds: typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0 ? seconds : null };
+}
+
+
+/* ---- Sign-up (AUTH-04, over AUTH-03 and AUTH-05's routes) ---- */
+
+type Schemas = components['schemas'];
+export type SignupStarted = Schemas['SignupStartedSchema'];
+export type PhoneCodeSent = Schemas['PhoneCodeSentSchema'];
+export type SignupResume = Schemas['SignupResumeSchema'];
+export type SignupProgress = Schemas['SignupProgressSchema'];
+export type EmailCodeSent = Schemas['EmailCodeSentSchema'];
+export type SignupProgressStep = Schemas['SignupProgressDto']['step'];
+
+const unexpected = () => new ApiError('unknown', 0, 'Something went wrong. Try again.');
+const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+function readStarted(data: Partial<SignupStarted> | undefined): SignupStarted {
+  if (!data || typeof data.phone !== 'string' || typeof data.attempt !== 'string' || !isNumber(data.expiresIn) || !isNumber(data.resendIn)) {
+    throw unexpected();
+  }
+  return { phone: data.phone, attempt: data.attempt, expiresIn: data.expiresIn, resendIn: data.resendIn, emailCodeRequired: data.emailCodeRequired === true };
+}
+
+function readCodeSent<T extends { expiresIn: number; resendIn: number }>(data: Partial<T> | undefined): T {
+  if (!data || !isNumber(data.expiresIn) || !isNumber(data.resendIn)) throw unexpected();
+  return data as T;
+}
+
+function readProgress(data: Partial<SignupProgress> | undefined): SignupProgress {
+  if (!data || typeof data.step !== 'string' || typeof data.inSequence !== 'boolean') throw unexpected();
+  return data as SignupProgress;
+}
+
+/** A3 Continue: starts a sign-up and texts the code. `attempt` in the answer is the secret every later call needs. */
+export async function signupRequest(body: Request<'signup'>): Promise<SignupStarted> {
+  const payload = await call<Schemas['SignupStartedAnswer']>('POST', '/auth/signup', body);
+  return readStarted(payload?.data);
+}
+
+/** A4 Resend: another code for the same sign-up. */
+export async function phoneVerifyStartRequest(body: Request<'phoneVerifyStart'>): Promise<PhoneCodeSent> {
+  const payload = await call<Schemas['PhoneCodeSentAnswer']>('POST', '/auth/phone/verify/start', body);
+  return readCodeSent<PhoneCodeSent>(payload?.data);
+}
+
+/** A4: the right code proves the phone and issues the first session. */
+export async function phoneVerifyConfirmRequest(body: Request<'phoneVerifyConfirm'>): Promise<TokenPair> {
+  return readTokenPair(await call<Schemas['SessionAnswer']>('POST', '/auth/phone/verify/confirm', body));
+}
+
+/** Where a sign-up stands before its code, for an app that was closed after A3. */
+export async function signupResumeRequest(body: Request<'signupResume'>): Promise<SignupResume> {
+  const payload = await call<Schemas['SignupResumeAnswer']>('POST', '/auth/signup/resume', body);
+  const data = payload?.data;
+  if (!data || (data.step !== 'phone' && data.step !== 'details')) throw unexpected();
+  return data as SignupResume;
+}
+
+/** The next sign-up step for the signed-in account. */
+export async function signupProgressRequest(token: string): Promise<SignupProgress> {
+  const payload = await call<Schemas['SignupProgressAnswer']>('GET', '/auth/signup/progress', undefined, token);
+  return readProgress(payload?.data);
+}
+
+/** Completes (or puts off) the next step. */
+export async function signupCompleteStepRequest(token: string, step: SignupProgressStep): Promise<SignupProgress> {
+  const body: Request<'signupCompleteStep'> = { step };
+  const payload = await call<Schemas['SignupProgressAnswer']>('POST', '/auth/signup/progress', body, token);
+  return readProgress(payload?.data);
+}
+
+/** Mails a code to the account's own email. */
+export async function signupEmailStartRequest(token: string): Promise<EmailCodeSent> {
+  const payload = await call<Schemas['EmailCodeSentAnswer']>('POST', '/auth/signup/email/start', undefined, token);
+  const data = readCodeSent<EmailCodeSent>(payload?.data);
+  if (typeof data.email !== 'string') throw unexpected();
+  return data;
+}
+
+/** Proves the email with the mailed code. */
+export async function signupEmailConfirmRequest(token: string, code: string): Promise<SignupProgress> {
+  const body: Request<'signupEmailConfirm'> = { code };
+  const payload = await call<Schemas['SignupProgressAnswer']>('POST', '/auth/signup/email/confirm', body, token);
+  return readProgress(payload?.data);
 }
