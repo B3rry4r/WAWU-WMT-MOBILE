@@ -130,6 +130,15 @@ describe('Z9 · About', () => {
     }
   });
 
+  it('wraps every row title whole, so "Privacy policy" and "Contact support" are never cut with an ellipsis at a large font', async () => {
+    answers['/about'] = [ok(about)];
+    await bootAbout();
+    await rtl.screen.findByText('Banking by Test Bank');
+    for (const title of ['Contact support', 'Rate the app', 'Terms', 'Privacy policy', 'Banking by Test Bank']) {
+      expect(rtl.screen.getByText(title).props.numberOfLines).toBeUndefined();
+    }
+  });
+
   it('without a support address the row says it is not available and opens nothing', async () => {
     answers['/about'] = [ok({ ...about, supportEmail: null })];
     await bootAbout();

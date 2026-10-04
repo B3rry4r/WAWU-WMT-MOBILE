@@ -8,7 +8,7 @@ import { GroupedList } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
-import { ListRow, rowMetrics } from '@/components/ListRow';
+import { rowMetrics } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -110,12 +110,7 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
           onPress={mail ? () => void open(mail, COULD_NOT_OPEN_MAIL) : undefined}
         />
         {rate ? (
-          <ListRow
-            testID="about-rate"
-            lead={<IconTile icon="Star" size={aboutMetrics.tile} />}
-            title="Rate the app"
-            onPress={() => void open(rate, COULD_NOT_OPEN_STORE)}
-          />
+          <WrapRow testID="about-rate" icon="Star" title="Rate the app" line={null} lineTestID="about-rate-line" onPress={() => void open(rate, COULD_NOT_OPEN_STORE)} />
         ) : null}
       </GroupedList>
       {problem ? (
@@ -124,15 +119,15 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
         </Text>
       ) : null}
       <GroupedList testID="about-legal">
-        <ListRow testID="about-terms" lead={<IconTile icon="FileText" size={aboutMetrics.tile} />} title="Terms" onPress={onOpenTerms} />
-        <ListRow testID="about-privacy" lead={<IconTile icon="Shield" size={aboutMetrics.tile} />} title="Privacy policy" onPress={onOpenPrivacy} />
+        <WrapRow testID="about-terms" icon="FileText" title="Terms" line={null} lineTestID="about-terms-line" onPress={onOpenTerms} />
+        <WrapRow testID="about-privacy" icon="Shield" title="Privacy policy" line={null} lineTestID="about-privacy-line" onPress={onOpenPrivacy} />
       </GroupedList>
     </>
   );
 }
 
 /**
- * A row whose words wrap whole and can be selected: the owner's licence line and a support
+ * Every row on this screen. Its words wrap whole and can be selected: the owner's licence line and a support
  * address are not cut to one line at a large font, because a cut address cannot be used.
  * `ListRow` keeps a title and subtitle to one line, so Banking and Contact support use this
  * until SHARED-CHANGES.md (SETTINGS-02 #2) adds a `subtitleLines` prop. With no `onPress`

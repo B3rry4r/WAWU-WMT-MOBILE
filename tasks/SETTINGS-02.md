@@ -118,6 +118,16 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 **Re-run.** Backend: tsc 0; `src/about` 19/19; `src/protected-routes src/common/tests src/about` 332/332 on fresh DB `s02_prot_test`; `contract:build`: only the removal of a regex `pattern` from my own new schema property (additive otherwise). Mobile `npm run check` exit 0: 39 suites / 694 tests, gates 9 / 183 files / 0 fail.
 
+### Builder report (round 3, 4 Oct 2026, after the round-2 verifier's FAIL)
+
+**Fixed (backend, uncommitted).** 1: `sections` must be a list of plain objects with exactly a string `heading` and a string `body` (arrays, null, strings, missing, extra or wrong-typed keys are 400, nothing stored), checked in the DTO (`IsPlainSections`) and again in `PoliciesService.put`, so a document that would read "Not available yet" can never replace a live one. 2: a lone UTF-16 surrogate in the title, a heading or a body is 400 (a real emoji pair is accepted and reads back unchanged). Spec titles are now "a user can ..." / "a superadmin cannot ...". Mobile: every row on About (Contact support, Rate the app, Terms, Privacy policy, Banking) is the wrapping `WrapRow`, so "Privacy policy" is not cut at 1.6x; test "wraps every row title whole".
+
+**Revert proofs.** Lone-surrogate check removed: the 3 surrogate tests fail. Plain-section check removed from both the DTO and the service: the 3 array-shaped section tests fail (either layer alone keeps them green, by design). `numberOfLines={1}` put back on the row title: the wrap test fails.
+
+**Note (Default (agent), low).** JSON nested about 2000 levels deep answers 500 from the global ValidationPipe on every route (also `POST /admin/auth/login`); it belongs with the KYC-02 #3 default above, and this task does not change it.
+
+**Re-run.** Backend `src/about` 32/32; protected + shadowing + about 345/345 on a fresh seeded DB; tsc 0; `contract:build` only additions against main (208 inserted, 0 removed). Mobile `npm run check` exit 0: 39 suites / 695 tests, gates 9 / 183 files / 0 fail.
+
 ## Verifier report
 
 **Verdict: FAIL** (verifier session, 4 Oct 2026; nothing fixed, nothing committed). Open defects: 1 to 4. Own stack: Postgres `s02v_*`, Hub :3812, mock WAWU ID :4812, web :8812, evidence in `/home/user/lanes/s02v/` (`shots/`, logs). Main compared in `/home/user/lanes/s02v/main` (origin/main c4d17bb).
@@ -149,6 +159,30 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 **Builder defaults judged (all default (agent), owner may override).** Dropping "a real bank account built in" (a system claim, listed as not-a-fact): fine. Terms and Privacy card on Z9 and "Read the privacy policy" on Z10: fine, needed for the checks. Banking row without chevron: fine (opens nothing). Rate the app Android only: fine (G-142). "Not available yet" copy: no placeholder legal text. Description sentence "helps African creators and professionals get paid for what they know" is brand copy from the canvas, kept.
 
 **NOT RUN.** V10 device; signed-in walk through real login; OS font scaling; `npm run api` against merged main; live droplet.
+
+## Verifier report (round 2)
+
+**Verdict: FAIL** (fresh verifier session, 4 Oct 2026; nothing fixed, nothing committed). Open defects: 1 and 2 below (both new, found by hostile input). Defects 1, 2 (NUL, trim, cap, dates) and 4 of round 1 are fixed as specified. Own stack: Postgres `s02w_*` (dropped after), Hub :3822, own mock WAWU ID :4822 (the :4001 one was not touched), web :8822.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Round-1 defect 1 (dates) | passed | PUT with 2026-13-45, 0000-00-00, 2026-02-30, 2027-02-29, 1999-12-31, 2101-01-01, 2026-1-5, ISO datetimes, trailing space/newline, Arabic-Indic digits, 2026-09-31, 2026-04-31, '', 123, 20260901, null, true, [], ['2026-09-01'], {}, 1e999, missing: all 400 `{statusCode,message,data:null}`, stored row unchanged each time. 2028-02-29, 2024-02-29, 2000-01-01, 2100-12-31 round-trip unchanged. |
+| Round-1 defect 2 (input) | partly, see findings 1 and 2 | NUL (raw and `\u0000`) in title, heading, body: 400. Empty or whitespace-only title, heading, body: 400. Exactly 60000 bytes: 200; 60001: 400; 3 x 5000 emoji (60000 bytes) 200 and 4 x: 400; 100 sections 200, 101: 400. Emoji, RTL, zero-width, ZWJ family, control chars round-trip inert. Invalid JSON, empty body, array, null, text/plain: 400. `__proto__`, `constructor`, duplicate keys: no effect. Body 130 kB and 1 MB: 500 (KYC-02 #3, as stated). `git diff origin/main -- src/common` is empty (all-exceptions.filter.ts untouched). |
+| Round-1 defect 4 (links test) | passed | Copy aside, restore, never checkout: iPhone rule removed fails "on an iPhone is null" (1 failed); `appVersion` hard-coded fails 2; restored 5/5. |
+| 1.6x zoom layout | passed with finding 4 | Web build, 360 wide, 1.6x, light and dark (`shots/tall-about-*.png`, `tall-terms-light.png` in the scratchpad): Banking name and licence line wrap whole, Contact support title and address wrap whole (address breaks mid-word, it is one unbroken word), nav title wraps, Terms and Privacy text wraps, horizontal overflow 0 on all three screens at 360 and 1.6x, light and dark. Rows are selectable (round-2 jest test). |
+| Round-1 regressions | passed | Empty (privacy row deleted: "Not available yet / has not been published yet"), filled, offline (Hub unreachable: "No connection" + Try again, light and dark). No invented legal text (nothing seeded; all text above is my own TEST fixtures). PUT: no token 401, WAWU user token (from the mock) 401, tampered signature 401, forged payload signed with another secret 401, reviewer 403, superadmin 200. Public GET /about and /policies/terms, /privacy 200; unknown, `TERMS`, `..%2f..%2fabout`, `%00`, `__proto__` 404. |
+| V1 gates | passed | Backend: `tsc --noEmit` 0; `npm run test:contract -- src/about` 19/19; `contract:build` byte-identical to the working file and `git diff origin/main` of `contract/openapi.json` has 0 removed lines; protected suite `scripts/protected-routes/run.sh --fresh` on fresh DB: "all 244 required tests passed" (253/253). Mobile `npm run check` exit 0: 39 suites / 694 tests, gates 9 / 183 files / 0 fail, 206 tasks. Migration: fresh apply 105 tables, `DROP TABLE "LegalDocument"` and record delete gives 104, re-apply 105. |
+| Backend revert proofs | passed | Calendar check removed: 4 fail; NUL/trim removed: 2 fail; size check removed: 1 fail; restored 19/19. |
+
+**Findings**
+1. defect: `PUT /admin/policies/:slug` accepts `sections` made of arrays. `[[]]`, `[[{"heading":"h","body":"b"}]]` and arrays nested up to about 1000 deep return 200 and replace the live document with no readable section, so the Terms or Privacy policy flips to "Not available yet". `[{ok},[]]` returns 200 and stores an empty `{}` entry beside the good one. `@ValidateNested` accepts an array element as an "object or array". Needed: each section must be a plain object (e.g. `@IsObject`-style check or reject arrays) so it is a 400 and nothing is stored. Write a spec "a superadmin cannot save sections that are not objects".
+2. defect (low): a lone UTF-16 surrogate (`"\ud800"`) in a heading or body returns 500 (Postgres refuses it in jsonb); in the title it returns 200 and is stored as U+FFFD, not as given. Same family as the NUL fix. Needed: 400 for text containing a lone surrogate.
+3. note (pre-existing, not this task's code): nesting of about 2000 levels or more answers 500 (RangeError in the global ValidationPipe); it also answers 500 on `POST /admin/auth/login`, a route this diff does not touch. Same area as KYC-02 #3; nothing for this task to fix.
+4. low, default (agent), owner may override: at 1.6x the second card on About shows "Privacy..." (the title is cut with an ellipsis by the shared one-line `ListRow`). Not clipped at the page edge and still opens Privacy; "Terms" is whole. Round 2 covered Banking and Contact support only.
+5. low, default (agent), owner may override: only the round-2 backend specs are named "a superadmin can/cannot ..."; the round-1 ones ("rejects a malformed document", "serves nothing for ...") are not written as "a user can ...". Not worth a rebuild alone.
+6. note: repeated runs showed the Hub throttles (20 requests per second per caller); not a defect. Builder default 2000-01-01 to 2100-12-31 and 60000 bytes accepted as default (agent), owner may override. Earlier round-1 findings 3 (no audit trail), 4 (bank name fallback) and 5 (local BankRow) stay with the owner/lead as recorded.
+
+**NOT RUN.** V10 on a device (real OS font scaling approximated with browser zoom 1.6x); signed-in walk through the real login; `npm run api` against merged main; live droplet; the web build's baked API address was the builder's :3802 and was redirected to my Hub :3822 in the browser (same requests, real responses).
 
 ## Owner sign-off
 
