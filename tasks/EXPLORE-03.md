@@ -7,7 +7,7 @@ order: 97
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -57,9 +57,37 @@ Filter creators by the creator taxonomy, a featured flag set by admins.
 
 **Owner inputs.** The category list and order (G-180); whether old free-text interests get mapped (G-181); a dashboard screen to feature creators (G-182).
 
+### Builder report (round 2, after the verifier's FAIL)
+
+**Fixed (backend `wmt/EXPLORE-03`, uncommitted).** 1: card avatars are re-signed through `StorageService.freshUrlFor`, only for a key shaped `avatars/<this creator>/<file>`; a key of another account, another folder or a nested path, or text that is not a key, is never signed and is dropped (null); a link to somewhere else passes through unchanged. 2: category matching normalises case, spaces and punctuation, in SQL (`regexp_replace(lower(i), '[^a-z0-9]', '', 'g')`) against the same rule on the category: "Film & video", "Film_Video", "film-video", " FILM  video " all match `film_video`; "Film Vide0" does not. 3 (unclear a): `PUT /admin/featured-creators/:id` answers 400 with a clear sentence for a creator with nothing live or with member lists off, instead of a silent 200. 4 (unclear b): both lists now decide eligibility, category and paging in one SQL query (no IN lists of ids; the viewer's own block list is one bound array); a temporary 40,000-creator fixture (deleted) answered 200 in 370 ms. Legacy `/creators` untouched; its limit and exact-case match are G-183.
+
+**Tests.** `src/explore` 12/12 (3 new: spellings; old signed avatar re-signed, foreign, wrong folder, nested, malformed and external links; admin 400s). Revert proofs: owner check off, 1 fails; re-sign off, 1 fails; normalisation off, 2 fail; live check off, 1 fails. tsc 0, eslint 0 errors, purge and export map specs pass, protected suite `run.sh --fresh` 244/244, `contract:build` leaves no diff (no signature changed). Mobile `npm run check` exit 0.
+
+**Default (agent), owner may override.** The non-public admin refusal is 400, not 404, because the creator exists; blocked status is per viewer and is not checked at feature time. Info finding 5 (`position: null` as 0) left as is.
+
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+**Verdict: FAIL (2 defects, small).** Verifier session, own DBs `e03v_*`, own mock (:4711, :4712), own hubs (:4731 branch, :4722 origin/main), scratch worktree `/home/user/lanes/e03v/main` (removed after). Nothing fixed, nothing committed; branch worktree clean after every revert proof.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 (gates, tsc, contract) | passed | `tsc --noEmit` 0. Mobile `npm run check` exit 0 (gates 9 run, 195 files, 0 findings; 207 tasks), no `tasks --write` needed. `contract:build` leaves no diff against the committed file; against origin/main: 4 new paths, 2 new schemas (`PutFeaturedCreatorDto`, `ExploreCreatorCard`), 0 removed. The 7 "changed" spots (mentors `oneOf`, 5 `required` lists, `UserProfileWithClaims.required`) are order-only: compared key by key with `required` and `oneOf` as sets, no field added, removed or retyped. |
+| V2 (public + admin behaviour) | failed (F1, F2); rest passed | Real built hub, 411 seeded creators. Lists: signed out, blocker, blocked and bystander all equal an independent SQL expectation for total and ids (hidden people absent from items and `total`; privacy-off, pending-only, non-creator excluded; no duplicates across pages). Featured: blocked either way hidden, order by position, `limit`, delete works. 80 hostile query values (NUL, lone surrogate, 1e20, arrays, SQL text, `__proto__`, doubled keys): no 5xx. Admin: no token 401, user token 401, reviewer, support, finance 403, tampered signature, forged payload, role-tamper, wrong secret, alg none, garbage all 401; identical to `PUT /admin/policies/privacy` and to the DELETE. Ghost id, non-creator, `%00`, 65 chars, SQL text: clean 404; bad body 400; 18 parallel PUTs: one row. |
+| V3 (legacy unchanged) | passed | Two hubs on copies of one seeded DB (origin/main vs branch): 72 requests (`/creators` with category, page, hostile values; `/search`, `/search/suggestions`, `/search/closest`, `/feed`, public-profile; signed out and three users): 0 differences in status or body. `scripts/protected-routes/run.sh --fresh` on fresh `e03v_protected_test`: 244/244 (253 tests). Schema diff: additions only (0 removed lines). `app.module.ts`: only the two imports SHARED-CHANGES EXPLORE-03 #1 names. Migration replays on an empty DB; rollback (`DROP TABLE`, row removed from `_prisma_migrations`) then `migrate deploy` re-creates it. `migrate diff` shows one drift (`ContentPiece.specializations` index) that is not this task's. |
+| V4 (tests, revert proofs) | passed | Spec 9/9 on a freshly seeded DB (it is not re-runnable on a DB that has other creators, blocks or featured rows; that is by design of a fixture, not a finding). Reverts, each failing and restoring green: block filter 1 failure, privacy filter 1, category filter 4, superadmin guard widened to reviewer 1, creator-only check on PUT 1, live-pieces filter 1. Purge map: dropping the `FeaturedCreator` entry fails 2 tests, dropping the export-excluded entry fails 1, both green restored. OWNED in purge and EXPORT_EXCLUDED with reason is reasoned (an admin's placement, not the person's content). |
+| Full `test:contract` | passed (no regression) | Branch 3610 passed / 61 failed / 3 skipped (3674); origin/main 3598 / 64 / 3 (3665), same environment (no Fintava keys), separate DBs, run in parallel. By test name: 0 failures on the branch that do not also fail on main; 3 fail only on main (flaky); 9 tests new on the branch, all `src/explore`; none missing. No suspect to re-run alone. |
+| V9 (live seam) | NOT RUN | Needs the deployed droplet; not available here. |
+| Performance | passed | 411 creators: every explore route about 20 ms, constant query count (no per-row queries). |
+
+**Findings**
+
+1. `defect` (medium). The new cards return `avatarUrl` exactly as stored. Stored avatars are full URLs, often the 7-day signed read URL; `user-profile.service` (`resignImage`) and `feed-cards.service` (`storage.freshUrlFor`) re-sign them for exactly this reason (see the `objectKeyFrom` regression note in `storage.presign.spec.ts`). A creator whose avatar was saved more than a week ago shows a dead image on the new Explore rail and lists, and a signature is shipped in a public card. The legacy `GET /creators` has the same gap, which is why the builder mirrored it, but the new routes are what the app will call. Unblocks: re-sign the avatar through `StorageService.freshUrlFor` in `cards()`.
+2. `defect` (low). G-181 and builder default 2 say a creator is in a category when an interest equals the id or label "ignoring case". `interestSpellings` only produces id, label, and their lower and upper forms, matched exactly, so `Film & video` or `Film_Video` is not in Film & Video (probe: two seeded creators with those interests were missing from `category=film_video` while `film_video`, `Film & Video`, `FILM_VIDEO`, `film & video` matched). Either match case-insensitively (SQL `lower()`), or change the stated rule. Same limit exists in the legacy route.
+3. `unclear` (low, owner or lead). `PUT /admin/featured-creators/:id` accepts a creator who is hidden everywhere (nothing live, or "show me in member lists" off) with 200 `featured: true`; the rail silently omits them. The task wording asks for a clean 4xx for a non-public creator; the builder chose "creator account only". Admin gets no hint why the rail is short.
+4. `unclear` (low, scale). Every list builds an `IN (...)` over all live creators' ids. At 40,000 live creators all three new routes and the legacy `/creators` answered 500 (Postgres bind-parameter limit); 411 is fine. Same pattern as legacy; matters only if the creator count nears ~32,000.
+5. Info. `position: null` and an empty `[]` body are accepted as "position 0"; `page=0x10`, `1e2` and ` 1` are accepted as numbers; `category=` (empty) and `FILM_VIDEO` are 400 (exact ids, as designed). Mobile `docs/PROGRESS.md` is regenerated in the diff and not in the builder's file list (generated, harmless).
+
+**NOT RUN.** V9 against the droplet; any mobile screen; `npm run api` against merged main; Fintava-dependent suites (fail identically on main).
 
 ## Owner sign-off
 

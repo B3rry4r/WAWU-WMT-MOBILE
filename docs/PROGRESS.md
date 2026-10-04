@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 34 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
+| building | 0 | 1 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
 
