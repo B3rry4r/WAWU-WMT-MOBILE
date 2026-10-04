@@ -7,7 +7,7 @@ order: 97
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -88,6 +88,27 @@ Filter creators by the creator taxonomy, a featured flag set by admins.
 5. Info. `position: null` and an empty `[]` body are accepted as "position 0"; `page=0x10`, `1e2` and ` 1` are accepted as numbers; `category=` (empty) and `FILM_VIDEO` are 400 (exact ids, as designed). Mobile `docs/PROGRESS.md` is regenerated in the diff and not in the builder's file list (generated, harmless).
 
 **NOT RUN.** V9 against the droplet; any mobile screen; `npm run api` against merged main; Fintava-dependent suites (fail identically on main).
+
+## Verifier report (round 2)
+
+**Verdict: PASS.** Narrow re-verification of the round-1 defects and unclear items. Own DBs `e03w_test`, `e03w_spec`, `e03w_protected_test`, own mock :4811, own hubs :4831 (branch) and :4832 (origin/main, scratch `main-src`), all stopped after. Nothing fixed; branch tree clean (builder's work is committed at f8f3c22); probe spec was a temporary file, removed.
+
+| Check | Result | Evidence |
+|---|---|---|
+| 1 Avatars | passed | Probe over 19 stored forms with a recording stub for `freshUrlFor`. Own-key URL (old expired signature) is re-signed (stub called once, fresh URL returned). Dropped (null) and never signed: foreign id URL and key, wrong folder (`kyc/...`), nested, `../` traversal as URL and key, `%2F..%2F` encoded, `%2F` nested, `avatars/<own>x/` prefix trick, `avatars/<foreign>/avatars/<own>/`, `javascript:`, relative path, empty. External https link passes through unchanged, as do links with no known folder marker (`.../x/1.png?p=/avatars/<own>/...`, `%2e%2e` segment form): none of these is signed. |
+| 2 Category match | passed | `Film & video`, `Film_Video`, `film-video`, ` FILM video ` all in `film_video`; `Fіlm` (Cyrillic i), fullwidth `ｆｉｌｍ`, `Film Vide0`, `film%`, `%`, `_`, `film_vide_`, `film & video & more`, SQL text, empty and `film`/`video` as two interests do not match. `category=%`, `_`, `film%`, `film_vide_`, `FILM_VIDEO`, `unknown_cat`, NUL, quote all answer 400 (category must be one of 12 exact ids, then compared by equality in SQL, never LIKE; all parameters bound). |
+| 3 Admin PUT | passed | No token 401, user token 401, reviewer 403. Normal creator 200 twice with identical body. 18 parallel PUTs all 200, one row. Nothing live 400 with a clear sentence; member lists off 400 with a clear sentence; after restoring, 200. |
+| 4 Scale | passed | 40,000 seeded creators (31,191 visible to the blocked-up viewer). Latency: categories 16 ms; creators 107 ms anon, 170 ms signed in; creators by category 95 to 240 ms; featured 20 to 91 ms; all 200. Full page walk (perPage 50) signed in and anon, with and without category: 624, 801, 250, 321 pages; got equals total every time, 0 duplicates, 0 short pages, 0 blocked people (viewer blocks every 7th, every 11th blocks viewer) leaked, signed-in total equals an independent SQL count (31,191). Featured with blocked creators among the 30 featured: both directions hidden, order by position, rail filled to the limit. Also 20,000: same result. |
+| 5 Regression | passed | Spec 12/12 on a fresh seeded DB. Revert proofs (3 spot checks, file copied aside and restored): owner-prefix check off, 1 fails; normalisation off, 2 fail; admin live check off, 1 fails; restored 12/12. Account-data-map and data-export-map specs 9/9. Protected suite `run.sh --fresh HEAD` on fresh `e03w_protected_test`: 244/244. `contract:build` leaves no diff. `tsc --noEmit` 0. Legacy `GET /creators`, `/search`, `/search/suggestions` side by side branch vs origin/main on one DB: 18 requests (signed in and out; category, page, hostile values), 0 differences. Mobile `npm run check` exit 0 (no `tasks --write` needed). |
+
+**Findings (all low or info; none blocks)**
+
+1. info. A stored avatar that is a bare own key (`avatars/<id>/<file>`, no `https://`) is dropped (null) because it is not a link. Round 1 saw stored values as full URLs, so this only matters if a bare key is ever stored.
+2. info. Normalisation also strips non-ASCII, so `FİLM VIDEO` (Turkish dotted I) and `film<zero-width space>video` match `film_video`; lookalike letters from other scripts do not. This is harmless widening in the stated rule ("case, spaces and punctuation do not matter").
+3. info (pre-existing, G-183). At 40,000 creators the legacy `GET /creators` signed out answers 500 on both branch and origin/main (identical); the new routes are fine. Not this task's.
+4. info. The probe's own-id URL on a foreign host (`https://other/avatars/<own>/f`) is signed as our bucket's own key; it cannot sign anything that is not that creator's.
+
+**NOT RUN.** V9 against the droplet; any mobile screen; `npm run api` against merged main; Fintava-dependent suites; the real storage client (absent locally): re-signing was proven against a stub that records what `freshUrlFor` is asked to sign, the same pattern as the spec.
 
 ## Owner sign-off
 
