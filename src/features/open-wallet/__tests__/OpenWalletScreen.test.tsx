@@ -4,6 +4,11 @@ import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// The first test in this file also pays for loading the screen's modules,
+// which took over 5 s (jest's default) on a loaded machine in 4 runs of
+// 3 Oct. A longer limit keeps that cold start from failing a correct test.
+jest.setTimeout(20000);
+
 const mockVault = new Map<string, string>();
 const mockStored: string[] = [];
 
