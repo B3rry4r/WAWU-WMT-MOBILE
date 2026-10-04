@@ -1327,6 +1327,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/feed/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The mixed feed (HOME-05): the same cards as `GET /feed`, with creator and
+         *     professional cards among them on For you.
+         */
+        get: operations["FeedController_mixed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/feed/following/count": {
         parameters: {
             query?: never;
@@ -1336,6 +1356,22 @@ export interface paths {
         };
         get: operations["FeedController_followingCount"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContentMediaController_get"];
+        put: operations["ContentMediaController_set"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4095,6 +4131,17 @@ export interface components {
         RateContentDto: {
             rating: number;
         };
+        SetMediaDto: {
+            /**
+             * @description The pictures of a photo set, in the order they are shown. Replaces the
+             *     whole list. Photo sets only (content type `image`).
+             */
+            frames?: string[];
+            /** @description How long a video, audio or course runs, as `4:12` or `1:20:05`. */
+            durationLabel?: string;
+            /** @description How many pages a PDF has. PDFs only. */
+            pageCount?: number;
+        };
         CreateCreditPurchaseDto: {
             /** @enum {string} */
             pack: "starter" | "popular" | "pro";
@@ -4815,24 +4862,40 @@ export interface components {
         };
         SelfieMatchDto: {
             /**
+             * @description The BVN whose check passed: 11 digits, no spaces. Leave it out and send
+             *     `checkHandle` instead (KYC-03); one of the two, never both.
+             */
+            bvn?: string;
+            /**
+             * @description The `checkHandle` the passed BVN check answered, in place of `bvn`
+             *     (KYC-03): the server takes the BVN from it. One of the two, never both.
+             */
+            checkHandle?: string;
+            /**
              * Format: byte
              * @description The selfie: plain base64 (no `data:` prefix) of a JPEG or PNG, 1 KB to
              *     about 75 KB (at most 100,000 base64 characters), at most 2,048 pixels
              *     on each side. A face match against the BVN photo, not a liveness check.
              */
             image: string;
-            /** @description The BVN whose check passed: 11 digits, no spaces. */
-            bvn: string;
         };
         IdentityOccupationDto: {
             /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
             occupation: string;
         };
         OpenNairaWalletDto: {
-            /** @description The BVN whose check passed: 11 digits, no spaces. */
-            bvn: string;
-            /** @description The NIN given with that check: 11 digits, no spaces. */
-            nin: string;
+            /**
+             * @description The BVN whose check passed: 11 digits, no spaces. Leave it and `nin` out
+             *     and send `checkHandle` instead (KYC-03); never both.
+             */
+            bvn?: string;
+            /** @description The NIN given with that check: 11 digits, no spaces. Left out with `checkHandle`. */
+            nin?: string;
+            /**
+             * @description The `checkHandle` the passed BVN check answered, in place of `bvn` and
+             *     `nin` (KYC-03): the server takes both from it. Never with them.
+             */
+            checkHandle?: string;
             /** @description A5's first name, as the BVN check prefilled it. */
             firstName: string;
             /** @description A5's last name, as the BVN check prefilled it. */
@@ -5041,6 +5104,7 @@ export interface components {
         BvnCheckView: {
             identity: components["schemas"]["WalletIdentityView"];
             prefill: components["schemas"]["BvnPrefillView"];
+            checkHandle: string;
         };
         SelfieMatchView: {
             matchedAt: string | null;
@@ -5678,6 +5742,26 @@ export interface components {
             savedByMe: boolean;
             followsCreator: boolean;
         };
+        FeedCreator: {
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+        };
+        MediaFrame: {
+            position: number;
+            url: string | null;
+            locked: boolean;
+        };
+        MediaDetails: {
+            contentId: string;
+            contentType: string;
+            durationLabel: string | null;
+            pageCount: number | null;
+            frameCount: number;
+            frames: components["schemas"]["MediaFrame"][];
+        };
         FeedItem: {
             id: string;
             /** @enum {string} */
@@ -5710,6 +5794,60 @@ export interface components {
             savedByMe: boolean;
             followsCreator: boolean;
             shares: number;
+            creator: components["schemas"]["FeedCreator"];
+            media: components["schemas"]["MediaDetails"];
+        };
+        KnownFollower: {
+            wawuId: string;
+            displayName: string | null;
+            avatarUrl: string | null;
+        };
+        CardWork: {
+            id: string;
+            contentType: string;
+            accessType: string;
+            price: number;
+            locked: boolean;
+            title: string;
+            thumbnailUrl: string | null;
+            durationLabel: string | null;
+            pageCount: number | null;
+            frameCount: number;
+            views: number;
+        };
+        CreatorCard: {
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            headline: string | null;
+            avatarUrl: string | null;
+            coverUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+            followers: number;
+            posts: number;
+            rating: number | null;
+            knownFollowers: {
+                count: number;
+                people: components["schemas"]["KnownFollower"][];
+            };
+            works: components["schemas"]["CardWork"][];
+            followsCreator: boolean;
+        };
+        ProfessionalCard: {
+            id: string;
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            headline: string;
+            avatarUrl: string | null;
+            coverUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+            category: string;
+            services: string[];
+            ratingAvg: number | null;
+            reviewCount: number;
+            dmPrice: number;
+            dmResponseHours: number;
         };
         FollowingCount: {
             count: number;
@@ -9619,6 +9757,45 @@ export interface operations {
             };
         };
     };
+    FeedController_mixed: {
+        parameters: {
+            query: {
+                /** @description `for_you` is the ranked browse; `following` is only people you follow. */
+                scope: "for_you" | "following";
+                category?: string;
+                /** @description Ordering of `for_you`. `following` is always newest first. */
+                sort: "trending" | "recent" | "top";
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": ({
+                        /** @enum {string} */
+                        kind: "content";
+                        content: components["schemas"]["FeedItem"];
+                    } | {
+                        /** @enum {string} */
+                        kind: "creator";
+                        creator: components["schemas"]["CreatorCard"];
+                    } | {
+                        /** @enum {string} */
+                        kind: "professional";
+                        professional: components["schemas"]["ProfessionalCard"];
+                    })[];
+                };
+            };
+        };
+    };
     FeedController_followingCount: {
         parameters: {
             query?: never;
@@ -9634,6 +9811,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowingCount"];
+                };
+            };
+        };
+    };
+    ContentMediaController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaDetails"];
+                };
+            };
+        };
+    };
+    ContentMediaController_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMediaDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaDetails"];
                 };
             };
         };

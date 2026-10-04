@@ -10,6 +10,10 @@ import type { BvnCheck } from '@/api/walletIdentity';
  * does not keep it (BACKEND_GAPS G-25), so the app holds it, in memory only:
  * never the secure store, never logged, gone when the app process ends.
  *
+ * A5 adds the home address the person typed (`keepAddress`), which A7 sends
+ * when it opens the account (MONEY-12 takes it once and stores none of it).
+ * It lives in the same place and goes with the rest on every forget.
+ *
  * It belongs to one account. A different person signed in on the same phone
  * reads nothing (`readKeptCheck` compares the owner), and `forgetKeptCheck`
  * drops it once Open your wallet no longer needs it.
@@ -22,9 +26,35 @@ import type { BvnCheck } from '@/api/walletIdentity';
  * never kept.
  *
  * It never holds the BVN or the NIN themselves: those live in A26's fields
- * until the check answers, and no longer.
+ * until the check answers, and no longer. What it holds in their place is the
+ * check's `checkHandle` (KYC-03, BACKEND_GAPS G-72): the numbers sealed under
+ * a server key, unreadable on the phone, good for 30 minutes, sent back to
+ * the selfie match and the account opening. It goes with the rest on every
+ * forget, and is never stored or logged.
  */
-type Kept = { owner: string; check: BvnCheck };
+/** A5's home address, in its three parts, as the person typed them. */
+export type HomeAddress = { street: string; city: string; state: string };
+
+/**
+ * The passed check as kept: the prefill and the step's state (last 4 digits
+ * only), without the handle, which is kept beside it (`readHandle`).
+ */
+export type KeptCheck = Omit<BvnCheck, 'checkHandle'>;
+
+/**
+ * One account's Open your wallet, in memory. `check` and `handle` are null
+ * once the server refused the handle (`expireKeptCheck`): the person must run
+ * the BVN check again, and what they typed on A5 (`address`, `occupation`)
+ * waits for the new check, with the server's sentence (`notice`) for A26.
+ */
+type Kept = {
+  owner: string;
+  check: KeptCheck | null;
+  handle: string | null;
+  address: HomeAddress | null;
+  occupation: string | null;
+  notice: string | null;
+};
 
 let kept: Kept | null = null;
 /** Bumped by every forget: a ticket from before it can no longer write. */
@@ -52,16 +82,64 @@ export function ticketIsLive(ticket: KeepTicket): boolean {
   return ticket.era === era;
 }
 
-/** Keeps the check for the ticket's owner. False, and nothing kept, when the ticket was voided by a forget. */
+/**
+ * Keeps the check for the ticket's owner. False, and nothing kept, when the
+ * ticket was voided by a forget. A5's address and occupation from an earlier
+ * check of the same account, kept through `expireKeptCheck`, carry over to
+ * the new one, so A5 comes back filled in.
+ */
 export function keepCheck(ticket: KeepTicket, check: BvnCheck): boolean {
   if (ticket.era !== era) return false;
-  kept = { owner: ticket.owner, check: { identity: { ...check.identity }, prefill: { ...check.prefill } } };
+  const carried = kept && kept.owner === ticket.owner ? kept : null;
+  kept = {
+    owner: ticket.owner,
+    check: { identity: { ...check.identity }, prefill: { ...check.prefill } },
+    handle: check.checkHandle,
+    address: carried?.address ?? null,
+    occupation: carried?.occupation ?? null,
+    notice: null,
+  };
   changed();
   return true;
 }
 
+/**
+ * Keeps A5's address beside the passed check of the ticket's owner. False, and
+ * nothing kept, when the ticket was voided by a forget or no check is kept for
+ * that owner (A7 sends it with the check's name and date of birth, never alone).
+ */
+export function keepAddress(ticket: KeepTicket, address: HomeAddress, occupation: string | null = null): boolean {
+  if (ticket.era !== era || !kept || kept.owner !== ticket.owner || !kept.check) return false;
+  kept = { ...kept, address: { ...address }, occupation: occupation ?? kept.occupation };
+  changed();
+  return true;
+}
+
+/** The check handle kept for this account, or null (none kept, or another person's). */
+export function readHandle(owner: string | undefined): string | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.handle;
+}
+
+/** A5's address kept for this account, or null (none typed yet, or another person's). */
+export function readAddress(owner: string | undefined): HomeAddress | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.address;
+}
+
+/** A5's occupation kept for this account, or null. */
+export function readOccupation(owner: string | undefined): string | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.occupation;
+}
+
+/** True when anything of Open your wallet is kept for this account (a check, or what waits for a new one). */
+export function isKeptFor(owner: string | undefined): boolean {
+  return Boolean(kept && owner && kept.owner === owner);
+}
+
 /** The kept check for this account, or null (none kept, or another person's). */
-export function readKeptCheck(owner: string | undefined): BvnCheck | null {
+export function readKeptCheck(owner: string | undefined): KeptCheck | null {
   if (!kept || !owner || kept.owner !== owner) return null;
   return kept.check;
 }
@@ -70,6 +148,22 @@ export function forgetKeptCheck(): void {
   era += 1;
   if (!kept) return;
   kept = null;
+  changed();
+}
+
+/**
+ * The server refused the kept check's handle (`409 bvn_not_checked`: its 30
+ * minutes ran out, or another check passed): the check and the handle are
+ * forgotten, every ticket out is void, and the person must run the BVN check
+ * again. What they typed on A5 stays, for this account, with `notice` (the
+ * server's sentence) for A26 to show. The session end and leaving the flow
+ * still forget it all (`forgetKeptCheck`).
+ */
+export function expireKeptCheck(notice: string | null): void {
+  era += 1;
+  if (!kept) return;
+  // A restart without a sentence (A5 or A6 seeing nothing kept as they close, right after the refusal) keeps the one there.
+  kept = { ...kept, check: null, handle: null, notice: notice ?? kept.notice };
   changed();
 }
 
@@ -90,8 +184,24 @@ function subscribe(listener: () => void) {
 }
 
 /** For A5 and A26: the kept check for this account, re-read when it changes. */
-export function useKeptCheck(owner: string | undefined): BvnCheck | null {
+export function useKeptCheck(owner: string | undefined): KeptCheck | null {
   const current = useSyncExternalStore(subscribe, () => kept, () => kept);
   if (!current || !owner || current.owner !== owner) return null;
   return current.check;
+}
+
+/** For A26: why the person is back for a new check (the server's sentence), with whether an address waits for it. */
+export function useCheckNotice(owner: string | undefined): { notice: string; addressKept: boolean } | null {
+  const current = useSyncExternalStore(subscribe, () => kept, () => kept);
+  if (!current || !owner || current.owner !== owner || current.check || !current.notice) return null;
+  return { notice: current.notice, addressKept: current.address !== null };
+}
+
+/** For A5 and A6: the kept check, its handle and A5's details together for this account, or null without a check. */
+export function useKeptOpening(
+  owner: string | undefined,
+): { check: KeptCheck; handle: string; address: HomeAddress | null; occupation: string | null } | null {
+  const current = useSyncExternalStore(subscribe, () => kept, () => kept);
+  if (!current || !owner || current.owner !== owner || !current.check || !current.handle) return null;
+  return { check: current.check, handle: current.handle, address: current.address, occupation: current.occupation };
 }

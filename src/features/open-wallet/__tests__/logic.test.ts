@@ -97,6 +97,7 @@ describe('the passed check kept for A5', () => {
   const check = {
     identity: { bvn: { last4: '0111', verifiedAt: '2026-10-03T10:00:00.000Z' }, ninLast4: '0999', occupation: null, checksLeft: 2 },
     prefill: { firstName: 'Ada', middleName: null, lastName: 'Eze', dateOfBirth: '1992-10-04', gender: 'female' as const },
+    checkHandle: 'v1.k03-test-handle',
   };
 
   it('belongs to the account that ran it, and is gone once forgotten', () => {

@@ -82,9 +82,12 @@ export async function runBvnCheck(input: { bvn: string; nin: string }): Promise<
     check.prefill === null ||
     !identity ||
     !Number.isSafeInteger(identity.checksLeft) ||
-    !('bvn' in identity)
+    !('bvn' in identity) ||
+    typeof check.checkHandle !== 'string' ||
+    check.checkHandle.length === 0
   ) {
     throw refusal(unreadable(), null);
   }
-  return { identity: check.identity, prefill: check.prefill };
+  // The sealed check (KYC-03): kept in memory with the prefill, sent back in place of the numbers.
+  return { identity: check.identity, prefill: check.prefill, checkHandle: check.checkHandle };
 }
