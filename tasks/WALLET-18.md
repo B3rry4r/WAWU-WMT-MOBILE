@@ -167,7 +167,7 @@ Builder, 4 Oct 2026 (resumed after a container restart; the worktrees were intac
 | Gates | main 9a370c0 16 fail / 21 warn, branch 16 / 24 (the three receipt `PROVISIONAL`s; `RECEIPT-RENDER-CONCURRENCY` is new) |
 | `contract:build` | run after each merge |
 | Key scan | 0 of 58 windows in each commit |
-| Mobile `npm run check` | exit 0: 33 suites, 602 tests, gates 0 fail / 0 warn on 157 files, 205 tasks |
+| Mobile `npm run check` | exit 0: 29 suites, 556 tests, gates 0 fail / 0 warn on 135 files, 205 tasks |
 
 **Fintava:** no call this round.
 
