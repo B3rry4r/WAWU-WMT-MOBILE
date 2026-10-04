@@ -77,7 +77,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 4 Oct 2026 · INBOX-09 · Merged to main by the lead (Developer 2's task): paid questions pause for creators who stop replying, backend PR #54 (aa11bcc); mobile contract synced. Owner questions G-77, G-78 carried forward.
+- 4 Oct 2026 · INBOX-09 · Merged to main by the lead (e8d9c9c, Developer 2's task): paid questions pause for creators who stop replying, backend PR #54 (aa11bcc); mobile contract synced. Owner questions G-77, G-78 carried forward.
 - 3 Oct 2026 · INBOX-09 · Built (backend): a creator is warned once at 20% of paid questions unanswered over 30 days and paid messages switch off for 7 days at 30% (R-13, all from config); the live send refuses a paused creator with `paid_messages_paused`, and new `GET /paid-dm/standing` and `/paid-dm/creators/:wawuId/availability` serve the creator and the fan (I8). Owner questions G-77, web gap G-78. Verifying.
 - 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
 - 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
