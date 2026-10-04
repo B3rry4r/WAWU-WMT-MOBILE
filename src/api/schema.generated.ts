@@ -1247,6 +1247,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/{id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ContentEngagementController_like"];
+        delete: operations["ContentEngagementController_unlike"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ContentEngagementController_view"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ContentEngagementController_share"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/engagement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContentEngagementController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FeedController_feed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/feed/following/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FeedController_followingCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/credits/purchase": {
         parameters: {
             query?: never;
@@ -5561,6 +5657,63 @@ export interface components {
             purchased: boolean;
             fullAssetUrl: string | null;
         };
+        LikeState: {
+            likes: number;
+            likedByMe: boolean;
+        };
+        ViewState: {
+            views: number;
+            counted: boolean;
+        };
+        ShareState: {
+            shares: number;
+            counted: boolean;
+        };
+        ContentEngagement: {
+            likes: number;
+            views: number;
+            shares: number;
+            commentCount: number;
+            likedByMe: boolean;
+            savedByMe: boolean;
+            followsCreator: boolean;
+        };
+        FeedItem: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "live" | "rejected" | "removed";
+            /** Format: date-time */
+            createdAt: string;
+            title: string;
+            creatorWawuId: string;
+            slug: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description: string;
+            category: string;
+            specializations: string[];
+            tags: string[];
+            /** @enum {string} */
+            accessType: "free" | "paid";
+            price: number;
+            durationLabel: string | null;
+            pageCount: number | null;
+            previewAssetUrl: string;
+            creatorFirstUploadFree: boolean;
+            views: number;
+            ratingPct: number | null;
+            commentCount: number;
+            likes: number;
+            fullAssetUrl: string | null;
+            fullAssetLocked: boolean;
+            likedByMe: boolean;
+            savedByMe: boolean;
+            followsCreator: boolean;
+            shares: number;
+        };
+        FollowingCount: {
+            count: number;
+        };
         DmSendInitResponse: {
             flutterwaveConfig: {
                 txRef: string;
@@ -8908,7 +9061,7 @@ export interface operations {
     ContentPieceController_list: {
         parameters: {
             query: {
-                scope?: "feed" | "mine";
+                scope?: "feed" | "mine" | "following";
                 category?: string;
                 /**
                  * @description Browse ordering. Defaults to `trending` (engagement decayed by age) —
@@ -9330,6 +9483,157 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentPieceResponse"][];
+                };
+            };
+        };
+    };
+    ContentEngagementController_like: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_unlike: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ViewState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentEngagement"];
+                };
+            };
+        };
+    };
+    FeedController_feed: {
+        parameters: {
+            query: {
+                /** @description `for_you` is the ranked browse; `following` is only people you follow. */
+                scope: "for_you" | "following";
+                category?: string;
+                /** @description Ordering of `for_you`. `following` is always newest first. */
+                sort: "trending" | "recent" | "top";
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedItem"][];
+                };
+            };
+        };
+    };
+    FeedController_followingCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowingCount"];
                 };
             };
         };
