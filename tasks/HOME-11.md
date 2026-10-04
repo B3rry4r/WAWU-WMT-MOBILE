@@ -7,7 +7,7 @@ order: 91
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -51,7 +51,27 @@ Built 4 Oct 2026 (backend branch `wmt/HOME-11`, off main a94f338). Nothing commi
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verdict: PASS (4 Oct 2026, verifier session; own DBs `h11v_*`, own mock port; builder's :4001 mock shared with another agent, never touched).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 (routes, own account) | passed | scratch probe spec (deleted after): 401 signed out on GET/PATCH, bad token 401; `?userWawuId=`, `X-User-Id` headers and `/settings/tgif/<id>` paths do nothing (token sub only; 404 for path variants); GET wrote 0 rows (row count unchanged); 5 sequential PATCHes last-write-wins; 24 mixed parallel PATCHes all 200, exactly 1 row; true/false round-trips through a second token; PUT/POST/DELETE/OPTIONS 404, HEAD 200 |
+| V2 (purge and export maps) | passed | `account-data-map.spec` and `data-export-map.spec` pass; failed when the `TgifPreference` rule (1 fail) or the `tgifPreference` section (1 fail) was dropped in place, restored from a copy, rerun 23/23 green. Export section selects `show, updatedAt` for `me` only |
+| V3 (existing routes) | passed | `run.sh --fresh` on a fresh DB: 244 of 244 required passed (253 in the two suites); `contract:build` leaves no diff; `git diff origin/main` on openapi.json 73+/0-, schema.prisma 10+/0-; app.module.ts +1 import +1 entry only (matches SHARED-CHANGES HOME-11 #2); migration is one CREATE TABLE, replayed on an empty DB, then rolled back (DROP + delete migration row) and re-applied cleanly; tsc 0 |
+| V4 (spec revert proofs, 4 spot-checked) | passed | dropping the purge rule, the export section, `@IsBoolean` (4 fail) and PATCH persistence (1 fail) each make the named tests fail; all restored |
+| V9 live seam | passed | the new spec's 14 tests use real RS256 tokens from the mock WAWU ID and the real DB; two logins of one account see each other's value |
+| mobile `npm run check` | passed | exit 0, gates 195 files scanned, 0 findings (no `tasks --write` needed) |
+| Full `test:contract` vs origin/main (by test name) | passed | branch 2891 passed / 785 failed; main 2783 / 879 (both runs concurrent on one shared mock, so many env failures); 0 tests fail on the branch that pass on main; 14 tests exist only on the branch, all pass |
+
+Strict body: strings, 1, null, missing, extra keys, arrays, top-level null/true/string, empty body, form and text content types, NUL and lone-surrogate keys, invalid UTF-8 all return the normal 400; none stored. `__proto__` and `constructor` keys return 200 and store only `show` (class-transformer drops them; no pollution seen).
+
+Findings:
+1. low, unclear (not caused by this task): a body over the parser limit (5 MB), 50,000 keys, or 5,000-deep nesting returns the normal-shaped 500 ("Something went wrong") instead of 413/400. The cause is in fenced shared code (`src/common` exception filter maps body-parser errors to 500), so it affects every route. Nothing stored. Needs the owner or a SHARED-CHANGES row if a 413 is wanted.
+2. low, differs-for-recorded-reason: the builder's SHARED-CHANGES HOME-11 #3 says mobile `contract/` is regenerated; the mobile diff does not contain it (it says it happens after the backend merges). Consistent with the note; no action.
+3. G-170 is an honest gap: the web's "off" lives in browser storage the Hub cannot read, nothing imports it, the gap row says so. Nothing in the branch reads HOME-10 tgif tables (no other `tgif` model in schema.prisma; `tgif` appears in src only in this task's files and its three map entries).
+4. note: the builder committed (7dbea81) despite the no-commit rule; no content impact.
+
+NOT RUN: anything on a phone or the web; Fintava sandbox (no money path). Full-suite counts are inflated by two concurrent runs sharing a mock, so the comparison shows "no new failure", not absolute health.
 
 ## Owner sign-off
 
