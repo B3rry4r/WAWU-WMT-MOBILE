@@ -150,6 +150,15 @@ describe('a check whose handle the server refused (409 bvn_not_checked)', () => 
     expect(readAddress(OWNER)).toEqual(home);
   });
 
+  it('a second restart without a sentence (the closing screen seeing nothing kept) keeps the server’s sentence', async () => {
+    keepCheck(ticketFor(OWNER), check);
+    keepAddress(ticketFor(OWNER), home, 'Filmmaker');
+    expireKeptCheck('Check your BVN again to continue.');
+    expireKeptCheck(null);
+    const { result } = await renderHook(() => useCheckNotice(OWNER));
+    expect(result.current).toEqual({ notice: 'Check your BVN again to continue.', addressKept: true });
+  });
+
   it('nothing can be typed in beside no check: the address waits for a new one to pass', () => {
     keepCheck(ticketFor(OWNER), check);
     expireKeptCheck(null);

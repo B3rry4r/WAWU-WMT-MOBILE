@@ -162,7 +162,8 @@ export function forgetKeptCheck(): void {
 export function expireKeptCheck(notice: string | null): void {
   era += 1;
   if (!kept) return;
-  kept = { ...kept, check: null, handle: null, notice };
+  // A restart without a sentence (A5 or A6 seeing nothing kept as they close, right after the refusal) keeps the one there.
+  kept = { ...kept, check: null, handle: null, notice: notice ?? kept.notice };
   changed();
 }
 

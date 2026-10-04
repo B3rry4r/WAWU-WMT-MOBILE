@@ -506,8 +506,7 @@ const styles = StyleSheet.create({
   navTitle: { ...font(700), flex: 1, textAlign: 'center', fontSize: NAV.title, letterSpacing: NAV.tracking * NAV.title },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: PAGE.between, paddingBottom: PAGE.lift },
   preview: { position: 'absolute', left: OVAL.ring, top: OVAL.ring, overflow: 'hidden' },
-  /** A16's two sentences fit one line at 390 px, as drawn: the words run nearly edge to edge. */
-  words: { alignItems: 'center', paddingHorizontal: space.sm },
+  words: { alignItems: 'center', paddingHorizontal: layout.gutter },
   wordsTitle: { ...font(700), fontSize: PAGE.title, lineHeight: canvasNormalLineHeight(PAGE.title), textAlign: 'center' },
   wordsLine: { fontSize: PAGE.line, lineHeight: canvasNormalLineHeight(PAGE.line), opacity: PAGE.lineOpacity, marginTop: PAGE.lineGap, textAlign: 'center' },
   foot: { minHeight: FOOT_ROW, justifyContent: 'center', paddingHorizontal: layout.gutter },

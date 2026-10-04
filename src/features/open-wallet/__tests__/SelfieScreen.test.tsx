@@ -293,6 +293,19 @@ describe('A6 · Selfie', () => {
     expect(openings()).toHaveLength(0);
   });
 
+  it('with the route’s real restart, the sentence survives A6 closing on nothing kept, for A26 to show', async () => {
+    const kept = keepOpening();
+    routes['POST /money/identity/selfie'] = [refusal(409, 'bvn_not_checked', 'Check your BVN again to continue.')];
+    const app = await boot();
+    // What the route passes (leave.ts, minus the navigation): A6 stays mounted here, as it does until dismissed.
+    app.onRestart.mockImplementation((notice?: string) => kept.expireKeptCheck(notice ?? null));
+    await take(app);
+    await app.waitFor(() => expect(app.onRestart.mock.calls.length).toBeGreaterThanOrEqual(2));
+    const notice = await rtl.renderHook(() => kept.useCheckNotice(OWNER));
+    expect(notice.result.current).toEqual({ notice: 'Check your BVN again to continue.', addressKept: true });
+    expect(kept.readAddress(OWNER)).toEqual(address);
+  });
+
   it('a build that kept no handle (none answered) cannot go on: back to A26, nothing sent', async () => {
     const kept = require('../keptCheck') as typeof import('../keptCheck');
     kept.keepCheck(kept.ticketFor(OWNER), { identity, prefill, checkHandle: '' });

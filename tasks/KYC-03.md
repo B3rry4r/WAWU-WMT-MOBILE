@@ -7,7 +7,7 @@ order: 86
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [KYC-05, MONEY-03, MONEY-12, MONEY-13, KYC-01, KYC-02, UI-02]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -254,6 +254,58 @@ Probe `zz-vk03-probe.test.tsx` ran in place in the mobile worktree, 9 of 9 passi
 - V10: no Android phone in this session, and the camera stays off until SHARED-CHANGES KYC-03 #1 is applied and a development build is made.
 - A real Fintava sandbox selfie and opening: no sandbox BVN passes (Fintava questions 6 and 11, G-25).
 - A handle's real 30 minutes in the browser: the equivalent refusal was driven by changing the key, and the backend expiry cases were run with forged `exp`.
+
+## Builder round 3
+
+Builder, 4 Oct 2026. Mobile `wmt/KYC-03` (0c14b21, then the fix below); backend `wmt/KYC-03` **442bf98** (one test added, pushed). Neither main moved (mobile `9a0c1be`, backend `9a370c0`), so nothing was merged. Evidence in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/kyc03/r3/`: `shots/`, `results.jsonl`, `calls.jsonl`, `drive.py` (the verifier's driver with my ports and four new scenarios), `sheet-r3.png`.
+
+- **Defect 1 (V6), fixed as ruled (Lead ruling, owner may override).** A `409 bvn_not_checked` at A5 (saving the occupation, or a newer check seen on load), at A6 (the match) or at A7 (the first opening and Try again) now goes back to A26 with the server's sentence. A26 shows it in a warning banner titled "We need a new BVN check", followed by "Your home address and occupation are kept." when they are. The store (`keptCheck.ts`) has a new `expireKeptCheck(notice)` for this path. It forgets only the check and its handle and voids every ticket out. A5's address and occupation stay in memory for the same account under the same rules: the session end, another account, and leaving the flow (A26 closing) still forget everything, and nothing goes to storage. When a new check passes for the same account, they carry over and A5 comes back filled in. The consent box is ticked again by the person. The plain words that a new BVN check cannot be avoided are the banner's title and the server's sentence; no em-dash.
+- **A defect of my own, found by the browser run and fixed.** In the first browser run the banner never appeared. A6 is still mounted until it is dismissed, so it saw nothing kept and fired its own restart without a sentence, and that overwrote the notice. The jest tests had used a mock restart and could not see it. Fix: a restart without a sentence keeps the one already there. Test: A6 with the route's real restart (`expireKeptCheck`) still leaves the sentence for A26. The mutant that undoes the fix is killed.
+- **Item 6 (`422 account_not_opened`).** A7's refusal now offers **Check my details** (back to A5) and **Done** (leave). The kept check, its handle and the server's selfie match are all untouched, so after correcting A5 and pressing Continue, A6 goes straight to the opening. A6's selfie read is no longer served from an earlier visit (`gcTime: 0`): a stale "not matched" would have offered a second selfie.
+  - **No second selfie is charged.** Browser, light and dark: 1 BVN check, 1 match and 2 openings, then the account opens with the corrected street (`a7-not-opened-check-my-details-*`, `a5-after-check-my-details-*`, `a7-opened-after-check-my-details-*`).
+  - If the handle has expired by then, the opening answers 409 and the defect-1 path applies. That path needs a new BVN check and a new selfie, and both are charged.
+  - `identity_has_wallet` and `phone_held_by_other_identity` keep Done only.
+  - `OpenWalletEnd` gained an optional second button (`secondaryLabel`, `onSecondary`), inside this feature.
+- **Test gap (BM3), closed on the backend (442bf98).** New test: "a handle from an earlier check is refused once a check of the same BVN with another NIN has passed". It kills the mutant that compares only the BVN on the handle path.
+- **Bookkeeping.**
+  - SHARED-CHANGES KYC-03 #2 is marked applied on the branch (9e5d7bc, contract re-copied in 62478c6).
+  - BACKEND_GAPS **G-98** is filed (owner: lead): remove the number-based bodies on the selfie match and the opening once every build sends the handle, that is after OPS-10's tester build is the only build.
+  - The 500 on bodies over 100 KB is left as G-49.
+- **Cosmetic V5, not changed.**
+  - A16's line: narrowing the inset from the gutter to `space.sm` still wrapped "cap." at 390 px (`a16-*`), because the server's sentence is longer than the canvas's line. I reverted it. A one-line A16 needs the backend's sentence without its last word or full stop, or a smaller type size than the canvas.
+  - The X's circle on the dark camera page comes from the shared `IconButton` (`surfaceScrim`, fenced). A fixed camera tone would need a prop there (a SHARED-CHANGES row). Not filed: cosmetic only.
+- **Tests (jest).** All cases below pass, and 13 mutants are all killed (no carry-over; a sentence dropped at A6 or A7; A5 keeping nothing on 409; the restart forgetting everything; no banner; A26 forgetting on mount; the store's tickets left live; the kept occupation ignored or not kept; the stale restart silent; Check my details never offered; the sentence overwritten).
+  - Every refused handle (A6, A7, A7's Try again, A5's save and A5's newer check) calls the restart with the server's sentence.
+  - A26 shows the banner, then loses it after a new pass while keeping the address and occupation.
+  - A5 comes back filled in after a refused handle and a new pass.
+  - The store keeps the address through an expiry, voids old tickets, and forgets everything at the session end and on leaving.
+  - Check my details opens again with no second selfie, including on the same query cache.
+- **Checks.**
+  - `npm run check`: exit 0, 32 suites and 620 tests; gates 9 run, 149 files, 0 fail, 0 warn, 0 accepted; lint clean; 205 tasks.
+  - Backend at 442bf98 on a freshly migrated and seeded `k03_contract_test`, with the stand-in WAWU ID on :4942: identity, opening, money and gate specs, 14 suites, 448 tests, all passed.
+  - A5's first test timed out once under a full parallel run and passed in the next three runs, the same pattern as the verifier's unclear 5 for A26.
+- **V9, the changed paths, light and dark, all `ok`.**
+  - Setup:
+    - a Hub built from backend 442bf98 on :4941 with a fresh `k03_v9r3_test` (migrated, seeded);
+    - the stand-in WAWU ID on :4942, and people signed in on A22;
+    - the verifier's Fintava stand-in for Fintava's routes only;
+    - the web export of this branch on :8141;
+    - 0 `wawuafrica.com` in the bundle and 0 attempted;
+    - browser storage holds only the two session keys.
+  - The refused handle is produced the verifier's way: the Hub is restarted with another `IDENTITY_HASH_KEY`, which gives the same 409 as an expired handle.
+  - Scenarios:
+    - `expired`: A6 (the verifier's reproduction, `RUN=3 python3 drive.py dark expired`).
+    - `expired-retry`: A7's Try again, after a Fintava 401 made the first opening fail.
+    - `expired-a7`: A7's first opening. Only this scenario's match was answered by the pass-through's G-72 stand-in (logged as `standin`, 2 calls), because the real match would meet the rotated key first. The opening's 409 is the real Hub's.
+    - `check-details`.
+    - `a16`.
+  - In each refused-handle scenario A26 shows the banner (`a6-handle-refused-a26-banner-*`, `a7-retry-handle-refused-a26-banner-*`, `a7-handle-refused-a26-banner-*`). After the key is restored and a new check passes, A5 shows "9 Verifier Crescent, Surulere", Lagos, Lagos and Photographer (`a5-prefilled-after-new-check-*`).
+  - No selfie or opening body carried a BVN or NIN, only `checkHandle`.
+- **NOT RUN:**
+  - V10 and the phone camera (SHARED-CHANGES KYC-03 #1, OPS-10).
+  - A real Fintava sandbox selfie or opening (questions 6 and 11, G-25).
+  - A handle's real 30 minutes in the browser (driven by a key change, as the verifier did).
+  - The full backend suite this round: only the spec tests changed since the verifier's 142/142 run.
 
 ## Owner sign-off
 
