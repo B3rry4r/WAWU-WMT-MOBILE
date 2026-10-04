@@ -7,7 +7,7 @@ order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -94,6 +94,27 @@ Backend `wmt/WALLET-08` **d01d019** (on 6dab9c8; origin/main still 38bbe4c, noth
 **Default (agent), owner may override:** the 500 a day (the lead's figure); the new code is `recipient_search_rate_limited`; `Retry-After` carries whole seconds.
 
 **NOT RUN.** The same two as round 1 (V9 against the real WAWU ID; recent from a real send once WALLET-07 serves `POST /money/transfers/wawu`), unchanged. The limiter's 120 an hour and 500 a day were proved on a moved clock, not by waiting an hour or a day; unblocked by nothing short of a 24-hour run, and the figures are pinned by literals.
+
+### Builder round 3 (4 Oct 2026)
+
+Backend `wmt/WALLET-08` **13d9b5f** (tests only; origin/main still 38bbe4c). No product change, so the contract is as in round 2 (SOURCE_COMMIT d01d019 still describes it). Mobile: origin/main 794b3ed merged in, PROGRESS regenerated. One defect, **D4: the window restart and the rounding were unpinned** (verifier mutants L9 and L6).
+
+**Tests added** (`recipient-throttle.contract.spec.ts`, on the moved clock, one account, every request from its own address; the file is now 13 tests):
+- **The minute window starts again.** 20 pass and the 21st is 429 at t0; at t0 + 59.999 s it is still 429; at t0 + 61 s exactly 20 pass and the 21st is 429; again at t0 + 122 s.
+- **The hour window starts again.** Six minutes of 20 make 120 and the 121st is 429 with `retryAfterSeconds` 3,234; an hour later (t0 + 3,600,000 ms) exactly 120 pass again and the 121st is 429 with 3,234 again.
+- **The wait rounds UP**, in the body and in `Retry-After`: 49.500 s gives 50, 49.001 s gives 50, 49.000 s stays 49, 1 ms left gives 1.
+
+**Mutants** (applied to `src/money/person-window-limiter.ts`, run against the recipient and statement specs, 91 tests, then restored; `git status` showed only the spec file changed after the last restore):
+
+| Mutant | Before | Now |
+|---|---|---|
+| L9 a window never resets (`if (false)`) | passed every test | **2 tests fail** |
+| L6 `Math.ceil` to `Math.floor` | passed the recipient tests | **2 tests fail** |
+| the hour window alone never resets | not tried | 1 fails |
+| a reset keeps the old count | not tried | 5 fail |
+| the reset needs more than the window (`>` for `>=`) | not tried | 1 fails |
+
+**Checks.** `tsc` 0; eslint clean on `src/money/recipients` and the limiter; prettier clean. Recipient, statement and rate-limit specs on a fresh migrated and seeded DB (mock WAWU ID on :4988): 5 suites, 113 tests, 0 failed (`hub-rate-limits` on the host network among them). Tripwire 0; no em-dash in added lines; Fintava key scan of the staged backend diff 0 hits. Mobile `npm run check` exit 0 (40 suites, 725 tests, gates 0 fail 0 warn, tasks); mobile secret scan 0 hits. The full and protected suites were not re-run: the diff is one spec file and no product code. Both repos' worktrees and the `w08_*` database are removed.
 
 ## Verifier report
 
