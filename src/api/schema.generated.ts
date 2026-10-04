@@ -1008,6 +1008,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/mine/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M28: my pieces with sales and the reviewer's reason. Literal paths stay above ':id'. */
+        get: operations["ContentPieceController_myLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/mine/library/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The numbers on the M28 filter tabs. */
+        get: operations["ContentPieceController_myLibraryCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/mine/library/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M26: one of my pieces, with its latest rejection reason. */
+        get: operations["ContentPieceController_myPiece"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content/purchases": {
         parameters: {
             query?: never;
@@ -1035,6 +1086,24 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["ContentPieceController_remove"];
+        options?: never;
+        head?: never;
+        /** Edit the details or the file of a piece that is pending or rejected. */
+        patch: operations["ContentPieceController_update"];
+        trace?: never;
+    };
+    "/api/hub/content/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a rejected piece for review again. */
+        post: operations["ContentPieceController_resubmit"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3906,6 +3975,23 @@ export interface components {
             /** Format: uri */
             fullAsset: string;
         };
+        UpdateContentDto: {
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            /** @description Replaces the whole list, as on create (at most three). */
+            specializations?: string[];
+            /** @description Replaces the whole list, as on create (at most twenty). */
+            tags?: string[];
+            /** @enum {string} */
+            accessType?: "free" | "paid";
+            price?: number;
+            /** Format: uri */
+            previewAsset?: string;
+            /** Format: uri */
+            fullAsset?: string;
+        };
         VerifyUnlockDto: {
             transaction_id: string;
             tx_ref: string;
@@ -5431,6 +5517,45 @@ export interface components {
             likes: number;
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
+        };
+        MyContentItem: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "live" | "rejected" | "removed";
+            /** Format: date-time */
+            createdAt: string;
+            title: string;
+            creatorWawuId: string;
+            slug: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description: string;
+            category: string;
+            specializations: string[];
+            tags: string[];
+            /** @enum {string} */
+            accessType: "free" | "paid";
+            price: number;
+            durationLabel: string | null;
+            pageCount: number | null;
+            previewAssetUrl: string;
+            creatorFirstUploadFree: boolean;
+            views: number;
+            ratingPct: number | null;
+            commentCount: number;
+            likes: number;
+            fullAssetUrl: string | null;
+            fullAssetLocked: boolean;
+            salesCount: number;
+            rejectionReason: string | null;
+            /** Format: date-time */
+            rejectedAt: string | null;
+        };
+        MyContentCounts: {
+            all: number;
+            live: number;
+            pending: number;
+            rejected: number;
         };
         UnlockVerifyResult: {
             purchased: boolean;
@@ -8855,6 +8980,69 @@ export interface operations {
             };
         };
     };
+    ContentPieceController_myLibrary: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+                status?: "live" | "pending" | "rejected";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"][];
+                };
+            };
+        };
+    };
+    ContentPieceController_myLibraryCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentCounts"];
+                };
+            };
+        };
+    };
+    ContentPieceController_myPiece: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"];
+                };
+            };
+        };
+    };
     ContentPieceController_purchases: {
         parameters: {
             query: {
@@ -8916,6 +9104,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ContentPieceController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"];
+                };
+            };
+        };
+    };
+    ContentPieceController_resubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"];
+                };
             };
         };
     };
