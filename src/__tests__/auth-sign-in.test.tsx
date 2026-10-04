@@ -255,8 +255,8 @@ describe('A25: sign in refused', () => {
 
 describe('sign in refused for other real causes', () => {
   const cases: [string, Answer, string, string][] = [
-    ['an account that was never confirmed', { status: 403, body: { statusCode: 403, code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email address before signing in.' } }, "Your account isn't confirmed yet", 'Finish confirming it, then sign in.'],
-    ['a sign-up whose phone was never confirmed', { status: 403, body: { statusCode: 403, code: 'PHONE_NOT_CONFIRMED', message: 'Confirm your phone number to finish signing up.' } }, "Your account isn't confirmed yet", 'Finish confirming it, then sign in.'],
+    ['an account that was never confirmed', { status: 403, body: { statusCode: 403, code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email address before signing in.' } }, "Your account isn't confirmed yet", 'Finish confirming it, then sign in. If you were signing up here, create your account again to get a new code.'],
+    ['a sign-up whose phone was never confirmed', { status: 403, body: { statusCode: 403, code: 'PHONE_NOT_CONFIRMED', message: 'Confirm your phone number to finish signing up.' } }, "Your phone isn't confirmed yet", 'Create your account again to get a new code.'],
     ['too many tries', { status: 429, body: { statusCode: 429, message: 'Too many requests' } }, 'Too many tries', 'Wait a moment, then try again.'],
     ['no connection', 'offline', 'No connection', 'Check your internet and try again.'],
     ['a server error', { status: 500, body: { statusCode: 500, message: 'Internal server error' } }, 'Something went wrong on our side', 'Try again in a moment.'],
