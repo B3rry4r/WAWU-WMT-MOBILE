@@ -7,7 +7,7 @@ order: 186
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -81,6 +81,72 @@ Builder, 3 Oct 2026. wawu-backend `wmt/WALLET-27` **5cd55c1** on main fe1ec6c (m
 - **Findings:** the receiver's line carries Fintava's reference, not ours (G-44, MONEY-15's), so the two people's statements show different references for one transfer.
 
 ## Verifier report
+
+### Verifier report, round 2
+
+Verifier, 3 to 4 Oct 2026 (the round-1 verifier; wrote none of this code). Backend `wmt/WALLET-27` **b9797a7** (round 2 is c98ef6d, then main 44fdd7d and 1e6b807 merged in); mobile **6ccc3fe**. Neither main moved (backend 1e6b807, mobile c733413). Fresh worktrees `/home/user/wt/vw27b2` and `/home/user/wt/vw27m2`. Built hub `node dist/src/main.js` on :4993 (trust proxy as in production: loopback peer, last X-Forwarded-For entry is the caller), stand-in WAWU ID on :4994. Databases `vw27r2_*`, all dropped. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw27r2/` (below, `vw27r2/`). The container restarted after the protected suite; nothing that ran before it is affected, and nothing was re-run.
+
+**Verdict: 1 defect open, status building.** The new per-route throttle lets one address with no account freeze the whole server.
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Throttle, real tokens | passed. A real token from one address: 200 ×5, then 429; headers `x-ratelimit-limit-short` 5, `-medium` 30. A forged token carrying V's `sub` from another address uses up only that address's bucket: V's real token from a third address is then 200 | `vw27r2/throttle.out` T1, T3 |
+| Throttle, forged `sub` floods | **failed (defect 1)** | `vw27r2/throttle.js`, `throttle.out`, `storage-bench.out`, `pinger.log` |
+| Trust-proxy reading | passed. `statementTracker` uses `bvnCheckTracker` itself. Through loopback, the last X-Forwarded-For entry is the address (T3). A direct caller (192.0.2.2) sending a different X-Forwarded-For on each of 7 calls got 200 ×5, then 429, 429: the header is ignored | `vw27r2/direct.out` |
+| Forged token reaches no database | passed. 100,000 forged requests over 205 s: 45 database transactions, against 14 a minute (about 48 in 205 s) from an idle hub's own jobs. So none came from the forged requests: every one is a 401 from `WawuAuthGuard`, after the throttler and before the gate | `vw27r2/throttle.out` T6, `idle-db.out` |
+| Row cap | passed. Exactly 50,000 completed rows (plus 3,000 failed, not counted): 200, `rowCount` 50000, 9.2 MB, 1.2 s. 50,001: `400 statement_too_large` in 40 ms with the stated message. 100,000 over 366 days: the same 400 in 32 to 52 ms, with no memory rise. The compiled service, given a count of 50,001, makes 1 query (the `COUNT(*)` over `LIMIT 50001`) and throws; at 50,000 or 0 it makes the count and then the row select | `vw27r2/rowcap.out`, `countfirst.out` |
+| 5 at once just under the cap | `unclear` (finding 2) | `vw27r2/rowcap.out` |
+| M10 | killed (1 failed, 49 passed) | `vw27r2/mutants/M10.log` |
+| 4 new mutants | 3 killed. N1, the count limited to the cap and so never above it: killed. N2, the hour window shortened to a minute: killed. N3, the bucket keyed by `sub` alone, without the address: killed. **N4 survives** (finding 3) | `vw27r2/mutate.py`, `mutants/summary.txt` |
+| Merges | passed; nothing dropped. Every line on backend main 1e6b807 is still on the branch, except the two gated-route test titles, which were rewritten to add "statements (WALLET-27)". Every line of round 2 (c98ef6d) survives except where main changed the same line: the fee-quote rows in `WALLET.md`, `FEE_QUOTE_KINDS`, and the section number. `money.module.ts` and `SERVED_MONEY_ROUTES` hold both WALLET-15 and WALLET-27. Both gated-route lists hold `fees/quote` and `statements`. CONVENTIONS: section 11 is the fee quote and section 12 is statements; section 12's body equals round 2's section 11 word for word. Mobile: `BACKEND_GAPS.md`, the sandbox README and `docs/LOG.md` lose nothing from main c733413 or from afb9cbe. Mobile `contract/` equals backend main 1e6b807 byte for byte (as `sync_contract.py` defines) | `vw27r2/b.diff`, `m.diff` |
+| Contract | passed. `npm run contract:build` leaves `contract/openapi.json` unchanged (git status clean) | `vw27r2/contract-build.out` |
+| Full suite, as deploy runs it | passed. Fresh migrated and seeded `vw27r2_full2_test`, `mock-wawu-id/server.js` on :4001 (free before; my stand-in stopped straight after; free again), `npx jest --runInBand --forceExit`: **139/139 suites, 3,326 passed, 3 skipped, 0 failed** | `vw27r2/full-suite.log` |
+| Protected suite | passed. `run.sh --fresh b9797a7` (lock origin/main 1e6b807): 253/253, all 244 required; no lock file in the diff | `vw27r2/protected.out` |
+| Gates | passed. Branch: 16 fail / 16 warn / 76 accepted on 664 files. Main 1e6b807: 16 / 14 / 76 on 656. The diff of the two outputs is exactly `PROVISIONAL(STATEMENT-RATE-LIMITS)` and `PROVISIONAL(STATEMENT-MAX-DAYS)`. `check_baseline.py` clean. `tsc --noEmit` exit 0; eslint exit 0 on every changed `.ts` | `vw27r2/gates-branch.out`, `gates-main.out`, `tsc.out`, `eslint.out` |
+| Tripwire, key scan | passed. 0 added lines match the tripwire. 0 of 58 key windows in either diff or in the probe output | `vw27r2/tripwire.out` |
+| Mobile `npm run check` | passed (exit 0 on the branch, before and after this report): typecheck 0, lint 0, 28 suites / 485 tests, gates 0 fail / 0 warn on 123 files, 205 tasks. Two of four runs (the first before the report, at load 4.1, and the first after it, at load 8.3) failed one test on a 5 s timeout: main's KYC-05 test `OpenWalletScreen.test.tsx` (A26, "a user sees a loading view first"). Each rerun passed. Nothing on this branch touches that file. It is a flaky test on mobile main under machine load, for the lead, not a WALLET-27 finding | `vw27r2/mobile-check-before.out`, `mobile-check-before2.out`, `mobile-check-after.out`, `mobile-check-after2.out` |
+
+**Defect 1: a forged-token flood from one address goes unthrottled, leaves state that is never freed, and freezes the whole server an hour later.**
+- **What changed.** `@Throttle(STATEMENT_THROTTLE)` overrides the app's `short` and `medium` throttlers for this route. It overrides their trackers as well as their limits, so the per-address global limit no longer applies here. The bucket is `address|sub`, and the `sub` is read before any signature check.
+- **No 429 from one address.** A caller with no account can therefore send unlimited requests from one address, each with a fresh random `sub`, and never get a 429.
+  - 400 such requests to `/money/statements`: 400 × 401, none 429.
+  - The same 400 to `/money/transactions`: 20 × 401, then 380 × 429 (T5a, T5b).
+- **Two-step reproduction (`vw27r2/throttle.js` T6, `pinger.js`).**
+  - **The flood.** From one address, send 100,000 `GET /money/statements?from=2026-09-01&to=2026-09-30&format=csv`, each `Authorization: Bearer <{"alg":"RS256","kid":"mock-wawu-id-key-1"}>.<{"sub":"<random uuid>"}>.bm9wZQ`. Results:
+    - All 100,000 answered 401 and none 429, at 486 a second (205 s).
+    - The attacker's slowest request waited 79 s.
+    - Hub RSS rose from 210 MB to 879 MB, and was still 348 MB afterwards.
+  - **One hour later.** Ping `/health` once a second from another address. The flood ran from 22:05:45 to 22:09:10 UTC. From 23:05:45 to about 23:09:30 the hub served almost nothing:
+    - `/health` took 1.0 s, 4.0 s, 29.3 s, **139.9 s** and 47.3 s.
+    - Only 19 pings were answered in about 3 minutes, against 60 a minute before and after.
+- **Why.** `@nestjs/throttler` 6.5's in-memory `ThrottlerStorageService` keeps state that the flood inflates:
+  - It keeps one storage entry per distinct key and never deletes one, so the memory stays.
+  - It sets one timer per hit, kept in one array per throttler name, and on each expiry it rebuilds that array with `filter`, so each expiry costs O(n).
+  - The route's `medium` window is an hour, so 100,000 timers expire together an hour later and block the event loop.
+  - The library alone (`vw27r2/storage-bench.js`): 100,000 keys with a 3 s window stalled the event loop for 108 s and left 100,000 entries (+36 MB) in place; 25,000 keys stalled it for 1.1 s.
+- **Why main cannot reach this from one address.** On main every route's bucket is the address alone. Requests over the limit add no timer, and the longest window is 60 s. One address therefore adds at most about 200 timers a minute per route.
+- **Fixed when** a request whose token does not verify can neither pick a new bucket nor skip the per-address limit. A test should send forged tokens with many different `sub`s from one address and get 429 after the per-address limit. Two ways to get there:
+  - key the bucket on the address alone, and count the per-person limit after `WawuAuthGuard`;
+  - or verify the token before using its `sub` in the tracker, and use the address alone when it does not verify.
+
+**Findings**
+1. Defect 1 above.
+2. `unclear` (bound for a one-process droplet; nothing in either repo states the droplet's RAM). Under the cap a statement is still heavy:
+   - One statement at 49,999 rows: 0.9 to 1.2 s, 9.2 MB.
+   - Five people at 49,999 rows each, at once from five addresses (all inside the throttle): about 3.6 to 3.9 s each.
+   - Hub RSS: 354 MB → 744 MB peak on the first batch; 1,224 MB on a second batch 3 s later; 982 MB at the end (garbage not yet collected).
+   - The per-person throttle does not bound how many different people build statements at once.
+   - Under 2 GB of RAM, a few heavy statements at once can still exhaust the one process.
+   - A bound that fixes it, whichever the owner prefers:
+     - at most N statements (for example 2) building at once in the process, the rest answered 429 or 503 with "try again";
+     - or a lower row cap (about 10,000 rows is about 1.8 MB and 0.2 s);
+     - or streaming the file.
+3. Test gap (not a defect). Mutant N4 survives: removing `'statement_too_large'` from `@MoneyErrors(...)` on the controller passes the statement, rate-limit and money-contract specs (50/50). The generated contract would then lose the 400. None of those specs compares the committed contract with a fresh build; the gap is only seen when someone runs `contract:build` by hand.
+4. Minor (no action asked). The count and the row select are two queries outside one transaction, and the select has no `LIMIT`. Rows written between them can push a file a few rows past 50,000. Only real movements can arrive in that gap, so this cannot be abused.
+
+**NOT RUN:** round 1's items stand (PDF G-68, email G-69, V10). No Fintava call (the route never calls Fintava).
+
+### Verifier report, round 1
 
 Verifier, 3 Oct 2026 (wrote none of this code). Backend `wmt/WALLET-27` **5cd55c1** on main fe1ec6c (backend main has not moved); mobile `wmt/WALLET-27` **33484cf** on e7dc879. Mobile main has since moved to 42309b2 (KYC-05); not merged here, the branch's own changes are docs and the task file. Fresh detached worktrees `/home/user/wt/vw27b` and `/home/user/wt/vw27m`; databases `vw27_full_test`, `vw27_probe_test`, `vw27_protected_test` (all dropped); hub :4993, stand-in WAWU ID :4994, and :4001 only for the full suite (`lsof` empty before; my stand-in stopped straight after; `lsof` empty again). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw27/` (below, `vw27/`).
 
