@@ -80,7 +80,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.
+- 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (4b50e4c, Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.
 - 4 Oct 2026 · ME-05 · Merged to main by the lead (a5787fb, Developer 1's task): profile fields, backend PR #55 (dec6591); mobile contract synced.
 - 4 Oct 2026 · AUTH-04 · Merged to main by the lead (2061390, Developer 1's task): sign-up with email and phone. Its gaps G-77, G-78 are renumbered G-93, G-94 (INBOX-09 merged first). OTA update follows.
 - 4 Oct 2026 · KYC-05 · Lead fix: A26's test file gets a 20 s test limit; its first test (cold module load) timed out at jest's 5 s default under machine load in 4 runs by three agents and the lead. No product code changed.
