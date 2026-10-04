@@ -35,3 +35,13 @@ export function clearAccountType() {
   picked = null;
   listeners.forEach((listener) => listener());
 }
+
+/**
+ * What WAWU ID's sign-up body calls the A2 pick: discover is `user`, earn is
+ * `creator` (contract `SignupDto.accountType`). Sent to WAWU ID only. It is
+ * never sent to the Hub: a `creator` save there opens a wallet, which R-6
+ * forbids at sign-up (BACKEND_GAPS G-34). No pick sends nothing, and the
+ * sequence reads that as `user`.
+ */
+export const wireAccountType = (type: AccountType | null): 'user' | 'creator' | undefined =>
+  type === 'earn' ? 'creator' : type === 'discover' ? 'user' : undefined;

@@ -21,7 +21,15 @@ const mismatch: Failure = {
 const notConfirmed: Failure = {
   tone: 'warning',
   title: "Your account isn't confirmed yet",
-  body: 'Finish confirming it, then sign in.',
+  body: 'Finish confirming it, then sign in. If you were signing up here, create your account again to get a new code.',
+  credentials: false,
+};
+
+/** A password that was right on a sign-up whose phone was never confirmed, with no code waiting on this phone: the way on is a new sign-up (an unconfirmed one gives up its email and phone to it). */
+const phoneNotConfirmed: Failure = {
+  tone: 'warning',
+  title: "Your phone isn't confirmed yet",
+  body: 'Create your account again to get a new code.',
   credentials: false,
 };
 
@@ -57,6 +65,7 @@ const UNCONFIRMED_CODES = ['EMAIL_NOT_VERIFIED', 'PHONE_NOT_CONFIRMED'];
  */
 export function signInFailure(error: unknown): Failure {
   if (!isApiError(error)) return broken;
+  if (error.code === 'PHONE_NOT_CONFIRMED') return phoneNotConfirmed;
   if (error.code && UNCONFIRMED_CODES.includes(error.code)) return notConfirmed;
   switch (error.kind) {
     case 'unauthorized':

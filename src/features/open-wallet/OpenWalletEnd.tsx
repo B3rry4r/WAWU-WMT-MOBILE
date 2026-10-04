@@ -25,6 +25,17 @@ export type OpenWalletEndProps = {
   children?: ReactNode;
   actionLabel: string;
   onAction: () => void;
+  /** An arrow after the label (A8's "Create your transaction PIN", kit `Btn` `iconRight`). */
+  actionIcon?: IconName;
+  /** A second, quieter way on, under the first (the refused opening's Done beside "Check my details"). */
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+  /** With a way back (the confirmed check, seen again from A5): the bar with its back button and title, as A5 draws its own. */
+  onBack?: () => void;
+  navTitle?: string;
+  /** Space above the result and between it and what follows, where a screen draws its own (A8: `pt: 60`, `gap: 18`). */
+  top?: number;
+  between?: number;
   testID?: string;
 };
 
@@ -34,15 +45,40 @@ export type OpenWalletEndProps = {
  * canvas's result layout (Email verified, KYC submitted): one way on, never a
  * dead end.
  */
-export function OpenWalletEnd({ tone, icon, title, message, children, actionLabel, onAction, testID }: OpenWalletEndProps) {
+export function OpenWalletEnd({
+  tone,
+  icon,
+  title,
+  message,
+  children,
+  actionLabel,
+  onAction,
+  actionIcon,
+  secondaryLabel,
+  onSecondary,
+  onBack,
+  navTitle,
+  top,
+  between,
+  testID,
+}: OpenWalletEndProps) {
   return (
     <AuthFrame
       testID={testID}
-      bare
-      contentTop={RESULT.top}
-      footer={<Button label={actionLabel} full onPress={onAction} testID="open-wallet-end-action" />}
+      bare={!onBack}
+      onBack={onBack}
+      navTitle={navTitle}
+      contentTop={onBack ? undefined : (top ?? RESULT.top)}
+      footer={
+        <>
+          <Button label={actionLabel} iconRight={actionIcon} full onPress={onAction} testID="open-wallet-end-action" />
+          {secondaryLabel && onSecondary ? (
+            <Button label={secondaryLabel} variant="secondary" full onPress={onSecondary} testID="open-wallet-end-secondary" />
+          ) : null}
+        </>
+      }
     >
-      <View style={styles.stack}>
+      <View style={[styles.stack, between !== undefined && { gap: between }]}>
         <View style={styles.result}>
           <IconTile icon={icon} tone={tone} size={RESULT.circle} strokeWidth={RESULT.glyphStroke} />
           <Text variant="title" style={styles.title}>

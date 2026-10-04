@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 48 of 181.**
+**Launch tasks done: 62 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 45 | 30 | 31 |
+| todo | 45 | 35 | 29 | 31 |
 | building | 0 | 0 | 1 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 32 | 13 | 3 | 1 |
+| done | 38 | 23 | 4 | 1 |
 
 ## Being built (or fixing verifier findings)
 
@@ -31,6 +31,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SCHOOLS-01](../tasks/SCHOOLS-01.md) Schools data model (Developer 3)
 - [OPS-04](../tasks/OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers (You)
 - [SHELL-03](../tasks/SHELL-03.md) Tester builds (Developer)
+- [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying (Developer 2)
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
@@ -47,33 +48,49 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end (Developer)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
+- [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
+- [ME-05](../tasks/ME-05.md) Profile fields (Developer)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
+- [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales (Developer)
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
+- [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
 - [KYC-02](../tasks/KYC-02.md) Selfie match to the BVN photo (You)
+- [HOME-04](../tasks/HOME-04.md) Feed: following, likes, views, shares (Developer)
 - [MONEY-12](../tasks/MONEY-12.md) Open a Fintava account when someone opens a wallet (You)
 - [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
+- [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details (Developer)
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
+- [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts (Developer)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
+- [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
+- [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people (Developer)
+- [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN (You)
+- [SETTINGS-03](../tasks/SETTINGS-03.md) Change password and sign out for real (WAWU ID) (Developer)
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
+- [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy (Developer)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
+- [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
+- [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
+- [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
+- [WALLET-27](../tasks/WALLET-27.md) Statements (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie
-- **Developer:** [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone, [ME-05](../tasks/ME-05.md) Profile fields, [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales
-- **Developer 2:** [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
+- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators
+- **Developer 2:** [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
@@ -81,17 +98,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 4 Oct 2026 · INBOX-02 · Built, now verifying: live chat updates, a WebSocket at `/api/hub/live` fed by Postgres LISTEN/NOTIFY, plus `GET /live/catch-up` (wawu-backend `wmt/INBOX-02`; 22 socket tests, gates unchanged).
-- 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
-- 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
-- 3 Oct 2026 · INBOX-08 · Built (backend): paid questions group into one thread per person with every reply bubble, and a creator's waiting list comes back soonest deadline first with the total waiting (`/paid-dm/*`, new `DmReply` table); the live `/dm/respond` is now race-safe. Status verifying.
-- 3 Oct 2026 · KYC-05 · Merged to main by the lead (mobile only, 265ed2a). Open your wallet, step 1 (BVN and NIN): a passed check is kept only for the person and session that ran it, and any answer that lands after a session ends writes nothing. Carried forward: check 1 waits on SHARED-CHANGES KYC-05 #1; device not run. OTA update follows.
-- 3 Oct 2026 · KYC-05 · Verified round 7: no open defect, status review (mobile 81669b0 with main e7dc879). Defect 3 closed: a pass landing in the session-end window leaves no A26 cache entry with A's identity (probe Q2), and a refusal or end landing there moves no screen state for B (3 of 3). Audit: no write after an await unchecked against the ticket or session. R6-2 now killed (2 tests), and R7-1 and R7-2 killed. `npm run check` exit 0, 485 tests, 0 act warnings.
-- 3 Oct 2026 · KYC-05 · Round 7, status verifying: a check answer from an ended session writes nothing (ticket checked before the cache write; a refusal under a void ticket moves no screen state); tests with the app's createQueryClient for both, and the start-over's unsubscribe pinned; mutants Q2, Q2b, R6-2 killed; the verifier's probe-r6 passes 4 of 4.
-- 3 Oct 2026 · KYC-05 · Verified round 6: 1 defect, status building (mobile 4a43404 with main e7dc879; Hub fe1ec6c). Defect 2 closed: probe P1 to P5 pass 5 of 5 (failed P1, P3 before); four session ends in a row, a session end after unmount, and 20 mounts with 0 listeners left all behave; the browser switch to B by a refresh answering B's pair and by sign-out shows B only loading, then B's own form, light and dark; the relaxed session-end test still kills R6-3. New defect 3 (privacy): a check answer landing between A26's session-end restart and the re-render is not kept but is still written into the query cache under A's id while B is signed in (probe Q2). `npm run check` 2 of 2 exit 0, 481 tests, 0 act warnings.
-- 3 Oct 2026 · KYC-05 · Round 6, status verifying: kept BVN details now end on every session end (keptCheck subscribes with onSessionEnd, FIX-04), including a sign-in replacing a session and a refresh to another account; A26 starts over on a session end, so A to B to A no longer sticks on loading; tested with the app's createQueryClient (verifier's P1 to P5 pass), mutants K1 to K4 killed; duplicate SHARED-CHANGES KYC-05 #4 row removed.
-- 3 Oct 2026 · KYC-05 · Verified round 5 on the merge with main e7dc879 (FIX-04): 1 defect, status building (supersedes the `review` line below, written before main moved). Merge 797a95a (PROGRESS.md regenerated; SHARED-CHANGES now holds two KYC-05 #4 rows). `npm run check` 3 of 3 exit 0, 476 tests, 0 act warnings; A26's sign-out and refused-refresh tests pass. Defect 2 (privacy): keptCheck does not subscribe to `onSessionEnd`, so after a refresh answering another account, or a sign-in replacing a session, A's kept name, date of birth and gender stay in memory (owner-tagged, never read by B) until B's account read reaches A26 or A26 closes (jest probe P1, P3 with the app's own query client). Not reachable from the UI today. Fix: `onSessionEnd(forgetKeptCheck)` in keptCheck.ts.
-- 3 Oct 2026 · KYC-05 · Verified round 5: no open defect, status review (mobile ef47494, main 6bc420e already in). Defect 1 closed: R4-4 re-applied fails 3 of 45 of the builder's tests. 400 tokens minted with wawu-id's own signing library and claim set (102 with `-` or `_`) give their `sub`, and ~6,100 malformed or fuzzed tokens give null without throwing, under jest's atob and a line-for-line port of Hermes's atob (V1 and legacy tags read). The builder's 3 surviving mutants are equivalent on Hermes too; 4 own mutants killed. `npm run check` 3 of 3 exit 0, 448 tests, 0 act warnings. NOT RUN: a live id.wawuafrica.com token, check 1, V10.
-- 3 Oct 2026 · KYC-05 · Round 5, status verifying: A26's token reading is tested with real-shaped tokens (a payload with - and _ and no padding, the same padded, a non-ASCII sub read as UTF-8, twelve malformed tokens) and tightened (three parts, base64url, UTF-8, an object with a string sub); R4-4 killed; the verifier's probe passes; sign-out tests settle inside act.
-- 3 Oct 2026 · KYC-05 · Verified round 4: 1 defect, status building (mobile 4021cd5, main 6bc420e already in; Hub fe1ec6c). Round 3's privacy defect closed: `cross_fast`, `cross_account`, `cross_wallet` show A's phone or wallet to B on 801aeaa and only the loading view, then B's own data, on 4021cd5 (both themes); the guard held against an unreadable token `sub`, tokens rotated mid-visit, B signing in while A's reads were in flight, an account read answering for another account, the same phone, and rapid A to B to A. Privacy scan of 94 typed numbers: 0 hits outside request bodies. New defect 1 (tests): mutant R4-4 (token payload decoded without the base64url alphabet) survives all 39 open-wallet tests, though a real-shaped token whose payload holds `-` or `_` then leaves A26 loading for good (jest probe). 4 of 8 own mutants killed, 3 equivalent.
-- 3 Oct 2026 · KYC-05 · Round 4, status verifying: A26 never paints another account's reads (its reads keyed by visit and account, shown only for the token's account, dropped on close and session end); one-cache jest across a sign-out and a sign-in as someone else; 10 of 10 mutants; the verifier's cross cases reproduced on 801aeaa and clean on this build. V9 on backend main fe1ec6c. App-wide cache clear: FIX-04.
-- 3 Oct 2026 · KYC-05 · Verified round 3: 1 defect, status building (mobile 84c0dad, main 6bc420e already in; Hub fe1ec6c). Round 2's defect closed: `race_back` and `race_signout` show "BVN confirmed" on de27d15 and the form on 84c0dad (both themes); two checks in flight, A's check landing after B signs in, and a token renewed mid-check (pass still kept) all behave. New defect 1 (privacy, predates round 3): after an account change A26 first paints the previous account's cached phone and wallet state (one QueryClient, never cleared; `cross_fast`, `cross_account`, `cross_wallet`). Privacy scan of 90 typed numbers: 0 hits outside request bodies. 7 of 9 own mutants killed, 2 equivalent.
+- 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
+- 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
+- 4 Oct 2026 · SETTINGS-02 · Built, awaiting verification: About, Terms and Privacy policy (Z9 to Z11) on new public Hub routes `GET /about` and `GET /policies/:slug`; the owner's text and bank lines come from the Hub, with a "Not available yet" state until filled in.
+- 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
+- 4 Oct 2026 · OPS-07 · Verified round 2 (independent, docs only): round 1 defects D1 to D5 and U1 closed; 12 states checked against src and task status; WEB-01 and M20 correct; 64 rows re-searched against the canvas, no miss; `npm run check` exit 0; 2 minor defects open (row 58 is not drawn as a control, M20 says the app sells ticks while ME-12 and ME-18 are todo); status building.
+- 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
+- 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
+- 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
+- 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
+- 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
+- 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
+- 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.
+- 4 Oct 2026 · KYC-04 · Builder round 2 on `wmt/KYC-04`: A10 never ends as set on a PIN the server held before (a lost answer with a failed check stays on A10 with Try again; `409 pin_already_set` says the earlier PIN stands, G-116), and A9 and A10 drop everything and leave the flow on any session change; 7 new tests fail on round 1's code, 10 of 10 mutants killed; status verifying.
+- 4 Oct 2026 · KYC-04 · Open your wallet step 3 built on `wmt/KYC-04`, mobile only: A7 hands the open account to A8 (bank name, account name and number with Copy from `GET /money/wallet`, Limit row only when the server sends one), A9 and A10 set the transaction PIN (`POST /money/pin`, a mismatch in W11's wrong-PIN look, wording in the brief), then back where the flow started; G-114, G-115, SHARED-CHANGES KYC-04 #1, #2, R1; status verifying.
