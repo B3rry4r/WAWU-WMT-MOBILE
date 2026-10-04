@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 54 of 181.**
+**Launch tasks done: 55 of 181.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 40 | 30 | 31 |
+| todo | 49 | 39 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 32 | 18 | 4 | 1 |
+| done | 32 | 19 | 4 | 1 |
 
 ## Done
 
@@ -55,6 +55,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
+- [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
 - [KYC-02](../tasks/KYC-02.md) Selfie match to the BVN photo (You)
 - [HOME-04](../tasks/HOME-04.md) Feed: following, likes, views, shares (Developer)
 - [MONEY-12](../tasks/MONEY-12.md) Open a Fintava account when someone opens a wallet (You)
@@ -74,7 +75,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie
-- **Developer:** [ME-06](../tasks/ME-06.md) Edit profile and social links, [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details, [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts
+- **Developer:** [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details, [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts, [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people
 - **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
@@ -82,6 +83,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · lead · Mobile jest `testTimeout` raised to 20 s in package.json: under machine load (load average 7 to 11 with five agents running) first tests that load a screen's modules timed out at the 5 s default in A26 and M9, though every one passes alone. No test or product code changed.
+- 4 Oct 2026 · ME-06 · Merged to main by the lead (Developer 1's task): edit profile and social links. OTA update follows.
+- 4 Oct 2026 · ME-06 · Edit profile (M8) and Social links (M9) built on `wmt/ME-06`, mobile only: name, handle, bio, location, avatar, cover, social links with drag to reorder, saved to `/users/me` and `/users/me/profile-fields`; status verifying; five SHARED-CHANGES rows and G-110 to G-113 filed.
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
 - 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.
 - 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (4b50e4c, Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.
@@ -94,6 +98,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · AUTH-04 · Built A2 Continue, A3 sign-up, A4 and A15 phone code, and the email step (status verifying): the app texts the code through wawu-id, keeps the sign-up secret in the secure store, resumes after quitting, counts down the server's own resend and lockout seconds, and opens the email step before Home. 457 tests, gates 0 findings; live walk on a local wawu-id and Hub 32 of 32 (earning and discovering user).
 - 3 Oct 2026 · SETTINGS-03 · Built (wawu-id): `POST /auth/change-password` (current password checked, rate limited, every other refresh token ended, this device gets a new pair) and `POST /auth/logout` (revokes the presented refresh token, G-6); gaps G-90 to G-92; verifier next.
 - 3 Oct 2026 · ME-09 · Built (backend): a creator's library with sales count and the reviewer's reason per piece, tab counts, edit while pending or rejected, and Send again (`/content/mine/library*`, `PATCH /content/{id}`, `POST /content/{id}/resubmit`; additive, protected suite 244 of 244). Gaps G-82 to G-84; shared changes ME-09 #1 and #2. Status verifying.
-- 3 Oct 2026 · HOME-04 · Built (backend): the Following tab, likes (twice counts once), one view per person per day, one share per person per day, and per-viewer liked, saved and follows flags on a new `GET /feed` (new `ContentLike`, `ContentView`, `ContentShare` tables; `GET /content` keeps its shape). Status verifying.
-- 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
-- 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
