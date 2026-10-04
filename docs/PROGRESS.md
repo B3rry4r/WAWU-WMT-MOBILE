@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 40 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 18 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
 
@@ -86,6 +86,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · KYC-03 · Verified round 2 (mobile 62478c6, backend 51c1e10), status building: 1 defect. A handle the server refuses (409 bvn_not_checked, e.g. after its 30 minutes) drops the person on an empty A26 with no word of why. The handle held: 38 forged, tampered, expired, replayed and cross-user handles refused alike, none reaching Fintava, 0 numbers or handles in DB or logs. Backend full suite 3,403 passed 0 failed (the :4001 suites too), protected 253/253, lock unchanged, gates as main, contract reproduced; mobile check exit 0; 14 mutants (1 test gap). Evidence and 6 unclear items in the task file.
 - 4 Oct 2026 · KYC-03 · Round 2, status verifying: G-72 closed with a sealed check handle (backend `wmt/KYC-03` 51c1e10, main 9a370c0 merged in). The passed BVN check answers `checkHandle` (AES-256-GCM, key from IDENTITY_HASH_KEY by HKDF, 30 minutes, nothing stored); the selfie match and the opening take it in place of the BVN and NIN. The app keeps it in memory with the check and sends it; A6, A7 and A16 now reach the real Hub (Fintava stand-in only for Fintava). Backend: 18 handle tests, 10 mutants killed, protected 253/253, gates as main; 6 backend suites bound to :4001 not run here.
 - 3 Oct 2026 · KYC-03 · Built (mobile): Open your wallet steps 2 and 3. A26's pass goes to A5 (the BVN's name, date of birth and gender, then home address, occupation and consent; the occupation is saved, the address kept in memory), then A6 (selfie) with A7 (matched, the account opening) and A16 (no match). The BVN and NIN are never re-asked or kept: today's Hub refuses the match and the opening without them (G-72), so no account opens from the app until the backend takes them from the passed check. Gaps G-72, G-73; SHARED-CHANGES KYC-03 #1 (camera), R1. Status verifying.
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
@@ -100,4 +101,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · AUTH-04 · Built A2 Continue, A3 sign-up, A4 and A15 phone code, and the email step (status verifying): the app texts the code through wawu-id, keeps the sign-up secret in the secure store, resumes after quitting, counts down the server's own resend and lockout seconds, and opens the email step before Home. 457 tests, gates 0 findings; live walk on a local wawu-id and Hub 32 of 32 (earning and discovering user).
 - 3 Oct 2026 · SETTINGS-03 · Built (wawu-id): `POST /auth/change-password` (current password checked, rate limited, every other refresh token ended, this device gets a new pair) and `POST /auth/logout` (revokes the presented refresh token, G-6); gaps G-90 to G-92; verifier next.
 - 3 Oct 2026 · ME-09 · Built (backend): a creator's library with sales count and the reviewer's reason per piece, tab counts, edit while pending or rejected, and Send again (`/content/mine/library*`, `PATCH /content/{id}`, `POST /content/{id}/resubmit`; additive, protected suite 244 of 244). Gaps G-82 to G-84; shared changes ME-09 #1 and #2. Status verifying.
-- 3 Oct 2026 · HOME-04 · Built (backend): the Following tab, likes (twice counts once), one view per person per day, one share per person per day, and per-viewer liked, saved and follows flags on a new `GET /feed` (new `ContentLike`, `ContentView`, `ContentShare` tables; `GET /content` keeps its shape). Status verifying.

@@ -7,7 +7,7 @@ order: 86
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [KYC-05, MONEY-03, MONEY-12, MONEY-13, KYC-01, KYC-02, UI-02]
 decisions: [R-6]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -130,6 +130,130 @@ Builder, 4 Oct 2026. Lead ruling (Default (lead), owner may override): close G-7
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+Verifier, 4 Oct 2026. Independent session; I wrote none of this code. Mobile `wmt/KYC-03` at 62478c6 (main 9a0c1be in, still current), backend `wmt/KYC-03` at 51c1e10 (main 9a370c0 in, still current), each in a fresh detached worktree (`/home/user/wt/vk03m`, `/home/user/wt/vk03b`). Evidence `$V` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk03/`. Every `vk03_*` database (all named `*_test`) was dropped at the end, and every process I started was stopped.
+
+**Verdict: one defect is open (defect 1, below). Status `building`.** The sealed handle held against every attack I made on it, and nothing leaked. The defect is in the app: when the server refuses a handle, the app drops the person back on A26 without saying why.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **passed**. Mobile `npm run check` exit 0 on the final tree (counts in "Regression" below). Backend `tsc --noEmit` exit 0. ESLint on the 9 changed `.ts` files: 0 problems. Backend gates: 9 run, 675 files scanned, 16 fail, 21 warn, 76 accepted, the same findings as main 9a370c0 (673 files; the only difference is 3 warns in `identity-config.ts` moved down 3 lines); baseline exit 0. Secret scan: every 8-character window of the Fintava key, 0 hits in both diffs (backend 56 KB, mobile 197 KB); 0 private-key or live-key patterns | `$V/m-check-final.log`, `b-tsc.log`, `b-eslint-changed.log` (empty), `b-gates.txt`, `b-gates-main.txt`, `b-baseline.txt` |
+| V4 Field trace | **passed**. Name, date of birth and gender: Fintava's BVN record, then the check's prefill, then A5's card (memory only), then the opening body. Occupation: A5, then `PUT /money/identity/occupation`, then `WalletIdentity.occupation` (21 rows "Photographer"), then read back on A5 after A6's X. Address: A5, then memory, then the opening's `address`, then Fintava's create body (key seen in the stand-in log). Handle: the check's answer, then memory, then the selfie and opening bodies, then unsealed into Fintava's `bvn` and `nin` | `results.jsonl` (`back-forth`), `calls.jsonl`, `fintava.log` (key names, BVN last 4 only) |
+| V5 Picture | **passed, with cosmetic differences** (see unclear 3). A5 light and dark: the BVN card matches the canvas row for row, including the hairline under Gender. Below it are Home address, City or town and State in A20's style, then Occupation and consent (BRIEF A5 applied). A6: "Fit your face in the oval" and "It must match your BVN photo.", with no blink and no liveness wording on A6, A7 or A16 (BRIEF A6 applied; a grep of `src/features/open-wallet` finds none). A7: green ring, "Matched to your BVN", "Opening your account". A16: red ring, the server's two sentences, Try again. The oval holds no drawn avatar, because on web that is where the camera goes. The button row (Take selfie, A7's spinner) is the builder's recorded default. The oval sits about 24 px higher than the canvas because the web build draws no status bar | `side-A5-{light,dark}.png`, `side-A6-*`, `side-A7-*`, `side-A16-*`, `crop-A5-card-light.png`, `design/` |
+| V6 States | **failed** (defect 1). Each state below was entered by its real cause, light and dark. Passed: A5 loading (Hub held 6 s); A6 loading; Hub unreachable during the match ("No connection"); Fintava down ("We couldn't check your selfie", 503); A16; A16 with no tries left (Done, no Try again); the person's 4th match ("You've used today's selfie checks", "Try again in about 24 hours."); the address throttle ("Too many tries", "Try again in a minute."); the opening refused by Fintava (`422`, "We couldn't open your account"); A7 waiting, then open; a reload on A6 goes back to A26. Failed: a handle the server refuses has no visible state | `shots/`, `sheet-states-dark.png`, `results.jsonl` |
+| V7 Flow walk | **passed** for a new account without a wallet, cold start: sign-in, A26, A5, A6, A7, open. Resume from a reload on A6 goes to A26. Leaving dismisses every flow screen: after Done at the open end, Done on A16 with no tries left, and Back from A26's "BVN confirmed", the DOM holds 0 `open-wallet*` test ids and no typed address, at `/` | `results.jsonl` (`after_done_flow_ids`, `after_leave_flow_ids`) |
+| V9 Live seam | **passed**. Hub `dist` built from 51c1e10 on :4943, fresh `vk03_v9_test`. Mock WAWU ID on :4944: people registered there and signed in through the app's own sign-in screen, with no injected token. My own Fintava stand-in (`fintava-standin.js`, made-up numbers, Fintava's documented shapes) was started with `env -i`. Web export on :8143 (pass-through `web-server.js`, key names only). 21 browser runs (the first `leave-a16` dark hit my own harness's address throttle and was rerun): the full flow ends `open`, and `GET /money/wallet` then reads `open` with an account. Every match body was `{checkHandle, image}` (39) and every opening `{address, checkHandle, dateOfBirth, firstName, lastName}` (8). 0 requests to `wawuafrica.com` or `fintavapay.com`, and 0 console errors. Rows: 39 verified checks, 12 matched, 17 not matched, 2 unavailable, 8 wallets open, 2 openings failed | `results.jsonl`, `calls.jsonl`, `drive.py`, `hub.log` |
+| V10 Device | **NOT RUN**. No Android phone in this session, and the phone build has no camera until SHARED-CHANGES KYC-03 #1 (`expo-camera`, `expo-image-manipulator`) is applied and a development build is made (OPS-10 for the droplet) | none |
+| Mutations | **passed**: 14 of my own, every file restored and sha1-checked. Backend 8: 7 killed (expiry, `outcome: 'verified'`, both forms, lifetime over 30 min, fixed nonce, `iat` in the future, extra field). **1 survived: BM3**, the handle path comparing only the sealed BVN and not the NIN (unclear 1). Mobile 6: 5 killed (forget leaving the handle readable, the address kept under a fresh ticket, the match without the handle, leaving dismissing only the top screen, A6 not comparing the owner). 1 equivalent: MM1, A7's late opening answer not checked against the ticket. Every way a ticket goes void also unmounts A6, so the late `setPhase` does nothing | `b-mutants.txt`, `b-mutate.py`, `m-mutants.txt`, `m-mutate.py` |
+
+### The sealed check handle, attacked (`attack.js`, `attack-31001.jsonl`: 71 cases, live Hub)
+
+- **Shape.** Unsealed with the derived key, a handle holds exactly `{bvn, checkId, exp, iat, nin, sub}`. `exp - iat` is 1800, `sub` is the caller, and `checkId` is that check's `verified` BvnCheckAttempt. The handle is `v1.` plus base64url of nonce, ciphertext and tag. Nothing outside the seal is derived from the numbers, and the BVN check's answer holds neither number in full (last 4 only). 11 handles had 11 distinct nonces, and two checks by the same person gave two different handles.
+- **38 refusals, each exactly `409 bvn_not_checked` "Check your BVN again to continue."**, none echoing a number or the handle, and none reaching Fintava (the stand-in counted 1 selfie call across all of them, which was the legitimate one):
+  - tampering: a changed byte in the nonce, the ciphertext or the tag;
+  - truncation: the last character dropped; cut to 40 characters; `v1.` alone; the empty string;
+  - format: `V1.` and `v2.` prefixes; `==` padding; the `+/` alphabet; a leading space; a trailing newline; 1,024 characters of junk;
+  - another person: B replaying A's handle at the match and at the opening;
+  - wrong key: sealed under another IDENTITY_HASH_KEY, under the raw key without HKDF, under another HKDF label, and without the AAD;
+  - forged with the real key (an insider's handle): expired 1 s ago; expiring exactly now; a 30 min 1 s life; `iat` 2 minutes ahead; `sub` swapped either way; A's numbers with B's `checkId`; an unknown `checkId`; an extra field; a missing `nin`; numbers typed as JSON numbers; a duplicated `sub` key, both orders; B's numbers sealed for A; the right BVN with a wrong NIN;
+  - a failed check's `checkId`;
+  - an old handle after a newer check (same BVN, new NIN) passed. The newer handle then served.
+- **A failed check answers no handle** (`422 bvn_not_confirmed`).
+- **400 with the one fixed sentence**, "Your BVN check could not be read. Check your BVN again to continue.", for a handle that is a number, an array, an object, `null`, or 1,025 characters.
+- **400 for both forms or neither:**
+  - selfie: handle and `bvn`; handle and `nin`; neither;
+  - opening: handle, `bvn` and `nin`; handle and `nin`; neither.
+  - None echoed a number.
+- **Body over 100 KB:** a 100,000-character handle is `500` "Something went wrong" (unclear 2). It reveals nothing.
+- **Encoding.** A non-canonical base64url spelling of a real handle (spare low bits set in the last character) decodes to the same bytes and is accepted. This is harmless: the bytes are authenticated, and no handle is stored, deduplicated or compared as text.
+- **Timing.** Median refusal times are 5.4 ms for a malformed handle, 6.0 ms for another person's, and 7.7 ms for a wrong check or numbers. So the stage that failed is visible. The numbers themselves are not: only the handle's owner can reach the stage that compares them, and the comparison is a keyed hash read from the row.
+- **Replay.** One handle serves a retried match and a retried opening within its life. After a match, a further match is `409 selfie_already_matched` and is not sent. A second opening returns the same wallet, with 1 Fintava create in total.
+- **Key separation is sound.** HKDF-Extract with an empty salt keys HMAC with zeros and takes IDENTITY_HASH_KEY as input, and Expand uses the label. The BVN and NIN hashes use IDENTITY_HASH_KEY directly as the HMAC key, so neither use can produce the other's outputs. A handle forged with the raw key or with another label is refused.
+- **IDENTITY_HASH_KEY rotated or missing** (`keyrot.js`, `keyrot.log`; the Hub was restarted each time):
+  - rotated: the same handle is `409` at the match and the opening. `deploy/README.md` says so: "Changing IDENTITY_HASH_KEY voids every handle out".
+  - unset: the check, the match and the opening are all `503 provider_unreachable` before any handle is read, and the Hub logs one "not set" warning.
+  - restored: the handle works again within its 30 minutes.
+- **Malformed JSON** carrying a handle, or a BVN on KYC-01's route, is `400` with the parser's position only. Nothing sent is echoed.
+- **Protected routes.** `.pipeline/protected-registry.json` has no `money/` route. `ci-check.sh 9a370c0 51c1e10 0`: "No change: the branch is checked against exactly the lock on the base", 253 of 253 tests, 244 required, exit 0.
+- **The old number bodies, judged: safe to keep for now.** `{bvn, image}` and `{bvn, nin, ...}` still give 200, and a wrong BVN gives `409` "Confirm your BVN first.". They add no exposure on the server: they need the caller's own passed check, compared as a keyed hash, and store nothing. The old exposure was the phone keeping the numbers after A26, and the app no longer sends them (0 of 47 match and opening bodies). Nothing schedules their removal (unclear 4).
+
+### Privacy (`privacy-scan.py`, `privacy-scan.txt`)
+
+- **Scanned:** 176 BVN and NIN values (every one typed in the browser runs, the attack run and the key test), raw and grouped 4-4-3, and the 12 handles the attack run captured.
+- **Hits: 0.** No number, handle, handle-shaped string (`v1.` plus 100 or more characters), base64 JPEG run or typed address appeared in a full dump of `vk03_v9_test` (245 KB), or in the Hub, mock, Fintava stand-in, pass-through, request or attack logs.
+- **The one address hit** is my own `results.jsonl`, where the driver recorded the street it read back from A5's field.
+- **Positive control:** the attack run's numbers file held 30 of them. It was deleted after the scan.
+- **Browser, after every one of the 21 runs:** localStorage held only `wawu.session.access` and `.refresh`. Session storage, IndexedDB and cookies were empty, there were no `data:` images, and no file input was left behind.
+- **Mobile code:** no `console`, SecureStore, AsyncStorage or web storage call anywhere under `src/features/open-wallet`.
+
+### KYC-05's switch scenarios through A5, A6 and A7
+
+Probe `zz-vk03-probe.test.tsx` ran in place in the mobile worktree, 9 of 9 passing, and was then removed (`probe.log`). Each case runs twice: once with A replaced by B through a refresh that answers B's token, and once through a sign-in as B (status `signedIn` throughout). The results:
+
+- **P1, A5 mid-flow:** B sees no part of A's name, typed street or handle. A5 restarts, and A has no check or handle kept.
+- **P2, A5's save answers late:** Continue is not called, and no address is kept for A or B.
+- **P3, A6's match answers late:** no opening is sent and no A7 is shown.
+- **P4, A7's opening answers late:** B never sees "Your wallet is open". No `/money/` request goes out under B's token. A's opening body was exactly `{firstName, lastName, dateOfBirth, address, checkHandle}`.
+- **P5:** nothing but the session keys reached secure storage.
+
+### Regression
+
+- **Backend full suite, as deploy runs it** (`fullsuite.sh`):
+  - setup: fresh `vk03_full_test`, `migrate deploy`, seed, then `jest --runInBand --forceExit --no-cache`;
+  - mock WAWU ID on :4001: started by me once `lsof` showed the port free (pid 7544, not mine, held it earlier and I waited), then stopped by me;
+  - result: **142 of 142 suites, 3,403 passed, 3 skipped, 0 failed.**
+  - The :4001-bound suites the builder could not run all pass: `kyc-submission` 22, `privacy-settings` 9, `credits-state` 4, `account` 5, `blocked-account` 9, `notification` 11, `saved-item` 7.
+  - Evidence: `b-full.log`, `b-full.json`. My first attempt died with ENOSPC (the machine's disk was full of other sessions' files) and is void.
+- **Handle spec:** 18 of 18 (`b-handle-spec.log`).
+- **Protected suite:** `run.sh --fresh HEAD` gave 253 of 253, all 244 required (`b-protected.log`).
+- **Contract:** `contract:build` reproduces the committed `contract/openapi.json` byte for byte, and the mobile `contract/openapi.json` equals it.
+- **Mobile `npm run check`:**
+  - First run, while my backend lint ran alongside on a 4-core machine at load 8: A26's first test (KYC-05's, in a file this task edits) timed out at 20 s, giving 607 of 608 (`m-check.log`).
+  - Same file alone: 106 of 106.
+  - Final run after this report: exit 0, 32 of 32 suites, 608 of 608 tests, gates 9 run on 149 files scanned with 0 fail, 0 warn, 0 accepted, 205 tasks (`m-check-final.log`).
+  - The builder saw the same timeout once (unclear 5).
+
+### Findings
+
+**Defect 1 (V6): when the server refuses the handle, the app sends the person back to A26 with nothing on screen to say why.** The trigger is any `409 bvn_not_checked`: the 30 minutes ran out, the key changed, or another check passed elsewhere. The refusal can come from the match (A6) or from the opening (A7, including Try again after "We couldn't open your account"). In each case `SelfieScreen` calls `onRestart`, which forgets the kept check and dismisses to A26. The person then sees an empty BVN and NIN form, and nothing says why. The server's sentence, "Check your BVN again to continue.", is dropped, and the home address typed on A5 is gone too. Starting again costs a charged BVN check and, if a selfie had matched, a charged selfie (3 of each a day).
+
+- **Reproduce:**
+  1. `RUN=2 python3 drive.py dark expired`: sign in, pass A26, fill A5, open A6.
+  2. Restart the Hub with another IDENTITY_HASH_KEY. Its answer is identical to an expired handle's: the attack run's "expired" and "another key" cases give the same `409` body.
+  3. Tap Take selfie.
+- **Result:** the URL is `/open-wallet`, the BVN and NIN fields are empty, the screen text is A26's own form text, and no message appears (`shots/a6-handle-refused-goes-to-dark.png`, `results.jsonl` scenario `expired`).
+- **Expected:** the person is told why they are back at A26. For example, A26 shows the server's sentence as its banner on arrival.
+
+**Unclear 1: test gap (BM3).** If the handle path compared only the sealed BVN, all 18 handle tests would still pass. The product is right: the live attack "old handle after a newer check (same BVN, new NIN)" is refused. But no test pins it, so a later edit could let an opening send Fintava a NIN the person's current check no longer holds. The builder can add one test for this case.
+
+**Unclear 2: a body over 100 KB answers `500`, not `413`.** This applies to every route, including KYC-01's `PUT /money/identity/occupation` with a 150,000-character body, so it predates this task (body-parser's "request entity too large" reaches `AllExceptionsFilter` as an unknown error). It leaks nothing, but the handle path's "never a 500" holds only up to the body limit. Owner of `src/common` to decide.
+
+**Unclear 3: cosmetic V5 differences.**
+- A16's line wraps onto two lines. The server's sentence ends with "cap." (the canvas has no full stop), and the words are inset by the gutter.
+- On the always-dark camera page, the X's round background shows near-black in dark mode and is invisible in light mode. The canvas draws the same faint circle in both.
+
+**Unclear 4: nothing removes the number bodies.** WORKFLOW section 6 needs a `removal` task once the logs show no calls for two weeks. No task or BACKEND_GAPS row names one for `SelfieMatchDto.bvn` and `OpenNairaWalletDto.bvn`/`nin`.
+
+**Unclear 5: A26's first test is timing-sensitive under load.** It timed out at 20 s once in my run and once in the builder's, and passes alone. WORKFLOW section 10 says a flaky suite is made deterministic.
+
+**Unclear 6: a refused opening (`422 account_not_opened`) offers only Done.** It shows the server's "We could not open your account with these details. Check them and try again." Done leaves the flow and forgets the address. Coming back (`reenter-after-422`) costs a second charged BVN check and a second charged selfie: the run saw 2 checks, 2 matches and 2 openings. The owner should say whether A7's refusal goes back to A5 to correct the address instead.
+
+**Bookkeeping:** SHARED-CHANGES `KYC-03 #2` says `open`, but its change (contract, generated types, `checkBvn`) is already on this branch. KYC-01 and KYC-02's rows say "Done in ...".
+
+**Capability checks:**
+- **Check 1** (A26's Continue lands on A5): passed (V9, every run).
+- **Check 2** (A5): passed (V9).
+- **Check 3** (A6, take the selfie): passed on the web build. NOT RUN on a phone (V10).
+- **Check 4** (A7 waits): passed (V9, Hub held 5 s, then open).
+- **Check 5** (A16 retry): passed (V9).
+- **Check 6** (V5): passed, with the cosmetic notes in unclear 3.
+- **Check 7** (values from the API or the user): passed. The server's sentences and `retryAfterSeconds` are shown as sent, and the state list is the Constitution's.
+- **Check 8** (V6): failed (defect 1).
+
+**NOT RUN:**
+- V10: no Android phone in this session, and the camera stays off until SHARED-CHANGES KYC-03 #1 is applied and a development build is made.
+- A real Fintava sandbox selfie and opening: no sandbox BVN passes (Fintava questions 6 and 11, G-25).
+- A handle's real 30 minutes in the browser: the equivalent refusal was driven by changing the key, and the backend expiry cases were run with forged `exp`.
 
 ## Owner sign-off
 
