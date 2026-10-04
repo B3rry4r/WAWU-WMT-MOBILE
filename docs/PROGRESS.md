@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 46 | 36 | 30 | 31 |
+| todo | 45 | 36 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 36 | 22 | 4 | 1 |
+
+## Being verified
+
+- [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 
 ## Done
 
@@ -90,6 +94,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
 - 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
 - 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
 - 4 Oct 2026 · SETTINGS-04 · Merged to main by the lead (9d0e1e4, Developer 1's task): data export, and blocking that hides people on every read; backend PR #62 (dfaa53b); its export-email gap renumbered G-95 to G-131.
@@ -104,4 +109,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · WALLET-18 fix round 3 (backend wmt/WALLET-18 f1a9d59, main 9a370c0 merged): numbers in names masked at the root (digits in any script, joined by any non-letter), at most 2 combining marks and each line clipped to its box, at most 2 receipts drawn at once (503 with Retry-After after 10 s), the reference drawn whole; status verifying.
 - 3 Oct 2026 · WALLET-18 · Verified round 2: 1 privacy defect still open (latent) and 1 new minor defect, status building (backend 2108141 with main 1e6b807; mobile 04d2626 with main c733413; neither main moved). D1 closed: at the ledger's longest values the first PDF takes 0.31 s and the image 0.15 s (13.9 s and 6.2 s before), /health at most 79 ms meanwhile, 10 PDFs at once in 1.04 s with /health at most 128 ms. D2 closed: every class XML forbids, through the ledger and called directly, gives 200 and no raw character. D3 still open: underscore, comma, en dash, middle dot, colon and zero-width separators, and full-width, Arabic-Indic and other non-ASCII digits, leave a phone or account whole on the public page. D4: stacked combining marks in a name are drawn over the header and date. Merge keeps both sides; full suite 139 suites 3,335 passed 0 failed; protected 253/253; gates 16 fail / 16 warn (only the two RECEIPT PROVISIONALs added); round 1's survivors killed, 2 of 4 new mutants survive (cap value, width table vs drawn width); 0 key windows, 0 Fintava calls.
 - 3 Oct 2026 · WALLET-18 fix round 2 (backend wmt/WALLET-18 2108141, main 1e6b807 merged): drawing a receipt is bounded and off the event loop (font width tables, 160-character cap, renderAsync, async PNG and PDF encoding), characters XML forbids no longer give a 500, and spaced or +234 phone numbers keep only their last 4 digits on the public page; status verifying.
-- 3 Oct 2026 · WALLET-18 · Verified: 2 defects and 1 latent privacy defect, status building (backend 2729634 on main fe1ec6c; mobile dbdfd91; mobile main moved to 42309b2). D1: drawing a receipt has no time bound and blocks the server (a 500-letter name: PDF 13.9 s, image 6.2 s, every other request waits as long; 200 letters 1.1 s). D2: a non-XML character in a printed name makes the image and PDF answer 500. D3 (latent until bills write rows): a phone written with spaces in a biller's name shows whole on the public page. Passed: no full account, phone, email, id, handle, note or title on any public page across 5 kinds plus the recipient's side; noindex and no-store; cross-owner 404 identical to missing; 1,200 misses byte-identical; throttles hold against forged X-Forwarded-For; one code under 20 parallel taps; full suite 136 suites 3,263 passed 0 failed; protected 253/253; gates 16 fail / 15 warn (only the two RECEIPT PROVISIONALs added); 7 of 9 own mutants killed; 0 key windows, 0 Fintava calls.
