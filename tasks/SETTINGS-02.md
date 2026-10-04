@@ -184,6 +184,27 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 **NOT RUN.** V10 on a device (real OS font scaling approximated with browser zoom 1.6x); signed-in walk through the real login; `npm run api` against merged main; live droplet; the web build's baked API address was the builder's :3802 and was redirected to my Hub :3822 in the browser (same requests, real responses).
 
+## Verifier report (round 3)
+
+**Verdict: FAIL** (fresh verifier session, 4 Oct 2026; nothing fixed, nothing committed; one defect, a merge artifact, not the builder's round-3 code). State under test: backend cce8aaa, mobile 23f2286 (clean trees). Own stack: Postgres `s02x_*` (dropped), Hub :3832, own mock WAWU ID :4832 (the :4001 one untouched), web :8832; evidence in `/home/user/lanes/s02x/` (`atk2.js`, `atk3.js`, `shots/`, logs).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Round-2 defect 1 (sections shape) | passed | Raw JSON PUT, document read back before and after each case, reseeded between: `[[]]`, `[[[]]]`, `[null]`, `[{}]`, `["x"]`, extra key, numbers, array and object as heading or body, duplicate keys, blank headings/bodies, `[]`, `""`, `null`, `true`, `5`, an object instead of a list, `{"0":{..}}`, `[{ok},[]]`, `[{ok},null]`, only heading, only body, null values, 101 sections, 500 levels of nesting, `sections` missing: all 400 in `{statusCode,message,data}`, document unchanged. An empty or all-blank document can never replace a live one. |
+| Round-2 defect 2 (surrogates) | passed | JSON-escaped `\ud800`, `\udc00`, `\udc00\ud800`, `a\ud83dz`, `x\ude00` in title, heading and body: 15/15 400, nothing stored. Lone surrogate in `effectiveDate` 400. Slug `%ED%A0%80` (raw bytes) 400. Emoji, ZWJ family, flag, Hebrew, Arabic, combining mark and RTL override read back byte-identical; escaped pair `\ud83d\ude00` reads back as U+1F600 (f09f9880). |
+| Lows | passed | Web build (scratch copy of the mobile tree with regenerated types), 360 wide, 1.6x zoom, light and dark: Banking name and licence line, Contact support title and a 56-char address, Terms, Privacy policy all wrap whole (Privacy policy is 2 lines, no ellipsis; no element with text-overflow ellipsis or line clamp; horizontal overflow 0). `shots/about-*.png`. Rate row absent on web by design. Spec titles: 31 of 32 read "a user/superadmin/reviewer can/cannot ..." (see finding 3). |
+| Revert proofs | passed | Copy aside, restored, trees clean. Backend: lone-surrogate check removed, 3 fail; plain-section check removed from DTO and service, 3 fail; DTO alone or service alone, 32/32 green (two layers, as stated). Mobile: `numberOfLines={1}` back on the row title, 1 fails ("wraps every row title whole"); restored 29/29. |
+| V1 backend | passed | `tsc --noEmit` 0; `src/about` 32/32; `run.sh --fresh` on a fresh DB "all 244 required tests passed"; `git diff origin/main -- src/common` empty; `contract:build` regenerated against main is additive (208 inserted, 0 removed) but see finding 1. |
+| V1 mobile | failed as committed, passed with the right contract | As committed: `npm run check` exit 2 at typecheck (`AboutView`, `PolicyView`, `/api/hub/policies/{slug}` missing from the generated types). With the backend contract regenerated into a scratch copy: exit 0, 39 suites / 695 tests, gates 9 / 183 files / 0 fail, 207 tasks (`mobile_check2.log`). |
+
+**Findings**
+1. defect: the merge commits dropped the SETTINGS-02 routes from the contract. `contract/openapi.json` at backend cce8aaa has no `/api/hub/about`, `/api/hub/policies/{slug}` or `AboutView`/`PolicyView` (0 matches); `contract:build` on that tree produces them (+208 lines, nothing removed) and leaves the file modified. Mobile `contract/openapi.json`, `contract/openapi.mobile.json` and `src/api/schema.generated.ts` at 23f2286 are therefore without them and `npm run check` exits 2 with 6 type errors in `src/features/about/`. Needed: commit the regenerated backend contract, then `npm run api` in mobile, and re-run `npm run check`. (I restored the committed backend file after generating; my copy is `/home/user/lanes/s02x/openapi.generated.json`.)
+2. low, default (agent), owner may override: extra `__proto__` and `constructor` keys inside a section return 200 and are silently dropped (the stored section is clean `{heading, body}`, no prototype pollution), where every other extra key is 400. Harmless; stated as a 400 in the check list.
+3. low: the spec "a document just under the limit is accepted" does not read "a ... can/cannot ...".
+4. note (pre-existing, KYC-02 #3): a body over the 100 kB parser limit (20000 sections) answers 500; client bytes that are invalid UTF-8 (CESU encoding of a surrogate) are decoded by the parser to U+FFFD and stored as such. Not this task's code.
+
+**NOT RUN.** V10 on a device (OS font scaling approximated with 1.6x browser zoom); signed-in walk through real login; `npm run api` against merged main (the verifier does not fix); live droplet; full `test:contract` (rounds 1 and 2 showed it environment-bound, identical on main).
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
