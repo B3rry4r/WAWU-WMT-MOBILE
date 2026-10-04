@@ -7,7 +7,7 @@ order: 81
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -84,6 +84,33 @@ Backend `wmt/HOME-05` (wawu-backend, worktree lanes/h05/wawu-backend), not commi
 6. `Default (agent), owner may override`: three new PROVISIONAL rows (FEED-CARD-EVERY, PDF-MAX-PAGES, PHOTO-SET-MAX-FRAMES) are warns with owner=YOU, as the builder said.
 
 **NOT RUN.** Deployed hub and real device; real WAWU ID login; real storage signing (finding 1); V5 to V8, V10 (not in `passes`).
+
+## Verifier report (round 2)
+
+**Verdict: PASS. Defect 1 is closed; no open defects. Status `review`.** Verifier: fresh session, 4 Oct 2026, focused re-verification. Backend at 8da711f (d354d77 round-2 fix merged with origin/main 9a370c0). Own worktrees `lanes/h05v2/{branch,base}` (base = 9a370c0, origin/main with HOME-04, per the lead's note), DBs `h05w_*`, mocks :4811 to :4814, hub :4821; :4001 untouched, only my own processes stopped. Nothing fixed; reverts by copy-aside and restore, tree clean after.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Defect 1 attack (black-box, running hub, real JWT through the guard) | passed: 0 failures | `lanes/h05v2/attack.py`, `attack2.py` |
+| V3 protected routes `run.sh --fresh 8da711f` | passed 244/244 required (253 total) | `lanes/h05v2/v3.log` |
+| Contract | passed: `contract:build` exit 0, committed file equals regenerated; vs 9a370c0: +2 paths, 0 removed, 0 operations changed, +8 schemas, `FeedItem` (HOME-04's, widened with `creator`, `media`); round 2 changed only `SetMediaDto` (`format: uri` dropped from `frames` items) | `cb.log` |
+| New spec | passed 25/25 | jest |
+| Revert proofs | see finding 2 | |
+| tsc | clean | |
+| Full `test:contract`, clean env, one run at a time | branch 325 failed / 3085 passed / 44 failing suites; base 329 / 3056 / 44 (3413 vs 3388 tests = the 25 new). By test name: 0 fail on branch that pass or are absent on base; 4 fail on base only (timing); failing suites identical | `full_br.json`, `full_ba.json` |
+| Mobile `npm run check` | exit 0 (205 tasks) | log |
+
+**Defect 1 attack (what was tried).** `PUT /content/:id/media` returned 400 with the stored frames unchanged for every one of: `notaurl`, empty, space, `ftp://`, `javascript:`, `data:`, another creator's key (bare, as a signed url, inside another host's query, `http://`), `../` traversal (bare, leading, absolute, own-prefix-to-other, in a url), `%2e%2e`, `%66ull`, `%2f`, double-encoded `%252e`, backslashes, `//` (bare and url), leading and trailing space, trailing newline, NUL and tab, unicode lookalikes (U+2215, Cyrillic c, fullwidth g), uppercase and mixed-case folder, never-uploaded key, abandoned StorageObject, owner segment = caller but row belongs to the other creator, owner segment = other but row is the caller's, wrong folder, extra segment, no or long extension, `?x=../`, `%` and `_` wildcards, non-string members (number, null, object, nested array), `frames` as a string, invalid UTF-8, a random uuid, and a mix of own and foreign (no partial write). Valid own keys, confirmed and pending, return 200; a signed url of an own key returns 200 and stores the bare key. A foreign host embedding an own key is accepted but stores only the own key (harmless, finding 3). A second creator PUTting onto the piece is 403. After all attacks every stored frame is the caller's own key.
+**Read path.** Bad rows inserted directly (another creator's key, `..` key, `notaurl`, a signed url of another's key, a traversal) on a free and a paid set: read as buyer (a real completed Purchase), non-buyer, owner and a third user, `GET /content/:id/media`, `GET /content/:id`, `/feed`, `/feed/entries` never return any of them; the buyer and owner see only the own frames; the non-buyer sees frame 1 (preview) and a url-null locked placeholder.
+
+**Findings.**
+1. No open defect. Defect 1 closed. Signing itself (real storage client) still NOT RUN: no storage configured locally, so the server returns the stored key unsigned; the guarantee shown is that no foreign key reaches `freshUrlFor`.
+2. `unclear`, doc accuracy, not a defect: the builder says "prefix check removed fails 2". Removing the whole key-grammar check at write time fails 0 (the StorageObject ownership lookup also refuses it); removing only the owner segment test (`parts[2] === wawuId`) fails 2, which is what the claim matches. StorageObject lookup removed fails 1 and read-path filter removed fails 2, as stated. The `..`/`//` guard alone fails 0, as the builder said. Layers overlap by design.
+3. `Default (agent), owner may override`: a url on any host that embeds the caller's own key is accepted and stored as the bare key (the key is what is validated and stored, so no foreign host is ever kept).
+4. `Default (agent), owner may override`: when a bad row is filtered on read, remaining frames keep their stored position numbers (1 and 6 in my probe), so positions can have gaps. Only reachable with bad data written outside the PUT.
+5. `Default (agent), owner may override`: round-1 findings 3 to 6 stand unchanged (duration `90:00`, empty card slot, existing migration drift, three PROVISIONAL warns). The `format: uri` removal in `SetMediaDto` is a loosening on a new schema, not on a live one.
+
+**NOT RUN.** Real storage signing; deployed hub and device; real WAWU ID login; V5 to V8, V10 (not in `passes`).
 
 ## Owner sign-off
 
