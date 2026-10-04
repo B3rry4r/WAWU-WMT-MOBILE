@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 36 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 37 | 22 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 
@@ -95,6 +95,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · WALLET-08 · Verified (independent, backend 6dab9c8): rulings 1 to 5, 7 and 8 hold under attack (no phone, account number, email, BVN or NIN in 38 scanned responses; a blocked hit is byte for byte and in timing an unknown number; phone exact in 7 spellings; 25 of 31 own mutants killed); tsc 0, protected 253/253 with the lock unchanged, gates 16 fail as on main plus the one PROVISIONAL, contract and mobile copy equal, `npm run check` exit 0; 2 defects open (D1 no per-caller limit, so ruling 6 is not met and one account can walk about 950 people a day per address and without limit across addresses; D2 contract omits 400 and 429) and 1 minor test defect (D3 caps not pinned); status building.
 - 4 Oct 2026 · WALLET-08 · Builder done, verifying (backend wmt/WALLET-08 6dab9c8): `GET /money/recipients` and `/recent` served behind the wallet gate: open wallets only, exact phone in four spellings, name and @handle by beginning (2 characters), blocked either way hidden, 5 fields only, search 20 a minute and 120 an hour per address; G-132, G-133.
 - 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
 - 4 Oct 2026 · OPS-07 · Verified round 2 (independent, docs only): round 1 defects D1 to D5 and U1 closed; 12 states checked against src and task status; WEB-01 and M20 correct; 64 rows re-searched against the canvas, no miss; `npm run check` exit 0; 2 minor defects open (row 58 is not drawn as a control, M20 says the app sells ticks while ME-12 and ME-18 are todo); status building.
@@ -109,4 +110,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · HOME-06 · Built on `wmt/HOME-06` (backend, owner DEV), verifying: `GET /content/:id/detail` (free preview, updated and purchased dates, buyer and student counts, rating state), `PUT /content/:id/rating` and `PUT /content/:id/preview`; the web's `POST /content/:id/rate` is unchanged (protected route); the new rating rules live only on `PUT /content/:id/rating`.
 - 4 Oct 2026 · WALLET-18 · Verified round 5: no defect open, status review (backend 5008664 with main c4d17bb; mobile be87619 with main 26cf830; both mains have since moved). D3 closed: all 73 round-4 rows show at most 4 digits (the 5 finding rows now show the real last four, `•••• 4567` and `•••• 4512`), plus 234 new attack rows (every noncharacter U+FDD0 to U+FDEF, U+FFFE, bidi controls, ZWJ, variation selectors, keycaps, NFKC forms) with no U+FDD0 in any page, image or PDF line. The table matches UCD 17.0 entry for entry, and the generator refuses any file but the pinned one and is byte-identical from the download. Fail closed holds on a real Hub with 12 characters taken out of its table, and in 612,000 differential fuzz strings; 17 of 19 own mutants killed (the 2 survivors: a circled-one value no test shows, and one equivalent). Note N1 for the lead: an unknown number character counts as one digit, so a future character that folds into 2 or more digits could let one extra digit show.
 - 4 Oct 2026 · WALLET-18 fix round 5 (backend wmt/WALLET-18 5008664, main c4d17bb merged): the digit table is built from Unicode 17.0.0 (pinned UnicodeData.txt and its SHA-256), adding Kaktovik 0 to 9 and the two Yangqin signs, with a test that fails when the table is older than the runtime; a number character the table does not know is hidden and counted (fail closed); status verifying.
-- 4 Oct 2026 · WALLET-18 · Verified round 4: 1 latent privacy defect still open, status building (backend 23c4ed3 with main e6bd701; mobile ebf1085 with main 2874688). D5 closed (the 200-character reference receipt and its link fit one A4 page at scale 1.005, 36 pt left under it). R3, R4 and 4 new mutants killed (6 of 6). Memory plateaus across 20 bursts of 30 PDFs on the whole Hub (peaks 415 to 444 MB, back to 322 MB at rest). D3: all 52 earlier rows and 17 of 21 new ones masked (Roman, Hangzhou, post-14 decimal digits, mixed No and Nd, x runs); left are 12 digit characters added after Unicode 14 (Kaktovik 0 to 9, two Yangqin signs) that the UCD 14 table misses. Full suite 144 suites 3,469 passed 0 failed (run in its own network namespace because another session's orphaned stand-in held :4001); protected 253/253; gates 16 fail / 27 warn (only the three RECEIPT PROVISIONALs added); 0 key windows, 0 Fintava calls.

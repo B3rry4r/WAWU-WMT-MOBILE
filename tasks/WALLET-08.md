@@ -7,7 +7,7 @@ order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -72,7 +72,92 @@ Builder, 4 Oct 2026. Backend `wmt/WALLET-08` **6dab9c8** (main 38bbe4c is alread
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier, 4 Oct 2026, independent (wrote none of this). Backend `wmt/WALLET-08` 6dab9c8 (main 38bbe4c in it, checked: `git diff 38bbe4c 6dab9c8` is the 19 files the builder lists), mobile dd5fed4. Fresh detached worktrees; own databases `vw08_*_test`; the built Hub on :4989 with a stand-in WAWU ID on :4990 (same signing key as the contract specs), Fintava base pointed at a dead local port (no Fintava call, live host never touched); full suite and protected suite each in their own network namespace (mock on :4001 inside it only). All evidence is under `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw08/` (phones masked to the last 4 digits in everything written there).
+
+**Verdict: 2 defects open (D1 ruling 6, D2 contract) and 1 minor test defect (D3). Status `building`.** V9 is NOT RUN against a real login (item 1 of NOT RUN). Every other ruling holds under attack: no phone, account number, email, BVN or NIN reached any of 38 scanned responses (bodies and headers), a blocked person answers byte for byte like an unknown one in both directions, and a phone is found only in full.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | Backend `tsc --noEmit` 0 (`tsc.log`); eslint `--no-fix` 0 on the 16 changed `.ts` files (`eslint.log`). Gates: main 38bbe4c 722 files **16 fail / 33 warn / 76 accepted**, branch 729 files **16 fail / 34 warn / 76 accepted**; the 16 FAIL lines are identical (`gates-main.fails`, `gates-branch.fails`, `diff` empty); the one new warn is `PROVISIONAL(RECIPIENT-SEARCH-RATE)` (`gates-*.findings`); `check_baseline.py` ok. Tripwire: 0 of 1,913 added lines match `test/protected-routes\|src/protected-routes\|compareShape\|protected-registry`. Mobile `npm run check` exit 0 (`mobile-check-before.log`: gates 171 files 0 fail 0 warn, 207 tasks). Secret scan: Fintava key (65 characters, 58 eight-character windows) against both branch diffs: **0 hits** (backend 100,150 bytes, mobile 44,962 bytes). No em-dash in added user-readable text (2 hits are tests asserting absence); no TODO or "for now" in added code. |
+| V2 Contract | passed, with D2 | **Recipient specs** `src/money/recipients`: 2 suites, 39 + 5 = **44 tests** pass (`spec-recipients.json`; the builder's "44 tests and 5 tests" is 44 in all, not 49). **Money, wallet-gate, MONEY-04, rate-limit specs** (`src/money` and `hub-rate-limits`, host network): 37 suites, **955/955** (`spec-money.json`; `hub-rate-limits` 22/22, `wallet-gate.contract` 16, `wallet-gate-coverage` 7, `money-contract` 11). **Full suite** on a fresh migrated and seeded DB, own namespace, CI environment: 153 suites, 3,548 passed, 126 failed, 3 skipped (`ns/full.txt`); the 126 are two environment failures that are not this branch: `hub-rate-limits` (22, the spec needs a non-loopback IPv4 interface, the namespace has none; 22/22 on the host) and `fintava-stall` (104 timing assertions at host load average 15 to 25; 120/120 on a rerun at load 15, `fintava-stall-rerun.log`; `src/fintava` is untouched by the diff). So 3,674 passed, 3 skipped, 0 failed, and 3,674 minus the 22 is the builder's 3,652. None of the 3 skips is in a file the diff touches. `contract:build` leaves `contract/openapi.json` byte for byte (sha256 `0792156a...`), equal to the mobile copy (`contract-build.log`). The contract omits the 400 and 429 answers (D2). |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh HEAD` in its own namespace: **253/253, all 244 required**, exit 0, lock ref origin/main 38bbe4c (`ns/prot.txt`). `git diff 38bbe4c 6dab9c8 -- src/protected-routes test/protected-routes .pipeline/protected-registry.json` is empty. |
+| V4 Field trace | passed | Phone: written by KYC-02 and MONEY-12 (`WalletIdentity.verifiedPhone`, `FintavaWalletOpening.phone`, both E.164, checked at `wallet-identity.service.ts:270` and `wallet-opening.service.ts:335`), read only by the phone query, never selected. Name: WAWU ID first and last name, else `FintavaWallet.accountName` (Fintava's name at opening), else the profile handle; a name search reads the wallet name and the handle only (G-132). Handle, avatar, ticks: `UserProfile`, one query. Blocks: `BlockedAccount` (SETTINGS-04) read through `hiddenFrom`, both directions, on all three queries (mutants M02 to M04). Sends: `FintavaLedgerEntry` rows (MONEY-10), read by recent only. Both sides of a crossing checked: caller and blocked person, `t6-block-recent.json`. |
+| V9 Live seam | NOT RUN (real login); partly run against the stand-in | The pass asks for a real sign-in and a value only the server has. I ran the built Hub (`node dist/src/main.js`, :4989) with RS256 tokens minted with the stand-in WAWU ID's own key (the way the contract specs do, not a login), people registered in the stand-in so its name lookup answered, and read a search result that carried the stand-in's first and last name with the wallet row's handle, avatar and tick (`t1-phone-forms.json`, `t3-injection.json`). Unblocked by: see NOT RUN, first item. |
+
+### Capability checks, as written
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Searching a phone written 080... finds the same person as +234... | passed | 8 people times 7 spellings (`+234`, `234`, `0`, bare 10 digits, spaces, dashes, brackets): the 3 open-wallet people (A, G, H) were found in all 7 spellings, each time the same one person; the blocked, blocking, wallet-less, opening and caller (5 people) in none (`t1-phone-forms.json`). A number with NBSP separators: found. |
+| People the user blocked never appear | passed | name, handle and phone search, and recent, both directions; a block added or removed between two requests takes effect on the next one (`t6-block-recent.json`). |
+
+### The lead's rulings, one by one (live, on the built Hub)
+
+| # | Ruling | Result | What I did |
+|---|--------|--------|-----------|
+| 1 | Open wallet only, never the caller | holds | wallet-less person with a proved phone (identity row only), a person whose opening is `opening`, the caller by phone (7 spellings), name and handle: always `[]`. |
+| 2 | Phone exact after +234; name and handle prefix, 2 characters | holds | prefix of 8 digits, last 8, `%`, `__`, trailing letter, `+2340...`, two numbers, zero-width digit: all `[]`. Fullwidth, Arabic-Indic, Devanagari digits and a superscript 2: not a phone, read as text, `[]` (no NFKC; mutant M19 shows nothing pins that, D3). `%%`, `__`, `\\`, `%a`, `a_`, quote injection, a Cyrillic look-alike of "adaeze": `[]`. `q` of 1 character, spaces, `@`, `@a`, empty, 1 digit, 1 emoji, NUL pair: 400. `q=ab%00`: reads as `ab`. 61 and 5,000 characters: 400. Repeated `q`, `q[]`, `q[a]`, another field, missing `q`: 400 in the one shape, no `reason`. (`t3-injection.json`) |
+| 3 | Five fields only | holds | result keys over all responses: `wawuUserId,displayName,handle,avatarUrl,tick`. Leak scan: for 9 people, their phone in 8 spellings (E.164, 234, 0, bare, last 8, spaced, last 4), account number, email and its local part, `4321` and `8765`, and the words bvn, nin, accountNumber, verifiedPhone, email, phone, customerId, walletId, balance, across **38 responses, bodies and every header: 0 hits** (`t6-leak-scan.json`; a first pass flagged "nin" inside the header name `x-ratelimit-remaining`, a false hit, fixed by whole-word matching). |
+| 4 | Blocked either way never appears | holds | the blocker, the blocked, and a third party; recent for the blocked person: `[]` (`t6-block-recent.json`). |
+| 5 | Capped results; plain arrays | holds, with D3 | CONVENTIONS section 6 says in as many words "Short lists (banks, recipients, beneficiaries) are plain arrays with a stated maximum and no paging": consistent. Live: a capped response is exactly 20, never more (467 capped responses in the walk). D3: the caps 20 and 10 are not pinned by a literal anywhere. |
+| 6 | Throttled per caller, exact limits in the rate-limit spec | **not met, D1** | the exact limits are in `hub-rate-limits.contract.spec.ts` (20 a minute and 120 an hour, `short` and `medium` named throttlers); live the 21st from one address is 429. But the limit is per address only. |
+| 7 | Behind the wallet gate | holds | no token 401; a person with no wallet and one still opening: 409 `wallet_not_open` / `wallet_opening` with q of `a`, `ad` and a phone (the text is never read), both routes (`t8` output); `wallet-gate-coverage` lists both routes. |
+| 8 | Recent | holds | newest first, one person once, caps, blocked, wallet-less, pending removed (`t6`); mutants M10 to M12, M15, M21 to M24 (M24 survives, D3). |
+
+### Defects
+
+- **D1 (defect, ruling 6): the search has no per-caller limit, and the per-address limit is no bound.** The ruling says per caller; the builder's reason (G-133: the global guard runs before the token is read) is true of the guard but not of the repo: `StatementRateLimiter` counts per `wawuUserId` in the handler after the gate (5 a minute, 30 an hour), and the BVN check and the selfie match count per person per 24 hours. A per-caller counter in `MoneyRecipientController.search` is the same pattern. Reproduction (`h/t7.mjs`, `t5-throttle.json`): one address, 60 requests in parallel: 20 answer 200, 40 answer 429; the same account from 30 different addresses (one /64): 30 of 30 answer 200; two accounts from one address share one bucket (a 401 and a 400 also spend it). `deploy/install-services.sh` has nginx listening on `[::]:80`, so a caller with one IPv6 /64 has 2^64 addresses; the Hub tracks `req.ip` as written, with no masking. So one account (it needs an open wallet, nothing more) is unlimited. **Fix:** a per-caller counter in the handler (after the gate, before the query), the limits set by the owner (no ruling names a figure, so it stays `PROVISIONAL`), and keep the per-address limit; then `RECIPIENT-SEARCH-RATE` names both. If the lead accepts per address, that is a decision to record in DECISIONS.md and G-133 closed as accepted; this report does not do that.
+- **D2 (defect, minor): the contract does not declare the 400 and 429 of `GET /money/recipients`.** Its responses are `200, 409, 423`; `GET /money/statements` declares `400, 409, 423, 429, 503` and `POST /money/identity/bvn` declares `429`. The app's generated types therefore cannot model "type at least 2 letters" or "slow down", which the route answers (`contract/openapi.json`). The response array also carries no `maxItems` (20 and 10 live only in prose). **Fix:** declare 400 and 429 on the search, rebuild the contract, sync the mobile copy.
+- **D3 (defect, minor, tests): the caps are not pinned, and the digit spelling is not pinned.** `money-recipient.contract.spec.ts` builds its cap expectations from the constants (`RECIPIENT_SEARCH_MAX`, `RECENT_RECIPIENTS_MAX`, lines 936 to 947 and 1027 to 1039), so raising 20 to 21 or 10 to 11 passes every test (mutants M14 and M24 survive). The cap is the privacy bound on one answer; the `hub-rate-limits` spec pins its own constants as literals, this one should too. No test pins fullwidth or Arabic-Indic digits as text (M19 survives): the behaviour is correct today (`t3`), a later NFKC would pass unseen.
+
+### Findings (numbers; design-level, none breaks a ruling except D1)
+
+1. **Can name search at 2 characters walk the user base? Yes, at about 3 requests a person.** A prefix walk (every 2-character `[a-z0-9]` pair, then each response that came back full, 20, extended by one character) over 6,000 synthetic wallet holders (60 first names, 60 surnames, handles `name+digits`) enumerated **6,000 of 6,000 in 18,108 requests** (467 capped answers, 3.02 requests per person including the 1,296 starting pairs; `t4-walk.json`). Limits allow: per address 120 an hour is the binding one (20 a minute would be 1,200), **2,880 requests a day, about 950 people a day** by the naive walk, and at most 57,600 rows a day (20 distinct per request) at the ceiling. Per account: no limit of its own, so addresses multiply it linearly and a /64 removes it (D1). At 3 requests a person, 1,000,000 wallet holders is about 3.0 million requests: 25,200 address-hours, or one day with 1,050 addresses. What a walker gets is id, display name, handle, avatar url and tick for every open-wallet person who has not blocked or been blocked by the caller, no phone. The rulings allow a 2-character prefix; this is the cost of that, and a per-caller limit (D1) is what bounds it.
+2. **Phone: no harvest, but reverse lookup and a yes-or-no on a number, by design.** A phone returns the person or nothing; nothing reveals a number. A hit costs about 5 ms more than anything else (p50 12.8 ms against 7.8 ms, Mann-Whitney z = 7.8 over 150 each, `t2-timing.json`; the extra is the WAWU ID name lookup, and against the real WAWU ID it will be larger), but a hit is also plain in the body (171 to 203 bytes against 43). A **blocked hit, a person with no wallet, an opening in progress, the caller and an unknown number are indistinguishable**: all 43 bytes, same body, same status, and timing z between -0.9 and 0.9 against an unknown number.
+3. **Name search reads the BVN name; the answer may not show it.** `FintavaWallet.accountName` is Fintava's account name at opening. A search for a word of that name finds the person and shows only their WAWU ID name and handle: searching `zedlegal` returned the person shown as "Zed Unnamedwid" with no handle (`t10-legal-name.txt`). So anyone with a wallet can test "is there a holder whose bank name begins with X" and tie a legal name to a public profile, which matters for a creator who uses a stage name on WAWU ID. Separately, when WAWU ID gives no name (an outage, or an id it does not know) the result shows the wallet name before the handle: `ADAEZE ABDULLAHI` with handle `adaeze688x2774`. Recorded by the builder as G-132; I classify it `unclear` (it does not break a ruling, ruling 2 says "name"; whether the legal name may be searched and shown is the owner's call).
+4. **A search is a full scan.** No index serves `ILIKE '% x%'` on `accountName` or `handle`. Plan: parallel seq scan of both tables, a hash join and a sort, then `LIMIT 20`. On 306,000 wallets (host load average 15): text search median **325 to 380 ms**, a phone search about 103 ms (`t9` output). Fine at launch size; with D1 open, parallel callers on many addresses are a load path onto the database.
+5. Answers outside the one shape: a query over about 16 KB (`q` of 20,000 characters) gets Node's own **431 with an empty body**, before the app (through nginx a 414 or 400); the missing-`q` and repeated-`q` messages read "q must be shorter than or equal to 60 characters" (class-validator's first failure), and the same short text gets two different messages (`q must be longer than or equal to 2 characters` from the DTO for one emoji, `Type at least 2 letters of a name or @handle.` from the parser). All 400, same envelope, no `reason`: cosmetic. The 429 body message is `ThrottlerException: Too Many Requests` (the app-wide default for every throttled route, not this task's) and carries `Retry-After-short`, not `Retry-After`, as every route here does (the builder's "Retry-After" is that header).
+6. `GET /money/recipients/recent?q=ad` ignores `q` (200, no complaint), and `/money/recipients/`, `/money/RECIPIENTS` and `HEAD` share the search's bucket (Express path matching, the throttler keys on the handler): no bypass.
+7. The sweep of my seeded `opening` person called the dead Fintava stand-in address every 30 s (`look up customer: unavailable "no connection"` at :00 and :30, `hub4989.log`); it started when I created that row, is not caused by a search, and the recipient routes make no Fintava call (the spec asserts it with a counting double and the service imports no client).
+
+### Mutants of my own (SQL and parser; `mut.py`, `mutants-first3.json`, `mutants-main.json`, `mutants.json`, `mut-M*.log`; run against the recipient spec, 39 tests, in a separate worktree)
+
+31 mutants applied, 1 pattern did not apply (M31, not counted): **25 killed, 6 survived.**
+
+| Killed | Mutant |
+|---|---|
+| M01 | minimum length 2 to 1 |
+| M02, M03, M04 | block filter dropped from the phone query, the text query, recent |
+| M05, M06 | phone matched by its last 8 digits (opening table), by a prefix (identity table) |
+| M07, M26 | LIKE not escaped, only `%` escaped |
+| M08, M09, M28 | caller not excluded (text, phone, recent) |
+| M10, M11, M21, M22, M23 | recent: any status, direction `in`, any category, any counterparty kind, any wallet kind |
+| M12 | recent: LEFT JOIN wallet (wallet-less come back) |
+| M13 | result carries `accountName` |
+| M15 | recent oldest first |
+| M17 | name search by contains instead of word beginning |
+| M20 | `@` handle needs 1 character, not 2 |
+| M25 | phone query lets a non-wallet holder through |
+| M27 | `@` search also searches names |
+| M29 | INNER JOIN on the profile (people with no profile lost) |
+| M30 | phone normalised to `+2340...` |
+
+| Survived | Mutant | Verdict |
+|---|---|---|
+| M14 | search cap 20 to 21 | real test gap (D3) |
+| M24 | recent cap 10 to 11 | real test gap (D3) |
+| M19 | NFKC before the phone parse | test gap (D3); the shipped behaviour is right |
+| M16 | handle branch without `ESCAPE` | equivalent: PostgreSQL's default escape is the backslash |
+| M32 | phone query without `LIMIT` | equivalent: at most 2 people can match one number (the opening phone is unique, the identity phone is not) |
+| M18 | a 9-digit text read as a phone with a 9 put in front | weak: it finds one exact number, never a partial one; not pinned |
+
+### NOT RUN
+
+- **V9 with a real sign-in, against the real WAWU ID.** Tokens were minted with the stand-in's key, not obtained by a login. Names came from the stand-in WAWU ID (mock `/internal/users/lookup`), and the timing figure in finding 2 is against its local latency. Unblocked by: the Hub started with a real `WAWU_ID_BASE_URL` and `WAWU_ID_INTERNAL_SERVICE_KEY` (OPS-10 deploy), a real sign-in, then a search that shows WAWU ID's name and the same timing run (150 hits, 150 misses).
+- **Recent from a real send.** `POST /money/transfers/wawu` (WALLET-07) is declared only, so recent was read on ledger rows written in the shape the consumer writes. Unblocked by: WALLET-07 serving that route (send, then `GET /money/recipients/recent` lists the person).
+- **The 120-an-hour window itself.** I sent 20 in a minute (21st 429) and read the constants from the spec; I did not wait an hour for the 121st. Unblocked by: a clock the throttler reads (none exists) or a 61-minute run; the spec pins `ttl: 3_600_000`.
+- **Real Fintava, real nginx.** The route calls neither. Address behaviour was tried from loopback with one `X-Forwarded-For` entry, which is what nginx writes (`hubTrustProxy` trusts one loopback hop); a real proxy hop is the OPS-11 spec's.
+- **Screens.** None (V5 to V7, V10 are not in this task's passes).
 
 ## Owner sign-off
 
