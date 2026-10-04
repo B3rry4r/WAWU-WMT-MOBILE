@@ -3,15 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 54 of 181.**
+**Launch tasks done: 54 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 40 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 32 | 18 | 4 | 1 |
+
+## Being verified
+
+- [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 
 ## Done
 
@@ -82,6 +86,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · FIX-05 · Built (backend 25291ac, status verifying): the global throttler counts in our own per-caller store (`src/hub-throttler-storage.ts`, registered in AppModule, SHARED-CHANGES FIX-05 #1) instead of @nestjs/throttler's, whose ending of one caller's block stopped every other caller's hits expiring (G-95). No per-hit timers; idle buckets pruned on access and by a chunked sweep; answers equal the library's hit for hit for each caller, so every limit, `@Throttle` and `@SkipThrottle` is unchanged. Built Hub: xaddr victim 6 x 429 on main, 0 on the branch, flooder refused identically (200 x 200, 800 x 429); 100k distinct callers then idle: RSS back below its start (main 1,113 MB and an 81.8 s stall). Protected 253/253, gates as main (16 fail / 21 warn). G-96 (IPv6 tracked per address) added.
 - 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
 - 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.
 - 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (4b50e4c, Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.
@@ -96,4 +101,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · ME-09 · Built (backend): a creator's library with sales count and the reviewer's reason per piece, tab counts, edit while pending or rejected, and Send again (`/content/mine/library*`, `PATCH /content/{id}`, `POST /content/{id}/resubmit`; additive, protected suite 244 of 244). Gaps G-82 to G-84; shared changes ME-09 #1 and #2. Status verifying.
 - 3 Oct 2026 · HOME-04 · Built (backend): the Following tab, likes (twice counts once), one view per person per day, one share per person per day, and per-viewer liked, saved and follows flags on a new `GET /feed` (new `ContentLike`, `ContentView`, `ContentShare` tables; `GET /content` keeps its shape). Status verifying.
 - 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
-- 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
