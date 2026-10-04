@@ -5,7 +5,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { flowDepth, useOpenWalletWay } from '../leave';
 import { isSendableSelfie, SELFIE_MIN_BASE64_CHARS } from '../api/opening';
 
-const mockRouter = { dismiss: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() };
+const mockRouter = { dismiss: jest.fn(), replace: jest.fn(), dismissTo: jest.fn(), push: jest.fn() };
 let mockRoutes: { name: string }[] = [];
 jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useNavigation: () => ({ getState: () => ({ routes: mockRoutes }) }) }));
 
@@ -253,5 +253,44 @@ describe('the ways out of A5 and A6', () => {
     const notice = await renderHook(() => useCheckNotice(OWNER));
     expect(notice.result.current?.notice).toBe('Check your BVN again to continue.');
     expect(mockRouter.dismissTo).toHaveBeenCalledWith('/open-wallet');
+  });
+});
+
+describe('the account is open: A8 in place of every earlier step (KYC-04)', () => {
+  beforeEach(() => Object.values(mockRouter).forEach((fn) => fn.mockClear()));
+  const route = (name: string) => ({ name });
+
+  it('A8 and A9 are Open your wallet screens, so the end of the flow dismisses them with the rest', () => {
+    expect(flowDepth({ routes: [route('(tabs)'), route('open-wallet-account'), route('open-wallet-pin')] })).toEqual({ depth: 2, below: true });
+    expect(flowDepth({ routes: [route('payer'), route('open-wallet'), route('open-wallet-details'), route('open-wallet-selfie'), route('open-wallet-account')] })).toEqual({
+      depth: 4,
+      below: true,
+    });
+  });
+
+  it('after A7, every earlier step goes and A8 opens on top of whatever started the flow (the pay sheet, the Wallet tab)', async () => {
+    mockRoutes = [route('(tabs)'), route('open-wallet'), route('open-wallet-details'), route('open-wallet-selfie')];
+    const { result } = await renderHook(() => useOpenWalletWay());
+    result.current.opened();
+    expect(mockRouter.dismiss).toHaveBeenCalledWith(3);
+    expect(mockRouter.push).toHaveBeenCalledWith('/open-wallet-account');
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('after A10, leaving dismisses A8 and A9 and the person is back where they tapped', async () => {
+    mockRoutes = [route('(tabs)'), route('open-wallet-account'), route('open-wallet-pin')];
+    const { result } = await renderHook(() => useOpenWalletWay());
+    result.current.leave();
+    expect(mockRouter.dismiss).toHaveBeenCalledWith(2);
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('with nothing under the flow (a link, a reload), A8 takes the place of every step and the end goes Home', async () => {
+    mockRoutes = [route('open-wallet-details'), route('open-wallet-selfie')];
+    const { result } = await renderHook(() => useOpenWalletWay());
+    result.current.opened();
+    expect(mockRouter.dismiss).toHaveBeenCalledWith(1);
+    expect(mockRouter.replace).toHaveBeenCalledWith('/open-wallet-account');
+    expect(mockRouter.push).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,11 @@
 import { useNavigation, useRouter } from 'expo-router';
 import { useMemo } from 'react';
 
+import { OPEN_WALLET_ACCOUNT_PATH } from './entry';
 import { expireKeptCheck } from './keptCheck';
 
-/** The route names of Open your wallet's screens (`src/app`): A26, A5, and A6 with A7 and A16. */
-const FLOW_ROUTES: readonly string[] = ['open-wallet', 'open-wallet-details', 'open-wallet-selfie'];
+/** The route names of Open your wallet's screens (`src/app`): A26, A5, A6 with A7 and A16, A8, and A9 with A10. */
+const FLOW_ROUTES: readonly string[] = ['open-wallet', 'open-wallet-details', 'open-wallet-selfie', 'open-wallet-account', 'open-wallet-pin'];
 
 type StackState = { routes: readonly { name: string }[] };
 
@@ -28,10 +29,16 @@ export type OpenWalletWay = {
    * shows on arrival (the server's). What was typed on A5 is kept for the new check.
    */
   restart: (notice?: string) => void;
+  /**
+   * The account is open (A7): every earlier step goes and A8 takes their place,
+   * on top of whatever opened the flow. Nothing of A26 to A7 is wanted again,
+   * and a back from A8 never lands on a step that would ask for them.
+   */
+  opened: () => void;
 };
 
 /**
- * The two ways out of A5 and A6 other than their back button. A26 sits under
+ * The ways out of A5, A6, A8 and A9 other than their back button. A26 sits under
  * them on the stack (they are pushed on top of it), so leaving dismisses every
  * Open your wallet screen at once (and, with nothing under them, puts Home
  * in their place), and restarting dismisses down to A26 (or
@@ -58,6 +65,16 @@ export function useOpenWalletWay(): OpenWalletWay {
       restart: (notice?: string) => {
         expireKeptCheck(notice ?? null);
         router.dismissTo('/open-wallet');
+      },
+      opened: () => {
+        const { depth, below } = flowDepth(navigation.getState() as StackState | undefined);
+        if (below && depth > 0) {
+          router.dismiss(depth);
+          router.push(OPEN_WALLET_ACCOUNT_PATH);
+          return;
+        }
+        if (depth > 1) router.dismiss(depth - 1);
+        router.replace(OPEN_WALLET_ACCOUNT_PATH);
       },
     }),
     [router, navigation],

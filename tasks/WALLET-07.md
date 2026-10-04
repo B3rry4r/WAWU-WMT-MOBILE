@@ -32,6 +32,8 @@ W7, W9-W12, I13-I15: send to another WAWU user by name, @handle or phone.
 
 Transfer between two Fintava accounts with a note, PIN and Idempotency-Key; a receipt.
 
+**Lead note (4 Oct 2026, from KYC-04):** a money action here that answers `409 pin_not_set` opens A9 (route `open-wallet-pin`, KYC-04) and comes back to this screen once the PIN is set; it never shows the bare error.
+
 ## Capability checks
 
 - [ ] A user with ₦10,000 sends ₦2,000 to @amaka: their balance drops by ₦2,033.25 (₦2,000 + Fintava's ₦23.25 + WAWU's ₦10, the quoted total); Amaka's rises by exactly ₦2,000.

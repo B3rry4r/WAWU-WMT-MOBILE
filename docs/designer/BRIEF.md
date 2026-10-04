@@ -1013,6 +1013,33 @@ here is redrawn.
 - **Now:** no mismatch state drawn.
 - **Instead:** a mismatch uses the PIN sheet's wrong-PIN line in W11's style;
   KYC-04 records its wording here.
+- **Wording (KYC-04, 4 Oct 2026):** the line is the server's own sentence for
+  `pin_mismatch`: "The two PINs do not match. Enter the same PIN twice." It
+  sits under the dots with W11's CircleAlert in the danger colour, and the
+  empty dots are ringed in danger until the first digit is typed again. The
+  screen goes back to step 1 ("1 of 2", "Create your transaction PIN"),
+  because neither entry is kept once the request is answered. Other refusals
+  use the same line without the red ring, in the server's words (for example
+  "No connection. Check your internet and try again." when no answer came
+  and the PIN turned out not to be set).
+- **A PIN the server already holds (KYC-04 round 3, Default (agent), owner may
+  override; round 2's wording is replaced):** when the set answers that a PIN
+  already exists on the account and the screen did not know of one, A10 ends
+  with the canvas's result layout (warning tone, the lock): "You already have
+  a transaction PIN" over "Your account has a transaction PIN. If you just set
+  it, it is the one you typed. If you set one before, that earlier PIN still
+  approves payments." and Done. The app cannot tell the two causes apart: this
+  person's own set landed first and its answer arrived twice (the typed PIN IS
+  the stored one), or a PIN was set earlier or on another phone. The sentence
+  is true in both, and it never says the typed PIN was not saved, nor that
+  the PIN was just set. A way to reset a PIN the person does not know (W37) is
+  added once WALLET-06 builds it (BACKEND_GAPS G-116).
+- **No answer, and no answer to the check either (KYC-04 round 2, Default
+  (agent)):** A10 stays, keys off, with the line "We couldn't check whether
+  your PIN was set." followed by the read's own words (for example "No
+  connection. Check your internet and try again.") in W11's line, and a Try
+  again that only checks again. A new PIN is never asked for while the first
+  may be set.
 - **Why:** every state needs a real look; the canvas's own style is used.
 
 ### A11 · Creator setup
