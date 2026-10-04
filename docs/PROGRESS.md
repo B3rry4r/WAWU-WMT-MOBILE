@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 51 of 181.**
+**Launch tasks done: 52 of 181.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 43 | 30 | 31 |
+| todo | 49 | 42 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 32 | 15 | 4 | 1 |
+| done | 32 | 16 | 4 | 1 |
 
 ## Done
 
@@ -59,6 +59,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
+- [SETTINGS-03](../tasks/SETTINGS-03.md) Change password and sign out for real (WAWU ID) (Developer)
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
@@ -79,6 +80,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · SETTINGS-03 · Merged to main by the lead (Developer 1's task): change password and real sign-out on WAWU ID, wawu-id PR #6 (4715d17); identity contract synced.
 - 4 Oct 2026 · ME-05 · Merged to main by the lead (a5787fb, Developer 1's task): profile fields, backend PR #55 (dec6591); mobile contract synced.
 - 4 Oct 2026 · AUTH-04 · Merged to main by the lead (2061390, Developer 1's task): sign-up with email and phone. Its gaps G-77, G-78 are renumbered G-93, G-94 (INBOX-09 merged first). OTA update follows.
 - 4 Oct 2026 · KYC-05 · Lead fix: A26's test file gets a 20 s test limit; its first test (cold module load) timed out at jest's 5 s default under machine load in 4 runs by three agents and the lead. No product code changed.
@@ -86,11 +88,10 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · INBOX-09 · Built (backend): a creator is warned once at 20% of paid questions unanswered over 30 days and paid messages switch off for 7 days at 30% (R-13, all from config); the live send refuses a paused creator with `paid_messages_paused`, and new `GET /paid-dm/standing` and `/paid-dm/creators/:wawuId/availability` serve the creator and the fan (I8). Owner questions G-77, web gap G-78. Verifying.
 - 3 Oct 2026 · AUTH-04 · Fix round 1, status verifying: the ended sign-up offers only Start again, a failed Continue keeps the held code secret, the code boxes fit 320 px, a release build no longer shows a blank page to a user on the email step, a failed sixth digit has Try again, double taps tested; G-64 and G-65 filed.
 - 3 Oct 2026 · AUTH-04 · Built A2 Continue, A3 sign-up, A4 and A15 phone code, and the email step (status verifying): the app texts the code through wawu-id, keeps the sign-up secret in the secure store, resumes after quitting, counts down the server's own resend and lockout seconds, and opens the email step before Home. 457 tests, gates 0 findings; live walk on a local wawu-id and Hub 32 of 32 (earning and discovering user).
+- 3 Oct 2026 · SETTINGS-03 · Built (wawu-id): `POST /auth/change-password` (current password checked, rate limited, every other refresh token ended, this device gets a new pair) and `POST /auth/logout` (revokes the presented refresh token, G-6); gaps G-90 to G-92; verifier next.
 - 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
 - 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
 - 3 Oct 2026 · INBOX-08 · Built (backend): paid questions group into one thread per person with every reply bubble, and a creator's waiting list comes back soonest deadline first with the total waiting (`/paid-dm/*`, new `DmReply` table); the live `/dm/respond` is now race-safe. Status verifying.
 - 3 Oct 2026 · KYC-05 · Merged to main by the lead (mobile only, 265ed2a). Open your wallet, step 1 (BVN and NIN): a passed check is kept only for the person and session that ran it, and any answer that lands after a session ends writes nothing. Carried forward: check 1 waits on SHARED-CHANGES KYC-05 #1; device not run. OTA update follows.
 - 3 Oct 2026 · KYC-05 · Verified round 7: no open defect, status review (mobile 81669b0 with main e7dc879). Defect 3 closed: a pass landing in the session-end window leaves no A26 cache entry with A's identity (probe Q2), and a refusal or end landing there moves no screen state for B (3 of 3). Audit: no write after an await unchecked against the ticket or session. R6-2 now killed (2 tests), and R7-1 and R7-2 killed. `npm run check` exit 0, 485 tests, 0 act warnings.
 - 3 Oct 2026 · KYC-05 · Round 7, status verifying: a check answer from an ended session writes nothing (ticket checked before the cache write; a refusal under a void ticket moves no screen state); tests with the app's createQueryClient for both, and the start-over's unsubscribe pinned; mutants Q2, Q2b, R6-2 killed; the verifier's probe-r6 passes 4 of 4.
-- 3 Oct 2026 · KYC-05 · Verified round 6: 1 defect, status building (mobile 4a43404 with main e7dc879; Hub fe1ec6c). Defect 2 closed: probe P1 to P5 pass 5 of 5 (failed P1, P3 before); four session ends in a row, a session end after unmount, and 20 mounts with 0 listeners left all behave; the browser switch to B by a refresh answering B's pair and by sign-out shows B only loading, then B's own form, light and dark; the relaxed session-end test still kills R6-3. New defect 3 (privacy): a check answer landing between A26's session-end restart and the re-render is not kept but is still written into the query cache under A's id while B is signed in (probe Q2). `npm run check` 2 of 2 exit 0, 481 tests, 0 act warnings.
-- 3 Oct 2026 · KYC-05 · Round 6, status verifying: kept BVN details now end on every session end (keptCheck subscribes with onSessionEnd, FIX-04), including a sign-in replacing a session and a refresh to another account; A26 starts over on a session end, so A to B to A no longer sticks on loading; tested with the app's createQueryClient (verifier's P1 to P5 pass), mutants K1 to K4 killed; duplicate SHARED-CHANGES KYC-05 #4 row removed.
