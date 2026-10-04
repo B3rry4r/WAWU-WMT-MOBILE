@@ -7,7 +7,7 @@ order: 186
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -141,6 +141,60 @@ Builder, 3 Oct 2026. wawu-backend `wmt/WALLET-27` **5cd55c1** on main fe1ec6c (m
 - **Findings:** the receiver's line carries Fintava's reference, not ours (G-44, MONEY-15's), so the two people's statements show different references for one transfer.
 
 ## Verifier report
+
+### Verifier report, round 3
+
+Verifier, 4 Oct 2026 (the verifier of rounds 1 and 2; wrote none of this code). Backend `wmt/WALLET-27` **9f884dc** (fix 359ccff, then main aa11bcc and 9a370c0 merged in); mobile **ce5a7c3**. Neither main has moved (backend 9a370c0, mobile 9a0c1be). Fresh worktrees `/home/user/wt/vw27b3` and `/home/user/wt/vw27m3`. The built hub (`node dist/src/main.js`, trust proxy as in production) ran on :4993, the stand-in WAWU ID on :4994, and :4001 was used only for the full suite. Databases `vw27r3_*`, all dropped. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw27r3/` (below, `vw27r3/`).
+
+**Verdict: defect 1 is fixed; 2 new defects are open (both small); status building.**
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| Defect 1 (forged-`sub` flood) | **fixed**. 400 forged random-`sub` statements from one address: 20 × 401, 380 × 429, the same as `/money/transactions` (T5a, T5b). 100,000 from one address: 200 × 401, 99,800 × 429, in 69 s. 41 database transactions during it, about an idle hub's own. Hub RSS was 223 MB, peaked at 436 MB during the flood, and was 174 MB after. A forged token with V's `sub` from V's own address no longer affects V (V gets 200). | `vw27r3/throttle.out` |
+| No stall during or after | passed. `/health` from another address once a second, from the start of the flood to 17 minutes after it ended. The worst answer took 435 ms, during the 1.2 M-row inserts for the load test, not during the flood. Five answers were 429s from main's throttler bug (main finding A), and none came from the statement route. | `vw27r3/pinger.log` |
+| Per-person limiter, window maths | passed. 5 requests, then 429 with retry 60. At +59.999 s still 429 with retry 1; at +60.000 s allowed. 30 spread over 30.5 minutes, then 429 with retry 1,770; at the hour's end allowed. A refused request does not count (mutant X1 is killed). Fixed windows allow a burst at the edge: 9 requests within one second, 5 a minute in each window, as `STATEMENT_RATE_LIMITS` documents. | `vw27r3/limiter-unit.out` |
+| Per-person limiter, memory | passed. 200,000 people in one minute make 200,000 entries (+50 MB heap); one hour later a single request sweeps them down to 2, in 75 ms. Only a verified person with an open wallet makes an entry: the forged flood added none (T6), and a gate refusal adds none. | `vw27r3/limiter-unit.out`, `limiter-http.out` |
+| Gate refusal, 400 | **failed (defect 2)** | `vw27r3/limiter-http.out` |
+| Concurrency cap | passed. Postgres showed at most 2 statement queries active at once (2,000 samples, 10 ms apart, during 10 at once). 5 people at 49,999 rows at once: 5 × 200 in 3.8 s, RSS peak 613 MB. 10 at once, three times: 10 × 200 each time, in 5.5 to 7.0 s, RSS peak 676 to 737 MB (round 2 reached 1,224 MB with 5). None waited past the 5 s limit, so there was no 503 over HTTP. With the slots alone (300 ms wait, 200 ms builds, 10 at once): 4 × 200, 6 × 503, peak 2; four failing builds each give their place back. | `vw27r3/concurrency.out`, `concurrency2.out`, `pgsample.out`, `limiter-unit.out` |
+| Row cap re-check | passed. 50,001 rows asked 6 times: 400 × 5, then 429 (`statement_too_large` counts toward the limit; part of defect 2) | `vw27r3/rowcap.out` |
+| Mutants (mine) | 3 of 4 killed. X1, a refused request still counted: killed. X2, the sweep forgets the hour window: killed. X3, a handed-over place is freed as well: killed. **X4 survives**: `retryAfterSeconds` rounded down instead of up (finding C, test gap). | `vw27r3/mutate.py`, `mutants/summary.txt` |
+| T4 (the builder's note) | main finding B, not this task's: the same on main 9a370c0 and on this branch | `vw27r3/t4-main.out`, `t4-branch.out` |
+| Full suite, as deploy runs it | passed. Fresh seeded `vw27r3_full2_test`, mock on :4001 (free before; stopped straight after; free again): **143/143 suites, 3,421 passed, 3 skipped, 0 failed** | `vw27r3/full-suite.log` |
+| Protected suite | passed. `run.sh --fresh 9f884dc` (lock origin/main 9a370c0): 253/253, all 244 required; no lock file in the diff | `vw27r3/protected.out` |
+| Gates | passed. Main 9a370c0: 16 fail / 21 warn / 76 accepted on 673 files. Branch: 16 / 24 / 76 on 681. The diff of the two outputs is exactly the three statement PROVISIONALs (`STATEMENT-RATE-LIMITS`, `STATEMENT-CONCURRENCY`, `STATEMENT-MAX-DAYS`). `check_baseline.py` clean. `tsc` 0; eslint 0 on every changed `.ts` | `vw27r3/gates-*.out` |
+| Contract, tripwire, key scan | passed. `contract:build` leaves the tree clean. Tripwire: 0 lines. Key scan: 0 of 58 windows in both diffs and in my outputs | `vw27r3/contract-build.out`, `tripwire.out` |
+| Mobile `npm run check` | passed: exit 0, typecheck 0, lint 0, 29 suites / 556 tests, gates 0 fail / 0 warn on 135 files, 205 tasks | `vw27r3/mobile-check.out` |
+
+**Defect 2: the statement route's own 400s count against the person's limit; only the DTO's 400s and the gate's refusals do not.** The builder's report says "A gate refusal or a 400 is not counted". The controller calls `limiter.take()` before `StatementService.statement()`, and `checkedPeriod()` runs inside the service. Reproduction (`vw27r3/limiter-http.js`), a fresh person each time, six identical requests, then one good request:
+- `format=pdf` or an extra field: 400 × 6, then 200. Not counted.
+- `from=2026-02-30`, `from` after `to`, `to` in the future, and more than 366 days: in each case 400 × 5, then `429 statement_rate_limited` on the 6th, and the good request after them is 429 too. Counted.
+- `400 statement_too_large` also counts: 50,001 rows asked 6 times gives 400 × 5, then 429.
+- A person who picks a wrong range five times is locked out of statements for a minute, and each mistake uses one of the 30 an hour.
+
+Fixed when the period is checked before the person is counted, and `statement_too_large` is either not counted or documented as counted. A test should send each of the five 400s five times and then get a 200.
+
+**Defect 3: CONVENTIONS section 12 still describes round 2's throttle.** It says "The route has its own `@Throttle` (`STATEMENT_THROTTLE`, ...): at most 5 a minute and 30 an hour per person per address (the bucket is the caller's address as the BVN check reads it, plus the token's `sub`), on the app's `short` and `medium` throttlers". That is the design defect 1 removed. The code has no `@Throttle`, no `STATEMENT_THROTTLE` and no address in the bucket. Only section 3's table and the controller's comment describe round 3 (per verified person, after the guard; two at once; `503 statement_busy`). Fixed when section 12 describes `StatementRateLimiter` and `StatementSlots` as built, including which refusals count.
+
+**Findings**
+- **A. Main finding, not this task's (medium): one address can make the global throttler answer 429 to other addresses.**
+  - **Cause.** `@nestjs/throttler` 6.5's in-memory storage keeps one list of expiry timers per throttler name for all callers. When any caller's block ends, `resetBlockdRequest` calls `clearExpirationTimes(name)`, which clears every caller's timers. Everyone else's counts then stop going down, and they reach the limit.
+  - **Reproduction** (`vw27r3/xaddr.js`, 60 s each):
+    - A victim at 2 requests a second to `/health` gets 120 × 200 with no attacker.
+    - The same victim gets 6 × 429 (at about 15 s, 31 s and 47 s) while another address sends bursts of 25 every 1.5 s.
+    - Identical on main 9a370c0 (`xaddr-main.out`) and on this branch (`xaddr-branch.out`). The pinger also saw it during the flood.
+  - **Who it touches.** It affects every route, and round 3 now relies on that throttler.
+  - **Fixed when** a block ending clears only its own key's timers: another storage, or a library version that does this.
+- **B. Main finding, not this task's (harmless): extra text after a valid bearer token is ignored.**
+  - On main 9a370c0 and on the branch alike:
+    - Accepted (200): `Bearer <valid> junk`; `Bearer <valid> x.<payload with another sub>.y`; `Bearer <valid> <a forged token>`; `Bearer\t<valid>\t<anything>`.
+    - Refused (401): `Bearer <forged> <valid>`; `Bearer <valid>junk` (no space); `<header>.<payload with another sub>.<valid signature>`; `junk Bearer <valid>`.
+  - **Why.** `ExtractJwt.fromAuthHeaderAsBearerToken()` (passport-jwt) parses the header with `(\S+)\s+(\S+)`. It takes the first whitespace-separated value after the scheme and ignores the rest.
+  - **Why it is harmless.** The signature and expiry are checked on that first value only, and nothing reads claims from the rest. The crafted header answered the valid token's own rows (`CAP-8777772012-...`, that person's account).
+  - **This branch did not make it worse.** Round 3 removed round 2's own header parsing (`bearerSubject`), and nothing under `src/money/statements` reads `authorization`. It is parsing slack, not a signature bypass.
+- **C. Test gap (not a defect).** Mutant X4, `retryAfterSeconds` from `Math.floor` instead of `Math.ceil`, passes all 57 statement, rate-limit and money-contract tests. A client told 1 s may come back early and be refused again.
+- **D. Observation.** With 10 at once, the 200s finished together at 5 to 7 s, not two at a time. Turning the 9 MB file into the response happens after `StatementSlots` hands the place on, so several responses are serialised at once. Memory still peaked at 737 MB, so nothing is asked.
+
+**NOT RUN:** round 1's items stand (PDF G-68, email G-69, V10). No Fintava call (the route never calls Fintava). The 5 s wait never ran out over HTTP: ten 49,999-row statements finished inside it on this machine. The 503 path was shown at unit level with a 300 ms wait.
 
 ### Verifier report, round 2
 
