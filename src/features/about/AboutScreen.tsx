@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { BrandMark } from '@/components/BrandMark';
 import { GroupedList } from '@/components/Card';
+import { useFocusRing } from '@/components/focusRing';
+import { Icon, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { ListRow, rowMetrics } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -92,14 +94,20 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
         Who Made This helps African creators and professionals get paid for what they know.
       </Text>
       <GroupedList testID="about-rows">
-        <BankRow name={about.bankName} licence={about.licenceLine} />
-        <ListRow
+        <WrapRow
+          testID="about-bank"
+          icon="Landmark"
+          title={`Banking by ${about.bankName}`}
+          line={about.licenceLine}
+          lineTestID="about-licence"
+        />
+        <WrapRow
           testID="about-support"
-          lead={<IconTile icon="Mail" size={aboutMetrics.tile} />}
+          icon="Mail"
           title="Contact support"
-          subtitle={about.supportEmail ?? NOT_FILLED_IN}
+          line={about.supportEmail ?? NOT_FILLED_IN}
+          lineTestID="about-support-address"
           onPress={mail ? () => void open(mail, COULD_NOT_OPEN_MAIL) : undefined}
-          accessibilityLabel={`Contact support, ${about.supportEmail ?? NOT_FILLED_IN}`}
         />
         {rate ? (
           <ListRow
@@ -124,35 +132,60 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
 }
 
 /**
- * "Banking by <bank>" and the owner's licence line under it. It is read, not opened,
- * so it has no chevron; the licence line wraps whole, because legal wording cut
- * short is not the wording. `ListRow` truncates its subtitle to one line, so this
- * row stands in for it until SHARED-CHANGES.md (SETTINGS-02 #2) adds a `subtitleLines` prop.
+ * A row whose words wrap whole and can be selected: the owner's licence line and a support
+ * address are not cut to one line at a large font, because a cut address cannot be used.
+ * `ListRow` keeps a title and subtitle to one line, so Banking and Contact support use this
+ * until SHARED-CHANGES.md (SETTINGS-02 #2) adds a `subtitleLines` prop. With no `onPress`
+ * it is read, not opened, and has no chevron.
  */
-function BankRow({ name, licence }: { name: string; licence: string | null }) {
+type WrapRowProps = { testID: string; icon: IconName; title: string; line: string | null; lineTestID: string; onPress?: () => void };
+
+function WrapRow({ testID, icon, title, line, lineTestID, onPress }: WrapRowProps) {
   const { colors } = useWawu();
-  return (
-    <View testID="about-bank" accessible accessibilityLabel={[`Banking by ${name}`, licence].filter(Boolean).join(', ')} style={styles.bankRow}>
-      <IconTile icon="Landmark" size={aboutMetrics.tile} />
-      <View style={styles.bankWords}>
-        <Text variant="body" style={[font(600), styles.bankTitle]}>
-          {`Banking by ${name}`}
+  const ring = useFocusRing();
+  const body = (
+    <>
+      <IconTile icon={icon} size={aboutMetrics.tile} />
+      <View style={styles.wrapWords}>
+        <Text variant="body" style={[font(600), styles.wrapTitle]}>
+          {title}
         </Text>
-        {licence ? (
-          <Text variant="secondary" testID="about-licence" style={[styles.bankLine, { color: colors.textMuted }]}>
-            {licence}
+        {line ? (
+          <Text variant="secondary" selectable testID={lineTestID} style={[styles.wrapLine, { color: colors.textMuted }]}>
+            {line}
           </Text>
         ) : null}
       </View>
-    </View>
+      {onPress ? <Icon name="ChevronRight" size={rowMetrics.chevron} color={colors.textMuted} /> : null}
+    </>
+  );
+  const label = [title, line].filter(Boolean).join(', ');
+  if (!onPress) {
+    return (
+      <View testID={testID} accessible accessibilityLabel={label} style={styles.wrapRow}>
+        {body}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      {...ring.handlers}
+      style={({ pressed }) => [styles.wrapRow, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
+    >
+      {body}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   header: { alignItems: 'center', gap: aboutMetrics.stack, paddingVertical: aboutMetrics.markPadV },
   description: { textAlign: 'center' },
-  bankRow: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between, minHeight: rowMetrics.minHeight, paddingVertical: rowMetrics.padV },
-  bankWords: { flex: 1, minWidth: 0 },
-  bankTitle: { fontSize: rowMetrics.title, letterSpacing: rowMetrics.titleTracking * rowMetrics.title },
-  bankLine: { fontSize: rowMetrics.subtitle, marginTop: rowMetrics.subtitleGap },
+  wrapRow: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between, minHeight: rowMetrics.minHeight, paddingVertical: rowMetrics.padV },
+  wrapWords: { flex: 1, minWidth: 0 },
+  wrapTitle: { fontSize: rowMetrics.title, letterSpacing: rowMetrics.titleTracking * rowMetrics.title },
+  wrapLine: { fontSize: rowMetrics.subtitle, marginTop: rowMetrics.subtitleGap },
 });

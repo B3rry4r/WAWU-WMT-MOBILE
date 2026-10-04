@@ -36,7 +36,6 @@ export function AboutFrame({ title, onBack, gap, children, testID }: AboutFrameP
         </View>
         <Text
           variant="body"
-          numberOfLines={2}
           accessibilityRole="header"
           style={[styles.title, { fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title }]}
         >

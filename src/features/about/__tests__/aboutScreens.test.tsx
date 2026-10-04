@@ -120,6 +120,16 @@ describe('Z9 · About', () => {
     expect(rtl.screen.getByText('help@example.test')).toBeTruthy();
   });
 
+  it('wraps a long licence line and a long support address whole and lets them be selected, so a large font never cuts them', async () => {
+    answers['/about'] = [ok({ ...about, licenceLine: 'L'.repeat(300), supportEmail: `${'a'.repeat(60)}@example.test` })];
+    await bootAbout();
+    for (const id of ['about-licence', 'about-support-address']) {
+      const line = await rtl.screen.findByTestId(id);
+      expect(line.props.numberOfLines).toBeUndefined();
+      expect(line.props.selectable).toBe(true);
+    }
+  });
+
   it('without a support address the row says it is not available and opens nothing', async () => {
     answers['/about'] = [ok({ ...about, supportEmail: null })];
     await bootAbout();
