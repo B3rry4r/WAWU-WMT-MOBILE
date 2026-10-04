@@ -3,7 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
-- 4 Oct 2026 · WALLET-18 · Merged to main by the lead (MERGEHASH): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
+- 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
 - 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
 - 4 Oct 2026 · SETTINGS-04 · Merged to main by the lead (9d0e1e4, Developer 1's task): data export, and blocking that hides people on every read; backend PR #62 (dfaa53b); its export-email gap renumbered G-95 to G-131.
 - 4 Oct 2026 · WALLET-27 · Merged to main by the lead (068abc3): account statements with per-person limits; backend PR #61 (5236f12).
