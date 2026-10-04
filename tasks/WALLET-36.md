@@ -3,7 +3,7 @@ id: WALLET-36
 title: Add money by card: the screen
 owner: YOU
 area: WALLET
-order: 193
+order: 194
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
