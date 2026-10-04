@@ -77,6 +77,19 @@ Branch `wmt/SETTINGS-04` in `wawu-backend` (from main 1e6b807) and in this repo 
 - **Counts.** Contract suite: branch 8 suites, 287 failed, 3059 passed (3349); 0 new against main's 287 (same list). V3 `--fresh` 244/244. `contract:build`: no change to `contract/openapi.json` (no route added or changed). `tsc` clean; changed and new files eslint-clean except old prettier lines in files I only touched; gates 16 fail as on main (17 warns, my provisional markers). Mobile `npm run check`: exit 0 (below).
 - **Low findings 3, 7, 8, 9 stay Default (agent), owner may override:** hidden-path timing (accepted for launch), reusable 72-hour bearer link and key tied to `ADMIN_JWT_SECRET`, public signed-out pages ignore blocks, notification text in the export may name others. The spec name in the `data-export-sections.ts` header is corrected to `data-export-map.spec.ts`.
 
+### Builder report, round 3 (R2-1, R2-2, HOME-05 check; uncommitted in the backend worktree, on top of the merge with origin/main 9a370c0)
+
+- **R2-1 Engagement.** `ContentEngagementService` now takes `BlockedAccountService`. Like, unlike, view, share and `GET /content/:id/engagement` answer the same 404 ("Content not found", body equal to a missing piece's) when the piece's owner is hidden from the caller, in both block directions, and nothing is counted (counters and like, view and share rows unchanged). The owner still reaches their own piece. Also fixed the low R2-3: `GET /feed/following/count` leaves out stale follow edges to a hidden person. Other HOME-04 surfaces checked: feed (`for_you`, `following`), `GET /content`, `GET /content/:id` were already covered; feed cards' creator info only exists on HOME-05 (below). Tests: "a user cannot like, unlike, view, share or read the engagement of a hidden creator's piece, in either block direction, and nothing is counted" (control: all five work on a visible piece; compares each body to a missing piece's), and the following-count test. Revert proof: restoring the committed service fails both.
+- **R2-2 Export.** `ProfileDetails` (location, skills, open to, Threads handle, link order, dates), `ContentLike`, `ContentView` and `ContentShare` are exported with named fields, own rows only (sections `profileDetails`, `likes`, `piecesViewed`, `piecesShared`). `data-export-map.spec.ts` passes (5 of 5). Test: "a user who opens the emailed link finds their profile details and their likes, and nobody else's" (another person's like on the same piece is not in the file). Revert proof: restoring the committed sections fails that test and the drift spec.
+- **Counts.** Full contract suite: origin/main 9a370c0: 8 suites failed, 287 tests failed, 3098 passed (3388); branch: 8 suites failed, 287 failed, 3150 passed (3440); failing lists identical by test name, 0 new. V3 `--fresh` 244/244. `contract:build`: `contract/openapi.json` unchanged (no route added or changed). `tsc` clean; my files eslint-clean; gates 16 fail, same as before. Mobile `npm run check`: exit 0.
+
+**FOLLOW-UP (HOME-05, read-only check of origin/wmt/HOME-05; nothing merged).** What the owner must do when merging the second of the two branches:
+1. Expect one textual conflict, `src/content-piece/content-piece.module.ts` (both add imports). Keep both: `BlockedAccountModule` and HOME-05's new providers. `content-engagement.service.ts` merges without a conflict (checked with `git merge-tree`); after the merge, `tsc` must pass because HOME-05 adds two constructor arguments to `ContentEngagementService` and this branch adds one (DI is by type, so no order change is needed).
+2. After the merge run `block-hides-people.contract.spec.ts`, `data-export-map.spec.ts`, HOME-05's `feed-cards.contract.spec.ts` and V3.
+3. Read of HOME-05 against blocking: `GET /feed/entries` builds on `engagement.feed`, which is already block-filtered here, and its creator and professional cards skip anyone blocked either way (`blockedEitherWay` in `feed-cards.service.ts`); its own test covers only the fan-blocks-professional direction, the code is symmetric. `GET /content/:id/media` goes through `ContentPieceService.findOne`, so a hidden owner's piece answers the same 404 as a missing one (a buyer of the piece keeps it, the rule here). `PUT /content/:id/media` is owner-only and answers 403 to anyone else on an existing piece versus 404 on a missing one, for blocked and unblocked callers alike: not a block bypass, left as HOME-05 designed it.
+4. `ContentFrame` has no user-id column, so the purge map and the drift spec do not list it; it is deleted with its piece (cascade). Frames are not in the export (they are file keys of the person's own piece; the `content` section lists the piece itself). Default (agent), owner may override. If the owner wants frames exported, add a `contentFrames` section to `data-export-sections.ts` selecting `contentId`, `position`, `createdAt` only, never `url`.
+5. No fix is needed in HOME-05's files, so no SHARED-CHANGES row beyond the merge note above.
+
 ## Verifier report
 
 **Verdict: FAIL.** Five open defects (1, 2, 4, 5, 6). Status set back to `building`. Verified at backend commit 547c5d5 (worktree `/home/user/lanes/s04/wawu-backend`), own DBs `s04v_*`, own mocks :4881 to :4883, main compared from `/home/user/lanes/s04v/main` (origin/main 1e6b807). Scratch attack specs live only in `/home/user/lanes/s04v/atk` (untracked, not in the branch).
@@ -108,6 +121,60 @@ Branch `wmt/SETTINGS-04` in `wawu-backend` (from main 1e6b807) and in this repo 
 ### NOT RUN
 
 Real email delivery (G-95); V9 on the real login; backend gate script and eslint; any phone check; WALLET-08 recipient search.
+
+## Verifier report (round 2)
+
+**Verdict: FAIL.** Round-1 defects 1, 2, 4, 5, 6 are fixed and I could not break the fixes. Two new open defects (R2-1, R2-2) come from main work the builder never saw (HOME-04 and ME-05, merged in by the lead). Status set back to `building`. Verified at backend commit c94d141 (merge of origin/main 9a370c0) in `/home/user/lanes/s04/wawu-backend`, mobile at 868c35f. Own DBs `s04w_*`, own mocks :4891 to :4893 (stopped after), main compared from `/home/user/lanes/s04v2/main` (origin/main 9a370c0). Attack specs (feed.atk, rooms.atk, export.atk) were scratch files in a throwaway worktree, removed afterwards; they were never in the branch. I did not touch the branch's files.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Merge review (content-piece.module.ts, content-piece.service.ts) | passed: `BlockedAccountModule` imported once; `following` scope is `creatorWawuId: { in: followedIds, notIn: hidden }`; `feed` is `notIn: hidden`; `mine` is unfiltered and skips the hidden lookup; no stray hunks | `git show c94d141 --cc` |
+| Round-1 defect 1 rooms | passed. Blocked either way (host blocked or blocker), a room that is open or private: open, link by id, link by slug, join, leave, messages read, messages post (valid body), mark read each answer byte-identically to a missing room (404 "Community not found", slug 404 "No community has this link."); no membership row is created; list leaves the room out; an already-joined member keeps open, messages, link and slug (200). `GET /:id/membership` and `DELETE /:id/join` answer 200 for hidden and missing alike | rooms.atk spec |
+| Round-1 defect 2 shelf | passed: `/users/:id/content` missing vs hidden creator, same 404, body byte-equal, also with `page=2&perPage=5` | same spec |
+| Round-1 defect 4 sweep | passed: 20 trials, 6 to 10 pending rows over 3 users, 4 separate app instances each running 2 sweeps plus direct `fulfil` of every id (including ids already sent): emails equal rows every trial, per user, all `sent` | export.atk spec |
+| Round-1 defect 5 create race | passed: 12 trials of 12 parallel POSTs spread over 4 instances: all 201, one id, one row, one email | same spec |
+| Round-1 defect 6 rate limit | passed: 3 emailed requests then 429 `{statusCode:429,message:"You can ask for your data 3 times a day. Try again tomorrow.",data:null}`; a burst of 40 interleaved with 10 sweeps over 4 instances: all 429, rows stay 3; a user with 2 sent and a burst of 20 gets 3 rows; rows backdated 25 h free the slot; another account is unaffected | same spec |
+| Revert proofs (copy aside, restore) | passed: round-1 export services restored to 547c5d5 fail all 3 attack tests; each of community-rooms, community and community-message services restored to 547c5d5 alone fails the rooms test in `block-hides-people.contract.spec.ts` (1 failed, 28 passed each). Working tree restored and checked clean. Shelf revert NOT re-run by me | atk worktree |
+| V3 protected routes | passed: `scripts/protected-routes/run.sh --fresh wmt/SETTINGS-04` 244 of 244, exit 0 | `/home/user/lanes/s04v2/v3.log` |
+| contract:build additive | passed: regenerated file is identical to the committed one; against origin/main 0 routes removed, 0 changed, 2 added (`GET /settings/privacy/export`, `GET /settings/privacy/export/download`) | script output |
+| Touched test (`user-profile.contract.spec.ts`, 200 to 404) | justified: it asserted the round-1 enumeration bug (unknown id 200 empty vs hidden 404). See finding R2-5 | `git diff` |
+| Full test:contract vs main | origin/main: 139 suites, 3132 passed, 0 failed. Branch: 142 suites, 3180 passed, 1 failed (`data export map`, finding R2-2); 48 more tests than main, none lost. Run with `--testPathIgnorePatterns protected-routes`: that spec, inside `test:contract` on a shared box, left tables missing for the specs after it on main and branch alike (env); V3 is covered by `run.sh` above. The mock keys of the two worktrees differ, so I copied main's mock pem pair into the branch worktree for the run and restored the originals afterwards | `/home/user/lanes/s04v2/contract_main2.log`, `contract_branch4.log` |
+| tsc | passed: `npx tsc --noEmit` exit 0 | |
+| Mobile `npm run check` | passed: exit 0, 29 suites 556 tests, gates 135 files scanned 0 findings, tasks check ok | `/home/user/lanes/s04v2/mobile_check.log` |
+
+### New main surfaces, checked in both directions (viewer hides host, host hides viewer)
+
+Setup: the viewer follows the hidden creator, then the block is made with the follow edge left in place on purpose, so a missing exclusion would show.
+
+| Surface | Result |
+|---|---|
+| `GET /feed?scope=for_you` | hides the person, total drops (passed) |
+| `GET /feed?scope=following` | hides the person, total 0 (passed) |
+| `GET /content?scope=following` and `GET /content` | hide the person (passed) |
+| `GET /content/:id` | 404 identical to missing (passed) |
+| `GET /feed/following/count` | counts the stale edge (1). A real block deletes both edges and a follow is refused while blocked, so this only shows with stale rows. Low, R2-3 |
+| `POST /content/:id/like`, `DELETE /content/:id/like`, `POST /content/:id/view`, `POST /content/:id/share`, `GET /content/:id/engagement` | **FAIL, R2-1** |
+| `/feed/entries`, `/content/:id/media`, creator cards | NOT RUN: no such routes exist in this code (origin/main 9a370c0 has no `entries` or content media route and the contract has none), so nothing to check. The feed cards come from `ContentPieceService.list` and are covered above |
+
+### Findings
+
+R2-1. **defect (medium).** The four content engagement routes and `GET /content/:id/engagement` ignore blocks, in both directions. For a piece owned by a hidden person: like answers 200 `{likes:10,likedByMe:true}` and the counter really moves; unlike 200; view 200; share 200 and a share row is created (`shares:1,counted:true`); engagement 200 with likes, views, shares, comment count and the viewer's flags. A missing id answers 404 "Content not found" on all five. So a caller can tell a blocked person's piece from a missing one, read its counts, and change them, while `GET /content/:id` on the same piece correctly 404s. Cause: `ContentEngagementService.requireLive`, the unlike branch of `setLiked`, and `engagement()` never call `BlockedAccountService.assertVisible` (the service does not inject it). Needed: all five answer the same 404 as a missing piece when the owner is hidden from the caller (the owner's own piece stays as is), plus a test per route and direction.
+
+R2-2. **defect (medium).** The merge broke the export drift guard. `src/data-export-request/tests/data-export-map.spec.ts` "decides every model the account owns" now fails (1 failed, 4 passed): `ContentLike`, `ContentView`, `ContentShare` (HOME-04) and `ProfileDetails` (ME-05) are `OWNED` in `account-data-map.ts` but are in neither `data-export-sections.ts` nor `EXPORT_EXCLUDED`. As built, a user's export leaves out their own profile details (location, skills, open-to, Threads handle, link order) and what they liked, opened and shared. Needed: each of the four is exported with named fields or excluded with a reason, and the spec is green.
+
+R2-3. **low.** `GET /feed/following/count` counts stale follow edges to a hidden person (only reachable with stale data, see above). Default (agent), owner may override: leave.
+
+R2-4. **low.** The 429 for export requests has no `Retry-After` header; the message says "tomorrow". Default (agent), owner may override: leave.
+
+R2-5. **low (differs-for-recorded-reason).** `GET /users/:wawuId/content` is in the protected registry (the web calls it, probe is a valid creator, so V3 stays green). An authenticated call for an id with no account was 200 empty and is now 404, the same as the profile route on the same page. This is the round-1 defect 2 fix, recorded in the builder report. Default (agent), owner may override; the web should treat a 404 shelf like a 404 profile.
+
+R2-6. **low (by reading, not exercised).** `fulfil` sends the email inside the claiming transaction and marks `sent` at commit. If the commit failed after the send, the row would stay pending and the person would get a second email. Mail timeout 10 s is under the 30 s transaction timeout, so the usual slow-mail case is safe. Default (agent), owner may override: accept (at least once).
+
+Round-1 findings 3, 7, 8, 9 stay Default (agent), owner may override, as the builder recorded.
+
+### NOT RUN (round 2)
+
+Real email delivery (G-95); V9 on the real login (mock WAWU ID only); backend gate script and eslint; any phone check; WALLET-08 recipient search; the shelf revert proof; paid-DM pause and the creator's DM queue on the merged code (not filtered by default 3, not re-tested); `/feed/entries` and content media (no such routes).
 
 ## Owner sign-off
 
