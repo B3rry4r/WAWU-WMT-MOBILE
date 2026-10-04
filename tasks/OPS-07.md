@@ -7,7 +7,7 @@ order: 183
 priority: after-launch
 repo: wawu-wmt-mobile
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: [R-34]
 passes: []
@@ -92,6 +92,31 @@ Verifier session: independent of the builder; read-only on the web (`wawuafrica`
 Not run: nothing in the task's own checks was skipped. Not done on purpose: the app was not opened (docs only), the builder's "not in the app" word search was not repeated for all 83 other rows; rows were sampled (13, 15, 16, 29, 40, 41, 43, 58, 64, 68, 73 against canvas text, src and tasks).
 
 Verdict: not ready. Five defects (D1 to D3 change what the web team is told; D4 and D5 are small), one unclear (U1). Back to building.
+
+## Verifier report, round 2
+
+Fresh detached worktree at e9dfc82 (origin/main 7d0e538 merged; `src/` and task status read on origin/main). Docs only, so no V5 to V9.
+
+| Check | Result | Evidence |
+|---|---|---|
+| 1 D1 to D5 and U1 closed as defined in round 1 | passed (two small leftovers, D6 and D7 below) | D1: row 29 is "Built in the app", with `EditProfileScreen.tsx` (`choose('cover')`, `profile/cover`) and `PictureHeader.tsx` named, both present on origin/main; M7 no longer says the app has no cover. D2: rows 68, 41, 16, 42, 38 now carry an App check; row 68 is drawn (M31 "3 credits left", ME-14). D3: three states in sections 1 and 3, nothing todo called "in the app", row 43's "treat as in the app" gone. D4: the 8 tables not in the account data map are named exactly (verified: `EventSpeaker`, `LearnCourse`, `LearnGuide`, `Playbook`, `PartnerService`, `Mentor`, `ShopOrderItem`, `LegalChatMessage`) and the EVG quote is credited to `data-export-sections.ts`; the "42 of 50" total is not exactly reproducible by my own count (39 of 47 by a stricter match) but the 8 names are right and only the total depends on the counting rule. D5: M1 says the account name is resolved from the bank; M4 says `trialEndsAt` is legacy. U1: M20 added. |
+| 2a The three states, all 12 non-"not in the app" rows | passed | Built (2): row 13, `src/app/email-code.tsx`, `signupFlow.ts`, AUTH-04 and AUTH-05 done; row 29, as above, ME-06 done. Drawn, not built (10): rows 15, 16, 38, 41, 42, 43, 58, 64, 68, 73. Every cited task is `todo` on origin/main (PROS-03, AUTH-06, ME-03, SETTINGS-01, WALLET-35, EVENTS-03, ME-12, ME-07, INBOX-12, HOME-03, ME-14, HOME-07) and `src/` has no P10, I21 to I23, M31, E6 or H10 screen (`src/app` holds only auth, tab placeholders, open-wallet, edit-profile, payout-account). Backend notes check out: WALLET-27 done, INBOX-09 done, HOME-05 done and backend only. Counts 2 + 10 + 77 = 89; table column matches (script). |
+| 2b Re-search sample: 64 of the 77 "not in the app" rows against the canvas text | passed with 2 notes | Searched all 29 `*.sections.json` and `*.dc.html` files (tags stripped) for distinctive words of rows 1, 2, 3, 4, 7, 8, 10, 11, 12, 17, 18, 20, 21, 22, 24, 25, 26, 27, 28, 31, 32, 33, 35, 36, 37, 39, 44, 45, 46, 49, 50, 51, 52, 53, 54, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 69, 70, 71, 72, 74, 75, 76, 77, 78, 79, 80, 82, 83, 84, 85, 86, 88, 89 and read every hit. No row was found to be drawn that the document calls absent. Two rows have a close drawing with no "close, not the same" note, unlike rows 5, 6, 9, 59, 66 and 82: row 10 (Wallet board shows a failed transfer "Reversed to your wallet", a different thing from the web's ledger label) and row 11 (A5 "Confirm your details" draws name, gender, state and occupation from the BVN, and `ConfirmDetailsScreen.tsx` is in `src/`, KYC-03 done; the web's by-hand typing and country picker are still absent). Both stay correctly "not in the app"; the note is missing (see N1). |
+| 2c Wording for the partial matches (rows 16, 38, 42, 64, 73) | passed, with D6 for row 58 | The state column says "Drawn on the canvas, not built" for all of them, but each App check starts "Partly drawn" and says what is missing (mark-all-read, writing a review, the wallet not the dashboard), and the At a glance table says "at least in part". That is clear enough for a reader who reads the App check; a reader who scans only the state column or the count of 10 would think five rows are drawn in full. Suggest "Partly drawn" in the state column. Row 58 is the odd one: its own text says the canvas does not draw a like control, so it does not meet section 3's own definition of "drawn". |
+| 3 M20 against the schema | passed with D7 | `VerificationPurchase` exists with `kind` (creator or professional), `priceNgn`, `flutterwaveTxRef`, `flutterwaveTxId`, `status`, `grantedUntil`, `settledAt`; `UserProfile` has `creatorVerifiedAt`, `creatorVerifiedUntil`, `professionalVerifiedAt`, `professionalVerifiedUntil`; the account data map lists `VerificationPurchase` as OWNED. Advice (keep `grantedUntil`, keep the purchase row, keep Flutterwave references) is consistent with WALLET-30 and with ME-12 and ME-18 existing. Rows 16 and 48 added to M20 (the groups now cover 40 distinct rows with the 49 "nothing to migrate" rows: 40 + 49 = 89, no overlap, none missing). |
+| 4 WEB-01 | passed | `tasks/WEB-01.md`: owner YOU, area OPS, order 207, priority after-launch, repo wawuafrica, type web-port, depends_on [OPS-07], decisions [R-34], passes V1 V3 V4 V5 V6 V7 V9, status todo. All 89 rows have "WEB-01" in the task column (script). Section 4 and "At a glance" say WEB-01. `check_tasks.py`: 207 tasks, 279 artboards. 63 distinct task ids in the document, OPS-07 and WEB-01, none missing from `tasks/`. |
+| 5 Open questions and row 70 | passed | M1, M6 and M9 are listed as open and undecided in section 2, in section 4 and in WEB-01, with no answer given. Row 70 stays unclassified and the document says why (no backend route or table; only the web spec line, `docs/01_SPEC.md` line 63). |
+| 6 Style and gates | passed | 0 em-dashes in `docs/WEB-ONLY-FEATURES.md`, `tasks/OPS-07.md`, `tasks/WEB-01.md` and the added lines of LOG, PROGRESS and INDEX. `npm run check` exit 0 on e9dfc82: 36 suites, 666 tests, gates 171 files scanned 0 fail 0 warn, 207 tasks. |
+
+### Findings
+
+- **D6 defect, minor.** Row 58 (comment like) is in "Drawn on the canvas, not built", but its App check says "Planned, not drawn as a control ... The canvas draws comment counts only". Section 3 defines "drawn" as "the artboard draws it". Either move row 58 to "Not in the app" with the HOME-03 note, as rows 5, 6, 9, 59, 66 and 82 are handled, or change the definition. This also changes the counts (9 drawn, 78 not in the app).
+- **D7 defect, minor.** M20 says "The app sells ticks from the wallet (ME-12, ME-18)". Both tasks are `todo` (ME-12 is the screen, ME-18 the backend), so nothing is sold yet. Say "will sell (ME-12 and ME-18, todo)".
+- **N1 note, not a defect.** Rows 10 and 11 would read better with a "close, not the same" App check (see 2b). Also, for rows 16, 38, 42, 64 and 73, putting "Partly drawn" in the state column would remove the only way the count of 10 can mislead.
+
+Not run: the app was not opened; the canvas text was word-searched (64 rows sampled by me, every hit read), not walked screen by screen; the other 13 "not in the app" rows were not re-searched by me.
+
+Verdict: not ready only for D6 and D7, both one-line fixes. D1 to D5 and U1 are closed, WEB-01 and M20 are right, and the 12 states are correct.
 
 ## Owner sign-off
 
