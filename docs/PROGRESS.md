@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 47 | 38 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 34 | 20 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 
@@ -90,6 +90,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · MONEY-17 · Verified round 3: 3 defects, status building (backend 20b4c4b on main c4d17bb, mobile 1a31f66). Round 2's three defects hold as ruled (R2-1: 200 rounds of 20 keys at once on once-only items, 0 double debits, 0 payments claimed while one for the item was open; R2-2: 0 uncoded 409 in 8,000 taps; R2-3: 40 right PINs all pass, 40 wrong give exactly 5 counted, another person's request under 0.5 s). Open: a paid-but-undelivered payment is retried every minute for ever with no backoff or review (the lead's ruling on decision (c)); a PIN compare held up over 30 s lets 10 wrong tries be compared and a right PIN pass a lock (120 accounts' checks queued ahead of it); a payment whose ledger rows Fintava's webhook completed is not settled (it waits for its hourly check, or for ever under review). Full suite 146/146 twice, protected suite 253/253, 13 of 16 mutants killed.
 - 4 Oct 2026 · MONEY-17 · Round 3 built, status verifying (backend 20b4c4b on main c4d17bb): the round 2 verifier's three defects fixed. The item stays claimed until the delivery is recorded and the feature's "already owned" rule is read again inside the claim (100 rounds of 20 keys at once: 0 double debits, were 2), the loser of a race is told `payment_in_progress` with a code (0 uncoded in 4,000 taps, were 980 of 2,000), and a PIN check reserves a slot, compares with nothing held and records the result (40 right PINs at once: 40 pass, no lock; 40 wrong: exactly 5 counted and the lock; another person's `GET /money/pin` 94 to 341 ms, was 4 to 7.5 s). Additive migration: two columns on `TransactionPin`. No API change.
 - 4 Oct 2026 · MONEY-17 · Verified round 2: 3 defects, status building (backend cade35b with main e6bd701, mobile 255bff2). Round 1's four defects closed (a lost answer stays pending until Fintava says, the sweep no longer starves, no ₦0.00 shortfall, the three-at-once test forces both orders). New: 20 keys at once can still debit a buyer twice for an owned item (2 rounds in 20), the losing tap gets 409 "That record already exists." instead of payment_in_progress (Prisma 7 meta), and the serialized PIN check lets one person's burst stall others for up to 5 s. Full suite 144/144, protected 253/253.
 - 4 Oct 2026 · MONEY-17 · Round 2 built, status verifying (backend cade35b on main e6bd701): a lost answer stays pending until Fintava itself says, one open payment per item, the sweep no longer starves, no ₦0.00 shortfall, the payment quote bound to its item, PIN checks one at a time, the deploy-suite timing tests steadied.
@@ -104,4 +105,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · HOME-05 · Builder (Developer): creator and professional cards on `GET /feed/entries`, `creator` and `media` on feed cards, photo-set frames, durations and page counts (`GET`/`PUT /content/:id/media`), table `ContentFrame`; built on wmt/HOME-04; gaps G-100 to G-103; status verifying
 - 4 Oct 2026 · KYC-03 · Verified round 3 (mobile e698d94, backend 442bf98), status review: no defect open. A refused handle at A5, A6, A7 or A7's Try again lands on A26 with the banner and the server's sentence, and A5 comes back filled in (18 of 18 browser scenarios, light and dark). The kept address never crossed accounts, sign-out, leaving or a reload, and never reached storage (11 probes). Check my details opened with 1 selfie match; BM3 killed; 5 of 5 new mutants killed. Backend full suite 3,404 passed 0 failed, protected 253/253; mobile check exit 0. Both mains moved: mobile f8130cd conflicts in BACKEND_GAPS, SHARED-CHANGES and PROGRESS only.
 - 4 Oct 2026 · KYC-03 · Round 3, status verifying: defect 1 fixed. A handle the server refuses (409 bvn_not_checked at A5, A6, A7 or A7's Try again) now returns to A26 with the server's sentence in a banner, and A5's address and occupation are kept in memory so A5 comes back filled in after the new check. A refused opening (422) offers Check my details, which needs no second selfie. The backend has a test for the NIN on the handle path (442bf98). G-98 filed. V9 passed light and dark against the real Hub.
-- 4 Oct 2026 · KYC-03 · Verified round 2 (mobile 62478c6, backend 51c1e10), status building: 1 defect. A handle the server refuses (409 bvn_not_checked, e.g. after its 30 minutes) drops the person on an empty A26 with no word of why. The handle held: 38 forged, tampered, expired, replayed and cross-user handles refused alike, none reaching Fintava, 0 numbers or handles in DB or logs. Backend full suite 3,403 passed 0 failed (the :4001 suites too), protected 253/253, lock unchanged, gates as main, contract reproduced; mobile check exit 0; 14 mutants (1 test gap). Evidence and 6 unclear items in the task file.
