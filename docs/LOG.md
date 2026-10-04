@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 4 Oct 2026 · INBOX-02 · Built, now verifying: live chat updates, a WebSocket at `/api/hub/live` fed by Postgres LISTEN/NOTIFY, plus `GET /live/catch-up` (wawu-backend `wmt/INBOX-02`; 22 socket tests, gates unchanged).
 - 3 Oct 2026 · INBOX-08 · Merged to main by the lead (6d0b9f7, Developer 2's task): paid DM threads and the creator's queue, backend PR #53 (1e6b807); mobile contract synced. Its gaps G-64 to G-66 are renumbered G-74 to G-76 (WALLET-15's G-64 merged first).
 - 3 Oct 2026 · WALLET-15 · Merged to main by the lead (cc7ed7f): fee quotes, served from backend PR #52 (44fdd7d); mobile contract synced. BILLS-02 told to take every fee from the quote (R-31 question to the owner). Carried forward: G-64, FEE_QUOTE_KEY on the droplet, verifier follow-ups for the paying tasks.
 - 3 Oct 2026 · INBOX-08 · Built (backend): paid questions group into one thread per person with every reply bubble, and a creator's waiting list comes back soonest deadline first with the total waiting (`/paid-dm/*`, new `DmReply` table); the live `/dm/respond` is now race-safe. Status verifying.
