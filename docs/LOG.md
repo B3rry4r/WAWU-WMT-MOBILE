@@ -3,7 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
-- 4 Oct 2026 · KYC-04 · Merged to main by the lead (MERGEHASH): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
+- 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
 - 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
 - 4 Oct 2026 · OPS-07 · Verified round 2 (independent, docs only): round 1 defects D1 to D5 and U1 closed; 12 states checked against src and task status; WEB-01 and M20 correct; 64 rows re-searched against the canvas, no miss; `npm run check` exit 0; 2 minor defects open (row 58 is not drawn as a control, M20 says the app sells ticks while ME-12 and ME-18 are todo); status building.
 - 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
