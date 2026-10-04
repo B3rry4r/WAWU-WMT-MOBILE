@@ -69,7 +69,7 @@ function boot() {
   sent = [];
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
-    sent.push({ path: url.pathname, method: (init?.method ?? 'GET').toLowerCase(), body: JSON.parse(String(init?.body)) });
+    sent.push({ path: url.pathname, method: (init?.method ?? 'GET').toLowerCase(), body: init?.body ? JSON.parse(String(init.body)) : undefined });
     return new Response(JSON.stringify(answer(url.pathname)), { status: 200, headers: { 'content-type': 'application/json' } });
   }) as typeof fetch;
   return require('@/api/identity') as typeof import('@/api/identity');
@@ -77,7 +77,7 @@ function boot() {
 
 const okAnswer = (path: string) => {
   const op = contract.paths[path].post;
-  return sample(op.responses['200'].content!['application/json'].schema);
+  return sample((op.responses['200'] ?? op.responses['201']).content!['application/json'].schema);
 };
 
 describe("WAWU ID's published contract and the app's sign-in calls", () => {
@@ -126,5 +126,56 @@ describe("WAWU ID's published contract and the app's sign-in calls", () => {
     const named = [...generated.matchAll(/operations\["(\w+)"\]/g)].map((m) => m[1]);
     expect(new Set(named)).toEqual(new Set(ids));
     expect(readFileSync(join(root, 'contract', 'identity', 'SOURCE_COMMIT'), 'utf8').trim()).not.toBe('');
+  });
+});
+
+describe("WAWU ID's published contract and the app's sign-up calls (AUTH-04)", () => {
+  const token = 'access-token-1';
+  const calls: [string, string, string, (id: ReturnType<typeof boot>) => Promise<unknown>][] = [
+    ['start a sign-up', 'post', '/auth/signup', (id) => id.signupRequest({ email: 'ada@example.test', phone: '08031234412', password: 'a-long-password', accountType: 'creator' })],
+    ['ask for another code', 'post', '/auth/phone/verify/start', (id) => id.phoneVerifyStartRequest({ phone: '+2348031234412', attempt: 'secret' })],
+    ['confirm the phone code', 'post', '/auth/phone/verify/confirm', (id) => id.phoneVerifyConfirmRequest({ phone: '+2348031234412', attempt: 'secret', code: '481902', emailCode: '123456' })],
+    ['resume a sign-up', 'post', '/auth/signup/resume', (id) => id.signupResumeRequest({ phone: '+2348031234412', attempt: 'secret' })],
+    ['read the sign-up progress', 'get', '/auth/signup/progress', (id) => id.signupProgressRequest(token)],
+    ['put the email step off', 'post', '/auth/signup/progress', (id) => id.signupCompleteStepRequest(token, 'email')],
+    ['have the email code mailed', 'post', '/auth/signup/email/start', (id) => id.signupEmailStartRequest(token)],
+    ['prove the email', 'post', '/auth/signup/email/confirm', (id) => id.signupEmailConfirmRequest(token, '123456')],
+  ];
+
+  beforeEach(() => {
+    answer = okAnswer;
+  });
+
+  it.each(calls)('a user can %s: the app sends the method and body the contract takes', async (_name, method, path, run) => {
+    const identity = boot();
+    await run(identity);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].method).toBe(method);
+    expect(sent[0].path).toBe(path);
+    const op = contract.paths[path]?.[method];
+    expect(op).toBeDefined();
+    if (op.requestBody) expect(problem(sent[0].body, op.requestBody.content['application/json'].schema)).toBeNull();
+    else expect(sent[0].body).toBeUndefined();
+  });
+
+  it('refuses an answer that lacks what the screens use', async () => {
+    const identity = boot();
+    answer = () => ({ data: {} });
+    await expect(identity.signupRequest({ email: 'a@b.test', phone: '08031234412', password: 'a-long-password' })).rejects.toThrow();
+    await expect(identity.signupProgressRequest(token)).rejects.toThrow();
+    await expect(identity.signupEmailStartRequest(token)).rejects.toThrow();
+  });
+
+  it('sends the access token as a Bearer header on the signed-in sign-up calls only', async () => {
+    const identity = boot();
+    const seen: (string | null)[] = [];
+    const inner = globalThis.fetch;
+    globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      seen.push(new Headers(init?.headers).get('authorization'));
+      return inner(input, init);
+    }) as typeof fetch;
+    await identity.signupProgressRequest(token);
+    await identity.signupRequest({ email: 'a@b.test', phone: '08031234412', password: 'a-long-password' });
+    expect(seen).toEqual([`Bearer ${token}`, null]);
   });
 });

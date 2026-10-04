@@ -1008,6 +1008,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/mine/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M28: my pieces with sales and the reviewer's reason. Literal paths stay above ':id'. */
+        get: operations["ContentPieceController_myLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/mine/library/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The numbers on the M28 filter tabs. */
+        get: operations["ContentPieceController_myLibraryCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/mine/library/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M26: one of my pieces, with its latest rejection reason. */
+        get: operations["ContentPieceController_myPiece"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content/purchases": {
         parameters: {
             query?: never;
@@ -1035,6 +1086,24 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["ContentPieceController_remove"];
+        options?: never;
+        head?: never;
+        /** Edit the details or the file of a piece that is pending or rejected. */
+        patch: operations["ContentPieceController_update"];
+        trace?: never;
+    };
+    "/api/hub/content/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a rejected piece for review again. */
+        post: operations["ContentPieceController_resubmit"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1170,6 +1239,102 @@ export interface paths {
             cookie?: never;
         };
         get: operations["PublicContentController_creatorContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ContentEngagementController_like"];
+        delete: operations["ContentEngagementController_unlike"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ContentEngagementController_view"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ContentEngagementController_share"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/engagement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContentEngagementController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FeedController_feed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/feed/following/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FeedController_followingCount"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2293,6 +2458,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/users/me/profile-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UserProfileController_getMyProfileFields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UserProfileController_updateMyProfileFields"];
+        trace?: never;
+    };
     "/api/hub/users/me/experience": {
         parameters: {
             query?: never;
@@ -2340,6 +2521,23 @@ export interface paths {
          *     UserProfileService.recordProfileView.
          */
         get: operations["UserProfileController_getPublicProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/{wawuId}/profile-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Somebody else's profile fields: what M5 and M33 draw for a visitor. */
+        get: operations["UserProfileController_getProfileFields"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3940,6 +4138,23 @@ export interface components {
             /** Format: uri */
             fullAsset: string;
         };
+        UpdateContentDto: {
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            /** @description Replaces the whole list, as on create (at most three). */
+            specializations?: string[];
+            /** @description Replaces the whole list, as on create (at most twenty). */
+            tags?: string[];
+            /** @enum {string} */
+            accessType?: "free" | "paid";
+            price?: number;
+            /** Format: uri */
+            previewAsset?: string;
+            /** Format: uri */
+            fullAsset?: string;
+        };
         VerifyUnlockDto: {
             transaction_id: string;
             tx_ref: string;
@@ -4354,6 +4569,21 @@ export interface components {
             avatarUrl?: string | null;
             /** Format: uri */
             coverUrl?: string | null;
+        };
+        UpdateProfileFieldsDto: {
+            /** @description Where the person is, free text ("Lagos, Nigeria"). null or "" clears it. */
+            location?: string | null;
+            /** @description Skills and expertise chips. [] clears them. */
+            skills?: string[];
+            /** @description What the person is open to, as chips. [] clears them. */
+            openTo?: string[];
+            /** @description Threads handle, with or without the "@". null or "" clears it. */
+            threadsHandle?: string | null;
+            /**
+             * @description The order the social links show in, first to last, as platform keys. Each
+             *     key once. [] puts them back in the default order.
+             */
+            socialOrder?: ("instagram" | "tiktok" | "youtube" | "x" | "threads" | "linkedin" | "facebook")[];
         };
         CreateProfileExperienceDto: {
             title: string;
@@ -5475,9 +5705,105 @@ export interface components {
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
         };
+        MyContentItem: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "live" | "rejected" | "removed";
+            /** Format: date-time */
+            createdAt: string;
+            title: string;
+            creatorWawuId: string;
+            slug: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description: string;
+            category: string;
+            specializations: string[];
+            tags: string[];
+            /** @enum {string} */
+            accessType: "free" | "paid";
+            price: number;
+            durationLabel: string | null;
+            pageCount: number | null;
+            previewAssetUrl: string;
+            creatorFirstUploadFree: boolean;
+            views: number;
+            ratingPct: number | null;
+            commentCount: number;
+            likes: number;
+            fullAssetUrl: string | null;
+            fullAssetLocked: boolean;
+            salesCount: number;
+            rejectionReason: string | null;
+            /** Format: date-time */
+            rejectedAt: string | null;
+        };
+        MyContentCounts: {
+            all: number;
+            live: number;
+            pending: number;
+            rejected: number;
+        };
         UnlockVerifyResult: {
             purchased: boolean;
             fullAssetUrl: string | null;
+        };
+        LikeState: {
+            likes: number;
+            likedByMe: boolean;
+        };
+        ViewState: {
+            views: number;
+            counted: boolean;
+        };
+        ShareState: {
+            shares: number;
+            counted: boolean;
+        };
+        ContentEngagement: {
+            likes: number;
+            views: number;
+            shares: number;
+            commentCount: number;
+            likedByMe: boolean;
+            savedByMe: boolean;
+            followsCreator: boolean;
+        };
+        FeedItem: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "live" | "rejected" | "removed";
+            /** Format: date-time */
+            createdAt: string;
+            title: string;
+            creatorWawuId: string;
+            slug: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description: string;
+            category: string;
+            specializations: string[];
+            tags: string[];
+            /** @enum {string} */
+            accessType: "free" | "paid";
+            price: number;
+            durationLabel: string | null;
+            pageCount: number | null;
+            previewAssetUrl: string;
+            creatorFirstUploadFree: boolean;
+            views: number;
+            ratingPct: number | null;
+            commentCount: number;
+            likes: number;
+            fullAssetUrl: string | null;
+            fullAssetLocked: boolean;
+            likedByMe: boolean;
+            savedByMe: boolean;
+            followsCreator: boolean;
+            shares: number;
+        };
+        FollowingCount: {
+            count: number;
         };
         DmSendInitResponse: {
             flutterwaveConfig: {
@@ -6547,6 +6873,15 @@ export interface components {
             monthStart: string;
             profileCompletenessPct: number;
             profileCompletenessMissing: ("handle" | "bio" | "avatar" | "cover" | "links")[];
+        };
+        ProfileFieldsView: {
+            wawuUserId: string;
+            location: string | null;
+            skills: string[];
+            openTo: string[];
+            threadsHandle: string | null;
+            socialOrder: string[];
+            memberSince: string | null;
         };
         CreatorProfile: {
             wawuUserId: string;
@@ -8817,7 +9152,7 @@ export interface operations {
     ContentPieceController_list: {
         parameters: {
             query: {
-                scope?: "feed" | "mine";
+                scope?: "feed" | "mine" | "following";
                 category?: string;
                 /**
                  * @description Browse ordering. Defaults to `trending` (engagement decayed by age) —
@@ -8889,6 +9224,69 @@ export interface operations {
             };
         };
     };
+    ContentPieceController_myLibrary: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+                status?: "live" | "pending" | "rejected";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"][];
+                };
+            };
+        };
+    };
+    ContentPieceController_myLibraryCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentCounts"];
+                };
+            };
+        };
+    };
+    ContentPieceController_myPiece: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"];
+                };
+            };
+        };
+    };
     ContentPieceController_purchases: {
         parameters: {
             query: {
@@ -8950,6 +9348,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ContentPieceController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"];
+                };
+            };
+        };
+    };
+    ContentPieceController_resubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyContentItem"];
+                };
             };
         };
     };
@@ -9130,6 +9574,157 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentPieceResponse"][];
+                };
+            };
+        };
+    };
+    ContentEngagementController_like: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_unlike: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ViewState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareState"];
+                };
+            };
+        };
+    };
+    ContentEngagementController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentEngagement"];
+                };
+            };
+        };
+    };
+    FeedController_feed: {
+        parameters: {
+            query: {
+                /** @description `for_you` is the ranked browse; `following` is only people you follow. */
+                scope: "for_you" | "following";
+                category?: string;
+                /** @description Ordering of `for_you`. `following` is always newest first. */
+                sort: "trending" | "recent" | "top";
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedItem"][];
+                };
+            };
+        };
+    };
+    FeedController_followingCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowingCount"];
                 };
             };
         };
@@ -11560,6 +12155,48 @@ export interface operations {
             };
         };
     };
+    UserProfileController_getMyProfileFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileFieldsView"];
+                };
+            };
+        };
+    };
+    UserProfileController_updateMyProfileFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileFieldsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileFieldsView"];
+                };
+            };
+        };
+    };
     UserProfileController_addExperience: {
         parameters: {
             query?: never;
@@ -11648,6 +12285,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreatorProfile"];
+                };
+            };
+        };
+    };
+    UserProfileController_getProfileFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileFieldsView"];
                 };
             };
         };

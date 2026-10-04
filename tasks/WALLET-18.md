@@ -40,8 +40,8 @@ Short code, public verification page, PNG and PDF rendering.
 
 ### Builder round 3
 
-Builder, 4 Oct 2026 (resumed after a container restart; the worktrees were intact). Backend `wmt/WALLET-18` **25de8bb**: the round-3 fixes are in 066b1eb, then backend main aa11bcc (INBOX-09) merged in cleanly. Mobile: the verifier's f4d0ddb, then main d60edd3 merged in.
-- **Merge conflicts (mobile):** BACKEND_GAPS kept both sides' rows (G-77 and G-78 are INBOX-09's; G-66 and G-67 stay this task's). PROGRESS was taken from main and regenerated, and the contract was copied from 25de8bb.
+Builder, 4 Oct 2026 (resumed after a container restart; the worktrees were intact). Backend `wmt/WALLET-18` **f1a9d59**: the round-3 fixes are in 066b1eb. Backend main was merged in twice, cleanly both times: aa11bcc (INBOX-09, at 25de8bb), then 9a370c0 (ME-05, ME-09, HOME-04, at f1a9d59). Main's new migration `20261004020000_content_engagement` sorts after this task's `20261003202940_money_receipts`; both are additive. Mobile: the verifier's f4d0ddb, then main d60edd3 and 9a0c1be merged in.
+- **Merge conflicts (mobile):** BACKEND_GAPS kept both sides' rows (G-74 to G-94 are other tasks'; G-66 and G-67 stay this task's). PROGRESS was taken from main and regenerated, and the contract was copied from f1a9d59.
 
 **D3: phone and account numbers in names. Fixed at the root.**
 - **Digits are folded first** (`foldDigits`): NFKC, so full-width, superscript, circled and mathematical digits become ordinary ones. Then every other Unicode decimal digit (`\p{Nd}`: Arabic-Indic, Persian, Devanagari, ...) becomes 0 to 9 by its value.
@@ -92,20 +92,20 @@ Builder, 4 Oct 2026 (resumed after a container restart; the worktrees were intac
 
 **Emoji:** characters the font lacks still draw as the font's empty box, but each line is now clipped at the content edge, so nothing overruns. Recorded rather than fixed: no writer produces such names today.
 
-**Runs (after the merge, 25de8bb)**
+**Runs (after the last merge, f1a9d59; the same checks also passed at 25de8bb: full suite 140 suites, 3,382 passed)**
 
 | Check | Result |
 |---|---|
 | `tsc` | 0 |
 | eslint on changed `.ts` | 0 |
 | Receipts, rate limits, gates, money contract, purge | 123 passed |
-| Full suite, fresh seeded `w18_full_test`, stand-in WAWU ID on :4001 (waited until `lsof` showed it free; another session held it about 25 minutes; stopped after) | 140 suites, 3,382 passed, 3 skipped, 0 failed |
-| Protected `--fresh HEAD` (lock origin/main aa11bcc unchanged) | 253/253 |
+| Full suite, fresh seeded `w18_full_test`, stand-in WAWU ID on :4001 (each time `lsof` showed it free first; once another session held it about 25 minutes; stopped after) | 143 suites, 3,438 passed, 3 skipped, 0 failed |
+| Protected `--fresh HEAD` (lock origin/main 9a370c0 unchanged) | 253/253 |
 | Tripwire | 0 added lines |
-| Gates | main aa11bcc 16 fail / 15 warn, branch 16 / 18 (the three receipt `PROVISIONAL`s; `RECEIPT-RENDER-CONCURRENCY` is new) |
-| `contract:build` | unchanged by the merge |
+| Gates | main 9a370c0 16 fail / 21 warn, branch 16 / 24 (the three receipt `PROVISIONAL`s; `RECEIPT-RENDER-CONCURRENCY` is new) |
+| `contract:build` | run after each merge |
 | Key scan | 0 of 58 windows in each commit |
-| Mobile `npm run check` | exit 0: 28 suites, 485 tests, gates 0 fail / 0 warn on 123 files, 205 tasks |
+| Mobile `npm run check` | exit 0: 29 suites, 556 tests, gates 0 fail / 0 warn on 135 files, 205 tasks |
 
 **Fintava:** no call this round.
 
