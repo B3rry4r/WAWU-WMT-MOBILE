@@ -7,7 +7,7 @@ order: 87
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -258,6 +258,51 @@ R2-4, R2-5, R2-6 and round-1 findings 3, 7, 8, 9 stay Default (agent), owner may
 ### NOT RUN (round 3)
 
 Real email delivery (G-95); V9 on the real login (mock WAWU ID only); backend gate script and eslint; any phone check; WALLET-08 recipient search; the 449 environment failures were not chased (identical on main).
+
+## Verifier report (round 4)
+
+**Verdict: PASS.** R3-1 is fixed and I could not break it, and the independent route sweep found no route that shows a hidden person. It found one hole that is not a read surface (R4-1) and four low differences between hidden and missing, listed below as Default (agent), owner may override. Status set to `review`. Verified at backend `282998b` (the merge commit; clean tree, nothing of mine left in it), mobile at `f701621`. Scratch work under `/home/user/lanes/s04v4/` (own DBs `s04y_*`, own mocks :4911 to :4914, hub :3911); every server I started is stopped and the origin/main worktree is removed. The builder's tree was never edited (copy-aside reverts, restored byte for byte, `git status` empty after each).
+
+**Merge review.** `git diff c4d17bb 282998b` is only SETTINGS-04's own 57 files (nothing of main's dropped); no file differs from the first parent outside main's side. `content-engagement.service.ts` has all three constructor arguments (`blockedAccounts`, `cards`, `mediaDetails`) and both sets of changes; `content-piece.module.ts` imports `NotificationModule`, `StorageModule`, `BlockedAccountModule`, `WawuAuthModule`. No mistake found (only an import-order nit).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| R3-1 profile fields, both directions | passed: `GET /users/:id/profile-fields` and `/users/:handle/profile-fields` answer 404 `User not found`, body identical to a missing id or handle, for A blocks P (viewer A, viewer P) and P blocks B (viewer B, viewer P); control before the block was 200; 200 again after unblocking; `GET /users/me/profile-fields` stays 200 and byte-equal while blocking; the same three `public-profile`, `content` and `evg` routes agree | `atk/out_s1..s4.txt`, `t7.js` |
+| Independent sweep, black box | passed, with the findings below: 4 block scenarios (blocker as viewer, blocked as viewer, both for each of two pairs) x 44 request patterns on id and handle (about 45 distinct routes) plus 40 list reads each, each compared hidden against a random missing id (status and body, ids and timestamps normalised) and checked for the hidden person's id, handle and name in every list. 176 route comparisons, 160 lists | `atk/attack.js`, `out_s*.txt`, `t3.js`, `t5.js`, `t8.js` |
+| Extra focus, main-era routes | passed: `GET /feed`, `/feed/entries` (for_you and following), `/feed/following/count`, `/content/:id/media`, like, unlike, view, share, engagement, comment likes (comment by a hidden person, and under a hidden person's piece), host join-request list, professional rating, event tiers and `POST /events/:id/orders`, saved beneficiaries (list and save), paid-DM availability: all 404 identical to missing, nothing counted. Creator and professional cards: with 18 entries in a fresh account's feed, a block in either direction removes the hidden person's cards and pieces, and unblocking brings them back | `atk/cards.js` |
+| Drift and export regression | passed: `data-export-map.spec.ts` 5 of 5; adding `ScratchNewTable` as OWNED fails it (1 failed); removing the `likes` section fails 2; both restored. `src/data-export-request` and `src/account-purge` 28 of 28 | spec output |
+| Export end to end | passed: 12 parallel `POST /settings/privacy/export` give 12 answers, one id, one row; after two sweeps exactly one mail in the WAWU ID outbox; the signed link opens twice (200), a tampered token is 404; the file has 38 sections, only the caller's rows; no hash, token, secret, password, signature, argon, bearer or `X-Amz` text; the one other account id in it (a tip) is the caller's own tip | `atk/export_P.json` |
+| Rate limit | passed: a 4th request in a day answers 429 with the recorded message (3 allowed), a pending one is returned without counting | `atk/rl.js` |
+| ContentFrame claim | reasonable: `ContentFrame` has no user column (`contentId` only, `ON DELETE CASCADE` from `ContentPiece`, which the purge deletes as OWNED), so the purge drift spec needs no row for it; the export's `content` section omits asset and picture URLs on purpose (uploaded files are listed under "not included"), so the frames are not exported | `schema.prisma`, `account-data-map.ts`, `data-export-sections.ts` |
+| Revert proofs (round 4 files) | passed: restoring the pre-round-4 version of each of `comment.service`, `community.service`, `paid-dm-pause.service`, `event-ticketing.service`, `beneficiary.service`, `professional.service`, `profile-details.service` alone fails exactly 1 test (blocking spec, saved-accounts spec for beneficiaries); restored | `scratchpad/revert.sh` |
+| V3 protected routes | passed: `scripts/protected-routes/run.sh --fresh wmt/SETTINGS-04`, 244 of 244, exit 0 (`v3b.log`). The first run showed 243 of 244 (`POST /payments/hosted-link` 400 redirect not allowed): my env had `CORS_ORIGIN=http://localhost:3000` set, which that test does not expect; unset, it is green. Environmental, mine | `s04v4/v3.log`, `v3b.log` |
+| contract:build | passed: against origin/main c4d17bb 0 routes removed, 0 changed, 2 added (`GET /settings/privacy/export`, `GET /settings/privacy/export/download`). A fresh `contract:build` differs from the committed file only in the order of `required` arrays in 7 places (content equal when sorted); committed file restored from my copy | `scratchpad/openapi.*.json` |
+| tsc | passed: `npx tsc --noEmit` exit 0 | |
+| Full `test:contract` vs origin/main c4d17bb, by name (own DBs, mocks, `--testPathIgnorePatterns protected-routes`) | passed: main 141 suites 3190 tests 43 failed; branch 144 suites 3249 tests 43 failed. Failing sets identical by name (0 new, 0 fixed); 61 new tests all pass; 2 main tests are gone, both replaced on purpose and recorded (`blocked-account-enforcement` "reading is still allowed", `user-profile` "is empty, not an error") | `s04v4/res_main.json`, `res_branch.json`, `cmp.js` |
+| Specs that hardcode :4001 (isolation) | passed: the 7 suites (`kyc-submission`, `notification`, `blocked-account.contract`, `privacy-settings`, `saved-item`, `credits-state`, `account`), run on both trees with my mock first: 40 fail on both; then pointed at the :4001 mock's JWKS (read only, I did not start or touch it): 11 fail on both, identical by name (`kyc-submission` lifecycle, `privacy-settings` lazy row, `credits-state` lazy row; seed-state dependent, same on main). `blocked-account.contract`, `notification`, `saved-item`, `account` pass on both | `iso_*.json`, `iso4001_*.json` |
+| Mobile `npm run check` | passed: 36 suites 666 tests, gates 171 files 0 findings, tasks check ok (206 tasks); every step ran to the last, I did not capture the exit code separately | `s04v4/mobile_check.log` |
+
+### Findings
+
+R4-1. **low (builder class O, in my view a gap), Default (agent), owner may override.** `POST /communities/:id/requests/:userId/approve` by id still admits a person who is hidden from the host. A requested to join P's private room, then A blocked P: the host's request list correctly leaves A out, but P (who knows A's id from before) gets 200 and A becomes a joined member of P's room; for a random id it is 404. No hidden person is shown (the id is the caller's own input) and the host's screen cannot reach it, so I did not count it as a defect. Suggested: refuse approve and deny for a hidden requester with the missing-request 404, or delete pending requests when a block is made.
+
+R4-2. **low, recorded.** Write routes answer 403, not the missing 404, for a hidden person: `POST /content/:id/comments`, `POST /tips`, `POST /creators/:id/follow`, `POST /dm/:id/send`, and `POST /chats` (403 `chat_blocked`). They say a block exists and that the account exists. Matches the builder's "403 while blocked" and INBOX-06, and contradicts default 1's wording ("a 403 would say who blocked whom") only for these interaction routes. Same as R3-2.
+
+R4-3. **low.** `GET /communities/:id/membership` for a room hosted by a hidden person returns the caller's own pending row (200 with the row) where a missing room returns 200 null. Own state, no profile data.
+
+R4-4. **low.** `PUT /content/:id/media` by a non-owner answers 403 `Only the creator can change this piece` for a hidden owner's piece and 404 for a missing one. A visible piece also answers 403, so it is not caused by the block, but it lets a hidden piece be told from a missing one.
+
+R4-5. **low, recorded defaults seen working.** Default 2 (a bought piece, and a room the person is already in, stay): `GET /content/:id` and `/media` of a bought piece of a hidden creator are 200; a joined room hosted by a hidden person stays readable and writable, with the host's id in it and the host's own messages hidden. Default 3: `/dm/threads`, `/paid-dm/threads`, `/dm/inbox`, `/paid-dm/queue`, `/content/purchases`, `/chats` (existing chats, `canMessage` false) still list the person. All as recorded.
+
+R4-6. **info.** Timing on `profile-fields`, hidden against missing, 40 pairs at 500 ms spacing: median 8.4 ms against 6.6 ms; `public-profile` and availability within 1 ms. Not an obvious difference (another jest run shared the machine). A signed-in `GET /events/:id/tickets` for a missing event is now 404 (was an empty list); V3 stays green, so it is not a protected route.
+
+R4-7. **info.** `contract:build` is not byte stable (order of `required` arrays only); the builder's choice to keep the committed file stands.
+
+Round 1 to 3 findings and their defaults stay as recorded.
+
+### NOT RUN (round 4)
+
+Real email delivery (G-95); V9 on the real login (mock WAWU ID only); backend gate script and eslint; any phone check; WALLET-08 recipient search and `transfers/wawu` (not served); the 11 seed-state failures in `kyc-submission`, `privacy-settings` and `credits-state` were not chased (identical on main); chat tested only for opening a chat with a hidden person and for list presence; notifications from a person blocked later not attacked.
 
 ## Owner sign-off
 

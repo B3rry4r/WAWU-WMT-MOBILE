@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 48 | 37 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 34 | 20 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people (Developer)
 
