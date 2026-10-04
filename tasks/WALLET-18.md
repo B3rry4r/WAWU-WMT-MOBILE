@@ -40,7 +40,7 @@ Short code, public verification page, PNG and PDF rendering.
 
 ### Builder round 4
 
-Builder, 4 Oct 2026. Backend `wmt/WALLET-18` **4f27119**. The fixes are in d8bc16b; 4f27119 rewords one test helper's comment that the deferrals gate read as prose. Backend main 9a370c0 has not moved since round 3, and the contract is unchanged (`contract:build`), so mobile's copy stays at f1a9d59's, byte for byte. Mobile main 9a0c1be has not moved.
+Builder, 4 Oct 2026. Backend `wmt/WALLET-18` **23c4ed3**. The fixes are in d8bc16b; 4f27119 rewords one test helper's comment that the deferrals gate read as prose; then backend main e6bd701 (HOME-05) was merged in cleanly. Mobile: main 2874688 merged in. BACKEND_GAPS kept both sides' rows (G-100 to G-113 are other tasks'), PROGRESS was regenerated, and the contract was copied from 23c4ed3.
 
 **D3: every Unicode digit, by the lead's ruling. Fixed.**
 - **A digit is any character whose Unicode numeric value is a whole number from 0 to 9.**
@@ -81,20 +81,20 @@ Builder, 4 Oct 2026. Backend `wmt/WALLET-18` **4f27119**. The fixes are in d8bc1
 
 It plateaus; there is no steady climb (`vw18r3`'s 394 to 470 MB over 7 bursts was measured in the whole Hub).
 
-**Runs (4f27119)**
+**Runs (23c4ed3, after the HOME-05 merge; the same checks also passed at 4f27119: full suite 143 suites, 3,444 passed)**
 
 | Check | Result |
 |---|---|
 | `tsc` | 0 |
 | eslint on changed `.ts` | 0 |
 | Receipts, rate limits, gates, money contract, purge | 129 passed |
-| Full suite, fresh seeded `w18_full_test`, stand-in WAWU ID on :4001 (checked free with `lsof` right before starting, confirmed as the listener, alive to the end, stopped after) | 143 suites, 3,444 passed, 3 skipped, 0 failed |
-| Protected `--fresh HEAD` (at d8bc16b; 4f27119 changes a comment only; lock origin/main 9a370c0 unchanged) | 253/253 |
+| Full suite, fresh seeded `w18_full_test`, stand-in WAWU ID on :4001 (checked free with `lsof` right before starting, confirmed as the listener, alive to the end, stopped after) | 144 suites, 3,469 passed, 3 skipped, 0 failed |
+| Protected `--fresh HEAD` (23c4ed3, lock origin/main e6bd701 unchanged) | 253/253 |
 | Tripwire | 0 added lines |
-| Gates | main 9a370c0 16 fail / 21 warn, branch 16 / 24 (the three receipt `PROVISIONAL`s; the round-4 comment hit is gone) |
-| `contract:build` | unchanged |
+| Gates | main e6bd701 16 fail / 24 warn, branch 16 / 27 (only the three receipt `PROVISIONAL`s are new) |
+| `contract:build` | run after the merge |
 | Key scan | 0 of 58 windows in each commit |
-| Mobile `npm run check` | exit 0: 29 suites, 556 tests, gates 0 fail / 0 warn on 135 files, 205 tasks |
+| Mobile `npm run check` | exit 0: 33 suites, 602 tests, gates 0 fail / 0 warn on 157 files, 205 tasks |
 
 **Fintava:** no call.
 
@@ -167,7 +167,7 @@ Builder, 4 Oct 2026 (resumed after a container restart; the worktrees were intac
 | Gates | main 9a370c0 16 fail / 21 warn, branch 16 / 24 (the three receipt `PROVISIONAL`s; `RECEIPT-RENDER-CONCURRENCY` is new) |
 | `contract:build` | run after each merge |
 | Key scan | 0 of 58 windows in each commit |
-| Mobile `npm run check` | exit 0: 29 suites, 556 tests, gates 0 fail / 0 warn on 135 files, 205 tasks |
+| Mobile `npm run check` | exit 0: 33 suites, 602 tests, gates 0 fail / 0 warn on 157 files, 205 tasks |
 
 **Fintava:** no call this round.
 
