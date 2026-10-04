@@ -7,7 +7,7 @@ order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -69,6 +69,31 @@ Builder, 4 Oct 2026. Backend `wmt/WALLET-08` **6dab9c8** (main 38bbe4c is alread
 **NOT RUN.**
 - A search or recent list from a real send: `POST /money/transfers/wawu` (WALLET-07) is declared only, so recent was tested on ledger rows written in the shape the ledger consumer writes. Unblocked by: WALLET-07 serving that route (then send, then `GET /money/recipients/recent` lists the person).
 - V9 against the real WAWU ID: tokens were real RS256 signed with the mock WAWU ID's key and checked through its JWKS; names came from a stand-in lookup in the contract spec. Unblocked by: the backend running with a real `WAWU_ID_BASE_URL` (OPS-10 deploy), a real sign-in, then a search that shows WAWU ID's name.
+
+### Builder round 2 (4 Oct 2026)
+
+Backend `wmt/WALLET-08` **d01d019** (on 6dab9c8; origin/main still 38bbe4c, nothing to merge). Mobile: origin/main 9b4f9ac is already in; contract copied from d01d019 (byte-equal to the backend's `contract:build`). The verifier's three defects, each fixed:
+
+**D1, ruling 6: a per-person limit on the search.** `RecipientSearchLimiter` counts in the handler, after `WawuAuthGuard` and the wallet gate, on the verified wawuUserId: **20 a minute, 120 an hour, 500 a day**, fixed windows that start at the person's first search in them. Past any of them: `429 recipient_search_rate_limited` (new code, in the one error shape) with `retryAfterSeconds` (seconds to the end of the longest full window, rounded up, at least 1) and the same number in a `Retry-After` header. The per-address `@Throttle` (20 a minute, 120 an hour) stays. `PROVISIONAL(RECIPIENT-SEARCH-RATE)` names both. The counter is the statements one, generalised: `src/money/person-window-limiter.ts` holds the logic once, `StatementRateLimiter` is now a 10-line subclass with the same figures, error and behaviour (its spec is unchanged and passes). A search the route refuses with a 400 is read before it is counted and does not count; a refusal by the token guard or the wallet gate never reaches the counter.
+- **Proof, through the whole AppModule** (`recipient-throttle.contract.spec.ts`, now 10 tests):
+  - One account from 30 addresses in one /64 (`2001:db8:abcd:12::1` to `::1e`): requests 1 to 20 answer 200, **21 to 30 answer 429** `recipient_search_rate_limited`, each with an integer `retryAfterSeconds` of 1 to 60 and `Retry-After` equal to it.
+  - Two accounts on one address X: A 15 and B 5 answer 200 (20 from X); then both are refused from X by the address limit (429, no `reason`); from another address A has exactly 5 left and its 6th is the per-person 429; B, from a third address, has 15 left and its 16th is the per-person 429. So each keeps their own budget and the address limit still holds for the address.
+  - 90 refused requests (no token, `q=a`, a person with no wallet), none counted: all 20 searches are still there and the 21st is 429.
+  - The hour and the day, on a clock the test moves (500 requests, each from its own address): 120 in six minutes of one hour, the 121st is 429 with `retryAfterSeconds` **3,234** (3,600,000 - 366,000 ms, exactly); 1 ms before the hour ends it is 1; four hours give 480, 20 more make 500, the 501st is 429 with **71,939** (86,400,000 - 14,461,000 ms) although the minute and hour have room; a day later the person starts clean.
+  - Exact figures in the spec as literals, and in `hub-rate-limits.contract.spec.ts`.
+- **Mutants killed:** no counter (4 tests fail), day 501 (2), hour 121 (2).
+
+**D2, contract.** The search now declares `400` (`MoneyPlainErrorEnvelope`: statusCode, message, data null, no `reason`), `429` (`recipient_search_rate_limited`, the money envelope) beside 409 and 423; both arrays carry `maxItems` 20 and 10 (new `@MaxItems(n)` decorator, written as `x-wawu-max-items` and applied to the 200 array by `scripts/enrich-contract.js`). A test reads `contract/openapi.json` for the statuses, the schemas and both maximums. Mobile types regenerated.
+
+**D3, tests.** The caps are literals now: 25 people give exactly 20 (the first 20 by name), 13 recent give exactly 10, and the constants are checked to equal 20 and 10 (mutants search cap 21 and recent cap 11: each fails 1 test). New test: fullwidth, Arabic-Indic, Eastern Arabic-Indic and Devanagari digits, fullwidth with `+234`, a mixed ASCII and fullwidth number and superscripts are all read as text and find nobody, while the ASCII number finds the person; a 9-digit text and a 10-digit text starting `09` are text (an NFKC mutant fails 1 test).
+
+**Optional index: not done, G-134 filed.** `lower(handle) text_pattern_ops` would serve only an `@` search; a plain text search reads the handle OR the wallet name (`ILIKE '% x%'`), which no btree serves, so the index would not change the 306,000-wallet figure. The real fix needs the name held in one lower-case column (with G-132) and a trigram index. **G-133** is closed (what is left: the counter is in memory in one process, like the statements one).
+
+**Checks.** `tsc` 0; eslint clean on `src/money` and `src/tests`; prettier clean. Full suite, fresh migrated and seeded DB, own network namespace with the mock on :4001 inside it (listener PID mine before and after): **152 suites, 3659 passed, 3 skipped, 0 failed** (`fintava-stall` passed in it, no rerun needed). `hub-rate-limits` on the host: 22/22. Protected `run.sh --fresh HEAD`: **253/253**, lock ref origin/main 38bbe4c, lock files diff empty; tripwire on added lines 0. Gates: **16 fail, 34 warn, 76 accepted** (the same as round 1; the warn list differs only in line numbers), `check_baseline` ok. Secret scan of the staged backend diff (58 windows): 0 hits. Mobile `npm run check` exit 0 (36 suites, 666 tests, gates 0 fail 0 warn, tasks); mobile secret scan 0 hits.
+
+**Default (agent), owner may override:** the 500 a day (the lead's figure); the new code is `recipient_search_rate_limited`; `Retry-After` carries whole seconds.
+
+**NOT RUN.** The same two as round 1 (V9 against the real WAWU ID; recent from a real send once WALLET-07 serves `POST /money/transfers/wawu`), unchanged. The limiter's 120 an hour and 500 a day were proved on a moved clock, not by waiting an hour or a day; unblocked by nothing short of a 24-hour run, and the figures are pinned by literals.
 
 ## Verifier report
 

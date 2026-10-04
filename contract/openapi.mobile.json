@@ -16621,7 +16621,18 @@
          "type": "array",
          "items": {
           "$ref": "#/components/schemas/RecipientView"
-         }
+         },
+         "maxItems": 20
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "q is missing, repeated, shorter than 2 characters (not counting a leading @) or longer than 60, or another field was sent. No `reason`: a malformed field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MoneyPlainErrorEnvelope"
         }
        }
       }
@@ -16645,6 +16656,16 @@
         }
        }
       }
+     },
+     "429": {
+      "description": "reason.code: recipient_search_rate_limited",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MoneyErrorEnvelope"
+        }
+       }
+      }
      }
     },
     "security": [
@@ -16656,7 +16677,8 @@
     "tags": [
      "MoneyRecipient"
     ],
-    "x-wawu-built-by": "WALLET-08"
+    "x-wawu-built-by": "WALLET-08",
+    "x-wawu-max-items": 20
    }
   },
   "/api/hub/money/recipients/recent": {
@@ -16672,7 +16694,8 @@
          "type": "array",
          "items": {
           "$ref": "#/components/schemas/RecipientView"
-         }
+         },
+         "maxItems": 10
         }
        }
       }
@@ -16707,7 +16730,8 @@
     "tags": [
      "MoneyRecipient"
     ],
-    "x-wawu-built-by": "WALLET-08"
+    "x-wawu-built-by": "WALLET-08",
+    "x-wawu-max-items": 10
    }
   },
   "/api/hub/chats": {
@@ -20584,7 +20608,8 @@
        "device_approval_refused",
        "statement_too_large",
        "statement_rate_limited",
-       "statement_busy"
+       "statement_busy",
+       "recipient_search_rate_limited"
       ],
       "type": "string"
      },
@@ -20651,7 +20676,7 @@
      },
      "retryAfterSeconds": {
       "type": "number",
-      "description": "provider_unreachable, idempotency_in_progress, identity_checks_exhausted, selfie_checks_exhausted, reset_codes_exhausted: seconds to wait before trying again."
+      "description": "provider_unreachable, idempotency_in_progress, identity_checks_exhausted, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again."
      },
      "checksLeft": {
       "type": "number",
@@ -20923,6 +20948,30 @@
     "required": [
      "bankCode",
      "accountNumber"
+    ]
+   },
+   "MoneyPlainErrorEnvelope": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "description": "Always null on an error.",
+      "type": "object",
+      "nullable": true,
+      "example": null
+     },
+     "statusCode": {
+      "type": "number",
+      "description": "400."
+     },
+     "message": {
+      "type": "string",
+      "description": "A sentence about the first field that is wrong."
+     }
+    },
+    "required": [
+     "data",
+     "statusCode",
+     "message"
     ]
    },
    "OpenChatDto": {
