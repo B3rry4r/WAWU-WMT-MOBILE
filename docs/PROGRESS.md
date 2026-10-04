@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 58 of 182.**
+**Launch tasks done: 60 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 48 | 37 | 30 | 31 |
+| todo | 46 | 35 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 1 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 34 | 20 | 4 | 1 |
+| done | 37 | 22 | 4 | 1 |
 
 ## Being verified
 
@@ -66,8 +66,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-02](../tasks/FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy) (You)
 - [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details (Developer)
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
+- [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts (Developer)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
 - [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
+- [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people (Developer)
 - [SETTINGS-03](../tasks/SETTINGS-03.md) Change password and sign out for real (WAWU ID) (Developer)
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
@@ -77,12 +79,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
+- [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
+- [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
+- [WALLET-27](../tasks/WALLET-27.md) Statements (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
 
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN
-- **Developer:** [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts, [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account
+- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy
 - **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
@@ -91,17 +96,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 4 Oct 2026 · ME-16 · Built (backend): featured works and education, twelve new routes under `/users`, two new tables, owner-only writes, blocked people get the unknown-person 404; ready for the verifier.
-- 4 Oct 2026 · FIX-05 · Merged to main by the lead (e2d3c14): per-caller rate-limit store, so one address flooding the server never pushes another into 429; backend PR #60 (c4d17bb).
-- 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
-- 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
-- 4 Oct 2026 · lead · Mobile jest `testTimeout` raised to 20 s in package.json: under machine load (load average 7 to 11 with five agents running) first tests that load a screen's modules timed out at the 5 s default in A26 and M9, though every one passes alone. No test or product code changed.
-- 4 Oct 2026 · ME-06 · Merged to main by the lead (e881d85, Developer 1's task): edit profile and social links. OTA update follows.
-- 4 Oct 2026 · ME-06 · Edit profile (M8) and Social links (M9) built on `wmt/ME-06`, mobile only: name, handle, bio, location, avatar, cover, social links with drag to reorder, saved to `/users/me` and `/users/me/profile-fields`; status verifying; five SHARED-CHANGES rows and G-110 to G-113 filed.
-- 4 Oct 2026 · HOME-05 · Builder (Developer): creator and professional cards on `GET /feed/entries`, `creator` and `media` on feed cards, photo-set frames, durations and page counts (`GET`/`PUT /content/:id/media`), table `ContentFrame`; built on wmt/HOME-04; gaps G-100 to G-103; status verifying
-- 4 Oct 2026 · KYC-03 · Verified round 3 (mobile e698d94, backend 442bf98), status review: no defect open. A refused handle at A5, A6, A7 or A7's Try again lands on A26 with the banner and the server's sentence, and A5 comes back filled in (18 of 18 browser scenarios, light and dark). The kept address never crossed accounts, sign-out, leaving or a reload, and never reached storage (11 probes). Check my details opened with 1 selfie match; BM3 killed; 5 of 5 new mutants killed. Backend full suite 3,404 passed 0 failed, protected 253/253; mobile check exit 0. Both mains moved: mobile f8130cd conflicts in BACKEND_GAPS, SHARED-CHANGES and PROGRESS only.
-- 4 Oct 2026 · KYC-03 · Round 3, status verifying: defect 1 fixed. A handle the server refuses (409 bvn_not_checked at A5, A6, A7 or A7's Try again) now returns to A26 with the server's sentence in a banner, and A5's address and occupation are kept in memory so A5 comes back filled in after the new check. A refused opening (422) offers Check my details, which needs no second selfie. The backend has a test for the NIN on the handle path (442bf98). G-98 filed. V9 passed light and dark against the real Hub.
-- 4 Oct 2026 · KYC-03 · Verified round 2 (mobile 62478c6, backend 51c1e10), status building: 1 defect. A handle the server refuses (409 bvn_not_checked, e.g. after its 30 minutes) drops the person on an empty A26 with no word of why. The handle held: 38 forged, tampered, expired, replayed and cross-user handles refused alike, none reaching Fintava, 0 numbers or handles in DB or logs. Backend full suite 3,403 passed 0 failed (the :4001 suites too), protected 253/253, lock unchanged, gates as main, contract reproduced; mobile check exit 0; 14 mutants (1 test gap). Evidence and 6 unclear items in the task file.
-- 4 Oct 2026 · KYC-03 · Round 2, status verifying: G-72 closed with a sealed check handle (backend `wmt/KYC-03` 51c1e10, main 9a370c0 merged in). The passed BVN check answers `checkHandle` (AES-256-GCM, key from IDENTITY_HASH_KEY by HKDF, 30 minutes, nothing stored); the selfie match and the opening take it in place of the BVN and NIN. The app keeps it in memory with the check and sends it; A6, A7 and A16 now reach the real Hub (Fintava stand-in only for Fintava). Backend: 18 handle tests, 10 mutants killed, protected 253/253, gates as main; 6 backend suites bound to :4001 not run here.
-- 3 Oct 2026 · KYC-03 · Built (mobile): Open your wallet steps 2 and 3. A26's pass goes to A5 (the BVN's name, date of birth and gender, then home address, occupation and consent; the occupation is saved, the address kept in memory), then A6 (selfie) with A7 (matched, the account opening) and A16 (no match). The BVN and NIN are never re-asked or kept: today's Hub refuses the match and the opening without them (G-72), so no account opens from the app until the backend takes them from the passed check. Gaps G-72, G-73; SHARED-CHANGES KYC-03 #1 (camera), R1. Status verifying.
-- 4 Oct 2026 · FIX-05 · Verified (backend 25291ac, status review, no defect): xaddr victim 6 x 429 on main, 0 on the branch; six victims under every limit while 19 addresses flood four routes: 0 x 429 on the branch, 130 on main; one caller on every limit set (20/1 s, 200/60 s, 5/60 s, 20/60 s, 3/60 s, 20/1 h) answers as main, 363 requests, statuses and Retry-After identical; fake-clock differential 280,457 answers equal; heap back to baseline after 100k and 1M callers (longest loop hold 59 ms); full suite 3,396 passed, 0 failed; protected 253/253; gates as main. Notes: G-96 row says nginx IPv6 is unknown, the config listens on [::].
-- 4 Oct 2026 · FIX-05 · Built (backend 25291ac, status verifying): the global throttler counts in our own per-caller store (`src/hub-throttler-storage.ts`, registered in AppModule, SHARED-CHANGES FIX-05 #1) instead of @nestjs/throttler's, whose ending of one caller's block stopped every other caller's hits expiring (G-95). No per-hit timers; idle buckets pruned on access and by a chunked sweep; answers equal the library's hit for hit for each caller, so every limit, `@Throttle` and `@SkipThrottle` is unchanged. Built Hub: xaddr victim 6 x 429 on main, 0 on the branch, flooder refused identically (200 x 200, 800 x 429); 100k distinct callers then idle: RSS back below its start (main 1,113 MB and an 81.8 s stall). Protected 253/253, gates as main (16 fail / 21 warn). G-96 (IPv6 tracked per address) added.
+- 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
+- 4 Oct 2026 · OPS-07 · Verified round 2 (independent, docs only): round 1 defects D1 to D5 and U1 closed; 12 states checked against src and task status; WEB-01 and M20 correct; 64 rows re-searched against the canvas, no miss; `npm run check` exit 0; 2 minor defects open (row 58 is not drawn as a control, M20 says the app sells ticks while ME-12 and ME-18 are todo); status building.
+- 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
+- 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
+- 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
+- 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
+- 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
+- 4 Oct 2026 · SETTINGS-04 · Merged to main by the lead (9d0e1e4, Developer 1's task): data export, and blocking that hides people on every read; backend PR #62 (dfaa53b); its export-email gap renumbered G-95 to G-131.
+- 4 Oct 2026 · WALLET-27 · Merged to main by the lead (068abc3): account statements with per-person limits; backend PR #61 (5236f12).
+- 4 Oct 2026 · SETTINGS-04 · Built (backend, status verifying): a block now hides people both ways on search, Explore, profiles, the feed, pieces, comments, rooms, the directory, events and EVG; data export fulfilled by a signed, expiring link emailed through WAWU ID (real inbox NOT RUN until WAWU ID adds the route, G-131); 41 new tests with revert proofs, V3 244 of 244, contract suite 0 new failures against main.
+- 4 Oct 2026 · HOME-06 · Built on `wmt/HOME-06` (backend, owner DEV), verifying: `GET /content/:id/detail` (free preview, updated and purchased dates, buyer and student counts, rating state), `PUT /content/:id/rating` and `PUT /content/:id/preview`; the web's `POST /content/:id/rate` is unchanged (protected route); the new rating rules live only on `PUT /content/:id/rating`.
+- 4 Oct 2026 · WALLET-18 · Verified round 5: no defect open, status review (backend 5008664 with main c4d17bb; mobile be87619 with main 26cf830; both mains have since moved). D3 closed: all 73 round-4 rows show at most 4 digits (the 5 finding rows now show the real last four, `•••• 4567` and `•••• 4512`), plus 234 new attack rows (every noncharacter U+FDD0 to U+FDEF, U+FFFE, bidi controls, ZWJ, variation selectors, keycaps, NFKC forms) with no U+FDD0 in any page, image or PDF line. The table matches UCD 17.0 entry for entry, and the generator refuses any file but the pinned one and is byte-identical from the download. Fail closed holds on a real Hub with 12 characters taken out of its table, and in 612,000 differential fuzz strings; 17 of 19 own mutants killed (the 2 survivors: a circled-one value no test shows, and one equivalent). Note N1 for the lead: an unknown number character counts as one digit, so a future character that folds into 2 or more digits could let one extra digit show.
+- 4 Oct 2026 · WALLET-18 fix round 5 (backend wmt/WALLET-18 5008664, main c4d17bb merged): the digit table is built from Unicode 17.0.0 (pinned UnicodeData.txt and its SHA-256), adding Kaktovik 0 to 9 and the two Yangqin signs, with a test that fails when the table is older than the runtime; a number character the table does not know is hidden and counted (fail closed); status verifying.
+- 4 Oct 2026 · WALLET-18 · Verified round 4: 1 latent privacy defect still open, status building (backend 23c4ed3 with main e6bd701; mobile ebf1085 with main 2874688). D5 closed (the 200-character reference receipt and its link fit one A4 page at scale 1.005, 36 pt left under it). R3, R4 and 4 new mutants killed (6 of 6). Memory plateaus across 20 bursts of 30 PDFs on the whole Hub (peaks 415 to 444 MB, back to 322 MB at rest). D3: all 52 earlier rows and 17 of 21 new ones masked (Roman, Hangzhou, post-14 decimal digits, mixed No and Nd, x runs); left are 12 digit characters added after Unicode 14 (Kaktovik 0 to 9, two Yangqin signs) that the UCD 14 table misses. Full suite 144 suites 3,469 passed 0 failed (run in its own network namespace because another session's orphaned stand-in held :4001); protected 253/253; gates 16 fail / 27 warn (only the three RECEIPT PROVISIONALs added); 0 key windows, 0 Fintava calls.
