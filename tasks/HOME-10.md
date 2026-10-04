@@ -7,7 +7,7 @@ order: 151
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -52,7 +52,25 @@ Backend only (`wmt/HOME-10`, uncommitted: the session was told not to commit). R
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verdict: **PASS**. No open defects. Verifier session was separate from the builder. Own databases `h10v_*`, own mocks on :4721 and :4723 (the :4001 mock belonged to another agent and was not touched). Nothing committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 (gates, tsc, specs) | passed | `tsc --noEmit` 0; `prisma validate` valid; tgif spec 9/9, account-data-map and data-export-map specs pass; mobile `npm run check` exit 0 (gates 195 files, 0 findings; 207 tasks), no `tasks --write` needed |
+| V2 (contract and input) | passed | Builder spec re-run, plus a throwaway probe spec (deleted afterwards, worktree clean): 401 with no token and a junk token on all five routes; forged `amen`/`readers` in the body is 400 and counts come from rows; delete of a reaction you do not have answers 200 with no row written and another user's reaction untouched; 15 trials each of 10 parallel same-user react/read/share plus 8 other users, every count equal to its rows and one row per person per day; raw SQL INSERT of a bad card or kind is refused by the CHECKs; blocker, blocked and bystander views correct in both directions |
+| V3 (existing routes) | passed | `scripts/protected-routes/run.sh --fresh wmt/HOME-10` on a fresh `h10v_protected_test`: 253/253 jest, "all 244 required tests passed". `contract:build`: no diff against the committed file; 0 lines removed against origin/main (317 added). Schema: `git diff origin/main -- prisma/schema.prisma` shows additions only |
+| V4 (data) | passed | Migration replay on a scratch db from empty, then rollback (DROP the 3 tables, delete the migration row), then redeploy: tables gone, then back. `migrate diff` after replay shows only main's own `DROP INDEX ContentPiece_specializations_idx`. CHECKs on kind and card present and enforced. Purge map and export map cover the 3 tables (export reads `userWawuId = me` only, no other person's rows). Dropping the `tgifShares` export section in a scratch copy fails data-export-map (1 failed); dropping the TgifRead purge rule fails account-data-map (1 failed); both restored byte-identical |
+| V9 (live seam) | passed with a note | Real tokens from the mock WAWU ID through the real Nest stack and real Postgres. No screen calls these routes yet (HOME-09), so there is no app seam to walk |
+
+Revert proofs, spot-checked 4 in scratch and restored (9/9 green after): drop unique index on TgifRead fails 3; no block filter fails 1; `IsOptional` for `ValidateIf` fails 1; no write date window fails 1.
+
+Full `npm run test:contract`, seeded dbs, by test name, branch against a separate origin/main (a94f338) worktree `/home/user/lanes/h10v/main`: branch 3409 pass / 262 fail of 3674; main 3357 / 305 of 3665. 0 tests fail on the branch that do not also fail on main; 43 fail only on main (env noise); the 9 extra tests on the branch are the new tgif tests, all passing. Failures on both are the known environment ones; not re-run alone one by one.
+
+Findings:
+1. low, `unclear` (Default (agent), owner may override): DELETE of a reaction you do not have answers 200 with the current state, not 404. The task allowed either; it is a clean no-op with no side effect, which suits take-back twice.
+2. low, note: protected-route and contract runs used the committed branch head `1a4f92c`; the working tree was clean, so that is the code reviewed.
+
+NOT RUN: a run of the mobile app against these routes (no screen calls them yet); each of main's env-caused failures re-run alone.
 
 ## Owner sign-off
 
