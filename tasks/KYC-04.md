@@ -7,7 +7,7 @@ order: 88
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -113,6 +113,124 @@ Builder, 4 Oct 2026. Mobile `wmt/KYC-04` from main `2c99b2f` (main has not moved
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+Verifier, 4 Oct 2026 (fresh session; wrote none of this code). Mobile `wmt/KYC-04` at dbc4e33 in a detached worktree, merge base = mobile main 2c99b2f (main has not moved). Backend: a detached worktree of backend main 95d8bd4, Hub `dist` built there (no backend change in this task). Evidence `$V` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk04/`:
+- screenshots `$V/shots/<name>-<theme>.png` (390 px at 2x), renders `$V/design/`, side by sides `$V/side-{A8,A9,A10}-{light,dark}.png` (render left), state sheets `$V/sheet-states-{light,dark}.png`;
+- browser driver `$V/drive.py` (my own scenarios; the App helper adapted from the builder's), runs `$V/results.jsonl` (38 runs), pass-through `$V/web-server.js` (the builder's, plus my controls: `/__thendown`, `/__pinhold`, `/__get401`, `/__deny`, `/__refreshas`), its request log `$V/calls.jsonl` (key names and lengths only);
+- jest probe `$V/probe-pin.test.tsx` with `$V/probe-pin.log` and `$V/probe-pin-p3.log` (run in place, then removed);
+- mutants `$V/mutants.txt` (`$V/mutate.py`); privacy scan `$V/privacy-scan.txt`; `npm run check` log `$V/check-branch.log`.
+
+**Verdict: 2 defects open (both on A10, below). Status back to `building`.**
+
+### Pass table
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed. `npm run check` exit 0: typecheck and lint clean, 40 suites, 704 tests (open-wallet 156), gates 9 run, 183 files scanned, 0 fail, 0 warn, 0 accepted, 205 tasks. Jest printed "A worker process has failed to exit gracefully" once; the run still exits 0 | `$V/check-branch.log` |
+| Diff vs report | passed. `git diff --stat origin/main...HEAD` lists exactly the builder's files (25). No local copy of a shared component: A9 and A10 import `Keypad`, `DOTS` and `ALERT` from `@/components/pin-sheet` by path and draw their own dots row, which SHARED-CHANGES KYC-04 #2 asks to share (the barrel does not export them on main) | `git diff --stat` |
+| V4 values | passed, with defect 1 for the PIN outcome. Against the built Hub: bank name "Loma Bank" twice (subtitle and Bank row), account name and the NUBAN grouped 3-3-4, each equal to `GET /money/wallet`; the long legal name from the Hub's own `WALLET_BANK_NAME` (Hub restarted with it) shows twice and wraps to exactly two lines in the Bank row, inside the card (text box 272 px wide, height = 2 line heights) (`a8-long-bank-*`). `limits` is null from the Hub, so no Limit row; with the pass-through setting `dailyLimitKobo` 30000000 on the Hub's real answer: "₦300,000 a day" (`a8-limit-standin-*`). No "Tier", no "Raise your limits". "Four digits." comes from `PIN_LENGTH` (mutant V5 killed). Copy put exactly the 10 digits as sent on the clipboard (read back equal, length 10), the label read "Copied" and back to "Copy" after about 2 s. Server sentences: `pin_mismatch` "The two PINs do not match. Enter the same PIN twice.", a Hub 500 "Something went wrong. Please try again." (`AllExceptionsFilter`'s own), "No connection..." is the client's `networkError()`. "It approves every payment and transfer." is a literal; it is backed by contract CONVENTIONS section 5 (PIN or the biometric approval standing in for it on every debit route, held by `wallet-gate-coverage.spec.ts`), so I accept it | `full`, `long_bank`, `limit` in `results.jsonl` |
+| V5 picture | passed, one `unclear` (finding 4). A8, A9, A10 side by side in light and dark: same parts in the same order and sizes (result circle, title, subtitle slot, card rows, Copy pill, footer button; bar with Back and "n of 2", LockKeyhole tile, title, line, dots, keypad). The built screens sit about 50 pt higher because the render draws a phone status bar. Brief applied: no tier, no "Raise your limits", Limit row hidden (and shown when sent), bank name a slot. A10's mismatch (`a10-mismatch-*`): the sentence under the dots with CircleAlert in danger and all four empty dots ringed danger (computed border `rgb(217, 58, 58)`), back to "1 of 2", as BRIEF section 12 records. No em-dash in any added user-facing string; no colour literal in the diff | `$V/side-*.png`, `$V/shots/` |
+| V6 states | passed (each by its real cause, light and dark, `$V/sheet-states-*.png`): A8 loading (Hub answers held 6 s) `a8-loading`; A8 error (Hub connections dropped) `a8-error`, Try again recovers; A8 opening (Fintava stand-in answers the account creation after 8 s, past the Hub's 3 s timeout, so the Hub holds the wallet as opening; A8 opened in a second tab meanwhile) `a8-opening`; A9 loading `a9-loading`; A9 error `a9-error`, Try again recovers; A10 setting (POST answer held 5 s: spinner, keys off, Back `aria-disabled`) `a10-setting`; A10 mismatch (real `400 pin_mismatch`) `a10-mismatch`; A10 server error (my `vk04_test`'s `TransactionPin` table renamed, so the Hub answers 500 to the POST and to the re-read) `a10-server-error`, then the table restored and the same PIN set (201, hash verifies); PIN already set: A8 Done (`a8-pin-set`, `pin-set-a8-link`), `/open-wallet-pin` by link leaves to Home with 0 new POSTs; no wallet: `/open-wallet-account` by link goes to `/open-wallet`, and so does `/open-wallet-pin` (through A8). My first "opening" try used a stand-in answer without `pin` and the app refused it as unreadable: the contract requires `pin`, so that was my harness, not the app (`opening` row in `results.jsonl`) | `$V/shots/` |
+| V7 flow | passed, except defect 2 and the NOT RUN rows below. Fresh user signed in on A22, `/open-wallet` pushed from Home: A26, A5, A6 (stand-in selfie match), A7, then A8. Browser Back from A8 lands on `/` with no Open your wallet screen left (`back-from-a8-*`). A8's Create opens A9; A9's Back goes to A8; A10's Back goes to A9 with "0 of 4" and nothing sent. After A10: `/`, no flow screen left (`after-a10-*`), `GET /money/pin` `isSet: true`, and the stored hash verifies against the PIN typed. Jest on the real Expo Router (`flowReturn.test.tsx`) covers the Wallet-tab and pay-sheet returns; my mutant V7 (A9's route left off the flow list) fails 4 of its tests | `full` rows, `$V/mutants.txt` |
+| V8 money | passed for what applies; the rest is not applicable because this task moves no money (no debit, webhook or ledger). One POST per A10 (keys off and `inFlight` while setting). Two first PINs cannot both land: the Hub's primary key answers the second `pin_already_set`. Chromium itself re-sent a POST whose connection dropped (finding 3); the Hub answered it `409`, never a second hash. Defect 1 is the money-adjacent fault | `calls.jsonl` |
+| V9 seam | passed (as a harness); defects 1 and 2 are both reproduced on it. Hub `dist` from 95d8bd4 on :4953 with a fresh `vk04_test` (migrated, seeded), stand-in WAWU ID :4954 (people registered there and signed in on the app's A22, no injected token), Fintava stand-in (made-up numbers, started with `env -i`, no key in its environment; the Hub had a made-up key), web export of dbc4e33 on :8153 (`--clear`, 0 `wawuafrica.com` in the bundle; 0 requests to `wawuafrica.com` or `fintavapay.com`). 38 browser runs across 23 scenarios. Rows: 38 wallets opened, 20 PINs set. The server-only values on screen: the NUBAN Fintava's stand-in issued and the Hub recorded | `results.jsonl`, `calls.jsonl` |
+| Privacy | passed for storage and logs; failed for in-memory state across an account change (defect 2). 13 distinct 4-digit PINs typed (plus partial entries). 0 hits in a full `vk04_test` dump, the Hub, stand-in WAWU ID, Fintava stand-in and pass-through logs and `calls.jsonl`; 0 in any navigation URL, request URL, console line or browser storage across 36 browser runs. localStorage held only `wawu.session.access` and `.refresh`; no sessionStorage, IndexedDB or cookie. 42 `POST /money/pin` reached the pass-through, each body exactly `{pin, pinConfirmation}`, 4 digits each, no query string (positive control: the browser captured 29 of the app's own POST bodies carrying the PIN). `TransactionPin` holds 20 rows, all `$argon2id$v=19$`. Jest: no PIN in the query cache, mutation cache (A10 uses no `useMutation`) or secure store after a set (probe P5); 0 jest snapshots in the repo. No error reporter exists | `$V/privacy-scan.txt`, `probe-pin.log` |
+| Mutations | 11 of my own, each restored and sha1-checked. **Killed (7):** V1 a late answer after a session end still finishes; V2 the mismatch without the wrong-PIN ring; V3 Copy puts the grouped number on the clipboard; V5 the length word off by one; V7 A9's route left off the flow list; V8 A8's Done and Create swapped; V11 `pin_already_set` treated as a refusal. **Survived (4):** V6 a lost answer whose re-read also fails treated as set (no test covers a failed re-read: part of defect 1); V10 a session end that keeps A9's first entry (part of defect 2); V4 a limit of 0 kobo shows "₦0 a day" (a test gap; no server sends 0, and the contract does not exclude it, recorded, not a defect); V9 A7 handing over on every render (equivalent: `way.opened` is memoised on the router, so the effect runs once; the guard matters only if the callback changed) | `$V/mutants.txt` |
+| Secret scan | passed. Every 8-character window of the Fintava key (58 windows) against `git diff origin/main...origin/wmt/KYC-04` (112 KB): 0 hits | the scan printed counts only |
+| V10 | NOT RUN. No device. Unblocked by a tester build with the backend on the droplet (OPS-10) | |
+
+### Capability checks
+
+1. A8 copy, Create, bank name from the API, Limit row only when sent: passed (V4).
+2. A9, 4 digits: passed.
+3. A10, re-enter; mismatch in W11's look, wording in the brief: passed (`a10-mismatch-*`, BRIEF section 12). The other outcomes fail under defect 1.
+4. V5 light and dark: passed, one `unclear` (finding 4).
+5. Values from the API or the user: passed (V4).
+6. States by their real cause: passed (V6).
+7. After A7, a user lands on A8: passed in the browser (`full`, both themes).
+8. After A10, back to the pay sheet or W5: passed in jest on the real Expo Router only. **NOT RUN on screen:** neither the pay sheet (SHARED-CHANGES KYC-05 #1) nor the Wallet tab (WALLET-01) has a way into the flow on main. Unblocked when either merges with a call to `useOpenWalletEntry().open`.
+
+### Findings
+
+**Defect 1 (A10): after an unanswered set, A10 can end the flow as if the PIN just typed were set, when the server holds an earlier one.**
+The steps that cause it:
+1. `afterPinRefusal` maps no answer (network, 5xx) to `unknown`, and `submit` then re-reads the wallet.
+2. If that re-read also fails, which is likely when the connection is what dropped, the `catch` falls through to `startAgain` with "No connection. Check your internet and try again." The person is sent back to A9 to choose a PIN, though the first one may well be set.
+3. The next POST answers `409 pin_already_set`. The service checks that before the mismatch: `transaction-pin.service.ts`, `set`.
+4. `afterPinRefusal` maps `pin_already_set` to `done`, so `finish()` ends the flow as a success. That holds even when the two new entries differ.
+
+The person leaves believing their PIN is the one they typed last. Their first payment then answers `pin_incorrect`, and the PIN is locked after five tries.
+
+- **Reproduce (real seam, both themes), `lost_reread_fails`.**
+  1. A9 and A10 with 8642.
+  2. The pass-through lets the Hub set it (201), drops the answer, and then drops every Hub connection (`/__losepin?n=1`, `/__thendown?on=1`). The browser's own re-sends and the app's re-read are dropped too.
+  3. A9 shows "No connection..." (`lost_reread_fails-told-*`).
+  4. Connection back; the person types 5555 twice. The Hub answers `409`, and the app goes to `/` with no flow screen left (`lost_reread_fails-after-second-*`).
+  5. The stored hash verifies 8642, not 5555.
+
+  `lost_reread_fails_mismatch` types 5555 then 5556. It also ends on `/` as done (both themes).
+- **Jest:** probe P3 (re-read lost, second PIN 5555: one POST, `onDone` called) and P4 (entries 1111 and 2222, server `pin_already_set`: `onDone` called). Both are in `$V/probe-pin.log` and `-p3.log`.
+- **Tests miss it:** mutant V6 (a failed re-read treated as set) survives the suite.
+
+Closed when:
+- no path ends the flow, or tells the person their PIN was not set, unless the server said which PIN is set;
+- a failed re-read keeps asking where the PIN stands (read again, or "We couldn't check your PIN" with Try again) and never offers a new entry;
+- a `pin_already_set` that answers a PIN other than one this visit sent, or two entries that differ, does not end as success;
+- a jest test kills V6, plus one for P3 and one for P4.
+
+**Defect 2 (A9 and A10, privacy and a stuck screen): a session end that keeps the app signed in does not start A9 and A10 over.**
+FIX-04 counts two session ends that keep the status `signedIn`: a refresh answering another account, and a sign-in that replaces a session. `CreatePinScreen`'s `onSessionEnd` only sets `live = false` and nulls `first`. It keeps `digits`, `step`, `phase` and the line, and `live` never turns true again while the screen stays mounted.
+
+What happens when A is on A9 and the session becomes B's:
+- A's typed digits stay on B's dots.
+- B's next digits are appended to them, so B sets a PIN that is partly A's input.
+- B's request is sent, and its answer is dropped by `!live.current`.
+- The screen stays on "Setting your PIN" with the keys off and Back disabled, with no way out but the platform back.
+- If the switch happens on A10, `first` is null, so four digits typed there send nothing and the screen sits full (probe P6).
+
+A26 handles the same session ends by starting a new visit (KYC-05 rounds 5 to 7). Reach is the same as KYC-05's defect 2: nothing in the UI offers these switches today, and KYC-05 treated that as in scope.
+
+- **Reproduce (real seam, both themes), `switch_a9_bopen`.**
+  1. B already has an open wallet and no PIN.
+  2. A signs in on A22, reaches A9 and types 2 and 7 ("2 of 4").
+  3. The next Hub GET answers 401 and the refresh answers B's pair (`/__get401?n=1`, `/__refreshas`; the token's `sub` is now B's).
+  4. A9 still shows "2 of 4" (`switch_a9_bopen-b-*`). B types 1 and 3, which moves on to A10, then types 2713.
+  5. The Hub stores B's PIN as 2713: the hash verifies, and A typed the "27".
+  6. Twenty seconds later the screen is still on "Setting your PIN" with Back `aria-disabled` (`switch_a9_bopen-b-20s-*`).
+- **Jest:** probe P1 (with the app's own `createQueryClient`, the POST body is A's two digits joined with B's, and the screen is stuck) and P6 (sign-in as B on A10: four digits typed, 0 POSTs sent).
+- **Tests miss it:** mutant V10 survives.
+- **Late answer, not a defect:** a late answer itself changes nothing. In `late_after_switch_bopen` and `late_after_switch` (both themes), A's set lands 6 s after the switch. A's hash verifies, B has no PIN row, and B's screen moves only on B's own reads. Jest P2 shows the same.
+- **Sign-out, not a defect:** a refused refresh mid-A10 goes to `/welcome`. B then signs in and gets an empty A26, because B has no wallet (`signout_mid`, both themes).
+
+Closed when A9 and A10 start over on every `onSessionEnd`. Starting over means:
+- step 1, nothing typed, no line, keys live;
+- the screen reads again as the new account;
+- a test with the app's real session and query client shows "0 of 4" after a refresh answering B, and a set by B then ending normally, with V10 killed.
+
+**Finding 3 (evidence, not a product defect): the builder's `lost` run did not take the re-read path.** Chromium re-sent the POST when the pass-through destroyed the socket. The Hub answered that re-send `409 pin_already_set`, and the app ended through `done`. The builder's `$K/calls.jsonl` lines 71 and 112 show 2 POSTs each, not the "1 POST" reported. My `lost_reread_ok` drops every answer (3 POSTs reached the Hub: the app's own and 2 browser re-sends). The app then read the wallet, found the PIN set and ended (both themes), so the re-read path itself works. Platform re-sends of a dropped POST are why `pin_already_set` answering the app's own first request is real, and correctly ends as done.
+
+**Finding 4 (`unclear`): the arrow on "Create your transaction PIN".** The canvas source passes `iconRight: 'ArrowRight'` (`design/_gen/auth.js` line 45), but the kit's `Btn` ignores `iconRight`, so the rendered A8 has no arrow. The built button has one. Picture and source disagree; the brief does not say.
+
+**Finding 5 (`unclear`, the builder's finding about A26's "Your wallet is open" end).** My judgement: not a defect of this task, but a follow-up that has no owner today.
+- **Why not this task:** the capability check "After A7, a user lands on A8" is the hand-over out of A7, and it passes on the seam.
+- **Who could own it:** a person whose wallet opened but who left before A9 needs a way back in. Two ways would serve, and neither belongs to this task:
+  - A26's open end, which is KYC-05's (merged).
+  - The ways into the flow, which are not built: `leadIfNoWallet` routes only `wallet_not_open`, the Wallet tab is WALLET-01, and the pay sheet is SHARED-CHANGES KYC-05 #1.
+- **Why it is unowned:** nothing in the backlog creates a first PIN after A8. WALLET-06's W36 is "change" only (its BRIEF entry: "a wallet holder already set one on A9"), and a debit answers `409 pin_not_set` with nowhere to go. So such a person has no in-app way to create a PIN. It needs an owner and a ruling on where `pin_not_set` leads (A8 or A9 would serve).
+
+**Checked and not a defect:**
+- The PIN appears in no route param or URL.
+- A8 and A9 by link with no wallet go to A26.
+- Back from A8 never lands on an earlier step.
+- Leaving after A10 or A8's Done dismisses every flow screen.
+- After a set, the second entry stays in `digits` until the screen unmounts (the dots show "4 of 4"). It is dropped with the screen, nothing reads it, and the leave runs straight after.
+
+**NOT RUN:**
+- Capability check 8 on screen. Unblocked when the pay sheet's or the Wallet tab's way in merges (SHARED-CHANGES KYC-05 #1, WALLET-01).
+- V10. Unblocked by OPS-10's tester build.
+- The A7 hand-over frame ("Matched to your BVN, Your account is open") as a picture. It lasts one render before A8 replaces it; A7 itself is KYC-03's and was verified there.
+
+Clean-up: the Hub, stand-in WAWU ID, Fintava stand-in and pass-through stopped (PIDs and command lines checked), `vk04_test` dropped, both worktrees removed.
 
 ## Owner sign-off
 
