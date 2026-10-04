@@ -25,6 +25,12 @@ export type OpenWalletEndProps = {
   children?: ReactNode;
   actionLabel: string;
   onAction: () => void;
+  /** A second, quieter way on, under the first (the refused opening's Done beside "Check my details"). */
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+  /** With a way back (the confirmed check, seen again from A5): the bar with its back button and title, as A5 draws its own. */
+  onBack?: () => void;
+  navTitle?: string;
   testID?: string;
 };
 
@@ -34,13 +40,35 @@ export type OpenWalletEndProps = {
  * canvas's result layout (Email verified, KYC submitted): one way on, never a
  * dead end.
  */
-export function OpenWalletEnd({ tone, icon, title, message, children, actionLabel, onAction, testID }: OpenWalletEndProps) {
+export function OpenWalletEnd({
+  tone,
+  icon,
+  title,
+  message,
+  children,
+  actionLabel,
+  onAction,
+  secondaryLabel,
+  onSecondary,
+  onBack,
+  navTitle,
+  testID,
+}: OpenWalletEndProps) {
   return (
     <AuthFrame
       testID={testID}
-      bare
-      contentTop={RESULT.top}
-      footer={<Button label={actionLabel} full onPress={onAction} testID="open-wallet-end-action" />}
+      bare={!onBack}
+      onBack={onBack}
+      navTitle={navTitle}
+      contentTop={onBack ? undefined : RESULT.top}
+      footer={
+        <>
+          <Button label={actionLabel} full onPress={onAction} testID="open-wallet-end-action" />
+          {secondaryLabel && onSecondary ? (
+            <Button label={secondaryLabel} variant="secondary" full onPress={onSecondary} testID="open-wallet-end-secondary" />
+          ) : null}
+        </>
+      }
     >
       <View style={styles.stack}>
         <View style={styles.result}>
