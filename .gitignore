@@ -45,3 +45,6 @@ example
 # design renders and screenshots are evidence, regenerated on demand
 build/
 scripts/**/__pycache__/
+
+# Local web-server pid files written by test runs
+*.pid
