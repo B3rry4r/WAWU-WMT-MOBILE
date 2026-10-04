@@ -7,7 +7,7 @@ order: 88
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [MONEY-02, MONEY-09, MONEY-12, KYC-03, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -318,6 +318,84 @@ They also void the visit, so an answer or a re-read from before the end moves no
 - V10 (OPS-10).
 - A real Fintava sandbox opening (questions 6 and 11, G-25).
 - A sign-out from a button: none on main. Jest and `signout_mid` from round 1 cover a sign-out.
+
+## Verifier report, round 2
+
+Verifier, 4 Oct 2026 (fresh session; wrote none of this code, and none of round 1's code or round 1's report). Mobile `wmt/KYC-04` at da7cecd in a detached worktree (builder's round 2 code 44c6cd7, mobile main 26cf830 merged in). Mobile main has since moved to 7c6c7b2, so it was also trial-merged in a throwaway worktree. Backend: a detached worktree of backend origin/main dfaa53b, Hub `dist` built there with a fresh `vk04r2_test` (87 migrations, seeded); no backend change in this task. Evidence `$V2` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vk04r2/`:
+- screenshots `$V2/shots/<name>-<theme>.png` (390 px at 2x), renders `$V2/design/`, sheets `$V2/sheet-a10-states-{light,dark}.png` and `$V2/side-A9-A10-{light,dark}.png`;
+- browser driver `$V2/drive.py` (round 1's scenarios plus my own: `dup_answer`, `lost_press`, `unchecked_back`, `unchecked_back_fast`, `checking_back`, `switch_a10_bopen`, `switch_unchecked`, `switch_a9_bpin`, `switch_a10_bpin`, `switch_a9_bnopin`, `switch_a9_bnowallet`, `post401_same`, `post401_switch`), runs `$V2/results.jsonl` (49 runs), pass-through `$V2/web-server.js` (plus `/__post401`), request log `$V2/calls.jsonl` (key names and lengths only);
+- jest probes `$V2/probe-pin-r2.test.tsx` with `$V2/probe-pin-r2.full.log` (run in place, then removed from the worktree) and `$V2/probe-on-round1-code.log`;
+- mutants `$V2/mutate.py`, `$V2/mutate2.py`, results `$V2/mutants.txt`; privacy scan `$V2/vk04r2_test.dump.sql` and the logs; `npm run check` logs `$V2/check-branch.log`, `$V2/check-trial-merge.log` and, on the tree that carries this report, `$V2/check-final.log` (last line `CHECK_EXIT=0`).
+
+**Verdict: 1 defect open (A10, the already-set sentence). Status back to `building`.** Round 1's defect 1 and defect 2 are both fixed as ruled: no path ends the flow as "set" on a PIN the server held before, a failed re-read keeps A10 with a Try again that only reads, and a session change drops everything and leaves the flow. The defect below is a different path to a false sentence that the lead's ruling also rules out.
+
+### Pass table
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed. `npm run check` exit 0 on the branch: typecheck and lint clean, 40 suites, 711 tests (open-wallet 163), gates 9 run, 183 files scanned, 0 fail, 0 warn, 0 accepted, 206 tasks. Trial merge of origin/main 7c6c7b2 into da7cecd: two docs conflicts (BACKEND_GAPS: kept both sides' rows; PROGRESS: regenerated), then `npm run check` exit 0 with the same counts (40 suites, 711 tests, gates 183 files 0/0/0, 206 tasks; main's contract and `schema.generated.ts` changes typecheck). Note: origin/main now tracks a stray `web.pid` (HOME-06 merge 66389ea), not from this branch | `$V2/check-branch.log`, `$V2/check-trial-merge.log`, `$V2/check-final.log` |
+| Diff vs report | passed. Round 2 changed `CreatePinScreen.tsx`, `pin.ts`, `src/app/open-wallet-pin.tsx`, three test files, BRIEF section 12 and G-116, exactly the builder's list. No local copy of a shared component | `git diff --stat eece9fc..da7cecd` |
+| V4 values | passed. Unchanged since round 1 except: a limit of 0 or not whole kobo shows no Limit row (mutant V4 now killed). The already-set and unknown-state wording is recorded in BRIEF section 12; no em-dash and no colour literal in any added string or style | mutants, `git diff` scan |
+| V5 picture | passed for the drawn states, 1 defect (below) on wording and 2 `unclear` (findings 3 and 4). A9 and A10 (3 typed) against the renders, light and dark, 390 px: same parts in the same order and sizes (only the render's status bar differs). New A10 states against W11's wrong-PIN style (CircleAlert in danger under the dots, same type): unknown state (`a10-unchecked-*`: "2 of 2", four dots filled, keys dimmed and off, the line, a secondary Try again), already-set end (`a10-already-set-*`: the canvas result layout, warning tone, lock, Done), server error (`a10-server-error-*`), mismatch (`a10-mismatch-*`, ring in danger). Theme tokens only in light and dark | `$V2/side-A9-A10-*.png`, `$V2/sheet-a10-states-*.png` |
+| V6 states | passed, each by its real cause, light and dark: lost answer then re-read dropped (`lost_retry`, `lost_reread_fails`, `lost_reread_fails_mismatch`, `lost_press`: keys `aria-disabled`; the 4 taps of `lost_retry` are refused, and in `lost_press` every key, Delete, the dots and the title pressed with force send nothing), Hub 500 on the set and the read (`server_error`: Try again, table restored, "not set", A9 again, set), already set (`already_set`), checking (`checking_back`) | `$V2/results.jsonl` |
+| V7 flow | passed. `full` in both themes: A26, A5, A6, A7, A8, A9, A10, back on `/`, `GET /money/pin` `isSet: true`, stored hash verifies the PIN typed. Back from the unknown state goes to A8 (`unchecked_back`, finding 2) | `full`, `unchecked_back` |
+| V8 money | passed for what applies. One POST per A10 in every run; a second PIN can never replace the first: the Hub answered every later POST `409` and the stored hash stayed the first PIN (`lost_reread_fails`, `already_set`, `unchecked_back_fast`, `dup_answer`). A 401 on the set followed by a refresh for the same account is sent once more, once (`post401_same`: 1 forwarded POST, hash is the PIN typed) | `$V2/calls.jsonl` |
+| V9 seam | passed as a harness; the defect below is reproduced on it. Hub from backend origin/main dfaa53b on :4953, stand-in WAWU ID on :4954 (`mock-wawu-id/server.js`, people registered there and signed in on the app's A22, no injected token), Fintava stand-in (made-up numbers, started with `env -i`; the Hub had a made-up key), web export of da7cecd on :8153 (`--clear`, 0 `wawuafrica.com` in the bundle, 0 requests to `wawuafrica.com` or `fintavapay.com`). 49 browser runs, 23 scenarios: 20 in both themes, 3 variants (`switch_a9_bnopin`, `switch_a9_bnowallet`, `switch_a10_bpin`) in light only. 66 wallets opened, 38 PINs set. The stored hash verified (argon2 with the backend's own module) after every set and for the lost, already-set and switch rows | `$V2/results.jsonl` |
+| Lead ruling 1 (409 never "your PIN is set"; A10 stays when the re-read fails) | passed with the defect below. `lost_retry`, `lost_reread_fails` and `_mismatch`: A10 stays, "2 of 2", 1 POST in all, second PIN never sent, hash is the first PIN; Try again with the connection back ends on `/` (`lost_retry`), and a double click on it ends on `/` with 0 further POSTs (`lost_press`). `already_set`: the end screen, hash still the earlier PIN, Done to `/` | `$V2/results.jsonl` |
+| Lead ruling 2 (any change of account or session) | passed. Each scenario, both themes, B with an open wallet: mid-A9 (`switch_a9_bopen`), mid-A10 (`switch_a10_bopen`), unknown state (`switch_unchecked`: Try again answered 401, the refresh answered B), set in flight (`late_after_switch_bopen`: A's late 201 lands, A's hash is set, B has no row, the screen is on `/` and not on "Setting your PIN" at 13 s), a 401 on the set with the refresh answering B (`post401_switch`: the Hub saw 0 forwarded POSTs, so nothing of A was re-sent for B; no row for A or B), B with a PIN already (`switch_a9_bpin`, `switch_a10_bpin`) and B with no wallet (`switch_a9_bnowallet`): in every one the flow is left to `/`, 0 POSTs go from the screen after the switch, 0 rows for B. Where the browser history was instrumented (`switch_a9_bpin`, `switch_a10_bpin`, `switch_a9_bnopin`, `switch_a9_bnowallet`) the calls were `go(-1)` then `replaceState('/')`, the same whether B has a PIN, none or no wallet. Sign-out mid-A10 goes to `/welcome` and B then gets an empty A26 (`signout_mid`) | `$V2/results.jsonl` |
+| Probes P1 to P6 (round 1) | passed. Re-run as assertions (`$V2/probe-pin-r2.test.tsx`) on da7cecd: P1 (refresh answering B mid-A9: "0 of 4", `onLeave` once, B's own `{1358, 1358}` is the only POST), P2 (late answer after the switch moves nothing, no money invalidation), P3 (lost answer, lost read, then 5555 twice: 1 POST, no `onDone`), P4 (1111 then 2222 answered 409: the already-set end, no `onDone`), P5 (no PIN in the query cache, mutation cache, secure store or the tree after a set), P6 (sign-in as B on A10: A9 again, 4 digits send nothing). 14 of 14 probes pass. The same file on round 1's `CreatePinScreen.tsx`, `pin.ts` and route: 11 of 14 fail (P1, P2, P3, P4, P6 among them; P5 passes, it is a positive privacy probe) | `$V2/probe-pin-r2.full.log`, `$V2/probe-on-round1-code.log` |
+| Privacy | passed. 16 distinct 4-digit PINs typed. 0 hits in a full `vk04r2_test` dump (305 KB) and in the Hub, stand-in WAWU ID, Fintava stand-in and pass-through logs, `calls.jsonl` and every log of mine; 0 in any navigation URL, 0 pin POSTs with a query string; localStorage held only `wawu.session.access` and `.refresh`, no sessionStorage, IndexedDB or cookie in 49 runs; the 47 POST bodies the browser sent were each exactly `{pin, pinConfirmation}` (positive control: 47 captured). `TransactionPin` holds 38 rows, all `$argon2id$v=19$`. Jest N8: no PIN in `console.log`, `error` or `warn` across a mismatch, a lost answer, an already-set and a done. In memory only: finding 5 | `$V2/vk04r2_test.dump.sql`, `results.jsonl` |
+| Mutations | 15 new mutants of mine on round 2's code plus round 1's V4, V6, V10 re-applied. **Round 1's three: all killed** (V4 `<= 0` to `< 0`: the limit-0 test; V6 a failed re-read treated as set: 2 tests; V10 a session end keeps A9's entry: the P6 test). **New: 9 killed by the builder's suite, 2 more killed only by my probes, 4 survived everything.** Killed by the suite: M1 a failed re-read offers a new entry, M2 "not set" treated as set, M9 a 5xx from the set treated as a refusal, M10 leave only on the second session end, M11 Back from the unknown state to A9, M12 Try again with a stale visit, M13 the already-set sentence says "was saved", M14 unmount does not void the visit, M15 a "set" read never finishes. M4 (a session end leaves `inFlight` set, so B can never send) and M6 (a read from an earlier visit acts on "set") survived the builder's suite and are killed by my probes N4 and N3: a gap in the builder's tests, not in the product. Survivors: M3 (the already-set end skips the money invalidation) and M5 (a session end keeps the line) survive everything: nothing observable, the flow leaves in the same tick. M7 (a failed read from an earlier visit draws its Try again) and M8 (leave on any session end, also signed out) also survive: unobservable on the app's routes, the screen is gone or redirected | `$V2/mutants.txt` |
+| Secret scan | passed. Every 8-character window of the Fintava key (58 windows) against `git diff origin/main...origin/wmt/KYC-04` (159 KB): 0 hits; 0 PEM blocks | the scan printed counts only |
+| V10 | NOT RUN. No device. Unblocked by a tester build with the backend on the droplet (OPS-10) | |
+
+### Defect
+
+**Defect 1 (A10): when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved.**
+1. The Hub sets the PIN and the answer is lost.
+2. The platform re-sends the same request. Chromium does it here (round 1's finding 3, restated in the builder's correction (e)); OkHttp can do the same on a stale pooled connection (NOT RUN on a device, below).
+3. The Hub answers the re-send `409 pin_already_set`, and the app ends on "You already have a transaction PIN" over "A PIN was already set on this account, so the one you just entered was not saved. Your earlier PIN is the one that approves payments."
+4. The stored hash verifies the PIN the person just typed, and the person has no earlier PIN. The sentence is false on both counts: it was saved, and nothing earlier exists. They may go looking for a PIN they never made, and five wrong tries lock it.
+
+BRIEF section 12 and G-116 list "the network sending the same request twice" among the causes and call the sentence true in each. It is not true for this one. The lead's ruling asks for a true sentence that the earlier PIN stands, without lying either way.
+
+- **Reproduce (real seam, both themes), `dup_answer`.**
+  1. A9 and A10 with 8642.
+  2. `/__losepin?n=1`: the pass-through lets the Hub set it (201) and drops that answer.
+  3. The Hub saw `[201 (answer dropped), 409]`.
+  4. The screen text is the sentence above; Done goes to `/`.
+  5. The stored hash verifies 8642 (`hash_is_8642: true`).
+  - `dup_answer-*` shots: `shots/dup-answer-light.png`, `shots/dup-answer-dark.png`.
+- **Jest:** probe N7 prints the same text for a single `409` after one typed pair.
+
+Closed when:
+- the sentence on that end is true both when the earlier PIN is the one just typed (an own request that landed first) and when it came from another phone or visit, so it does not say the typed PIN was not saved (for example it says a PIN is set on the account and that the PIN set first is the one that approves payments);
+- a jest test with a `409` pins the new wording, and the `dup_answer` seam run shows it;
+- BRIEF section 12 and G-116 carry the same wording.
+
+### Findings (not defects)
+
+**Finding 2 (`unclear`, low): Back from the unknown state lands on a stale A8.** The builder's report says Back goes to A8 "which reads the wallet before offering anything". It does not: A8 stays mounted under A9 and nothing refreshes its cached wallet, so it still offers "Create your transaction PIN" when the PIN is set (`unchecked_back`, `unchecked-back-a8-*`). No double set follows. Tapping it opens A9, which reads and leaves with 0 POSTs. With a slow Hub (`unchecked_back_fast`, answers held 6 s) A9 opens on the cached wallet with live keys; typing 3579 twice sends a POST that answers 409, and the already-set end shows (true there: 8642 is the earlier PIN, hash unchanged). An A8 that reads again when it comes back into view, or the unknown state invalidating the wallet read on Back, would remove the stale offer.
+
+**Finding 3 (`unclear`, low): Back is a dead control while "Checking your PIN".** During the re-read Back carries no `aria-disabled` (in "Setting your PIN" it does) and a press does nothing (`checking_back`, both themes: `back_aria_disabled_while_checking` null, `back_moved_while_checking` false). Only the keys' look is dimmed; Back looks live. The platform back still leaves.
+
+**Finding 4 (`unclear`, cosmetic): a wrapped line detaches its icon.** The unknown-state line is two lines at 390 px, and CircleAlert sits at the left gutter far from the centred text (`a10-unchecked-*`, `a10-server-error-*`); the one-line mismatch keeps the icon beside its text. W11 draws no wrong-PIN state, so the picture does not settle it.
+
+**Finding 5 (not a defect): the second entry stays in React state until the screen unmounts.** In the unknown, already-set and done states `digits` keeps the second entry (the dots read "4 of 4"); the `CreatePinScreen` comment says both entries are dropped when the request is answered. Memory only, nothing reads it, and nothing was stored or logged (privacy row).
+
+**Finding 6 (residual, not a defect):** "set" from a re-read cannot tell the person's own PIN from one another phone set in the same window after a lost request that never reached the server. The window is the length of one request and nothing in the app or the contract can close it.
+
+**Checked and not a defect:**
+- A late answer, a late read and a late 401 refresh from an earlier session change nothing (probes N3, N4, N5; `late_after_switch_bopen`; `post401_switch`).
+- Two Try again taps in one render batch call `onDone` twice in a jest `act` that batches the renders (N1 with both presses in one `act`); each tap is its own event on a device and the button is gone after the first, and `lost_press` (double click) ended once.
+- Round 1's finding 4, the arrow on "Create your transaction PIN": the shared `Button` has `iconRight`, the canvas source passes it (`design/_gen/auth.js` line 45), and the render shows none because the kit's `Btn` ignores it. Recorded, not a defect.
+
+**NOT RUN:**
+- V10 on a device, and with it the native stack's exit animation under two leaves in a row and OkHttp's own re-send of a dropped POST (the seam used Chromium's). Unblocked by OPS-10's tester build.
+- Capability check 8 on screen (the pay sheet and the Wallet tab returns). Unblocked when SHARED-CHANGES KYC-05 #1 (pay sheet) or WALLET-01 (Wallet tab) merges with a call to `useOpenWalletEntry().open`.
+- A real Fintava sandbox opening (G-25, questions 6 and 11): the stand-in answered.
+
+Clean-up: the Hub, stand-in WAWU ID, Fintava stand-in and pass-through stopped (PIDs and command lines checked), `vk04r2_test` dropped, the three worktrees removed.
 
 ## Owner sign-off
 
