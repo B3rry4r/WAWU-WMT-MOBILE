@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 48 | 38 | 30 | 31 |
+| todo | 48 | 37 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 1 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 34 | 20 | 4 | 1 |
+
+## Being verified
+
+- [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 
 ## Done
 
@@ -86,6 +90,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · ME-16 · Built (backend): featured works and education, twelve new routes under `/users`, two new tables, owner-only writes, blocked people get the unknown-person 404; ready for the verifier.
 - 4 Oct 2026 · FIX-05 · Merged to main by the lead (e2d3c14): per-caller rate-limit store, so one address flooding the server never pushes another into 429; backend PR #60 (c4d17bb).
 - 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
 - 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
@@ -100,4 +105,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · KYC-03 · Built (mobile): Open your wallet steps 2 and 3. A26's pass goes to A5 (the BVN's name, date of birth and gender, then home address, occupation and consent; the occupation is saved, the address kept in memory), then A6 (selfie) with A7 (matched, the account opening) and A16 (no match). The BVN and NIN are never re-asked or kept: today's Hub refuses the match and the opening without them (G-72), so no account opens from the app until the backend takes them from the passed check. Gaps G-72, G-73; SHARED-CHANGES KYC-03 #1 (camera), R1. Status verifying.
 - 4 Oct 2026 · FIX-05 · Verified (backend 25291ac, status review, no defect): xaddr victim 6 x 429 on main, 0 on the branch; six victims under every limit while 19 addresses flood four routes: 0 x 429 on the branch, 130 on main; one caller on every limit set (20/1 s, 200/60 s, 5/60 s, 20/60 s, 3/60 s, 20/1 h) answers as main, 363 requests, statuses and Retry-After identical; fake-clock differential 280,457 answers equal; heap back to baseline after 100k and 1M callers (longest loop hold 59 ms); full suite 3,396 passed, 0 failed; protected 253/253; gates as main. Notes: G-96 row says nginx IPv6 is unknown, the config listens on [::].
 - 4 Oct 2026 · FIX-05 · Built (backend 25291ac, status verifying): the global throttler counts in our own per-caller store (`src/hub-throttler-storage.ts`, registered in AppModule, SHARED-CHANGES FIX-05 #1) instead of @nestjs/throttler's, whose ending of one caller's block stopped every other caller's hits expiring (G-95). No per-hit timers; idle buckets pruned on access and by a chunked sweep; answers equal the library's hit for hit for each caller, so every limit, `@Throttle` and `@SkipThrottle` is unchanged. Built Hub: xaddr victim 6 x 429 on main, 0 on the branch, flooder refused identically (200 x 200, 800 x 429); 100k distinct callers then idle: RSS back below its start (main 1,113 MB and an 81.8 s stall). Protected 253/253, gates as main (16 fail / 21 warn). G-96 (IPv6 tracked per address) added.
-- 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
