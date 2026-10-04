@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 36 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 36 | 22 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 
@@ -94,6 +94,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
 - 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
 - 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
@@ -108,4 +109,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · WALLET-18 · Verified round 3: 1 privacy defect still open (latent) and 1 new minor defect, status building (backend f1a9d59 with main 9a370c0; mobile 604c066 with main 9a0c1be; neither main moved). D4 closed (495 combining marks stay in their row, at most 2 per character on the page). The draw cap holds: PDFs finish in pairs, 220 at once give 142 x 200 and 78 x 503 at 10.8 s with Retry-After 5, no 500, /health at most 160 ms, memory peaks flat at about 460 to 500 MB. D3 narrowed: every Nd script, NFKC forms, combining and bidi marks, mixed scripts and 500-digit runs are masked, but circled-dingbat and Ethiopic digits (Unicode No) and x with spaces or doubled still show whole. New: in the PDF a reference of 170 or more characters pushes the receipt and its Check it at footer off the A4 page. Full suite 143 suites 3,438 passed 0 failed; protected 253/253; gates 16 fail / 24 warn (only the three RECEIPT PROVISIONALs added); 2 of 4 own mutants killed (clip and Retry-After untested); 0 key windows, 0 Fintava calls.
 - 4 Oct 2026 · WALLET-18 fix round 3 (backend wmt/WALLET-18 f1a9d59, main 9a370c0 merged): numbers in names masked at the root (digits in any script, joined by any non-letter), at most 2 combining marks and each line clipped to its box, at most 2 receipts drawn at once (503 with Retry-After after 10 s), the reference drawn whole; status verifying.
 - 3 Oct 2026 · WALLET-18 · Verified round 2: 1 privacy defect still open (latent) and 1 new minor defect, status building (backend 2108141 with main 1e6b807; mobile 04d2626 with main c733413; neither main moved). D1 closed: at the ledger's longest values the first PDF takes 0.31 s and the image 0.15 s (13.9 s and 6.2 s before), /health at most 79 ms meanwhile, 10 PDFs at once in 1.04 s with /health at most 128 ms. D2 closed: every class XML forbids, through the ledger and called directly, gives 200 and no raw character. D3 still open: underscore, comma, en dash, middle dot, colon and zero-width separators, and full-width, Arabic-Indic and other non-ASCII digits, leave a phone or account whole on the public page. D4: stacked combining marks in a name are drawn over the header and date. Merge keeps both sides; full suite 139 suites 3,335 passed 0 failed; protected 253/253; gates 16 fail / 16 warn (only the two RECEIPT PROVISIONALs added); round 1's survivors killed, 2 of 4 new mutants survive (cap value, width table vs drawn width); 0 key windows, 0 Fintava calls.
-- 3 Oct 2026 · WALLET-18 fix round 2 (backend wmt/WALLET-18 2108141, main 1e6b807 merged): drawing a receipt is bounded and off the event loop (font width tables, 160-character cap, renderAsync, async PNG and PDF encoding), characters XML forbids no longer give a 500, and spaced or +234 phone numbers keep only their last 4 digits on the public page; status verifying.
