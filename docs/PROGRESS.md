@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 56 of 181.**
+**Launch tasks done: 58 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 48 | 38 | 30 | 31 |
+| todo | 47 | 38 | 30 | 31 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 32 | 20 | 4 | 1 |
+| done | 34 | 20 | 4 | 1 |
 
 ## Being built (or fixing verifier findings)
 
@@ -67,6 +67,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-05](../tasks/HOME-05.md) Feed: creator and professional cards, media details (Developer)
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
+- [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
 - [SETTINGS-03](../tasks/SETTINGS-03.md) Change password and sign out for real (WAWU ID) (Developer)
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
@@ -75,11 +76,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
+- [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN
 - **Developer:** [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts, [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account
 - **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
@@ -96,10 +98,10 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · WALLET-18 fix round 2 (backend wmt/WALLET-18 2108141, main 1e6b807 merged): drawing a receipt is bounded and off the event loop (font width tables, 160-character cap, renderAsync, async PNG and PDF encoding), characters XML forbids no longer give a 500, and spaced or +234 phone numbers keep only their last 4 digits on the public page; status verifying.
 - 3 Oct 2026 · WALLET-18 · Verified: 2 defects and 1 latent privacy defect, status building (backend 2729634 on main fe1ec6c; mobile dbdfd91; mobile main moved to 42309b2). D1: drawing a receipt has no time bound and blocks the server (a 500-letter name: PDF 13.9 s, image 6.2 s, every other request waits as long; 200 letters 1.1 s). D2: a non-XML character in a printed name makes the image and PDF answer 500. D3 (latent until bills write rows): a phone written with spaces in a biller's name shows whole on the public page. Passed: no full account, phone, email, id, handle, note or title on any public page across 5 kinds plus the recipient's side; noindex and no-store; cross-owner 404 identical to missing; 1,200 misses byte-identical; throttles hold against forged X-Forwarded-For; one code under 20 parallel taps; full suite 136 suites 3,263 passed 0 failed; protected 253/253; gates 16 fail / 15 warn (only the two RECEIPT PROVISIONALs added); 7 of 9 own mutants killed; 0 key windows, 0 Fintava calls.
 - 3 Oct 2026 · WALLET-18 built (backend branch wmt/WALLET-18 2729634, not merged): receipts with a 12-character code anyone can check at wawu/r/<code> (public page, masked sides, every miss the same 404, throttled), and the receipt as a PNG and a one-page A4 PDF; new dependency @resvg/resvg-js; G-66, G-67; status verifying.
+- 4 Oct 2026 · FIX-05 · Merged to main by the lead (e2d3c14): per-caller rate-limit store, so one address flooding the server never pushes another into 429; backend PR #60 (c4d17bb).
+- 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
 - 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
 - 4 Oct 2026 · lead · Mobile jest `testTimeout` raised to 20 s in package.json: under machine load (load average 7 to 11 with five agents running) first tests that load a screen's modules timed out at the 5 s default in A26 and M9, though every one passes alone. No test or product code changed.
 - 4 Oct 2026 · ME-06 · Merged to main by the lead (e881d85, Developer 1's task): edit profile and social links. OTA update follows.
 - 4 Oct 2026 · ME-06 · Edit profile (M8) and Social links (M9) built on `wmt/ME-06`, mobile only: name, handle, bio, location, avatar, cover, social links with drag to reorder, saved to `/users/me` and `/users/me/profile-fields`; status verifying; five SHARED-CHANGES rows and G-110 to G-113 filed.
 - 4 Oct 2026 · HOME-05 · Builder (Developer): creator and professional cards on `GET /feed/entries`, `creator` and `media` on feed cards, photo-set frames, durations and page counts (`GET`/`PUT /content/:id/media`), table `ContentFrame`; built on wmt/HOME-04; gaps G-100 to G-103; status verifying
-- 4 Oct 2026 · HOME-04 · Merged to main by the lead (863274b, Developer 1's task): feed with following, likes, views, shares, backend PR #57 (9a370c0); migration renamed 20261004020000_content_engagement; mobile contract synced.
-- 4 Oct 2026 · ME-09 · Merged to main by the lead (1d5262c, Developer 1's task): my content (edit, resubmit, rejection reason, sales), backend PR #56 (7bd993e); mobile contract synced.

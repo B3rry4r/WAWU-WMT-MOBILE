@@ -13,6 +13,10 @@ import type { MoneyErrorCode } from '@/api/money';
  * `open`. Both land on A26, the first step.
  */
 export const OPEN_WALLET_PATH = '/open-wallet' as const;
+/** A5, Confirm your details (KYC-03), pushed on top of A26 when a check passes. */
+export const OPEN_WALLET_DETAILS_PATH = '/open-wallet-details' as const;
+/** A6, the selfie, with A7 (matched, the account opening) and A16 (no match) as its states (KYC-03). */
+export const OPEN_WALLET_SELFIE_PATH = '/open-wallet-selfie' as const;
 
 const noWallet: MoneyErrorCode = 'wallet_not_open';
 
