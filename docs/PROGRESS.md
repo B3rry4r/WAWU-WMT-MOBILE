@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 30 | 31 |
-| building | 0 | 1 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 38 | 22 | 4 | 1 |
 
-## Being built (or fixing verifier findings)
+## Built and verified, waiting for the owner's sign-off
 
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 
