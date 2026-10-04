@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 44 | 36 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 38 | 22 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 
@@ -96,6 +96,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 4 Oct 2026 · WALLET-08 · Verified round 3 (independent, backend 13d9b5f, tests only): the backend diff is the one spec file (100 lines added, 0 elsewhere); mutants re-applied, L9 (window never resets) now fails 2 recipient tests and L6 (ceil to floor) fails 1 recipient and 1 statement test, restored, tree clean; src/money and hub-rate-limits 37 suites 965/965 on a small fresh DB; mobile `npm run check` exit 0 (725 tests); secret scan 0 hits; no defect open, D4 closed, status review.
 - 4 Oct 2026 · WALLET-08 · Builder round 3, verifying (backend wmt/WALLET-08 13d9b5f, tests only): the window restart (minute and hour) and the round-up of Retry-After are pinned on a moved clock; mutants L9 and L6 now fail tests.
 - 4 Oct 2026 · WALLET-08 · Verified round 2 (independent, backend d01d019): D1, D2, D3 closed; the per-person search limit (20 a minute, 120 an hour, 500 a day) holds against one account on 30 addresses (20 pass, 10 refused), a refreshed token and a second session (same count), 25 parallel (20 and 5) and a window edge (20 and 5), 400s not counted, Retry-After 60 then 30; statements identical to origin/main (299,894 random operations on the old and new limiter, and two built Hubs, same transcript incl. 12 of 30 busy 503s counted); contract differs from main only in the recipients paths and new schemas; full suite, protected 253/253, gates, `npm run check` all as before; 1 minor test defect open (D4: nothing pins that a window starts again, mutant L9 survives); status building. Also: my 720,000-row seed filled the disk and stopped the shared PostgreSQL for about 7 minutes (14:05 to 14:12 UTC); dropped it and restarted the cluster.
 - 4 Oct 2026 · WALLET-08 · Builder round 2, verifying (backend wmt/WALLET-08 d01d019): a per-person search limit (20 a minute, 120 an hour, 500 a day, `429 recipient_search_rate_limited` with Retry-After), the contract declares the search's 400 and 429 and the arrays' maximums, caps and non-ASCII digits pinned in tests; G-133 closed, G-134 filed.
@@ -110,4 +111,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
 - 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
 - 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
-- 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.

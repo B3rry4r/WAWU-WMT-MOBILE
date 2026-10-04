@@ -7,7 +7,7 @@ order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -289,6 +289,50 @@ While seeding round-2 statement tests (16 people with 45,000 ledger rows each, 7
 - **The round-1 live attack battery against d01d019** (phone spellings, injection, leak scan, block timing). Not re-run: it sends 100+ searches from one account and would now meet the person limit; `recipient-query.ts` and the SQL in `recipient.service.ts` are unchanged (the diff touches only the call and the signature) and the 41 recipient tests pass. Unblocked by: the same scripts in `../vw08/h/` with one account per 20 searches.
 - **The statements hour window (30 an hour) over HTTP.** It needs 6 or more minutes of real time per Hub. Covered by the differential run (the hour window is in it) and the unchanged statements spec.
 - **A multi-process counter.** Not applicable on the droplet's single process; G-133 states it.
+
+## Verifier report, round 3
+
+Verifier, 4 Oct 2026, independent. Backend `wmt/WALLET-08` 13d9b5f (on d01d019), mobile 36214e9. Fresh detached worktrees, own small database `vw08r3_test` (181 MB at the end, dropped), stand-in WAWU ID on :4990, no large seeding. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw08r3/`.
+
+**Verdict: no defect open. D4 is closed. Status `review`.**
+
+| Check | Result |
+|-------|--------|
+| 1. Backend diff is only the spec | passed |
+| 2. L9 and L6 re-applied | passed (L9 killed by the recipient specs only, see note) |
+| 3. Specs on a small fresh DB | passed, 37 suites, 965/965 |
+| 4. Mobile check and secret scan | passed |
+
+### 1. The backend diff
+
+`git diff d01d019 13d9b5f` is one file, `src/money/recipients/tests/recipient-throttle.contract.spec.ts`, 100 lines added, none removed. Against every other path the diff is empty (0 lines), so no product code, no contract and no config changed. The mobile contract is still `SOURCE_COMMIT` d01d019 and `contract/openapi.json` is byte-equal to the backend's. The new tests read right: the minute window (20 pass, the 21st is refused, still refused at 59.999 s, exactly 20 pass again at 61 s and again at 122 s), the hour window (120 pass, the 121st is refused with 3,234 s, then the same again an hour later), and the wait rounded up (49.500 s and 49.001 s give 50, 49.000 s stays 49, 1 ms left gives 1, in the body and in `Retry-After`). Each test uses its own account and a fresh address per request, so none depends on another's counter.
+
+### 2. The mutants, re-applied by me to `person-window-limiter.ts`
+
+Run against `src/money/recipients` (54 tests) and `src/money/statements` (37 tests); the file was restored after each (`cmp` with the saved original, and `git status --short` empty at the end).
+
+| Mutant | Recipient specs | Statement specs |
+|---|---|---|
+| none (baseline) | 54 pass | 37 pass |
+| L9 a window never resets (`if (false && ...)`) | **2 fail**: "the minute window starts again" and "the hour window starts again" | 37 pass (survives) |
+| L6 `Math.ceil` to `Math.floor` | **1 fails**: "a wait that is not a whole number of seconds is rounded UP" | **1 fails** ("rounds the wait up, never down", X4) |
+
+Note on L9: the statement specs still do not pin the restart themselves. It is not a defect: the two services share one limiter class, the recipient specs kill the mutant in that class, and a break in the class would show in the recipient specs. A change that only touched the statements' use of the class (their window figures, 5 and 30) is covered by the statement specs as before. It would still be tidier to have one second-minute test in the statements spec; not asked for here.
+
+### 3. The specs, small fresh database
+
+Fresh `vw08r3_test`, migrated and seeded, no extra rows. `src/money` and `src/tests/hub-rate-limits`: **37 suites, 965 tests, 965 passed, 0 failed, 0 skipped** (round 2 was 962; the three new tests). `recipient-throttle` 13/13, `money-recipient` 41/41, `money-statement` 26/26, `statement-units` 11/11, `hub-rate-limits` 22/22 (on the host network, which has the non-loopback interface it needs). Disk: 6.1 GB free at the end.
+
+### 4. Mobile and secrets
+
+- `npm run check`: exit 0, 40 suites, 725 tests, 207 tasks. (The 666 of round 2 grew because 794b3ed from origin/main is merged in.)
+- The round 3 mobile commit 36214e9 touches three files (`docs/LOG.md`, `docs/PROGRESS.md`, `tasks/WALLET-08.md`); the rest of `ebe602d..36214e9` is the merge of origin/main 794b3ed, not WALLET-08 work.
+- Secret scan, 58 windows of the Fintava key plus private-key and token patterns: backend `d01d019..13d9b5f` 0 hits (4,649 bytes), mobile `ebe602d..36214e9` 0 hits (247,025 bytes), the round 3 commit alone 0 hits.
+
+### NOT RUN
+
+- **V9 with a real sign-in against the real WAWU ID, recent from a real send, the hour and day over real time, the round-1 live battery, a multi-process counter:** unchanged from round 2, same reasons and same unblock steps. This round changed no product code.
+- **The full backend suite and protected suite.** Not re-run: the diff is one test file, and the product code is byte-identical to the d01d019 that passed both in round 2. Unblocked by: `run.sh --fresh HEAD` if the lead wants it on 13d9b5f.
 
 ## Owner sign-off
 
