@@ -1311,6 +1311,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/{id}/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContentDetailController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rate, or change your rating. Always one rating per person. */
+        put: operations["ContentDetailController_rate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The creator sets how much of their own piece is free to preview. */
+        put: operations["ContentDetailController_setPreview"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/feed": {
         parameters: {
             query?: never;
@@ -1786,9 +1836,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** The caller's own export requests and where each one is (pending, sent, failed). */
+        get: operations["DataExportRequestController_listMine"];
         put?: never;
         post: operations["DataExportRequestController_requestExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/settings/privacy/export/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DataExportDownloadController_download"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3503,6 +3570,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One statement. `from` and `to` are calendar days in Africa/Lagos time
+         *     and BOTH are included: from 00:00 on `from` to 23:59:59.999 on `to`,
+         *     Lagos time. A day that does not exist, `from` after `to`, `to` after
+         *     today in Lagos, or more than 366 days is a 400; a period with more than
+         *     50,000 movements is `400 statement_too_large`. The app's global
+         *     per-address limits apply as on every route; on top, one person may ask
+         *     for 5 a minute and 30 an hour (`429 statement_rate_limited`, counted
+         *     here, after the token is verified), and two statements are built at
+         *     once in the process (`503 statement_busy` after 5 s of waiting).
+         *     The route's own 400s never count: the period is checked before the
+         *     person is counted, and `statement_too_large` gives the place back.
+         */
+        get: operations["MoneyStatementController_statement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/fees/quote": {
         parameters: {
             query?: never;
@@ -3519,6 +3615,73 @@ export interface paths {
          *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
          */
         get: operations["MoneyFeesController_feeQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** W41: the receipt and its code. The same code every time. */
+        post: operations["MoneyReceiptController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}/receipt/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W42: the receipt as a PNG, always a white document. */
+        get: operations["MoneyReceiptController_image"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}/receipt/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W43: the receipt as a one-page A4 PDF. */
+        get: operations["MoneyReceiptController_pdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/r/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PublicReceiptController_page"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4130,6 +4293,11 @@ export interface components {
         };
         RateContentDto: {
             rating: number;
+        };
+        SetPreviewDto: {
+            freePages?: number | null;
+            freeSeconds?: number | null;
+            freeLessons?: number | null;
         };
         SetMediaDto: {
             /**
@@ -4776,7 +4944,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -5062,6 +5230,18 @@ export interface components {
             inKobo: number;
             outKobo: number;
         };
+        StatementView: {
+            from: string;
+            to: string;
+            timeZone: string;
+            /** @enum {string} */
+            format: "csv";
+            fileName: string;
+            contentType: string;
+            rowCount: number;
+            content: string;
+            generatedAt: string;
+        };
         FeeQuotePartView: {
             /** @enum {string} */
             code: "bank_transfer" | "balance_transfer" | "bill_charge" | "wawu_fee";
@@ -5166,6 +5346,29 @@ export interface components {
             resendAvailableAt: string;
             expiresAt: string;
         };
+        TickState: {
+            verified: boolean;
+            expiresAt: string | null;
+        };
+        VerificationState: {
+            creator: components["schemas"]["TickState"];
+            professional: components["schemas"]["TickState"];
+        };
+        BlockedAccountUser: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+        };
+        BlockedAccount: {
+            id: string;
+            userWawuId: string;
+            blockedWawuId: string;
+            /** Format: date-time */
+            blockedAt: string;
+            blockedUser?: components["schemas"]["BlockedAccountUser"];
+        };
         MoneyPartyView: {
             wawuUserId: string;
             displayName: string;
@@ -5195,6 +5398,30 @@ export interface components {
             accountName: string;
             matchesBvnName: boolean | null;
             updatedAt: string;
+        };
+        ReceiptPartyView: {
+            name: string;
+            accountNumber: string | null;
+            accountNumberLast4: string | null;
+            bankName: string | null;
+        };
+        ReceiptLineView: {
+            label: string;
+            value: string;
+        };
+        ReceiptView: {
+            code: string;
+            link: string;
+            url: string | null;
+            transaction: components["schemas"]["TransactionView"];
+            typeLabel: string;
+            headline: string;
+            from: components["schemas"]["ReceiptPartyView"] | null;
+            to: components["schemas"]["ReceiptPartyView"] | null;
+            bankName: string;
+            licenceLine: string | null;
+            lines: components["schemas"]["ReceiptLineView"][];
+            issuedAt: string;
         };
         AdminUserView: {
             id: string;
@@ -5229,9 +5456,9 @@ export interface components {
                 message: string;
                 data: {
                     id: string;
+                    userWawuId: string;
                     /** Format: date-time */
                     createdAt: string;
-                    userWawuId: string;
                     kind: string;
                     title: string;
                     body: string;
@@ -5626,29 +5853,6 @@ export interface components {
                 publicKey: string;
             };
         };
-        TickState: {
-            verified: boolean;
-            expiresAt: string | null;
-        };
-        VerificationState: {
-            creator: components["schemas"]["TickState"];
-            professional: components["schemas"]["TickState"];
-        };
-        BlockedAccountUser: {
-            wawuId: string;
-            name: string;
-            handle: string | null;
-            avatarUrl: string | null;
-            verification: components["schemas"]["VerificationState"];
-        };
-        BlockedAccount: {
-            id: string;
-            userWawuId: string;
-            blockedWawuId: string;
-            /** Format: date-time */
-            blockedAt: string;
-            blockedUser?: components["schemas"]["BlockedAccountUser"];
-        };
         ContentPieceResponse: {
             id: string;
             /** @enum {string} */
@@ -5851,6 +6055,37 @@ export interface components {
         };
         FollowingCount: {
             count: number;
+        };
+        FreePreview: {
+            pages: number | null;
+            seconds: number | null;
+            lessons: number | null;
+        };
+        DetailLesson: {
+            id: string;
+            title: string;
+            order: number;
+            durationLabel: string | null;
+            isFree: boolean;
+        };
+        RatingState: {
+            average: number | null;
+            count: number;
+            myRating: number | null;
+            canRate: boolean;
+            /** @enum {string|null} */
+            cannotRateReason: "own_content" | "not_purchased" | null;
+        };
+        ContentDetail: {
+            contentId: string;
+            contentType: string;
+            updatedAt: string;
+            purchasedAt: string | null;
+            buyerCount: number;
+            studentCount: number | null;
+            freePreview: components["schemas"]["FreePreview"];
+            lessons: components["schemas"]["DetailLesson"][];
+            rating: components["schemas"]["RatingState"];
         };
         DmSendInitResponse: {
             flutterwaveConfig: {
@@ -6990,9 +7225,9 @@ export interface components {
         };
         CommunityJoinRequest: {
             id: string;
+            userWawuId: string;
             /** @enum {string} */
             status: "pending" | "joined";
-            userWawuId: string;
             /** Format: date-time */
             requestedAt: string;
             communityId: string;
@@ -9730,6 +9965,77 @@ export interface operations {
             };
         };
     };
+    ContentDetailController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentDetail"];
+                };
+            };
+        };
+    };
+    ContentDetailController_rate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateContentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingState"];
+                };
+            };
+        };
+    };
+    ContentDetailController_setPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPreviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreePreview"];
+                };
+            };
+        };
+    };
     FeedController_feed: {
         parameters: {
             query: {
@@ -10673,6 +10979,31 @@ export interface operations {
             };
         };
     };
+    DataExportRequestController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        userWawuId: string;
+                        status: string;
+                        /** Format: date-time */
+                        requestedAt: string;
+                    }[];
+                };
+            };
+        };
+    };
     DataExportRequestController_requestExport: {
         parameters: {
             query?: never;
@@ -10693,12 +11024,31 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         userWawuId: string;
+                        status: string;
                         /** Format: date-time */
                         requestedAt: string;
                     };
                 };
+            };
+        };
+    };
+    DataExportDownloadController_download: {
+        parameters: {
+            query?: {
+                token?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -12787,9 +13137,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        userWawuId: string;
                         /** @enum {string} */
                         status: "pending" | "joined";
-                        userWawuId: string;
                         /** Format: date-time */
                         requestedAt: string;
                         communityId: string;
@@ -12818,9 +13168,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        userWawuId: string;
                         /** @enum {string} */
                         status: "pending" | "joined";
-                        userWawuId: string;
                         /** Format: date-time */
                         requestedAt: string;
                         communityId: string;
@@ -12897,9 +13247,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        userWawuId: string;
                         /** @enum {string} */
                         status: "pending" | "joined";
-                        userWawuId: string;
                         /** Format: date-time */
                         requestedAt: string;
                         communityId: string;
@@ -14500,6 +14850,84 @@ export interface operations {
             };
         };
     };
+    MoneyStatementController_statement: {
+        parameters: {
+            query: {
+                /** @description The first day of the statement, YYYY-MM-DD in Africa/Lagos time, included. */
+                from: string;
+                /**
+                 * @description The last day of the statement, YYYY-MM-DD in Africa/Lagos time,
+                 *     included. On or after `from`, not after today in Lagos, and at most
+                 *     366 days from `from`, both days counted (STATEMENT_MAX_DAYS).
+                 */
+                to: string;
+                /**
+                 * @description The file. Only `csv` today: Fintava issues no stamped statement
+                 *     (WALLET-27, BACKEND_GAPS G-68), so there is no `pdf`.
+                 */
+                format: "csv";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementView"];
+                };
+            };
+            /** @description reason.code: statement_too_large */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: statement_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: statement_busy */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     MoneyFeesController_feeQuote: {
         parameters: {
             query: {
@@ -14553,6 +14981,197 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyReceiptController_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyReceiptController_image: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt as a PNG image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description Receipts are busy right now. Try again in a few seconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MoneyReceiptController_pdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt as a one-page A4 PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description Receipts are busy right now. Try again in a few seconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicReceiptController_page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt check page: amount, date, status, both sides masked, reference. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description No receipt has this code. The same page for every miss. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
                 };
             };
         };
