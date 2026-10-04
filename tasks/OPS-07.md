@@ -7,7 +7,7 @@ order: 183
 priority: after-launch
 repo: wawu-wmt-mobile
 type: ops
-status: building
+status: verifying
 depends_on: []
 decisions: [R-34]
 passes: []
@@ -33,7 +33,7 @@ after launch. Nothing here is an owner ruling.
 app" and name the web-port task that carries it. List separately the rows that hold user money or user data
 needing migration.
 
-The list is `docs/WEB-ONLY-FEATURES.md`.
+The list is `docs/WEB-ONLY-FEATURES.md`. The web-port task it names is WEB-01 (`tasks/WEB-01.md`).
 
 ## Capability checks
 
@@ -49,6 +49,19 @@ The list is `docs/WEB-ONLY-FEATURES.md`.
 - **"Not in the app" check:** word search of the canvas text, mobile `src/` and every task file per row, hits read. Six rows may already be in the app (13 email step, built in `src/app/email-code.tsx`; 15 Become a creator via P10; 43 paid-message settings I21 to I23; 58 comment likes in HOME-03; 64 notifications M31; 73 rating shown on H10). They stay marked as asked and are listed in section 3 for the verifier. Not run: the app was not opened.
 - **Could not classify:** row 70 (dispute an unanswered DM): no route or table found in the backend. Three questions no document answers (in section 2): old Flutterwave ledger history into the new wallet (M1), typed name versus BVN name (M6), a creator already at disabled_30d (M9). None decided here.
 - **Gates:** `npm run check` exit 0 before and after: 36 suites, 666 tests, gates 171 files scanned 0 fail 0 warn, 206 tasks. No em-dashes in the new file. No gaps or shared-change requests filed.
+
+## Builder round 2
+
+Fixes the five defects and the unclear item in the verifier report above (merged `origin/main` 7d0e538 first). Round 1's report above stands for what it says, except that check 1 is now met by WEB-01 and the "6 rows" and "39 rows" counts changed.
+
+- **D1 (row 29):** now "Built in the app": `src/features/profile-edit/EditProfileScreen.tsx` (`choose('cover')`, folder `profile/cover`, saves `coverUrl`) and `PictureHeader.tsx`, ME-06 done. M7 no longer says the app has no cover; row 29 left M7.
+- **D2 (search redone for all 89 rows):** against the canvas text (every `design/*.sections.json` and `design/*.dc.html`, tags stripped), `src/` and the task files, every hit read. Misses corrected: row 68 (M31 draws "3 credits left", ME-14 plans it), row 41 (E6, EVENTS-03), row 16 (Me menu M7 and Settings Z2), row 42 (M11 and M18 show the identity check state), row 38 (the wallet Statement screen sends PDF or CSV by email). Close-but-different rows now say so in App check: 5 (W17), 6 (I9), 9 (W39), 59 (W27 Report a problem), 66 (I22, I23), 82 (SC8). Not run: the app, and a screen-by-screen read of the canvas (word search plus reading hits).
+- **D3 (three states):** section 1 and the new section 3 separate "Built in the app" (2: rows 13, 29), "Drawn on the canvas, not built" (10: rows 15, 16, 38, 41, 42, 43, 58, 64, 68, 73, each with task, status todo, artboard) and "Not in the app" (77). Nothing todo is called "in the app". Row 43's "treat as in the app" is gone.
+- **D4:** the account data map sentence now says 42 of the 50 named tables are in it and names the 8 that are not (`EventSpeaker`, `LearnCourse`, `LearnGuide`, `Playbook`, `PartnerService`, `Mentor` are catalogues; `ShopOrderItem`, `LegalChatMessage` are child rows). The EVG quote is credited to `data-export-sections.ts` line 760.
+- **D5:** M1 says the account name is resolved from the bank, not typed. M4 says `CreditsState.trialEndsAt` is a legacy column nothing reads or writes.
+- **U1 (lead ruling):** new group M20 "Paid verification ticks" (`VerificationPurchase` and the tick dates on `UserProfile`; rows 16 and 48): a paid tick's remaining time must survive the port. Money groups are now M1 to M4, M12, M14, M15, M17, M19 and M20; 40 rows in 20 groups.
+- **WEB-01:** created `tasks/WEB-01.md` (title "Port web-only features after launch", owner YOU, area OPS, order 207, after-launch, type web-port, repo wawuafrica, depends on OPS-07, passes V1 V3 V4 V5 V6 V7 V9, decision R-34). Every row's task column and "At a glance" now say WEB-01. The three open questions (M1 Flutterwave history, M6 typed against BVN name, M9 disabled_30d) stay listed as open and undecided in the document and in WEB-01.
+- **Gates:** `npm run check` exit 0 (numbers in the LOG line). No em-dashes in the new text.
 
 ## Verifier report
 
