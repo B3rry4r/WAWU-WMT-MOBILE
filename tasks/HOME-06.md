@@ -7,7 +7,7 @@ order: 83
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -62,7 +62,52 @@ Built by an agent on `wmt/HOME-06` (backend `wawu-backend`, mobile repo for this
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+**Verdict: FAIL** (one defect: a protected, web-called route changed behaviour). Verifier session, 4 Oct 2026. Branch `wmt/HOME-06` at 766189f (merge base 9a370c0; origin/main has since moved to c4d17bb). Evidence: `/home/user/lanes/h06v/` (logs), scratch scripts in the session scratchpad.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed with a note | backend `tsc --noEmit` exit 0; eslint (no-fix) on the 4 changed src files clean; `scripts/gates/run.py` 677 files, 16 fail / 21 warn / 75 accepted, main (673 files) 16 / 21 / 76 (same findings; one accepted deferral drained by the deleted `rate()` comment); `check_baseline.py` ok. Mobile `npm run check` exit 0 (gates 135 files scanned, 0 findings; 205 tasks). |
+| V2 Contract | passed for the new routes; full-suite comparison NOT RUN | `src/content-piece` + `src/account-purge` specs on the branch: 137/137 pass (includes the 26 new tests and the old `POST /rate` tests). Revert proofs (file copied aside, restored byte for byte): purchase check off = 1 failing test; own-piece check off = 1; block check off on rate = 2; row lock off = 2. Full `test:contract`: I could not get a clean side-by-side. My runs gave branch 758 failed / main 298 failed; money suites fail with 401 / `prisma.fintavaWallet.create` P1010 in this worktree set-up, and the same 11 fees tests fail even on a scratch worktree holding main's code, so it is my environment, not the branch. The builder's own lists (`/home/user/lanes/h06/fail_branch.txt`, `fail_main.txt`) are 43 vs 43 and identical, not reproduced by me. |
+| V3 Regression | passed, but does not cover the change (finding 1) | `scripts/protected-routes/run.sh --fresh HEAD`, fresh DB: "all 244 required tests passed" (`h06v/v3_branch.log`). Its only probe of `POST /content/:id/rate` is "as buyer, rating 5, expect 201 and 23 keys with `ratingPct: number`". |
+| V4 Field trace | passed | Writer `PUT /rating` (and the web `POST /rate`) writes `ContentRating` plus `ratingPct` in one locked transaction; readers `GET /content/:id/detail` (rows) and `GET /content`, `GET /content/:id` (cache). `ContentDetail` written by `PUT /preview` and the creator edit/resubmit stamp; read by detail. |
+| V9 Live seam | NOT RUN | no mobile screen calls the routes yet (HOME-02, HOME-03). Black-box over real HTTP with real mock-WAWU-ID tokens was run instead (below). |
+
+### What I ran
+
+- Two hubs (main-src at origin/main 9a370c0 on :3971, branch on :3972), on two copies of one seeded database (`h06v_base` -> `h06v_main`, `h06v_branch`; the branch copy migrated afterwards), one mock WAWU ID, identical tokens and identical requests (script `bb.js`).
+- Migration on a copy of the seeded DB: `ContentPiece` rows hashed (md5) before, after deploy, after `DROP TABLE "ContentRating","ContentDetail"` (the stated rollback) and after replaying the SQL by hand: all four equal; seeded `ratingPct` 96, 91, 73 untouched. `prisma migrate diff` after deploy: only main's own `DROP INDEX "ContentPiece_specializations_idx"`. HOME-05's `20261004100000_content_frames` (table `ContentFrame`) applied beside it on one DB with no error: different names and tables, coexist.
+- Races on the branch hub: 14 buyers at once (14 rows, 14 distinct users, cache 61 = round(mean 3.071 x 20)); 1 buyer x 14 parallel (one row); forged `average`, `count`, `ratingPct`, `userWawuId` in the body: 400 "property ... should not exist"; rating 0, 6, "5", null, {} : 400; direct SQL with stars 0, 6, -1 refused by the CHECK, a duplicate (user, piece) refused by the unique index.
+
+### Findings
+
+1. **defect (FAIL): the web's `POST /content/:id/rate` changed behaviour and nothing authorises it.** The route is in `.pipeline/protected-registry.json` (route 42, caller `src/lib/api/content.ts:378`); `wawu-backend/CLAUDE.md` says additive only and that nothing in the registry changes behaviour; the task says "Additive only", names only new capability checks, lists no decision and no `SHARED-CHANGES` row approving the change, and `DECISIONS.md` has no ruling about it ("the web follows after launch" is about the web adopting the app, not about breaking the web today). Also `ContentPieceService.rate()` was deleted, a removal outside a removal task. Black-box, main vs branch, same requests (all other cases identical):
+
+   | Request | main | branch |
+   |---|---|---|
+   | buyer of a paid piece, rating 1 to 5 | 201, piece (23 keys) | 201, same keys; only `ratingPct` differs (value, below) |
+   | anyone rates a free piece | 201 | 201 (same) |
+   | non-buyer of a PAID piece | 201, moves the rating | **403** "Only people who bought this can rate it." |
+   | buyer with only a pending purchase | 201 | **403** |
+   | creator rates own piece (paid or free) | 201 | **403** "You cannot rate your own content." |
+   | piece pending or removed | 201 | **404** |
+   | rater blocked by the creator, or who blocked the creator | 201 | **404** |
+   | no token / missing id / bad uuid / rating 0, 6, 2.5, "4", no body / extra field | 401 / 404 / 400 ... | same |
+   | `ratingPct` after a rating | `round((old + 20 x stars) / 2)`, any rater, repeated | `round(mean of rows x 20)`, one row per person; the first row on a piece rated before HOME-06 replaces the old number (96 became 100, 60 became 100) |
+   | side effects | writes `ratingPct` only | writes a `ContentRating` row and `ratingPct`, locks the piece row |
+
+   Status code (201), envelope and keys are unchanged, so a web client that only rates after buying would not notice; a web page that lets anyone rate a paid piece, lets a creator rate their own, or rates a piece still pending would now get 403 or 404 where it got 201. The 244/244 suite cannot see any of this: its single probe is the buyer's happy path and checks only that `ratingPct` is a number (and the old `content-piece.contract.spec.ts` rate tests only cover a free seeded piece, 400, 404, 401). To unblock: either keep the old route's behaviour until a removal task (add the new rules only on `PUT /content/:id/rating`), or an owner ruling in `DECISIONS.md` that this route may change, with a V3 probe for each new refusal.
+2. **unclear (owner), builder's G-122:** the migration is safe (rows byte-identical), but legacy aggregates become inconsistent: `GET /content/:id/detail` says average null, count 0 while `ratingPct` still shows 96; the first new rating discards the old number. Needs the owner's call (builder asked it). Not a defect of the migration.
+3. **Block hiding passed.** For a person the creator blocked, a person who blocked the creator, and a stranger on a pending or removed piece, `detail`, `PUT rating` and `PUT preview` answered byte-identical (ids masked) to a random missing id: 404 `Content not found`. Unauthenticated: 401. A buyer blocked after buying keeps `detail` (200) and `GET /content/:id`, but `PUT rating` and `POST /rate` answer 404. Enumeration: a live paid piece answers a non-buyer 403, but live pieces are public in the feed, so no existence is leaked that is not already shown; non-live and blocked pieces never differ from missing.
+4. **Preview and counts passed.** `detail` has no asset URL key (`fullAssetUrl` string "SECRET" absent from the whole body for a non-buyer); lessons carry only id, title, order, duration, `isFree`. `PUT /preview`: non-creator and buyer get 404; 0, negative, float, 10000+, whole piece (84 of 84), wrong kind for the type, on free content, unknown key: all 400; the lessons rule (4 of 4 refused, 2 ok, `isFree` true for 1 to 2 only). Counts: a buyer with two completed purchases counts once; pending and failed purchases not counted; `studentCount` is a number for a paid course only, null for free course and pdf. Content purchases have only pending, completed, failed (no refund state), so refunds cannot inflate counts. No fee, price or rate involved.
+5. **Overlap claims, SHARED-CHANGES HOME-06 #1 to #3: confirmed with one correction.** Scratch merge of branch + local `wmt/SETTINGS-04` (76df651; no `origin/wmt/SETTINGS-04` exists to fetch) in `/home/user/lanes/h06v/merge`: exactly one conflict, in `content-piece.service.ts`, the `rate()` hunk (HOME-06 deletes it, SETTINGS-04 adds `assertVisible`); `content-piece.module.ts` auto-merged with one `BlockedAccountModule` import. After taking the deletion `tsc` is clean, `src/account-purge` passes, and `data-export-map.spec.ts` fails with `ContentRating` undecided (G-126 is true: the second merger must add the export entry). If finding 1 is fixed by keeping `rate()`, that conflict changes and #3 must be redone.
+6. **defect (low), branch is behind main:** origin/main is now c4d17bb (HOME-05, KYC-03, FIX-05 merged). Merging it conflicts in `contract/openapi.json` (regenerate, never hand-merge) and `src/content-piece/content-piece.module.ts` (both add imports/providers), because HOME-05 touched the same files; `schema.prisma` merges cleanly. Needs the merge, `contract:build` and a re-run of V3 before the PR.
+7. **Defaults (agent), owner may override:** all seven builder defaults reviewed; nothing here contradicts them except that default 3 (harden the web route) is the unauthorised change in finding 1.
+
+### NOT RUN
+
+V9 (no screen yet); full `test:contract` side-by-side by test name (environment, see V2); the account purge end to end (mock refuses WAWU ID deletion, as the builder said); wallet-unlocked buyers (G-125); a third round with origin/main merged in (branch is behind, finding 6).
+
+Result: status set back to `building` for finding 1 (and 6).
 
 ## Owner sign-off
 
