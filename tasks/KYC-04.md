@@ -307,6 +307,8 @@ They also void the visit, so an answer or a re-read from before the end moves no
 
 **Counts and checks.** `npm run check` exit 0: 40 suites, 711 tests (open-wallet 163), gates 9 run, 183 files, 0 fail, 0 warn, 0 accepted, 205 tasks. Secret scan: 58 eight-character windows of the Fintava key against `git diff origin/main...HEAD`: 0 hits; 0 PEM blocks.
 
+**Main moved during the round.** Mobile main moved to 26cf830 (FIX-05: docs and task files, nothing under `src/` or `contract/`). It is merged in as 6662f9f: SHARED-CHANGES kept rows from both sides, and PROGRESS was regenerated. `npm run check` on the merged tree: exit 0, 40 suites, 711 tests, gates 0/0/0 on 183 files, 206 tasks.
+
 **Filed:** BACKEND_GAPS G-116. BRIEF section 12, A10: the already-set and the unknown-state wording.
 
 **Not built (Lead):** nothing for `409 pin_not_set` from a payment.
