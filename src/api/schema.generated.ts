@@ -2293,6 +2293,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/users/me/profile-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UserProfileController_getMyProfileFields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UserProfileController_updateMyProfileFields"];
+        trace?: never;
+    };
     "/api/hub/users/me/experience": {
         parameters: {
             query?: never;
@@ -2340,6 +2356,23 @@ export interface paths {
          *     UserProfileService.recordProfileView.
          */
         get: operations["UserProfileController_getPublicProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/{wawuId}/profile-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Somebody else's profile fields: what M5 and M33 draw for a visitor. */
+        get: operations["UserProfileController_getProfileFields"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4287,6 +4320,21 @@ export interface components {
             avatarUrl?: string | null;
             /** Format: uri */
             coverUrl?: string | null;
+        };
+        UpdateProfileFieldsDto: {
+            /** @description Where the person is, free text ("Lagos, Nigeria"). null or "" clears it. */
+            location?: string | null;
+            /** @description Skills and expertise chips. [] clears them. */
+            skills?: string[];
+            /** @description What the person is open to, as chips. [] clears them. */
+            openTo?: string[];
+            /** @description Threads handle, with or without the "@". null or "" clears it. */
+            threadsHandle?: string | null;
+            /**
+             * @description The order the social links show in, first to last, as platform keys. Each
+             *     key once. [] puts them back in the default order.
+             */
+            socialOrder?: ("instagram" | "tiktok" | "youtube" | "x" | "threads" | "linkedin" | "facebook")[];
         };
         CreateProfileExperienceDto: {
             title: string;
@@ -6456,6 +6504,15 @@ export interface components {
             monthStart: string;
             profileCompletenessPct: number;
             profileCompletenessMissing: ("handle" | "bio" | "avatar" | "cover" | "links")[];
+        };
+        ProfileFieldsView: {
+            wawuUserId: string;
+            location: string | null;
+            skills: string[];
+            openTo: string[];
+            threadsHandle: string | null;
+            socialOrder: string[];
+            memberSince: string | null;
         };
         CreatorProfile: {
             wawuUserId: string;
@@ -11469,6 +11526,48 @@ export interface operations {
             };
         };
     };
+    UserProfileController_getMyProfileFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileFieldsView"];
+                };
+            };
+        };
+    };
+    UserProfileController_updateMyProfileFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileFieldsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileFieldsView"];
+                };
+            };
+        };
+    };
     UserProfileController_addExperience: {
         parameters: {
             query?: never;
@@ -11557,6 +11656,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreatorProfile"];
+                };
+            };
+        };
+    };
+    UserProfileController_getProfileFields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileFieldsView"];
                 };
             };
         };
