@@ -89,9 +89,13 @@ team rule: the developer publishes to `preview` only.
   services.
 - `preview`: internal distribution, Android APK, channel `preview`, the live
   services.
-- `production`: store builds (AAB now; App Store with RELEASE-03), channel
-  `production`, the live services, and the build number managed by Expo
-  (`appVersionSource: remote`, `autoIncrement`).
+- `production`: store builds, `distribution: store`, Android app bundle
+  (`buildType: app-bundle`; App Store with RELEASE-03), channel `production`,
+  the live services, and the build number managed by Expo
+  (`appVersionSource: remote`, `autoIncrement`). It holds no credentials and
+  no `submit` profile: the Google service-account key stays on the owner's
+  machine and is given to `eas submit` when it asks (RELEASE-01). The Play
+  listing, data-safety answers and screenshot plan are in `docs/release/`.
 
 The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`, and the
 WAWU ID address as `EXPO_PUBLIC_ID_URL`. Secrets never go into the app at all.
