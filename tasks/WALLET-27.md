@@ -7,7 +7,7 @@ order: 186
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-15]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -36,6 +36,66 @@ CSV export; stamped PDF if Fintava provides it; emailed to the user.
 - [ ] A statement for last month lists exactly last month's transactions.
 
 ## Builder report
+
+### Builder round 3
+
+Builder, 4 Oct 2026 (the builder of rounds 1 and 2).
+- **Branches.**
+  - wawu-backend `wmt/WALLET-27` **9f884dc**:
+    - 359ccff: round 3.
+    - b9797a7's merge of main aa11bcc (INBOX-09, no conflict).
+    - 9f884dc: merge of main 9a370c0 (ME-05, ME-09, HOME-04, no conflict).
+  - Mobile `wmt/WALLET-27`: the verifier's a16f2cb, then mobile main 9a0c1be (which includes d60edd3) merged in. PROGRESS was taken from main and regenerated. `sync_contract.py --backend` changes nothing, because main already holds backend 9a370c0.
+- **Defect 1 (forged-`sub` flood), fixed by the lead's ruling.**
+  - **No throttler override.** The route has no `@Throttle` and no tracker of its own. `statementTracker`, `bearerSubject` and `STATEMENT_THROTTLE` are gone. The global `short` (20 a second) and `medium` (200 a minute) apply per address, exactly as on every route.
+  - **Per-person limit, after authentication.**
+    - `StatementRateLimiter` (`statement-config.ts`, `PROVISIONAL(STATEMENT-RATE-LIMITS)`) allows 5 a minute and 30 an hour, each a fixed window per verified `wawuUserId`. Over the limit is `429 statement_rate_limited` with `retryAfterSeconds`.
+    - It is called in the handler, after WawuAuthGuard, the wallet gate and validation, so a forged token or no token never makes an entry. A gate refusal or a 400 is not counted.
+    - Memory is bounded by a map, swept at most once a minute, that drops a person whose windows have both ended. No timer is kept per request.
+    - Default (agent/lead), owner may override: a `statement_busy` answer still counts as one of the person's 5.
+  - **Two at once.**
+    - `StatementSlots` (`PROVISIONAL(STATEMENT-CONCURRENCY)`) builds at most 2 statements at once in the process; the count, the read and the file are all built inside a place.
+    - Others wait in order up to 5 s, each with one timer, then get `503 statement_busy`: "Statements are busy right now. Try again in a few seconds." with `retryAfterSeconds` 1.
+  - The two new codes are in `MONEY_ERROR_STATUS`, CONVENTIONS section 3's table and section 12, and the contract.
+  - **Finding 4:** the row read is now `LIMIT 50,001` and re-checked, so rows landing between the count and the read can no longer push a file past the cap.
+- **Tests.** Statement specs: 46, plus `hub-rate-limits` 11.
+  - Behind the real `HUB_THROTTLERS` and global guard:
+    - 30 forged tokens, each with a new `sub`, from one address: 20 × 401, then 10 × 429. The global headers say 20 and 200, and the limiter gained no entry.
+    - A verified person gets 200 × 5, then `429 statement_rate_limited` (with `retryAfterSeconds` 1 to 60). Another verified person at the same address gets 200. With the clock 61 s on, the first person gets 200 again.
+  - Without the throttlers, 10,000 forged requests with 10,000 different `sub`s all get 401, and the limiter's size is unchanged.
+  - Limiter unit tests:
+    - 30 in an hour, then `retryAfterSeconds` 3,240.
+    - 10,000 people, then one more an hour later, leaves 1 entry.
+  - Slots unit tests: at most 2 at once. A waiter gets the freed place. Past the wait the answer is 503, and the place is not lost.
+  - Over HTTP, 5 people at once with each count delayed:
+    - With a 200 ms wait: 2 × 200 and 3 × `503 statement_busy`, peak 2.
+    - With the real 5 s wait: 5 × 200, peak 2.
+  - **N4:** the route's declared responses (the decorator metadata `contract:build` reads) and the committed contract both list exactly 400 `statement_too_large`, 409, 423, 429 `statement_rate_limited` and 503 `statement_busy`.
+  - **Finding 4:** a count forced to 50,000 over 50,001 rows still answers 400.
+  - `hub-rate-limits` asserts that the statement route carries no throttler metadata, the exact limits (5 per 60,000 ms, 30 per 3,600,000 ms), and 2 places with a 5,000 ms wait.
+  - **Mutants**, each alone, file restored by copy:
+    - Killed: no `take`, a minute limit of 6, no sweep, 3 places, no slots, `statement_busy` or `statement_too_large` left out of `@MoneyErrors`, a route `@Throttle` put back, and the re-check after the read removed.
+    - One equivalent in outcome: the read's `LIMIT` alone removed. The re-check still answers 400; only memory differs.
+- **The verifier's flood, re-run** (`vw27r2/throttle.js` with N = 5,000 and a 15 s ping, against my built hub on :4991 with the stand-in WAWU ID on :4992). Output: `scratchpad/w27r3/throttle.out`.
+  - T1: a real token, 200 × 5 then 429; the headers are the global 20 and 200.
+  - T5b: 400 forged random-`sub` statements from one address are now **20 × 401, 380 × 429**, the same as `/money/transactions` (T5a).
+  - T6: 5,000 forged requests from one address: **100 × 401, 4,900 × 429**, 3 database transactions, RSS 203 to 289 MB, then 165 MB.
+  - T7: `/health` max 5 ms over the next 15 s.
+  - T2 and T3: a forged token with V's `sub` gets 401 and does not touch V.
+  - T4: a valid token followed by extra text is still accepted, as on main; it got 429 here only because A had used its 5.
+  - Five people at 49,999 rows each, at once from five addresses (`w27r3/heavy.js`): all 200, built two at a time, 0.4 to 2.1 s each. RSS peaked at 516 MB on the first batch and 597 MB on the second, against the verifier's 744 and 1,224 MB without the cap.
+- **Checks on 9f884dc.**
+  - `tsc --noEmit` 0; eslint 0 on every changed `.ts`.
+  - Statement, history, gate, money-contract, fees and `hub-rate-limits` specs: 11 suites, 187/187.
+  - Protected `run.sh --fresh 9f884dc` (lock origin/main 9a370c0): 253/253, all 244 required, no lock file touched.
+  - **Full suite on fresh seeded `w27_full6_test`: 0 failures in total**, in two runs:
+    - :4001 was held by another session, so the whole suite ran with the stand-in on :4992: 143 suites, 3,378 passed, 3 skipped, 43 failed. All 43 were in the 7 suites that hard-code :4001.
+    - Those 7 then ran with my stand-in on :4001 once it was free (started 01:57:27, stopped 01:57:33, `lsof` empty after): 7/7, 67/67.
+  - Gates: main 9a370c0 is 16 fail / 21 warn / 76 accepted. The branch is 16 / 24 / 76, the same line for line plus the three statement PROVISIONALs (`STATEMENT-RATE-LIMITS`, `STATEMENT-CONCURRENCY`, `STATEMENT-MAX-DAYS`). `check_baseline.py` is clean.
+  - `contract:build`: against main, the contract only adds the route, `StatementView` and three codes. A rebuild after the last merge equals the committed file.
+  - CI tripwire: 0 added lines. Key scan: 0 of 58 windows.
+  - Mobile `npm run check` (main 9a0c1be merged): exit 0, with typecheck 0, lint 0, 29 suites / 556 tests, gates 0 fail / 0 warn on 135 files, and 205 tasks.
+- **Not changed:** round 1's NOT RUN items (G-68, G-69 and its owner question, V10) and finding G-44 stand. No sandbox call.
 
 ### Builder round 2
 
