@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 49 | 44 | 31 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 1 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 1 | 0 | 0 |
 | done | 32 | 13 | 3 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [HOME-04](../tasks/HOME-04.md) Feed: following, likes, views, shares (Developer)
 
