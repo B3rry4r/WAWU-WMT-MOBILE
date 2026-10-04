@@ -3,7 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
-- 4 Oct 2026 · HOME-06 · Built on `wmt/HOME-06` (backend, owner DEV), verifying: `GET /content/:id/detail` (free preview, updated and purchased dates, buyer and student counts, rating state), `PUT /content/:id/rating` and `PUT /content/:id/preview`; the web's `POST /content/:id/rate` now needs a purchase for paid pieces and keeps one rating per person.
+- 4 Oct 2026 · HOME-06 · Built on `wmt/HOME-06` (backend, owner DEV), verifying: `GET /content/:id/detail` (free preview, updated and purchased dates, buyer and student counts, rating state), `PUT /content/:id/rating` and `PUT /content/:id/preview`; the web's `POST /content/:id/rate` is unchanged (protected route); the new rating rules live only on `PUT /content/:id/rating`.
 - 4 Oct 2026 · FIX-05 · Merged to main by the lead (e2d3c14): per-caller rate-limit store, so one address flooding the server never pushes another into 429; backend PR #60 (c4d17bb).
 - 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
 - 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
