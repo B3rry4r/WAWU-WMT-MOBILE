@@ -78,7 +78,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 4 Oct 2026 · AUTH-04 · Merged to main by the lead (Developer 1's task): sign-up with email and phone. Its gaps G-77, G-78 are renumbered G-93, G-94 (INBOX-09 merged first). OTA update follows.
+- 4 Oct 2026 · AUTH-04 · Merged to main by the lead (2061390, Developer 1's task): sign-up with email and phone. Its gaps G-77, G-78 are renumbered G-93, G-94 (INBOX-09 merged first). OTA update follows.
 - 4 Oct 2026 · KYC-05 · Lead fix: A26's test file gets a 20 s test limit; its first test (cold module load) timed out at jest's 5 s default under machine load in 4 runs by three agents and the lead. No product code changed.
 - 4 Oct 2026 · INBOX-09 · Merged to main by the lead (e8d9c9c, Developer 2's task): paid questions pause for creators who stop replying, backend PR #54 (aa11bcc); mobile contract synced. Owner questions G-77, G-78 carried forward.
 - 3 Oct 2026 · INBOX-09 · Built (backend): a creator is warned once at 20% of paid questions unanswered over 30 days and paid messages switch off for 7 days at 30% (R-13, all from config); the live send refuses a paused creator with `paid_messages_paused`, and new `GET /paid-dm/standing` and `/paid-dm/creators/:wawuId/availability` serve the creator and the fan (I8). Owner questions G-77, web gap G-78. Verifying.
