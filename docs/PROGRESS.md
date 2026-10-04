@@ -85,7 +85,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 4 Oct 2026 · KYC-03 · Merged to main by the lead (MERGEHASH): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
+- 4 Oct 2026 · KYC-03 · Merged to main by the lead (aac042c): Open your wallet step 2 with the sealed check handle, backend PR #59 (95d8bd4) deployed; mobile contract synced. OTA update follows.
 - 4 Oct 2026 · HOME-05 · Merged to main by the lead (98f6127, Developer 1's task): feed creator and professional cards, media details, backend PR #58 (e6bd701); mobile contract synced.
 - 4 Oct 2026 · lead · Mobile jest `testTimeout` raised to 20 s in package.json: under machine load (load average 7 to 11 with five agents running) first tests that load a screen's modules timed out at the 5 s default in A26 and M9, though every one passes alone. No test or product code changed.
 - 4 Oct 2026 · ME-06 · Merged to main by the lead (e881d85, Developer 1's task): edit profile and social links. OTA update follows.
