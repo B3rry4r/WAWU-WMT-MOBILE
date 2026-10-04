@@ -7,7 +7,7 @@ order: 93
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SHELL-01, UI-02]
 decisions: [R-1, R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -186,7 +186,7 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Verifier report (round 3)
 
-**Verdict: FAIL** (fresh verifier session, 4 Oct 2026; nothing fixed, nothing committed; one defect, a merge artifact, not the builder's round-3 code). State under test: backend cce8aaa, mobile 23f2286 (clean trees). Own stack: Postgres `s02x_*` (dropped), Hub :3832, own mock WAWU ID :4832 (the :4001 one untouched), web :8832; evidence in `/home/user/lanes/s02x/` (`atk2.js`, `atk3.js`, `shots/`, logs).
+**Verdict: PASS after re-check** (originally FAIL on finding 1, which was merge-induced and is closed: backend 6efd84c commits the regenerated contract, mobile 1f2986b regenerates the client; re-check: `git show HEAD:contract/openapi.json` has `/about` and `/policies/{slug}`, `contract:build` leaves no diff, mobile `npm run check` exit 0 with 695 tests, `git diff origin/main -- src/common` empty). Findings 2 and 3 stay as Default (agent), owner may override. Original note: fresh verifier session, 4 Oct 2026; nothing fixed, nothing committed; one defect, a merge artifact, not the builder's round-3 code). State under test: backend cce8aaa, mobile 23f2286 (clean trees). Own stack: Postgres `s02x_*` (dropped), Hub :3832, own mock WAWU ID :4832 (the :4001 one untouched), web :8832; evidence in `/home/user/lanes/s02x/` (`atk2.js`, `atk3.js`, `shots/`, logs).
 
 | Pass | Result | Evidence |
 |------|--------|----------|
