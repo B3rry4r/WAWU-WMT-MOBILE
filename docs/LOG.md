@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 5 Oct 2026 · INBOX-07 · Builder round 2 (status verifying): verifier defect D1 fixed (a forged inbox cursor outside Postgres' time range now answers 400, with tests); INBOX-08's same flaw filed as G-190.
 - 4 Oct 2026 · INBOX-07 · Built, awaiting verification (backend only): `GET /inbox` (chats, paid threads and communities in one cursor-paged list, one stable order, unread per row) and `GET /inbox/unread` (the tab badge, equal to the sum of the rows); one index added; defaults and four owner questions in G-186 to G-189.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.

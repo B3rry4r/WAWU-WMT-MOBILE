@@ -7,7 +7,7 @@ order: 23
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [INBOX-01, INBOX-06, INBOX-08]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -108,3 +108,10 @@ Verifier, 5 Oct 2026. Backend `wmt/INBOX-07` at `6c9c3af` and mobile at `dd4ae24
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+## Builder addendum (5 Oct 2026, after verifier defect D1)
+
+- **D1 fixed (backend):** `decodeInboxCursor` now accepts only the form the server writes (four-digit year, milliseconds, `Z`), a time from 1970-01-01T00:00:00.000Z to 9999-12-31T23:59:59.999Z that round-trips through `toISOString()`; anything else is 400. Both boundary instants are accepted (200). New tests (8): year 10000, year 0, a negative year, +275760-09-13, 1969-12-31T23:59:59.999Z, 2026-02-31, a time with no zone (all 400), and the two boundaries (200). Before the fix 7 of the 8 failed (the refusals; the boundaries passed); after, the spec is 36 of 36.
+- **INBOX-08's `GET /paid-dm/threads` not changed;** named in BACKEND_GAPS G-190. Ids recheck: no other branch uses above G-189; main and mobile main unmoved (backend `a94f338`, mobile `8484195`), so no merge was needed; migration timestamp unchanged and still the latest.
+- **Backend gates after (fresh seeded `wawu_hub_test`, own Postgres :5460, own mock :4001, nothing else running):** tsc 0; eslint 4,514 problems (3,655 errors, 859 warnings), same as before and as main; gates 16 fail, 34 warn, 76 accepted on 740 files; baseline 108 owned; `test:contract` three full runs (two default order, one with the inbox spec sequenced first) each 153 suites, 3,680 passed, 3 skipped, 18 failed, the 18 being only `receipt-units.spec.ts` and `data-export.contract.spec.ts`; no `fintava-stall` failure. Protected routes `--fresh`: 253 of 253, all 244 required pass. Mobile `npm run check`: exit 0, 43 suites, 754 tests, gates 195 files 0 fail. The spec alone on the fresh seed leaves all-table counts equal to the seed (the other suites leave their own residue in the shared DB, as on main).
+
