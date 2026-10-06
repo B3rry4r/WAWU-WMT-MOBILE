@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 36 | 30 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 38 | 22 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 
@@ -96,6 +96,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · RELEASE-01 · Verified (independent, docs and `eas.json`): `eas.json` is one added line and `npm run check` exit 0; claims trace to DECISIONS and tasks, Naira only, no em-dash; data-safety evidence accurate against hub, wawu-id and `package.json`; B1, B3, B4, B5 real, B2 re-judged against SETTINGS-02 (`done`: in-app screens exist but the Hub serves JSON and no text is filled in, so a public page and the owner's text are still needed); 4 wording defects open (stale SETTINGS-02 status, password and licence number not in the form, one wrong permission line, no target API line); both capability checks and V10 NOT RUN; status building.
 - 4 Oct 2026 · RELEASE-01 · Built (docs and `eas.json` only, status verifying): `docs/release/` has the Play listing with the owner's Console checklist, the data-safety answers with evidence, and the screenshot plan (no listing-quality shot is possible yet: the tabs are placeholders); `eas.json` production profile gets `distribution: store`; both capability checks NOT RUN (owner and device); five blockers for the owner (account deletion, privacy text, Play Billing, report control, camera and picker modules).
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
 - 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
@@ -110,4 +111,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-04 · Builder round 2 on `wmt/KYC-04`: A10 never ends as set on a PIN the server held before (a lost answer with a failed check stays on A10 with Try again; `409 pin_already_set` says the earlier PIN stands, G-116), and A9 and A10 drop everything and leave the flow on any session change; 7 new tests fail on round 1's code, 10 of 10 mutants killed; status verifying.
 - 4 Oct 2026 · KYC-04 · Open your wallet step 3 built on `wmt/KYC-04`, mobile only: A7 hands the open account to A8 (bank name, account name and number with Copy from `GET /money/wallet`, Limit row only when the server sends one), A9 and A10 set the transaction PIN (`POST /money/pin`, a mismatch in W11's wrong-PIN look, wording in the brief), then back where the flow started; G-114, G-115, SHARED-CHANGES KYC-04 #1, #2, R1; status verifying.
 - 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
-- 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
