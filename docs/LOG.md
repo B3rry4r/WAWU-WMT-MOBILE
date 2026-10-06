@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-203 to G-208.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
 - 4 Oct 2026 · SETTINGS-02 · Built, awaiting verification: About, Terms and Privacy policy (Z9 to Z11) on new public Hub routes `GET /about` and `GET /policies/:slug`; the owner's text and bank lines come from the Hub, with a "Not available yet" state until filled in.
