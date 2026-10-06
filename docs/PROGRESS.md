@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 35 | 29 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 1 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
 
