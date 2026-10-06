@@ -7,7 +7,7 @@ order: 172
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: building
 depends_on: [SHELL-03, KYC-04]
 decisions: [R-24]
 passes: [V1, V10]
@@ -100,6 +100,61 @@ Verifier, 6 Oct 2026, independent (wrote none of it). Branch `wmt/RELEASE-01` at
 **OWNER TO CONFIRM.** Age 18 and over (and the same wording in the Terms); contact email (`support@wawuafrica.com` only if monitored); category (Business proposed); whether Fintava and Loma Bank are declared shared or as service providers (D-1); where Console puts BVN and NIN; how long money and identity-check records are kept after deletion (D-2); whether the legal chat sends text to Gemini at launch; whether push and Expo Updates count as sharing; whether Resend counts as sharing; the TLS grade of both hosts; the real manifest permissions after the build; whether bills need "Other" under Financial features and whether the web's health plan stays out of the app; whether the sponsored card ships (Ads answer follows); personal versus organisation Play account (a personal account made after November 2023 needs 12 testers for 14 days); the Fintava and Loma Bank wording line in the description.
 
 **Not run:** both capability checks and V10 (owner and device). The branch conflicts with `main` only in the generated `docs/PROGRESS.md`; regenerate it at merge.
+
+## Verifier report, round 2
+
+Verifier, 6 Oct 2026, independent (wrote none of it). Branch `wmt/RELEASE-01` at e0905a6 (detached worktree). Mobile `origin/main` 8484195 is an ancestor of the branch and `git merge-tree` against it is clean. No `eas` command, no secret read, no live host called; backend and wawu-id read through `git show` only (Hub `origin/main` is now a94f338, wawu-id 4715d17). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vrel01r2/` (`check.txt` first full run, `openwallet-alone.txt`, `icon-view.png`, `check-final.txt`). Verdict: **not yet review, 5 defects open (D5 to D9): four are things the launch build collects or ships that the form omits or gets wrong, one is a leftover owner-phrased question. All four round 1 defects are closed except that D3 is only partly closed (D8).** No code defect; `eas.json` unchanged.
+
+### Round 1 defects
+
+| Defect | Result | Proof |
+|---|---|---|
+| D1 B2 stale against SETTINGS-02 | **closed** | `PLAY-LISTING.md:43` says SETTINGS-02 is `done` and gives three reasons B2 stands (JSON not a web page; no text until `PUT /admin/policies/{slug}`, G-140; web text generic and names none of the items); `:312` and `DATA-SAFETY.md:146` agree; `tasks/SETTINGS-02.md` `status: done`; `BACKEND_GAPS.md:126` is G-140 with that text. `grep SETTINGS-02 docs/release/*.md` finds no "todo". |
+| D2 password, account type, licence number, event address missing | **closed for those four** (new omissions found: D5, D6, D7) | `DATA-SAFETY.md` rows "Password" (:58, names that Google has no password item, proposes User IDs, LEAD CHECK), "Account type" (:59, Other info), "professional licence number" (when PROS-03 ships) and "Address: an event's street address" (when the events tasks ship). Evidence paths checked: `SignUpScreen.tsx` (Password), `identity.ts` `loginRequest`, `accountType.ts` `wireAccountType`, wawu-id `schema.prisma` `passwordHash` and `accountType`, migration `20261002120000_add_phone_verification`. |
+| D3 permissions line wrong | **partly closed** (D8) | Table now lists `expo-updates` ACCESS_NETWORK_STATE, `expo-image` INTERNET and ACCESS_NETWORK_STATE, `expo-local-authentication` USE_BIOMETRIC and USE_FINGERPRINT: all three match the installed manifests. But `node_modules/expo-file-system/android/src/main/AndroidManifest.xml` is missing from it (D8). |
+| D4 target API level missing | **closed** | `PLAY-LISTING.md:78` to `:82`; `node_modules/react-native/gradle/libs.versions.toml:4` `targetSdk = "36"`, `package.json` `react-native` 0.86.3, `expo` ~57.0.26. |
+
+### Pass table
+
+| Check | Result | Evidence |
+|---|---|---|
+| Organisation Play account, no personal-account or 12-tester path | passed | `grep -i "personal account\|12 tester\|12-tester\|twelve\|14 days\|closed test"` over `docs/release/*` and `docs/BUILDS.md`: 0 hits. `PLAY-LISTING.md:14` and `:69` state an existing organisation account. |
+| Website and support email as facts | passed | `https://wawuafrica.com` and `support@wawuafrica.com` at `PLAY-LISTING.md:15, 70, 130, 131`, no question mark or "confirm" attached. |
+| App icon is the lead's, correct and unaltered | passed | `docs/release/assets/play-icon-512.png`: 512 x 512, RGBA, alpha extrema (255, 255) so opaque, 46,608 bytes. `assets/images/icon.png` is 1,024 x 1,024 RGB, so nothing was upscaled. `PIL resize((512,512), LANCZOS)` of the source against the file: per-channel difference extrema (0,0),(0,0),(0,0), mean 0.0 (bicubic, bilinear and box all differ), so it is the app icon, Lanczos-downscaled, byte-for-byte pixels, no padding or edit. Opened and looked: the purple tile with the Who Made This mark, centred, square corners. |
+| Feature graphic is the owner's only asset | passed | `PLAY-LISTING.md:17, 76, 129`, `SCREENSHOTS.md:17`. |
+| Review account is a lead procedure | passed | `PLAY-LISTING.md:247 to :273` ("a lead task, not an owner question"), NOT RUN with its unblocking fact (installable internal-testing release and the sign-up routes answering). |
+| Device testing on the owner's Android phone | passed | `PLAY-LISTING.md:18, 83, 272`. |
+| Fintava and Loma Bank marked, none deleted | passed | Script over `docs/release/*.md`: every Fintava or Loma Bank mention carries the dagger (PLAY-LISTING 16 of 16, DATA-SAFETY 35 of 36; the one other is the model name `FintavaLedgerEntry`, a code identifier, and "Iyin Ekiti MFB" sits inside a daggered sentence). Round 1 had 7 and 32 mentions; no line was removed, only rewritten with the dagger (`git diff 92778f2 HEAD`). The dagger legend is in both file headers. SCREENSHOTS names neither. |
+| Nuvion asserted only as the owner's stated plan | passed | Every Nuvion sentence says it is being switched to and that nothing about it is in the repo (`PLAY-LISTING.md:9-12, 56, 179, 266`, `DATA-SAFETY.md:8-12, 141, 149`); no fact about its data handling, licence or location. Not in `docs/BUILDS.md`. |
+| Data-safety claims against the code | **failed** (D5, D6, D7) | See below. Evidence paths in the form: 12 mobile files all exist, all 12 Hub files exist on `origin/main`, and the spot-checked lines are true: `CHECK_HANDLE_TTL_SECONDS = 30 * 60`, `aes-256-gcm`, selfie "never stored and never logged", `GRACE_PERIOD_MS = 48h`, `sslmode=verify-full`, NYC1, NYC3, SFO3, migrations `wallet_identity` and `selfie_match`. `package.json` (27 dependencies, 9 dev) holds no analytics, crash, ads or Firebase package; `src/` has no device id, installation id, location, contacts or microphone use; `app.json` sets no `android.permissions`; `src/` calls only the auth, `/api/hub/users/me`, money, uploads, about and policies routes the form covers. |
+| Permissions table against installed manifests | **failed** (D8) | A scan of every `AndroidManifest.xml` under `node_modules` (main, no tests) finds uses-permission in exactly four packages: `expo-local-authentication`, `expo-image`, `expo-updates` (all in the table) and `expo-file-system` (not). `expo-dev-launcher` debug adds CHANGE_WIFI_MULTICAST_STATE (development only, consistent with the table's "development builds only"). React Native, reanimated, screens, svg, gesture-handler, safe-area-context, worklets: none. |
+| OWNER DECISION list holds only owner decisions | **failed** (D9, minor) | The six (legal text, Play Billing, report action, retention, sharing declarations, age) are real. Other leftovers are labelled LEAD CHECK. One owner-phrased conditional remains outside the six (D9). |
+| No em-dash; limits | passed | U+2014 count: 0 in `docs/release/*.md`, `docs/BUILDS.md`, `tasks/RELEASE-01.md`, `eas.json`; U+2013: 0. Extracted the description block by script: title `Who Made This` 13 of 30, short description 69 of 80, full description 2,134 of 4,000, release notes `First release of Who Made This.` 32. No em-dash in any of them. |
+| Claims table statuses vs the branch | passed | Script compared every `ID` followed by a status in section 8 with `tasks/*.md` on the branch: 0 mismatches (SETTINGS-01, 05, 06, 08 `todo`; SETTINGS-02 `done`). |
+| Merge check against origin/main | passed | `git merge-base --is-ancestor origin/main HEAD` true (8484195); `git merge-tree --write-tree HEAD origin/main` returns a tree, no conflict. |
+| `eas.json` | passed | No diff against round 1; `production` has `distribution: store`, `channel: production`, both live URLs; no `submit`, no secret key. |
+| `npm run check` | passed on rerun | First full run: exit 1, one failure, `OpenWalletScreen.test.tsx` A26 first test, 20 s timeout under load (42 suites passed, 753 of 754 tests; `check.txt`). The file alone: 37 of 37 passed in 8.7 s (`openwallet-alone.txt`). Full run after the report and regeneration (`check-final.txt`): exit 0, 43 suites, 754 tests, gates 9 run, 195 files, 0 fail, 0 warn, 0 accepted, baseline 0, 207 tasks. |
+| Capability checks 1 and 2, V10 | NOT RUN | Unblocked when an internal-testing release of `africa.wawu.wmt` exists on Play and the review account signs in on the owner's phone and shows a value only the server holds (`PLAY-LISTING.md` section 1, steps 5 to 9); the second also needs the Console's policy status and pre-launch report on that build. |
+
+### Findings
+
+**D5 · defect (low): interests are collected at launch and not declared.** A12 of AUTH-06 (`priority: launch`, `todo`, "What are you into? Pick three or more", 12 chips) sends the person's chosen interests (`signupCompleteStepRequest` step `interests`, `src/api/identity.ts:152`; `SignupProgressDto.step` includes `interests` and `follows`, `identity.generated.ts:415`). `DATA-SAFETY.md` has no row for it (`grep -i interest docs/release/DATA-SAFETY.md`: 0 hits) and the file says it describes the launch build. Add a row (App interactions or Other info, purpose Personalisation, not shared, optional).
+
+**D6 · defect (medium): enrolment shares name, email and phone with the school, and the form says only Fintava and Resend receive them.** SCHOOLS-06 (`launch`, `todo`) draws SC4 "Greenfield gets these details so they can follow up with you" (name, email, phone prefilled) and SC7 "We've sent them your details" and "WAWU sends the school a report with your details"; its Scope calls the line a legal slot the owner fills. The school is a third party that gets Name, Email and Phone, and the "Shared" cells in `DATA-SAFETY.md` rows Name, Email address and Phone number do not say so. Add the school to those rows (and to D-1 as a sharing declaration, or say why it is a user-to-user transfer the user starts with prominent disclosure, which Google excludes), and to the privacy text list in B2 and D-3.
+
+**D7 · defect (low): bill inputs are not declared.** BILLS-01 (`launch`) collects a meter number (S4) and shows the name and address of the meter holder returned by the biller lookup (S4: "Chidinma Okoro · 14 Admiralty Way"), and airtime, data and cable bills take a phone or smartcard number (S2). `grep -i "meter\|smartcard\|airtime\|bill" docs/release/DATA-SAFETY.md`: 0 hits. Add them (Other financial info or Other info; shared with the wallet provider that runs the bill, so under the dagger rule, and with the biller).
+
+**D8 · defect (low): the permissions table omits `expo-file-system`.** `node_modules/expo-file-system/android/src/main/AndroidManifest.xml` declares `INTERNET`, `WRITE_EXTERNAL_STORAGE` and `READ_EXTERNAL_STORAGE` (both storage permissions `maxSdkVersion="32"`). It is a dependency of `expo` (`node_modules/expo/package.json:85`, `~57.0.7`) and is autolinked. Section 5 says it lists what the installed packages add, "read from their AndroidManifest.xml", and the round 1 fix was exactly to make that list complete. Add the row (normal permissions needing no Play declaration; say the two storage ones are capped at Android 12L, so they do not become the READ_MEDIA permissions that section 6 of `PLAY-LISTING.md` tells the owner to look for). The "INTERNET ... for any app" sentence is then also covered twice.
+
+**D9 · defect (low): one owner-phrased question outside the six.** `PLAY-LISTING.md:223`: "If the owner decides not to ship the sponsored card at launch, the answer is No". ADS-01 to ADS-05 are `priority: launch`; what ships is known to the lead from the task statuses at submission, so the Ads answer is a LEAD CHECK against the shipped build, not an owner decision. Reword (Ads: Yes while ADS-01 is a launch task; the lead re-checks it against the build submitted). Line 17 says "the six decisions": it stays six once this is reworded.
+
+**Minor, not defects (no action needed before review):**
+- `DATA-SAFETY.md` and `PLAY-LISTING.md` headers cite Hub `origin/main` 38bbe4c; it is a94f338 now (no change in any path the docs cite was seen).
+- `docs/BUILDS.md:27, 29, 31` still say "live Fintava", unmarked. It is outside `docs/release/` and was not changed by this task, so I did not count it; whoever does the Nuvion switch will need to find it.
+- The round 1 sections of this file ("Builder report", "Final list for the owner" with "OWNER TO CONFIRM", personal versus organisation account, icon and review account as owner items) are superseded by "Builder round 2" and the owner update; they are history, not instructions.
+- DATA-SAFETY row for Password still defers the Console category to a LEAD CHECK: acceptable, it names the closest options and the criterion.
+
+**NOT RUN, each with its unblocking fact:** both capability checks and V10 (above); the real built manifest (needs a production build: `bundletool dump manifest` on the AAB, or Console's App bundle explorer); live TLS grade and the HTTP 301 claim (a live host call, forbidden to this role; a verifier or the lead runs an SSL test on `api.wawuafrica.com` and `id.wawuafrica.com`); the review account (lead, after an installable internal-testing release).
 
 ## Owner sign-off
 
