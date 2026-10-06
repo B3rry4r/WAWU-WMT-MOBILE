@@ -101,6 +101,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
 - 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
 - 6 Oct 2026 · ADS-04 · Merged to main in the lead's merge train (wmt/TRAIN-1): serve one sponsored card, `GET /ads?placement=`; Developer 2's task.
 - 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
@@ -115,4 +116,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Built, awaiting verification: ads data model (backend branch `wmt/ADS-03`): `AdCampaign` and `AdCreative` with placement, status and CTA allow-list enums, serving index and CHECKs, additive migration `20261006090000_ads_data_model`; no routes, no price column (R-15).
-- 4 Oct 2026 · INBOX-02 · Fix round 1 built: exact catch-up paging, quiet publish, non-live upgrades answered as before, 1001 on SIGTERM, a feed that probes itself, send-buffer and unsigned-socket limits; verifying again.
