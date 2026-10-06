@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 31 | 27 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 39 | 27 | 7 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 
@@ -105,6 +105,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · RELEASE-01 · Verified round 5 (independent, docs only, status review): D18 and D19 closed and every round 4 minor and at-merge item closed; the inventory check exits 0 (116 models at 872cf45, which is still backend main, 116 listed) and has teeth (a deleted model row, a fake model, a misspelt one, an unknown form row and an old pin each fail, exit 1 to 9, file restored); my own scans of every writer in `src`, all 116 Hub and 14 WAWU ID models and ten random launch tasks (seed 8302) found nothing undeclared; R-39 wording, train 1's eight tasks shown `done`, counts (132 todo, 74 done), daggers, em-dashes (0), listing limits (13, 69, 2,134, 31) and `eas.json` hold; `npm run check` exit 0 (one known load timeout in OpenWalletScreen A26, 37 of 37 alone). Three minor notes, no defect; NOT RUN items unchanged (Play release, manifest, TLS, two LEGAL lead checks, NX-04 and D-5 searches, Nuvion rows).
 - 6 Oct 2026 · RELEASE-01 · Builder round 5 (docs only, status verifying): mobile main 6df916d merged; the inventory is re-pinned to backend 872cf45 and lists all 116 Hub models by real name (the nine train 1 models named, `FeaturedCreator` declared at NX-02 as a staff placement), 417 items found and mapped, 0 unmapped, and its check now fails on any schema model missing from section 1 (proved by deleting a row); HK-03 corrected (the pending sign-up's phone and attempt secret are in the secure store, new row I-417); R-39 applied (codes by email after AUTH-07, selfie step may be dropped, no "nothing about Nuvion" claim); train 1's eight tasks and the task counts (132 `todo`, 74 `done`) brought up to date.
 - 6 Oct 2026 · RELEASE-01 · Verified round 4 (independent, docs only, status building): the inventory check exits 0 (411 of 411 mapped, 72 form rows all cited, all 183 launch tasks and all 116 Hub and 14 WAWU ID models read); D10 to D17 and the minor items closed; owner corrections, six owner decisions, bills as the recorded R-39 fact, daggers, em-dash 0 and listing limits hold; two low defects open: the nine train 1 models (Hub 872cf45) are named wrongly or not at all and the inventory is pinned at a94f338 (D18), and HK-03 says only tokens are stored on the phone while `signupStore.ts` also keeps the pending sign-up's phone and attempt secret (D19); trial merge of main 6df916d conflicts only in the generated PROGRESS.md.
 - 6 Oct 2026 · RELEASE-01 · Builder round 4 (docs only, status verifying): the data-safety form is now built from an exhaustive inventory, `docs/release/DATA-INVENTORY.md` (every one of 107 Hub models, 14 planned models, 239 inputs and logged items across the 183 launch task files, 14 WAWU ID models and 10 sign-up fields, 14 receivers, 13 searched-for-and-not-found rows: 411 items, 411 mapped, 0 unmapped, checked by a command in the file), and every form row has a reference; the verifier's D10 to D17 are closed (legal consultation flow with matter details, booking, typed-name signature with IP and CAC inputs, CV fields, chat attachments, the school click, the device id and biometric label, the blank line, the owner heading, and the bills wording recorded as a fact: Nuvion has no bill payments, on hold in each BILLS-01 to 06 file, not a release decision); who consults and who files at CAC stay LEAD CHECKs with the fact that settles each.
@@ -119,4 +120,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · ADS-04 · Merged to main in the lead's merge train (wmt/TRAIN-1): serve one sponsored card, `GET /ads?placement=`; Developer 2's task.
 - 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
 - 6 Oct 2026 · WALLET-08 · Merged to main in the lead's merge train (wmt/TRAIN-1): find a recipient by phone, name or handle, and recent recipients; the lead's task.
-- 6 Oct 2026 · EXPLORE-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): Explore categories, creators by category and admin-featured creators; Developer 1's task.
