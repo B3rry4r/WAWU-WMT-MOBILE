@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · SCHOOLS-02 · Verified (independent): V1, V3 passed (protected suite 253/253, 244 required, three runs; contract equal in meaning, migration after main's newest), V2 failed with 2 defects open (a `null` in a PATCH for a required field, and a start date of year 0000, both answer 500 not 400), V4 passed with the reader plan noted for SCHOOLS-04 and SCHOOLS-07, V9 partly run (dashboard and app NOT RUN); status back to building.
 - 6 Oct 2026 · SCHOOLS-02 · Built, awaiting verification: the dashboard's school routes (`/admin/schools`, `/admin/school-courses`, `/admin/school-intakes`): create, edit and hide a school, a course and an intake; admin tokens only; additive migration `20261006100000_schools_hidden` (SHARED-CHANGES row SCHOOLS-02 #1); backend branch `wmt/SCHOOLS-02`, protected 253/253.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.

@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 30 | 30 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
+| building | 0 | 0 | 0 | 1 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes (Developer 3)
 
