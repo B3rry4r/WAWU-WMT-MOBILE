@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 36 | 30 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 37 | 22 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 
@@ -95,6 +95,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · MONEY-17 · Verified round 4: no defect open, status review (backend d840c73 on main 38bbe4c, mobile 39b7c6a). The three round 3 defects are closed: a paid-but-undelivered payment is retried on the 1, 2, 4 ... 60 minute backoff and goes to review at 72 h with the claim held (an unregistered kind goes to review at once); a PIN locked at record time is never answered 200 and at most four wrong answers precede the lock; a payment whose ledger rows Fintava's webhook completed settles from review or backoff (4 of 4 and 3 of 3, delivered once). Race probes, ledger against the transfer log and the PIN slot probes hold; protected suite 253/253, gates and tripwire as main, 7 of 10 new mutants killed. Not clean: one full suite with 0 failures in a single run (every failing suite passes alone; the machine ran at load 22 to 43) and the 0.5 s PIN latency figure (not measurable at that load). Both migrations still sort before main's 20261004141500_legal_documents; the lead renames at merge.
 - 4 Oct 2026 · MONEY-17 · Round 4 built, status verifying (backend d840c73 on main 38bbe4c): the round 3 verifier's three defects fixed. A paid payment the feature cannot deliver is retried on the check's backoff (1, 2, 4 ... 60 minutes; was every minute for ever) and goes to review after 72 hours with the item still claimed, and a paid kind nothing registers goes to review at once; a PIN locked when a held-up check's result is recorded answers 423, a right PIN included (was 200), and a late wrong result no longer extends the lock; the webhook consumer tells the payment after its transaction commits, so a payment in review or backoff settles from a webhook (3 of 3 stuck before, 0 after). Both migrations renamed after main's newest. No API change.
 - 4 Oct 2026 · MONEY-17 · Verified round 3: 3 defects, status building (backend 20b4c4b on main c4d17bb, mobile 1a31f66). Round 2's three defects hold as ruled (R2-1: 200 rounds of 20 keys at once on once-only items, 0 double debits, 0 payments claimed while one for the item was open; R2-2: 0 uncoded 409 in 8,000 taps; R2-3: 40 right PINs all pass, 40 wrong give exactly 5 counted, another person's request under 0.5 s). Open: a paid-but-undelivered payment is retried every minute for ever with no backoff or review (the lead's ruling on decision (c)); a PIN compare held up over 30 s lets 10 wrong tries be compared and a right PIN pass a lock (120 accounts' checks queued ahead of it); a payment whose ledger rows Fintava's webhook completed is not settled (it waits for its hourly check, or for ever under review). Full suite 146/146 twice, protected suite 253/253, 13 of 16 mutants killed.
 - 4 Oct 2026 · MONEY-17 · Round 3 built, status verifying (backend 20b4c4b on main c4d17bb): the round 2 verifier's three defects fixed. The item stays claimed until the delivery is recorded and the feature's "already owned" rule is read again inside the claim (100 rounds of 20 keys at once: 0 double debits, were 2), the loser of a race is told `payment_in_progress` with a code (0 uncoded in 4,000 taps, were 980 of 2,000), and a PIN check reserves a slot, compares with nothing held and records the result (40 right PINs at once: 40 pass, no lock; 40 wrong: exactly 5 counted and the lock; another person's `GET /money/pin` 94 to 341 ms, was 4 to 7.5 s). Additive migration: two columns on `TransactionPin`. No API change.
@@ -109,4 +110,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
 - 4 Oct 2026 · WALLET-18 · Merged to main by the lead (df36372): receipts with image, PDF and a public check that shows at most an account's last 4 digits; backend PR #64 (38bbe4c); migration renamed to 20261004124500 at merge.
 - 4 Oct 2026 · HOME-06 · Merged to main by the lead (66389ea, Developer 1's task): content detail, previews and fair ratings; backend PR #63 (030d789). At merge: migration renamed to 20261004113000, ratings added to the data export, and SETTINGS-04's block on the web rating route kept and put to the owner (G-127).
-- 4 Oct 2026 · SETTINGS-04 · Merged to main by the lead (9d0e1e4, Developer 1's task): data export, and blocking that hides people on every read; backend PR #62 (dfaa53b); its export-email gap renumbered G-95 to G-131.
