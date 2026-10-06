@@ -374,3 +374,79 @@ describe('error shape', () => {
     expect(toApiError(503, null).kind).toBe('server');
   });
 });
+
+/** A token shaped like WAWU ID's: a JWT whose `sub` is the account. The signature is never read here. */
+const jwtFor = (sub: string, n: number) => {
+  const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return `${part({ alg: 'RS256', typ: 'JWT' })}.${part({ sub, n })}.signature`;
+};
+
+describe('the session tells its listeners when it ends (FIX-04)', () => {
+  it('a sign-out, a refused refresh and a sign-in over a session each end it once; a first sign-in, a restore and a second sign-out do not', async () => {
+    mockVault.set('wawu.session.access', 'access-0');
+    mockVault.set('wawu.session.refresh', 'refresh-0');
+    const { session, client } = boot();
+    const ended = jest.fn();
+    session.onSessionEnd(ended);
+
+    await session.restoreSession();
+    expect(ended).not.toHaveBeenCalled();
+    await client.api.GET('/api/hub/notifications' as never);
+    expect(await session.getAccessToken()).toBeNull();
+    expect(ended).toHaveBeenCalledTimes(1);
+
+    await session.signIn('a@test.wawu.dev', 'right');
+    expect(ended).toHaveBeenCalledTimes(1);
+    await session.signOut();
+    expect(ended).toHaveBeenCalledTimes(2);
+    await session.signOut();
+    expect(ended).toHaveBeenCalledTimes(2);
+
+    await session.signIn('a@test.wawu.dev', 'right');
+    await session.signIn('b@test.wawu.dev', 'other');
+    expect(ended).toHaveBeenCalledTimes(3);
+    expect(await session.getAccessToken()).toBe('access-3');
+  });
+
+  it('a refresh for the same account does not end the session; one that answers for another account does, and the request that asked gets no token', async () => {
+    mockVault.set('wawu.session.access', jwtFor('account-a', 1));
+    mockVault.set('wawu.session.refresh', 'refresh-a');
+    const { session } = boot();
+    const ended = jest.fn();
+    session.onSessionEnd(ended);
+    await session.restoreSession();
+
+    let next = { accessToken: jwtFor('account-a', 2), refreshToken: 'refresh-a2' };
+    handler = () => ({ status: 200, body: { data: next } });
+    await expect(session.refreshAccessToken(jwtFor('account-a', 1))).resolves.toBe(next.accessToken);
+    expect(ended).not.toHaveBeenCalled();
+
+    const sameAccount = next.accessToken;
+    next = { accessToken: jwtFor('account-b', 3), refreshToken: 'refresh-b' };
+    // The request that asked was A's: it is not sent again as B (FIX-04 round 2), but the session is now B's.
+    await expect(session.refreshAccessToken(sameAccount)).resolves.toBeNull();
+    expect(ended).toHaveBeenCalledTimes(1);
+    expect(await session.getAccessToken()).toBe(next.accessToken);
+  });
+
+  it('a listener that throws stops neither the others nor the sign-out, which then reports it; an unsubscribed one is not called', async () => {
+    const { session } = boot();
+    const broken = jest.fn(() => {
+      throw new Error('listener failed');
+    });
+    const after = jest.fn();
+    const gone = jest.fn();
+    session.onSessionEnd(broken);
+    session.onSessionEnd(after);
+    session.onSessionEnd(gone)();
+
+    await session.signIn('a@test.wawu.dev', 'right');
+    await expect(session.signOut()).rejects.toThrow('listener failed');
+
+    expect(broken).toHaveBeenCalledTimes(1);
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(gone).not.toHaveBeenCalled();
+    expect(await session.getAccessToken()).toBeNull();
+    expect(mockVault.size).toBe(0);
+  });
+});

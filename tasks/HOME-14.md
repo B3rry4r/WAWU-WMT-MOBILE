@@ -3,7 +3,7 @@ id: HOME-14
 title: Pay tips from the wallet (backend)
 owner: DEV
 area: HOME
-order: 113
+order: 114
 priority: launch
 repo: wawu-backend
 type: money-path

@@ -3,7 +3,7 @@ id: EVENTS-10
 title: Refund ticket buyers when an event is called off
 owner: DEV3
 area: EVENTS
-order: 147
+order: 149
 priority: launch
 repo: wawu-backend
 type: money-path

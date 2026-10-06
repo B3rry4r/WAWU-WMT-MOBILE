@@ -46,7 +46,7 @@ Backend `wmt/EVENTS-02` (e8a0d8d, main a055b4f merged in acf062d). Files: `prism
 - Changed test: `event.contract.spec.ts` sent `hybrid` and `conference` as the unknown values; both are now valid, so it sends `in_space` and `festival` (still proves unknown values 400).
 - Default (agent), owner may override: `location` stays a non-null string on the wire (the web reads it); left out it is the street address, or `''` with none, and follows a later address edit only if it came from the address. Ticket prices stay `priceNaira`, like PUT /events/:id/tickets.
 - Copy not on the canvas, for the owner to read: category labels Music, Entertainment, Conference, Training, Fashion, Lifestyle, Community, Church, Other; kind labels Summit, Webinar, Competition.
-- Filed G-55: E13 to E15 never ask for the Kind, and `type` is still required. Hybrid, Conference and Concert reach the web's list for new events only; the web shows them as it shows any value it does not know.
+- Filed G-144 (G-55 when written; main took G-55): E13 to E15 never ask for the Kind, and `type` is still required. Hybrid, Conference and Concert reach the web's list for new events only; the web shows them as it shows any value it does not know.
 - NOT RUN: mobile `npm run api` (it copies the contract from backend main, so the new types arrive after merge); Fintava (not used by this task).
 
 ## Verifier report

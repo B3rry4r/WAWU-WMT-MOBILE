@@ -3,7 +3,7 @@ id: BILLS-02
 title: Pay a bill: review, PIN, token, failures
 owner: DEV2
 area: BILLS
-order: 118
+order: 119
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -16,6 +16,7 @@ artboards: [S5, S6, S7, S11, S12]
 # BILLS-02 · Pay a bill: review, PIN, token, failures
 
 ## Read first
+- **Lead note (3 Oct 2026):** the fee figures below were written before R-31. Every amount on S5, S6, S7 and S11 comes from the server's fee quote (`GET /money/fees/quote?kind=bill`, WALLET-15, merged), never from this file: today it returns ₦10,115.75 for a ₦10,000 electricity bill (the ₦100 bill charge plus Fintava's ₦15.75 balance-transfer charge, R-31). The owner is asked on the progress page whether the payer or WAWU pays that charge; build against the quote and the screen follows the ruling.
 
 - `docs/WORKFLOW.md` (the rules every task follows)
 - `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
