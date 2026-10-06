@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · LEGAL-01 · Built, awaiting verification: the legal chat starts before any payment. New routes under `/legal/intake/assistant` let the WAWU Legal Assistant take the problem and write the brief into the intake, `send` opens the matter for a consultant with nothing charged, and the matter chat opens before payment so a consultant can join; matter options and quick replies come from the API as named schemas. Additive migration `20261006120000`; the real model and the dashboard screen are NOT RUN (G-210).
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
 - 4 Oct 2026 · SETTINGS-02 · Built, awaiting verification: About, Terms and Privacy policy (Z9 to Z11) on new public Hub routes `GET /about` and `GET /policies/:slug`; the owner's text and bank lines come from the Hub, with a "Not available yet" state until filled in.
