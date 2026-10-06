@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · ADS-05 · Verified round 2 (independent): D1 closed (23 scenarios over HTTP, GET and POST agree, one shared eligibility function; 18 mutants, 17 killed, 1 equivalent); no defect open; one low note (a report in flight when a campaign is paused can still count) and owner questions U1 to U4 stand; trial merge with ADS-06 has 3 generated or append-only conflicts and 471 tests pass.
 - 6 Oct 2026 · ADS-05 · Round 2 built, awaiting verification: defect D1 fixed (a view, tap or skip counts only for a card `GET /ads` could serve that person: one shared eligibility function, event open and blocks included); main 872cf45 merged in.
 - 6 Oct 2026 · ADS-05 · Verified round 1, back to building: one defect (a view or tap is counted for a campaign `GET /ads` would never serve to that person, for example one whose event is closed or does not exist); counting, the once-a-day key, the daily totals, 50 and 400 parallel reports, privacy, purge and export all hold; 20 own mutants all killed; owner questions on tap-before-view and per-address limits.
 - 6 Oct 2026 · ADS-05 · Built, awaiting verification: `POST /ads/:id/events` counts a view, tap or skip once per person per UTC day (backend branch `wmt/ADS-05`); daily totals equal the raw events; read helper `AdsCountsService` for the admin report; additive migration `20261006133700_ads_event_counts`; owner questions G-197 to G-200.

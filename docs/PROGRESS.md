@@ -9,17 +9,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 35 | 27 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
-| review | 0 | 0 | 2 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 3 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
-
-## Being verified
-
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
 
 ## Done
@@ -102,6 +99,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · ADS-05 · Verified round 2 (independent): D1 closed (23 scenarios over HTTP, GET and POST agree, one shared eligibility function; 18 mutants, 17 killed, 1 equivalent); no defect open; one low note (a report in flight when a campaign is paused can still count) and owner questions U1 to U4 stand; trial merge with ADS-06 has 3 generated or append-only conflicts and 471 tests pass.
 - 6 Oct 2026 · ADS-05 · Round 2 built, awaiting verification: defect D1 fixed (a view, tap or skip counts only for a card `GET /ads` could serve that person: one shared eligibility function, event open and blocks included); main 872cf45 merged in.
 - 6 Oct 2026 · ADS-05 · Verified round 1, back to building: one defect (a view or tap is counted for a campaign `GET /ads` would never serve to that person, for example one whose event is closed or does not exist); counting, the once-a-day key, the daily totals, 50 and 400 parallel reports, privacy, purge and export all hold; 20 own mutants all killed; owner questions on tap-before-view and per-address limits.
 - 6 Oct 2026 · ADS-05 · Built, awaiting verification: `POST /ads/:id/events` counts a view, tap or skip once per person per UTC day (backend branch `wmt/ADS-05`); daily totals equal the raw events; read helper `AdsCountsService` for the admin report; additive migration `20261006133700_ads_event_counts`; owner questions G-197 to G-200.
@@ -116,4 +114,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Verified round 2 (independent, docs only): round 1 defects D1 to D5 and U1 closed; 12 states checked against src and task status; WEB-01 and M20 correct; 64 rows re-searched against the canvas, no miss; `npm run check` exit 0; 2 minor defects open (row 58 is not drawn as a control, M20 says the app sells ticks while ME-12 and ME-18 are todo); status building.
 - 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
 - 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
-- 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
