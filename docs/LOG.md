@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · INBOX-07 · Verified round 2 (independent; the branch's earlier "round 2" section was written by the builder's session and was not relied on): D1 closed (forged cursor times outside Postgres' range, other date forms, offsets, leap seconds, tampered base64 and 10,000 character cursors all 400, none 500); capability check 3 then 2 then 1; 77 tied rows page exactly at 12 page sizes; badge exact under 100 concurrent messages; 17 of 17 non-equivalent mutants killed; G-190 judged not a defect of this task but still unassigned; protected 253 of 253; no defect open, status review.
 - 5 Oct 2026 · INBOX-07 · Builder round 2 (status verifying): verifier defect D1 fixed (a forged inbox cursor outside Postgres' time range now answers 400, with tests); INBOX-08's same flaw filed as G-190.
 - 4 Oct 2026 · INBOX-07 · Built, awaiting verification (backend only): `GET /inbox` (chats, paid threads and communities in one cursor-paged list, one stable order, unread per row) and `GET /inbox/unread` (the tab badge, equal to the sum of the rows); one index added; defaults and four owner questions in G-186 to G-189.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.

@@ -133,3 +133,89 @@ _Owner: date, and "screenshots and evidence pack reviewed"._
 - **INBOX-08's `GET /paid-dm/threads` not changed;** named in BACKEND_GAPS G-190. Ids recheck: no other branch uses above G-189; main and mobile main unmoved (backend `a94f338`, mobile `8484195`), so no merge was needed; migration timestamp unchanged and still the latest.
 - **Backend gates after (fresh seeded `wawu_hub_test`, own Postgres :5460, own mock :4001, nothing else running):** tsc 0; eslint 4,514 problems (3,655 errors, 859 warnings), same as before and as main; gates 16 fail, 34 warn, 76 accepted on 740 files; baseline 108 owned; `test:contract` three full runs (two default order, one with the inbox spec sequenced first) each 153 suites, 3,680 passed, 3 skipped, 18 failed, the 18 being only `receipt-units.spec.ts` and `data-export.contract.spec.ts`; no `fintava-stall` failure. Protected routes `--fresh`: 253 of 253, all 244 required pass. Mobile `npm run check`: exit 0, 43 suites, 754 tests, gates 195 files 0 fail. The spec alone on the fresh seed leaves all-table counts equal to the seed (the other suites leave their own residue in the shared DB, as on main).
 
+
+## Verifier report, round 2
+
+Verifier, 6 Oct 2026, independent of the builder. Backend `wmt/INBOX-07` at `1d137e7`, mobile at `6f23b28`; backend main `a94f338` and mobile main `8484195` had not moved at the end of the run (re-fetched), so the branch lands as it stands.
+
+**Provenance, read this first.** The branch already carried a section headed "Round 2: D1 fix" under the round 1 report, in the commit `6f23b28` "verifier round 2, D1 closed, status review". That commit has the same `Claude-Session` id as the builder's addendum commit `b0843bb`, so the builder's session wrote it. It is not an independent verification and I did not rely on any number in it; every figure below was taken by me on these heads. (It also left a stray `\1` in the D1 line of Findings; harmless text, not touched.) Everything below stands on its own.
+
+Setup: own worktrees `vi07b` and `vi07m` (detached), own Postgres databases `vi07_*` (all dropped), Hub on :5031, mock WAWU ID on :5032 (the full suite ran in its own network namespace on :4001). Probes went over HTTP against the built server with real mock-WAWU-ID tokens, through rotating loopback source addresses so the per-IP throttle never decided a result. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vi07/` (probe scripts `fuzz-decode.js`, `p-cursor-http.js`, `p-paging.js`, `p-unread.js`, `p-race.js`, `p-replay.js`, `p-g190.js`, `p-g190b.js`, `mutate.py`, and their `.out` files; `mut-*.log`, `gates-*.txt`, `ns/full.txt`, `rerun-*.log`, `protected.log`, `mobile-check.log`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **passed** (two timing and load notes below) | Backend `tsc --noEmit` 0 errors. eslint on the 9 changed `.ts` files (no `--fix`): 0 problems; `scripts/enrich-contract.js` is outside the lint project on main as well. `scripts/gates/run.py`: 9 gates, 16 fail / 34 warn / 76 accepted on both main (732 files, a `git archive` of origin/main) and the branch (740 files); whole output identical apart from the files-scanned line. `check_baseline.py`: 108 entries, all owned. Tripwire: 0 added lines match `test/protected-routes\|src/protected-routes\|compareShape\|protected-registry`; `.pipeline/protected-registry.json` unchanged. `npm run contract:build` leaves `contract/openapi.json` byte for byte (git diff empty); against main it is +338 lines, 2 paths and 8 schemas added, 0 paths and 0 schemas changed. Migration `20261004213700_inbox_feed_index` sorts after main's latest `20261004141500_legal_documents`; one `CREATE INDEX`, no column or table (note: `ADS-03` to `ADS-06` carry migrations dated `20261006...`, which sort after this one, so on merge order those are the later ones, nothing to do here). Full suite, in a network namespace (own mock on :4001, own fresh migrated and seeded database, `ADMIN_JWT_SECRET` set), under a machine load average of 20 to 28 because other sessions were running: 153 suites, 3,573 passed, 3 skipped, 125 failed in 6 suites. Reruns on a fresh database with the mock on :5032: `hub-rate-limits.contract.spec.ts` passes on the host network (it always fails inside the namespace); `selfie-match`, `credit-host-earnings` and `notification` pass alone (each had failed with a 5 s test timeout under load); `fintava-stall.spec.ts` failed 10 tests alone on the first rerun at load average 24 and passed 120 of 120 on the second at load average 18, so a timing test (reported both ways, as the rules ask); `receipt-units.spec.ts` still fails 2 tests, the Node Unicode table environment failure the round 1 report names on main too (I did not re-run main's copy this round). The new spec: 36 of 36 on a fresh seed, and again in the full run and in a run with `data-export-map`, `account-data-map` and `route-shadowing` (4 suites, 53 tests, all pass). Mobile `npm run check`: first run exit 1, 42 of 43 suites, 753 of 754 tests, the one failure `OpenWalletScreen.test.tsx` "a user sees a loading view first..." with "Exceeded timeout of 20000 ms" at load average 21 to 28 (334 s run); that file alone: 37 of 37 pass in 13.5 s. This branch's mobile diff is documentation only. `npm run check` again after my edits (task file, LOG line, regenerated INDEX and PROGRESS): exit 0, 43 of 43 suites, 754 of 754 tests, gates 195 files 0 fail, 207 tasks; so the one timeout above was load, not the branch. |
+| V2 Contract | **passed, D1 closed** | See "D1 attack" below. Capability check as written, over HTTP: two chats from other people and one waiting paid question give `GET /inbox/unread` 3 (`chats 2, paidDms 1`); after `POST /chats/:id/read` on one chat 2; after the creator answers the question through `POST /paid-dm/questions/:id/replies` 1. Equal timestamps: 77 rows (12 chats, 12 rooms, 10 fan and 10 creator paid threads all on one millisecond; 30 chats at +-1 ms and +-1 s; 3 empty host rooms ranked last; a pending join and a never-written chat that must not show) paged at sizes 1, 2, 3, 5, 7, 10, 13, 20, 33, 50, 99, 100: every size gives exactly the order of an independent sort by (time desc, key desc, byte order), no repeat, none lost; the `kind` filter pages inside a kind at sizes 1, 4, 100 (42, 15 and 20 rows). Rows arriving, tying with the cursor and deleted between pages: 0 duplicates, 0 lost below the cursor, a new top row not inserted into the pages already read (it shows on refresh, G-189 (3)). |
+| V3 Regression | **passed** | `scripts/protected-routes/run.sh --fresh HEAD` (lock from origin/main): 253 of 253, "all 244 required tests passed", exit 0. `src/common/tests/route-shadowing.regression.spec.ts` passes. The backend diff against main is the builder's 13 files (2,256 insertions, 1 deletion: `contract/openapi.json`, the migration, `schema.prisma`, `scripts/enrich-contract.js`, `app.module.ts`, 9 files in `src/inbox/`); nothing in `src/direct-message`, `src/chat`, `src/community` or `src/live`. Mobile diff: `BACKEND_GAPS.md`, `SHARED-CHANGES.md`, `docs/LOG.md`, `docs/PROGRESS.md`, this file. |
+| V4 Field trace | **passed** | Concurrent messages and the unread count: 5 senders x 20 messages sent at once to one person while 4 pollers read `GET /inbox/unread` and `GET /inbox?limit=100`: all 100 stored, the badge never went down or above 100 over the samples, final badge 100, sum of the rows 100, `GET /chats` unread sum 100. Read marks racing sends (4 senders x 25 messages, read marks posted in a loop on every chat meanwhile, 330 samples): 100 stored; final badge, rows sum, an independent SQL count of the chat rule and `GET /chats` all equal (1). Blocks, per source: a person blocked after a room had messages from them: the member's room count drops from 4 to 2, the preview is not from them, and the count equals `GET /communities/mine` (2); a chat created before a block stays in the list with `canMessage: false`, its one earlier message still counts (1) and equals `GET /chats`; a send after the block is 403; a blocked asker's paid thread still shows and counts (SETTINGS-04 default 3: paid threads are not filtered). So the inbox hides blocked people exactly where the source routes do (rooms) and keeps what they keep (chats and paid threads); the asymmetry is G-188, unchanged and still the owner's call. Another person's replay: a cursor from person A used by person B returned only B's own rows older than the cursor (3 of 3, 0 of A's rows). |
+
+### D1 attack (the fix in `src/inbox/inbox-cursor.ts`)
+
+`decodeInboxCursor` now requires the time to match `YYYY-MM-DDTHH:MM:SS.mmmZ`, to lie between 1970-01-01T00:00:00.000Z and 9999-12-31T23:59:59.999Z and to equal `toISOString()` of itself, and the key to match the server's key pattern. D1 as round 1 defined it (any forged time outside Postgres' range answers 500): **closed**.
+
+- Unit harness on the compiled decoder (`fuzz-decode.js`): 75 hand-made forms refused with `BadRequestException`, 24 accepted, 0 that threw anything else. Times refused: year 10000 and `+010000`, year 0000, `-000001`, `+275760-09-13`, `-271821`, 1969-12-31T23:59:59.999Z, leap seconds (`23:59:60`, also 2016-12-31), hour 24, minute 60, 02-30, 02-29 in a common year, month 13 and 00, day 00 and 32, no milliseconds, one, two and four digit milliseconds, lowercase `z` and `t`, `+00:00`, `+01:00`, `-05:00`, `+0100` and no zone, a space instead of `T`, leading and trailing space, newline and NUL, Arabic-Indic and full-width digits, a number, `NaN`, `Infinity`, words, empty, two times joined. Times accepted: only 2026-10-06T12:00:00.000Z, both boundary instants and 2024-02-29. Keys refused: SQL text (also at UUID length), a wrong prefix, `paid_dm` without or with a bad side, short, long, empty, trailing space, newline, NUL, an extra `|`, Arabic-Indic digits, accented letters, 36 non-hex characters. Envelope refused: no bar, only a bar, bad base64, truncated. 200,000 random byte strings: 0 accepted, 0 other throws. 6,000 single-character edits of a real cursor: 5,536 refused, 448 accepted and every one of those decodes to a different but well-formed cursor (an unsigned cursor cannot do better); 0 other throws. 1 MB and 10,000 character cursors: refused, no hang.
+- Over HTTP (`p-cursor-http.js`): every forged shape above that matters, each under no filter and the three `kind` filters: all 400, none 500, and 0 Prisma `22007` entries in the server log. `1970-01-01T00:00:00.000Z` and `9999-12-31T23:59:59.999Z` answer 200. 201 and 10,000 characters 400 (DTO limit 200); empty, repeated `cursor`, `cursor[]` and `cursor[a]` 400.
+- Leap seconds: `23:59:60.000Z` answers 400 (JavaScript cannot parse it, so it can never round-trip); a leap second never reaches Postgres.
+- **Not strict, no effect (unclear, low):** the decoder does not accept "only the server's own form" in two places. (1) The key pattern has the `i` flag and checks only 36 characters of `[0-9a-f-]`, so `CHAT:<UUID>`, `paid_dm:fan:` + 36 `f` and `chat:` + 36 hyphens answer 200 (they are only a text bound in the SQL, never a cast to uuid, so no error and no wrong row). (2) The base64url envelope is read by Node's lenient decoder, so a trailing `=` or `==`, the standard alphabet (`+` and `/`), a stray `!`, `@` or newline inside the string, all decode to the same cursor and answer 200. Neither gives a 500, a wrong page or a leak, and an unsigned cursor can name any time and key anyway. Tightening (drop `i`, require a UUID shape, re-encode and compare) is cheap but not needed for D1; recorded, not a defect.
+
+### Mutants (my own, scratch edits restored, source sha unchanged and `git status` clean afterwards)
+
+Each run is the 36-test spec on a fresh seed. Killed means at least one test failed.
+
+| Mutant | Result |
+|--------|--------|
+| C2 drop the 1970 floor | killed, 2 failed (before 1970, year 0) |
+| C3 drop the round-trip check | killed, 1 failed |
+| C5 ceiling off by one (max instant refused) | killed, 1 failed |
+| C6 key shape check dropped | killed, 1 failed |
+| C7 paging `<` becomes `<=` on the key | killed, 12 failed |
+| C8 tie-break direction flipped | killed, 8 failed |
+| C9 time compare `<` becomes `<=` | killed, 13 failed |
+| C10 cursor written without milliseconds | killed, 11 failed |
+| U1 chat unread counts the caller's own messages | killed, 1 failed |
+| U2 chat read mark `>` becomes `>=` | killed, 3 failed (including the capability check) |
+| U3 room count ignores blocked senders | killed, 2 failed |
+| U4 paid waiting ignores the deadline | killed, 1 failed |
+| U5 fan side counts waiting questions | killed, 1 failed |
+| U6 badge total drops communities | killed, 2 failed |
+| U7 chat unread ignores the read mark | killed, 4 failed (including the capability check) |
+| U8 room count ignores the read marker | killed, 2 failed |
+| U9 paid waiting counts answered questions | killed, 2 failed (including the capability check) |
+| C1 drop the year-9999 ceiling | **survived, equivalent**: the four-digit year in the shape check already caps the time at 9999 |
+| C4 drop the shape regex | **survived, equivalent**: the round-trip check plus the range reject every form the regex does |
+| C1 and C4 together (compiled alone, my harness) | killed by `fuzz-decode.js`: the `+010000` forms are accepted again (26 accepted against 24) |
+| C11 key check removed, C12 NaN guard removed (compiled alone, my harness) | killed (47 and 24 accepted with 42 non-400 throws, against 24 and 0) |
+| C13 `bar < 1` guard removed (compiled alone) | survived, equivalent: an empty time fails the shape check |
+
+17 mutants on the spec killed (10 on the cursor and paging, 7 on the unread rules and the badge, 17 of 17 non-equivalent), 2 equivalent survivors on the spec (C1, C4, each redundant with the other guards, together a real defence in depth that the spec's year-10000 test covers), plus 5 more on the decoder alone with my own harness.
+
+### G-190 (INBOX-08's `GET /paid-dm/threads` unchanged)
+
+Confirmed on this branch: `GET /paid-dm/threads?cursor=<year 10000, year 0 or a negative year>` answers 500, and `GET /paid-dm/queue` answers 500 for year 0 and a negative year (200 for `+010000`); `GET /chats` answers 200 for all of them and `GET /inbox` 400. **Acceptable, not a defect of INBOX-07.** The flaw is in INBOX-08's code that is already on main (`decodeCursor` in `src/direct-message/paid-dm.service.ts`), the branch does not touch it, INBOX-07 is "additive only", and the inbox's own cursor can no longer reach it (the two route families use different key forms, so an inbox cursor is a 400 there). The row names the fact that unblocks it. What remains is an owner assignment: G-190's last column reads "INBOX-08 follow-up (owner to assign)" and no task carries it yet, so the lead should hand it to Developer 2 or whoever owns INBOX-08 before it is forgotten; nothing in the app sends a forged cursor, so no user meets it.
+
+### Trial merge
+
+Backend `git merge-tree` of `origin/wmt/INBOX-07` with `origin/main`: clean (main is an ancestor of the branch, 0 commits ahead). With `INBOX-06` and `INBOX-08`: clean (both already on main). With `EXPLORE-03`: clean. With `INBOX-02`: conflicts in `contract/openapi.json` and `src/app.module.ts` (unchanged from round 1; `prisma/schema.prisma` merges), not resolved. Mobile with `origin/main`: clean; with `INBOX-02`: conflicts in `BACKEND_GAPS.md` and `docs/PROGRESS.md`, not resolved. Whichever of INBOX-02 and INBOX-07 lands second merges main in and regenerates the contract.
+
+### Findings
+
+**defect**
+
+None open. D1 is closed.
+
+**differs-for-recorded-reason**
+
+None.
+
+**unclear (for the owner, none blocks)**
+
+- G-186 to G-189 stand exactly as in round 1 (no WAWU thread or Money rows yet, a fan sees no badge for a creator's reply, one rule for blocked people, empty chats and empty hosted rooms). My blocks check above re-confirms G-188 as built: rooms hide blocked senders, chats and paid threads do not.
+- G-190: see above; needs an owner for the INBOX-08 follow-up.
+- The decoder leniencies above (key case and shape, base64 envelope); optional tightening.
+
+### What was not run
+
+- V5 to V8: not in this task's passes (backend only, no screens, no money moved).
+- V9 live seam against the real wawu-id: not re-run this round. Round 1 passed it, and the fix since touches only `src/inbox/inbox-cursor.ts` and the spec, so nothing a live sign-in exercises changed; the probes this round used the mock WAWU ID with the Hub's internal service key set, so names came from the lookup route. Re-running it needs `scripts/local/up.sh --detach` against wawu-id `origin/main` on free ports and a database prefix of its own (about 1 GB and several minutes; not done under a load average of 20 or more).
+- A second run of the full backend suite on a quiet machine: the 6 failing suites were rerun alone as listed in V1, which is what the common rules ask, but one uninterrupted green run (apart from `receipt-units`) was not obtained because load stayed at 17 to 28 throughout. Unblocked by: the same command (`ns.sh`, copied to `scratchpad/vi07/ns/`) on a machine with a load average under 4.
+- `receipt-units.spec.ts` on main this round: not re-run; round 1 recorded the same 2 failing tests on main and on the branch (the Node Unicode table).
