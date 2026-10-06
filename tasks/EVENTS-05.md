@@ -7,7 +7,7 @@ order: 24
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -43,6 +43,19 @@ Sold count on my events, per-referral ticket counts, door staff a host can add, 
 - **Check 2 (door staff check in; twice = already used):** same spec: staff 403 before being added; added, scan gives `valid` with "Chidi Umeh", second scan `already_used` with the first time and `Door 1`; two staff scanning at once give one of each; another event's code `invalid`; removed staff 403; the protected host-only route still 403s staff. Live: identical.
 - **Gates (backend):** before 16 fail / 13 warn / 76 accepted (643 files); after 16 / 13 / 76 (648). Lint 4,488 problems before and after (new files clean). `tsc` 0. Protected suite `run.sh --fresh`: main 253/253, branch 253/253, lock-diff no change. Full `npm run test:contract` (mock on :4141): 133 suites, 126 passed, 3,173 tests passed; the 7 failing suites (kyc-submission, notification, blocked-account, privacy-settings, saved-item, credits-state, account) hard-code mock WAWU ID on :4001, held by another session's mock with other keys (401 at login); NOT RUN in effect, unblocked by a free :4001 or those specs reading `WAWU_ID_BASE_URL`. Mobile `npm run check` exit 0 after the merge of main.
 - **For the owner / next tasks (default, agent, owner may override):** no artboard draws adding door staff (E18 has no row for it), so EVENTS-08/09 have no screen for `POST /door-staff`; label default "Door n" is agent copy. `buy` still stores any `referralCode` as sent; only codes of the event's own links are counted. NOT RUN: Fintava (not touched by this task).
+
+### Builder report, round 2
+
+_Fix round 1, 6 Oct 2026. Backend `wmt/EVENTS-05` 59a0600 (the first build eb2a835 merged with main a94f338)._
+
+- **D1 fixed.** `EventRunningService.addDoorStaff` now asks `BlockedAccountService.assertVisible(host, person, 'We could not find that account.')` after the person is resolved, so a block either way is the same 404 as a missing account, for both `wawuUserId` and `handle`; nothing is stored. `EventTicketingModule` imports `BlockedAccountModule` (kept beside main's own import in the merge). Test: "a host cannot add someone who has blocked them, or whom they blocked", both directions, both ways of naming the person, no row written.
+- **D2 fixed.** The add runs in one transaction under `pg_advisory_xact_lock` per event. The default label is the lowest free "Door n" among the event's active staff (not a count of rows ever added); a custom label equal to an active person's (any case) is a 409 ("Another person at this door already has that name. Pick a different one."); someone put back keeps their old label when it is still free. Tests: three people added with `Promise.all` get three different labels; a taken label in upper case is 409. No schema change, so the contract is unchanged (507 lines added, as before).
+- **D3 fixed (test).** New test: a staff row id of `EV_EMPTY` sent through `EV_OTHER`'s path is 404 and the row stays active.
+- **M1 (merge, done here).** Migration renamed to `20261005090000_event_door_staff` (after main's newest `20261004141500_legal_documents`); its rollback header and SHARED-CHANGES EVENTS-05 #1 name the new folder. Main merged into both branches (one conflict in `event-ticketing.module.ts`, kept both; mobile conflicts in `SHARED-CHANGES.md` kept both, `docs/PROGRESS.md` regenerated). Mobile `contract/` re-copied from the backend branch.
+- **M2 (merge, done here).** `EventDoorStaff` added to `EXPORT_EXCLUDED` in `src/data-export-request/data-export-sections.ts` ("A door role the organiser gave, not data the person gave"), the verifier's resolution; `data-export-map.spec.ts` green. Exporting it as a section instead is the owner's call.
+- **Left alone (`unclear`).** U1 (lower-case code), U2 (staff access has no end), U3 (429 is not a verdict, for EVENTS-09), U4 (later blocks, holder name at the door), U5. Not changed.
+- **Checks (backend, own DBs `wawu_events_05`, `wawu_events_05_prot_test`, mock WAWU ID on :4141).** `tsc --noEmit` 0. eslint on `src/event-ticketing` and the export sections file: clean. `event-running` spec now 24 tests; with `src/event`, `src/event-ticketing`, `src/account-purge`, `src/blocked-account`: 6 suites / 140 tests pass; `data-export-map` and `account-data-map` 9 pass. Gates: 737 files, 16 fail / 34 warn / 76 accepted, equal to main a94f338. Protected suite `run.sh --fresh HEAD`: 253/253, 244 required passed. `contract:build` leaves `contract/openapi.json` unchanged. Mobile `npm run check` (after the merge of main and the re-copied contract): exit 0, gates 195 files 0 findings, 207 tasks checked.
+- **NOT RUN.** `src/data-export-request/tests/*.contract.spec.ts` (the `data-export` contract file): it hard-codes the mock WAWU ID on :4001 (15 tests fail here with the mock on :4141); unblocked by a free :4001 or the spec reading `WAWU_ID_BASE_URL`. The full `npm run test:contract` was not rerun, for the same reason; the verifier's full run on the first build had 0 real failures. A paid ticket through Flutterwave and Fintava: as in round 1.
 
 ## Verifier report
 

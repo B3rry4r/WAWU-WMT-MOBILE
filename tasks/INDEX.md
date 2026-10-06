@@ -51,27 +51,30 @@ Builder and verifier are always different sessions.
 33. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
 34. [MONEY-16](MONEY-16.md) Nightly check against Fintava
 35. [MONEY-14](MONEY-14.md) Reset the PIN, and approve with fingerprint or face · needs AUTH-03 from Developer first
-36. [MONEY-15](MONEY-15.md) Transaction history and detail
-37. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02, BILLS-01 from Developer first
-38. [WALLET-14](WALLET-14.md) Saved recipients and payout account
-39. [WALLET-11](WALLET-11.md) Payout bank account · needs UI-02 from Developer first
-40. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02, SETTINGS-01 from Developer first
-41. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01, HOME-02 from Developer first
-42. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
-43. [WALLET-07](WALLET-07.md) Send money to a WAWU user · needs SETTINGS-04 from Developer first
-44. [WALLET-02](WALLET-02.md) Send to a WAWU user · needs UI-02, UI-03 from Developer first
-45. [WALLET-09](WALLET-09.md) Send money to a bank
-46. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
-47. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs INBOX-03, SETTINGS-07 from Developer 2 first
-48. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02, HOME-12, BILLS-02 from Developer first
-49. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02, BILLS-01 from Developer first
-50. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
-51. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
-52. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
-53. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-54. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
-55. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
-56. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+36. [FIX-03](FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy)
+37. [MONEY-15](MONEY-15.md) Transaction history and detail
+38. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02, BILLS-01 from Developer first
+39. [WALLET-14](WALLET-14.md) Saved recipients and payout account
+40. [WALLET-11](WALLET-11.md) Payout bank account · needs UI-02 from Developer first
+41. [FIX-04](FIX-04.md) One person's cached answers are never shown to the next person
+42. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02, SETTINGS-01 from Developer first
+43. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01, HOME-02 from Developer first
+44. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
+45. [WALLET-07](WALLET-07.md) Send money to a WAWU user · needs SETTINGS-04 from Developer first
+46. [WALLET-02](WALLET-02.md) Send to a WAWU user · needs UI-02, UI-03 from Developer first
+47. [WALLET-09](WALLET-09.md) Send money to a bank
+48. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
+49. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs INBOX-03, SETTINGS-07 from Developer 2 first
+50. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02, HOME-12, BILLS-02 from Developer first
+51. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02, BILLS-01 from Developer first
+52. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
+53. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
+54. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
+55. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
+56. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
+57. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
+58. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
+59. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
@@ -98,6 +101,7 @@ Builder and verifier are always different sessions.
 21. [WALLET-21](WALLET-21.md) Dollar and crypto accounts, swap
 22. [RELEASE-03](RELEASE-03.md) iOS release
 23. [TEST-01](TEST-01.md) Tests pass on a cold cache and a loaded machine
+24. [WEB-01](WEB-01.md) Port web-only features after launch
 
 ## Developer
 

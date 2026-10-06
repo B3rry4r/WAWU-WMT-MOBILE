@@ -3,7 +3,7 @@ id: INBOX-17
 title: Paid questions: pay, hold, pay out and refund through the wallet (backend)
 owner: DEV2
 area: INBOX
-order: 110
+order: 111
 priority: launch
 repo: wawu-backend
 type: money-path

@@ -3,7 +3,7 @@ id: RELEASE-01
 title: Store listings and production builds
 owner: YOU
 area: RELEASE
-order: 170
+order: 172
 priority: launch
 repo: wawu-wmt-mobile
 type: setup

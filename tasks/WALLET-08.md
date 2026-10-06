@@ -3,7 +3,7 @@ id: WALLET-08
 title: Find a recipient, and recent recipients
 owner: YOU
 area: WALLET
-order: 132
+order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
