@@ -24,11 +24,13 @@ RELEASE-03, after launch.
   `https://api.wawuafrica.com` and `https://id.wawuafrica.com`. There is no
   staging server, and nothing runs on Railway.
 - **What runs where (DECISIONS R-25):** tester builds on phones talk to the
-  live services; they are not pointed at a local backend, and there is no standing tunnel. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava before OPS-10.
+  live services; they are not pointed at a local backend, and there is no standing tunnel. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava† before OPS-10.
   Every check and verification runs against the local backend (wawu-backend
-  `scripts/local/up.sh`) with the Fintava sandbox, through `npm run web` or an
+  `scripts/local/up.sh`) with the Fintava† sandbox, through `npm run web` or an
   emulator. Money paths are exercised on a phone only once OPS-10 has put the
-  live Fintava setup on the droplet.
+  live Fintava† setup on the droplet.
+  † = to be replaced when the Nuvion switch lands (the wallet provider is changing from Fintava† to Nuvion, 6 Oct 2026;
+  nothing about Nuvion is in this repository, so the sandbox and live-setup wording here is redone then, not deleted now).
 
 ## Who has what
 
