@@ -4,6 +4,7 @@ Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
 - 4 Oct 2026 · HOME-10 · Built (backend, wmt/HOME-10): TGIF reactions, readers and shares, five new routes under /tgif, three new tables, status verifying; G-160 to G-163
+- 4 Oct 2026 · HOME-11 · Built, awaiting verification (DEV): `GET/PATCH /settings/tgif` saves "TGIF on Today" to the account (table `TgifPreference`, purge and export maps, contract regenerated); protected suite 244 of 244 fresh; gaps G-170, G-171.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · ME-16 · Built (backend): featured works and education, twelve new routes under `/users`, two new tables, owner-only writes, blocked people get the unknown-person 404; ready for the verifier.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
