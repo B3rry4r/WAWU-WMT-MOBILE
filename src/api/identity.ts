@@ -92,6 +92,7 @@ export async function forgotPasswordRequest(identifier: string): Promise<ResetLi
 type Schemas = components['schemas'];
 export type SignupStarted = Schemas['SignupStartedSchema'];
 export type PhoneCodeSent = Schemas['PhoneCodeSentSchema'];
+export type EmailSignupCodeSent = Schemas['EmailSignupCodeSentSchema'];
 export type SignupResume = Schemas['SignupResumeSchema'];
 export type SignupProgress = Schemas['SignupProgressSchema'];
 export type EmailCodeSent = Schemas['EmailCodeSentSchema'];
@@ -104,7 +105,16 @@ function readStarted(data: Partial<SignupStarted> | undefined): SignupStarted {
   if (!data || typeof data.phone !== 'string' || typeof data.attempt !== 'string' || !isNumber(data.expiresIn) || !isNumber(data.resendIn)) {
     throw unexpected();
   }
-  return { phone: data.phone, attempt: data.attempt, expiresIn: data.expiresIn, resendIn: data.resendIn, emailCodeRequired: data.emailCodeRequired === true };
+  return {
+    phone: data.phone,
+    attempt: data.attempt,
+    expiresIn: data.expiresIn,
+    resendIn: data.resendIn,
+    emailCodeRequired: data.emailCodeRequired === true,
+    // AUTH-07: present only when the code was mailed; a texted sign-up's answer has neither.
+    ...(data.channel === 'email' ? { channel: 'email' as const } : {}),
+    ...(typeof data.maskedEmail === 'string' ? { maskedEmail: data.maskedEmail } : {}),
+  };
 }
 
 function readCodeSent<T extends { expiresIn: number; resendIn: number }>(data: Partial<T> | undefined): T {
@@ -117,7 +127,7 @@ function readProgress(data: Partial<SignupProgress> | undefined): SignupProgress
   return data as SignupProgress;
 }
 
-/** A3 Continue: starts a sign-up and texts the code. `attempt` in the answer is the secret every later call needs. */
+/** A3 Continue: starts a sign-up and sends the code (mailed by default, texted when WAWU ID's SIGNUP_VERIFY_CHANNEL is sms; AUTH-07). `attempt` in the answer is the secret every later call needs. */
 export async function signupRequest(body: Request<'signup'>): Promise<SignupStarted> {
   const payload = await call<Schemas['SignupStartedAnswer']>('POST', '/auth/signup', body);
   return readStarted(payload?.data);
@@ -132,6 +142,17 @@ export async function phoneVerifyStartRequest(body: Request<'phoneVerifyStart'>)
 /** A4: the right code proves the phone and issues the first session. */
 export async function phoneVerifyConfirmRequest(body: Request<'phoneVerifyConfirm'>): Promise<TokenPair> {
   return readTokenPair(await call<Schemas['SessionAnswer']>('POST', '/auth/phone/verify/confirm', body));
+}
+
+/** A4 Resend when the code was mailed (AUTH-07, the default): another code for the same sign-up. */
+export async function signupEmailCodeStartRequest(body: Request<'signupEmailCodeStart'>): Promise<EmailSignupCodeSent> {
+  const payload = await call<Schemas['EmailSignupCodeSentAnswer']>('POST', '/auth/signup/email-code/start', body);
+  return readCodeSent<EmailSignupCodeSent>(payload?.data);
+}
+
+/** A4 when the code was mailed (AUTH-07): the right code proves the email and issues the first session. */
+export async function signupEmailCodeConfirmRequest(body: Request<'signupEmailCodeConfirm'>): Promise<TokenPair> {
+  return readTokenPair(await call<Schemas['SessionAnswer']>('POST', '/auth/signup/email-code/confirm', body));
 }
 
 /** Where a sign-up stands before its code, for an app that was closed after A3. */

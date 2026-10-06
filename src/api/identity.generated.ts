@@ -13,7 +13,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A3: create the account and text a code to the phone. No session yet (R-36). */
+        /** A3: create the account and send a 6-digit code: mailed to the email by default (R-39, `channel: email` in the answer), texted to the phone when SIGNUP_VERIFY_CHANNEL is sms. No session yet (R-36). */
         post: operations["signup"];
         delete?: never;
         options?: never;
@@ -30,7 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A4: send another code. The same answer for any number and secret; only a live sign-up is texted. */
+        /** A4 (texted sign-up): send another code. The same answer for any number and secret; only a live sign-up is texted. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are mailed. */
         post: operations["phoneVerifyStart"];
         delete?: never;
         options?: never;
@@ -47,7 +47,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A4: check the texted code (and the mailed one when sign-up asked for it). Right: the first session. */
+        /** A4 (texted sign-up): check the texted code (and the mailed one when sign-up asked for it). Right: the first session. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are mailed. */
         post: operations["phoneVerifyConfirm"];
         delete?: never;
         options?: never;
@@ -149,8 +149,42 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Where a sign-up stands before its phone code, for an app that was closed between A3 and A4. Sends nothing. */
+        /** Where a sign-up stands before its code (mailed by default, texted with SIGNUP_VERIFY_CHANNEL=sms), for an app that was closed between A3 and A4. Sends nothing. A sign-up whose code went by the other channel answers `details`. */
         post: operations["signupResume"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signup/email-code/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A4 (mailed sign-up, the default): mail another code. The same answer for any number and secret; only a live sign-up is mailed. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are texted. */
+        post: operations["signupEmailCodeStart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signup/email-code/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A4 (mailed sign-up, the default): check the mailed code. Right: the email is proven and the first session is issued. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are texted. */
+        post: operations["signupEmailCodeConfirm"];
         delete?: never;
         options?: never;
         head?: never;
@@ -233,10 +267,17 @@ export interface components {
             expiresIn: number;
             /** @description Seconds until another code can be asked for. */
             resendIn: number;
-            /** @description Shown once. Keep it with the sign-up (it survives the app closing) and send it on every phone/verify and resume call. */
+            /** @description Shown once. Keep it with the sign-up (it survives the app closing) and send it on every code and resume call. */
             attempt: string;
-            /** @description The confirm call must also carry `emailCode`, the code mailed to the email. */
+            /** @description Texted sign-up only: the confirm call must also carry `emailCode`, the code mailed to the email. Always false when the code was mailed. */
             emailCodeRequired: boolean;
+            /**
+             * @description `email`: the code was mailed (the default, DECISIONS R-39): send it to `signup/email-code/*`. Absent: the code was texted (`SIGNUP_VERIFY_CHANNEL=sms`): `phone/verify/*`.
+             * @enum {string}
+             */
+            channel?: "email";
+            /** @description With `channel: email`: where the code went, written a•••@example.com. Show it on A4. */
+            maskedEmail?: string;
         };
         SignupStartedAnswer: {
             data: components["schemas"]["SignupStartedSchema"];
@@ -247,7 +288,7 @@ export interface components {
              * @description Machine-readable cause, when there is one. A body without it is a plain refusal (a 400 from validation, a 401 wrong password, a 409 taken email or phone).
              * @enum {string}
              */
-            code?: "USER_NOT_IN_WAWUID" | "EMAIL_NOT_VERIFIED" | "PHONE_NOT_CONFIRMED" | "PHONE_INVALID" | "PHONE_NOT_SUPPORTED" | "PHONE_CODE_INVALID" | "PHONE_CODE_LOCKED" | "PHONE_CODE_RESEND_TOO_SOON" | "PHONE_ALREADY_CONFIRMED" | "RATE_LIMITED" | "SMS_NOT_CONFIGURED" | "SMS_SEND_FAILED" | "SESSION_INVALID" | "SIGNUP_STEP_OUT_OF_ORDER" | "SIGNUP_ALREADY_FINISHED" | "EMAIL_NOT_SET" | "EMAIL_ALREADY_PROVEN" | "EMAIL_CODE_INVALID" | "EMAIL_CODE_LOCKED" | "EMAIL_CODE_RESEND_TOO_SOON" | "CURRENT_PASSWORD_WRONG" | "PASSWORD_UNCHANGED" | "PASSWORD_NOT_SET";
+            code?: "USER_NOT_IN_WAWUID" | "EMAIL_NOT_VERIFIED" | "PHONE_NOT_CONFIRMED" | "PHONE_INVALID" | "PHONE_NOT_SUPPORTED" | "PHONE_CODE_INVALID" | "PHONE_CODE_LOCKED" | "PHONE_CODE_RESEND_TOO_SOON" | "PHONE_ALREADY_CONFIRMED" | "RATE_LIMITED" | "SMS_NOT_CONFIGURED" | "SMS_SEND_FAILED" | "SESSION_INVALID" | "SIGNUP_STEP_OUT_OF_ORDER" | "SIGNUP_ALREADY_FINISHED" | "EMAIL_NOT_SET" | "EMAIL_ALREADY_PROVEN" | "EMAIL_CODE_INVALID" | "EMAIL_CODE_LOCKED" | "EMAIL_CODE_RESEND_TOO_SOON" | "EMAIL_ALREADY_CONFIRMED" | "EMAIL_NOT_CONFIGURED" | "EMAIL_SEND_FAILED" | "SIGNUP_CHANNEL_DISABLED" | "CURRENT_PASSWORD_WRONG" | "PASSWORD_UNCHANGED" | "PASSWORD_NOT_SET";
             /** @description A sentence for people. Validation errors join theirs with ", ". */
             message: string;
             /** @description Seconds to wait, with every 429 (also sent as a Retry-After header). */
@@ -390,9 +431,42 @@ export interface components {
              * @enum {string|null}
              */
             accountType?: "user" | "creator" | null;
+            /**
+             * @description With `phone`: `email` when the code was mailed (use `signup/email-code/*`); absent when it was texted. The step is named `phone` whichever way the code travels.
+             * @enum {string}
+             */
+            channel?: "email";
+            /** @description With `channel: email`: where the code went, written a•••@example.com. */
+            maskedEmail?: string;
         };
         SignupResumeAnswer: {
             data: components["schemas"]["SignupResumeSchema"];
+        };
+        SignupEmailCodeStartDto: {
+            /** @description The number as `POST /auth/signup` answered it. */
+            phone: string;
+            /** @description The secret `POST /auth/signup` returned for this sign-up. */
+            attempt: string;
+        };
+        EmailSignupCodeSentSchema: {
+            /** @description The number as stored (+234...). */
+            phone: string;
+            /** @description Seconds the code can be used for. */
+            expiresIn: number;
+            /** @description Seconds until another code can be asked for. */
+            resendIn: number;
+            /** @enum {string} */
+            channel: "email";
+        };
+        EmailSignupCodeSentAnswer: {
+            data: components["schemas"]["EmailSignupCodeSentSchema"];
+        };
+        SignupEmailCodeConfirmDto: {
+            /** @description The number as `POST /auth/signup` answered it. */
+            phone: string;
+            /** @description The secret `POST /auth/signup` returned for this sign-up. */
+            attempt: string;
+            code: string;
         };
         SignupProgressSchema: {
             /**
@@ -482,7 +556,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description PHONE_CODE_RESEND_TOO_SOON, RATE_LIMITED. */
+            /** @description PHONE_CODE_RESEND_TOO_SOON (texted), EMAIL_CODE_RESEND_TOO_SOON (mailed), RATE_LIMITED. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -491,7 +565,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description SMS_NOT_CONFIGURED, SMS_SEND_FAILED. */
+            /** @description SMS_NOT_CONFIGURED, SMS_SEND_FAILED (texted); EMAIL_NOT_CONFIGURED, EMAIL_SEND_FAILED (mailed). */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -525,6 +599,15 @@ export interface operations {
             };
             /** @description Validation, PHONE_INVALID, PHONE_NOT_SUPPORTED. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description SIGNUP_CHANNEL_DISABLED. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -582,7 +665,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description PHONE_ALREADY_CONFIRMED, or the email or phone was taken meanwhile. */
+            /** @description PHONE_ALREADY_CONFIRMED, SIGNUP_CHANNEL_DISABLED, or the email or phone was taken meanwhile. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -864,6 +947,115 @@ export interface operations {
                 };
             };
             /** @description RATE_LIMITED. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    signupEmailCodeStart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupEmailCodeStartDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailSignupCodeSentAnswer"];
+                };
+            };
+            /** @description Validation, PHONE_INVALID, PHONE_NOT_SUPPORTED. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description SIGNUP_CHANNEL_DISABLED. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description EMAIL_CODE_RESEND_TOO_SOON, RATE_LIMITED. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description EMAIL_NOT_CONFIGURED. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    signupEmailCodeConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupEmailCodeConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAnswer"];
+                };
+            };
+            /** @description Validation, EMAIL_CODE_INVALID (also for a secret that is not live: restart sign-up after the fourth 400 in a row). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description EMAIL_ALREADY_CONFIRMED, SIGNUP_CHANNEL_DISABLED, or the email or phone was taken meanwhile. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description EMAIL_CODE_LOCKED, RATE_LIMITED. */
             429: {
                 headers: {
                     [name: string]: unknown;

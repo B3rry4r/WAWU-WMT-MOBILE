@@ -121,7 +121,7 @@ describe("WAWU ID's published contract and the app's sign-in calls", () => {
 
   it('has its generated types made from this contract (every operation, by name)', () => {
     const ids = Object.values(contract.paths).flatMap((item) => Object.values(item).map((op) => op.operationId));
-    expect(ids).toEqual(expect.arrayContaining(['login', 'refresh', 'forgotPassword', 'signup', 'phoneVerifyConfirm', 'signupResume', 'signupProgress']));
+    expect(ids).toEqual(expect.arrayContaining(['login', 'refresh', 'forgotPassword', 'signup', 'phoneVerifyConfirm', 'signupEmailCodeStart', 'signupEmailCodeConfirm', 'signupResume', 'signupProgress']));
     for (const id of ids) expect(generated).toContain(`operations["${id}"]`);
     const named = [...generated.matchAll(/operations\["(\w+)"\]/g)].map((m) => m[1]);
     expect(new Set(named)).toEqual(new Set(ids));
@@ -135,6 +135,8 @@ describe("WAWU ID's published contract and the app's sign-up calls (AUTH-04)", (
     ['start a sign-up', 'post', '/auth/signup', (id) => id.signupRequest({ email: 'ada@example.test', phone: '08031234412', password: 'a-long-password', accountType: 'creator' })],
     ['ask for another code', 'post', '/auth/phone/verify/start', (id) => id.phoneVerifyStartRequest({ phone: '+2348031234412', attempt: 'secret' })],
     ['confirm the phone code', 'post', '/auth/phone/verify/confirm', (id) => id.phoneVerifyConfirmRequest({ phone: '+2348031234412', attempt: 'secret', code: '481902', emailCode: '123456' })],
+    ['ask for another mailed code (AUTH-07)', 'post', '/auth/signup/email-code/start', (id) => id.signupEmailCodeStartRequest({ phone: '+2348031234412', attempt: 'secret' })],
+    ['confirm the mailed code (AUTH-07)', 'post', '/auth/signup/email-code/confirm', (id) => id.signupEmailCodeConfirmRequest({ phone: '+2348031234412', attempt: 'secret', code: '481902' })],
     ['resume a sign-up', 'post', '/auth/signup/resume', (id) => id.signupResumeRequest({ phone: '+2348031234412', attempt: 'secret' })],
     ['read the sign-up progress', 'get', '/auth/signup/progress', (id) => id.signupProgressRequest(token)],
     ['put the email step off', 'post', '/auth/signup/progress', (id) => id.signupCompleteStepRequest(token, 'email')],

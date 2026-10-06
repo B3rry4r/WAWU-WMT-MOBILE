@@ -1008,6 +1008,20 @@ here is redrawn.
 - **Now:** "Sent by SMS to 0803 ••• 4412, the number on your BVN".
 - **Instead:** "Sent by SMS to 0803 ••• 4412". No BVN at sign-up.
 - **Why:** R-6.
+- **Owner-ruled deviation (R-39, 6 Oct 2026, AUTH-07), replaces the line above:** the code is
+  mailed, not texted. The nav title is **"Verify your email"** (was "Verify your phone") and
+  the line under "Enter the 6-digit code" is **"Sent to n•••@example.com"** (the address
+  typed on A3, written by WAWU ID with the first letter and the domain; was "Sent by SMS to
+  0803 ••• 4412"). The six boxes, the keypad, "Resend in 0:42" and "Resend code" are as
+  drawn. The same on A15: the wrong-code state keeps "That code isn't right" and everything
+  else of A4. A3's line under its heading reads "We'll email you a code to confirm your
+  address." (it was "We'll text a code to your phone."); A3 still asks for the phone number
+  and verifies nothing about it. No separate "Check your email" step follows A4: the email is
+  proven here. Layout, spacing and type are unchanged: only the channel words move.
+- **Rollback:** with WAWU ID's `SIGNUP_VERIFY_CHANNEL=sms` the app draws the old words above
+  ("Verify your phone", "Sent by SMS to 0803 ••• 4412") because WAWU ID answers without a
+  channel; A3's line is the one exception (the app does not know the channel before A3), and
+  would then still say email.
 
 ### A10 · Confirm PIN
 - **Now:** no mismatch state drawn.

@@ -23,7 +23,7 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export type SignUpValues = { email: string; phone: string; password: string };
 
 export type SignUpScreenProps = {
-  /** Starts the sign-up. Resolves when the code has been texted (the route opens A4); rejects with an ApiError. */
+  /** Starts the sign-up. Resolves when the code has been sent (the route opens A4); rejects with an ApiError. */
   onContinue: (values: SignUpValues) => Promise<void>;
   onBack?: () => void;
   /** A sign-up is waiting for its code: A3 offers to go back and enter it. */
@@ -106,7 +106,8 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, ini
           <Text variant="h1" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size }}>
             {"Let's get you started"}
           </Text>
-          <Text variant="muted">{"We'll text a code to your phone."}</Text>
+          {/* MECHANISM: WAWU ID POST /auth/signup mails the 6-digit code to this email through Resend (EmailSignupService, R-39). */}
+          <Text variant="muted">{"We'll email you a code to confirm your address."}</Text>
         </View>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="sign-up-banner" /> : null}
         <AuthField

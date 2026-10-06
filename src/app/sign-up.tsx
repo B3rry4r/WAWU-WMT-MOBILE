@@ -7,7 +7,7 @@ import { startSignup } from '@/features/auth/signupFlow';
 import { heldSignup } from '@/features/auth/signupStore';
 
 /**
- * A3. Only reachable signed out (the root layout's guard). Continue texts the code and opens A4.
+ * A3. Only reachable signed out (the root layout's guard). Continue sends the code (mailed by default, R-39) and opens A4.
  * A refused Continue keeps the sign-up already waiting for its code; while one is held, a link goes back to it.
  */
 export default function SignUpRoute() {

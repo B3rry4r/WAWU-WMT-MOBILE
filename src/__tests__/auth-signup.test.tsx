@@ -64,8 +64,15 @@ const refuse = (status: number, code: string, extra: Record<string, unknown> = {
   status,
   body: { statusCode: status, code, message: `refused ${code}`, ...extra },
 });
+/**
+ * A texted sign-up: what WAWU ID answers with SIGNUP_VERIFY_CHANNEL=sms (no channel field), the rollback of R-39.
+ * The app still draws it as it was (the suites below up to "AUTH-07"); the default sign-up is `mailed()`.
+ */
 const started = (over: Record<string, unknown> = {}) =>
   ok({ phone: '+2348031234412', expiresIn: 600, resendIn: 7, attempt: 'secret-attempt-1', emailCodeRequired: false, ...over }, 201);
+/** A mailed sign-up (the default, R-39): the answer names the channel and the masked address. */
+const mailed = (over: Record<string, unknown> = {}) =>
+  started({ channel: 'email', maskedEmail: 'l•••@wawu.africa', expiresIn: 600, ...over });
 const session = ok({ accessToken: 'access-new', refreshToken: 'refresh-new', user: { id: 'u1' } });
 const progress = (step: string, over: Record<string, unknown> = {}) =>
   ok({ step, inSequence: true, accountType: 'user', steps: ['email'], emailProven: false, ...over });
@@ -215,7 +222,7 @@ describe('A3: email, phone and password', () => {
 
   it.each([
     ['an email or phone already in use', refuse(409, 'ANY'), 'That email or phone number is already in use'],
-    ['a number that is not Nigerian', refuse(400, 'PHONE_NOT_SUPPORTED'), "We can't text that number yet"],
+    ['a number that is not Nigerian', refuse(400, 'PHONE_NOT_SUPPORTED'), "We can't use that number yet"],
     ['a number that is not a number', refuse(400, 'PHONE_INVALID'), 'That phone number is not valid'],
     ['a text that could not be sent', refuse(503, 'SMS_SEND_FAILED'), "We couldn't send the code"],
     ['too many tries', refuse(429, 'RATE_LIMITED', { retryAfterSeconds: 90 }), 'Too many tries'],
@@ -729,5 +736,187 @@ describe('fix round 1', () => {
     await press('Sign in');
     await waitFor(() => expect(screen.getByText("Your phone isn't confirmed yet")).toBeTruthy());
     expect(screen.getByText('Create your account again to get a new code.')).toBeTruthy();
+  });
+});
+
+describe('AUTH-07: the sign-up code is mailed (R-39, the default)', () => {
+  const MASKED = 'l•••@wawu.africa';
+  const confirm = () => callsTo('/auth/signup/email-code/confirm');
+
+  async function toMailedA4(over: Record<string, unknown> = {}) {
+    answers['POST /auth/signup'] = mailed(over);
+    answers['POST /auth/signup/email-code/confirm'] = session;
+    await toA3();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+  }
+
+  it('A3 says the code is emailed, and a user who taps Continue reaches A4 as "Verify your email" with the masked address', async () => {
+    await toA3();
+    expect(screen.getByText("We'll email you a code to confirm your address.")).toBeTruthy();
+    expect(screen.queryByText(/text/i)).toBeNull();
+    answers['POST /auth/signup'] = mailed();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+    expect(screen.getByText('Verify your email')).toBeTruthy();
+    expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
+    expect(screen.getByText('Resend in 0:07')).toBeTruthy();
+    expect(screen.queryByText(/SMS/)).toBeNull();
+    expect(screen.queryByText(/phone/i)).toBeNull();
+    expect(screen.queryByText('Code from your email')).toBeNull();
+    // the address on screen is the server's mask: the typed address is not drawn
+    expect(screen.queryByText(/lennox/)).toBeNull();
+  });
+
+  it('a user who enters the 6 digits is signed in through the email-code route, never the phone one, and lands on Home', async () => {
+    await toMailedA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(confirm()[0].body).toEqual({ phone: '+2348031234412', attempt: 'secret-attempt-1', code: '481902' });
+    expect(callsTo('/auth/phone/verify/confirm')).toEqual([]);
+    expect(mockVault.get(ACCESS_KEY)).toBe('access-new');
+    expect(mockVault.has(SIGNUP_ATTEMPT_KEY)).toBe(false);
+  });
+
+  it('after the code there is no email step: the progress says the next step and the user reaches Home', async () => {
+    answers['GET /auth/signup/progress'] = progress('interests', { steps: ['email', 'interests', 'follows'], emailProven: true });
+    await toMailedA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(callsTo('/auth/signup/progress').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Check your email')).toBeNull();
+    expect(callsTo('/auth/signup/email/start')).toEqual([]);
+  });
+
+  it('a user can resend after the countdown, through the email-code route, and sees the server\'s new countdown', async () => {
+    jest.useFakeTimers();
+    await toMailedA4();
+    await act(async () => {
+      jest.advanceTimersByTime(7000);
+    });
+    answers['POST /auth/signup/email-code/start'] = ok({ phone: '+2348031234412', expiresIn: 600, resendIn: 31, channel: 'email' });
+    await press('Resend code');
+    await waitFor(() => expect(screen.getByText('Resend in 0:31')).toBeTruthy());
+    expect(callsTo('/auth/signup/email-code/start')[0].body).toEqual({ phone: '+2348031234412', attempt: 'secret-attempt-1' });
+    expect(callsTo('/auth/phone/verify/start')).toEqual([]);
+    expect(screen.getByText('We sent a new code.')).toBeTruthy();
+  });
+
+  it('a resend that comes too soon shows the wait the server names', async () => {
+    jest.useFakeTimers();
+    await toMailedA4();
+    await act(async () => {
+      jest.advanceTimersByTime(7000);
+    });
+    answers['POST /auth/signup/email-code/start'] = refuse(429, 'EMAIL_CODE_RESEND_TOO_SOON', { retryAfterSeconds: 25 });
+    await press('Resend code');
+    await waitFor(() => expect(screen.getByText('Resend in 0:25')).toBeTruthy());
+  });
+
+  it('A15: a wrong code shows "That code isn\'t right" with the digits kept, and the fourth wrong 400 in a row ends the sign-up', async () => {
+    await toMailedA4();
+    answers['POST /auth/signup/email-code/confirm'] = refuse(400, 'EMAIL_CODE_INVALID', { message: "That code isn't right" });
+    await typeDigits('111111');
+    await waitFor(() => expect(screen.getByText("That code isn't right")).toBeTruthy());
+    expect(screen.getByLabelText('Code, 6 of 6 digits entered')).toBeTruthy();
+    for (let round = 0; round < 3; round++) {
+      await typeDigits('1');
+      await typeDigits('11111');
+      await waitFor(() => expect(confirm().length).toBe(round + 2));
+    }
+    await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Start again' })).toBeTruthy();
+  });
+
+  it('a locked sign-up shows the wait the server names and turns the keys off', async () => {
+    jest.useFakeTimers();
+    await toMailedA4();
+    answers['POST /auth/signup/email-code/confirm'] = refuse(429, 'EMAIL_CODE_LOCKED', { retryAfterSeconds: 900 });
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByText('Too many tries. Try again in 15:00.')).toBeTruthy());
+    await typeDigits('1');
+    expect(screen.getByLabelText('Code, 0 of 6 digits entered')).toBeTruthy();
+  });
+
+  it.each([
+    ['no connection', null, 'No connection'],
+    ['the mail service down', refuse(503, 'EMAIL_NOT_CONFIGURED'), "We couldn't send the code"],
+    ['a server fault', refuse(500, 'X'), 'Something went wrong on our side'],
+    ['already confirmed', refuse(409, 'EMAIL_ALREADY_CONFIRMED'), 'This sign-up is already confirmed'],
+    ['the channel switched while waiting', refuse(409, 'SIGNUP_CHANNEL_DISABLED'), 'This sign-up needs to start again'],
+  ])('a refused check for %s is said in words', async (_name, refusal, title) => {
+    await toMailedA4();
+    if (refusal) answers['POST /auth/signup/email-code/confirm'] = refusal;
+    else delete answers['POST /auth/signup/email-code/confirm'];
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByTestId('phone-code-banner')).toBeTruthy());
+    expect(screen.getByText(title)).toBeTruthy();
+    expect(screen.queryByText("That code isn't right")).toBeNull();
+  });
+
+  it.each([
+    ['mail that could not be sent', refuse(503, 'EMAIL_SEND_FAILED'), "We couldn't send the code"],
+    ['mail not set up', refuse(503, 'EMAIL_NOT_CONFIGURED'), "We couldn't send the code"],
+    ['a resend asked for too soon', refuse(429, 'EMAIL_CODE_RESEND_TOO_SOON', { retryAfterSeconds: 40 }), 'A code was just sent'],
+    ['a number that is not Nigerian', refuse(400, 'PHONE_NOT_SUPPORTED'), "We can't use that number yet"],
+  ])('A3 tells a user, with what they typed kept, when sign-up is refused for %s', async (_name, refusal, title) => {
+    answers['POST /auth/signup'] = refusal;
+    await toA3();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(title)).toBeTruthy());
+    expect(screen.getByTestId('sign-up-email').props.value).toBe('lennox@wawu.africa');
+    expect(mockVault.has(SIGNUP_ATTEMPT_KEY)).toBe(false);
+  });
+
+  it('a user who quit after A3 and opens the app finds A4 again, with the masked address and the time that is left', async () => {
+    mockVault.set(SIGNUP_PHONE_KEY, '+2348031234412');
+    mockVault.set(SIGNUP_ATTEMPT_KEY, 'secret-attempt-1');
+    answers['POST /auth/signup/resume'] = ok({
+      step: 'phone',
+      phone: '+2348031234412',
+      expiresIn: 500,
+      resendIn: 12,
+      emailCodeRequired: false,
+      accountType: 'creator',
+      channel: 'email',
+      maskedEmail: MASKED,
+    });
+    answers['POST /auth/signup/email-code/confirm'] = session;
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+    expect(screen.getByText('Verify your email')).toBeTruthy();
+    expect(screen.getByText('Resend in 0:12')).toBeTruthy();
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(confirm().length).toBe(1);
+    expect(callsTo('/auth/phone/verify/confirm')).toEqual([]);
+  });
+
+  it('a sign-in refused as email not verified, with a mailed sign-up held, opens A4 as the email screen', async () => {
+    answers['POST /auth/signup/resume'] = ok({ step: 'details' });
+    answers['POST /auth/login'] = refuse(403, 'EMAIL_NOT_VERIFIED');
+    await renderRouter(routes, { initialUrl: '/sign-in' });
+    await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+    mockVault.set(SIGNUP_PHONE_KEY, '+2348031234412');
+    mockVault.set(SIGNUP_ATTEMPT_KEY, 'secret-attempt-1');
+    answers['POST /auth/signup/resume'] = ok({ step: 'phone', phone: '+2348031234412', expiresIn: 300, resendIn: 5, emailCodeRequired: false, channel: 'email', maskedEmail: MASKED });
+    await fireEvent.changeText(screen.getByTestId('sign-in-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-in-password'), 'hunter2hunter2');
+    await press('Sign in');
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+  });
+
+  it('with no masked address in the answer the screen still says the code was emailed', async () => {
+    answers['POST /auth/signup'] = mailed({ maskedEmail: undefined });
+    await toA3();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText('Sent to your email address')).toBeTruthy());
+  });
+
+  it('nothing in the mailed sign-up asks WAWU ID for a text', async () => {
+    await toMailedA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(calls.filter((c) => c.path.includes('/phone/verify'))).toEqual([]);
+    expect(calls.filter((c) => c.url.startsWith(apiBaseUrl))).toEqual([]);
   });
 });
