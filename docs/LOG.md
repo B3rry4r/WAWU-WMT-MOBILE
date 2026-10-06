@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · ADS-06 · Built, awaiting verification: admin ad endpoints (backend branch `wmt/ADS-06`): create, edit, schedule, pause, resume, end, delete a draft, list, detail and report under `/api/hub/admin/ads`, with an audit row for every change (migration `20261006130000_admin_ads_audit`); a pause stops serving on the next request; views, taps and skips wait for ADS-05 (G-194).
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Built, awaiting verification: ads data model (backend branch `wmt/ADS-03`): `AdCampaign` and `AdCreative` with placement, status and CTA allow-list enums, serving index and CHECKs, additive migration `20261006090000_ads_data_model`; no routes, no price column (R-15).
