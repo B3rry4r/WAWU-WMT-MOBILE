@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 35 | 28 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
-| review | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 2 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
-
-## Being verified
-
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 
 ## Done
