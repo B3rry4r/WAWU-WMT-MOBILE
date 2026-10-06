@@ -14,8 +14,8 @@ tasks below are done.
 - 2 to 8 screenshots per device type; at least 2 in all to publish.
 - JPEG or 24-bit PNG, no alpha. Each side 320 to 3,840 px; the long side at most twice the short side.
 - Phone portrait, recommended 9:16 at least 1,080 x 1,920. The app is portrait only (`app.json` `orientation`).
-- Feature graphic 1,024 x 500 (JPEG or 24-bit PNG, no alpha) and icon 512 x 512 (32-bit PNG): not screenshots, listed
-  in `PLAY-LISTING.md`, section 1.
+- Feature graphic 1,024 x 500 (JPEG or 24-bit PNG, no alpha): the owner supplies it, the only owner asset. The 512 x 512
+  icon is made by the lead (`docs/release/assets/play-icon-512.png`). Neither is a screenshot; see `PLAY-LISTING.md`.
 - Tablet and Chromebook screenshots are optional. The app is a phone app; skip them.
 
 ## The plan: 8 phone screenshots, light theme, 1,080 x 1,920
