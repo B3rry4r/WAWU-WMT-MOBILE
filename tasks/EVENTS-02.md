@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -48,6 +48,14 @@ Backend `wmt/EVENTS-02` (e8a0d8d, main a055b4f merged in acf062d). Files: `prism
 - Copy not on the canvas, for the owner to read: category labels Music, Entertainment, Conference, Training, Fashion, Lifestyle, Community, Church, Other; kind labels Summit, Webinar, Competition.
 - Filed G-144 (G-55 when written; main took G-55): E13 to E15 never ask for the Kind, and `type` is still required. Hybrid, Conference and Concert reach the web's list for new events only; the web shows them as it shows any value it does not know.
 - NOT RUN: mobile `npm run api` (it copies the contract from backend main, so the new types arrive after merge); Fintava (not used by this task).
+
+### Builder report, round 2
+
+Fix round 1, for the Verifier's F1 (defect). Backend `wmt/EVENTS-02` 1df8744, main merged in first (main moved; mobile merged too, `BACKEND_GAPS.md` row G-55 renumbered G-144 because main took G-55 meanwhile).
+
+- **F1 fixed.** `NewEventTicketTypeDto.priceNaira` and `quantity` (`src/event/dto/create-event.dto.ts`) no longer coerce with `@Type(() => Number)`; `@IsInt` now refuses anything that is not a JSON integer, as PUT /events/:id/tickets does. `""`, `"5000"`, `true`, `"0x10"`, `"1e3"`, `"5,000"` and `null` on either field are 400 and save nothing. The 400 message is one per field ("priceNaira must be a whole number of naira, from 0 to 10000000." and "quantity must be a whole number, from 1 to 1000000."), so `"5,000"` and `null` no longer read "must not be greater than". New spec in `src/event/tests/event-hosting.contract.spec.ts` covers all 12 field and value pairs, checks the message and that no event was saved. The generated contract is unchanged (`npm run contract:build` leaves `contract/openapi.json` as committed).
+- **Checks after.** `npx tsc --noEmit` clean. Event specs (event, hosting, admin events): 3 suites, 106 tests passed (105 before, plus the new one). `scripts/protected-routes/run.sh --fresh`: 2 suites, 253 tests passed, all 244 required. `npm run contract:build`: no diff. Gates: 16 failures, none in `src/event` or this task's files (Flutterwave, wallet and notification files from main); `check_baseline.py` clean. `eslint src/event` reports 101 errors in files this round did not touch (`list-events-query.dto.ts`, `event.contract.spec.ts`, `jest.config.js`), as before; the two files I changed are Prettier-clean. The full contract suite and Fintava-key checks were NOT RUN this round (no Fintava keys here; the full suite was run by the Verifier).
+- **F2, F3, F4** are `unclear (owner)`. Not fixed here; they are recorded in the Verifier report above, which is where the owner reads them.
 
 ## Verifier report
 
