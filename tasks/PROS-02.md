@@ -7,7 +7,7 @@ order: 8
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -117,6 +117,51 @@ Files checked against the report: the 12 backend files and the five mobile docs 
 - V5 and V6: the task has no artboards and no screen.
 
 **To close:** defects 1 to 3 (merge main, thread the viewer, decide the export, rename the migration, regenerate the contract, add the specs), then 4 to 6, with items 7 and 8 answered by the owner or lead.
+
+## Verifier report, round 2
+
+Verifier, 6 Oct 2026, a fresh session that wrote none of this task's code (the round-1 verifier's evidence was not available to it, so everything below was run again). Checked backend `wmt/PROS-02` `fe4bb87` and mobile `wmt/PROS-02` `350f448`, in fresh worktrees. Backend `origin/main` is `a94f338` and mobile `origin/main` is `8484195`: both already contained in the branches, so there was nothing to merge and the branches were judged as they will land (the backend diff against main is the 13 files the builder lists; the mobile diff is five docs files). Hub :4127 and mock WAWU ID :4128 for the live checks; own databases `wawu_hub_pros_02_v2`, `wawu_test_pros_02_v2`, `wawu_protected_pros_02_v2` (dropped afterwards). The task names no `depends_on` and no ruling.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **passed.** Backend: `tsc --noEmit` 0; eslint on the changed `.ts` files, no `--fix`, 0 problems; gates 9 run / 737 files / 16 fail / 35 warn / 76 accepted against `origin/main` exported and run the same way: 9 / 732 files / 16 / 34 / 76; the 16 failures and 34 warnings are identical lines, the one new warning is `PROVISIONAL(PRO-REPLY-SAMPLE, owner=YOU, why=...)` (carries its why); `check_baseline.py` passes (108 entries, every accepted finding has an owner and a reason); `npm run contract:build` leaves `contract/openapi.json` byte-identical (git clean); no `TODO`, `for now`, `Flutterwave` or em-dash in added lines except one em-dash in a test-file comment (not user-facing). Mobile: `npm run check` exit 0, 754 tests (43 suites), gates 195 files / 0 fail / 0 warn / 0 accepted, 207 tasks. (The first mobile run failed one test, `OpenWalletScreen` A26 "loading view first", on its 20 s timeout while four other agents' suites held the machine at load 11 to 13; it passes alone, 37/37, and the whole `npm run check` passed on the rerun. No app code is in the diff.) | `/tmp/claude-0/gates-branch.txt`, `gates-main.txt`, `tsc.txt`, `contract-build.txt`, `mobile-check.txt`, `mobile-check2.txt`, `mobile-ow.txt` |
+| V2 Contract | **passed.** FULL backend suite, `npx jest --runInBand` as `deploy.yml` runs it, in its own network namespace with its own Postgres and its own :4001 mock, fresh migrated and seeded database: **branch 153 suites (151 passed, 2 failed), 3,691 tests (3,672 passed, 16 failed, 3 skipped). Main `a94f338`, same method: 152 suites (150 passed, 2 failed), 3,665 tests (3,647 passed, 15 failed, 3 skipped).** The same two suites fail on both: `tests/hub-rate-limits` (11 on each; needs a non-loopback interface, which the namespace has none of; as in round 1) and `money/receipts/tests/receipt-units` (4 on main; 5 on the branch on the full run, the fifth being the "under 300 ms" timing check at 323 ms under load; rerun alone on the branch it fails the same 4 as main and the timing check passes; the 4 are this machine's Node Unicode tables, `𖿴`, nothing to do with professionals). `legal-intake` reports `focused` on both. The only suite difference is the added `professional-directory` (26/26). Also passing in the run: `professional` 23, `blocked-account/*` 37, 14 and 9, `account-purge/account-data-map` 4, `data-export-request/data-export-map` 5. No suite that passes on main fails on the branch. | `/tmp/claude-0/full-branch.json`, `full-main.json`, `full-branch.txt`, `full-main.txt` |
+| V3 Regression | **passed.** `scripts/protected-routes/run.sh --fresh HEAD` (lock `origin/main`): **253/253**, "all 244 required tests passed". No change under `src/protected-routes`, `test/protected-routes`, `.pipeline`. Live: the web's `GET /professionals` still answers 15 keys per item and `GET /professionals/:id` 18 keys with `dmPrice` and no `city`. | `/tmp/claude-0/protected-branch.txt`, `probe/p.py` |
+| V4 Field trace | **passed.** City: written by `PUT /professionals/location` (creator only, own row), read by the directory and the directory profile, deleted by the purge (OWNED), exported in its own section; hidden together with the listing for blocked people. Reply time: `respondedAt` and `sentAt` as in round 1, now only rows with `respondedAt >= sentAt`. Price: `CreatorState.dmPrice` times 100, null while not taking messages. | live probes below |
+| V9 Live seam | **passed against the mock WAWU ID; real WAWU ID NOT RUN.** Accounts registered and signed in through the mock's real `/auth/register` (no minted token), blocks made through the real `POST /settings/privacy/blocked`, city through `PUT /professionals/location`. Professional rows and paid-message rows inserted by SQL (no payment key). | `probe/p.py` (kept at `/tmp/claude-0/keep/p.py`) |
+
+**Round-1 defect re-check** (each reproduced by me against the built branch Hub, not read from the builder's report)
+
+| # | Round-1 defect | Result | Evidence |
+|---|---|---|---|
+| 1 | Blocked people shown by the directory routes | **fixed.** Viewer V blocked X; Z blocked V; W blocks nobody; three finance professionals X, Z, W. V sees only W in `GET /professionals/directory?field=accounting_tax` and `GET /professionals?category=finance`, `pagination.total` 1 on both; `GET /professionals/directory/{X}` and `/{Z}` 404 for V (and `GET /professionals/{X}`, `{Z}` 404), `/{W}` 200. W and an anonymous caller see all three (total 3) and 200 on all profiles. Both directions, list, total and profile. Spec `block-hides-people` and `professional-directory` (26) pass; my mutants: hidden filter removed, profile ignoring the viewer, directory ignoring the viewer, all killed. | `probe/p.py` output |
+| 2 | `ProfessionalLocation` missing from the data export | **fixed.** `professionalLocation` section in `data-export-sections.ts` (city, created, updated, own rows only); `data-export-map.spec.ts` 5/5 on the branch, unedited; mutant (section emptied of its model) killed. | `full-branch.json`, `mut.out` |
+| 3 | Migration sorts before main's newest | **fixed.** `20261004150000_professional_location` is the last folder on the branch; main's newest is `20261004141500_legal_documents`; the SHARED-CHANGES row says so; applies cleanly on a fresh database (migrate deploy in three databases). | `ls prisma/migrations`, migrate logs |
+| 4 | Impossible reply times read as 1 minute | **fixed.** Pro X with three replies dated before their messages: `usualReplyMinutes` null, `answeredMessageCount` 0. Pro Z with those three plus real replies of 30, 60, 90 minutes: 60 / 3. Pro W with two real and one reversed: null / 2. Mutant (condition removed) killed. | `probe/p.py` |
+| 5 | City is only a length | **fixed.** 400 for: two zero-width spaces, "Ikeja\n\nPay me 0803", "12345", `<script>alert(1)</script>`, "A", 61 characters, "Lagos2", a NUL, a trailing zero-width space, "-Ikeja", empty string, null, an array; 200 for "Ikeja", "  Port   Harcourt  " (saved "Port Harcourt"), "St. John's-on-Sea", "Ìbàdàn"; a buyer gets 403. Mutants (regex removed, inner-space collapse removed) killed. | `probe/p.py` |
+| 6 | Gap ids collide | **fixed.** `BACKEND_GAPS.md` on the branch has G-144, G-145, G-146 (PROS-02) and G-53, G-54, G-56 are once each, with MONEY-15, the contract gap and A26. Mobile main's highest is G-143; no open `wmt/*` branch (81 others) has a G-144 to G-149 row in its `BACKEND_GAPS.md` or a task file naming one. The builder report, SHARED-CHANGES and LOG use the new ids; the old round-1 text keeps the old ids, as the builder said. | `git grep` over `origin/wmt/*` |
+
+**Capability checks**
+- Filtering by a field on P1 returns professionals in that field: **passed** (spec 26/26, round-1 probes of all seven fields stand; the branch's service code for the filter is unchanged since, and `field=accounting_tax` returns exactly the finance listings in my probe).
+- A card's "usually replies in" comes from real reply times: **passed**, now including impossible data (above).
+
+**Own mutants on the round-2 fixes and new specs** (9 against `professional-directory` and `data-export-map`): hidden filter removed, profile ignoring the viewer, directory ignoring the viewer, `respondedAt >= sentAt` removed, city regex removed, inner-space collapse removed, floor of 3 changed to 2, ceiling changed to floor, export section emptied: **9 of 9 killed** (round 1 left 10 of 24 alive; the floor and the rounding, two of those, are now pinned). Files restored after each; `git status` clean.
+
+**Findings**
+1. **unclear (owner or lead), carried from round 1, not addressed by the builder (and not theirs to answer): the feed's professional card gets none of this.** H10 draws "Chartered accountant · Ikeja" and a usual reply time; HOME-05's card on main has neither `city` nor `usualReplyMinutes`. HOME-07 depends on PROS-02 and must read `/professionals/directory/{id}` per card or the card gains the fields. Still not in `BACKEND_GAPS.md`.
+2. **unclear (owner), carried: `engineering` is not a regulated category** (COREN licenses engineers; P1 says "Vetted practitioners"), and it widens the category enum on three professional routes (previously 400, now accepted; SHARED-CHANGES `PROS-02 #1` and G-145).
+3. **unclear (owner), new with the fix: a city with a digit is refused** (the builder says so and invites a loosening; "Lagos2" and "12345" answer 400, as designed). Names such as "Port-Harcourt Zone 3" are not accepted. The directory has no city filter, so the free-text city has no canonical list (round-1 note 9, unchanged).
+4. Note: two test gaps the builder left deliberately (a per-field `total` spec; `GET /professionals/location` read) remain; I checked both live (the total is right on every probe; `GET /professionals/location` is the same read the PUT answers with). Not defects.
+5. Note: no `unclear` here blocks the merge; the lead merges backend and mobile together (backend PR #47, mobile PR #3).
+
+No open defect. Files checked against the report: the 13 backend files and 5 mobile docs files match the builder's lists.
+
+**NOT RUN**
+- V9 through the real WAWU ID login: the mock was used. Unblocked by `scripts/local/up.sh` with a real `wawu-id` and its keys.
+- A paid message through a real payment (Flutterwave or Fintava): paid-message rows inserted by SQL as a confirmed payment writes them; the real respond route was exercised in round 1 and its spec still passes. Unblocked by sandbox keys.
+- The admin approval route: listings approved by SQL here.
+- `hub-rate-limits` in the full suite (needs a non-loopback interface; fails identically on main). Unblocked by running the suite on a host with one.
+- V5 and V6: the task has no artboards and no screen.
 
 ## Owner sign-off
 

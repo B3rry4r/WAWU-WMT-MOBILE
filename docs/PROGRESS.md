@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 35 | 30 | 30 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 0 | 1 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price (Developer 3)
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · PROS-02 · Verifier report, round 2: all six round-1 defects confirmed fixed (blocked people on the directory list, profile and the web's list in both directions, data export section, migration order, impossible reply times, city text, gap ids G-144 to G-146); full backend suite 153 suites, 3,672 of 3,691 passed, the same two suites failing as on main (152 suites, 3,647 of 3,665); protected 253/253; mobile check exit 0; two owner questions carried (feed card fields, `engineering` not regulated); status review
 - 6 Oct 2026 · PROS-02 · Builder fix round 1 (backend `fe4bb87`): blocked people hidden from the directory and its profile, the city has its own data-export section, migration renamed `20261004150000`, impossible reply times not counted, a city must be a place name, gap ids now G-144 to G-146; status verifying.
 - 6 Oct 2026 · PROS-02 · Verifier report, round 1: the branch as is passes its specs, the protected suite (253/253) and the gates; trial-merged onto backend main `a94f338` it conflicts in one hunk of `professional.service.ts` and then shows blocked people in the new directory routes, leaves `ProfessionalLocation` out of the data export (`data-export-map.spec.ts` fails) and carries a migration that sorts before main's newest; impossible reply times read as 1 minute; city is only a length; gap ids G-53, G-54 and G-56 collide on mobile main; status building
 - 3 Oct 2026 · PROS-02 · Professionals backend: the canvas's 7 fields mapped to categories (`GET /professionals/fields`, `engineering` added), `GET /professionals/directory?field=` and `/directory/{id}` with city, usual reply time (median of real replies) and price in kobo, `PUT /professionals/location` (new table); web routes unchanged; status verifying
@@ -111,4 +112,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
 - 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
 - 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
-- 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.
