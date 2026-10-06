@@ -7,7 +7,7 @@ order: 27
 priority: launch
 repo: wawu-backend
 type: migration
-status: verifying
+status: building
 depends_on: []
 decisions: [R-15]
 passes: [V1, V3, V4, V9]
@@ -50,7 +50,81 @@ Backend branch `wmt/ADS-03` (2468204): `prisma/schema.prisma` (block appended at
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier, 6 Oct 2026. Independent session; wrote none of this task's code. Checked backend `wmt/ADS-03` @ 2468204 and mobile @ ffdda0c against origin/main (backend a94f338, mobile 8484195; neither moved). Own worktrees, own Postgres 16 on a tmpfs (port 5463), own mock WAWU ID on :4001 started from the same checkout as each test run, own real wawu-id copy for V9. Everything started was stopped (ps checked), the tmpfs unmounted, the worktrees and caches removed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed, with defects D1 and D2 open | Backend: `tsc --noEmit` 0 on main and branch; eslint without `--fix` 4514 problems on both (3655 errors, 859 warnings; 746 vs 747 files); `scripts/gates/run.py` 16 fail / 34 warn / 76 accepted on both (files scanned 732 vs 733); `check_baseline.py` exit 0 on both; `contract/openapi.json` unchanged and `npm run contract:build` leaves `git status` clean. Full `test:contract` on a freshly migrated and seeded database, main: 152 suites, 3665 tests (3644 passed, 18 failed, 3 skipped); branch: 153 suites, 3707 tests (3686 passed, 18 failed, 3 skipped). The failing set is identical on both: `money/receipts/tests/receipt-units.spec.ts` (Node Unicode digit table) and `data-export-request/tests/data-export.contract.spec.ts` (ADMIN_JWT_SECRET unset; with it set, 3 suites and 24 tests pass on the branch). Mobile `npm run check` exit 0 (43 suites, 754 tests, gates 0 fail on 195 files, no OpenWalletScreen timeout). Diff matches the builder report: backend 3 files (+819), mobile 4 files (SHARED-CHANGES row, LOG line, task file, generated PROGRESS). |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh`: all 244 required tests pass on the branch AND on a real worktree of origin/main (on the branch 253 tests in 2 suites; the second suite is the route-shadowing spec). No route added (`GET /api/hub/ads` is 404 on the running branch build). Generated Prisma client: 107 existing models unchanged byte for byte in `runtimeDataModel`, no existing `models/*.ts` file differs, the only differences are the two new models and their input types plus the embedded schema text. |
+| V4 Field trace | passed, findings U1, U4, U5, U7, D2 | Migration on a fresh database from all 91 migrations: applies, `migrate diff` shows only main's `DROP INDEX "ContentPiece_specializations_idx"`; re-run of `migrate deploy` applies nothing. Migration on main's 90 migrations plus `npm run db:seed` plus rows in Event, NotificationCampaign and users: per-table `pg_dump --schema-only` of all 108 public tables (107 plus `_prisma_migrations`) identical (ignoring pg_dump's random `\restrict` token), whole-schema dump 0 lines removed, data dump 0 lines removed (only the new `_prisma_migrations` row added), all row counts equal, neighbour rows intact. Field trace for H33 and H36 below. |
+| V9 Live seam | passed for what applies; the ad read-back is NOT RUN | There is no route, so no ad value can be created or read through the API. Run instead: `scripts/local/up.sh --detach` from a copy of the branch with a copy of the real wawu-id (own databases, ports 3463 and 3464): Hub and wawu-id boot, `scripts/local/smoke.sh` all PASS (real register, confirm, login, `/users/me`), `GET /events` and `GET /notifications` answer 200 with the real login token on a database that has the new migration (`_prisma_migrations` lists `20261006090000_ads_data_model`), and the new tables carry 8 constraints, one of which refused a bad window when tried by hand. NOT RUN: sign in and see an ad only the server has. Unblocked by ADS-04 (serve) and ADS-06 (create); ADS-04's V9 is where that is proved. |
+
+### Capability checks
+
+- **Migration applies on a fresh local database built from every existing migration and on the OPS-03 seeded database, and adds only new tables or nullable columns: passed.** It adds no column to any existing table at all (three enums, two tables, two indexes, one foreign key, five CHECKs, all on the new tables). Read line by line: no ALTER, DROP or UPDATE touches an existing object, so no lock on an existing table, no data change. Enum types are created before the tables that use them. Not idempotent (no IF NOT EXISTS), as every Prisma migration; the migrate history prevents a second run. The rollback in the header works: run on a copy, schema-only dump identical to a fresh main database (0 lines differ). It does not say that `_prisma_migrations` needs the row removed or `prisma migrate resolve --rolled-back` (nit). The migration timestamp is later than every migration on main and on every open branch (latest open: `20261004213700_inbox_feed_index`). Combined case: scratch merge of `wmt/ADS-03` with `wmt/INBOX-02` and `wmt/INBOX-07`: `prisma/schema.prisma` merges with no conflict, `prisma validate` passes, the three migrations plus 91 earlier apply in order on a fresh database, `migrate diff` again only the known DropIndex. The only conflicts are between INBOX-02 and INBOX-07 themselves (`src/app.module.ts`, `contract/openapi.json`); ADS-03 touches neither. Nothing committed.
+- **V3 regression suite unchanged: passed** (V3 row).
+
+### The 42-test spec
+
+Passes alone twice, in the full suite, and next to `src/account-purge` in both orders; after it the row count of every table equals a fresh seed (checked, and AdCampaign and AdCreative hold 0 rows after the full suite). The account purge drift guard (`account-data-map.spec.ts`) passes untouched. Mutation test (done on a scratch database by dropping the object, not in the repo): dropping the window CHECK fails 2 tests; the weight CHECK 5; the advertiser CHECK 3; the text CHECK 4; the artwork CHECK 7; the unique index 1; the serving index 1; changing the cascade to restrict fails everything (the clean-up cannot run); loosening weight to 1..1000 fails 2; loosening the window to `>=` fails 2. Every assertion that names a constraint really exercises the database. Gaps in what it tests, found by my probes: it does not try non-breaking space or zero-width text (D2), nor a very long text, nor an upper-case `HTTP://`. The index test sets `enable_seqscan = off`, so it proves the index can answer the filter, not that the planner chooses it; I checked that separately.
+
+### My own probes (scratch database, Postgres 16, C.UTF-8)
+
+- Weight: 1 and 100 accepted; 0, 101, -1, 2147483647 and NULL refused; 50.5 and 100.4 are rounded to an integer by Postgres and accepted.
+- Window: start = end refused; end 1 ms later accepted; end 0.4 microseconds later refused (the column rounds to milliseconds first); end before start refused; `infinity` as an end accepted. A time written with an offset (`+01`) into the raw SQL has its offset silently dropped by Postgres (the column is `timestamp(3)` without time zone, the repo convention, and Prisma sends UTC), so only the UTC rule is safe (nit).
+- Blank text: empty, spaces, tab and newline, U+2003, U+3000 refused. U+00A0, U+200B, U+FEFF accepted as an advertiser or headline (D2).
+- Length: no cap anywhere. A 10 MB headline, 1 MB advertiser, 1 MB subline, 5000-character button label and 100 kB artwork URL are accepted (U5).
+- Artwork: `https`, `HTTP://A.B/C` and mixed case accepted (right: the match is case-insensitive); empty string, leading or trailing space, trailing newline, newline injection, CR, `javascript:`, `data:`, `ftp:`, `//host/x`, `http://` and an inner space refused. Accepted by design of a CHECK, to be handled by the ADS-06 DTO: `http://localhost`, `http://127.0.0.1/x`, `http://user:pass@host`, a non-breaking space inside, `"><script>` in the path.
+- `ctaDestinationId`: a missing event, a pending event and ` ev ` with spaces are accepted (no foreign key, as designed); ADS-06 and ADS-04 must check.
+- Dedupe: nothing is unique on advertiser; the same advertiser typed two ways is two names. A report by advertiser (ADS-02) will group by spelling (U3).
+- Relations: deleting a campaign deletes its creative; a second creative on one campaign is refused; a creative for a missing campaign is refused; deleting an Event does not touch an ad (the ad then points at nothing, so ADS-04 must check). Twenty concurrent creative inserts for one campaign: exactly one succeeds. Concurrent creative insert and campaign delete: no orphan.
+- Status: any transition is accepted (ended to draft to live), as the DB is not meant to constrain it; and an update into a bad window or weight is refused (so the CHECKs hold on UPDATE too).
+- Serving query plan, 6000 campaigns and 6000 creatives, ADS-04's shape (placement, status in scheduled/live, window holds the moment, order by weight desc, limit 1): `AdCampaign_placement_status_startsAt_endsAt_idx` is used (bitmap scan for a window with 16 hits, index scan for none), 1 ms; `AdCreative_campaignId_key` serves the join. The planner chose a sequential scan of AdCreative in the hash join at 6000 rows, which is a planner choice for a small table.
+- Enum extension: `ALTER TYPE ... ADD VALUE` runs inside a transaction block on Postgres 16 and is additive, but the new value cannot be used in the same transaction ("unsafe use of new value"), so a task that adds a destination must put rows that use it in a later migration or a later statement (nit for ADS-06 and whoever adds the second destination).
+
+### Field trace (H33 and H36)
+
+| On the card | Writer | Stored in | Reader |
+|-------------|--------|-----------|--------|
+| "SPONSORED" label, "Ads keep TGIF free", "Skip" | none (the app's own words) | not stored | ADS-01 |
+| Advertiser name | ADS-06 (dashboard form, ADS-02) | `AdCampaign.advertiser` | ADS-04 serves, ADS-01 shows |
+| Headline ("Gospel Night Live") | ADS-06 | `AdCreative.headline` | ADS-04, ADS-01 |
+| Event, place, date, "from ₦5,000" | ADS-06, typed by the team | `AdCreative.subline` (one free text) | ADS-04, ADS-01 |
+| Button words ("Get tickets", "Tickets") | ADS-06 | `AdCreative.ctaLabel` | ADS-01 |
+| What the button opens (event detail, E2) | ADS-06 | `ctaDestination` (allow-list enum) and `ctaDestinationId` (Event id) | ADS-04 checks still open, ADS-01 navigates |
+| Picture | ADS-06 via the upload presign | `AdCreative.artworkUrl` (nullable) | ADS-01 |
+| Placement, window, status, weight | ADS-06 | `AdCampaign` | ADS-04 (index serves exactly this filter), ADS-02 |
+| Views, taps, skips | ADS-05 | its own tables, referencing the ids above | ADS-02 |
+
+Everything H33 and H36 draw has a column, every column is used by a later task, and no price, payment, advertiser account or person column exists (R-15). Nothing is missing and nothing is invented apart from `createdAt` and `updatedAt`, which every model carries.
+
+### Findings
+
+**D1 · defect (low): the PROVISIONAL(ADS-WEIGHT-RANGE) marker is where no gate reads it.** It sits in `prisma/schema.prisma` and in the migration SQL. `scripts/gates/checks/provisional.py` scans only `src/**/*.ts` (`gates.config.json`, `files.source`), so the marker raises no warn (warn count is 34 on main and on the branch, and `GATES_RELEASE=1 run.py` prints no ADS-WEIGHT line). The point of the marker is that a release build fails while an unconfirmed value remains (WORKFLOW section 10: "mark it PROVISIONAL(...) in config, list it in the task file"). The task file lists it, but the machine check cannot see it. Fix: carry the marker in a scanned `src/ads` file (a constant or comment for the range, which ADS-06's DTO needs anyway), or have the owner confirm the range before merge. I did not touch the gate.
+
+**D2 · defect (low): the "not blank" CHECKs do not refuse text that looks blank.** The migration header says a name, headline, button or destination is never "empty or only white space". A headline, button label, destination id or advertiser made only of a non-breaking space (U+00A0), a zero-width space (U+200B) or a byte-order mark (U+FEFF) is stored, and renders an empty or invisible card. Text pasted from a document or chat commonly carries U+00A0. Whether `\s` matches U+2003 and U+3000 depends on the server's locale (they are refused on a C.UTF-8 cluster; not tested on a cluster with another locale), so the production behaviour is not what the spec proves. The spec tests only "", spaces, tab and newline. Fix: widen the pattern to the characters that draw as nothing, or take the claim out of the header and make ADS-06's DTO trim and refuse them, and add the case to the spec.
+
+**U1 · unclear (owner): what "weight" means, and its range.** The migration says the highest weight wins, ties to ADS-04. That makes a weight 1 booking never show while any heavier one overlaps on the same placement. If the owner means a share of the time (rotation by weight), the model is the same but ADS-04's rule is not. The range 1 to 100 is PROVISIONAL (no ruling gives it); nothing in R-15 or the task contradicts it. Changing it later is a new migration (drop and add the CHECK; it validates existing rows).
+
+**U2 · unclear (owner), no action needed now: destinations.** Only `event` is on the allow-list. The task says "CTA destination from an allow-list"; H33 ("Get tickets") and H36 ("Tickets") draw only the event, R-15 and the later ADS tasks name no other, so a one-value enum meets the text and invents nothing. Adding a value later is additive (see the enum note above). Judged right; owner to say if a second destination (a creator's page, a web link) is wanted for launch.
+
+**U3 · unclear (owner): advertiser as free text.** The same advertiser spelled two ways is two names, so ADS-02's reports by advertiser would split. R-15 (no accounts at launch) makes free text the honest model; a later advertiser table is additive. Also, the advertiser may be a named person; see U6.
+
+**U4 · unclear (owner): the price and date live in free text.** The card's "Abuja · Sat 18 October · from ₦5,000" is one `subline` the team types. The Event has its own date and ticket types, so the card can show a price the event no longer has. ADS-01 says a figure on the card must come from the API, not the design; a typed subline does come from the API, so this is allowed, but nothing keeps it in step with the event. Owner to say whether the team types it (current model) or ADS-04 composes it from the Event.
+
+**U5 · unclear (owner / ADS-06): no length limit anywhere.** The database accepts a 10 MB headline. The Hub's request size limits stop real input, but the card layout needs short text and no task says where the cap lives. ADS-06's task text does not mention caps; it should.
+
+**U6 · unclear (owner): personal data.** `advertiser` is a name, not an account, and nothing links a row to a WAWU user, so `account-data-map.ts` cannot classify it (its drift guard keys on WAWU ID columns and passes untouched). If an advertiser can be a named individual, the name is personal data of someone who is not a user, and erasing it is a manual job in the dashboard. The builder's claim "no personal data" holds for WAWU users, not necessarily for advertisers.
+
+**U7 · unclear (ADS-01 to settle): which text follows "SPONSORED".** On H33 the line reads "SPONSORED · Gospel Night Live · Abuja ...". The model carries both an advertiser name and a headline, so either reading is possible; nothing is missing.
+
+**U8 · unclear (ADS-04 and ADS-06 to define): `scheduled` and `live` both serve.** A `scheduled` campaign inside its window is served, so `live` adds nothing the window and `scheduled` do not; nothing in the database moves a campaign between them or to `ended` when the window passes. Not a defect (the DB is not meant to constrain transitions, and the window decides), but the two tasks need one written rule.
+
+**Nits, no label needed:** (a) the schema block comment says the AdCreative CHECKs include "advertiser"; that CHECK is on AdCampaign. (b) The migration header says the event must be "approved"; the Event status that is live is `published`. (c) The header's rollback omits the `_prisma_migrations` row.
+
+**differs-for-recorded-reason:** none.
+
+Checked and fine: fenced files each have a SHARED-CHANGES row (ADS-03 #1, status open; `contract/**`, `src/common/**`, `app.module.ts` untouched); the schema block is appended at the end; no em or en dashes in anything added, no TODO or "for now"; gate counts and gap ids unchanged (`BACKEND_GAPS.md` untouched); R-15 is respected (no price or payment column, no advertiser account); naming follows the repo (PascalCase tables, `<Table>_<name>_check`, uuid text ids, `timestamp(3)`).
 
 ## Owner sign-off
 
