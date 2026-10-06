@@ -7,7 +7,7 @@ order: 151
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -71,6 +71,12 @@ Findings:
 2. low, note: protected-route and contract runs used the committed branch head `1a4f92c`; the working tree was clean, so that is the code reviewed.
 
 NOT RUN: a run of the mobile app against these routes (no screen calls them yet); each of main's env-caused failures re-run alone.
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (second of eight), verifier PASS with no defect open (backend 1a4f92c). Backend migration renamed from `20261004144723_tgif_engagement` to `20261005100000_tgif_engagement`: the old timestamp sorted before ME-16's `20261004200000`, which is earlier in train order. The rollback note inside the SQL and the SHARED-CHANGES row HOME-10 #1 name the new folder; nothing else referenced the old one. The merge itself was clean (the builder's NOT RUN item, merging main a94f338, is now done by the train). No interaction needed a fix.
+
+Open follow-ups from the verifier: no screen calls these routes yet (HOME-09 does), so V9 through the app is NOT RUN; a take-back (`DELETE`) of a reaction you do not have answers 200 with the current state, a recorded default (agent), owner may override.
 
 ## Owner sign-off
 

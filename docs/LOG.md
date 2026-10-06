@@ -3,6 +3,14 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
+- 6 Oct 2026 · ADS-04 · Merged to main in the lead's merge train (wmt/TRAIN-1): serve one sponsored card, `GET /ads?placement=`; Developer 2's task.
+- 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
+- 6 Oct 2026 · WALLET-08 · Merged to main in the lead's merge train (wmt/TRAIN-1): find a recipient by phone, name or handle, and recent recipients; the lead's task.
+- 6 Oct 2026 · EXPLORE-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): Explore categories, creators by category and admin-featured creators; Developer 1's task.
+- 6 Oct 2026 · HOME-11 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF on Today saved to the account, GET and PATCH `/settings/tgif`; Developer 1's task.
+- 6 Oct 2026 · HOME-10 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF reactions, readers and shares on three new tables; Developer 1's task.
+- 6 Oct 2026 · ME-16 · Merged to main in the lead's merge train (wmt/TRAIN-1): featured works and education, twelve new routes under `/users`, two new tables; Developer 1's task.
 - 4 Oct 2026 · HOME-10 · Built (backend, wmt/HOME-10): TGIF reactions, readers and shares, five new routes under /tgif, three new tables, status verifying; G-160 to G-163
 - 4 Oct 2026 · HOME-11 · Built, awaiting verification (DEV): `GET/PATCH /settings/tgif` saves "TGIF on Today" to the account (table `TgifPreference`, purge and export maps, contract regenerated); protected suite 244 of 244 fresh; gaps G-170, G-171.
 - 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.

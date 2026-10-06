@@ -7,7 +7,7 @@ order: 27
 priority: launch
 repo: wawu-backend
 type: migration
-status: review
+status: done
 depends_on: []
 decisions: [R-15]
 passes: [V1, V3, V4, V9]
@@ -125,6 +125,12 @@ Everything H33 and H36 draw has a column, every column is used by a later task, 
 **differs-for-recorded-reason:** none.
 
 Checked and fine: fenced files each have a SHARED-CHANGES row (ADS-03 #1, status open; `contract/**`, `src/common/**`, `app.module.ts` untouched); the schema block is appended at the end; no em or en dashes in anything added, no TODO or "for now"; gate counts and gap ids unchanged (`BACKEND_GAPS.md` untouched); R-15 is respected (no price or payment column, no advertiser account); naming follows the repo (PascalCase tables, `<Table>_<name>_check`, uuid text ids, `timestamp(3)`).
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (sixth of eight), verifier round 3 PASS with no defect open (backend 0eeaa3c, PR #68 untouched). Backend migration `20261006090000_ads_data_model` keeps its name: it already sorts after every earlier train migration, and the only later one in the train (INBOX-02) was renamed to follow it. One conflict: `prisma/schema.prisma`, both sides appending at the end (this task's two models after `FeaturedCreator`); both kept. The two tables hold no personal data, so no purge or export map entry is needed, and both map specs pass. No interaction needed a fix.
+
+Open follow-ups from the verifier, all owner or ADS-06 questions: U1 what weight means and the `PROVISIONAL(ADS-WEIGHT-RANGE)` 1 to 100 range; U2 only `event` as a destination; U3 advertiser is free text; U4 the hand-typed subline can drift from the Event; U5 no length cap anywhere (ADS-06's DTO should cap); U6 an advertiser may be a named person, erasure is manual; U7 which text follows "SPONSORED"; U8 `scheduled` and `live` both serve; U9 the invisible-character list is finite (ADS-06's DTO should apply a Unicode-category rule). The database must be UTF8 (the blank checks are not complete on SQL_ASCII); `SHOW server_encoding` on production confirms.
 
 ## Owner sign-off
 

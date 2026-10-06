@@ -7,7 +7,7 @@ order: 31
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: [ADS-03]
 decisions: [R-15]
 passes: [V1, V2, V3, V4, V9]
@@ -98,6 +98,12 @@ No `defect`. No `differs-for-recorded-reason`.
 Environment notes, not findings: the first full branch run had one timing failure in `fintava-stall.spec.ts` ("lands at half the timeout"); it passed alone on branch and main, and a full second run on a fresh DB was clean (only the two known suites failed). On a cold jest cache `route-shadowing` failed once in a combined run and passed on rerun. ADS-03's data-model spec (blank text "in any locale") needs a UTF8 database; on an SQL_ASCII cluster it fails 5 tests, so the test database must be UTF8.
 
 Status set to `review`.
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (seventh of eight), verifier PASS with no defect open (backend aef0699, PR #69 untouched). It depends on ADS-03 and its branch carries ADS-03's commits, so merging it after ADS-03 brought only its own files. No migration. No conflicts: `app.module.ts` and `contract/openapi.json` merged cleanly and the regenerated contract equals the merged one. The `ads` first segment passes the route-shadowing spec beside the other new first segments (`explore`, `live`, `tgif`). No interaction needed a fix.
+
+Open follow-ups from the verifier, owner questions: U1 (G-191) what weight means, `PROVISIONAL(ADS-SERVE-RULE)` stays and `GATES_RELEASE=1` fails on it until answered; U2 (G-192) what "event still open" means; U3 (G-193) the subline can drift from the event; U4 signed-in only; U5 the "upcoming" test is a copy of `timeWindow()` in `event.service.ts`; U6 candidates are not capped; U7 an `http:` artwork URL is served as stored; U8 a burst over 20 a second gets 429. The V9 ad read-back needs ADS-06 to create a campaign.
 
 ## Owner sign-off
 

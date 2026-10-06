@@ -7,7 +7,7 @@ order: 134
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: [MONEY-10, MONEY-12, SETTINGS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -333,6 +333,12 @@ Fresh `vw08r3_test`, migrated and seeded, no extra rows. `src/money` and `src/te
 
 - **V9 with a real sign-in against the real WAWU ID, recent from a real send, the hour and day over real time, the round-1 live battery, a multi-process counter:** unchanged from round 2, same reasons and same unblock steps. This round changed no product code.
 - **The full backend suite and protected suite.** Not re-run: the diff is one test file, and the product code is byte-identical to the d01d019 that passed both in round 2. Unblocked by: `run.sh --fresh HEAD` if the lead wants it on 13d9b5f.
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (fifth of eight), verifier round 3 PASS with no defect open (backend 13d9b5f). No migration and no schema change. Conflicts: only generated files. Mobile `contract/SOURCE_COMMIT`, `contract/openapi.json`, `contract/openapi.mobile.json` and `src/api/schema.generated.ts` were taken from main and are resynced at the end of the train from the train's backend head (`npm run api -- --backend`), so SOURCE_COMMIT names the train head. Backend `contract/openapi.json` conflicted with main's newer file; main's was taken and `npm run contract:build` regenerated it (a follow-up commit in the backend train). Specs, money rate-limit spec (`hub-rate-limits.contract.spec.ts`, on the host network) and purge and export map specs all pass beside the other tasks. No interaction needed a fix.
+
+Open follow-ups from the verifier: V9 against the real WAWU ID (names come from a stand-in lookup in the specs); recent recipients from a real send needs WALLET-07 serving `POST /money/transfers/wawu`; G-132 (name search needs WAWU ID's names) and G-134 (a trigram index for the name search); the per-person limit counter lives in memory in one process (one `ExecStart` on the droplet); the 120 an hour and 500 a day windows were proved on a moved clock, not over real time; `PROVISIONAL(RECIPIENT-SEARCH-RATE)` is the one new gate warning.
 
 ## Owner sign-off
 

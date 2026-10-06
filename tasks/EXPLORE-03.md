@@ -7,7 +7,7 @@ order: 97
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -109,6 +109,12 @@ Filter creators by the creator taxonomy, a featured flag set by admins.
 4. info. The probe's own-id URL on a foreign host (`https://other/avatars/<own>/f`) is signed as our bucket's own key; it cannot sign anything that is not that creator's.
 
 **NOT RUN.** V9 against the droplet; any mobile screen; `npm run api` against merged main; Fintava-dependent suites; the real storage client (absent locally): re-signing was proven against a stub that records what `freshUrlFor` is asked to sign, the same pattern as the spec.
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (fourth of eight), verifier round 2 PASS (backend f8f3c22). Backend migration renamed from `20261004160000_featured_creators` to `20261005120000_featured_creators` (it shared `20261004160000` with HOME-11; HOME-11 keeps the earlier slot). SHARED-CHANGES row EXPLORE-03 #1 names the new folder. One conflict: `prisma/schema.prisma`, both sides appending a model at the end (HOME-11's `TgifPreference`, this task's `FeaturedCreator`); both kept. `app.module.ts`, the purge map (`FeaturedCreator` OWNED) and the export map (`FeaturedCreator` excluded with a reason) merged cleanly. No interaction needed a fix.
+
+Open follow-ups from the verifier and builder, all owner inputs or low: the category list and order (G-180), whether old free-text interests get mapped (G-181), a dashboard screen to feature creators (G-182); the legacy `GET /creators` answers 500 at about 40,000 creators and keeps its exact-case match (G-183, untouched); V9 against the droplet and any mobile screen (EXPLORE-01) are NOT RUN; a stored avatar that is a bare own key (no `https://`) is dropped, because stored avatars are full URLs today.
 
 ## Owner sign-off
 

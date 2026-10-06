@@ -7,7 +7,7 @@ order: 19
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -123,6 +123,12 @@ No defect. Remaining items:
 **unclear N6 (round 1's U4, still there, harmless):** catch-up lists the sender's own read mark as a `chat.read`, which the socket never sends.
 
 **NOT RUN.** Real nginx in front of the socket (config read, not exercised); managed Postgres with `sslmode=verify-full` for the LISTEN connection; the probe under heavy pool saturation (a probe that waits more than 3 s for a pool connection would close every socket 4503; not provoked). V5, V6, V7, V10 are not in this task's passes.
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (last of eight), verifier round 2 PASS with no defect open (backend 660c87d, PR #66 untouched). Backend migration renamed from `20261004150000_chat_read_at` to `20261006100000_chat_read_at`: the old timestamp sorted before ME-16, HOME-10, HOME-11 and EXPLORE-03, and it now follows ADS-03's `20261006090000`; it is the last migration in the train. Nothing referenced the old folder name (this file's mentions of `20261003233000` and `20261004150000` are history). Conflicts: `src/app.module.ts`, where HOME-10's `TgifModule` and this task's `LiveModule` each added an import and an `imports` entry; both kept. `contract/openapi.json` conflicted and was regenerated with `npm run contract:build` (a follow-up commit in the backend train). The branch adds `ws` and `@types/ws` to `package.json` and the lockfile, which merged cleanly. No interaction needed a fix, and the live, chat, community-message and route-shadowing specs pass beside every other task.
+
+Open follow-ups from the verifier: U1 Postgres LISTEN/NOTIFY instead of Redis, and the production `DATABASE_URL` must be the direct port (a pooled URL makes the Hub refuse sockets and say why); U5 the receipts digit table is at Unicode 17 and Node 22.22.0 here is Unicode 16, so which one the droplet has decides whether two Yangqin signs are masked; N1 the app (INBOX-04) must retry with backoff on 429 at the new per-address socket limit; N2 a full database stall closes sockets after about 82 s; N3 the probe-failure line always says to use a direct connection; N4 a database that already applied the old migration name must be recreated; N6 catch-up lists the sender's own read mark (harmless). NOT RUN: a real nginx in front of the socket, and managed Postgres with `sslmode=verify-full` for the LISTEN connection.
 
 ## Owner sign-off
 

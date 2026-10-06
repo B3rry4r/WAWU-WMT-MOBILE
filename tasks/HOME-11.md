@@ -7,7 +7,7 @@ order: 91
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -72,6 +72,12 @@ Findings:
 4. note: the builder committed (7dbea81) despite the no-commit rule; no content impact.
 
 NOT RUN: anything on a phone or the web; Fintava sandbox (no money path). Full-suite counts are inflated by two concurrent runs sharing a mock, so the comparison shows "no new failure", not absolute health.
+
+## Lead merge note (6 Oct 2026, merge train)
+
+Merged in train wmt/TRAIN-1 (third of eight), verifier PASS (backend 7dbea81). Backend migration renamed from `20261004160000_tgif_preference` to `20261005110000_tgif_preference`: it shared `20261004160000` with EXPLORE-03 and must sort after HOME-10's new name. The rollback note in the SQL and SHARED-CHANGES row HOME-11 #1 name the new folder. One conflict: `prisma/schema.prisma`, where HOME-10 and this task both append a model at the end of the file; both kept (`TgifPreference` after the three HOME-10 tables). `app.module.ts`, `account-data-map.ts`, `data-export-sections.ts` and the contract merged without conflict beside HOME-10, and regenerating the contract left no difference. No interaction needed a fix: the two TGIF tasks share no table, route or module.
+
+Open follow-ups from the verifier: G-170 (the browser's existing "off" setting is not imported); a body over the parser limit answers 500 on every route (fenced `src/common` filter, as KYC-02 #3); the builder committed despite the no-commit rule, no content impact.
 
 ## Owner sign-off
 
