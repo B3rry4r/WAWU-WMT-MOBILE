@@ -3,7 +3,7 @@ id: WALLET-01
 title: Wallet home: Naira account and its states
 owner: YOU
 area: WALLET
-order: 153
+order: 155
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -59,6 +59,8 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 - W1: Swap and the Dollar and Crypto tabs (opens W20): added by WALLET-21 after launch; not built at launch (BRIEF, "Not built at launch")
 - W1: Scan (opens W24): added by WALLET-20 after launch; not built at launch (BRIEF, "Not built at launch")
 - W1: the WAWU card row (opens W29): added by WALLET-22 after launch; not built at launch (BRIEF, "Not built at launch")
+
+**Lead note (4 Oct 2026, from KYC-04):** a money action here that answers `409 pin_not_set` opens A9 (route `open-wallet-pin`, KYC-04) and comes back to this screen once the PIN is set; it never shows the bare error.
 
 ## Capability checks
 

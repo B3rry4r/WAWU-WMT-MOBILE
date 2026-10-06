@@ -3,11 +3,11 @@ id: MONEY-15
 title: Transaction history and detail
 owner: YOU
 area: MONEY
-order: 108
+order: 109
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: done
 depends_on: [MONEY-10]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -38,11 +38,339 @@ GET history with search, category filter and cursor pages; monthly totals; GET o
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+### Builder round 3
+
+Builder, 3 Oct 2026 (the builder of rounds 1 and 2). wawu-backend `wmt/MONEY-15` **c0d9a12**, round 3 on a622812. Backend main is still 48b9043, so no merge was needed. Mobile `wmt/MONEY-15`: the verifier's edbeeb6, then mobile main 331a6fa (AUTH-05) merged in, with PROGRESS regenerated; no other conflict.
+- **Defect 2 (year 0000 answered 500):** `isIso` in `history-keys.ts` now refuses a time dated year 0000, so the cursor's `at`, the cursor's snapshot and the group key's snapshot are all checked before any query. Postgres has no year 0; `checkedMonth` already refused it for months.
+  - Tests: the verifier's three requests (a cursor snapshot of 0000, a cursor `at` of 0000, a group key snapshot of 0000) each answer 400 with the existing message. The same three dated 0001 answer 200. Unit cases were added for both keys.
+  - Year 0001 minus the 5 s window (below) would be year 0000, so that bound is clamped at 0001-01-01. A mutant without the clamp fails the 0001 test with a 500.
+- **Blind spot A (a write in flight at page 1), closed:** a scroll now groups only the unlocks completed at or before its snapshot minus `LEDGER_WRITE_MAX_MS`. That is 5,000 ms, Prisma's default interactive-transaction `timeout`: Prisma rolls back a transaction that runs longer.
+  - Where the 5 s comes from: `LedgerService.record` and `LedgerConsumerService` write inside `prisma.$transaction(fn)` with no options, and `PrismaService` sets no `transactionOptions`. A new unit test fails if `ledger.service.ts`, `ledger-consumer.service.ts`, `ledger-status.service.ts` or `prisma.service.ts` ever passes `timeout`, `maxWait` or `transactionOptions`, so the constant cannot silently drift from the setting.
+  - So a write stamped before page 1 and committed after it stays its own row in that scroll, and its group keeps its members and its place.
+  - Cost: an unlock completed in the last 5 s shows as its own row until a later refresh. Default (agent), owner may override.
+  - Test: the verifier's R6 shape. Two unlocks and 5 transfers, page 1, then a third unlock stamped 4 s before the snapshot. Each earlier movement shows exactly once and the group shows 2. A margin of 0 or 1 s fails it, and so does grouping by the snapshot itself.
+  - Spec setups recorded "a moment ago" are now aged by 60 s (an `age()` helper) before they are read as history. P1, P1b and P1c age their setup before page 1 and again before the refresh check; all three stay green. The group-key boundary test moved to snapshot minus 5 s, inclusive.
+- **CONVENTIONS section 6 rewritten** without the overclaim. It lists two things a refresh still corrects:
+  - **A row whose time moves earlier mid-scroll** (the verifier's finding 1). MONEY-10's merge keeps the earliest time, and MONEY-08 settles a pending row with Fintava's time. This is a duplicate today, and not about grouping. It could be a loss only if a completed row's time ever crossed Lagos midnight into a day with a group of the same piece.
+  - **A reopened unlock** (blind spot B). If its group was already shown, its money can show twice in that scroll.
+  - "Shows exactly once" is now stated only for the other cases.
+- **Mutants** (each alone, the file restored by copy): a 0 s margin, a 1 s margin, grouping by the snapshot instead of the bound, year 0000 allowed, and no clamp. All 5 killed.
+- **Checks:**
+  - `tsc` 0; eslint 0 on every `.ts` the branch changes against main.
+  - History, gate and money-contract specs: 6 suites, 103/103 (history 47).
+  - Protected `run.sh --fresh` (code c0d9a12, lock 48b9043): 253/253, all 244 required, no lock file touched.
+  - Gates 16 fail / 12 warn / 76 accepted on 636 files, line for line as main 48b9043; `check_baseline.py` clean.
+  - CI tripwire 0; key scan 0 of 58 windows.
+  - Contract unchanged: a fresh build equals the committed file, enum order aside.
+  - Full suite (`npx jest --runInBand --forceExit`) on fresh seeded `m15_full5_test`, my WAWU ID stand-in on :4001. The run waited until `lsof` showed :4001 free (12:50 UTC); the stand-in was stopped straight after and `lsof` was empty again. Result: 130/130 suites, 3,144 passed, 3 skipped, 0 failed. That includes `hub-rate-limits` and every money, Fintava, KYC and identity spec.
+  - Mobile `npm run check` (main 331a6fa merged): exit 0, with typecheck 0, lint 0, 21 suites / 377 tests, gates 0 fail / 0 warn on 98 files, and 203 tasks.
+- **Not run:** no sandbox call (the routes never call Fintava). Round 1's NOT RUN items stand.
+
+### Builder round 2
+
+Builder, 3 Oct 2026 (the round-1 builder). wawu-backend `wmt/MONEY-15` **a622812**: round 2 is 6d240fe. Backend main c1d23b5 (MONEY-13, #42) was merged in as 39238d4 with no conflict, then main 48b9043 (MONEY-14, #43) as 33b7fac. That second merge had conflicts in `money.module.ts`, `money-contract.spec.ts`, `CONVENTIONS.md` and the two gate specs' test titles; both sides were kept, so the gated-route lists hold MONEY-14's 7 routes and these 3. a622812 is prettier on `money-contract.module.ts` after the merge. The merged `contract/openapi.json` equals a fresh build with enum order ignored. Mobile `wmt/MONEY-15`: the verifier's 275f50c, then mobile main a3e072c and 85a4e57 merged in. The `BACKEND_GAPS.md`, sandbox README and `contract/SOURCE_COMMIT` conflicts kept both sides (main's G-40 to G-43, G-48 and G-49, and this task's G-44 and G-45, in number order), PROGRESS was regenerated, and `sync_contract.py` now copies backend main 48b9043 with no type change. Every round-1 finding was reproduced first: the new tests below were run against round 1's service, keys and DTO. P1, P1b, P1c and the trim test fail there. The reference-order and full-page tests pass there, because they pin behaviour that was already right.
+- **Defect 1, a grouped row vanishing mid-scroll (fixed by a snapshot).**
+  - How it works: the first page takes the server's clock (milliseconds) as the scroll's snapshot. The cursor (now `c2.`) carries it beside the last row's (`occurredAt`, id). The group key (now `g2.`) carries the snapshot of the read that showed the row. Every page of one scroll groups as of that snapshot: a group's members are the unlocks whose `completedAt` is at or before it.
+  - Effect: an unlock that lands, or a pending one that settles, mid-scroll stays its own row in that scroll. It can no longer move a group across a cursor already handed out. The next refresh groups it. A group's place and `createdAt` stay its latest member's (Lead ruling 3).
+  - Why not anchor the group to its first member (the other option offered): that alone still shows a settling unlock twice (once pending on a page already read, once inside its group). It would also put a group below rows newer than its `createdAt`.
+  - Why the server's clock: the ledger stamps `completedAt` with it (`LedgerService`, `new Date()`), so both sides of the comparison use one clock.
+  - Default (agent), owner may override. Rules in backend `CONVENTIONS.md` section 6, "The scroll's snapshot".
+  - Round 1's `c1.` and `g1.` are refused with a 400. Nothing outside this branch issues them.
+- **Tests added** (`money-history.contract.spec.ts`; each walks every page and counts each movement once, a group counting once for each member listed by its own key):
+  - **P1:** 2 completed unlocks and 5 transfers, page 1 with limit 3, then a third unlock. The 2 old unlocks and 5 transfers each appear exactly once, the group shows 2, and the new unlock waits for the refresh, where the group shows 3.
+  - **P1b:** the same with a pending newest unlock that settles between pages. It appears once (pending, on page 1), and the group of 2 once.
+  - **P1c:** an older pending unlock that settles below the cursor appears once, as its own row, completed.
+  - A group key lists the unlocks completed by its snapshot, that instant included.
+- **M5:** a test for the reference order (ours, then Fintava's, the session, the transaction id, the tagapay one, the row id), one row per step. Ours first is what G-44's fix relies on.
+- **M13:** `nextCursor` was already null when nothing follows (the service reads `limit + 1`). A test now holds it: 6 rows as 3 + 3, the second page without a cursor; `limit=6` without one; `limit=5` with one.
+- **Minor, `q`:** trimmed by the DTO (`@Transform`) before `@MinLength(2)` and `@MaxLength(60)`, so `" P "`, `"   "` and `" a"` are 400 and `"  pe  "` searches "pe". The contract changes only in `q`'s description. The committed contract is round 1's plus that one line, because a fresh `contract:build` reorders enum values (it is equal to a fresh build with enum order ignored).
+- **Mutants**, each alone, the service restored by copy:
+  - Killed: M5 (Fintava's reference first), M13 (`>=` for `>`), no as-of check, `<` for `<=` at the snapshot, the cursor's snapshot ignored, the group key's snapshot ignored, and the next cursor taking a new time.
+  - Round 1's 14 re-run: 13 killed. `status = 'completed'` in the group test now survives. It is equivalent to the check as it is today: a row's `completedAt` is set only when it completes, cleared when a disagreement reopens it, and an `in` row never becomes `reversed`. It is kept as a guard.
+- **Checks on the merged head a622812 (main 48b9043 inside):**
+  - Full suite (`npx jest --runInBand --forceExit`) on fresh seeded `m15_full4_test`, my WAWU ID stand-in on :4001. :4001 was busy with another session until 12:08 UTC, so the run waited for `lsof` to show it free; my stand-in was stopped straight after, and `lsof` was empty again. Result: 130/130 suites, 3,141 passed, 3 skipped, 0 failed. This includes `hub-rate-limits` and every money, Fintava, KYC and identity spec.
+  - Before the MONEY-14 merge (39238d4, main c1d23b5): 126/126 suites, 3,065 passed, 0 failed.
+  - History, gate and money-contract specs: 6 suites, 100/100.
+  - Protected `run.sh --fresh` (code a622812, lock 48b9043): 253/253, all 244 required, no lock file touched.
+  - `tsc` 0. eslint 0 on every `.ts` the branch changes against main.
+  - Gates 16 fail / 12 warn / 76 accepted on 636 files, the same findings line for line as main 48b9043 (16 / 12 / 76 on 631 files; MONEY-14 brought the 2 new warnings). `check_baseline.py` clean.
+  - CI tripwire 0. Key scan 0 of 58 windows on every commit.
+  - Mobile `npm run check` (main 85a4e57 merged): exit 0, with typecheck 0, lint 0, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, and 203 tasks.
+- **Not run, and what is left:**
+  - No new sandbox call: the routes never call Fintava.
+  - Two cases the snapshot cannot see. A ledger write still in flight at the very instant page 1 is read: its `completedAt` is stamped before it commits. A completed unlock put back to `pending` by a disagreement (MONEY-08, a stop): its `completedAt` is cleared. Either can still move one group in an open scroll; a refresh shows it right.
+  - Round 1's NOT RUN items stand.
+
+### Builder round 1
+
+Builder, 3 Oct 2026. wawu-backend `wmt/MONEY-15` 35e4e33 (from main 6d48c97, which did not move; `origin/wmt/MONEY-13` 35b68af merged in as 35e4e33 at the lead's request); mobile `wmt/MONEY-15` (from main 12aa3c9; main 3304f1e merged in, PROGRESS regenerated, `npm run check` exit 0 again: 371 tests, gates 0 fail on 96 files, 203 tasks).
+- **MONEY-13 merged in (lead's request):** a merge commit, no rebase; one conflict, the comment block in `money.module.ts` (both kept). The three history routes now carry `@RequireOpenWallet()` and take `@CurrentWallet()`; the service's own no-wallet check and its `BALANCE_OPENING_MESSAGE` import are gone, so no wallet is the gate's `409 wallet_not_open` / `wallet_opening` in the gate's words (my spec now asserts `NO_WALLET_MESSAGE` and `WALLET_OPENING_MESSAGE` on all three routes). MONEY-13's specs changed on purpose, each because these routes are now served and gated: the gated-route lists in `wallet-gate-coverage.spec.ts` and `wallet-gate.contract.spec.ts` name the three routes (the contract spec then sends them as every kind of person without a wallet), and the coverage spec's example of a declared route moves from `GET money/transactions` to `GET money/holds`. Gate specs 3 suites, 45/45. Contract regenerated after the merge: semantically identical (enum order aside), so the committed file is unchanged. If MONEY-13 changes after its verification, this branch merges it again.
+- **Built** (`src/money/history/`): `GET /money/transactions` (filter chips, `q`, `month`, cursor pages, grouped unlock earnings, `group=<key>`), `GET /money/transactions/summary`, `GET /money/transactions/{id}`, served from the MONEY-10 ledger only (no Fintava call, no balance); the MONEY-04 declarations removed from `MoneyContractModule`, contract regenerated (only the 3 operations lose `x-wawu-served: false` and their "not served" note; path order moves). Rules written in backend `docs/contract/CONVENTIONS.md` section 6 ("The history"). Shared files touched, small: `src/money/money.module.ts` (controller + provider), `money-contract.module.ts`, `SERVED_MONEY_ROUTES` (+3), `WALLET.md` (3 rows), `contract/openapi.json` (regenerated). The no-wallet answer is MONEY-13's wallet gate (below).
+- **Check 1, searching a recipient's name finds their transfers:** `money-history.contract.spec.ts` records rows through the ledger's own writer and reads them over HTTP with RS256 tokens: every transfer naming Chidinma Okoro (bank, wallet, in) and nothing else, for "Chidinma", "chidinma okoro", "OKORO", "dinma O" and her handle; with `filter=money_out` only her money out; a row a delivery wrote (no name) is named from the other person's `FintavaWallet.accountName` and found. Sandbox (`docs/fintava/sandbox/36-money15-history.md`): a real ₦10 round trip A to B and back, `q=Bayo` as A finds both movements, B gets 404 for A's row.
+- **Check 2, monthly totals equal the sum of that month's rows:** the spec walks the month's list page by page and adds up its completed rows by direction: equal to `/summary`, and to the expected 10,200,000 in / 3,768,076 out, with Lagos-midnight edges on both ends, pending, failed and a reversed send left out, and a grouped row not changing it. Sandbox: `inKobo` 1000, `outKobo` 1000 = the month's 2 completed rows.
+- **Also proved:** 45 rows in 3 pages, each once, newest first, a row landing mid-scroll shifts nothing; bad cursor, group key, month, limit, `q` length, non-uuid id: 400; someone else's row = no row = 404; merchant rows never shown; status as the ledger moves it (pending, completed, reversed; a disagreeing sighting stays pending); W27 fee split ₦25,000 + ₦40 + ₦25 = ₦25,065; only the last 4 of a bank account; kobo exact at 2^53-1. 37 tests (25 HTTP, 12 unit). 14 one-line mutants of the service, each alone, file restored by copy (owner, account, wallet kind, the summary's owner and wallet kind, completed-only summary, Lagos day, Lagos month, LIKE escape, completed-only groups, group of 2 or more, the fee split check, the cursor's id tie-break, note search): all killed; owner, account and wallet kind only after the "only rows on the caller's own wallet" test was added (each is redundant with the other two on rows the writer makes).
+- **Checks after the MONEY-13 merge (35e4e33):** `tsc` 0; eslint 0 on changed files; full suite on fresh seeded `m15_full2_test` with my WAWU ID stand-in on :4001 (`lsof` empty before and after, stopped straight after): 126/126 suites, 3,058 passed, 3 skipped, 0 failed (`hub-rate-limits` and every money, Fintava, KYC and identity spec in it); protected `run.sh --fresh` (code 35e4e33, lock 6d48c97): 253/253, all 244 required, no lock file touched; gates 16 fail / 10 warn / 76 accepted on 628 files, the same findings as main; CI tripwire 0; key scan 0 of 58.
+- **Checks before the merge (3a16544):** `tsc --noEmit` 0; eslint 0 on every changed `.ts`; `src/money src/fintava src/admin/kyc-review` + `hub-rate-limits`: 30 suites, 1,305 passed (no `@Throttle` added); full suite on fresh seeded `m15_full_test`, WAWU ID stand-in on :4932, the 4 suites that hard-code :4001 left out: 119 suites, 2,951 passed, 3 skipped, 22 failed, all in `notification`, `blocked-account` and `saved-item`, which also hard-code :4001 and got 401 because :4001 was then held by another session's process; once :4001 was free (`lsof` empty before and after; my stand-in started there and stopped straight after) those 3 and the 4 left out ran on fresh seeded `m15_p4001_test`: 7/7 suites, 67/67, so 0 failures across the suite; protected `run.sh --fresh` (code 3a16544, lock origin/main 6d48c97): 253/253, all 244 required, no lock file touched. Gates before 16 fail / 10 warn / 76 accepted (619 files), after 16 / 10 / 76 (624 files), the same findings line for line (main has 10 warn, not 9); `check_baseline.py` clean; CI tripwire 0 added lines; key scan 0 of 58 windows on every commit and the sandbox output. Mobile `npm run check` before (main 12aa3c9): exit 1, only "docs/PROGRESS.md is out of date" (main's own state); after (this branch, PROGRESS regenerated): exit 0, typecheck 0, lint 0, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks. Mobile `sync_contract.py --backend` copies the backend's origin/main (6d48c97), so only `contract/SOURCE_COMMIT` moved (cdcb2bc to 6d48c97, same contract); the 3 routes' served markers reach the app's contract when the backend branch merges (no type changes: the generated file only loses the three "Declared by MONEY-04, not served yet" doc comments).
+- **Gaps filed:** G-44 (the receiver's row shows Fintava's reference, the sender's ours: two receipt references for one transfer; MONEY-10's consumer) and G-45 (rows only a delivery wrote have a bank code and no bank name, so "Transfer · GTBank" loses the bank; WALLET-09, WALLET-10). No shared-change request. `contract:build` is not deterministic (a second build reorders enum values); the committed contract is the first build, semantically main's plus the 3 served markers.
+- **Default (agent), owner may override:** (1) only `completed` unlock earnings group, so a group's status and sums are confirmed money; (2) a group's id, reference and time are its latest movement's, its counterparty, note and ids null, and search sees its description only; (3) `group=<key>` ignores `filter`, `q` and `month`; (4) "Content" is unlocks and tips, "Bills" is category `bill` or a `bill` link (a held bill too); (5) the receipt shows the sending feature's quoted fee split only when amount plus both equals Fintava's total, else Fintava's charge with WAWU's fee 0; (6) the summary sums `totalKobo` of `completed` rows by `occurredAt` in Africa/Lagos time; (7) a frozen wallet's history still reads (nothing asks Fintava, and the gate answers no freeze); (8) copy the canvas does not draw, for the owner to read: "Top up", "Held payment", "Payment", "Earning", "Credits", "Paid question", "Event ticket", "Legal fee", "School fee", "Verification", "Reversal", "Refund", "Bill", "Bank account", "Biller", "Someone on Who Made This", "Who Made This", "N buyers", "We could not find that transaction."; (9) the other side's name: as recorded, else their wallet's account name, else `@handle`; the reference: ours, else Fintava's, session, transaction id, tagapay, else the row id.
+- **NOT RUN:** V9's real sign-in (verifier's pass; the sandbox run signed in at the stand-in WAWU ID). Bank-send and bill rows from the sandbox: payouts refused (question 17). A real delivery: OPS-10. W27 "Report a problem": SUPPORT-01 (G-8). V10: no screen (WALLET-04).
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+### Verifier report, round 3
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code). **Verdict: defect 2 is closed, and no defect is open, so status `review`.** Blind spot A is closed for every write that commits within Prisma's 5 s timer. One new `unclear` finding (finding 4): 5 s is when Prisma's timer is due, not a hard limit on the time from stamp to commit. A writer whose event loop is late reaching that timer commits after it, and the round-2 loss came back once that happened (reproduced in a separate process). CONVENTIONS section 6 states the 5 s as a hard limit.
+
+Checked at backend `wmt/MONEY-15` c0d9a12 (main 48b9043, which has not moved; round 3's own change is `git diff a622812..c0d9a12`) and mobile `wmt/MONEY-15` 46095e8 (mobile main 331a6fa inside). I used fresh detached worktrees `/home/user/wt/vm15b3` and `/home/user/wt/vm15m3`. The container restarted part way through. The lead stopped my Hub and dropped `vm15r3_live_test`. Every check whose output was not saved was run again from a new database: the margin walk, the full suite and every check after it. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vm15r3/` (the rows below name each file). My probe scripts are kept there and are not committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`tsc.log`). eslint 0 on the 13 `.ts` files the branch adds or changes against main (`changed-ts.txt`, `eslint.log`). Gates on main 48b9043: 16 fail / 12 warn / 76 accepted, 631 files. On the branch: 16 / 12 / 76, 636 files. The findings match line for line once line numbers are dropped (`gates-main.log`, `gates-branch.log`, `.norm`), and `check_baseline.py` is clean (`check-baseline.log`). CI tripwire: 0 added lines outside the protected suite's own files match (`tripwire.txt`). Key scan: 58 windows of 8 characters, 0 hits in the backend diff, the backend patch log, the mobile diff and the mobile patch log. Mobile `npm run check` exit 0: typecheck, lint, 21 suites / 377 tests, gates 0 fail / 0 warn on 98 files, 203 tasks (`mobile-check-before.log`). |
+| V2 Contract | passed | Defect 2 is closed (Focus 1). Backend `contract/` is unchanged from round 2 (`git diff a622812 c0d9a12 -- contract/` is empty). Against mobile main 331a6fa, mobile `contract/` changes only `SOURCE_COMMIT` (da76d13 to 48b9043), as in round 2. The history, gate and money-contract specs: 6 suites, 103/103 (`history-baseline.log`). |
+| V3 Regression | passed | `run.sh --fresh c0d9a12` with lock 48b9043: 253/253, all 244 required (`protected.log`). The lock and suite files differ from main by 0 lines. `hub-rate-limits.contract.spec.ts`: 10/10 (`hub-rate-limits.log`). Full suite run as the deploy runs it: a fresh migrated and seeded `vm15r3_full_test`, and `mock-wawu-id/server.js` on :4001 with a keypair made as `deploy.yml` makes it. `lsof` showed :4001 free before (13:16 UTC). My mock was stopped straight after and `lsof` was empty again at 13:22. `npx jest --runInBand --forceExit`: **130/130 suites, 3,144 passed, 3 skipped, 0 failed** (`full.log`, `full.json`). MONEY-14's flaky `pin-reset` leak check passed, so no rerun was needed. |
+| V4 Field trace | passed | Round 3 changes no writer and no field read. The margin walk (Focus 3) checked each group's count against its key's list. It also checked the July summary against its rows: it counts an unlock completed inside the margin at once (in 753,000 = 3 unlocks + 3 transfers), because the summary does not group. |
+| V9 Live seam | passed against the stand-in WAWU ID | Built server (`npm run build`, `node dist/src/main.js` on :4937, no Fintava key or base URL set). People registered and signed in through the stand-in's `POST /auth/login` on :4938, with no minted token. They then read rows that the ledger's own writer (`LedgerService.record`) wrote (`live-tamper.log`, `live-inflight.log`, `live-margin.log`). The real WAWU ID sign-in is NOT RUN (below). |
+
+**Focus 1: defect 2 is closed**
+- Round 2's `live-tamper.js` was run again on the built server (`live-tamper-r2.js`, `live-tamper-r2.log`). All three year-0000 requests now answer 400 with the existing messages: the cursor snapshot and the cursor `at` with `cursor is not one this history gave.`, and the group key snapshot with `group is not a key this history gave.`. The year 0001 and 2099 snapshots answer 200, and `c1.`/`g1.` answer 400.
+- Wider sweep (`live-tamper.js`, `live-tamper.log`), 129 requests. Each of the three fields (cursor snapshot, cursor `at`, group key snapshot) was sent 38 bad values and 5 good ones. **0 unexpected answers.** The Hub log has no 500 and no Postgres error.
+  - Bad values, all answered 400:
+    - year 0000 at other times and offsets (`+01:00`, `-01:00`, `+00:00`, no milliseconds, date only)
+    - `10000-…`, `+010000-…`, `+275760-…`, `+294277-…`, `-000001-…`, `-271821-…`, `-0001-…`, `+000000-…`
+    - leap seconds `23:59:60.000Z` and `.999Z`, and `24:00`
+    - 25, 4 and 2 fraction digits, and none
+    - 30 Feb and month 13
+    - a space or lower-case `t`/`z`, full-width digits, a trailing newline or a leading space
+    - `infinity`, `-infinity`, `epoch`, `now`, `allballs`
+    - a number, `null` and an array
+  - Good values, all answered 200: `0001-01-01T00:00:00.000Z`, `0001-01-01T00:00:04.999Z` (where the group bound is clamped), `0001-12-31…`, `1970-01-01…` and `9999-12-31T23:59:59.999Z`.
+  - `month` is unchanged: 0000, 10000 and -0001 are 400, and 0001 and 9999 are 200.
+
+**Focus 2: blind spot A, a real in-flight write (`live-inflight.js`, `live-inflight.log`, run again after the restart in `live-inflight-run2.log` with the same results)**
+- **A, closed.** A real interactive transaction used Prisma's defaults, as `LedgerConsumerService.finish` does. Inside it, `LedgerService.record(input, tx)` recorded a third unlock and stamped its `completedAt`. Page 1 (`limit=3`) was read over HTTP while that write was still uncommitted, at 10, 1,000, 2,500, 4,000, 4,500, 4,800 and 4,900 ms after the stamp. The transaction then committed and the rest of the scroll was walked.
+  - The two older unlocks were not aged by SQL: the probe waited 6 s instead.
+  - In all 7 runs (and all 7 again in run 2), each of u1, u2 and the 5 transfers showed exactly once, the new unlock did not show, and the group showed 2.
+  - A refresh 5 s later showed the group of 3 in all 7.
+- **B.** A transaction callback that awaits 5.2 s is refused at about 5,206 ms ("A commit cannot be executed on an expired transaction. The timeout for this transaction was 5000"), and no row is written. The timer is real for an ordinary slow write.
+- **C, see finding 4.** A writer in its own process stamps an unlock, waits 4.9 s, then keeps its event loop busy for 600 ms. Prisma commits it, and the stamp-to-commit time was 5,571 ms (5,600 ms in run 2). Page 1 was read 5.2 s after the stamp, while the write was not yet visible. The rest of that scroll showed the 5 transfers and **neither u1 nor u2** (the group of 3 had moved above the cursor). This is round 2's loss.
+- **Every code path that writes a completed unlock** (`completedAt` set, all inside one transaction):
+  - The only assignments are in `LedgerService.recordIn` and `merge`. The stamp is `new Date()` taken inside the transaction callback, after `BEGIN`, so maxWait is not counted.
+  - Callers:
+    - `record` without a transaction: its own `$transaction(fn)`, no options. A retry runs a new transaction and takes a new stamp.
+    - `LedgerConsumerService.finish`: `$transaction(fn)`, no options. It passes `tx` to `record` and `applyReversal`.
+    - `LedgerStatusService` (the sweep): calls `ledger.record(...)` without a transaction.
+  - `applyReversal`, `markAbsentFailed` and `noteDiscrepancy` never set `completedAt`. `merge` clears it when a disagreement reopens a row (blind spot B, documented).
+  - The sweep's raw `UPDATE` (`reschedule`) touches only `statusChecks` and `nextCheckAt`. `account-data-map.ts` only deletes.
+  - No `$transaction` anywhere in `src` passes `timeout`, `maxWait` or an isolation option, and `PrismaService` sets no `transactionOptions`. Prisma 7.9.1's default is `timeout: 5e3`, `maxWait: 2e3`.
+  - The deploy runs one Hub process (one systemd unit), so the stamp and the snapshot come from one clock.
+- **The guard test is real:**
+  - It fails when a writer is changed to pass `timeout: 10000` (G1), when the consumer's `finish` passes `{ timeout: 10_000 }` (G3), and when `PrismaService` sets `transactionOptions` (G4).
+  - It is a text match on 4 files, though, so two things get past it:
+    - `{ timeout }` shorthand, which compiles to a 10 s timeout (G2 survives).
+    - A future caller in another file that passes its own longer transaction into `ledger.record(input, tx)`. Today only the consumer does that.
+
+**Focus 3: no regression from the margin (`live-margin.js`, `live-margin.log`)**
+- Setup: a group of two plus an unlock completed **inside** the 5 s margin just before page 1. Page sizes were 1, 2 and 3, with 1.1 to 3 s between pages, so the margin ran out partway through the scroll. 15 checks, 0 unexpected.
+  - M1, the newest member inside the margin: it is its own row on page 1, the group shows 2 and its key lists 2, and every movement shows exactly once. A refresh shows the group of 3.
+  - M2, the oldest member inside the margin (below the cursor): it is its own row on a later page, the group shows 2/2, and everything shows once.
+  - M3, every member inside the margin: no group in that scroll, and everything shows once even after the margin ran out. A refresh 5 s later shows a group of 2/2.
+- Also: the July summary includes an unlock completed inside the margin straight away. P1, P1b, P1c and the boundary test pass, within the 103/103 above.
+
+**Focus 4: CONVENTIONS section 6**
+- These statements match what I observed:
+  - The bound is the snapshot minus 5 s.
+  - An unlock that lands, settles, or is in flight within Prisma's timer stays its own row.
+  - An unlock completed in the last 5 s is its own row until a refresh.
+  - A time dated year 0000 is a 400.
+  - The two listed cases a refresh corrects (round 2's findings 1 and 3) are described as round 2 reproduced them.
+- One sentence overclaims: "The 5 s is how long a ledger write can run from stamping `completedAt` to committing". C shows 5.57 s. The same is true of the `LEDGER_WRITE_MAX_MS` comment ("the longest a ledger write can take"). Finding 4 covers both.
+
+**Findings**
+- `unclear`, finding 4: the 5 s is when Prisma's timer is due, not a hard limit on the time from stamp to commit.
+  - How Prisma 7.9.1 handles it (`client-engine-runtime` `TransactionManager`): the timeout is a `setTimeout` started after `BEGIN`.
+    - A commit the callback issues before that timer runs is completed: the transaction is then `closing`, and the timer waits for the close.
+    - So stamp to commit can run past 5 s by the commit's own time and by how late the event loop runs the timer. C measured 5,571 ms and 5,600 ms.
+  - What it takes in production (one Hub process, where the writer and the reader share an event loop), all at once:
+    - a ledger write that has already run for nearly 5 s;
+    - an event-loop stall or a slow `COMMIT` at that instant;
+    - a page-1 read whose query runs before the commit is visible;
+    - a group of the same piece and Lagos day below the cursor.
+  - Effect: the same as round 2's blind spot A. A refresh corrects it.
+  - For the owner:
+    - accept it and change the two sentences to say the margin covers writes that finish within Prisma's timer;
+    - or make the bound exact by keying visibility to the database rather than the clock, for example a stored `pg_current_snapshot()` checked with `pg_visible_in_snapshot(xmin, …)`.
+- Round 2's findings 1 (a row whose time moves earlier) and 3 (a reopened unlock) are now documented in CONVENTIONS section 6, and the text matches round 2's reproductions. Finding 2 (blind spot A) is closed except for finding 4.
+
+**Mutations** (`mutate.py`, `mutants/summary.txt`, logs in `mutants/`): 14 of my own, on round 3's code and the guard. Each ran alone, the file was restored by copy and `git status` was clean afterwards. Each was run against the history contract and unit specs (47 tests). **12 killed, 2 survived.**
+- Killed:
+  - R1, a margin of 4.5 s in the query (the constant left at 5 s)
+  - R2, a margin of 5.5 s
+  - R3, `<` for `<=` at the bound
+  - R4, the margin on the first page only
+  - R5, the margin on history pages but not a group key's list
+  - R7, no clamp
+  - R8, year 0 refused only in January
+  - R9, the cursor's `at` not checked for year 0
+  - R10, the group key's snapshot not checked for year 0
+  - G1, `timeout: 10000` in `LedgerService.record`
+  - G3, `timeout: 10_000` in the consumer's `finish`
+  - G4, `transactionOptions` in `PrismaService`
+- Survived:
+  - R6, a clamp at 1970 instead of year 1. Equivalent in practice: no `completedAt` is earlier than 1970, and only a forged snapshot reaches the clamp.
+  - G2, `{ timeout }` shorthand (10 s, compiles). The guard is a text match (Focus 2). Observation, not a defect.
+
+**Capability checks**
+- [x] Searching a recipient's name finds their transfers: the history spec's capability tests pass at c0d9a12 (in the 103/103).
+- [x] Monthly totals equal the sum of that month's rows: the same specs pass. The margin walk's July summary equals its rows, including an unlock completed inside the margin.
+
+**NOT RUN**
+- The real WAWU ID sign-in (V9). Unblocked when a session may call `id.wawuafrica.com`.
+- A sandbox round trip. Not needed: the three routes never call Fintava (the built server ran with no Fintava key). Unblocked by a pass that is allowed one ₦10 round trip on dev.fintavapay.com, if wanted.
+
+Cleanup: my Hub on :4937 (PID 21378, after the restart; the lead stopped the first one), my stand-in on :4938 (21423) and my :4001 stand-in (5234) were stopped by PID, after checking each PID's working directory was this worktree. `lsof` shows :4001, :4937 and :4938 free. Databases `vm15r3_live_test`, `vm15r3_probe_test`, `vm15r3_protected_test` and `vm15r3_full_test` were dropped. The temporary main worktree used for the gate comparison was removed.
+
+### Verifier report, round 2
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code). **Verdict: Defect 1 is closed; 1 new minor defect is open (defect 2), so status `building`.** Defect 2 is a 500 instead of a 400 for a forged cursor or group key dated year 0000. No app user can send it, and the fix is one line. Three findings are `unclear`: one movement can be shown twice in a scroll through a path the builder did not list (finding 1), and the two blind spots the builder did list are judged in findings 2 and 3.
+
+Checked at backend `wmt/MONEY-15` a622812 (main 48b9043 merged in; MONEY-15's own work judged with `git diff 48b9043...a622812`) and mobile `wmt/MONEY-15` 92bf3ea (merge-base with mobile main 85a4e57), in fresh detached worktrees `/home/user/wt/vm15b2` and `/home/user/wt/vm15m2`. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vm15r2/` (each file is named in the rows below). My probe spec `zz-vm15r2-probe.spec.ts` is kept there and is not committed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`tsc.log`). eslint 0 on the 13 `.ts` files the branch adds or changes against main (`changed-ts.txt`, `eslint.log`). Gates: main 48b9043 has 16 fail / 12 warn / 76 accepted on 631 files, and the branch has 16 / 12 / 76 on 636 files. The findings match line for line once line numbers are dropped (`gates-main.log`, `gates-branch.log`, `.norm`), and `check_baseline.py` is clean. CI tripwire: 0 added lines outside the protected suite's own files match the pattern (`tripwire.txt`). Key scan: 58 windows of 8 characters, 0 hits in the backend diff and patch log and in the mobile diff and patch log. Mobile `npm run check` exit 0: typecheck, lint, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks (`mobile-check-before.log`). |
+| V2 Contract | failed (defect 2) | Defect 1 is closed (see Focus 1). The contract compared as JSON against main 48b9043, with enum order normalised (`contract-diff.txt`): the three operations lose `x-wawu-served: false` and their "not served yet" description, and `q`'s description changes. Nothing else changes. Mobile `contract/` changes only `SOURCE_COMMIT` (da76d13 to 48b9043). The history contract and unit specs pass 44/44 at baseline. Forged values on the built server (`live-tamper.js`, `live-tamper.log`): `c1.` and `g1.` are 400, a snapshot dated 0001 or 2099 is 200, and a snapshot or `at` dated **0000 is 500** (defect 2). |
+| V3 Regression | passed | `run.sh --fresh a622812` with lock 48b9043: 253/253, all 244 required (`protected.log`). The lock files differ from main by 0 lines. Full suite the way the deploy runs it: a fresh migrated and seeded database, `mock-wawu-id/server.js` on :4001 with a keypair made as `deploy.yml` makes it (`lsof` empty before; mine was stopped straight after and `lsof` was empty again), `npx jest --runInBand --forceExit`. **Run 1** on `vm15r2_full_test`: 130 suites, 3,140 passed, 3 skipped, 1 failed (`full.log`, `full.json`). The one failure is MONEY-14's "nothing secret leaves the server" in `pin-reset.contract.spec.ts`: its digit-boundary search found the PIN `8642` in some log line, answer or row. That spec passed 3 of 3 runs on its own (`pin-reset-rerun1..3.log`). MONEY-15 touches no PIN, device or logging code. **Run 2** on a fresh `vm15r2_full2_test`: 130/130 suites, 3,141 passed, 3 skipped, **0 failed** (`full2.log`, `full2.json`). `hub-rate-limits.contract.spec.ts`: 10/10 (`hub-rate-limits.log`). |
+| V4 Field trace | passed | Round 2 changes no writer and no field read. Spot-checked on the new code (R5 in the probe spec): each row of a scroll equals its own `/transactions/{id}` (status, total, description), and each group member listed by its key equals its detail. A group's `totalKobo` equals the sum of its members, and each member is `completed`. The month summary equals that month's completed rows walked, plus the one unlock that arrived mid-scroll (in 520,876 = 420,876 + 100,000, out 51,075). |
+| V9 Live seam | passed against the stand-in WAWU ID | The built server (`npm run build`, `node dist/src/main.js` on :4935, with no Fintava key or base URL set, so no Fintava call can succeed). People registered and signed in through the stand-in's `POST /auth/login` on :4936, with no minted token. They then read rows written by the ledger's own writer (`live-group-skip.log`, `live-shift.log`, `live-tamper.log`). The real WAWU ID sign-in is NOT RUN (see below). |
+
+**Focus 1: Defect 1 is closed**
+- Round 1's live reproduction was adapted to `c2.` and re-run on the built server (`live-group-skip.js`, `live-group-skip.log`). Three cases ran: arrival, a pending newest unlock settling, and an older pending unlock settling below the cursor. Every movement that existed before page 1 showed exactly once (7, 8 and 8 movements). Each group was counted through its own key. After a refresh, the group showed 3 buyers and ₦7,500.
+- Stress (R1 in the probe spec, `probe-run2.log`): 4 kinds (arrival as the newest, arrival with a Fintava time earlier in the day, top pending settling, bottom pending settling) at every page size from 1 to 6, with the event after **every** page. All 24 runs showed each pre-page-1 movement exactly once, with 0 duplicates.
+- Multiple groups (R2, `probe-run3-R2.log`): 2 pieces on 2 Lagos days gave 4 groups. One group stretched from 06:00 to 18:00 Lagos around 6 transfers, so it straddled page boundaries. 4 new unlocks (one into each group) landed after every page, at page sizes 1 to 5 (up to 75 rows). Each of the 21 pre-page-1 movements showed exactly once, with 0 duplicates.
+- Lagos midnight (R4): members at 23:59:59.999 and 00:00 Lagos make two groups, one per day. Arrivals on both sides of midnight after every page, at page sizes 1 to 3: each pre-page-1 movement showed once.
+- Snapshot edges (R3, `probe-run2.log`):
+  - An unlock whose `completedAt` equals the snapshot to the millisecond is in the group. One at +1 ms is its own row.
+  - Another person replaying the cursor sees only their own row. Replaying the group key gives an empty list.
+  - Snapshots dated 2099 or 9999 group everything, and 1970 or 0001 group nothing: 200 either way, and only the caller's rows.
+  - One scroll's group key paged with another scroll's cursor: the cursor's snapshot wins, so that group list follows the other scroll. The app never sends that pair.
+  - A group on page 2 carries the scroll's snapshot.
+  - **Year 0000 is a 500** (defect 2).
+
+**Defect 2 (minor): a cursor or group key dated year 0000 is a 500, not a 400.**
+- Reproduction on the built server (`live-tamper.js`, `live-tamper.log`), any signed-in person with a wallet:
+  - `GET /money/transactions?cursor=c2.<base64url of ["2026-10-02T10:00:00.000Z","<any uuid>","0000-01-01T00:00:00.000Z"]>` answers `500 "Something went wrong. Please try again."`.
+  - The same happens for `group=g2.<["piece-x","2026-10-02","0000-01-01T00:00:00.000Z"]>`, and for a cursor whose `at` (round 1's field) is year 0000.
+  - The Hub logs Postgres `22008 date/time field value out of range`.
+- Why: `isIso` in `history-keys.ts` accepts `0000-01-01T00:00:00.000Z` (JavaScript round-trips it), but Postgres has no year 0. `checkedMonth` already refuses `0000` for months.
+- Against: CONVENTIONS section 6 says "A cursor or key the server did not write ... is a plain 400", and `history-keys.ts` says "anything this history did not write is a 400, never a query".
+- No app user can send this value. The cost is a 500 and an error log that anyone can trigger at will.
+- Closed when those three requests answer 400 with the existing messages.
+
+**Findings**
+- `unclear`, finding 1: a row whose time moves earlier mid-scroll is shown twice. This path is not one of the two blind spots the builder listed.
+  - MONEY-10's merge keeps the earliest `occurredAt` (`ledger.service.ts`, `if (s.occurredAt < row.occurredAt)`). MONEY-08's sweep settles a pending row with Fintava's `createdAt` (`ledger-status.service.ts`).
+  - Reproduction on the built server (`live-shift.log` (a)): a pending send is page 1 (`limit=1`). The sweep's lookup then settles it with a time 3.5 s earlier, past 4 other rows. The send is shown twice in one scroll: pending at 10:00:05, then completed at 10:00:01.5.
+  - This is not grouping. Round 1's cursor did the same. The round-2 text "every movement that existed before the first page shows once" (CONVENTIONS section 6) overclaims for this case.
+  - It can only duplicate today. The loss version needs a **completed** row's time to move earlier across Lagos midnight into a day that has a group of the same piece (`live-shift.log` (b): the two 29 Sep unlocks leave the scroll). The sweep re-reads only pending rows, so today only a fold of two rows of one movement could do that.
+  - A refresh corrects both. For the owner: accept and document it as a third blind spot, or order by a key that never moves.
+- `unclear`, finding 2: the builder's blind spot A (a write in flight at page 1's instant).
+  - Reproduced (`live-shift.log` (c), probe R6). An unlock whose `completedAt` is 5 ms before the snapshot, committed after page 1, moves its group above the cursor. The 2 earlier unlocks never show in that scroll. A refresh shows the group of 3.
+  - It is narrow. `completedAt` is stamped at the start of `recordIn`, and the write commits inside the writer's interactive transaction (Prisma's default 5 s; no timeout is set in the ledger or the consumer). So the window is at most about 5 s per write, and only for a piece and Lagos day that already has a completed unlock below the cursor.
+  - It is corrected by a refresh, but while it lasts it is a loss, not a duplicate.
+  - Observation: grouping only unlocks completed at or before the snapshot minus that transaction limit would close this window. The cost is that an unlock completed in the last few seconds stays its own row until the next refresh.
+- `unclear`, finding 3: the builder's blind spot B (a completed unlock put back to `pending` by a disagreeing sighting).
+  - Tested at 6 placements (latest, middle or oldest member reopened; group above or below the cursor; probe R7). Nothing is lost.
+  - When the group was already shown above the cursor, money is shown twice in that scroll. If the latest member reopens, the group comes back lower with its other members. If a middle or oldest member reopens, it comes back as its own pending row. The shown group's key then lists fewer than its count ("count 3, key lists 2").
+  - When the group is still below the cursor, everything shows once. A refresh corrects it. This is narrow and a duplicate, never a loss.
+- Note for MONEY-14 (G-48 test hardening), not this task: the flaky leak check in full run 1 above.
+
+**Focus 2 to 5, spot checks on the new code**
+- Duplication or loss beyond findings 1 to 3: none. The summary and the detail agree with the list (V4).
+- Merge with main: the two gate specs list MONEY-14's routes (main's 12 gated routes) plus exactly the 3 history routes, in both the coverage and the contract spec. No assertion was removed or loosened. The only other change to those specs is round 1's declared-route example (`GET money/transactions` to `GET money/holds`). `SERVED_MONEY_ROUTES` gains exactly the 3 routes. All three handlers carry `@RequireOpenWallet()`, and the gate's no-wallet tests pass in the full suite.
+- Isolation: another person's cursor gives only the caller's rows, and their group key gives an empty list (R3).
+- `q` (R9): `" P "`, `"   "`, `" a"` and a no-break space around one letter are 400. `"  pe  "` and tabs around `pe` find the row. 60 letters with a space on each side is 200. `c1.` and `g1.` are 400.
+- Pagination: covered by R1, R2 and R4 above, at page sizes 1 to 6.
+
+**Mutations** (`mutate.py`, `mutants/summary.txt`, logs in `mutants/`). Each mutant ran alone and the file was restored by copy, then the history contract and unit specs ran (44 tests). 12 of my own on the snapshot code; 9 killed:
+- grouping as of `occurredAt` instead of `completedAt`
+- a snapshot 60 s in the future
+- a snapshot 60 s in the past
+- a snapshot truncated to the second
+- the database clock instead of the snapshot
+- a group key carrying this read's time instead of the scroll's
+- a cursor snapshot not validated
+- the `c` prefix accepted for `c1.`
+- `q` not trimmed by the DTO
+
+3 survived, each equivalent in practice:
+- N6, a group list preferring its key's snapshot over its cursor's: they differ only when a key is sent with another scroll's cursor.
+- N8, a group key with 2 or more elements: a 2-element key is still refused by the snapshot check, so only 4 or more elements get through.
+- N10, dropping `completedAt IS NOT NULL`: SQL's NULL comparison already excludes those rows.
+
+**Capability checks**
+- [x] Searching a recipient's name finds their transfers: the history spec's capability tests pass on a622812 (44/44 with the unit spec), and `q` trimming holds (R9).
+- [x] Monthly totals equal the sum of that month's rows: R5 walked July and got the summary's In and Out, with groups expanded through their keys. Pending rows are left out, and the one unlock that arrived mid-scroll is in the summary.
+
+**NOT RUN**
+- The real WAWU ID sign-in (V9): unblocked when a session may call `id.wawuafrica.com`.
+- A sandbox round trip: not needed. The three routes never call Fintava (the built server ran with no Fintava key). Unblocked by a pass allowed one ₦10 round trip on dev.fintavapay.com, if wanted.
+- Bank-send and bill rows from the sandbox: payouts are refused (question 17). They were written through the ledger's writer instead.
+
+Cleanup: my Hub on :4935 and my stand-ins on :4936 and :4001 were stopped by PID, after checking each PID's working directory was this worktree. `lsof` shows all three ports free. Databases `vm15r2_probe_test`, `vm15r2_live_test`, `vm15r2_protected_test`, `vm15r2_full_test` and `vm15r2_full2_test` were dropped. The extra main worktree used for the gate comparison was removed.
+
+### Verifier report (round 1)
+
+Verifier, 3 Oct 2026 (a session that wrote none of this code). **Verdict: 1 open defect; status `building`.** Grouped unlock earnings drop out of a scroll when an unlock of the same piece on the same Lagos day lands or settles between pages (defect 1 below). Everything else asked of the history held: isolation, status truth, the month summary at every Lagos edge, search escaping and both capability checks on the built server.
+
+Checked at backend `wmt/MONEY-15` 35e4e33 (merge-base with main 6d48c97, main has not moved) and mobile `wmt/MONEY-15` 857ca5e (contains mobile main 3304f1e), in fresh detached worktrees `/home/user/wt/vm15b` and `/home/user/wt/vm15m`. MONEY-15's own work judged with `git diff 35b68af...35e4e33` plus the merge (35e4e33 `--cc`: one conflict, both comments kept; MONEY-13's files differ from 35b68af only by the three spec/doc edits named below and the module registration). Evidence in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vm15/` (named per row).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`tsc.log`); eslint on the 21 `.ts` files the branch adds or changes against main: 0 (`eslint.log`). Gates: main 6d48c97 16 fail / 10 warn / 76 accepted on 619 files, branch 16 / 10 / 76 on 628 files; the findings are identical line for line once line numbers are dropped (`gates-main.log`, `gates-branch.log`, `.norm`). CI tripwire: 0 added lines outside the protected suite's own files match `test/protected-routes|src/protected-routes|compareShape|protected-registry` (`tripwire.txt`). Mobile `npm run check` exit 0: typecheck, lint, 20 suites / 371 tests, gates 0 fail / 0 warn on 96 files, 203 tasks (`mobile-check-before.log`; again exit 0 with this report, the LOG line and the regenerated PROGRESS: `mobile-check-after.log`). Key scan: 58 windows of 8 characters, 0 hits in the backend diff and patch log and the mobile diff and patch log. |
+| V2 Contract | passed | `contract/openapi.json` compared as JSON (key order and enum order normalised) against 35b68af: the only differences are the three operations losing `x-wawu-served: false` and their "Declared by MONEY-04, not served yet" description; path order moves. Mobile `contract/` changes only `SOURCE_COMMIT`. History and gate specs 5 suites 82/82 (`history-gate-specs.log`). Probes over HTTP (`zz-vm15-probe.spec.ts`, `probe-run2.log`, `probe-run3.log`): see Focus below. |
+| V3 Regression | passed | `run.sh --fresh 35e4e33`, lock origin/main 6d48c97: 253/253, all 244 required (`protected.log`); lock files differ from main by 0 lines. Full suite the way the deploy runs it: fresh migrated and seeded `vm15_full_test`, `mock-wawu-id/server.js` on :4001 with a keypair made as `deploy.yml` makes it (`lsof` empty before, mine stopped straight after, empty again), `npx jest --runInBand --forceExit`: 126/126 suites, 3,058 passed, 3 skipped, 0 failed (`full.json`, `full.log`). `hub-rate-limits.contract.spec.ts` 10/10 (`hub-rate-limits.log`). |
+| V4 Field trace | passed | Every field the history reads has a writer: the row and its figures, references, status, link and note by MONEY-10's `LedgerService.record` (send, delivery consumer), `reversed` by `applyReversal` (MONEY-08); the other person's name by MONEY-12's `wallet-opening.service.ts` (`FintavaWallet.accountName`); handle and avatar by `UserProfile`. The quoted fee split (`providerFeeKobo`, `wawuFeeKobo`) and the link have no feature writing them yet (WALLET-07 and the paying features); the history then shows Fintava's own charge and no link, as the builder's default (5) records. Crossing users: A's send to B is named from B's wallet on A's side, and B's delivery-written row names A from A's wallet (`live-check.log`). No screen reads it yet (WALLET-04). |
+| V9 Live seam | passed against the stand-in WAWU ID | The built server (`npm run build`, `node dist/src/main.js` on :4933, Fintava base URL pointed at a closed local port so no Fintava call could succeed): two people registered and signed in through the stand-in WAWU ID's `POST /auth/login` on :4934 (no minted token), got `409 wallet_not_open` before a wallet, then read rows the ledger's writer stored: a receipt reference, fee split 4,000 + 2,500, last 4 `6789`, `Cache-Control: no-store` (`live-check.js`, `live-check.log`: 19 of 19). The real WAWU ID sign-in is NOT RUN: unblocked when a session may call `id.wawuafrica.com` (this pass was told not to). |
+
+**Defect 1: grouped unlock earnings drop out of the scroll when a new or settling unlock of the same piece lands mid-scroll.**
+- Reproduction on the built server (`live-group-skip.js`, `live-group-skip.log`): a creator has 2 completed unlocks of one piece at 09:00 and 09:30 Lagos and 5 transfers from 10:00 to 14:00 Lagos the same day. The whole history reads 5 transfers then "Unlock · Lighting night shoots · 2 buyers". Page 1 (`limit=3`) shows 3 transfers. A third buyer unlocks the piece at 15:00. Following `nextCursor` gives the last 2 transfers and ends. The scroll showed 0 kobo of unlock earnings: the ₦5,000 that existed before page 1 never appears.
+- The same with a pending unlock that the sweep settles between pages (`P1b` in `zz-vm15-probe.spec.ts`, `probe-run2.log`): page 1 shows the pending unlock, it becomes completed, and the 2 older completed unlocks are never shown. `P1` is the arrival case over the spec harness.
+- Why: a group's place in the order is its latest movement's (`occurredAt`, `id`), computed over the whole history on every read. When a newer member arrives or settles, the group moves above the cursor already handed out, so every later page filters it out. The builder's "a row landing mid-scroll shifts nothing" holds for single rows only.
+- Closed when `P1` and `P1b` pass: every movement that existed before page 1 appears in the scroll exactly once (as a row or inside a group), with a mid-scroll unlock of the same piece and day, arriving or settling.
+
+**Focus checks** (probes over HTTP with the real `MoneyModule`, RS256 tokens from the stand-in on :4934, rows from the ledger's writer; `zz-vm15-probe.spec.ts` kept in the evidence folder, not committed)
+- Isolation (`P3`, passed): another person's row id is the same 404 body as a random uuid; their group key returns an empty list; their cursor replayed gives only the caller's own rows; a forged cursor carrying `x' OR 1=1 --` and a 3-element group key are 400; a group key with target `%` matches nothing; searching another person's counterparty name, note, piece title or own name finds nothing; another person's month summary holds only their rows. B finds Zainab (B's counterparty) and not Adaeze (not B's).
+- Truth (`P5`, `P6`, `live-check.log`, passed): each listed status equals the stored one for pending, completed, failed and reversed rows; a reversed and a failed send are out of the summary. Summary at 23:59:59(.999) and 00:00:00 Lagos on both edges of Sep 2026, and on both edges of Feb 2028 (leap, the 29th): Aug 2026 in 1; Sep in 10, out 110; Oct out 1,010; Jan 2028 in 2; Feb in 220; Mar in 2,000 (kobo), each equal to the completed rows found by walking that month one row per page; a pending row on 29 Feb is out. No route returns a balance.
+- Pagination (`P2`, passed): 30 rows on one timestamp, pages of 7, each once; a row added on the same timestamp mid-scroll repeats and skips nothing (it sorts before the cursor, so it is a new row for the next refresh). Limits `0`, `101`, `-1`, `abc`, `1.5` are 400; 100 is served. Repeated query parameters and `q[]=` are 400, never 500 (`P7`). With grouping: defect 1.
+- Search (`P4b`, passed): `0%` finds only "Percent 100% Ltd"; `%%`, `__`, `nt_1` and a double backslash find nothing; `r_s` and `k\s` find their literal text; `ỌLÁ` and `adébáyọ̀` find "Ọlá Adébáyọ̀"; 61 characters is 400 and 60 is served; an SQL-looking term is a plain 200.
+- MONEY-13's specs: only the gated-route lists (plus their test titles) and the coverage spec's declared-route example change (`GET money/transactions` to `GET money/holds`, still a declared route); no assertion weakened. All three history routes carry `@RequireOpenWallet()`; no wallet is 409 `wallet_not_open` on the built server.
+
+**Mutations** (`mutate.py`, logs in `mutants/`; each alone, the file restored by copy, the history contract spec and the unit spec run, 37 tests): 16 of my own, none of the builder's 14. Killed (13): the cursor's `<` as `<=`; reading `limit` rows, not `limit + 1`; the month's end inclusive; the summary adding amounts, not totals; the detail ignoring its id; the last 5 digits; the outer tie-break ascending; a case-sensitive name search; no wallet account-name fallback; money-in rows showing fees; a group key ignoring its day; an untrimmed search; a cursor accepted without its prefix. Survived (3):
+- M5, Fintava's reference before ours in the reference order: no test has a row carrying both, so "ours first", which G-44's fix relies on, is not pinned.
+- M13, `nextCursor` set when the last page is exactly full: the contract says `nextCursor: null` is the last page, and no test has a row count that is a multiple of the page size.
+- M15, an avatar for every kind of counterparty: equivalent, because the profile join only matches `wawu_user`.
+
+**Other findings**
+- `unclear`: `q` is checked for 2 to 60 characters before trimming, so `q=" P "` searches one character ("P", 2 rows in `P4b`). CONVENTIONS section 6 says "2 to 60 characters, trimmed" and does not say which comes first.
+- An own row's id written in capitals passes `ParseUUIDPipe` and answers 404. This reveals nothing; recorded only.
+
+**Capability checks, against the built server** (`live-check.log`)
+- [x] Searching a recipient's name finds their transfers: `Chidinma`, `chidinma okoro`, `OKORO` and `dinma O` each find all 4 transfers with Chidinma Okoro (completed, pending, the October one and the money in written in capitals) and nothing else, across pages of 2; `bayo` finds the send to Bayo, named from his wallet; `filter=money_out` keeps her 3 money-out rows.
+- [x] Monthly totals equal the sum of that month's rows: Aug, Sep and Oct 2026 summaries equal their walked completed rows (Sep: in 50,000, out 2,507,500 with the pending 30 Sep 23:59:59 send left out; the 1 Oct 00:00 Lagos send is October; the 31 Aug 23:59:59 top-up is August). Not ticked for grouped rows mid-scroll: defect 1 is about the list, and the summary itself does not move.
+
+**NOT RUN**
+- The real WAWU ID sign-in (V9): unblocked when a session may call `id.wawuafrica.com`.
+- The sandbox round trip: not repeated. This pass was read-only at Fintava and moved no money; the routes never call Fintava. Unblocked by a pass allowed one ₦10 round trip on dev.fintavapay.com.
+- Bank-send and bill rows from the sandbox: payouts refused (question 17). They were read from the ledger's writer instead.
+
+Cleanup: my stand-ins on :4934 and :4001 and the Hub on :4933 stopped by PID; databases `vm15_probe_test`, `vm15_protected_test`, `vm15_live_test` and `vm15_full_test` dropped.
+
+## Lead merge note (3 Oct 2026)
+
+Merged after verifier round 3 found no open defect. Backend PR #44. Carried forward:
+- **G-53** (round 3, finding 4, unclear): the 5 s `LEDGER_WRITE_MAX_MS` is Prisma's transaction timer. It is not a hard limit from stamp to commit, because a commit that started before the timer fires may finish later. A group can therefore still drop from one scroll when a near-5 s write meets an event-loop stall. This is narrow, and a refresh corrects it. The fix is either to soften the CONVENTIONS section 6 line and the constant's comment, or to bound grouping by what the database has committed rather than by the clock. Owner question on the progress page.
+- The verifier's surviving mutant G2: the timeout guard is a text match, so a `{ timeout }` shorthand gets past it. This goes into G-53's follow-up.
+- Earlier rounds' notes (sweep-time duplicates, blind spot B) are documented in CONVENTIONS section 6 as corrected by a refresh.
 
 ## Owner sign-off
 

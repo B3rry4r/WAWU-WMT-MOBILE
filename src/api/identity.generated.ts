@@ -89,6 +89,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Z2: sign out. The refresh token sent stops working. The same answer for a live, a dead or an unknown token. */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Z2: change the password of the signed-in account. Every other device is signed out; this one gets a new pair to keep using. */
+        post: operations["changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -213,7 +247,7 @@ export interface components {
              * @description Machine-readable cause, when there is one. A body without it is a plain refusal (a 400 from validation, a 401 wrong password, a 409 taken email or phone).
              * @enum {string}
              */
-            code?: "USER_NOT_IN_WAWUID" | "EMAIL_NOT_VERIFIED" | "PHONE_NOT_CONFIRMED" | "PHONE_INVALID" | "PHONE_NOT_SUPPORTED" | "PHONE_CODE_INVALID" | "PHONE_CODE_LOCKED" | "PHONE_CODE_RESEND_TOO_SOON" | "PHONE_ALREADY_CONFIRMED" | "RATE_LIMITED" | "SMS_NOT_CONFIGURED" | "SMS_SEND_FAILED" | "SESSION_INVALID" | "SIGNUP_STEP_OUT_OF_ORDER" | "SIGNUP_ALREADY_FINISHED" | "EMAIL_NOT_SET" | "EMAIL_ALREADY_PROVEN" | "EMAIL_CODE_INVALID" | "EMAIL_CODE_LOCKED" | "EMAIL_CODE_RESEND_TOO_SOON";
+            code?: "USER_NOT_IN_WAWUID" | "EMAIL_NOT_VERIFIED" | "PHONE_NOT_CONFIRMED" | "PHONE_INVALID" | "PHONE_NOT_SUPPORTED" | "PHONE_CODE_INVALID" | "PHONE_CODE_LOCKED" | "PHONE_CODE_RESEND_TOO_SOON" | "PHONE_ALREADY_CONFIRMED" | "RATE_LIMITED" | "SMS_NOT_CONFIGURED" | "SMS_SEND_FAILED" | "SESSION_INVALID" | "SIGNUP_STEP_OUT_OF_ORDER" | "SIGNUP_ALREADY_FINISHED" | "EMAIL_NOT_SET" | "EMAIL_ALREADY_PROVEN" | "EMAIL_CODE_INVALID" | "EMAIL_CODE_LOCKED" | "EMAIL_CODE_RESEND_TOO_SOON" | "CURRENT_PASSWORD_WRONG" | "PASSWORD_UNCHANGED" | "PASSWORD_NOT_SET";
             /** @description A sentence for people. Validation errors join theirs with ", ". */
             message: string;
             /** @description Seconds to wait, with every 429 (also sent as a Retry-After header). */
@@ -296,6 +330,23 @@ export interface components {
         };
         TokenPairAnswer: {
             data: components["schemas"]["TokenPairSchema"];
+        };
+        LogoutDto: {
+            /** @description The refresh token this device holds. */
+            refreshToken: string;
+        };
+        SignedOutSchema: {
+            /** @example true */
+            signedOut: boolean;
+        };
+        SignedOutAnswer: {
+            data: components["schemas"]["SignedOutSchema"];
+        };
+        ChangePasswordDto: {
+            /** @description The password the account has now. */
+            currentPassword: string;
+            /** @description The same length rule as a reset (8 to 128 characters). */
+            newPassword: string;
         };
         ForgotPasswordDto: {
             /** @description Email or phone number. */
@@ -641,6 +692,106 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoutDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedOutAnswer"];
+                };
+            };
+            /** @description Validation: a field missing or of the wrong type. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description RATE_LIMITED. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenPairAnswer"];
+                };
+            };
+            /** @description Validation (new password under 8 or over 128 characters), CURRENT_PASSWORD_WRONG, PASSWORD_UNCHANGED. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description SESSION_INVALID. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description PASSWORD_NOT_SET (an account that never had a password). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description RATE_LIMITED (five wrong current passwords in 15 minutes). */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

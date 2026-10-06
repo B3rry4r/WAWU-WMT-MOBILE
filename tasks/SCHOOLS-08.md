@@ -3,7 +3,7 @@ id: SCHOOLS-08
 title: My courses and apply on the school's site
 owner: DEV3
 area: SCHOOLS
-order: 134
+order: 136
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen

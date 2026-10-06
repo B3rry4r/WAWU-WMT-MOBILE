@@ -2,8 +2,13 @@ import { useRouter } from 'expo-router';
 
 import { AccountTypeScreen } from '@/features/auth/AccountTypeScreen';
 
-/** A2. Only reachable signed out. Continue (to A3) is added by AUTH-04, which passes `onContinue`. */
+/** A2. Only reachable signed out. Continue opens A3, which sends the pick with the sign-up. */
 export default function AccountTypeRoute() {
   const router = useRouter();
-  return <AccountTypeScreen onBack={router.canGoBack() ? () => router.back() : undefined} />;
+  return (
+    <AccountTypeScreen
+      onBack={router.canGoBack() ? () => router.back() : undefined}
+      onContinue={() => router.push('/sign-up')}
+    />
+  );
 }

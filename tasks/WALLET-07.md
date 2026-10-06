@@ -3,7 +3,7 @@ id: WALLET-07
 title: Send money to a WAWU user
 owner: YOU
 area: WALLET
-order: 135
+order: 137
 priority: launch
 repo: wawu-backend
 type: money-path
@@ -31,6 +31,8 @@ W7, W9-W12, I13-I15: send to another WAWU user by name, @handle or phone.
 ## Scope
 
 Transfer between two Fintava accounts with a note, PIN and Idempotency-Key; a receipt.
+
+**Lead note (4 Oct 2026, from KYC-04):** a money action here that answers `409 pin_not_set` opens A9 (route `open-wallet-pin`, KYC-04) and comes back to this screen once the PIN is set; it never shows the bare error.
 
 ## Capability checks
 
