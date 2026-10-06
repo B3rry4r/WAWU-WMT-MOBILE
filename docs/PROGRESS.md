@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 27 | 31 |
-| building | 0 | 0 | 1 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 1 | 0 |
 | review | 0 | 0 | 2 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
@@ -18,7 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
 
@@ -102,6 +102,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · ADS-05 · Round 2 built, awaiting verification: defect D1 fixed (a view, tap or skip counts only for a card `GET /ads` could serve that person: one shared eligibility function, event open and blocks included); main 872cf45 merged in.
 - 6 Oct 2026 · ADS-05 · Verified round 1, back to building: one defect (a view or tap is counted for a campaign `GET /ads` would never serve to that person, for example one whose event is closed or does not exist); counting, the once-a-day key, the daily totals, 50 and 400 parallel reports, privacy, purge and export all hold; 20 own mutants all killed; owner questions on tap-before-view and per-address limits.
 - 6 Oct 2026 · ADS-05 · Built, awaiting verification: `POST /ads/:id/events` counts a view, tap or skip once per person per UTC day (backend branch `wmt/ADS-05`); daily totals equal the raw events; read helper `AdsCountsService` for the admin report; additive migration `20261006133700_ads_event_counts`; owner questions G-197 to G-200.
 - 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.
@@ -116,4 +117,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
 - 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
-- 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
