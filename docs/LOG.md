@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Built, awaiting verification: ads data model (backend branch `wmt/ADS-03`): `AdCampaign` and `AdCreative` with placement, status and CTA allow-list enums, serving index and CHECKs, additive migration `20261006090000_ads_data_model`; no routes, no price column (R-15).
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.

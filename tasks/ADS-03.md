@@ -7,7 +7,7 @@ order: 27
 priority: launch
 repo: wawu-backend
 type: migration
-status: building
+status: verifying
 depends_on: []
 decisions: [R-15]
 passes: [V1, V3, V4, V9]
@@ -129,3 +129,15 @@ Checked and fine: fenced files each have a SHARED-CHANGES row (ADS-03 #1, status
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+## Builder report, round 2 (D1, D2 and nits)
+
+Backend `wmt/ADS-03` @ 2b1fce3. Main had not moved (backend a94f338, mobile 8484195); no new migration anywhere is later than `20261006090000`. The migration was **edited in place**, as it is merged nowhere. Mobile merged with origin/wmt/ADS-03 (verifier report), no rebase.
+- **D1 fixed:** `src/ads/ads-limits.ts` exports `AD_WEIGHT_MIN = 1` and `AD_WEIGHT_MAX = 100` and holds the only `PROVISIONAL(ADS-WEIGHT-RANGE)` marker. The marker is gone from `schema.prisma` and the migration (both point to the file). New spec test reads the bounds of `AdCampaign_weight_check` from `pg_get_constraintdef` and fails if they differ from the constants; a second test checks the constants and one step outside. Gate warns: **34 before (main) to 35 after**, `src/ads/ads-limits.ts:15` is the one added; fail 16 and accepted 76 unchanged.
+- **D2 fixed:** the five not-blank CHECKs (advertiser, headline, ctaLabel, ctaDestinationId, subline) now refuse a value made only of an explicit set spelled as `\u` escapes (control characters, ASCII and Unicode spaces, zero-width and direction marks U+200B to U+200F and U+2060 to U+206F, BOM, soft hyphen, U+034F, U+061C, Mongolian and Hangul fillers, Khmer vowels, variation selectors, U+2028 and U+2029), the list written in the migration. No `\s`. A value with one visible character among them is accepted. 12 new spec tests: 24 invisible cases and each repeated, on all five columns, plus accepted mixes ("Gospel" NBSP "Night", ZWSP then A, BOM after A, ZWJ inside a word, one letter, accented, CJK).
+- **Before-failure shown:** the same 54-test spec run against a database built from the old migration (commit 2468204): 5 failed (one per column), listing 34 values it accepted per column (NBSP, ZWSP, ZWNJ, ZWJ, WORD JOINER, BOM, U+202F, LRM, soft hyphen, U+034F, U+180E, U+3164, U+FE0F, U+0001, DEL, NEL, the mix). Against the new migration: 54 of 54.
+- **Locale:** the available locales here are C, C.UTF-8 and POSIX. Cluster 1 is C.UTF-8 (where `\s` matches U+2003), cluster 2 was `initdb --locale=C` (where `\s` does not match U+2003, so the old class would have accepted it): migration applied and 54 of 54 passed on both.
+- **Nits:** the schema comment now puts the advertiser CHECK on AdCampaign; the header says the Event must be `published`; the manual rollback now includes `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261006090000_ads_data_model'`. The weight CHECK is written `>= 1 AND <= 100`.
+- **Owner questions U1 to U8 stay open** (weight meaning, only `event`, free-text advertiser, hand-typed subline, no length caps, advertiser as personal data, SPONSORED text, status transitions). No length caps added.
+- **Re-run, same checkout, own Postgres and mock, tmpfs:** migration on a seeded database (main's 90 migrations plus seed plus neighbour rows): all 107 existing tables' `pg_dump --schema-only` identical, schema dump 0 lines removed, data dump 0 removed, only the two new tables and one `_prisma_migrations` row added; re-run applies nothing; fresh database from all 91 migrations: `migrate diff` shows only main's `DROP INDEX "ContentPiece_specializations_idx"`. `tsc` exit 0; eslint without `--fix` 4514 problems (same as main, none in `src/ads`); `test:contract` 153 suites, 3712 passed, 4 failed, 3 skipped, the one failing suite `receipt-units.spec.ts` (as on main); gates 16 fail / 35 warn / 76 accepted; `check_baseline` exit 0; `run.sh --fresh` 244/244; `contract:build` no diff. Mobile `npm run check` exit 0 (43 suites, 754 tests, gates 0 fail, 207 tasks).
+

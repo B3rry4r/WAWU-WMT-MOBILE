@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 29 | 31 |
-| building | 0 | 0 | 1 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 1 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Built, awaiting verification: ads data model (backend branch `wmt/ADS-03`): `AdCampaign` and `AdCreative` with placement, status and CTA allow-list enums, serving index and CHECKs, additive migration `20261006090000_ads_data_model`; no routes, no price column (R-15).
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
@@ -111,4 +112,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
 - 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.
 - 4 Oct 2026 · KYC-04 · Builder round 2 on `wmt/KYC-04`: A10 never ends as set on a PIN the server held before (a lost answer with a failed check stays on A10 with Try again; `409 pin_already_set` says the earlier PIN stands, G-116), and A9 and A10 drop everything and leave the flow on any session change; 7 new tests fail on round 1's code, 10 of 10 mutants killed; status verifying.
-- 4 Oct 2026 · KYC-04 · Open your wallet step 3 built on `wmt/KYC-04`, mobile only: A7 hands the open account to A8 (bank name, account name and number with Copy from `GET /money/wallet`, Limit row only when the server sends one), A9 and A10 set the transaction PIN (`POST /money/pin`, a mismatch in W11's wrong-PIN look, wording in the brief), then back where the flow started; G-114, G-115, SHARED-CHANGES KYC-04 #1, #2, R1; status verifying.
