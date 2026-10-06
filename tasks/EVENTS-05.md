@@ -7,7 +7,7 @@ order: 24
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -46,7 +46,81 @@ Sold count on my events, per-referral ticket counts, door staff a host can add, 
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+_Verifier session, 6 Oct 2026, a fresh session that wrote none of this code. Verified backend `wmt/EVENTS-05` eb2a835 (one commit on main a055b4f) and mobile `wmt/EVENTS-05` c1f30ee; backend `origin/main` is now a94f338 (96 commits ahead of the branch's base). Focus given: authority and privacy. Own databases `ve05_b_test`, `ve05_t_test`, `ve05_prot_test`, `ve05_full_test`; ports 5041 (the built Hub) and 5042 (mock WAWU ID); :4001 only inside a private network namespace for the full suite; every process stopped, every database dropped, my worktrees removed. Nothing was sent to api.wawuafrica.com, id.wawuafrica.com or Fintava (this task does not touch Fintava). Evidence root `E` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/ve05`._
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates (backend, branch as is) | **passed**. `tsc --noEmit` 0. eslint on the 8 changed source and spec files (no `--fix`) exit 0. Gates `python3 scripts/gates/run.py`: 648 files scanned, 16 fail / 13 warn / 76 accepted, the same 16 fail files as the merged tree and main (the builder reports 16 / 13 / 76 before the change too); no new warning, no `PROVISIONAL` marker added. Tripwire (added lines matching protected-suite names): none. `npm run contract:build` leaves `contract/openapi.json` byte-identical; the mobile `contract/openapi.json` equals the backend branch's. Diff against the report: 11 backend files, exactly those the builder lists (controller, service, DTO, `ticket-counts.ts`, module, `event-ticketing.service.ts` refactor, migration, schema, purge map, contract, spec); mobile 8 files (the builder's six plus `contract/SOURCE_COMMIT` and `contract/openapi.mobile.json`, both written by the sync script). Mobile `npm run check` on c1f30ee: typecheck, lint, 21 suites / 377 tests, gates 98 files / 0 findings, 203 tasks, all green. **Migration order fails against current main**, see M1. | `E/gates-branch.txt`, `E/eslint-branch.txt`, `E/contract-build.txt`, `E/mobile-check-branch.txt` |
+| V2 Contract | **failed** (D1, D2; the rest passed). The builder's 20 tests pass on the branch (`E/spec-branch.txt`). My own 30-test spec (`E/ve05-verify.contract.spec.ts`, not committed): 26 to 28 of 30 pass per run on the branch and on the trial merge; the failing ones are D1 (B1, B2) and D2 (S2, S4, which depends on the race, 2 of 3 runs). Passed: no token is 401 on all 7 new routes; door staff get 403 on referrals, door-staff list, dashboard, add and remove, and the staff row stays unremoved; their `mine/sold` lists only events they host; another organiser gets 403 on referrals, list and add for this organiser's event, and sees only their own event in `mine/sold`; a staff row id of event A sent through event B's path (or an organiser's own path) is 404 and the row is untouched; staff of A scanning at B (same host) is 403 and consumes nothing; a stranger is 403; the protected host-only scan still 403s staff; removal takes access away on the next request, `door/mine` empties, re-add restores it, double remove answers the same, and "by Door n" survives the removal; both or neither of id and handle, adding yourself, an unknown person, a bad handle (`<script>`), a 31-character label: refused (400, 400, 400, 404, 404, 400, 400); the same person added 5 times at once is one row; an event called off reads 0 sold, scans `invalid`, and refuses new staff (409). Forged codes (`ZZZZ-ZZZZ-ZZZZ`, an SQL fragment, `../../etc/passwd`, 4 characters, `{$ne:null}`, empty, 41 characters): `invalid` with `ticket: null` or 400, nothing consumed; another event's real code and a made-up code give byte-identical answers (no leak); a voided ticket is `invalid`. | `E/mine-branch-1.txt` to `-3.txt`, `E/trial-specs-mine.txt` |
+| V3 Regression | **passed**. Protected suite `scripts/protected-routes/run.sh --fresh HEAD` (code from the branch, lock from origin/main): 2 suites, 253/253 (244 required tests passed), lock unchanged. Trial merge: see the last row. The three protected routes the web calls are byte for byte as before (the only change in `event-ticketing.service.ts` is `totals()` delegating to `ticketTotals`, same query and same statuses). Full backend suite on the branch as is, in a private network namespace with :4001 ours alone, mock on it: 133 suites, 128 passed / 5 failed, 3,022 tests passed / 194 failed / 3 skipped (973 s, machine load average 25 to 44 from other sessions). All 5 failing files rerun alone: `admin-events` 37/37, `learn-guide` 26/26, `fintava-stall` 120/120, `hub-rate-limits` 10/10 (host network, as the rules say, it needs a non-loopback interface), `money-pin` 24/25 on the whole file and the one test that timed out (5 s limit, argon2 under load) passes alone. So 0 real failures. The builder's 7 suites that "hard-code :4001" all pass here because :4001 was free inside the namespace. | `E/protected-branch.txt`, `E/full-ns-branch.txt`, `E/rerun-summary.txt` |
+| V4 Field trace | **passed**, table below. | this section |
+| V9 Live seam | **passed**. Built Hub on :5041 (`node dist/src/main.js`), real mock-WAWU-ID login on :5042 (no injected token), HTTP only: a plain user (Adaeze) added by `@adaeze`, sees the event in `door/mine`, scans: `valid`, holder "Chidi Umeh" (a name only WAWU ID holds), `by Door 1`, totals `sold 4, checkedIn 1, stillToArrive 3`; same ticket in lower case: `already_used` with the first time; 19 parallel scans of one other ticket: 1 `valid` and 18 `already_used`, database `checked_in` rows = 2, which is the two tickets; a forged code `invalid`; staff 403 on referrals, door-staff, dashboard; removed, the next scan is 403. The host's `mine/sold`, dashboard `ticketsSold` and the link's `ticketsSold` all read 4 for 4 tickets issued. The event row was inserted by SQL because the seeded creators are not verified hosts (B3 is not this task's gate). A burst above 20 requests in one second from one address is answered 429 by the Hub's global limiter (first walk), see U3. | `E/live-walk.txt`, `E/live.mjs` |
+| Trial merge onto main a94f338 | **conflict, then passes after a straightforward resolution.** See "Trial merge" below. | `E/export-map-merged.txt`, `E/trial-specs-1.txt`, `E/trial-specs-2.txt`, `E/gates-trial.txt`, `E/protected-trial.txt` |
+
+**Capability checks, as written**
+
+- A host sees the same sold count on E17 and E18 as tickets actually issued: **passed** (V9 walk 4, 4, 4 for 4 issued; N3 in my spec compares `mine/sold`, the dashboard and the ticket rows after voids and check-ins; after an event is called off all read 0). A referral link's sales go up by one per ticket bought through it: **passed** (3 tickets in one order through the link read 3; a pending unpaid order through it reads 0; a voided ticket takes it down by one; a link code of event A used on event B counts at neither). Caveat U1 (lower-case code).
+- Door staff can check people in: **passed**. The same ticket twice shows "already used": **passed** (first time and first door shown; 19 parallel repeats all `already_used`).
+
+**V4 field trace**
+
+| Value | Writer | Storage | Readers |
+|---|---|---|---|
+| Sold count | ticket issue on free or verified order (`issueOrder`), voiding on cancel | `EventTicket.status` | E17 `mine/sold`, E18 dashboard, door totals, all through `ticket-counts.ts` (`valid` and `checked_in`); my mutant M6 (void counted as sold) is caught by 3 of my tests |
+| Link sales | buyer's `referralCode` at `POST /orders`, stored as sent | `EventOrder.referralCode` (only `paid` orders count) | `GET /referrals` counts non-void tickets of those orders; the link list itself is `EventReferral` |
+| Door staff and label | host `POST /door-staff` (`label` or "Door n") | `EventDoorStaff` (soft remove) | door staff `door/mine` and the scan, host list, E23 "by Door n" through `checkedInBy` |
+| Check-in | host or staff scan, one conditional `updateMany` on `status: 'valid'` | `EventTicket.status/checkedInAt/checkedInBy` | the scan answer, the dashboard `checkedIn`, the old host scan |
+| Holder name | the buyer's WAWU ID name | not stored here | the scan answer only (name only: no email, phone, ids or `buyerWawuId` appear in any new response; asserted by P1 and P2) |
+
+**Trial merge** (throwaway worktree, detached, never pushed). `git merge origin/wmt/EVENTS-05` onto a94f338: auto-merged `contract/openapi.json`, `prisma/schema.prisma`, `src/account-purge/account-data-map.ts`, `src/event-ticketing/event-ticketing.service.ts`; **one conflict**, `src/event-ticketing/event-ticketing.module.ts` (main added `BlockedAccountModule` to `imports`, the branch added the running controller and service); resolved by keeping both. After that: `tsc` 0, `prisma validate` ok, a fresh DB migrates and seeds, `contract:build` leaves the merged contract byte-identical. **Then `data-export-map.spec.ts` fails** ("decides every model the account owns": `EventDoorStaff` is in neither `EXPORT_SECTIONS` nor `EXPORT_EXCLUDED`), see M2; with an `EXPORT_EXCLUDED` row added it passes. With that one row: `data-export-map`, `account-data-map` and the builder's 20 tests 3 suites / 29 tests green; `src/blocked-account` and `src/event` 4 suites / 112 tests green; my 30-test spec gives the same result as on the branch (D1 and D2 reproduce). Gates on the merge: 737 files, 16 fail / 34 warn / 76 accepted, identical to main a94f338 itself (732 files, 16 / 34 / 76; same 16 files, the same 34 warning lines). Protected suite on the committed merge: see the next line.
+
+Protected suite on the committed merge (code e42b617, lock from origin/main a94f338, fresh database): **253/253**, 244 required tests passed, exit 0 (`E/protected-trial.txt`).
+
+**Mutants** (13 one-line edits to the built service or `ticket-counts.ts`, run on the trial tree, which holds the same code; each restored from a copy afterwards). Both suites together killed 13 of 13. Builder's spec alone killed 12 (M8 survives it); my spec alone killed 12 (M9 survives it).
+
+| Mutant | Builder's 20 | My 30 |
+|---|---|---|
+| M1 removed staff keep door access (drop the `removedAt` check) | killed | killed (A9) |
+| M2 staff of any event may scan (staff lookup ignores the event) | killed | killed (A6) |
+| M3 check-in not atomic (`status: 'valid'` out of the WHERE) | killed (4 tests) | killed (R1, A10) |
+| M4 another event's ticket accepted | killed | killed (F3, A6) |
+| M5 referrals open to anyone (`assertHost` dropped) | killed | killed (A2, A4) |
+| M6 void counted as sold | killed | killed (N1, N3, N4) |
+| M7 link counts voided tickets | killed | killed (N1) |
+| M8 remove a staff row of another event (`eventId` out of the lookup) | **survived** | killed (A5) |
+| M9 removed staff still listed | killed | **survived** |
+| M10 door staff may add door staff (`assertHost` dropped on add) | killed | killed (A2, A4) |
+| M11 voided ticket not refused up front | killed | killed (F2, N4) |
+| M12 removed staff keep the event in `door/mine` | killed | killed (A9, A10, R1) |
+| M13 `mine/sold` lists everyone's events | killed | killed (A3, A4) |
+
+### Findings
+
+**D1 · defect (medium; SETTINGS-04 says blocks hide people from each other on every surface).** A host can add someone as door staff although one of them has blocked the other, and doing so shows the blocked person's name, handle and avatar. Reproduce (branch and trial merge): insert `BlockedAccount(userWawuId = host, blockedWawuId = X)` or the reverse, then `POST /api/hub/events/{id}/door-staff` with `{"handle": "<X's handle>"}` or `{"wawuUserId": "<X>"}` as the host: **201** with `displayName`, `handle`, `avatarUrl` of X; main's own rule (`BlockedAccountService.assertVisible`) answers such a lookup as a 404 exactly like a missing account (the same as events, profile and the wallet recipient search). `EventRunningService.personById/personByHandle` never consult `BlockedAccountService` and the module does not import `BlockedAccountModule` (main's `EventTicketingModule` already does after the merge). Test B1, B2 in `E/ve05-verify.contract.spec.ts`. Expected: 404 "We could not find that account." in both directions, for both ways of naming the person.
+
+**D2 · defect (low).** Door labels are not unique, so E23's "Checked in at 09:52 by Door 1" can name two different people. `addDoorStaff` computes the default as `count(rows ever added) + 1` with no lock and no unique index, so people added at the same moment get the same label. Reproduce: three `POST /events/{id}/door-staff` for three different people sent in parallel (`Promise.all`): labels `["Door 1","Door 1","Door 1"]` in one run and `["Door 1","Door 1","Door 3"]` in another (the second run gave three distinct labels, so it needs real concurrency); and a custom `label` equal to another person's label is accepted (S4 sees 2 distinct labels for 3 active staff). Expected: a label is unique among an event's active staff (default skips taken numbers; a taken custom label is 409), or the answer says which person.
+
+**D3 · defect (low, test gap).** The builder's spec does not pin "a staff row of another event cannot be removed": mutant M8 (`where: { id: staffId }` without the event) passes all 20 tests. Without it, any organiser who learns a staff row id could remove staff from someone else's event (ids are UUIDs, so unlikely, but the guard is untested). My A5 kills it.
+
+**M1 · merge finding (for the lead, not a defect of the task).** The branch's migration `20261003180000_event_door_staff` sorts BEFORE main's newest folder `20261004141500_legal_documents`, so the rule "a new migration folder sorts after every folder on origin/main" fails on current main. Merge needs a rename to a timestamp after `20261004141500` (SETTINGS-02 did the same), and SHARED-CHANGES row EVENTS-05 #1 names the old folder.
+
+**M2 · merge finding.** SETTINGS-04's `data-export-map.spec.ts` (on main since after the branch's base) fails on the merge until `EventDoorStaff` is decided in `src/data-export-request/data-export-sections.ts`. The branch decided only the purge map (`OWNED` by `staffWawuId`, correct: the row goes with the person; a host's purge cascades through `Event`). My resolution in the throwaway tree was an `EXPORT_EXCLUDED` row ("A door role the organiser gave, not data the person gave"); exporting it as a section is the other valid choice and is the owner's.
+
+**U1 · unclear (low).** Referral codes are matched exactly. A buyer who sends the code lower-cased buys the ticket (stored as sent) and it counts for no link; the builder disclosed that `buy` stores any code as sent. Fine while the app sends the code unchanged; EVENTS-08/09 or the link parser should not alter case, or the match should ignore it.
+
+**U2 · unclear (owner).** Door staff keep access until the host removes them, with no end at the event's end. Staff can still scan after the event is over (tickets of a called-off event are void, so those stay refused).
+
+**U3 · unclear (info for EVENTS-09).** Check-in is behind the Hub's global limiter (20 requests per second and 200 per minute per client address, `src/hub-throttlers.ts`). A burst above that returns 429, neither `valid` nor `invalid`; several scanners behind one venue address share the budget. The scanner screen must treat 429 as "try again", never as a verdict. My first live walk hit it with 20 parallel scans.
+
+**U4 · unclear (owner, SETTINGS-04).** Beyond adding (D1): a staff member who blocks the host afterwards stays on the host's list with name, handle and avatar and keeps door access (test B4 prints it); and the scan shows the holder's name to a scanner the holder has blocked (B3 prints it). A door needs the name to let the right person in, so I did not count these as defects; the owner may want a rule.
+
+**U5 · code reading, not run.** For an event whose refund failed, orders stay `paid` while their tickets are void, so a link's `revenueNaira` (orders, as the dashboard counts it) can read above zero while its `ticketsSold` reads 0. Same convention as the dashboard, noted so EVENTS-08 does not show both side by side.
+
+**Passed without finding.** Privacy: no new response carries an email, a phone, a BVN, a NIN or `buyerWawuId` (WAWU ID's public lookup gives only first and last name and tier; the service reads only the name). Nothing needed masking because nothing of that kind is returned. Numbers are counted from ticket and order rows only (nothing stored as a counter, nothing invented: the E18 `remaining` still comes from tier quantity less sold, unchanged). Purge map: `EventDoorStaff.staffWawuId` OWNED, `account-data-map.spec.ts` green. Migration is one additive table with a rollback header; an existing database with the old migrations applies it.
+
+**NOT RUN.** (1) A paid ticket bought live through Flutterwave: the live walk used free tickets; paid orders ran only through the spec's local adapter, unblocked by Flutterwave sandbox credentials. (2) Fintava: not touched by this task. (3) V5 to V8 and V10: not in this task's `passes`; there are no screens (EVENTS-08 and EVENTS-09 build them). (4) The live servers: not contacted by rule. (5) The Fintava-key window scan of my own staged diff, a standing rule: the permission classifier refused the key read, so it was not run (unblocked by the lead running it, or by allowing the read); I scanned the diff instead for key-shaped strings (`FLWSECK`, private-key headers, long hex, bearer tokens): none, and it holds no BVN, NIN or phone number.
+
+**Verdict: status back to `building`.** Open: D1 (blocked people can be added), D2 (labels not unique under concurrency), D3 (untested guard). M1 and M2 are merge work for the lead whichever way D1 to D3 go. Everything else the task promises held, including the 20-way check-in race.
 
 ## Owner sign-off
 

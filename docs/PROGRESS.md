@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 52 | 46 | 32 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
+| building | 0 | 0 | 0 | 1 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 27 | 12 | 2 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff (Developer 3)
 
@@ -72,6 +72,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · EVENTS-05 · Verified: 3 defects, status building (backend eb2a835 on a055b4f, mobile c1f30ee; main is now a94f338). D1: a host can add someone as door staff although one has blocked the other, and sees their name, handle and avatar (SETTINGS-04 answers such a lookup 404). D2: door labels are not unique, so three people added at once all read "Door 1". D3: removing a staff row of another event is not pinned by a test (mutant survives). Passed: door staff and other organisers refused on every organiser route, removed staff lose access at once, a forged or another event's code is `invalid` with identical answers, 20 parallel scans of one ticket give 1 valid and 19 already used (in process and over HTTP on the built Hub), no phone, email or BVN in any new response, counts equal ticket rows; protected 253/253, full suite 133 suites with 5 load failures that pass alone, 13 of 13 own mutants killed by the two specs together. Trial merge on main: one conflict (module imports), then `data-export-map.spec` fails until `EventDoorStaff` is decided in the export map, and the migration folder must be renamed to sort after `20261004141500`.
 - 3 Oct 2026 · EVENTS-05 · Built (backend eb2a835, status verifying): sold per hosted event (E17) counted as the dashboard counts it, shared links with tickets sold, door staff a host adds by WAWU id or handle, and a door check-in for host or staff with the holder's name and "already used by Door 1"; one additive table; protected 253/253, full suite 126 of 133 suites (7 pinned to :4001 not runnable here).
 - 3 Oct 2026 · WALLET-14 saved recipients and the payout account merged (backend PR #45, a055b4f). Bank names come only from Fintava; a payout account in another name is flagged; BVN name words are stored only as person-bound keyed hashes. Three verifier rounds. G-54 filed (contract build order).
 - 3 Oct 2026 · WALLET-14 · Merged main for the pull request (backend d89f7e5 with main ad1e515, mobile with main 8a58a67), status review: gate route lists hold MONEY-14, MONEY-15 and WALLET-14 routes; one test added (two people saving the same place get their own rows, kills M2); full suite 132 suites 3,196 passed 0 failed, protected 253/253; main's committed contract is not byte-reproducible by its own build (order only).
@@ -86,4 +87,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · MONEY-15 · Verified round 3: status review (backend c0d9a12, mobile 46095e8; neither main moved). Defect 2 is closed: the three year-0000 requests answer 400. 129 forged dates across the cursor, the group key and the month (year 0000 and 10000+, negative years, leap seconds, long fractions) brought 0 unexpected answers on the built server. Blind spot A is closed for writes that commit within Prisma's 5 s timer (a real uncommitted write at page 1, 10 ms to 4.9 s, 14 runs: nothing lost). The margin brought no regression (15 walks at page sizes 1 to 3). New `unclear` finding 4: a writer whose event loop is late reaching the timer commits after 5 s (5.6 s measured), and the loss returns; CONVENTIONS section 6 calls 5 s a hard limit. Full suite 130/130 suites, 3,144 passed, 0 failed; protected 253/253; gates as main; 12 of 14 mutants killed.
 - 3 Oct 2026 · MONEY-15 · Round 3 (backend c0d9a12, status verifying): a cursor or group key dated year 0000 is now a 400, not a 500 (defect 2). A scroll groups only unlocks completed by its snapshot less 5 s, Prisma's default transaction timeout that the ledger writes under, so a write in flight at page 1 can no longer move a group (blind spot A). CONVENTIONS section 6 now lists what a refresh still corrects. Full suite 130/130, 0 failed; protected 253/253.
 - 3 Oct 2026 · MONEY-15 · Verified round 2: back to building (backend a622812, mobile 92bf3ea; main 48b9043 merged). Defect 1 closed. Every movement that existed before page 1 showed exactly once on the built server and in 24 stress runs (arrival, settling, an older one settling below the cursor; page sizes 1 to 6; an event after every page), with 4 groups straddling pages and around Lagos midnight. New defect 2 (minor): a forged cursor or group key dated year 0000 is a 500, not a 400. Unclear: a pending row the sweep settles with Fintava's earlier time is shown twice in one scroll. The in-flight write loses a group for one scroll (a window of about 5 s), and a reopened unlock only duplicates. Full suite 130/130, 3,141 passed, 0 failed (an earlier run had 1 flaky MONEY-14 leak check, 3/3 alone). Protected 253/253, gates as main (16 / 12), 9 of 12 own mutants killed (3 equivalent).
-- 3 Oct 2026 · MONEY-15 · Round 2 (backend a622812, status verifying): a scroll groups as of its snapshot. The cursor and the group key carry the first page's time, and a group's members are the unlocks completed by then, so an unlock landing or settling mid-scroll no longer moves a group across a cursor (defect 1; tests P1, P1b, P1c). Reference order and the exactly-full last page are pinned by tests; `q` is trimmed before its length check. Backend main 48b9043 merged in. Full suite 130/130, 0 failed; protected 253/253.
