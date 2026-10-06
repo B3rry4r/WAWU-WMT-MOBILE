@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 45 | 35 | 29 | 31 |
+| todo | 45 | 35 | 28 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 1 | 0 |
 | review | 0 | 0 | 1 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
+
+## Being verified
+
+- [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 
 ## Done
 
@@ -90,13 +94,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators
-- **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-04](../tasks/ADS-04.md) Serve a sponsored card
+- **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-06](../tasks/ADS-06.md) Admin ad endpoints
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Built, awaiting verification: ads data model (backend branch `wmt/ADS-03`): `AdCampaign` and `AdCreative` with placement, status and CTA allow-list enums, serving index and CHECKs, additive migration `20261006090000_ads_data_model`; no routes, no price column (R-15).
@@ -111,4 +116,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
 - 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
 - 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
-- 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.
