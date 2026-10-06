@@ -2,34 +2,46 @@
 
 Prepared by the RELEASE-01 builder on 6 Oct 2026 (round 4). This file exists so the data-safety form is complete by construction instead of by spot-checks. It lists, from the sources and not from memory:
 
-1. every model in the Hub schema (wawu-backend `origin/main` a94f338, `prisma/schema.prisma`), and the models launch tasks will add;
+1. every model in the Hub schema (wawu-backend `origin/main` 872cf45, `prisma/schema.prisma`, 116 models), each listed by its real name, and the models launch tasks will add that are not in the schema yet;
 2. every launch-priority task (`grep -l "priority: launch" tasks/*.md`) with each input a person types, picks, uploads or signs, and each thing logged about them;
 3. WAWU ID's schema and sign-up fields (wawu-id `origin/main` 4715d17), and who receives what.
 
 The last column of every table is the row of `docs/release/DATA-SAFETY.md` that declares the item (`[PI-01]` and so on). **The exit condition is zero unmapped items**, and the totals at the end are computed from this file by the check below. Items are tied to the form by reference, so a new model, field or screen is declared only when its line here points to a row.
 
-Sources read on 6 Oct 2026: Hub schema 107 models; WAWU ID schema 14 models; mobile `tasks/*.md` at 8484195 plus this branch; the Hub `account-data-map.ts`, `data-export-sections.ts`, `legal-intake-questions.ts`, `service-application`, `legal` and `common/ai` sources; the dashboard (`wawu-dashboard` `origin/main` c1dfca6) for who works legal requests. Nothing was called live.
+Sources read on 6 Oct 2026: Hub schema 116 models at 872cf45 (the check below reads this pin: Hub schema pin: `872cf45`); WAWU ID schema 14 models; mobile `tasks/*.md` on `origin/main` 6df916d merged into this branch; the Hub `account-data-map.ts`, `data-export-sections.ts`, `legal-intake-questions.ts`, `service-application`, `legal` and `common/ai` sources; the dashboard (`wawu-dashboard` `origin/main` c1dfca6) for who works legal requests. Nothing was called live.
 
-**How to re-check** (run in a worktree of this branch; it exits non-zero and names the line if any mapping is missing):
+**How to re-check** (run in a worktree of this branch; it exits non-zero and names the line if any mapping is missing, or if a `model` in the pinned Hub schema is not listed in section 1 by its real name, or section 1 lists a name the schema does not have). The Hub repo is read with `git show <pin>:prisma/schema.prisma`; set `BACKEND` if it is not at `/home/user/wawu-backend`:
 
 ```
 python3 - <<'EOF'
-import re
+import re, os, subprocess
 inv=open("docs/release/DATA-INVENTORY.md").read(); ds=open("docs/release/DATA-SAFETY.md").read()
 rows=set(re.findall(r"^\| \[([A-Z]{2}-\d\d?)\]",ds,re.M)); bad=0
 for l in inv.splitlines():
     m=re.match(r"^\| I-\d+ \|.*\| ([A-Z]{2}-\d\d?(?:, [A-Z]{2}-\d\d?)*) \|$",l)
     if l.startswith("| I-") and not m: print("unmapped:",l[:80]); bad+=1
     elif m and not set(m.group(1).split(", "))<=rows: print("unknown row:",l[:80]); bad+=1
+ids=re.findall(r"^\| I-(\d+) \|",inv,re.M)
+if len(ids)!=len(set(ids)): print("duplicate item id"); bad+=1
+pin=re.search(r"Hub schema pin: `([0-9a-f]{7,})`",inv).group(1)
+repo=os.environ.get("BACKEND","/home/user/wawu-backend")
+schema=subprocess.check_output(["git","-C",repo,"show",pin+":prisma/schema.prisma"],text=True)
+models=set(re.findall(r"^model (\w+) ",schema,re.M))
+sec1=inv.split("\n## 1. ")[1].split("\n### 1b.")[0]
+listed=set(re.findall(r"^\| I-\d+ \| `(\w+)` \|",sec1,re.M))
+for m in sorted(models-listed): print("model missing from section 1:",m); bad+=1
+for m in sorted(listed-models): print("section 1 names a model not in the schema:",m); bad+=1
+print(len(models),"models in the schema at",pin,",",len(listed),"listed in section 1")
 raise SystemExit(bad)
 EOF
 ```
+
 
 Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Bank†, to be replaced when the Nuvion switch lands); **Resend**, **Expo**, **Google Gemini** are the service providers named in `DATA-SAFETY.md`; "Nobody outside WAWU" means no third party receives it (other app users may see it only where the cell says so). Hosting at DigitalOcean holds everything and is listed once in section 4.
 
 ---
 
-## 1. Hub models (107 in the schema at a94f338)
+## 1. Hub models (116 in the schema at 872cf45)
 
 | Item | Model | Personal data in it | Written by | Goes to | Declared in |
 |---|---|---|---|---|---|
@@ -119,7 +131,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-084 | `WalletLedgerEntry` | web wallet ledger (Flutterwave era) | No launch task | Nobody outside WAWU | NX-04 |
 | I-085 | `WalletWithdrawal` | bank code, account number, account name (web withdrawals) | No launch task | Nobody outside WAWU | NX-04 |
 | I-086 | `TransactionPin` | PIN hash, failed tries, lock time | KYC-04, WALLET-06 | Nobody outside WAWU | FI-04 |
-| I-087 | `TransactionPinReset` | phone, code hash, tries, times | WALLET-06 (MONEY-14 done) | Code texted through the wallet provider | FI-04, PI-07 |
+| I-087 | `TransactionPinReset` | phone, code hash, tries, times | WALLET-06 (MONEY-14 done) | Until the wallet rebuild moves PIN-reset codes to email (R-39): the code is texted through the wallet provider† | FI-04, PI-07 |
 | I-088 | `ApprovalDevice` | deviceId, publicKey, biometric label, last used | WALLET-06 (MONEY-14 done) | Nobody outside WAWU | AA-08 |
 | I-089 | `ApprovalChallenge` | deviceId, one-time challenge | MONEY-02, MONEY-14 | Nobody outside WAWU | AA-08 |
 | I-090 | `FintavaWallet` | customerId, walletId, account number, account name | KYC-04, MONEY-12 | Held by the wallet provider | FI-04 |
@@ -140,25 +152,32 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-105 | `SchoolCourse` | title, weeks, mode, syllabus, price (catalogue) | SCHOOLS-02 (staff) | Nobody outside WAWU | NX-03 |
 | I-106 | `CourseIntake` | start date, capacity, seats taken (no person) | SCHOOLS-02, SCHOOLS-07 | Nobody outside WAWU | NX-03 |
 | I-107 | `LegalDocument` | terms and privacy text (no person) | Staff only (admin route) | Nobody outside WAWU | NX-03 |
+| I-111 | `AdCampaign` | advertiser (a business name as the card shows it; advertisers have no accounts, R-15), placement, status, window, weight | ADS-02, 03, 06 (staff) | Nobody outside WAWU | NX-03 |
+| I-412 | `AdCreative` | headline, subline, button label, destination (an event id), artwork url: the card's copy, no person | ADS-02, 03, 04, 06 (staff) | Nobody outside WAWU; shown to everyone as the sponsored card | NX-03 |
+| I-112 | `TgifReaction` | userWawuId, day, card, kind (an Amen), one per person per card per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
+| I-413 | `TgifRead` | userWawuId, day (a read), one per person per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
+| I-414 | `TgifShare` | userWawuId, day (a share tap), one per person per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
+| I-113 | `TgifPreference` | userWawuId, show (the TGIF on Home switch) | HOME-11, SETTINGS-01 | Nobody outside WAWU | AA-09 |
+| I-119 | `ProfileWork` | featured work: title, role, client, year, link, category, description, media, position | ME-11, ME-16 | Public on the profile | PI-16, PF-01, PF-02 |
+| I-415 | `ProfileEducation` | school, field, start and end year | ME-02, ME-16 | Public on the profile | PI-16 |
+| I-416 | `FeaturedCreator` | the featured creator's account id, position in Explore, and `featuredByAdminId` (the staff member who chose them): a staff placement about a person, deleted with the creator's account (`OWNED` in `account-data-map.ts`) and left out of the data export (`EXPORT_EXCLUDED`) | EXPLORE-03 (staff, from the dashboard) | Nobody outside WAWU; the creator appears in Explore, where the profile is public anyway | NX-02 |
+
+Rows I-111, I-112, I-113, I-119 and I-412 to I-416 are the nine models train 1 added to the schema (merge train 1, backend PR #71, 872cf45: ADS-03, HOME-10, HOME-11, ME-16, EXPLORE-03). Four of them were listed as planned in an earlier round under approximate names and keep their item ids; the new item ids are numbered after the last one in the file. `ChatParticipant` also gained `readAt` (INBOX-02, the read mark): it is the read position already declared at I-097.
 
 "No launch task" means no launch-priority task or artboard writes the model: it is accounted for at NX-04 or NX-03 rather than declared as collected by the app. The **LEAD CHECK** that keeps NX-04 honest is on that row: after the build, search `src/` for the routes that write these tables.
 
-### 1b. Models launch tasks will add (not in the schema yet)
+### 1b. Models launch tasks will add (checked against the 872cf45 schema: none of these is in it)
 
 | Item | Model or field set | Personal data in it | Written by | Goes to | Declared in |
 |---|---|---|---|---|---|
 | I-108 | SchoolEnrollment (SCHOOLS-07, SCHOOLS-09) | user, course, intake, fee, consent time; the school is emailed name, email, phone, course, intake | SCHOOLS-06, 07, 09 | The school (by email through Resend) | PI-08, FI-03 |
 | I-109 | SchoolLinkClick (SCHOOLS-10) | user, course, time of a click on the school link | SCHOOLS-08, 10 | The school sees only a per-school code | AA-10 |
 | I-110 | AdEvent (ADS-05) | user, placement, day of a sponsored-card view, tap or skip | ADS-01, ADS-05 | Advertisers get daily totals only | AA-05 |
-| I-111 | AdCampaign and AdCreative (ADS-03) | advertiser name and copy (business, no person) | ADS-02, 03, 06 (staff) | Nobody outside WAWU | NX-03 |
-| I-112 | TgifReaction and TgifRead (HOME-10) | user, day of an Amen, a read, a share | HOME-09, 10 | Nobody outside WAWU | AA-11 |
-| I-113 | TGIF on Home preference (HOME-11) | per-account switch | HOME-11, SETTINGS-01 | Nobody outside WAWU | AA-09 |
 | I-114 | MoneyRequest (INBOX-15) | requester, payer, amount, note, status | INBOX-15, INBOX-20 | The other person in the chat | FI-04, MS-01 |
 | I-115 | BillReminder (BILLS-06) | bill name, meter or customer number, usual amount, due day, remind offset, paid mark | BILLS-05, 06 (on hold) | Nobody outside WAWU; push through Expo | FI-08, AA-07 |
 | I-116 | Recent searches and popular searches (EXPLORE-05) | typed search text per user, counted queries from everyone | EXPLORE-02, 04, 05, SCHOOLS-04 | Nobody outside WAWU | AA-03 |
 | I-117 | Device push token (INBOX-03) | Expo push token per phone | INBOX-03, INBOX-21 | Expo push service and Google FCM | AA-07 |
 | I-118 | Support thread (SUPPORT-01) | typed messages with WAWU plus a payment or piece reference | SUPPORT-01 | WAWU staff | MS-01 |
-| I-119 | Education entries and featured works (ME-16) | school, field, years; work title, role, client, year, link, media | ME-11, ME-16 | Public on the profile | PI-16, PF-01, PF-02 |
 | I-120 | Door staff list (EVENTS-05) | other accounts a host picks to check tickets | EVENTS-05, EVENTS-09 | Door staff see holder names at check-in | PI-03, PI-01 |
 | I-121 | Account deletion record and reason (SETTINGS-05, 06, 08) | deletion time, freeze, optional reason | SETTINGS-05, 06, 08 | The wallet provider is told to freeze the wallet | PI-21, HK-05 |
 
@@ -166,7 +185,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 
 ## 2. Launch tasks: what the person types, picks, uploads or signs, and what is logged
 
-183 files carry `priority: launch`: 182 tasks and `TEMPLATE.md`, the template. Status on 6 Oct 2026: 62 `done`, 120 `todo`, 1 `building` (RELEASE-01, now `verifying`). Each task appears at least once; a task with no input of its own says why. Kinds: typed, picked, uploaded, signed, captured (camera), device (stays on the phone), received (comes back to the person), logged, none.
+183 files carry `priority: launch`: 182 tasks and `TEMPLATE.md`, the template. Status on mobile `origin/main` 6df916d merged, 6 Oct 2026: of the 182 tasks, 70 `done`, 111 `todo` and 1 `verifying` (RELEASE-01). Each task appears at least once; a task with no input of its own says why. Kinds: typed, picked, uploaded, signed, captured (camera), device (stays on the phone), received (comes back to the person), logged, none.
 
 | Item | Task | Artboards | Kind | What | Goes to | Declared in |
 |---|---|---|---|---|---|---|
@@ -180,10 +199,11 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-129 | AUTH-01 | A22 A23 A24 A25 | typed | A23 email for a reset link (A24 shows it) | Resend sends the link | PI-02 |
 | I-130 | AUTH-01 | A22 A23 A24 A25 | logged | Refresh token (hash) and the request IP in rate-limit counters | WAWU ID | PI-04, AP-02 |
 | I-131 | AUTH-02 | A1 A2 | picked | A2 discover or earn (account type) | Nobody outside WAWU | PI-05 |
-| I-132 | AUTH-03 | none | typed | A4 six-digit phone code, and the phone it was sent to | The code is texted through the wallet provider† | PI-07 |
+| I-132 | AUTH-03 | none | typed | A4 six-digit phone code, and the phone it was sent to | Until AUTH-07 ships (R-39): the code is texted through the wallet provider†; after it the sign-up code goes by email | PI-07 |
 | I-133 | AUTH-03 | none | logged | Phone verified time, wrong-try counters per phone | WAWU ID | PI-07, AP-02 |
-| I-134 | AUTH-04 | A3 A4 A15 | typed | A3 email, phone number, password | Phone: SMS through the wallet provider†; email: Resend | PI-02, PI-07, PI-04 |
-| I-135 | AUTH-04 | A3 A4 A15 | typed | A4 and A15 the code, resent on request | Wallet provider† (SMS) | PI-07 |
+| I-134 | AUTH-04 | A3 A4 A15 | typed | A3 email, phone number, password | Phone: until AUTH-07 ships (R-39) a text code through the wallet provider†; email: Resend | PI-02, PI-07, PI-04 |
+| I-135 | AUTH-04 | A3 A4 A15 | typed | A4 and A15 the code, resent on request | Until AUTH-07 ships (R-39): wallet provider† (SMS); after it, Resend (email code) | PI-07, PI-02 |
+| I-417 | AUTH-04 | A3 A4 A15 | device | The sign-up waiting for its code, kept in the phone's secure store under `wawu.signup.phone` (the phone number being verified) and `wawu.signup.attempt` (the attempt secret `POST /auth/signup` returned) so quitting between A3 and A4 does not lose it; cleared on confirm, on a new sign-up and on sign-in (`src/features/auth/signupStore.ts`). The browser build keeps both in `sessionStorage`, for the tab only | Nobody outside WAWU | HK-03, PI-07, NX-05 |
 | I-136 | AUTH-05 | none | typed | The email code that proves the email (or skip) | Resend sends the code | PI-02 |
 | I-137 | AUTH-05 | none | logged | Sign-up steps done and when (email, creator setup, interests, follows) | WAWU ID | AA-09 |
 | I-138 | AUTH-06 | A11 A12 A13 | picked | A11 checklist taps (open paid messages, profile, first piece, wallet) | Nobody outside WAWU | AA-09 |
@@ -226,7 +246,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-175 | EVENTS-10 | none | logged | Refund of each ticket price to the buyer's wallet | Wallet provider† | FI-03, FI-04 |
 | I-176 | EXPLORE-01 | X1 X15 X2 X3 X13 X14 | picked | X1 to X3 category chips and Follow taps | Nobody outside WAWU | AA-01 |
 | I-177 | EXPLORE-02 | X4 X5 X6 X7 | typed | X5 and X6 search text; recent searches kept, Clear removes them | Nobody outside WAWU | AA-03 |
-| I-178 | EXPLORE-03 | none | none | Backend: taxonomy filter and a staff-set featured flag | Nobody outside WAWU | NX-03 |
+| I-178 | EXPLORE-03 | none | none | Backend: taxonomy filter and the staff-set featured list (`FeaturedCreator`: creator, position, the featuring admin's id; I-416) | Nobody outside WAWU | NX-02, NX-03 |
 | I-179 | EXPLORE-04 | X8 X9 X10 X11 X12 | typed | X6 to X12 search text across creators, communities, content | Nobody outside WAWU | AA-03 |
 | I-180 | EXPLORE-04 | X8 X9 X10 X11 X12 | picked | Follow and Join taps | Nobody outside WAWU | AA-01, AA-12 |
 | I-181 | EXPLORE-05 | none | logged | Recent searches saved per account; real queries counted for popular searches | Nobody outside WAWU | AA-03 |
@@ -336,7 +356,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-285 | MONEY-11 | none | logged | Balance read from the wallet provider† (never summed) | Wallet provider† | FI-04 |
 | I-286 | MONEY-12 | none | logged | Account opening sends first and last name, phone, email, address, date of birth, BVN, NIN | Wallet provider† | PI-01, PI-02, PI-06, PI-07, PI-12, PI-13 |
 | I-287 | MONEY-13 | none | none | Money screens lead to Open your wallet (an error shape) | Nobody outside WAWU | FI-04 |
-| I-288 | MONEY-14 | none | typed | W37 the six-digit PIN reset code, sent by SMS | Wallet provider† | FI-04, PI-07 |
+| I-288 | MONEY-14 | none | typed | W37 the six-digit PIN reset code, sent by SMS today and moving to email in the wallet rebuild (R-39) | Wallet provider† (SMS, until the rebuild) | FI-04, PI-07 |
 | I-289 | MONEY-14 | none | logged | Device key registered: deviceId, publicKey, biometric label | Nobody outside WAWU | AA-08 |
 | I-290 | MONEY-15 | none | typed | W26 transaction search and filter | Nobody outside WAWU | FI-04 |
 | I-291 | MONEY-16 | none | logged | A nightly comparison emailed to the owner on a mismatch | Resend | FI-04, PI-02 |
@@ -397,7 +417,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-346 | WALLET-03 | W8 W13 W14 | typed | W8 bank and account number; the account name returned | Wallet provider† (name lookup and send) | FI-01 |
 | I-347 | WALLET-04 | W26 W27 W28 | typed | W26 search and filter; W27 Report a problem opens support chat | Nobody outside WAWU | FI-04, MS-01 |
 | I-348 | WALLET-05 | W15 W17 W19 | typed | W17 a withdrawal amount to the payout account | Wallet provider† | FI-04, FI-01 |
-| I-349 | WALLET-06 | W35 W36 W37 | typed | W36 a new PIN twice; W37 the reset code | Wallet provider† (SMS) | FI-04, PI-07 |
+| I-349 | WALLET-06 | W35 W36 W37 | typed | W36 a new PIN twice; W37 the reset code | Wallet provider† (SMS until the wallet rebuild moves the code to email, R-39) | FI-04, PI-07 |
 | I-350 | WALLET-06 | W35 W36 W37 | picked | W35 fingerprint or face for payments | Nobody outside WAWU | AA-08 |
 | I-351 | WALLET-07 | none | logged | Transfer between two accounts with a note and a receipt | Wallet provider† | FI-04 |
 | I-352 | WALLET-08 | none | logged | Server-side recipient search by name, handle or phone; recent recipients | Nobody outside WAWU | PI-07, FI-01 |
@@ -418,14 +438,14 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 
 | Item | Model | Personal data in it | Written by | Goes to | Declared in |
 |---|---|---|---|---|---|
-| I-361 | `WawuUser` | first, middle and last name, email, phone, gender, country, state, passwordHash, occupation, accountType, tick dates, status, email and phone verified times, cross-app ids (onboardingRef, wawuafricaAppUserId, beautyUserId, basketUserId), legacy trustScore (not shown, R-18), deletedAt | AUTH-01, 03, 04, 05, ME-12, SETTINGS-03, 08 | WAWU ID; email through Resend; phone codes through the wallet provider† | PI-01, PI-02, PI-03, PI-04, PI-05, PI-07, PI-12, FI-03, HK-05 |
+| I-361 | `WawuUser` | first, middle and last name, email, phone, gender, country, state, passwordHash, occupation, accountType, tick dates, status, email and phone verified times, cross-app ids (onboardingRef, wawuafricaAppUserId, beautyUserId, basketUserId), legacy trustScore (not shown, R-18), deletedAt | AUTH-01, 03, 04, 05, ME-12, SETTINGS-03, 08 | WAWU ID; email through Resend; until AUTH-07 ships (R-39) the phone code is texted through the wallet provider† | PI-01, PI-02, PI-03, PI-04, PI-05, PI-07, PI-12, FI-03, HK-05 |
 | I-362 | `RefreshToken` | token hash, expiry (one per signed-in phone) | AUTH-01, SETTINGS-03 | Nobody outside WAWU | PI-04, HK-03 |
 | I-363 | `PasswordResetToken` | token hash, expiry | AUTH-01 (A23, A24) | Resend sends the link | PI-04, PI-02 |
 | I-364 | `ActivationToken` | token hash, expiry (the web email activation) | No launch screen (the app proves email by a code) | Resend | PI-02 |
 | I-365 | `PhoneChangeRequest` | new phone, code hash | No launch screen (planned, `id:src/auth/auth.service.ts`) | Nobody outside WAWU | PI-07 |
 | I-366 | `OtpSession` | phone, code hash (the web phone login over WhatsApp) | No mobile screen (LEAD CHECK PI-07: search `src/` for `/auth/otp`) | Meta WhatsApp, only if the app ever calls it | PI-07 |
 | I-367 | `EmailVerificationCode` | code hash, expiry | AUTH-05 | Resend | PI-02 |
-| I-368 | `PhoneVerification` | phone, code hash, attempts, claimEmail, email code hash, expiry | AUTH-03, AUTH-04 | Wallet provider† (SMS); Resend (email code) | PI-07, PI-02 |
+| I-368 | `PhoneVerification` | phone, code hash, attempts, claimEmail, email code hash, expiry | AUTH-03, AUTH-04 | Until AUTH-07 ships (R-39): wallet provider† (SMS); Resend (email code) | PI-07, PI-02 |
 | I-369 | `PhoneGuessBudget` | phone, wrong-try counters and lock times | AUTH-03, AUTH-04 | Nobody outside WAWU | PI-07, AP-02 |
 | I-370 | `SignupProgress` | which sign-up steps were done and when | AUTH-05, AUTH-06 | Nobody outside WAWU | AA-09 |
 | I-371 | `SignupEmailCode` | email hash, code hash, send times | AUTH-05 | Resend | PI-02 |
@@ -438,7 +458,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | Item | Field | How it is given | Goes to | Declared in |
 |---|---|---|---|---|
 | I-375 | email | A3 typed | Resend sends the sign-up code | PI-02 |
-| I-376 | phone number (+234 only) | A3 typed; A4 six-digit code | Wallet provider† (SMS) | PI-07 |
+| I-376 | phone number (+234 only) | A3 typed; A4 six-digit code | Until AUTH-07 ships (R-39): wallet provider† (SMS); after it the code goes by email and the phone is not texted | PI-07 |
 | I-377 | password | A3 typed | Hashed at WAWU ID | PI-04 |
 | I-378 | account type: user or creator | A2 picked | Nobody outside WAWU | PI-05 |
 | I-379 | occupation (an optional field of `SignupDto`; the app asks it on A5, not at sign-up) | A5 typed (KYC-03) | Nobody outside WAWU (kept by the Hub) | PI-12 |
@@ -454,7 +474,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 
 | Item | Receiver | What it receives | Declared in |
 |---|---|---|---|
-| I-385 | Fintava† / Loma Bank† (the wallet provider, to be replaced by Nuvion) | Name, email, phone, address, date of birth, gender, BVN, NIN, selfie; recipient account numbers for name lookups; payout and transfer data; sign-up and PIN-reset SMS codes; bill data if bills ship | PI-01, PI-02, PI-06, PI-07, PI-12, PI-13, PF-01, FI-01, FI-04, FI-05 |
+| I-385 | Fintava† / Loma Bank† (the wallet provider; R-39 switches Fintava† off and Nuvion in, reversibly) | Name, email, phone, address, date of birth, gender, BVN, NIN, selfie (R-39: the selfie step uses Nuvion's hosted check, or is dropped); recipient account numbers for name lookups; payout and transfer data; until AUTH-07 and the wallet rebuild move codes to email (R-39), the sign-up and PIN-reset SMS codes; bill data if bills ship (bills are on hold, FI-06) | PI-01, PI-02, PI-06, PI-07, PI-12, PI-13, PF-01, FI-01, FI-04, FI-05 |
 | I-386 | Resend (email) | Sign-up code, password reset link, data-export link, and when built the school report, legal booking details and the nightly check | PI-02, PI-08, PI-18, FI-04, HK-04 |
 | I-387 | Expo push service (and Google FCM) | Push token and notification content | AA-07, FI-08 |
 | I-388 | Expo Updates | Platform, runtime version and channel at each update check | AP-02 |
@@ -497,17 +517,19 @@ Searches ran over the 183 launch task files on this branch and over `package.jso
 
 ## 5. Totals
 
+Pinned to the Hub schema at 872cf45 (116 models). Computed from this file on 6 Oct 2026, round 5.
+
 | Part | Items |
 |---|---|
-| 1. Hub models in the schema | 107 |
-| 1b. Models launch tasks will add | 14 |
-| 2. Launch-task inputs and logged items, across 183 task files | 239 |
+| 1. Hub models in the schema | 116 |
+| 1b. Models launch tasks will add (not in the schema) | 10 |
+| 2. Launch-task inputs and logged items, across 183 task files | 240 |
 | 3a. WAWU ID models | 14 |
 | 3b. Sign-up fields | 10 |
 | 4. Receivers | 14 |
 | 4b. Searched for and not found, and fact rows | 13 |
-| **Items found** | **411** |
-| **Items mapped to a row of DATA-SAFETY.md** | **411** |
+| **Items found** | **417** |
+| **Items mapped to a row of DATA-SAFETY.md** | **417** |
 | **Unmapped** | **0** |
 
 Distinct rows of `DATA-SAFETY.md` used: see the check above; the form has 72 referenced rows.

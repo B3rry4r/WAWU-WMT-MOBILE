@@ -30,7 +30,7 @@ RELEASE-03, after launch.
   emulator. Money paths are exercised on a phone only once OPS-10 has put the
   live Fintava† setup on the droplet.
   † = to be replaced when the Nuvion switch lands (the wallet provider is changing from Fintava† to Nuvion, 6 Oct 2026;
-  nothing about Nuvion is in this repository, so the sandbox and live-setup wording here is redone then, not deleted now).
+  `DECISIONS.md` R-39 records the switch, and the sandbox and live-setup wording here is redone when it lands, not deleted now).
 
 ## Who has what
 

@@ -1,6 +1,6 @@
 # Play screenshot plan: Who Made This
 
-Prepared by the RELEASE-01 builder on 4 Oct 2026 and revised on 6 Oct 2026 against mobile `origin/main` 8484195.
+Prepared by the RELEASE-01 builder on 4 Oct 2026 and revised on 6 Oct 2026 against mobile `origin/main` 6df916d.
 
 **Short answer: no listing-quality screenshot can be taken today.** The five tabs are title-only placeholders, and
 every feature screen a store visitor should see (Home, Explore, a profile, Communities, Wallet home, Events, Schools) is
@@ -28,9 +28,9 @@ the real one the app shows). Hide the notification shade and use the phone's 100
 
 | # | Shot | Artboard | Why it sells | Built on main today? | Needs before it can be shot |
 |---|---|---|---|---|---|
-| 1 | Home, Today | H1 | The first thing a visitor sees | **No** (`Home` tab is a title) | HOME-01, and its depends_on list (HOME-02, HOME-07, HOME-09, HOME-10, HOME-11, EXPLORE-02, ME-02, ME-04, ME-14, WALLET-02, WALLET-05, BILLS-01, EVENTS-01, LEGAL-02, SCHOOLS-03) |
+| 1 | Home, Today | H1 | The first thing a visitor sees | **No** (`Home` tab is a title) | HOME-01, and its depends_on list (HOME-02, HOME-07, HOME-09, EXPLORE-02, ME-02, ME-04, ME-14, WALLET-02, WALLET-05, BILLS-01, EVENTS-01, LEGAL-02, SCHOOLS-03; the backend HOME-10 and HOME-11 are `done` since 6 Oct) |
 | 2 | For you feed with a video and a locked piece | H2, H3 | "Preview before you pay" | **No** | HOME-02, HOME-07 (backend HOME-04 to 06 are done) |
-| 3 | Explore: categories and featured creators | X1, X2 | Discovery | **No** | EXPLORE-01 (and EXPLORE-03 backend, EXPLORE-02) |
+| 3 | Explore: categories and featured creators | X1, X2 | Discovery | **No** | EXPLORE-01 (and EXPLORE-02; the backend EXPLORE-03 is `done` since 6 Oct) |
 | 4 | A creator's profile: content, services, about | M1, M2 | "Get paid for what you know" | **No** | ME-01 (needs ME-04, ME-11, ME-12 and more) |
 | 5 | Content detail with the Unlock sheet | H19, H14 | Naira pricing, fees shown before paying | **Partly**: the pay sheet (MONEY-03 `done`) exists but is a dev preview route that redirects home in a release build | HOME-03, HOME-12, WALLET-15 is done |
 | 6 | Communities or a paid-question thread | I24 or I2 | Chat and paid questions | **No** | INBOX-05, or INBOX-10 |

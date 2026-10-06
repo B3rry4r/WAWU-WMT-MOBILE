@@ -1,15 +1,19 @@
 # Google Play listing: Who Made This
 
-Prepared by the RELEASE-01 builder on 4 Oct 2026 and revised on 6 Oct 2026 against mobile `origin/main` 8484195, `DECISIONS.md`, the code, and the
+Prepared by the RELEASE-01 builder on 4 Oct 2026 and revised on 6 Oct 2026 against mobile `origin/main` 6df916d, `DECISIONS.md`, the code, and the
 backends' main branches (read only). **Submission is the owner's alone**, from the owner's own machine, with the store
 keys kept off Expo (`docs/BUILDS.md`). Nothing in this folder has been sent to Google or Expo.
 
 **Wallet provider is changing (6 Oct 2026).** The money rail is being switched from Fintava† (account held at Loma
 Bank†) to **Nuvion**. Every mention of Fintava† or Loma Bank† in this folder is marked with a dagger and is **to be
-replaced when the Nuvion switch lands**; none was deleted. Nothing about Nuvion (what it receives, whether it is a
-service provider or a third party, where it stores data, its licence holder) is in this repository, so the data-safety
-rows, the privacy text and the optional description sentence that name the provider must be redone from Nuvion's own
-documents once the switch is built. † = to be replaced when the Nuvion switch lands.
+replaced when the Nuvion switch lands**; none was deleted. `DECISIONS.md` R-39 records the switch, and this folder
+asserts only what R-39 says: Nuvion replaces Fintava†, reversibly (Fintava† is switched off, not deleted, and one setting
+picks the provider); codes go by email, not SMS (AUTH-07 moves sign-up verification to the email code, the wallet rebuild
+moves forgot-PIN codes); the selfie step uses Nuvion's hosted check if its API can start one, and is dropped if Nuvion's
+KYC has none; Nuvion has no bill payments; its NGN fees and limits are awaited. R-39 does not say what Nuvion receives,
+whether it is a service provider or a third party, or where it stores data, so the data-safety rows, the privacy text
+and the optional description sentence that name the provider must be redone from Nuvion's own documents once the switch
+is built. † = to be replaced when the Nuvion switch lands.
 
 **Who does what (6 Oct 2026).** The Play account is an existing **organisation** account. The website
 (`https://wawuafrica.com`) and the support email (`support@wawuafrica.com`, the one the live site uses) exist. The
@@ -32,15 +36,15 @@ stated on the page I read.
 
 The listing text below is ready. The app is not. On main today the five tabs (Home, Explore, Inbox, Wallet, Me) are
 title-only placeholders (`src/features/shell/TabScreen.tsx`); what is built is sign-up and sign-in, Open your wallet
-(BVN and NIN, details, selfie, account, PIN), Edit profile with social links, and the payout bank account. 140 of 207
-tasks are `todo` (66 are `done`, and RELEASE-01 itself is `verifying`). This is expected (RELEASE-01 depends on SHELL-03 and KYC-04 only; RELEASE-02 submits after
+(BVN and NIN, details, selfie, account, PIN), Edit profile with social links, and the payout bank account. 132 of 207
+tasks are `todo` (74 are `done`, and RELEASE-01 itself is `verifying`; the eight train 1 tasks that merged on 6 Oct, ADS-03, ADS-04, EXPLORE-03, HOME-10, HOME-11, INBOX-02, ME-16 and WALLET-08, are all backend and add no phone screen). This is expected (RELEASE-01 depends on SHELL-03 and KYC-04 only; RELEASE-02 submits after
 CHECK-3), but these items are **Google policy requirements that a feature task must meet first**, so the owner should
 know the list now:
 
 | # | What Google requires | State on main | What unblocks it |
 |---|---|---|---|
 | B1 | **Account deletion** (User Data policy): an in-app path to delete the account and its data, and a public web link where a person can request deletion. | No delete screen (SETTINGS-05 `todo`, SETTINGS-06 `todo`, SETTINGS-08 `todo`). The Hub today schedules a 48-hour grace and has no cancel route, while R-17 says 30 days cancelled by signing in. The hard-delete service (`AccountPurgeService`) has no caller. The web has `/settings/delete-account`, but it sits behind sign-in (the web's `RequireAuth` sends signed-out visitors to sign-in), so it is not a page a person who cannot sign in can use. No public deletion-request page exists that I could find. | SETTINGS-05, 06 and 08 built and verified; the owner publishes a web page (or form, or a mailbox) that names the app and says how to ask for deletion. Both go in Console, "App content", "Data safety". |
-| B2 | **Privacy policy URL** that is public, loads without login, names the app or developer, and covers what the app collects. | SETTINGS-02 is `done` on main: the app has About, Terms and Privacy policy screens that read the owner's text from the Hub (`GET /about`, `GET /policies/{slug}`, JSON). That does not clear B2, for three reasons. (a) Those routes return JSON, not a web page; Play's field needs a public page that loads without sign-in. (b) The Hub holds no text until the owner enters it: until a superadmin sends `PUT /admin/policies/terms` and `/privacy` (title, date, sections), the app shows "not available" (BACKEND_GAPS G-140). (c) The existing web text (`https://wawuafrica.com/terms`, HTTP 200 signed out on 4 Oct 2026; `/privacy/policy` redirects to its privacy section) is the web's generic "Master Terms, Privacy and Platform Policy": it does not say "Who Made This" and names none of the items listed in the next column. | The owner (with their lawyer) writes one Terms and Privacy text, then does **both**: (1) enters it through the admin route (G-140) so the app shows it, and (2) publishes the **same text** on a public web page, whose address goes in Console. The privacy text must name: BVN and NIN; the selfie and the face match; Fintava† and Loma Bank† (who hold the wallet and the identity data); the school that receives an enrolling person's name, email and phone (when the schools enrolment tasks ship, SCHOOLS-06 and SCHOOLS-07); the bill providers and billers that receive a meter, smartcard or phone number (only if bills ship: they are on hold, `DATA-SAFETY.md` FI-06); the interests a person picks at sign-up (when AUTH-06 ships); the legal consultant who reads matter details, bookings and a typed-name signature (with the IP address saved with it), and whoever files business-name registrations at CAC (when the legal tasks ship); Google Gemini, if the legal chat ships; push notifications (Expo's push service and Google's FCM); update checks (Expo Updates); IP-address request logs; the hosting outside Nigeria (DigitalOcean: Hub and WAWU ID on a droplet in NYC1, managed Postgres in NYC3, file storage in SFO3, `hub:deploy/README.md`); email through Resend; sign-up codes texted through Fintava†; how long records are kept after deletion; and how to ask for deletion. It must match `DATA-SAFETY.md`. |
+| B2 | **Privacy policy URL** that is public, loads without login, names the app or developer, and covers what the app collects. | SETTINGS-02 is `done` on main: the app has About, Terms and Privacy policy screens that read the owner's text from the Hub (`GET /about`, `GET /policies/{slug}`, JSON). That does not clear B2, for three reasons. (a) Those routes return JSON, not a web page; Play's field needs a public page that loads without sign-in. (b) The Hub holds no text until the owner enters it: until a superadmin sends `PUT /admin/policies/terms` and `/privacy` (title, date, sections), the app shows "not available" (BACKEND_GAPS G-140). (c) The existing web text (`https://wawuafrica.com/terms`, HTTP 200 signed out on 4 Oct 2026; `/privacy/policy` redirects to its privacy section) is the web's generic "Master Terms, Privacy and Platform Policy": it does not say "Who Made This" and names none of the items listed in the next column. | The owner (with their lawyer) writes one Terms and Privacy text, then does **both**: (1) enters it through the admin route (G-140) so the app shows it, and (2) publishes the **same text** on a public web page, whose address goes in Console. The privacy text must name: BVN and NIN; the selfie and the face match; Fintava† and Loma Bank† (who hold the wallet and the identity data); the school that receives an enrolling person's name, email and phone (when the schools enrolment tasks ship, SCHOOLS-06 and SCHOOLS-07); the bill providers and billers that receive a meter, smartcard or phone number (only if bills ship: they are on hold, `DATA-SAFETY.md` FI-06); the interests a person picks at sign-up (when AUTH-06 ships); the legal consultant who reads matter details, bookings and a typed-name signature (with the IP address saved with it), and whoever files business-name registrations at CAC (when the legal tasks ship); Google Gemini, if the legal chat ships; push notifications (Expo's push service and Google's FCM); update checks (Expo Updates); IP-address request logs; the hosting outside Nigeria (DigitalOcean: Hub and WAWU ID on a droplet in NYC1, managed Postgres in NYC3, file storage in SFO3, `hub:deploy/README.md`); email through Resend; sign-up codes (texted through Fintava† until AUTH-07 ships, then sent by email through Resend, R-39) and PIN-reset codes (texted until the wallet rebuild moves them to email); how long records are kept after deletion; and how to ask for deletion. It must match `DATA-SAFETY.md`. |
 | B3 | **Payments policy**: Play requires Google Play Billing for in-app purchases of digital goods and services, with listed exemptions. | The app sells digital items through the Naira wallet, not Play Billing: unlocking a creator's content, WAWU Credits, verification ticks. Tickets, school fees, bills, legal consultations and person-to-person transfers are plausibly services or transfers outside the exemption question, but I am not the one to rule on it. | **OWNER DECISION** (it is a business and legal call, so no task can settle it): read Play's Payments policy and the alternative-billing programmes open to Nigeria, decide which items are exempt or covered, and record the ruling in `DECISIONS.md`. A rejection on this ground would arrive after submission. |
 | B4 | **User-generated content policy**: the app must let people report objectionable content and block abusive users. | Blocking is built on the backend (SETTINGS-04) and drawn (Z4, Z5, Z12; "Block someone from their profile menu"). The canvas draws no control to report a piece, comment, message or profile (the only "Report a problem" is for payments, W27, which opens support chat, SUPPORT-01). The backend has a DM-report table. Creator uploads go through review (ME-08 "in review"). | **OWNER DECISION**: whether a "Report" action is added (a design change, so it needs a ruling in `DECISIONS.md`), or whether support chat plus block is judged enough for review. |
 | B5 | **Camera and photos** declarations. | The selfie (A6) and profile pictures (M8) need `expo-camera`, `expo-image-manipulator` and `expo-image-picker`, which are not installed (SHARED-CHANGES row 8 and KYC-03 #1, both `open`). Today's phone build says "We can't open your camera". | The owner applies SHARED-CHANGES rows 8 and KYC-03 #1 and a new build is made. The permission list on the Play-built app must then match `DATA-SAFETY.md`, section "Permissions". |
@@ -133,7 +137,7 @@ question for the owner.
 | Feature graphic (1,024 x 500) | **Owner supplies** (not in the repo). JPEG or 24-bit PNG, no alpha. |
 | Contact email | `support@wawuafrica.com` (live; the address the live site uses) |
 | Website | `https://wawuafrica.com` |
-| Phone | optional; leave blank unless the owner wants one public |
+| Phone | Leave blank. Default (agent), owner may override (a public phone number is the owner's to choose to publish). |
 | Privacy policy URL | A public page carrying the owner's final Terms and Privacy text (B2). Until then `https://wawuafrica.com/privacy/policy` (redirects to the privacy section of `/terms`) loads, but it is the web's generic text. |
 | Account deletion URL | A public page that explains how to ask for deletion (B1). Not built yet; its address goes here. |
 
@@ -222,7 +226,7 @@ owner reads each answer and submits it; Google issues the rating, I do not predi
 ## 5. Ads declaration
 
 - **"Does your app contain ads": Yes.** ADS-01 to ADS-05 (the TGIF sponsored card, its admin screens, data model,
-  serving and view and tap counts) are all `priority: launch` (all `todo` on this branch), so the launch build shows a
+  serving and view and tap counts) are all `priority: launch` (ADS-03, the data model, and ADS-04, serving a card, are `done` on main since 6 Oct; ADS-01, ADS-02 and ADS-05 are `todo`), so the launch build shows a
   sponsored card. Ads are booked by the WAWU team and invoiced by hand (R-15); the app shows a sponsored card on Today
   and counts views and taps (ADS-04, ADS-05). Google counts this as ads even though it is not an ad network.
 - **LEAD CHECK, not an owner question:** at submission the lead checks the answer against the build that is
@@ -251,7 +255,7 @@ owner reads each answer and submits it; Google issues the rating, I do not predi
 ## 7. App access (instructions Google's reviewer needs)
 
 Most of the app is behind sign-in, so Google requires login instructions. A reviewer cannot sign themselves up:
-sign-up needs a Nigerian phone number that receives a text code and an email code (AUTH-03, AUTH-05; R-36: +234 numbers
+sign-up needs a Nigerian phone number that receives a text code and an email code today (AUTH-03, AUTH-05; when AUTH-07 ships, R-39 moves sign-up verification to the email code; R-36: +234 numbers
 only), and opening a wallet needs a real Nigerian BVN, NIN and a face that matches the BVN photo (R-6). So the **lead**
 makes a **review account** in the live system before submission and keeps it working through review. This is a lead
 task, not an owner question.
@@ -261,7 +265,7 @@ task, not an owner question.
 1. **Wait for the production build to exist** (`eas build -p android --profile production`, then installed from Play
    internal testing). The account is made through the app's **own sign-up on the production backend**, never by writing
    to a database: email, a +234 phone number the lead controls, password, the phone code and the email code
-   (AUTH-04, AUTH-05). Choose the "earn" account type (sends `accountType: creator`), which shows the most screens.
+   (AUTH-04, AUTH-05; when AUTH-07 ships, the email code only, R-39). Choose the "earn" account type (sends `accountType: creator`), which shows the most screens.
    Unblocked when: an internal-testing release is installable and `https://api.wawuafrica.com` and
    `https://id.wawuafrica.com` answer the sign-up routes.
 2. **Give it a profile** through Edit profile (ME-06): a name, a handle, a short bio, and pictures once
@@ -286,7 +290,7 @@ Most of the app needs an account. Sign in with email and password:
 1. Open the app, tap "Sign in".
 2. Email: <LEAD FILLS: review account email>
 3. Password: <LEAD FILLS: review account password>
-Do not create a new account: sign-up needs a Nigerian (+234) phone number that receives a text code.
+Do not create a new account: sign-up needs a Nigerian (+234) phone number and a code sent to you. <LEAD EDITS to match the submitted build: a text code until AUTH-07 ships, an email code after>
 This account <has / does not have> an open wallet. <If it does: its wallet holds a small test balance.>
 Opening a new wallet asks for a Nigerian BVN and NIN and a selfie that matches the BVN photo, so it cannot be
 completed with a test identity; please use the account above to review the wallet screens.
@@ -297,22 +301,22 @@ No other login steps, no two-step codes, no region restriction on sign-in.
 
 ## 8. Claims table: where each part of the description comes from
 
-"Status" is what `tasks/*.md` says on mobile main 8484195 (checked on 6 Oct 2026). A paragraph may go into Console only when every task in its row is
+"Status" is what `tasks/*.md` says on mobile main 6df916d (checked on 6 Oct 2026). A paragraph may go into Console only when every task in its row is
 `done` (or `review`) and CHECK-3 has passed.
 
-| Description paragraph | Source | Tasks (status on main 8484195) |
+| Description paragraph | Source | Tasks (status on main 6df916d) |
 |---|---|---|
 | Set a price in Naira; free pieces; unlock from wallet; tips | R-8 (free allowed), R-5 (Naira), R-10 (purchase pays Fintava†'s charge) | ME-04 `todo`, ME-08 `todo`, HOME-12 `todo`, HOME-13 `todo`, HOME-15 `todo` |
 | Content and events go through review | ME-08 "in review" (M24); EVENTS-04 E15 (review step). The text says only content and events: nothing shows a service listing is reviewed (PROS-03 draws "Under review" for a professional's listing, P8, but that is a separate task). | ME-08 `todo`, EVENTS-04 `todo`; ME-09 `done` (backend rejection reason) |
 | Earnings land in the wallet automatically | R-11 | WALLET-16 `todo` |
 | Paid questions; free chat; send and request money in chat | R-13 | INBOX-10 `todo`, INBOX-12 `todo`, INBOX-19 `todo`, INBOX-20 `todo`; backend INBOX-06, 08, 09 `done` |
-| Home, Explore, search, follow, preview, ticks | R-7, R-8; HOME and EXPLORE tasks | HOME-01 to HOME-03 `todo`, EXPLORE-01 to 04 `todo`, ME-12 `todo`; backend HOME-04 to 06 `done` |
+| Home, Explore, search, follow, preview, ticks | R-7, R-8; HOME and EXPLORE tasks | HOME-01 to HOME-03 `todo`, EXPLORE-01, 02 and 04 `todo`, EXPLORE-03 `done` (backend), ME-12 `todo`; backend HOME-04 to 06 `done` |
 | Communities, Credits as a count | R-5; "WAWU Credits" name ruling | INBOX-05 `todo`, INBOX-13 `todo`, INBOX-14 `todo`; backend INBOX-01 `done` |
 | Events, QR ticket, verified hosts, check-in | CLAUDE.md of the web (hosting is verified-only, B3); EVENTS tasks | EVENTS-01, 03, 04, 06, 08, 09 `todo` |
 | Schools and courses, enrol and pay | R-2, R-12, R-33 | SCHOOLS-03, 06, 08 `todo`; backend SCHOOLS-01 `done` |
 | Professionals; legal help through a chat | R-14, R-18 | PROS-01, PROS-03 `todo`, LEGAL-02, 04, 06 `todo` |
 | Wallet: BVN, NIN, selfie, address, PIN | R-6; KYC-01 to KYC-05 | **built**: KYC-03, 04, 05 `done` (selfie needs the camera module, B5) |
-| Pay, send to users and banks, add money by bank transfer, bills, transactions, receipts | R-19, R-33; MONEY, WALLET, BILLS | MONEY-17 `todo`, WALLET-02, 03, 05 `todo`, BILLS-01 to 03 `todo`; MONEY-15, WALLET-18 `done`. **Bills are on hold (a recorded fact, not an owner decision):** since 6 Oct 2026 the wallet provider is moving from Fintava† to Nuvion, which offers no bill payments; bills stay off until the owner decides to drop them or add a bills provider (recorded in `tasks/RELEASE-01.md`, "Builder round 4", "Recorded facts"). The sentence "pay electricity, airtime, data and cable TV bills" and the bill rows of `DATA-SAFETY.md` (FI-05, FI-08) ship only if bills ship: LEAD CHECK against the build submitted, and remove them if the build has no bills. |
+| Pay, send to users and banks, add money by bank transfer, bills, transactions, receipts | R-19, R-33; MONEY, WALLET, BILLS | MONEY-17 `todo`, WALLET-02, 03, 05 `todo`, BILLS-01 to 03 `todo`; MONEY-15, WALLET-08 (recipient search, backend), WALLET-18 `done`. **Bills are on hold (a recorded fact, not an owner decision):** since 6 Oct 2026 the wallet provider is moving from Fintava† to Nuvion, which offers no bill payments; bills stay off until the owner decides to drop them or add a bills provider (recorded in `tasks/RELEASE-01.md`, "Builder round 4", "Recorded facts"). The sentence "pay electricity, airtime, data and cable TV bills" and the bill rows of `DATA-SAFETY.md` (FI-05, FI-08) ship only if bills ship: LEAD CHECK against the build submitted, and remove them if the build has no bills. |
 | PIN, or fingerprint or face | R-26, MONEY-09, MONEY-14 | `done` (biometric needs `expo-local-authentication`, in `package.json`) |
 | Fees shown before you confirm | R-10, R-23 | MONEY-03 `done` (pay sheet); WALLET-15 `done` |
 | Block, notifications, download data, delete account | SETTINGS tasks, R-17 | SETTINGS-01 `todo`, SETTINGS-05 `todo`; backend SETTINGS-04, 07 `done`. (About, Terms and Privacy screens: SETTINGS-02 `done`, but the app shows "not available" until the owner enters the text, G-140.) |

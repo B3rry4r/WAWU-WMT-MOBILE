@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 31 | 27 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 39 | 27 | 7 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 
@@ -105,6 +105,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · RELEASE-01 · Builder round 5 (docs only, status verifying): mobile main 6df916d merged; the inventory is re-pinned to backend 872cf45 and lists all 116 Hub models by real name (the nine train 1 models named, `FeaturedCreator` declared at NX-02 as a staff placement), 417 items found and mapped, 0 unmapped, and its check now fails on any schema model missing from section 1 (proved by deleting a row); HK-03 corrected (the pending sign-up's phone and attempt secret are in the secure store, new row I-417); R-39 applied (codes by email after AUTH-07, selfie step may be dropped, no "nothing about Nuvion" claim); train 1's eight tasks and the task counts (132 `todo`, 74 `done`) brought up to date.
 - 6 Oct 2026 · RELEASE-01 · Verified round 4 (independent, docs only, status building): the inventory check exits 0 (411 of 411 mapped, 72 form rows all cited, all 183 launch tasks and all 116 Hub and 14 WAWU ID models read); D10 to D17 and the minor items closed; owner corrections, six owner decisions, bills as the recorded R-39 fact, daggers, em-dash 0 and listing limits hold; two low defects open: the nine train 1 models (Hub 872cf45) are named wrongly or not at all and the inventory is pinned at a94f338 (D18), and HK-03 says only tokens are stored on the phone while `signupStore.ts` also keeps the pending sign-up's phone and attempt secret (D19); trial merge of main 6df916d conflicts only in the generated PROGRESS.md.
 - 6 Oct 2026 · RELEASE-01 · Builder round 4 (docs only, status verifying): the data-safety form is now built from an exhaustive inventory, `docs/release/DATA-INVENTORY.md` (every one of 107 Hub models, 14 planned models, 239 inputs and logged items across the 183 launch task files, 14 WAWU ID models and 10 sign-up fields, 14 receivers, 13 searched-for-and-not-found rows: 411 items, 411 mapped, 0 unmapped, checked by a command in the file), and every form row has a reference; the verifier's D10 to D17 are closed (legal consultation flow with matter details, booking, typed-name signature with IP and CAC inputs, CV fields, chat attachments, the school click, the device id and biometric label, the blank line, the owner heading, and the bills wording recorded as a fact: Nuvion has no bill payments, on hold in each BILLS-01 to 06 file, not a release decision); who consults and who files at CAC stay LEAD CHECKs with the fact that settles each.
 - 6 Oct 2026 · RELEASE-01 · Verified round 3 (independent, docs only): round 2 defects D5 to D9 and both minor items closed (own scan of all 39 AndroidManifest.xml and 15 .aar files matches the permissions table); new omissions found walking the launch tasks: legal consultation data undeclared (D10, medium), profile CV fields (D11), chat attachments (D12), school-link click (D13), approval device id (D14), plus an unsourced "bills frozen" phrased as an owner decision (D15), D-4 and D-5 under the owner heading (D16) and a broken table (D17); status building. OpenWalletScreen timed out once under load, 37 of 37 alone.
@@ -119,4 +120,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
 - 6 Oct 2026 · WALLET-08 · Merged to main in the lead's merge train (wmt/TRAIN-1): find a recipient by phone, name or handle, and recent recipients; the lead's task.
 - 6 Oct 2026 · EXPLORE-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): Explore categories, creators by category and admin-featured creators; Developer 1's task.
-- 6 Oct 2026 · HOME-11 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF on Today saved to the account, GET and PATCH `/settings/tgif`; Developer 1's task.
