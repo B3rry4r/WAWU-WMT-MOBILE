@@ -13,6 +13,8 @@ decisions: [R-10, R-19, R-20, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
+On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
+
 # BILLS-04 · Pay bills from the wallet (backend)
 
 ## Read first
