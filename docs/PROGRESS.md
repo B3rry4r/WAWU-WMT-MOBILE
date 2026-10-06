@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 30 | 27 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 39 | 27 | 7 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio (You)
 
@@ -105,6 +105,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · HOME-02 · Verified (independent session, `b4b32bd` on backend `872cf45`): V1, V4, V6, V9 passed, V5 failed on two defects (the offer bar cuts "Pay from wallet" and its title at prices above about ₦2,500; at 360 x 640 the PDF book overlaps the free-pages bar), 17 of 20 mutants caught; back to building.
 - 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-203 to G-208.
 - 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
 - 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
@@ -119,4 +120,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · HOME-11 · Built, awaiting verification (DEV): `GET/PATCH /settings/tgif` saves "TGIF on Today" to the account (table `TgifPreference`, purge and export maps, contract regenerated); protected suite 244 of 244 fresh; gaps G-170, G-171.
 - 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
-- 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
