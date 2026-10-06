@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 54 | 46 | 32 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
+| building | 0 | 0 | 0 | 1 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 25 | 12 | 2 | 0 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price (Developer 3)
 
@@ -70,6 +70,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · PROS-02 · Verifier report, round 1: the branch as is passes its specs, the protected suite (253/253) and the gates; trial-merged onto backend main `a94f338` it conflicts in one hunk of `professional.service.ts` and then shows blocked people in the new directory routes, leaves `ProfessionalLocation` out of the data export (`data-export-map.spec.ts` fails) and carries a migration that sorts before main's newest; impossible reply times read as 1 minute; city is only a length; gap ids G-53, G-54 and G-56 collide on mobile main; status building
 - 3 Oct 2026 · PROS-02 · Professionals backend: the canvas's 7 fields mapped to categories (`GET /professionals/fields`, `engineering` added), `GET /professionals/directory?field=` and `/directory/{id}` with city, usual reply time (median of real replies) and price in kobo, `PUT /professionals/location` (new table); web routes unchanged; status verifying
 - 3 Oct 2026 · AUTH-05 sign-up sequence merged (Developer 1; wawu-id PR #5, dbcb2f8). The server enforces the sign-up order; identity contract re-synced to wawu-id main. The G-16 duplicate-phones script runs only when the owner runs it with `--owner-approved`.
 - 3 Oct 2026 · AUTH-05 · Fix round 2: the G-16 script's revert undoes a set with a held phone-only row and still refuses a new row on the number (D2); U3 recorded as a default; status verifying
@@ -84,4 +85,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · MONEY-08 · Verified round 3: no open defect, status review (backend 359ad06 with main 13a6f77, mobile 0846579). Both round-2 defects reproduced on 2c5dee8 and closed: 16 reversal shapes off by a kobo or missing a figure, on a completed or absent-failed send, or a second reversalRef, are noted and move nothing, and a matching reversal is marked once under 5 races of 6 posts, two consumers and checks; 17 empty or inconsistent history pages (empty with a next page, past the total, a changing total, `hasNextPage` "true") wait instead of failing as absent. MONEY-07's body-hash key keeps replays to one row, stores a contradicting delivery (noted), and moves the ledger once for re-serialised copies of every event; its migration keeps 5 old rows intact in either order with MONEY-12. Fee-only differences end pending and noted in both orders and under races. Protected 253/253, contract 2,976 passed / 0 failed, gates 16 fail / 10 warn (+LEDGER-STATUS-CHECK-AFTER only), 8 of 8 spot mutants killed. Findings: a reversal of a completed send stays recorded, so its end depends on arrival order (unclear).
 - 3 Oct 2026 · MONEY-08 · Round 3 (backend 359ad06, status verifying): a reversal applies only with the row's amount, fee and total to the kobo and only to a pending or Fintava-failed send, anything else is written on `discrepancy` and moves nothing; a history walk is complete only when Fintava says no next page or it passed the send's time, with every page's figures consistent (an empty page while more follow waits, never failed as absent); a disagreement ends `pending` and noted in either order (a completed row is put back); MONEY-07's store keys on the SHA-256 of the body (additive migration `20261003140000_fintava_webhook_delivery_key`), so a second body for one status reaches the ledger. 18 of 18 mutants killed; both mains merged (MONEY-12, AUTH-02); gaps renumbered G-38, G-39. Finding: every bank send whose sender records a fee other than Fintava's `charges` stops (G-39).
 - 3 Oct 2026 · MONEY-08 · Verified round 2: round 1's 4 defects closed, 2 new defects, status building (backend 2c5dee8, mobile caa870c; neither main moved). A new send settles in its first pass behind 3,000 waiting rows, after a restart and in steady state (150 of 150, at most 50 checks a pass); revivals stay swept with no discrepancy; absent never wins against a delivery stored or consumed at any of 6 timings; a cut-off walk waits. Defects: a reversal with other figures (₦200 back for ₦100) is marked reversed with nothing on `discrepancy`; an empty history page while Fintava says more pages follow counts as a complete walk, so a 404 becomes absent. Protected 253/253, contract 2,832 passed, gates 16 fail / 9 warn (same fails as main), migrations with MONEY-12 identical in either order.
-- 3 Oct 2026 · MONEY-08 · Round 2 (backend 2c5dee8, status verifying): the sweep's schedule is on the ledger row (additive migration `20261003120000_ledger_status_schedule`), claimed 50 a pass with SKIP LOCKED, fresh rows first, so a new send settles in its first pass behind 3,000 waiting rows and after a restart; a revival goes on `revivedAt`, not `discrepancy`, and stays swept; absent is a compare-and-set (row version, no Fintava sighting, no stored delivery) and needs a complete history walk (MONEY-06 `history_incomplete`); any figure difference through a webhook or revival is a stop that moves no status (MONEY-10 aligned with WORKFLOW section 10). 10 of 10 mutants killed; 3 sandbox GETs.

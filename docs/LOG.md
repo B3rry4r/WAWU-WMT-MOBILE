@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · PROS-02 · Verifier report, round 1: the branch as is passes its specs, the protected suite (253/253) and the gates; trial-merged onto backend main `a94f338` it conflicts in one hunk of `professional.service.ts` and then shows blocked people in the new directory routes, leaves `ProfessionalLocation` out of the data export (`data-export-map.spec.ts` fails) and carries a migration that sorts before main's newest; impossible reply times read as 1 minute; city is only a length; gap ids G-53, G-54 and G-56 collide on mobile main; status building
 - 3 Oct 2026 · PROS-02 · Professionals backend: the canvas's 7 fields mapped to categories (`GET /professionals/fields`, `engineering` added), `GET /professionals/directory?field=` and `/directory/{id}` with city, usual reply time (median of real replies) and price in kobo, `PUT /professionals/location` (new table); web routes unchanged; status verifying
 - 3 Oct 2026 · AUTH-05 sign-up sequence merged (Developer 1; wawu-id PR #5, dbcb2f8). The server enforces the sign-up order; identity contract re-synced to wawu-id main. The G-16 duplicate-phones script runs only when the owner runs it with `--owner-approved`.
 - 3 Oct 2026 · AUTH-05 · Fix round 2: the G-16 script's revert undoes a set with a held phone-only row and still refuses a new row on the number (D2); U3 recorded as a default; status verifying
