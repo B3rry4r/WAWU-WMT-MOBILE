@@ -3,17 +3,17 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 62 of 182.**
+**Launch tasks done: 70 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 45 | 35 | 30 | 30 |
-| building | 0 | 0 | 0 | 1 |
-| verifying | 0 | 0 | 0 | 0 |
+| todo | 44 | 31 | 27 | 30 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 0 | 0 | 0 | 0 |
-| done | 38 | 23 | 4 | 1 |
+| done | 39 | 27 | 7 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff (Developer 3)
 
@@ -34,12 +34,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying (Developer 2)
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
+- [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
 - [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
+- [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
+- [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
@@ -73,13 +76,18 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN (You)
 - [SETTINGS-03](../tasks/SETTINGS-03.md) Change password and sign out for real (WAWU ID) (Developer)
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
+- [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account (Developer)
 - [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy (Developer)
+- [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
+- [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
+- [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
+- [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
@@ -89,26 +97,26 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
-- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account, [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators
-- **Developer 2:** [INBOX-02](../tasks/INBOX-02.md) Live updates for chat, [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-03](../tasks/ADS-03.md) Ads data model
+- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader
+- **Developer 2:** [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-06](../tasks/ADS-06.md) Admin ad endpoints, [ADS-05](../tasks/ADS-05.md) Count ad views and taps
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · EVENTS-05 · Fix round 2 built, status verifying (backend e0a3501, main 872cf45 merged): D4 the default door label is the lowest free "Door n" (spec fails with the old line), migration renamed 20261006110000 after main's newest, mobile contract and types re-synced from the branch contract. Backend spec 25 tests, protected 253/253, gates 16/51/76 as main.
 - 6 Oct 2026 · EVENTS-05 · Verified round 2: D1 (blocks), D3 (cross-event row) and M2 (export) fixed, D2 labels unique under concurrency but the default is not the lowest free "Door n" (D4, low, untested); status building (backend 59a0600 merged with main 872cf45, mobile e42a809). Migration folder sorts before five of main's again (M1b, rename at merge). Protected 253/253, full suite 0 failures main lacks, live walk with two door staff scanning one code: one valid.
 - 6 Oct 2026 · EVENTS-05 · Fix round 1 built, status verifying (backend 59a0600, main a94f338 merged): D1 blocked people are a 404 when added as door staff, D2 door labels unique under concurrency (lock per event, taken label is 409), D3 test that another event's staff row cannot be removed; migration renamed 20261005090000, EventDoorStaff decided in the export map. Backend spec 24 tests, protected 253/253, gates 16/34/76 as main.
 - 6 Oct 2026 · EVENTS-05 · Verified: 3 defects, status building (backend eb2a835 on a055b4f, mobile c1f30ee; main is now a94f338). D1: a host can add someone as door staff although one has blocked the other, and sees their name, handle and avatar (SETTINGS-04 answers such a lookup 404). D2: door labels are not unique, so three people added at once all read "Door 1". D3: removing a staff row of another event is not pinned by a test (mutant survives). Passed: door staff and other organisers refused on every organiser route, removed staff lose access at once, a forged or another event's code is `invalid` with identical answers, 20 parallel scans of one ticket give 1 valid and 19 already used (in process and over HTTP on the built Hub), no phone, email or BVN in any new response, counts equal ticket rows; protected 253/253, full suite 133 suites with 5 load failures that pass alone, 13 of 13 own mutants killed by the two specs together. Trial merge on main: one conflict (module imports), then `data-export-map.spec` fails until `EventDoorStaff` is decided in the export map, and the migration folder must be renamed to sort after `20261004141500`.
 - 3 Oct 2026 · EVENTS-05 · Built (backend eb2a835, status verifying): sold per hosted event (E17) counted as the dashboard counts it, shared links with tickets sold, door staff a host adds by WAWU id or handle, and a door check-in for host or staff with the holder's name and "already used by Door 1"; one additive table; protected 253/253, full suite 126 of 133 suites (7 pinned to :4001 not runnable here).
-- 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
-- 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
-- 4 Oct 2026 · SETTINGS-02 · Built, awaiting verification: About, Terms and Privacy policy (Z9 to Z11) on new public Hub routes `GET /about` and `GET /policies/:slug`; the owner's text and bank lines come from the Hub, with a "Not available yet" state until filled in.
-- 4 Oct 2026 · OPS-07 · Merged to main by the lead (4625842): docs/WEB-ONLY-FEATURES.md lists the 89 web-only features for the web team under WEB-01 (2 built, 9 drawn not built, 78 not in the app; 40 rows in 20 money/data groups); two wording fixes made at merge.
-- 4 Oct 2026 · OPS-07 · Verified round 2 (independent, docs only): round 1 defects D1 to D5 and U1 closed; 12 states checked against src and task status; WEB-01 and M20 correct; 64 rows re-searched against the canvas, no miss; `npm run check` exit 0; 2 minor defects open (row 58 is not drawn as a control, M20 says the app sells ticks while ME-12 and ME-18 are todo); status building.
-- 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
-- 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
-- 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
-- 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
-- 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
-- 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
+- 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
+- 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
+- 6 Oct 2026 · ADS-04 · Merged to main in the lead's merge train (wmt/TRAIN-1): serve one sponsored card, `GET /ads?placement=`; Developer 2's task.
+- 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
+- 6 Oct 2026 · WALLET-08 · Merged to main in the lead's merge train (wmt/TRAIN-1): find a recipient by phone, name or handle, and recent recipients; the lead's task.
+- 6 Oct 2026 · EXPLORE-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): Explore categories, creators by category and admin-featured creators; Developer 1's task.
+- 6 Oct 2026 · HOME-11 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF on Today saved to the account, GET and PATCH `/settings/tgif`; Developer 1's task.
+- 6 Oct 2026 · HOME-10 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF reactions, readers and shares on three new tables; Developer 1's task.
+- 6 Oct 2026 · ME-16 · Merged to main in the lead's merge train (wmt/TRAIN-1): featured works and education, twelve new routes under `/users`, two new tables; Developer 1's task.
+- 4 Oct 2026 · HOME-10 · Built (backend, wmt/HOME-10): TGIF reactions, readers and shares, five new routes under /tgif, three new tables, status verifying; G-160 to G-163
