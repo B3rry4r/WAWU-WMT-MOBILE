@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · ADS-06 · Verifier (independent): V1, V2, V3, V4 and V9 run; pause stops serving on the next request on the real ADS-04 code (trial merge clean onto main and ADS-04; 372 specs pass there), every route refuses user, expired, forged, refresh and wrong-role tokens (176 of 176), 25 of 25 own mutants killed, protected suite 253 of 253 and the lock unchanged; one low defect open (D1: a time in the year 0000 is a 500 on create, edit and the list filters), status building.
 - 6 Oct 2026 · ADS-06 · Built, awaiting verification: admin ad endpoints (backend branch `wmt/ADS-06`): create, edit, schedule, pause, resume, end, delete a draft, list, detail and report under `/api/hub/admin/ads`, with an audit row for every change (migration `20261006130000_admin_ads_audit`); a pause stops serving on the next request; views, taps and skips wait for ADS-05 (G-194).
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.

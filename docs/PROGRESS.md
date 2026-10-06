@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 28 | 31 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
+| building | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 1 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
 
@@ -101,6 +101,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · ADS-06 · Verifier (independent): V1, V2, V3, V4 and V9 run; pause stops serving on the next request on the real ADS-04 code (trial merge clean onto main and ADS-04; 372 specs pass there), every route refuses user, expired, forged, refresh and wrong-role tokens (176 of 176), 25 of 25 own mutants killed, protected suite 253 of 253 and the lock unchanged; one low defect open (D1: a time in the year 0000 is a 500 on create, edit and the list filters), status building.
 - 6 Oct 2026 · ADS-06 · Built, awaiting verification: admin ad endpoints (backend branch `wmt/ADS-06`): create, edit, schedule, pause, resume, end, delete a draft, list, detail and report under `/api/hub/admin/ads`, with an audit row for every change (migration `20261006130000_admin_ads_audit`); a pause stops serving on the next request; views, taps and skips wait for ADS-05 (G-194).
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
 - 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
@@ -115,4 +116,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
 - 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
 - 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
-- 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
