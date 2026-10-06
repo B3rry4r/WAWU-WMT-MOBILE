@@ -327,6 +327,24 @@ These are identifiers, not names a user reads. Changing them would break the Exp
 - Each task that builds an affected screen: every task listed above carries R-37 in its `decisions`.
 - The web follows after launch.
 
+### R-38 · The bottom bar does not get a Studio tab
+*Owner, 6 Oct 2026 ("bugs like this would not be condoned", about the boss brief v2.0's centre "Create ✨" Studio tab).*
+The bottom bar stays **Home · Communities · Explore · Messages · Settings**, and Create stays the floating button for creator accounts. This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
+
+**Carried out by:** every navigation and AI-tools task; a verifier treats a bar with a sixth or swapped slot as a defect.
+
+### R-39 · The wallet provider moves from Fintava to Nuvion, reversibly
+*Owner, 6 Oct 2026.*
+- **Provider:** Nuvion replaces Fintava. Nuvion is licensed in Nigeria (owner, from Nuvion directly); do not re-raise it.
+- **Reversible:** Fintava is switched off, not deleted. One setting (`WALLET_PROVIDER`) picks the provider, and rollback is changing it and restarting (MONEY-20).
+- **No SMS:** codes go by email, as before. Sign-up verification moves to the email code (AUTH-07); forgot-PIN codes move to email in the wallet rebuild.
+- **Selfie:** use Nuvion's hosted selfie check if its API can start one for our users; if Nuvion's KYC has none, the selfie step is dropped.
+- **Facts from Nuvion's own dashboard code:** `POST /counterparty-lookups` returns the account holder's name for a NIP account; `/kyc/liveness/sessions` starts the hosted selfie check; `/fee-simulations` previews a fee.
+- **Bills:** Nuvion has no bill payments. Bills stay off until the owner drops them or picks a separate bills provider.
+- **Waiting on:** Nuvion's NGN fees and limits (the owner is asking).
+
+**Carried out by:** MONEY-20 (the provider seam), AUTH-07 (email sign-up codes), then a Nuvion adapter task once fees and limits are in. R-1's Loma Bank licence line is superseded by this ruling.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
