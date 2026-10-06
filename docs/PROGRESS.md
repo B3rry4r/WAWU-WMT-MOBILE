@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 30 | 30 |
-| building | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 1 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 1 |
+| review | 0 | 0 | 0 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Built and verified, waiting for the owner's sign-off
+## Being built (or fixing verifier findings)
 
 - [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price (Developer 3)
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · PROS-02 · Verifier report, round 2 (second independent session): all six round-1 defects reproduced closed against backend `fe4bb87` (blocked people both ways in list, total and profile; export section; reply and city fixes; gap ids), but backend main moved to `872cf45` during the check so the migration now sorts before six main folders, a city of Hangul filler letters is still blank on the card, and G-144 collides with open EVENTS-02; trial merge onto `872cf45` is clean (contract regenerates 6 order-only lines); protected 253/253, same 16 gate fails, 17 mutants 15 killed; status building
 - 6 Oct 2026 · PROS-02 · Verifier report, round 2: all six round-1 defects confirmed fixed (blocked people on the directory list, profile and the web's list in both directions, data export section, migration order, impossible reply times, city text, gap ids G-144 to G-146); full backend suite 153 suites, 3,672 of 3,691 passed, the same two suites failing as on main (152 suites, 3,647 of 3,665); protected 253/253; mobile check exit 0; two owner questions carried (feed card fields, `engineering` not regulated); status review
 - 6 Oct 2026 · PROS-02 · Builder fix round 1 (backend `fe4bb87`): blocked people hidden from the directory and its profile, the city has its own data-export section, migration renamed `20261004150000`, impossible reply times not counted, a city must be a place name, gap ids now G-144 to G-146; status verifying.
 - 6 Oct 2026 · PROS-02 · Verifier report, round 1: the branch as is passes its specs, the protected suite (253/253) and the gates; trial-merged onto backend main `a94f338` it conflicts in one hunk of `professional.service.ts` and then shows blocked people in the new directory routes, leaves `ProfessionalLocation` out of the data export (`data-export-map.spec.ts` fails) and carries a migration that sorts before main's newest; impossible reply times read as 1 minute; city is only a length; gap ids G-53, G-54 and G-56 collide on mobile main; status building
@@ -111,4 +112,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
 - 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
 - 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
-- 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
