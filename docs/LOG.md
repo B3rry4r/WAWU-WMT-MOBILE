@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 6 Oct 2026 · ADS-05 · Verified round 1, back to building: one defect (a view or tap is counted for a campaign `GET /ads` would never serve to that person, for example one whose event is closed or does not exist); counting, the once-a-day key, the daily totals, 50 and 400 parallel reports, privacy, purge and export all hold; 20 own mutants all killed; owner questions on tap-before-view and per-address limits.
 - 6 Oct 2026 · ADS-05 · Built, awaiting verification: `POST /ads/:id/events` counts a view, tap or skip once per person per UTC day (backend branch `wmt/ADS-05`); daily totals equal the raw events; read helper `AdsCountsService` for the admin report; additive migration `20261006133700_ads_event_counts`; owner questions G-197 to G-200.
 - 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.

@@ -7,7 +7,7 @@ order: 39
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [ADS-04]
 decisions: [R-15]
 passes: [V1, V2, V3, V4, V9]
@@ -51,7 +51,53 @@ Backend branch `wmt/ADS-05` (on `wmt/ADS-04` / ADS-03, merged in, not rebased; n
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier session, 6 Oct 2026, round 1. Heads under test: backend `wmt/ADS-05` e3f38aa, mobile 0ebfdb0. Evidence folder: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/va05/` (logs named below). Own worktrees (detached), own Postgres databases `va05_*`, Hub on :5011 (built `dist`), mock WAWU ID on :5012 (the full suite needs a mock on :4001, see NOT RUN). `origin/main` is backend a94f338 and mobile 8484195, unmoved. The branch's diff against `origin/wmt/ADS-04` is exactly the builder's 14 backend files; the mobile diff is `BACKEND_GAPS.md`, `SHARED-CHANGES.md`, `docs/LOG.md`, `docs/PROGRESS.md` and this file (the builder also named `tasks/INDEX.md`; it is unchanged against ADS-04, so nothing is missing). No local copy of anything main has.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed (3 suites NOT RUN, listed below) | Backend `tsc --noEmit` 0 (`tsc.log`). eslint on the 10 changed .ts files 0 problems (`eslint-changed.log`; whole-repo eslint NOT RUN, the builder's 4514 is not re-counted). `scripts/gates/run.py`: main 16 fail / 34 warn / 76 accepted (732 files); branch 16 / 36 / 76 (750 files); the 16 fail lines are identical (`gm.f` against `gb.f`, diff empty); the +2 warns are `PROVISIONAL(ADS-SERVE-RULE)` (ADS-04) and `PROVISIONAL(ADS-WEIGHT-RANGE)` (ADS-03), both with why=; ADS-05 adds none (`gates-main.txt`, `gates-branch.txt`). Tripwire: 0 added lines match. `npm run contract:build` leaves `git status` empty (`contract-build.log`). Migration `20261006133700_ads_event_counts` sorts after the last folder on origin/main (`20261004141500_legal_documents`). Secret scan of the full diff, every 8-character window of the Fintava key: 0 hits. Backend full suite (`full.txt`, jest run in band, hub-rate-limits left out, database `va05_full_test`, fresh migrated and seeded, mock on :5012): 154 suites, 147 passed, 7 failed, 3639 of 3788 tests passed. Of the 7: `fintava-stall` passed alone (120/120, `stall.txt`); `money-statement`, `notification-switches` and `account` passed on rerun with the mock set by `WAWU_ID_BASE_URL_TEST` (`rerun7.txt`); `credits-state`, `kyc-submission` and `privacy-settings` hard-code `http://localhost:4001` and stay NOT RUN. `hub-rate-limits.contract.spec.ts` alone on the host network: 22/22 (`ratelimits.txt`). Mobile `npm run check` exit 0 on 0ebfdb0: 43 suites, 754 tests, gates 0 fail on 195 files, tasks check ok (`mobile-check2.log`). The first mobile run (`mobile-check.log`) had 2 jest timeouts (CreatePinScreen, OpenWalletScreen at 20 s) while the backend suite, the protected run and a build shared the CPU; both pass on the quiet rerun. |
+| V2 Contract | failed (D1) | The 3 checks of the spec pass (`ads-specs.log`: 3 ads suites, 145/145). Over real HTTP on the built Hub (`attack2.out`, `attack3.out`, `attack4.out`, `attack5.out`, `attack6.out`): 401 for no token and a tampered token; 400 for a non-uuid id, an extra body key (`viewerWawuId`), and `VIEW`, `View`, ` view`, `impression`, `click`, null, 1, `["view"]`, `{"a":1}`; 404 with an identical body for paused, ended, not yet begun and unknown id; 404 for an upper-cased uuid and a trailing slash (so the id cannot be respelled to dodge the key); a second token for the same person adds nothing. D1: a report is counted for a card the person was never served. |
+| V3 Regression | passed | `scripts/protected-routes/run.sh --fresh HEAD`: 253 tests passed, "all 244 required tests passed" (`protected.log`); the lock is unchanged (origin/main a94f338). `account-purge`, `route-shadowing`, `data-export-map` and `account-data-map` specs are in the full run and pass. |
+| V4 Field trace | passed | Writer: `POST /ads/:id/events` (person from the verified token only; a body key naming a person is a 400). Storage: `AdEvent` (person, campaign, kind, UTC day; the primary key is the dedupe) and `AdDailyTotal` (no person). Readers: `AdsCountsService` only, which reads `AdDailyTotal` and an aggregate `groupBy` of `AdEvent`; no route and no response field carries a person, a count by person or a timestamp of a view (`grep adEvent` outside the spec: one reader, the aggregate). Both new tables are decided: `AdEvent` OWNED in `account-data-map.ts`, `AdEvent` in `EXPORT_EXCLUDED` with a reason (the specs pass); `AdDailyTotal` and `AdCampaign` hold no person column, so neither map needs them. After 400 mixed parallel reports over 10 people the raw rows per campaign and kind equal the stored daily totals exactly (`attack5.out`, SQL read-back). |
+| V9 Live seam | NOT RUN (partly done) | Done: the built Hub on :5011 with the mock's real `POST /auth/login` and `/auth/register` tokens (no injected token), campaigns inserted by SQL, counts read back from the tables. Not done: "create something and read it back through the API". There is no route that creates a campaign (ADS-06) or reads the counts (G-200 says whoever merges second wires `AdsCountsService` into the admin report). Unblocked by: ADS-06's admin report returning `delivery` from `AdsCountsService`, then one login, one `POST` and a read of the report. |
+
+### Capability checks, as written
+
+- [x] **Opening the same card twice in a day counts one view.** Passed. Same person, same card, same day, over HTTP: 5 replays, a second login (second token) and 50 parallel identical reports (all 200) leave one view row and a total of 1 (`attack2.out`; the 50-parallel run used one spoofed `X-Forwarded-For` per request, trusted only from loopback by the Hub's own rule, so the rate limit did not hide the race). 60 parallel reports of the three kinds from one person count 1 view, 1 tap, 1 skip. The rate limit alone (no spoofing) let 15 of 50 through and answered 35 with 429; the one that counted was still one.
+- [x] **Daily totals match the raw events.** Passed. 400 parallel mixed reports (10 people, 2 campaigns, 3 kinds): `AdEvent` rows per campaign and kind equal `AdDailyTotal` (6/7/5 and 7/6/5), no 5xx, no deadlock.
+
+### Race, abuse and privacy probes
+
+- **Race, 50 parallel identical views:** 50 answered 200, 1 counted (rule: 1). 400 mixed: totals equal rows. The count and the row come from one statement, so a parallel burst cannot split them.
+- **Replays and forged ids:** see V2. A paused, ended, scheduled-for-later or unknown campaign is never counted and the four 404 bodies are byte-identical (`{"statusCode":404,"message":"Ad not found","data":null}`).
+- **Rate limit:** no `@Throttle` on the route, so no row is owed in the hub-rate-limits spec; the app-wide 20 a second and 200 a minute per address apply (a burst of 40 from one address: 15 to 20 answered, the rest 429). The per-person rule is once per campaign, kind and UTC day.
+- **Privacy:** the answer to a first report and a repeat is the same `{accepted:true}`; the 404s say nothing about why; no response or reader exposes a person (V4).
+
+### Mutants of my own (scratch edits in the worktree, each restored, tree clean after; `mutate.py`, `mut/run.log`, `mut/run2.log`)
+
+20 mutants, all KILLED by `ads-events.contract.spec.ts` or the account-purge specs, 0 survived: M1 totals counted from the report instead of the new row; M2 conflict updates instead of nothing; M3 person key replaced by the campaign id; M4 window end ignored; M5 paused counts as served; M6 day cut one hour late; M7 total day taken from the database date; M8 an unserved campaign answers 200; M9 status 201; M10 purge entry dropped; M11 skip added to the tap total; M12 creative requirement dropped; M13 window start ignored; M14 skip stored as a view; M15 total upsert overwrites instead of adding; M16 `no-store` header dropped; M17 `reconcile` ignores skips; M18 `summary` ignores its campaign filter; M19 range end loses its last day; M20 skips lost from the total. The spec is strong on counting, the key, the window and the day. It never states the "served to this person" rule, which is why D1 lives behind a green spec.
+
+### Merge trials (throwaway worktrees, nothing committed)
+
+Backend `origin/wmt/ADS-05` onto `origin/main` (a94f338): already contains it, a fast-forward, 0 conflicts. Onto `origin/wmt/ADS-04` (aef0699): already contains it, 0 conflicts. Mobile `origin/wmt/ADS-05` onto `origin/main` (8484195) and onto `origin/wmt/ADS-04` (09eb5b1): both already ancestors, 0 conflicts. The shared files `app.module.ts` and `contract/openapi.json` will conflict with whichever of ADS-06, INBOX-02 and INBOX-07 merges next (as the SHARED-CHANGES rows say); not trialled.
+
+### Findings
+
+**defect D1: a report is counted for an ad the person was never served (and could never be served).** `AdsEventsService.record` checks only status, window and creative. `GET /ads` also requires the card's event to be open (ads-serving.ts rule 5: published, not cancelled, not finished, host not blocked by this viewer), and its own comment says a campaign is "served" by all five rules. So anyone signed in can add a view, a tap and a skip for any scheduled or live campaign, whatever it points at. Reproduction (`attack4.out`): on the live database, two `live` campaigns whose creative points at an event id that does not exist; as a signed-in user `GET /ads?placement=tgif_card` and `?placement=today_slot` both answer `data: null`, yet `POST /ads/<id>/events` with `view` and with `tap` answer 200 and `AdDailyTotal` rises (campaign 6: 2 views, 1 tap). The same holds for a cancelled event, a finished event and a host who blocked the viewer. The builder's code comment ("Whether the card's event is still open is not asked: the person saw the card") fits a card that was on screen when the event closed; it does not fit a card that was never served, and nothing records that the card was served, so the server cannot tell the two apart. Advertisers are invoiced on these counts (R-15), so a count nobody was shown is a wrong invoice. Fix is the builder's: at least apply rule 5 (per viewer, as `GET /ads` does) before counting, or record or sign what `GET /ads` served and count only against that; add a spec line for it (no spec states the rule today). This is not covered by G-198 (that only asks about late reports).
+
+`unclear` (owner):
+- U1 (extends G-198) A tap needs no earlier view, so the tap rate can pass 100%. Seen on the live database: campaign 5 with 1 view and 2 taps (rate 2.0, `attack4.out`); one account sending only taps adds 1 a day. G-198 already names it and asks the owner; the helper returns `ctr` above 1 as it stands.
+- U2 No per-address bound beyond the global rate limit. Per person is once a day per kind; per address nothing counts distinct people. 60 different accounts from one address counted 60 views on one campaign in about 4 seconds, all 200 (`attack3.out`); the ceiling is the app-wide 200 a minute per address per route (more over several routes or addresses). Whether making accounts is costly enough in real WAWU ID (the mock's `/auth/register` needs no verification) decides whether this matters; if it does, a per-address count of distinct people per campaign per day is one more rule. Not invented here.
+- U3 (G-199) Which cards a person opened is left out of the data export. It names the person and a day, so whether it belongs in their export is the owner's call; the spec requires only that it is decided, and it is.
+
+No `differs-for-recorded-reason`.
+
+### NOT RUN
+
+- `credits-state.contract.spec.ts`, `kyc-submission.contract.spec.ts`, `privacy-settings.contract.spec.ts`: each hard-codes a mock WAWU ID at `http://localhost:4001`, and :4001 may not be used on the host. They touch nothing in ads and failed here only with "fetch failed". Unblocked by: running the three in the namespace runner (own network namespace with a mock on :4001); my attempt to prepare that runner was refused by the session's permission layer, so I did not run it.
+- Whole-repo eslint (the builder's 4514 count): not re-counted; the changed files are clean.
+- V9 read-back through the API: see the V9 row.
+- Mobile contract sync (`npm run api`): the mobile contract copy waits for the backend merge; nothing in the app calls the route yet.
 
 ## Owner sign-off
 
