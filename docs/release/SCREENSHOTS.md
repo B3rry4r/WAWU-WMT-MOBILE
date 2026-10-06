@@ -1,6 +1,6 @@
 # Play screenshot plan: Who Made This
 
-Prepared by the RELEASE-01 builder on 4 Oct 2026 against `origin/main` 794b3ed.
+Prepared by the RELEASE-01 builder on 4 Oct 2026 and revised on 6 Oct 2026 against mobile `origin/main` 8484195.
 
 **Short answer: no listing-quality screenshot can be taken today.** The five tabs are title-only placeholders, and
 every feature screen a store visitor should see (Home, Explore, a profile, Communities, Wallet home, Events, Schools) is

@@ -7,7 +7,7 @@ order: 172
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: building
+status: verifying
 depends_on: [SHELL-03, KYC-04]
 decisions: [R-24]
 passes: [V1, V10]
@@ -220,6 +220,42 @@ Verifier, 6 Oct 2026, independent (wrote none of it). Branch `wmt/RELEASE-01` at
 **Minor, not defects:** (1) `PLAY-LISTING.md:35` says "142 of 207 tasks are `todo`"; the branch has 140 `todo`, 66 `done`, 1 `verifying` (RELEASE-01) of 207. (2) `PLAY-LISTING.md` and `SCREENSHOTS.md` headers and the section 8 heading still read "main 794b3ed" (mobile main is 8484195); the statuses themselves are right. (3) D-1 names Resend, Expo and Google as service providers but not DigitalOcean (hosting); the privacy text list does name it. (4) A transfer's optional note (WALLET-02 W9, "For the shoot, thank you") is free text sent with a transfer and is not named in the form. (5) SETTINGS-01 privacy and notification switches (Z4, Z2) are stored per-account preferences (`PrivacySettings`, `NotificationSettings`); not named, Google has no category for app settings.
 
 **NOT RUN, each with its unblocking fact:** capability checks 1 and 2 and V10 (an internal-testing release of `africa.wawu.wmt` on Play, the review account signing in on the owner's phone and showing a value only the server holds; the second also needs Console's policy status and pre-launch report on that build); the real built manifest (a production build, then `bundletool dump manifest` or Console's App bundle explorer); live TLS grade and the HTTP 301 claim (an SSL test on `api.wawuafrica.com` and `id.wawuafrica.com` by the lead; a live host call is forbidden to this role); the review account (the lead, after an installable internal-testing release); which party consults and files for LEGAL-06 (D10: a read of `wawu-dashboard`, not available here).
+
+## Builder round 4
+
+Builder, 6 Oct 2026, on `wmt/RELEASE-01` 23552a0 (mobile `origin/main` 8484195 is an ancestor, nothing to merge). Docs only: `docs/release/DATA-INVENTORY.md` (new), `docs/release/DATA-SAFETY.md`, `docs/release/PLAY-LISTING.md`, `docs/release/SCREENSHOTS.md`, and one line under the front matter of `tasks/BILLS-01.md` to `BILLS-06.md` (their `status` is unchanged). No eas command, no store account, no secret read, no live host called, no money code touched. Hub (a94f338), WAWU ID (4715d17) and the dashboard (c1dfca6) were read through `git show` only; the dashboard is at `/home/user/wawu-dashboard` after all, so the "who consults" check could be partly read.
+
+**The change of method.** Rounds 1 to 3 built the form from spot-checks, and each verifier round found new holes. This round the form is built from an inventory that is checked by a command. `docs/release/DATA-INVENTORY.md` lists every Hub model (107, each with its personal-data fields, the launch task that writes it, who receives it), the models launch tasks will add (14), every input and logged item of the 183 launch-priority task files (239 items, from every artboard's typed, picked, uploaded, signed, captured and logged data), WAWU ID's 14 models and the 10 sign-up fields, every third party found (14), and the searches that back each "No" row (13). Every item names the `DATA-SAFETY.md` row that declares it. Every row of the form now has a reference (`[PI-01]`, `[FI-04]`, ...), 72 in all, and the inventory's check (in its header) fails on any item whose row is missing or unknown.
+
+**Inventory totals (computed from the file).** Items found **411**: 107 Hub models, 14 planned models, 239 launch-task items, 14 WAWU ID models, 10 sign-up fields, 14 receivers, 13 searched-for-and-not-found or fact rows. Items mapped **411**. **Unmapped 0** (the check in the file's header exits 0; every one of the 72 form rows is cited at least once). Of the 107 Hub models, 70 are declared as collected by the app (rows PI, FI, MS, PF, AA), 2 are staff accounts (NX-01), 6 are the admin audit trail (NX-02), 13 are catalogue or settings data with no person (NX-03) and 16 are tables no launch screen writes (NX-04, with the exact search that keeps that honest).
+
+### Recorded facts
+
+- **Nuvion and bills (6 Oct 2026).** The Nuvion switch summary the lead gave the owner on 6 Oct 2026 says Nuvion offers no bill payments, and that bills stay off until the owner decides to drop them or add a separate bills provider. This is a recorded fact, cited from this task file by `DATA-SAFETY.md` FI-06 and `PLAY-LISTING.md` section 8. It is **not** a seventh release decision: the six owner decisions (`PLAY-LISTING.md`, "Owner decisions") are unchanged, and the bill rows (FI-05, FI-08, the airtime and data clause in PI-07) ship only if bills ship. Each `tasks/BILLS-01.md` to `BILLS-06.md` now carries, under its front matter, the line "On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider)."
+
+### Round 3 defects closed
+
+| Defect | Closed at | What it says now |
+|---|---|---|
+| D10 legal consultation | `DATA-SAFETY.md:74` PI-17 (matter details), `:75` PI-18 (booking), `:76` PI-19 (typed-name signature, time, IP), `:77` PI-20 (CAC inputs: type, names, nature, ID, signature, passport photograph, address), `:97` MS-01, `:107` PF-04 (attachments and delivered documents), `:134` AA-13 (signature IP) | The receivers come from the code. Legal requests are worked by admin accounts of role `superadmin`, `support` or `finance` in the dashboard (`hub:src/legal/legal-ops.controller.ts`, `dash:src/app/(app)/legal/page.tsx`); Gemini gets text only (documents are counted, not sent). **LEAD CHECK, who consults:** the list of production `AdminUser` rows with those roles and any contract with outside lawyers (the seed's "WAWU Legal Partners" label is not proof). **LEAD CHECK, who files at CAC:** the Hub has no CAC integration (nothing in `hub:src` sends a filing), so the fact is whose login is used on CAC's portal. Both added to D-1 (`:172`), D-3 (`:181`) and `PLAY-LISTING.md` B2 (`:43`) and decision 5 (`:60`). |
+| D11 CV fields | `DATA-SAFETY.md:73` PI-16 | Headline, company, website, experience, education, skills, open to, featured works (client, role, year, link, media): public, not shared, optional, gated on ME-01, 02, 11, 16. |
+| D12 chat attachments | `DATA-SAFETY.md:104` PF-01, `:105` PF-02, `:107` PF-04 | Photo, video and a PDF up to 20 MB in a chat, shared with the other person only. |
+| D13 school click | `DATA-SAFETY.md:131` AA-10 | Collected (user, course, time), not shared; the school's site gets only a per-school code. LEAD CHECK that the redirect adds no user id. |
+| D14 device id and label | `DATA-SAFETY.md:129` AA-08 | Declared under Device or other IDs: `deviceId`, public key, and the fingerprint or face label; the biometric itself is not collected. |
+| D15 bills wording | `DATA-SAFETY.md:89` FI-06, `:88` FI-05, `PLAY-LISTING.md:315`, `:43` | Written as the recorded fact above, no owner decision, no "open owner decision" wording left (`grep -n -i "survive\|open owner"` finds nothing). |
+| D16 headings | `DATA-SAFETY.md:170` | Heading now "three owner decisions, one ruling for the lead, one lead check". D-1, D-2, D-3 say OWNER DECISION and which of the six they are; D-4 is a finding the lead rules (default (agent): a design change in `DECISIONS.md`, owner may override); D-5 is a LEAD CHECK with the search that settles it. `PLAY-LISTING.md:334` and `:339` say the same thing, so the two documents agree. |
+| D17 blank line | `DATA-SAFETY.md:70` to `:72` | The blank line between the BVN row and the licence row is gone; a script finds no orphan table row and no column-count mismatch in either file. |
+| Minor: counts | `PLAY-LISTING.md:35` | 140 `todo`, 66 `done`, RELEASE-01 `verifying`, of 207. |
+| Minor: main hash | `PLAY-LISTING.md:3, 300, 303`, `SCREENSHOTS.md:3`, `DATA-SAFETY.md:6` and section 4 | Mobile main 8484195. |
+| Minor: DigitalOcean in D-1 | `DATA-SAFETY.md:172` | Named, counted a service provider (default (agent), owner may override). |
+| Minor: transfer note | `DATA-SAFETY.md:87` FI-04, `:97` MS-01 | Notes typed with a transfer, tip or request; LEAD CHECK whether the note is sent to the wallet provider as the narration. |
+| Minor: per-account switches | `DATA-SAFETY.md:130` AA-09 | Notification and privacy switches, paid-message settings, TGIF switch, sign-up progress. |
+
+Other holes the inventory found and the form now declares: legal documents and chat (PI-17, MS-01, PF-04); the business-name registration documents (PI-20); the reason for leaving when deleting an account (PI-21, LEAD CHECK whether stored); bill reminders (FI-08); TGIF reactions and reads (AA-11); community membership and what a host sees of a join request (AA-12); the IP stored with a consent and with a signature (AA-13); a ticket holder's name shown to door staff (PI-01); recipient bank account names looked up from a typed account number (FI-01); the support chat (MS-01); the four cross-app ids and `country` and `state` on the WAWU ID account (PI-03, PI-12). One earlier statement was wrong and is corrected: SCHOOLS-09, not SCHOOLS-07, records the consent time (PI-08).
+
+**Checks.** U+2014 and U+2013 count 0 in `docs/release/*.md`, `tasks/RELEASE-01.md` and the BILLS files; the inventory check exits 0; `eas.json` unchanged; every Fintava or Loma Bank mention added carries the dagger. `npm run check`: see the LOG line and the hand-back (results below).
+
+**NOT RUN (unchanged), each with its unblocking fact:** both capability checks and V10 (an internal-testing release of `africa.wawu.wmt` on Play and the review account signing in on the owner's phone); the real built manifest (a production build, then `bundletool dump manifest` or Console's App bundle explorer); the live TLS grade and the HTTP 301 claim (an SSL test on `api.wawuafrica.com` and `id.wawuafrica.com` by the lead); who consults and who files for LEGAL (the two LEAD CHECKs at PI-17 and PI-20); the NX-04 route search and the D-5 Flutterwave search (both run on the built app source after the launch tasks are built).
 
 ## Owner sign-off
 

@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 35 | 30 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 6 Oct 2026 · RELEASE-01 · Builder round 4 (docs only, status verifying): the data-safety form is now built from an exhaustive inventory, `docs/release/DATA-INVENTORY.md` (every one of 107 Hub models, 14 planned models, 239 inputs and logged items across the 183 launch task files, 14 WAWU ID models and 10 sign-up fields, 14 receivers, 13 searched-for-and-not-found rows: 411 items, 411 mapped, 0 unmapped, checked by a command in the file), and every form row has a reference; the verifier's D10 to D17 are closed (legal consultation flow with matter details, booking, typed-name signature with IP and CAC inputs, CV fields, chat attachments, the school click, the device id and biometric label, the blank line, the owner heading, and the bills wording recorded as a fact: Nuvion has no bill payments, on hold in each BILLS-01 to 06 file, not a release decision); who consults and who files at CAC stay LEAD CHECKs with the fact that settles each.
 - 6 Oct 2026 · RELEASE-01 · Verified round 3 (independent, docs only): round 2 defects D5 to D9 and both minor items closed (own scan of all 39 AndroidManifest.xml and 15 .aar files matches the permissions table); new omissions found walking the launch tasks: legal consultation data undeclared (D10, medium), profile CV fields (D11), chat attachments (D12), school-link click (D13), approval device id (D14), plus an unsourced "bills frozen" phrased as an owner decision (D15), D-4 and D-5 under the owner heading (D16) and a broken table (D17); status building. OpenWalletScreen timed out once under load, 37 of 37 alone.
 - 6 Oct 2026 · RELEASE-01 · Builder round 3 (docs only, status verifying): the verifier's five defects fixed in `docs/release/` and `docs/BUILDS.md`: interests picked at sign-up declared (D5), the school receiving name, email and phone declared as shared and added to D-1 and the privacy-text list, marked to ship with the schools enrolment tasks (D6), bill inputs declared and marked frozen pending the wallet provider switch with nothing asserted about Nuvion (D7), `expo-file-system` and the two debug-only manifests added so the permissions table lists all six packages that declare any (D8), the Ads answer is a lead check against the shipped build (D9); Hub citation now a94f338; `docs/BUILDS.md` Fintava lines daggered.
 - 6 Oct 2026 · RELEASE-01 · Verified round 2 (independent, docs only): round 1 defects D1, D2 and D4 closed, D3 partly; the owner's corrections are applied as facts (organisation account, website and support email, the lead's icon checked pixel for pixel as a Lanczos downscale of `icon.png`, review account as a lead task, Fintava and Loma Bank daggered with none deleted, Nuvion only as the stated plan); no em-dash, limits 13, 69 and 2,134; 5 defects open (the form omits sign-up interests, the school receiving name, email and phone at enrolment and bill inputs, the permissions table omits `expo-file-system`, one owner-phrased Ads question); both capability checks and V10 NOT RUN; status building.
@@ -111,4 +112,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Builder round 2 (docs only, status verifying): all 89 rows re-searched against the canvas text; states are now built 2, drawn but not built 10, not in the app 77; M20 (paid ticks) added, 40 rows in 20 money and data groups; account data map and EVG source corrected; WEB-01 created and named on every row; `npm run check` exit 0 (36 suites, 666 tests, 171 files, 207 tasks).
 - 4 Oct 2026 · OPS-07 · Verified (independent, docs only): all 89 rows present with wording kept, section 2 tables and advice checked, no invented task ids, `npm run check` exit 0; 5 defects open (row 29 cover upload is built in the app, row 68 is drawn on M31, section 3 calls planned screens "in the app", two small wrong sentences in section 2), 1 unclear; status back to building.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
-- 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
