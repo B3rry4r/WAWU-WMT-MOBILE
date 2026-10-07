@@ -8,12 +8,22 @@ priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-11, MONEY-12, MONEY-13, MONEY-15, UI-02, KYC-05, WALLET-02, WALLET-05, WALLET-06, BILLS-01, WALLET-04]
+depends_on: [MONEY-11, MONEY-12, MONEY-13, MONEY-15, UI-02, KYC-05]
 decisions: [R-1, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [W1, W4, W5, W6]
 ---
 # WALLET-01 · Wallet home: Naira account and its states
+
+## Lead note (7 Oct 2026): built now, with what exists (R-41)
+
+The owner asked for every tab to be built now. This hub is built before the tasks below; each entry on it that leads to one of their screens is left out here and added, exactly as drawn, by that task (R-27, R-41). Everything else on the artboards is built as drawn.
+
+- WALLET-02 (Send to a WAWU user)
+- WALLET-05 (Add money and withdraw)
+- WALLET-06 (Wallet settings, change and reset the PIN)
+- BILLS-01 (Pay a bill: choose biller, meter and amount)
+- WALLET-04 (Transaction history and detail)
 
 ## Read first
 

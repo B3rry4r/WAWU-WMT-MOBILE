@@ -372,3 +372,9 @@ The full list of what the canvas contradicts, with both sides quoted, is in
 `PUT /events/:id/tickets`, the web's route for a host's ticket tiers and prices, follows the same rules as creating or editing an event: the host must hold a current verification (B3, hosting is verified-only), and a change to an approved event sends it back to review. Once a ticket is sold, tiers stay locked as they are today (409). This is a deliberate change to a protected route.
 
 **Carried out by:** EVENTS-11.
+
+### R-41 · Every tab is built now, with what exists
+*Owner, 7 Oct 2026 ("I want all tabs to be built").*
+The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect.
+
+**Carried out by:** HOME-01, ME-01, EXPLORE-01, WALLET-01 now; each later task named in their "Lead note (7 Oct 2026)" adds its own entry.
