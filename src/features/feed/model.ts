@@ -153,7 +153,7 @@ export type Offer = { icon: IconName; title: string; subtitle: string };
  * The offer bar under a locked post (H3, H4, H5): what unlocking gives and how it is paid
  * for. Only a locked piece has one. The price beside it is the piece's own price. The bar
  * offers the piece itself: a free post linked to a separate paid piece (H3's "Golden Hour
- * presets") is not served (BACKEND_GAPS G-204).
+ * presets") is not served (BACKEND_GAPS G-216).
  */
 export function offerFor(item: FeedItem, kind: PostKind): Offer | null {
   if (!isLocked(item)) return null;

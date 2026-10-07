@@ -86,7 +86,7 @@ export type RailProps = {
  * The right rail (H2 to H6): the creator, likes, comments and saves. The avatar's profile
  * (M5) is ME-02's to open, the comments (H21) HOME-03's, and the ₦ Tip button (H26)
  * HOME-13's: each adds its press as drawn. The saves count is not served (BACKEND_GAPS
- * G-203), so the bookmark has no figure under it.
+ * G-215), so the bookmark has no figure under it.
  */
 export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow }: RailProps) {
   const name = creatorName(item.creator) ?? undefined;

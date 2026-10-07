@@ -37,8 +37,8 @@ function RoundButton({ icon, label, onPress, big, testID }: { icon: 'RotateCcw' 
  * H6: an audio post. It plays while it fills the screen; the big button pauses and plays,
  * the two beside it move back and on, and the waveform is a scrubber. The waveform is read
  * from the file itself where the build can decode it (the Hub serves no peaks,
- * BACKEND_GAPS G-205); the square above it is a tile, because an audio piece has no
- * cover picture (BACKEND_GAPS G-206).
+ * BACKEND_GAPS G-217); the square above it is a tile, because an audio piece has no
+ * cover picture (BACKEND_GAPS G-218).
  */
 export function AudioPost(props: PostProps) {
   const { item, active } = props;
