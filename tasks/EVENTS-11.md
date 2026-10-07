@@ -7,7 +7,7 @@ order: 184
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -181,6 +181,43 @@ Backend `wmt/EVENTS-11` `d98e037` (one commit on `b368f20`; origin/main `3041887
   - the full backend suite in a network namespace (not in this round's list);
   - Real WAWU ID (the mock was used);
   - Flutterwave and Fintava: not called; the paid path ran against the stand-in at the client seam.
+
+## Verifier report, round 4
+
+Independent verifier session (wrote none of this task), narrow re-check of round 4. Backend `wmt/EVENTS-11` `d98e037` (on `b368f20`; origin/main `3041887` unmoved), mobile `31e980d`. Fresh detached worktrees, each with its own real copy of `node_modules` (`cp -r`, link count 1) so that `prisma generate` and the builds never wrote through hard links. Databases `ve11_*_test`, all dropped. Branch Hub :5391, main Hub :5392 (used only for the open-checkout comparison), stand-in WAWU ID :5393, one migrated and seeded database. The payment client is the Hub's own mock adapter at its seam, because no Flutterwave secret is set. No Flutterwave, Fintava or wawuafrica.com call. Evidence: the lead's scratchpad `ve11/r4/`.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| D2: PUT vs a free purchase, 40 trials | **fixed.** 0 500s, 0 inconsistent final states (sold = paid quantity = tickets, no order on a missing tier). 20 x PUT 200 and order 409 (`pending`, new tier); 20 x order 201 and PUT 409 sold (`published`, old tier, 1 paid order, 1 ticket). | `race4.out` |
+| D2: PUT vs a paid settle (`/events/orders/:orderId/verify` into `issueOrder`), 30 trials | **fixed.** 0 500s, 0 inconsistent. 24 x verify 201 and PUT 409 sold; 6 x verify 201 and PUT 409 "a buyer is paying". | `race4.out` |
+| Three-way races, 30 trials each | **passed.** Two PUTs and a purchase: 0 500s, 0 inconsistent (the two PUTs run one after the other; the purchase is either first, so both PUTs get 409, or refused). PUT, an admin remove and a purchase: 0 500s, 0 inconsistent, never `removed` undone. PUT, PATCH and two purchases: 0 500s, 0 inconsistent. Hub log after every race: 0 `40P01` lines, 0 ERROR lines. | `race4.out`, `hub-b.log` |
+| D1 re-run, 40 trials each | **still fixed.** PUT vs remove: undone 0 (24 PUT first, `pending`, remove 400; 16 remove first, `removed`, PUT 403 with the takedown message). PATCH vs remove: undone 0 (40 PATCH first, remove 400). | `race-d1-put.out`, `race-d1-patch.out` |
+| Lock order argument | **holds.** PUT takes the event row `FOR NO KEY UPDATE` and then the event's tier rows `FOR UPDATE`. `issueOrder` takes its tier row (the `sold` increment) and then only `FOR KEY SHARE` on the event (its order and ticket inserts), which does not conflict with `FOR NO KEY UPDATE`. So the tier rows are the only locks the two compete for, and neither waits on the other's event lock: there is no cycle. A second PUT or a PATCH waits on the event lock before touching a tier row. No other code locks tier rows: the only writes to `EventTicketType` are PUT's and `issueOrder`'s. Cancel updates the event and its tickets, not tiers. The three-way races above found no deadlock. | code read, `race4.out` |
+| Removed events | **passed.** After a remove, PUT "Repriced" ₦1 x 500,000 is 403, with a body byte-identical to PATCH's. Re-sending the same tiers is also 403. A lapsed host also gets the takedown 403. Status, reason, `updatedAt` and tier rows are unchanged. Restore 200, and the public reads Regular ₦5,000 x 100, the tiers from before the takedown. | `removed-abandon.out` |
+| Abandoned checkout | **failed, D3.** | `removed-abandon.out` |
+| New spec `event-purchase-races` (with `event-edit-races`) | **passed.** 7/7 on each of three runs. | `purchase-races-*.out` |
+| Lock and protected suite | **passed.** Registry, suite folders, scripts and workflow: 0 diff lines against `6ea8612`. With that lock, `run.sh --fresh d98e037` passes 253/253, all 244 required. | `prot-r4.out` |
+| Regression | **passed.** `src/event` + `src/admin/events` + `src/event-ticketing`: 157/157. Whole-app specs (route shadowing, payment webhook x2, admin payments, blocked accounts x3, admin ops reads, protected-registry): 9 suites, 176/176. tsc 0. eslint 0 on the 13 changed .ts files. Gates: 16 fail and 58 warn, the same lines as main. Tripwire 0. `contract:build` leaves the committed contract unchanged. | `jest-*.out`, `tsc.out`, `eslint.out`, `gates-*.txt` |
+
+### Findings
+
+- **D3 · defect.** Nothing ever ends an abandoned checkout, so one blocks every tier edit on that event for good.
+  - **What ends a pending order:** an `EventOrder` leaves `pending` only through `verifyOrder` (paid, or failed when the charge does not verify). That runs when the buyer's browser calls `/events/orders/:orderId/verify`, or when a Flutterwave `charge.completed` webhook names its `tx_ref`.
+  - **What is missing:** there is no sweep, no timeout and no cron for event orders (`eventOrder` is written only in `event-ticketing.service.ts`; the webhook only routes to `verifyOrder`). A buyer who opens checkout and closes the payment window makes no charge, so no webhook ever arrives.
+  - **Reproduction:**
+    - a published event with Regular ₦5,000 x 100;
+    - the buyer account (not the host) sends `POST /events/:id/orders` (201, order `pending`) and does nothing else;
+    - the host's `PUT /events/:id/tickets` at ₦6,000 is 409 "A buyer is paying for "Regular" right now, so the tiers cannot be replaced yet. Add a new tier instead, or try again once that payment has finished.";
+    - keeping Regular and adding VIP is also 409;
+    - at 0, 2 and 5 minutes the order is still `pending` and both PUTs are still 409.
+  - **Impact:** the 409's advice cannot work, because PUT replaces the whole set, so "add a new tier" is the same refused request. Any signed-in account can open such a checkout on any published paid event at no cost, which freezes that host's prices indefinitely.
+  - **On main:** the same order made PUT fail with a 500 (the tier delete hits the order's foreign key), so the freeze predates this task. Round 4 makes it a clear 409, but it still lasts forever.
+  - **Unblocked when** an open order expires: a sweep or a checkout window after which `pending` becomes `failed`, or the PUT check ignores and fails orders older than that window. Alternatively, PUT keeps a tier that a pending order points at instead of deleting it. Add a spec with an order left open past the window.
+- **O5 · pre-existing, recorded by the builder.** Opening a paid checkout at the moment a PUT replaces its tier fails the order insert on the tier's foreign key with a 500. Branch 14 of 30 trials; main 17 of 30, plus one PUT 500 that the branch no longer has. Final states were consistent on both. Not caused by this task.
+- **O6 · note.** When a PUT replaces a tier just before a purchase, the purchase is told "This ticket is sold out." (409). It is a correct refusal with a misleading message: the tier was replaced, not sold out.
+- **NOT RUN.** The full backend suite: it needs a network namespace for :4001, which this session is refused; unblocked by a session allowed to run one. Real WAWU ID: the stand-in was used. Real Flutterwave: the paid path ran through the Hub's mock adapter at its seam.
+
+**Verdict: building.** D2 is fixed, D1 stays fixed, the removed-event ruling holds, and the lock is unchanged. D3 (an abandoned checkout freezes a host's tiers with no end) is open.
 
 ## Owner sign-off
 
