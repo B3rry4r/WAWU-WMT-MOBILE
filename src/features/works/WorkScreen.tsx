@@ -38,7 +38,7 @@ const heroMetrics = { height: 280, scrim: 0.35, scrimEnd: 0.4, playButton: 56, p
 const bodyMetrics = { top: 38, stack: 14, thumb: 84, thumbRadius: 14, thumbGap: space.sm, thumbsShown: 3, bottomRoom: 140 } as const;
 const navTop = 6;
 const footMetrics = { avatar: 40, name: 14.5, top: space.md, bottom: 34, between: 10 } as const;
-const removeMetrics = { icon: 18, label: 14.5, gap: 8 } as const;
+const removeMetrics = { icon: 18, label: 14.5, gap: space.sm } as const;
 const descriptionMetrics = { size: 14.5, line: 1.55 } as const;
 
 export type WorkScreenProps = {
