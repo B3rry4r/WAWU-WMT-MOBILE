@@ -2526,6 +2526,73 @@ export interface paths {
         patch: operations["ProfessionalController_setListed"];
         trace?: never;
     };
+    "/api/hub/professionals/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_location"];
+        /** The city on your card and in the directory. A creator account only. */
+        put: operations["ProfessionalController_setLocation"];
+        post?: never;
+        delete: operations["ProfessionalController_clearLocation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_fields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The directory filtered by field, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One professional's profile, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directoryProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals": {
         parameters: {
             query?: never;
@@ -4286,6 +4353,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/tgif/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The five cards of the day, addressed to the caller by first name. */
+        get: operations["TgifController_day"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/share-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The verse of the day on the shared card, as a PNG (H35). */
+        get: operations["TgifController_shareImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tgif/{date}/stats": {
         parameters: {
             query?: never;
@@ -5355,7 +5456,7 @@ export interface components {
         };
         ApplyProfessionalDto: {
             /** @enum {string} */
-            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
             headline: string;
             about: string;
             services?: string[];
@@ -5367,6 +5468,10 @@ export interface components {
         };
         UpdateListingDto: {
             listed: boolean;
+        };
+        UpdateProfessionalLocationDto: {
+            /** @description Where you work, as people will read it: "Ikeja", "Port Harcourt". */
+            city: string;
         };
         CreateProfessionalReviewDto: {
             stars: number;
@@ -5987,23 +6092,23 @@ export interface components {
             hidden?: boolean;
         };
         CreateCourseDto: {
+            /** @description Whole kobo (CONVENTIONS section 1). */
+            priceKobo: number;
             title: string;
             weeks: number;
             /** @enum {string} */
             mode: "online" | "in_person" | "hybrid";
             syllabus?: string[];
             outcomes?: string[];
-            /** @description Whole kobo (CONVENTIONS section 1). */
-            priceKobo: number;
         };
         UpdateCourseDto: {
+            priceKobo?: number;
             title?: string;
             weeks?: number;
             /** @enum {string} */
             mode?: "online" | "in_person" | "hybrid";
             syllabus?: string[];
             outcomes?: string[];
-            priceKobo?: number;
             hidden?: boolean;
         };
         CreateIntakeDto: {
@@ -8207,6 +8312,71 @@ export interface components {
             verification: components["schemas"]["VerificationState"];
             following: boolean;
         };
+        ProfessionalLocationView: {
+            city: string | null;
+        };
+        ProfessionalFieldView: {
+            id: string;
+            label: string;
+            categories: string[];
+            applyCategory: string;
+            regulated: boolean;
+        };
+        ProfessionalFieldRef: {
+            id: string;
+            label: string;
+        };
+        ProfessionalDirectoryEntry: {
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
+        ProfessionalDirectoryPage: {
+            items: components["schemas"]["ProfessionalDirectoryEntry"][];
+            currentPage: number;
+            perPage: number;
+            total: number;
+        };
+        ProfessionalDirectoryProfile: {
+            about: string;
+            issuingBody: string | null;
+            credentialKind: string;
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
         ProfessionalListItem: {
             id: string;
             wawuId: string;
@@ -8360,6 +8530,12 @@ export interface components {
             followingCount: number;
             communityCount: number;
         };
+        ProfileWorkOwnerView: {
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+        };
         ProfileWorkCategoryView: {
             name: string;
             count: number;
@@ -8383,6 +8559,7 @@ export interface components {
             createdAt: string;
         };
         ProfileWorksView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
             count: number;
             categories: components["schemas"]["ProfileWorkCategoryView"][];
             works: components["schemas"]["ProfileWorkView"][];
@@ -8394,6 +8571,20 @@ export interface components {
             startYear: number;
             endYear: number | null;
             current: boolean;
+        };
+        ProfileWorkDetailView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
+            id: string;
+            title: string;
+            role: string;
+            client: string | null;
+            year: number;
+            link: string | null;
+            category: string | null;
+            description: string | null;
+            media: components["schemas"]["ProfileWorkMediaView"][];
+            position: number;
+            createdAt: string;
         };
         EnrolResponse: {
             externalHostUrl: string;
@@ -8786,6 +8977,18 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
+        };
+        TgifDayView: {
+            date: string;
+            series: string;
+            seriesTheme: string;
+            verse: string;
+            verseReference: string;
+            reality: string;
+            remember: string;
+            prayer: string;
+            takeaway: string;
+            shareLink: string | null;
         };
         TgifCardStats: {
             /** @enum {string} */
@@ -14085,10 +14288,135 @@ export interface operations {
             };
         };
     };
+    ProfessionalController_location: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_setLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfessionalLocationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_clearLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_fields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalFieldView"][];
+                };
+            };
+        };
+    };
+    ProfessionalController_directory: {
+        parameters: {
+            query?: {
+                /** @description A field id from GET /professionals/fields, for example `accounting_tax`. */
+                field?: "accounting_tax" | "legal_compliance" | "design_creative" | "technology_it" | "engineering" | "healthcare" | "business_consulting";
+                page?: number;
+                perPage?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryPage"];
+                };
+            };
+        };
+    };
+    ProfessionalController_directoryProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryProfile"];
+                };
+            };
+        };
+    };
     ProfessionalController_list: {
         parameters: {
             query?: {
-                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
                 page?: number;
                 perPage?: number;
             };
@@ -15165,7 +15493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileWorkView"];
+                    "application/json": components["schemas"]["ProfileWorkDetailView"];
                 };
             };
         };
@@ -17891,6 +18219,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatUpload"];
+                };
+            };
+        };
+    };
+    TgifController_day: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifDayView"];
+                };
+            };
+        };
+    };
+    TgifController_shareImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The day's verse on the TGIF card, as a PNG image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
                 };
             };
         };
