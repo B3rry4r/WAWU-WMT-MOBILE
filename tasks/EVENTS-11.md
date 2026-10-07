@@ -7,7 +7,7 @@ order: 183
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -125,6 +125,28 @@ Backend `wmt/EVENTS-11` `b368f20` (origin/main `3041887`, unchanged, merge a no-
 - **Checks.** `src/event` + `src/admin/events` + `src/event-ticketing`: **154/154** (150 plus the 4 race tests). tsc 0. eslint 0 on every changed .ts file. Gates 16 fail, the same lines as main, 58 warn. Tripwire: no added line matches. Secret scan of the staged diff: nothing key-shaped. `contract:build` regenerated and committed (enum order only, above).
 - **Seen, not changed (for the lead):** PATCH on an event its host already cancelled (status `cancelled`) is accepted today and returns it to `pending` (main does the same). That is not a race and not a takedown, so it is left as it is.
 - **NOT RUN:** the full backend suite in a network namespace (only the event, admin events and protected suites were asked; unblocked by a namespace run). The `relock-approved` label (owner only; the lock is unchanged since round 2). Real WAWU ID (mock used). Fintava not touched.
+
+## Verifier report, round 3
+
+Independent verifier session (wrote none of this task), narrow re-check of round 3. Backend `wmt/EVENTS-11` `b368f20` (on `6ea8612`; origin/main `3041887` unmoved), mobile `b5679be`. Fresh detached worktrees, databases `ve11_*_test` (all dropped), branch Hub :5391, main Hub :5392, round 2 Hub (`6ea8612`) :5394, stand-in WAWU ID :5393, one migrated and seeded database for the three Hubs. Evidence: the lead's scratchpad `ve11/r3/`.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| D1 over real HTTP | **fixed.** PUT racing an admin remove, 40 trials: takedown undone 0 (18 remove 200 and `removed` with one `removed` review; 22 PUT first, `pending`, remove 400 "This event was decided by someone else a moment ago.", no review row). PATCH racing a remove, 40 trials: undone 0 (37 PATCH first, `pending`, remove 400; 3 remove first, `removed`, PATCH 403 with the takedown message). | `race-all.out` |
+| Locking code | Both routes take `SELECT ... FOR UPDATE` on the event row first in one interactive transaction, re-run the event checks under it (PUT: 404, not yours 403, cancelled 409, sold 409; PATCH: 404, takedown 403, window 400), and PUT's status write is an `updateMany` on the status it decided from. The gate (`assertMayHost`) runs before the transaction, so no outside call is made under the lock. Answers and their order are unchanged (the round 2 spec and the new spec pass, the 409/403/404 bodies are the same code). **But `FOR UPDATE` conflicts with the `FOR KEY SHARE` lock Postgres takes on the event row for every foreign-key insert that points at it, and that causes D2 below.** | code read, `race-all.out` |
+| New spec `event-edit-races.contract.spec.ts` | **passed.** b368f20: 4/4 on three separate runs. `6ea8612`: 3 of 4 fail (PUT race, PATCH race, parallel PUTs). Main `3041887`: 2 of 4 fail (PATCH race, parallel PUTs); its PUT race passes there because main's PUT never writes the status. | `races-*.out` |
+| Lock and protected suite | **passed.** Registry, `src/protected-routes`, `test/protected-routes`, `scripts/protected-routes` and the workflow: 0 diff lines against `6ea8612`. `run.sh --fresh b368f20` with the `6ea8612` lock: 253/253, all 244 required. | `prot-r3.out` |
+| Regression | **passed.** `src/event` + `src/admin/events` + `src/event-ticketing` 154/154. Whole-app specs (route shadowing, payment webhook x2, admin payments, blocked accounts x3, admin ops reads, protected-registry) 9 suites, 176/176. tsc 0. eslint 0 on the 12 changed .ts files. Gates 16 fail, 58 warn, same lines as main (only "files scanned" differs). Tripwire 0. `contract:build` leaves the committed contract unchanged. **O4 closed:** `EventView.category` order and `EventOptionsView` now equal main's. | `jest-*.out`, `tsc.out`, `eslint.out`, `gates-*.txt` |
+| PUT racing a ticket purchase | **failed, D2.** | `race-all.out`, `race-buy-main.out`, `race-buy-r2.out`, `hub-b.log` |
+
+### Findings
+
+- **D2 · defect (introduced in round 3).** `PUT /events/:id/tickets` deadlocks with a ticket purchase on the same event, and one of the two requests gets a 500 "Something went wrong. Please try again." Reproduction (`race.js buy`): a published event of a verified host with a free tier (sold 0); send `PUT /events/:id/tickets` (same tier, quantity 50 to 60) and `POST /events/:id/orders` for that tier at the same moment. Branch, 40 trials: 26 order 500 (PUT 200), 11 PUT 500 (order 201), 3 clean; the Hub log has 74 `40P01 deadlock detected` lines and every one of the 37 500s is one. Same script on main: 0 500s, 0 deadlocks (36 order 409 sold out, 4 both 201). On round 2 `6ea8612`: 0 500s, 0 deadlocks. Cause: the purchase's transaction (`issueOrder`) first locks the tier row (`updateMany ... sold: increment`), then inserts `EventOrder`, whose foreign key to `Event` takes `FOR KEY SHARE` on the event row. PUT holds `FOR UPDATE` on that row, which conflicts with `FOR KEY SHARE`, and then its `deleteMany` waits for the tier row the purchase holds. Each waits for the other. The paid path settles through the same `issueOrder` after Flutterwave confirms a charge (`/events/orders/:orderId/verify`), so a paying buyer can get a 500 there too (that path is not run here: no Flutterwave call allowed). Unblocked when the row lock does not conflict with foreign-key inserts (for example `FOR NO KEY UPDATE`, which still serialises against an admin's status update and against a second PUT) or the two transactions take their locks in the same order, plus a spec that races PUT against a purchase.
+- **Item 5 · unclear (lead).** "PUT on a removed event saves the tiers and leaves it removed" does let a restore publish prices nobody reviewed as a change. Live (`restore.out`): published at Regular ₦5,000 x 100; admin remove 200; host PUT "Repriced" ₦1 x 500,000 is 200, the event stays `removed` (stranger 404); admin restore 200, and the public now reads Repriced ₦1 x 500,000. The admin detail shows the current tiers before the restore (R-42 F2), but nothing marks them as changed since the takedown (the review history only says "removed"), and restore is not review. This is the round 1 default that the lead's ruling kept, so it is not counted as a defect here. Either PUT answers 403 on a removed event as PATCH does, or a tier change on a removed event makes restore send it to `pending`.
+- **Noted from the builder's report, not checked further:** PATCH on a host-cancelled event returns it to `pending` (main does the same).
+- **NOT RUN.** The full backend suite (needs a network namespace for :4001, refused to this session; unblocked by a session allowed to run one). The paid-ticket verify path in the D2 race (needs a Flutterwave stand-in at the client seam; unblocked by a spec with the mocked client). Real WAWU ID (stand-in used).
+
+**Verdict: building.** D1 is fixed and the lock is unchanged, but round 3 introduced D2.
 
 ## Owner sign-off
 
