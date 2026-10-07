@@ -3,7 +3,7 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 90 of 186.**
+**Launch tasks done: 91 of 187.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 51 | 27 | 11 | 5 |
+| done | 52 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
+- [EXPLORE-01](../tasks/EXPLORE-01.md) Explore: browse, categories, loading, empty (You)
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
@@ -133,14 +134,14 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01 · Builder round 2 (status verifying): D1 the eye at 70% (the Wallet tab's own eye), D2 a failed TGIF day read says so with Try again, D3 the creator card is the shared MediaCard (Follow through `footer`); the balance card reads and words its states as the Wallet tab does (shared reads, `homeView`, `stateWords`, `MoneyGround`, `FittedBalance`); TGIF and money-shadow tokens; SHARED-CHANGES HOME-01 #3.
 - 7 Oct 2026 · HOME-01 · Verifier report (status building): V1, V4 and V9 passed; real WAWU ID sign-in, a Follow, an unfollow and the TGIF switch written by the app and read back from the Hub and the database; 14 of 14 mutants killed. Three defects: D1 the balance eye is full white where H1 paints it at 70%, D2 a failed TGIF day read hides the card with no message or Try again, D3 the creator card redraws MediaCard's stacked picture, scrim and caption (SHARED-CHANGES HOME-01 #2 defers the swap). A live Fintava figure is NOT RUN (Fintava unset).
 - 7 Oct 2026 · HOME-01 · Builder report (branch `wmt/HOME-01`, status verifying): Home's Today with the Naira balance from Fintava or the way to Open your wallet, today's TGIF card (gone when TGIF is off), creators to discover with Follow in place, loading, empty and error states; the feed is shown in place under the same tab row (`/feed` removed); entries to screens not built yet left out (R-41); gaps G-280 to G-282, shared changes HOME-01 #1 and #2.
+- 7 Oct 2026 · SHARED-03 · New task (lead, order 184; tasks from 184 move down one): one shared toast, the All chip's padding, a MediaCard placeholder, two test gaps and the flaky Z3 settings test, from the hub checks.
+- 7 Oct 2026 · EXPLORE-01 · Merged: the Explore tab (categories, featured creators with Follow, category pages with paging); one shared-toast follow-up in SHARED-03.
+- 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.
+- 7 Oct 2026 · EXPLORE-01 · Round 2: shared FilterChips and MediaCard replace the local chips and card (D1, D2), Follow pending per creator (D3), refused Follow rolls back with a short line, blank categories tested; status verifying.
+- 7 Oct 2026 · EXPLORE-01 · Verified round 1 (independent verifier, real WAWU ID fb8717e, Hub 3041887): V4, V6, V9 and R-41 passed, X15 confirmed not built, 11 of 12 mutants killed; 3 low defects open (CategoryChips forks FilterChips and CreatorCard redraws MediaCard, VERIFIER check 2, neither caught by the forks gate; a pending Follow drops Follow taps on every other card); status building.
+- 7 Oct 2026 · EXPLORE-01 · Built: Explore (category tiles, featured creators with Follow, loading, error) and Categories (chips, creators, empty, paging) against the local Hub; entries to screens not built yet left out (R-41); status verifying.
 - 7 Oct 2026 · SHARED-02 · Merged: shared components for the tab hubs (card, chip and button options, theme tokens, signed-in routes); 132 of 144 screens pixel-identical, the rest intended.
 - 7 Oct 2026 · SHARED-02 · Verifier report, round 2 (mobile `13596e1`, main `c4471f3`): D1 (no SHARED-CHANGES row lost, none went backwards), D2 ("Profile saved" once from the Me tab, from Settings and on a cold `?from=me`, light and dark) and D3 (M1's button only; W1 identical) closed; T1 to T7 killed, 4 own mutants killed; `npm run check` 0 (71 suites, 1286 tests); 144 picture pairs against main, only `/tgif` and M1's button differ; status review.
 - 7 Oct 2026 · SHARED-02 · Round 2: ME-11 #4's status restored (D1); "Profile saved" once wherever M8 closes to, M10 on the Me tab, M8's own elsewhere (D2); M1's Edit profile on `size="profile"` and W1's card on the generated `--shadow-money` / `--glow-money` (D3; W1 pixel-identical, M1 only the label); WALLET-11's payout test ends in 6 s in band (WALLET-01 #3); seven test gaps closed. Status verifying.
 - 7 Oct 2026 · SHARED-02 · Verifier report (independent session, mobile `6fa4f49`, main `5fec168`): V1 passed (`npm run check` 0; 67 suites, 1227 tests; gates 310 files, 0 findings); 144 before and after picture pairs, 132 identical, 12 differ, all `/tgif` by design, its five grounds now equal the canvas; guards and new props pass; 18 mutants, 11 killed, 7 survived (test gaps); three defects: D1 the merge dropped main's ME-11 #4 status, D2 a save on M8 from Settings shows no "Profile saved", D3 ME-01 #1 marked applied but M1's "Edit profile" still `sm` with `style`; status building.
 - 7 Oct 2026 · SHARED-02 · Built: the four tab hubs' shared changes applied (MediaCard `titleAccessory`, `footer`, `action`; FilterChips chip `icon` and `revealSelected`; Button size `profile`; TGIF, `--glow-money` and every `--shadow-*` generated as tokens; categories and the works routes under the signed-in guard; M8 hands back at once for M10's single "Profile saved"); 128 before and after screenshot pairs, 126 identical, the 2 TGIF ones changed by design. Status verifying.
-- 7 Oct 2026 · WALLET-01 · Merged: the Wallet tab (balance that always fits with its kobo, account number with Copy, recent activity, every state, no Bills); built now under R-41.
-- 7 Oct 2026 · WALLET-01 · Verified round 3 (15691dd): D5 closed (0 cut frames in 108 watched cases at 320/360/390 px, light and dark: first mount, balance changed under the card and while the tab is open, Hide/Show), the measuring copy aria-hidden (one balance in the accessibility tree), BalanceCard.test.tsx fails 3 of 4 on round 2 and passes now, 3 of 4 own mutants killed (K2 a test gap the browser covers), no conflict markers and every row kept; D1 to D4 still closed; status review.
-- 7 Oct 2026 · WALLET-01 · Round 3: a new or re-shown balance stays invisible until that figure is measured, so no cut frame is painted (D5); the measuring copy is aria-hidden on the web; status verifying.
-- 7 Oct 2026 · WALLET-01 · Verified round 2 (2c91287): D1 to D4 closed (every Back from A26 lands on the tab, balances whole at 320/360/390 px up to ₦999,999,999.99, the three WALLET-01 test files end in 17 s in band, 9 of 9 mutants killed; the remaining in-band hold is WALLET-11's payout test, mutation timers); trial merge with main 5fec168 passes; new D5 (low): a balance that changes under the card, or Show after Hide, paints one frame cut with "…" before it is re-measured; status building.
-- 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.
-- 7 Oct 2026 · WALLET-01 · Verified (independent session, mobile 972d411, backend main 3041887, real WAWU ID): R-41 passed (no bills entry, every left-out entry's screen unbuilt), V4 passed on two seeds of non-canvas values (balance from the provider read, debits as totals with fees), V6 and V9 passed, V5 failed: D1 Back from a button-opened A26 reopens A26, D2 the balance is cut off with "…" at 320 px from six naira digits, D3 WalletScreen.test.tsx holds jest about 5 minutes in band (a React Query gc timer), D4 4 of 14 mutants survive; status back to building.
