@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 7 Oct 2026 · INBOX-03 · Verified (V1, V2, V3, V4, V9; V10 and real Expo NOT RUN): sender, tokens, policy and migration hold on two instances and a live sign-in against a stand-in; 4 defects found (NUL in a token answers 500, a spec leaves a seeded follow deleted, 3 unmarked figures, retries and receipts break when the database timezone is not UTC); status back to building.
 - 7 Oct 2026 · INBOX-03 · Built (backend `wmt/INBOX-03`, mobile `wmt/INBOX-03`): phone push through Expo behind the notification service, `POST`/`DELETE /push-tokens`, off unless `PUSH_ENABLED=true`; real Expo and a phone NOT RUN (exp.host blocked here; needs FCM credentials and a device); gaps G-265 to G-268.
 - 7 Oct 2026 · AUTH-08 · New task (lead, order 182; tasks from 182 move down one): wawu-id refresh and sign-out look up the token by id instead of argon2-checking every stored token (CHECK-1 F-5, SETTINGS-01 G-264).
 - 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
