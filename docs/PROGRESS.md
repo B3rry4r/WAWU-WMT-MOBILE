@@ -7,16 +7,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 43 | 31 | 25 | 31 |
+| todo | 43 | 30 | 25 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 2 | 0 |
+| review | 1 | 0 | 2 | 0 |
 | done | 40 | 27 | 7 | 1 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
+- [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 
 ## Done
 

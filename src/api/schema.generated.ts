@@ -4156,6 +4156,202 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chats, paid questions and communities in one list, latest activity first. */
+        get: operations["InboxController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/inbox/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Inbox tab's badge: the sum of every row's unread count. */
+        get: operations["InboxController_unread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M7's figures in one read: purchases, saved, unread notifications. */
+        get: operations["MeController_counts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved (M30): content, events and creators, newest first, by tab. */
+        get: operations["MeController_savedList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/saved/creators/{wawuId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save a creator (M30's Creators tab). Idempotent. */
+        put: operations["MeController_saveCreator"];
+        post?: never;
+        /** Remove a saved creator. Idempotent. */
+        delete: operations["MeController_unsaveCreator"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My purchases (M29): pieces bought, newest first, searchable, with course progress. */
+        get: operations["MeController_purchaseList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/lessons/{lessonId}/done": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark a lesson of a course piece finished (M29 "3 of 12 done"). Idempotent. */
+        put: operations["MeController_lessonDone"];
+        post?: never;
+        /** Mark a lesson not finished. Idempotent. */
+        delete: operations["MeController_lessonNotDone"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notifications (M31, M32), by chip, each with what opening it opens. */
+        get: operations["MeController_notificationList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A month's earnings from the caller's completed sales (M7, M18). Never a balance. */
+        get: operations["MeController_earningsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/earnings/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The completed sales behind a month's earnings, newest first. */
+        get: operations["MeController_earningSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ads/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The app reports that this person viewed, tapped or skipped the card of a
+         *     campaign (the id GET /ads returned). Counted once per person, kind and
+         *     UTC day: a repeat answers the same as the first and changes nothing, so
+         *     the app may retry freely and the answer says nothing about earlier counts.
+         *     A campaign that is not being served (unknown, draft, paused, ended, outside
+         *     its window) is a plain 404, the same for all of them.
+         */
+        post: operations["AdsEventsController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/banks": {
         parameters: {
             query?: never;
@@ -5555,6 +5751,10 @@ export interface components {
              * @enum {string}
              */
             kind?: "amen";
+        };
+        RecordAdEventDto: {
+            /** @enum {string} */
+            type: "view" | "tap" | "skip";
         };
         NameCheckDto: {
             bankCode: string;
@@ -8077,6 +8277,193 @@ export interface components {
             events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveCommunityMessageEvent"])[];
             cursor: string;
             hasMore: boolean;
+        };
+        InboxPreview: {
+            text: string | null;
+            /** @enum {string|null} */
+            attachment: "video" | "image" | "file" | null;
+            mine: boolean;
+            senderName: string | null;
+            sentAt: string;
+        };
+        InboxPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+        };
+        InboxChat: {
+            chatId: string;
+            other: components["schemas"]["InboxPerson"];
+            canMessage: boolean;
+        };
+        InboxPaidDm: {
+            /** @enum {string} */
+            side: "creator" | "fan";
+            other: components["schemas"]["InboxPerson"];
+            questionCount: number;
+            waitingCount: number;
+            nextDeadlineAt: string | null;
+        };
+        InboxCommunity: {
+            communityId: string;
+            name: string;
+            imageUrl: string | null;
+            /** @enum {string} */
+            kind: "open" | "private";
+            /** @enum {string} */
+            role: "host" | "member";
+        };
+        InboxItem: {
+            id: string;
+            /** @enum {string} */
+            kind: "paid_dm" | "community" | "chat";
+            lastActivityAt: string | null;
+            unreadCount: number;
+            preview: components["schemas"]["InboxPreview"] | null;
+            chat: components["schemas"]["InboxChat"] | null;
+            paidDm: components["schemas"]["InboxPaidDm"] | null;
+            community: components["schemas"]["InboxCommunity"] | null;
+        };
+        InboxPage: {
+            items: components["schemas"]["InboxItem"][];
+            nextCursor: string | null;
+        };
+        InboxUnread: {
+            total: number;
+            chats: number;
+            paidDms: number;
+            communities: number;
+        };
+        MeCountsView: {
+            purchases: number;
+            saved: number;
+            unreadNotifications: number;
+        };
+        SavedContentView: {
+            id: string;
+            title: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            /** @enum {string} */
+            accessType: "free" | "paid";
+            priceKobo: number | null;
+            thumbnailUrl: string | null;
+            bought: boolean;
+            creator: components["schemas"]["FeedCreator"];
+        };
+        SavedEventView: {
+            id: string;
+            name: string;
+            startsAt: string;
+            endsAt: string | null;
+            location: string;
+            bannerUrl: string | null;
+            /** @enum {string} */
+            status: "cancelled" | "published";
+        };
+        SavedEntryView: {
+            id: string;
+            /** @enum {string} */
+            kind: "creator" | "content" | "event";
+            savedAt: string;
+            content: components["schemas"]["SavedContentView"] | null;
+            event: components["schemas"]["SavedEventView"] | null;
+            creator: components["schemas"]["FeedCreator"] | null;
+        };
+        SavedPage: {
+            items: components["schemas"]["SavedEntryView"][];
+            nextCursor: string | null;
+        };
+        SavedCreatorState: {
+            creatorWawuId: string;
+            saved: boolean;
+        };
+        PurchasedPieceView: {
+            id: string;
+            title: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            thumbnailUrl: string | null;
+            creator: components["schemas"]["FeedCreator"];
+        };
+        LessonProgressView: {
+            total: number;
+            done: number;
+        };
+        PurchaseEntryView: {
+            id: string;
+            purchasedAt: string;
+            content: components["schemas"]["PurchasedPieceView"];
+            lessons: components["schemas"]["LessonProgressView"] | null;
+        };
+        PurchasePage: {
+            items: components["schemas"]["PurchaseEntryView"][];
+            nextCursor: string | null;
+        };
+        LessonDoneState: {
+            lessonId: string;
+            contentId: string;
+            done: boolean;
+            lessons: components["schemas"]["LessonProgressView"];
+        };
+        NotificationTargetView: {
+            /** @enum {string} */
+            kind: "content" | "community" | "paid_question" | "profile";
+            id: string;
+            title: string | null;
+            deadlineAt: string | null;
+        };
+        NotificationFeedItem: {
+            id: string;
+            kind: string;
+            /** @enum {string} */
+            category: "content" | "other" | "money" | "messages";
+            title: string;
+            body: string;
+            tone: string;
+            amountKobo: number | null;
+            creditsCount: number | null;
+            actionLabel: string | null;
+            imageUrl: string | null;
+            actionHref: string | null;
+            read: boolean;
+            createdAt: string;
+            target: components["schemas"]["NotificationTargetView"] | null;
+            actor: components["schemas"]["FeedCreator"] | null;
+        };
+        NotificationFeedPage: {
+            items: components["schemas"]["NotificationFeedItem"][];
+            nextCursor: string | null;
+            unreadCount: number;
+        };
+        EarningsMonthView: {
+            month: string;
+            earnedKobo: number;
+        };
+        MyEarningsView: {
+            month: string;
+            earnedKobo: number;
+            salesCount: number;
+            previousMonth: string;
+            previousEarnedKobo: number;
+            changePct: number | null;
+            months: components["schemas"]["EarningsMonthView"][];
+        };
+        EarningSaleView: {
+            id: string;
+            /** @enum {string} */
+            stream: "tip" | "content" | "community_credits" | "paid_question";
+            earnedKobo: number;
+            occurredAt: string;
+            title: string | null;
+            contentId: string | null;
+        };
+        EarningSalePage: {
+            month: string;
+            items: components["schemas"]["EarningSaleView"][];
+            nextCursor: string | null;
         };
         PaymentQuoteView: {
             /** @enum {string} */
@@ -16585,6 +16972,310 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiveCatchUp"];
+                };
+            };
+        };
+    };
+    InboxController_list: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+                /** @description Only rows of this kind (the Paid DMs and Communities chips). All kinds when left out. */
+                kind?: "chat" | "paid_dm" | "community";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxPage"];
+                };
+            };
+        };
+    };
+    InboxController_unread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxUnread"];
+                };
+            };
+        };
+    };
+    MeController_counts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeCountsView"];
+                };
+            };
+        };
+    };
+    MeController_savedList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description M30's tab: everything, or one kind. Default `all`. */
+                type?: "all" | "content" | "events" | "creators";
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPage"];
+                };
+            };
+        };
+    };
+    MeController_saveCreator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCreatorState"];
+                };
+            };
+        };
+    };
+    MeController_unsaveCreator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCreatorState"];
+                };
+            };
+        };
+    };
+    MeController_purchaseList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /**
+                 * @description "Search what you've bought": trimmed, then 2 to 60 characters. Matches
+                 *     part of a piece's title or its creator's handle, ignoring case.
+                 */
+                q?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchasePage"];
+                };
+            };
+        };
+    };
+    MeController_lessonDone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDoneState"];
+                };
+            };
+        };
+    };
+    MeController_lessonNotDone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDoneState"];
+                };
+            };
+        };
+    };
+    MeController_notificationList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description M31's chip. Default `all`. */
+                category?: "all" | "money" | "messages" | "content";
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationFeedPage"];
+                };
+            };
+        };
+    };
+    MeController_earningsSummary: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM in Africa/Lagos time, 2000-01 to 2099-12. Default: this month. */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyEarningsView"];
+                };
+            };
+        };
+    };
+    MeController_earningSales: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description YYYY-MM in Africa/Lagos time, 2000-01 to 2099-12. Default: this month. */
+                month?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarningSalePage"];
+                };
+            };
+        };
+    };
+    AdsEventsController_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordAdEventDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: boolean;
+                    };
                 };
             };
         };
