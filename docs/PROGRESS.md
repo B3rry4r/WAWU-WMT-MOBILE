@@ -3,7 +3,7 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 74 of 182.**
+**Launch tasks done: 75 of 183.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 41 | 27 | 9 | 1 |
+| done | 42 | 27 | 9 | 1 |
 
 ## Done
 
@@ -89,6 +89,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
+- [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -105,6 +106,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · MONEY-20 · Merged to main (backend PR #74): every money service behind one wallet provider interface, Fintava kept behind `WALLET_PROVIDER`, rollback is one setting; the lead's task.
 - 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
 - 7 Oct 2026 · ADS-05 · Merged to main in merge train 2 (backend PR #72): count ad views, taps and skips, only for a card the person could be served; Developer 2's task.
 - 7 Oct 2026 · INBOX-07 · Merged to main in merge train 2 (backend PR #72): one inbox list with unread counts; Developer 2's task.
@@ -119,4 +121,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · RELEASE-01 · Builder round 2 (docs only, status verifying): the verifier's four defects fixed in `docs/release/` (B2 reworked now SETTINGS-02 is done, with what the privacy text must name; password, account type, licence number and event address declared; permissions table from the manifests; target API level 36 line) and the disclosure-and-consent, Flutterwave and review-line items kept as findings; owner update applied (organisation account, live website and support email, the lead's 512 x 512 icon in `docs/release/assets/`, the review account as a lead task, every Fintava and Loma Bank mention marked "to be replaced when the Nuvion switch lands", OWNER TO CONFIRM cut to six owner decisions).
 - 6 Oct 2026 · RELEASE-01 · Verified (independent, docs and `eas.json`): `eas.json` is one added line and `npm run check` exit 0; claims trace to DECISIONS and tasks, Naira only, no em-dash; data-safety evidence accurate against hub, wawu-id and `package.json`; B1, B3, B4, B5 real, B2 re-judged against SETTINGS-02 (`done`: in-app screens exist but the Hub serves JSON and no text is filled in, so a public page and the owner's text are still needed); 4 wording defects open (stale SETTINGS-02 status, password and licence number not in the form, one wrong permission line, no target API line); both capability checks and V10 NOT RUN; status building.
 - 4 Oct 2026 · RELEASE-01 · Built (docs and `eas.json` only, status verifying): `docs/release/` has the Play listing with the owner's Console checklist, the data-safety answers with evidence, and the screenshot plan (no listing-quality shot is possible yet: the tabs are placeholders); `eas.json` production profile gets `distribution: store`; both capability checks NOT RUN (owner and device); five blockers for the owner (account deletion, privacy text, Play Billing, report control, camera and picker modules).
-- 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).

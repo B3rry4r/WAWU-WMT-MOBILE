@@ -74,8 +74,9 @@ Builder and verifier are always different sessions.
 56. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
 57. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
 58. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
-59. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
-60. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+59. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
+60. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
+61. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
