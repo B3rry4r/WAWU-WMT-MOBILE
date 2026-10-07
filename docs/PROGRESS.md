@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 28 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
+| review | 0 | 0 | 0 | 0 |
 | done | 43 | 27 | 9 | 3 |
 
-## Built and verified, waiting for the owner's sign-off
+## Being verified
 
 - [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat (You)
 
