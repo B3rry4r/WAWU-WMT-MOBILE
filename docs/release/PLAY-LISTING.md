@@ -37,7 +37,7 @@ stated on the page I read.
 The listing text below is ready. The app is not. On main today the five tabs (Home, Explore, Inbox, Wallet, Me) are
 title-only placeholders (`src/features/shell/TabScreen.tsx`); what is built is sign-up and sign-in, Open your wallet
 (BVN and NIN, details, selfie, account, PIN), Edit profile with social links, and the payout bank account. 132 of 207
-tasks are `todo` (74 are `done`, and RELEASE-01 itself is `verifying`; the eight train 1 tasks that merged on 6 Oct, ADS-03, ADS-04, EXPLORE-03, HOME-10, HOME-11, INBOX-02, ME-16 and WALLET-08, are all backend and add no phone screen). This is expected (RELEASE-01 depends on SHELL-03 and KYC-04 only; RELEASE-02 submits after
+tasks are `todo` (74 are `done`, the eight train 1 tasks that merged on 6 Oct, ADS-03, ADS-04, EXPLORE-03, HOME-10, HOME-11, INBOX-02, ME-16 and WALLET-08, are all backend and add no phone screen). This is expected (RELEASE-01 depends on SHELL-03 and KYC-04 only; RELEASE-02 submits after
 CHECK-3), but these items are **Google policy requirements that a feature task must meet first**, so the owner should
 know the list now:
 

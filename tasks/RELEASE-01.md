@@ -7,7 +7,7 @@ order: 172
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: review
+status: done
 depends_on: [SHELL-03, KYC-04]
 decisions: [R-24]
 passes: [V1, V10]
@@ -393,6 +393,9 @@ No defect. Notes, none needing action before review:
 - The check is pinned to the schema commit named in the file: when backend `main` moves past 872cf45 and someone does not bump the pin, the check still exits 0. Today main is 872cf45; the next builder's step is to bump the pin and list any new model.
 
 **NOT RUN, each with its unblocking fact:** capability checks 1 and 2 and V10 (an internal-testing release of `africa.wawu.wmt` on Play, the review account signing in on the owner's phone and showing a value only the server holds; the second also needs Console's policy status and pre-launch report on that build); the real built manifest (a production build, then `bundletool dump manifest` or Console's App bundle explorer); live TLS grade and the HTTP 301 claim (an SSL test on `api.wawuafrica.com` and `id.wawuafrica.com` by the lead: a live host call is forbidden to this role); who consults and who files for LEGAL (the two LEAD CHECKs at PI-17 and PI-20: the production `AdminUser` roles and the CAC portal login, both outside this repository); the NX-04 and D-5 searches (to run on the built app source after the launch tasks are built); every provider row for Nuvion (Nuvion's own documents once the switch is built; AUTH-07's built request decides the sign-up rows).
+
+## Lead merge note (6 Oct 2026)
+Merged to mobile main after verifier round 5 (no defect open). Docs only: `docs/release/PLAY-LISTING.md`, `DATA-SAFETY.md`, `DATA-INVENTORY.md`, `SCREENSHOTS.md`, the 512 px icon, `docs/BUILDS.md` daggers, and the hold line on BILLS-01 to BILLS-06. Round 5's minor notes stay open for the next release pass: bump the inventory's schema pin whenever backend main adds a model (the check only compares against the pin); NX-05 names the wrong clipboard library; PLAY-LISTING's selfie sentence waits on R-39. Remaining work is NOT RUN items that need a Play internal-testing release, the owner's phone, or Console; the review account is the lead's once an installable build exists. The lead's task.
 
 ## Owner sign-off
 

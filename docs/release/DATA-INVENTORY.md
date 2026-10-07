@@ -185,7 +185,7 @@ Rows I-111, I-112, I-113, I-119 and I-412 to I-416 are the nine models train 1 a
 
 ## 2. Launch tasks: what the person types, picks, uploads or signs, and what is logged
 
-183 files carry `priority: launch`: 182 tasks and `TEMPLATE.md`, the template. Status on mobile `origin/main` 6df916d merged, 6 Oct 2026: of the 182 tasks, 70 `done`, 111 `todo` and 1 `verifying` (RELEASE-01). Each task appears at least once; a task with no input of its own says why. Kinds: typed, picked, uploaded, signed, captured (camera), device (stays on the phone), received (comes back to the person), logged, none.
+183 files carry `priority: launch`: 182 tasks and `TEMPLATE.md`, the template. Status on mobile `origin/main` 6df916d merged, 6 Oct 2026: of the 182 tasks, 71 `done` (RELEASE-01 included) and 111 `todo`. Each task appears at least once; a task with no input of its own says why. Kinds: typed, picked, uploaded, signed, captured (camera), device (stays on the phone), received (comes back to the person), logged, none.
 
 | Item | Task | Artboards | Kind | What | Goes to | Declared in |
 |---|---|---|---|---|---|---|
