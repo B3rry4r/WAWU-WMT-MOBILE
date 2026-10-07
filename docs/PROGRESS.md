@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 87 of 185.**
+**Launch tasks done: 87 of 186.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 69 | 0 | 23 | 26 |
+| todo | 70 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -122,6 +122,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
 - 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
@@ -136,4 +137,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · AUTH-08 · Builder report (wawu-id `dd4326a` on branch `wmt/AUTH-08`, status verifying): a refresh or sign-out finds the refresh token by its stored `jti` and verifies one hash instead of one per stored token, so 200 stored tokens answer in 356 ms (refresh) and 236 ms (sign-out) where main takes 31.6 s and 29.2 s; pre-change tokens (null `jti` row) still refresh once and only once until they expire; an account's expired rows are deleted on every issue and sign-out (50 at a time); additive migration `20261007120000_refresh_token_jti`, rollback run; the task text was wrong that old tokens carry no `jti` (they carried an unstored one), so the fallback is on a missing row, not a missing claim; answers CHECK-1 F-5 and the cause named in G-264.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
 - 7 Oct 2026 · SCHOOLS-02 · Fix round 3 built (backend `7d6b14c`, mobile `e2b1e08`): a NUL or lone surrogate in any school, course or intake text field is 400 naming the field (was 500 in `logo`, `applyUrl`, `reportEmail`), a body that is not a JSON object is 400 on the write routes, migration renamed `20261010100000_schools_hidden` (after main's and every open branch's newest), main merged into both branches, mobile contract equals the backend branch's; protected 253/253, 660 admin and schools tests pass, mobile check exit 0.
-- 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
