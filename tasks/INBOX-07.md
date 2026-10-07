@@ -7,7 +7,7 @@ order: 23
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: [INBOX-01, INBOX-06, INBOX-08]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -122,6 +122,9 @@ None open. D1 below is closed.
 - V5 to V8: not in this task's passes (backend-only, no screens, no money moved).
 - A real Fintava or money path: nothing in this task writes to a wallet or ledger.
 - The real wawu-id was run locally only (sandbox, its own databases); nothing touched a shared or remote service.
+
+## Lead merge note (7 Oct 2026, merge train 2)
+Merged in backend merge train 2 (PR #72, train head 46127cd) after verifier round 3 passed on its merged head. Mobile: conflicts only in BACKEND_GAPS.md (rows kept, sorted) and the generated PROGRESS. Open, not blocking: G-186 to G-190 as recorded; INBOX-08's forged-time 500 on /paid-dm/threads is INBOX-08's (G-190). Developer 2's task.
 
 ## Owner sign-off
 

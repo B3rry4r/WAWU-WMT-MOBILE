@@ -7,7 +7,7 @@ order: 39
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: [ADS-04]
 decisions: [R-15]
 passes: [V1, V2, V3, V4, V9]
@@ -175,6 +175,9 @@ No `differs-for-recorded-reason`.
 - Whole-repo eslint count (the builder's 4514): not re-counted; the 13 changed files are clean.
 - Real WAWU ID registration cost (decides U2): the mock's register needs no verification; the real service is not called from here.
 - A release-mode run of the full suite with a quiet machine: load was 27 to 35 throughout; every failing suite was rerun alone and passed or is the known namespace effect (`hub-rate-limits`).
+
+## Lead merge note (7 Oct 2026, merge train 2)
+Merged in backend merge train 2 (PR #72, train head 46127cd) after verifier round 2 passed. Accepted at merge (Default, lead): F1, a report already in flight when a pause or cancel commits can count once (its row is stamped before the pause); the 'no grace' code comment overstates this and should be reworded. F2 doc drift (G-198 wording, SHARED-CHANGES ADS-05 #3 says ADS-04 is on a branch) to correct with ADS-06. Owner questions U1 to U4 stay open, U4 (counts for a booking never shown) matters for invoicing. Developer 2's task.
 
 ## Owner sign-off
 

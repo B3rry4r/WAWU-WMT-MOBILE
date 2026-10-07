@@ -3,21 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 71 of 182.**
+**Launch tasks done: 74 of 182.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 30 | 25 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 2 | 0 |
-| done | 40 | 27 | 7 | 1 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
-- [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
-- [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
+| review | 0 | 0 | 0 | 0 |
+| done | 41 | 27 | 9 | 1 |
 
 ## Done
 
@@ -39,6 +33,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
+- [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
 - [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
 - [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
@@ -47,6 +42,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
+- [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here (Developer)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
@@ -89,6 +85,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
+- [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
@@ -108,6 +105,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
+- 7 Oct 2026 · ADS-05 · Merged to main in merge train 2 (backend PR #72): count ad views, taps and skips, only for a card the person could be served; Developer 2's task.
+- 7 Oct 2026 · INBOX-07 · Merged to main in merge train 2 (backend PR #72): one inbox list with unread counts; Developer 2's task.
 - 6 Oct 2026 · RELEASE-01 · Merged to main (9226a1b): Google Play listing, data-safety form and the full data inventory (417 items, each mapped to a form row, with a check that fails on any unlisted model); the lead's task.
 - 6 Oct 2026 · RELEASE-01 · Verified round 5 (independent, docs only, status review): D18 and D19 closed and every round 4 minor and at-merge item closed; the inventory check exits 0 (116 models at 872cf45, which is still backend main, 116 listed) and has teeth (a deleted model row, a fake model, a misspelt one, an unknown form row and an old pin each fail, exit 1 to 9, file restored); my own scans of every writer in `src`, all 116 Hub and 14 WAWU ID models and ten random launch tasks (seed 8302) found nothing undeclared; R-39 wording, train 1's eight tasks shown `done`, counts (132 todo, 74 done), daggers, em-dashes (0), listing limits (13, 69, 2,134, 31) and `eas.json` hold; `npm run check` exit 0 (one known load timeout in OpenWalletScreen A26, 37 of 37 alone). Three minor notes, no defect; NOT RUN items unchanged (Play release, manifest, TLS, two LEGAL lead checks, NX-04 and D-5 searches, Nuvion rows).
 - 6 Oct 2026 · RELEASE-01 · Builder round 5 (docs only, status verifying): mobile main 6df916d merged; the inventory is re-pinned to backend 872cf45 and lists all 116 Hub models by real name (the nine train 1 models named, `FeaturedCreator` declared at NX-02 as a staff placement), 417 items found and mapped, 0 unmapped, and its check now fails on any schema model missing from section 1 (proved by deleting a row); HK-03 corrected (the pending sign-up's phone and attempt secret are in the secure store, new row I-417); R-39 applied (codes by email after AUTH-07, selfie step may be dropped, no "nothing about Nuvion" claim); train 1's eight tasks and the task counts (132 `todo`, 74 `done`) brought up to date.
@@ -120,6 +120,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · RELEASE-01 · Verified (independent, docs and `eas.json`): `eas.json` is one added line and `npm run check` exit 0; claims trace to DECISIONS and tasks, Naira only, no em-dash; data-safety evidence accurate against hub, wawu-id and `package.json`; B1, B3, B4, B5 real, B2 re-judged against SETTINGS-02 (`done`: in-app screens exist but the Hub serves JSON and no text is filled in, so a public page and the owner's text are still needed); 4 wording defects open (stale SETTINGS-02 status, password and licence number not in the form, one wrong permission line, no target API line); both capability checks and V10 NOT RUN; status building.
 - 4 Oct 2026 · RELEASE-01 · Built (docs and `eas.json` only, status verifying): `docs/release/` has the Play listing with the owner's Console checklist, the data-safety answers with evidence, and the screenshot plan (no listing-quality shot is possible yet: the tabs are placeholders); `eas.json` production profile gets `distribution: store`; both capability checks NOT RUN (owner and device); five blockers for the owner (account deletion, privacy text, Play Billing, report control, camera and picker modules).
 - 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
-- 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
-- 6 Oct 2026 · ADS-04 · Merged to main in the lead's merge train (wmt/TRAIN-1): serve one sponsored card, `GET /ads?placement=`; Developer 2's task.
-- 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
