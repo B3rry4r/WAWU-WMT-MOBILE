@@ -1,7 +1,7 @@
 ---
 id: HOME-15
 title: Pay for unlocks from the wallet (backend)
-owner: DEV
+owner: YOU
 area: HOME
 order: 123
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # HOME-15 · Pay for unlocks from the wallet (backend)
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

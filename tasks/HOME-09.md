@@ -1,7 +1,7 @@
 ---
 id: HOME-09
 title: TGIF reader
-owner: DEV
+owner: YOU
 area: HOME
 order: 154
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H29, H30, H31, H32, H34, H35]
 ---
 # HOME-09 · TGIF reader
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

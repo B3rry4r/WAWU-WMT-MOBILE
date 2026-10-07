@@ -782,6 +782,121 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/assistant/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The problems offered as taps when the assistant opens (S14). */
+        get: operations["LegalAssistantController_topics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open the conversation, or pick up the unfinished one. A new one starts
+         *     with the assistant's two opening lines and the topic taps.
+         */
+        post: operations["LegalAssistantController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LegalAssistantController_thread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The client says something: typed (`body`) or a tap (`quickReplyId`).
+         *     Before the brief is sent the assistant answers; after, the message goes
+         *     to the consultant on the matter's thread.
+         */
+        post: operations["LegalAssistantController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the assistant again after `503 assistant_unavailable`. Counted like a
+         *     message, and one at a time per conversation (409 `assistant_busy`).
+         */
+        post: operations["LegalAssistantController_reply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Send to a consultant" (S16): the brief goes to WAWU Legal's consultant
+         *     queue and the matter opens at `awaiting_quote`. Nothing is charged.
+         *     Sending again answers the same thread and opens nothing new.
+         */
+        post: operations["LegalAssistantController_sendToConsultant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/legal/availability": {
         parameters: {
             query?: never;
@@ -1687,7 +1802,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** The host's shared links, each with its tickets sold (E18). */
+        get: operations["EventRunningController_referrals"];
         put?: never;
         /** A shareable link that attributes its sales. */
         post: operations["EventTicketingController_createReferral"];
@@ -1711,6 +1827,96 @@ export interface paths {
          *     Flutterwave refund per order, not a status flip.
          */
         post: operations["EventTicketingController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/mine/sold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sold per event for every event the caller hosts (E17). */
+        get: operations["EventRunningController_mySold"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/door/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The events the caller works the door at. */
+        get: operations["EventRunningController_myDoorEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who the host lets check tickets in. */
+        get: operations["EventRunningController_listDoorStaff"];
+        put?: never;
+        /** Add someone to the door, by WAWU id or handle. */
+        post: operations["EventRunningController_addDoorStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door-staff/{staffId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take someone off the door. */
+        delete: operations["EventRunningController_removeDoorStaff"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scan at the door, as the host or their door staff. Let them in (E20)
+         *     with the holder's name, already used (E23) with when and by whom, or
+         *     not valid (E24), with the live counts.
+         */
+        post: operations["EventRunningController_checkIn"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3286,6 +3492,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The label to show for each category, format and kind, beside the value to
+         *     send (EVENTS-02): "Business & Finance" is `business`. Declared before
+         *     `:id` for the same reason `mine` is.
+         */
+        get: operations["EventController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/events/{id}": {
         parameters: {
             query?: never;
@@ -4688,6 +4915,12 @@ export interface components {
              */
             body: string;
         };
+        SendAssistantMessageDto: {
+            /** @description What the client typed. At most 2000 characters. */
+            body?: string;
+            /** @description The `id` of one of the thread's live `quickReplies`. */
+            quickReplyId?: string;
+        };
         CreateLegalRequestDto: {
             serviceCode: string;
             /** @description Whatever the service's intake form collected. */
@@ -5027,6 +5260,13 @@ export interface components {
              *     change.
              */
             reason: string;
+        };
+        AddDoorStaffDto: {
+            /** Format: uuid */
+            wawuUserId?: string;
+            /** @description With or without the "@". Same characters a handle may hold. */
+            handle?: string;
+            label?: string;
         };
         EventDecisionReasonDto: {
             reason: string;
@@ -5428,6 +5668,15 @@ export interface components {
             /** @description Display order. Defaulted by position when omitted. */
             order?: number;
         };
+        NewEventTicketTypeDto: {
+            name: string;
+            /** @description Naira, like every ticket price this backend stores. 0 is a free ticket. */
+            priceNaira: number;
+            /** @description How many exist. A venue has a capacity, so there is no unlimited option. */
+            quantity: number;
+            /** @enum {string} */
+            tier?: "free" | "regular" | "vip" | "vvip" | "early_bird" | "group";
+        };
         CreateEventDto: {
             name: string;
             description: string;
@@ -5435,9 +5684,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio?: string;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /**
              * @description ISO 8601. The authoritative instant — the only thing upcoming/past is
              *     decided on. Not required to be in the future: an event whose start passes
@@ -5451,7 +5700,13 @@ export interface components {
             timeLabel?: string;
             /** @description Display only, e.g. "WAT". */
             timezone?: string;
-            location: string;
+            /**
+             * @description The city or venue line the card shows. Optional (EVENTS-02): the app's
+             *     host wizard asks only for the street address, so when this is left out
+             *     the server fills it from `address`, and leaves it empty when there is no
+             *     address either. A value sent here is stored as sent, as before.
+             */
+            location?: string;
             address?: string;
             /**
              * @description The venue by NAME, e.g. "Eko Convention Centre".
@@ -5477,11 +5732,18 @@ export interface components {
              * @description What the event is about. Defaults to `other` when not stated.
              * @enum {string}
              */
-            category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+            category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
             /** Format: email */
             contactEmail?: string;
             contactPhone?: string;
             speakers?: components["schemas"]["EventSpeakerDto"][];
+            /**
+             * @description The ticket types, sent with the event in the same submit (EVENTS-02), so
+             *     the event and its tickets go to review together. Omitted or empty, the
+             *     event sells nothing, exactly as before. The tiers can still be replaced
+             *     afterwards through PUT /events/:id/tickets.
+             */
+            ticketTypes?: components["schemas"]["NewEventTicketTypeDto"][];
         };
         UpdateEventDto: {
             name?: string;
@@ -5489,9 +5751,9 @@ export interface components {
             hostOrg?: string;
             hostOrgBio?: string;
             /** @enum {string} */
-            format?: "in_person" | "online";
+            format?: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type?: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type?: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             startsAt?: string;
             endsAt?: string;
             timeLabel?: string;
@@ -5511,7 +5773,7 @@ export interface components {
              * @description What the event is about. Defaults to `other` when not stated.
              * @enum {string}
              */
-            category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+            category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
             /** Format: email */
             contactEmail?: string;
             contactPhone?: string;
@@ -5751,6 +6013,51 @@ export interface components {
              * @enum {string}
              */
             kind?: "amen";
+        };
+        CreateAdCreativeDto: {
+            headline: string;
+            /** @description Place, date and price as the team types them. Leave it out for no second line. */
+            subline?: string | null;
+            ctaLabel: string;
+            /**
+             * @description What the button opens. The allow-list is the AdCtaDestination enum: `event` today.
+             * @enum {string}
+             */
+            ctaDestination: "event";
+            /** @description For `event`, an Event id. The event must be published and not over. */
+            ctaDestinationId: string;
+            /** @description An https link to the picture. Leave it out for a card without one. */
+            artworkUrl?: string | null;
+        };
+        CreateAdCampaignDto: {
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
+            startsAt: string;
+            /** @description UTC. Must come after startsAt, and must not have passed yet. */
+            endsAt: string;
+            /** @description Ranks bookings that overlap on one placement. Range: src/ads/ads-limits.ts. */
+            weight?: number;
+            creative: components["schemas"]["CreateAdCreativeDto"];
+        };
+        UpdateAdCreativeDto: {
+            headline?: string;
+            subline?: string | null;
+            ctaLabel?: string;
+            /** @enum {string} */
+            ctaDestination?: "event";
+            ctaDestinationId?: string;
+            artworkUrl?: string | null;
+        };
+        UpdateAdCampaignDto: {
+            advertiser?: string;
+            /** @enum {string} */
+            placement?: "tgif_card" | "today_slot";
+            startsAt?: string;
+            endsAt?: string;
+            weight?: number;
+            creative?: components["schemas"]["UpdateAdCreativeDto"];
         };
         RecordAdEventDto: {
             /** @enum {string} */
@@ -7030,6 +7337,70 @@ export interface components {
                 remaining: number;
             } | null;
         };
+        HostSoldCount: {
+            eventId: string;
+            ticketsSold: number;
+        };
+        HostSoldCounts: {
+            items: components["schemas"]["HostSoldCount"][];
+        };
+        DoorEventView: {
+            eventId: string;
+            eventName: string;
+            /** Format: date-time */
+            startsAt: string;
+            location: string;
+            venueName: string | null;
+            status: string;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            label: string;
+        };
+        DoorEventList: {
+            items: components["schemas"]["DoorEventView"][];
+        };
+        EventReferralSalesView: {
+            id: string;
+            code: string;
+            label: string;
+            ticketsSold: number;
+            revenueNaira: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        DoorStaffView: {
+            id: string;
+            wawuUserId: string;
+            label: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+            /** Format: date-time */
+            addedAt: string;
+        };
+        CheckedInByView: {
+            /** @enum {string} */
+            role: "host" | "door_staff";
+            label: string | null;
+        };
+        DoorCheckInResult: {
+            /** @enum {string} */
+            outcome: "valid" | "already_used" | "invalid";
+            ticket: {
+                code: string;
+                tierName: string;
+                holderName: string | null;
+                /** Format: date-time */
+                checkedInAt: string | null;
+                checkedInBy: components["schemas"]["CheckedInByView"];
+            } | null;
+            totals: {
+                sold: number;
+                checkedIn: number;
+                stillToArrive: number;
+                remaining: number;
+            };
+        };
         DayAvailability: {
             date: string;
             slots: {
@@ -7392,9 +7763,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -7446,9 +7817,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -8025,9 +8396,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -8040,7 +8411,7 @@ export interface components {
             externalUrl: string | null;
             bannerUrl: string | null;
             /** @enum {string} */
-            category: "community" | "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
+            category: "community" | "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
             contactEmail: string | null;
             contactPhone: string | null;
             /** Format: date-time */
@@ -8061,6 +8432,23 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             lastDecisionReason: string | null;
+        };
+        EventOptionsView: {
+            categories: {
+                /** @enum {string} */
+                value: "community" | "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
+                label: string;
+            }[];
+            formats: {
+                /** @enum {string} */
+                value: "in_person" | "online" | "hybrid";
+                label: string;
+            }[];
+            types: {
+                /** @enum {string} */
+                value: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
+                label: string;
+            }[];
         };
         EventGoingView: {
             eventId: string;
@@ -8165,6 +8553,61 @@ export interface components {
             /** Format: date-time */
             completedAt: string | null;
             legalRequestId: string | null;
+        };
+        LegalAssistantTopic: {
+            id: string;
+            label: string;
+            matter: string;
+            matterLabel: string;
+        };
+        LegalAssistantMessage: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "consultant" | "assistant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            consultantName: string | null;
+        };
+        LegalAssistantQuickReply: {
+            id: string;
+            label: string;
+        };
+        LegalAssistantBriefRow: {
+            label: string;
+            value: string;
+        };
+        LegalAssistantBrief: {
+            matter: string;
+            matterLabel: string;
+            rows: components["schemas"]["LegalAssistantBriefRow"][];
+            ready: boolean;
+        };
+        LegalAssistantConsultant: {
+            name: string | null;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        LegalAssistantThread: {
+            id: string;
+            /** @enum {string} */
+            stage: "sent" | "profiling" | "brief_ready";
+            matter: string;
+            matterLabel: string;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            awaitingReply: boolean;
+            legalRequestId: string | null;
+            requestStatus: string | null;
+            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
+            assistantStopped: boolean;
+        };
+        LegalAssistantTranscript: {
+            intakeId: string;
+            legalRequestId: string | null;
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            messages: components["schemas"]["LegalAssistantMessage"][];
         };
         ChatPerson: {
             wawuId: string;
@@ -8464,6 +8907,199 @@ export interface components {
             month: string;
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
+        };
+        AdCreativeView: {
+            headline: string;
+            subline: string | null;
+            ctaLabel: string;
+            /** @enum {string} */
+            ctaDestination: "event";
+            ctaDestinationId: string;
+            artworkUrl: string | null;
+        };
+        AdEventView: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            open: boolean;
+        };
+        AdCounts: {
+            views: number;
+            taps: number;
+            skips: number;
+            ctr: number | null;
+        };
+        AdCampaignView: {
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** @enum {string} */
+            phase: "upcoming" | "running" | "over";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+            creative: components["schemas"]["AdCreativeView"];
+            event: components["schemas"]["AdEventView"];
+            servingNow: boolean;
+            delivery: components["schemas"]["AdCounts"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdSummaryReportView: {
+            /** Format: date-time */
+            generatedAt: string;
+            filters: {
+                /** @enum {string|null} */
+                placement: "tgif_card" | "today_slot" | null;
+                /** @enum {string|null} */
+                status: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+                /** @enum {string|null} */
+                phase: "upcoming" | "running" | "over" | null;
+                /** Format: date-time */
+                from: string | null;
+                /** Format: date-time */
+                to: string | null;
+            };
+            campaigns: number;
+            delivery: components["schemas"]["AdCounts"];
+            deliveryByStatus: {
+                live: unknown;
+                paused: unknown;
+                draft: unknown;
+                scheduled: unknown;
+                ended: unknown;
+            };
+            deliveryByPlacement: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+            byStatus: {
+                live: unknown;
+                paused: unknown;
+                draft: unknown;
+                scheduled: unknown;
+                ended: unknown;
+            };
+            byPlacement: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+            byPhase: {
+                upcoming: unknown;
+                running: unknown;
+                over: unknown;
+            };
+            servingNow: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+        };
+        AdOverlapView: {
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+        };
+        AdAuditEntryView: {
+            id: string;
+            /** @enum {string} */
+            action: "paused" | "updated" | "scheduled" | "ended" | "created" | "resumed" | "deleted";
+            /** @enum {string|null} */
+            previousStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            /** @enum {string|null} */
+            newStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            changes: {
+                [key: string]: {
+                    from: unknown;
+                    to: unknown;
+                };
+            } | null;
+            adminId: string;
+            adminEmail: string;
+            /** @enum {string} */
+            adminRole: "superadmin" | "reviewer" | "support" | "finance";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdCampaignDetailView: {
+            overlapping: components["schemas"]["AdOverlapView"][];
+            history: components["schemas"]["AdAuditEntryView"][];
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** @enum {string} */
+            phase: "upcoming" | "running" | "over";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+            creative: components["schemas"]["AdCreativeView"];
+            event: components["schemas"]["AdEventView"];
+            servingNow: boolean;
+            delivery: components["schemas"]["AdCounts"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdCampaignChangeView: {
+            campaign: components["schemas"]["AdCampaignDetailView"];
+            audit: components["schemas"]["AdAuditEntryView"];
+        };
+        AdDayCounts: {
+            day: string;
+            views: number;
+            taps: number;
+            skips: number;
+        };
+        AdCampaignReportView: {
+            campaign: components["schemas"]["AdCampaignView"];
+            range: {
+                /** Format: date-time */
+                from: string | null;
+                /** Format: date-time */
+                to: string | null;
+                fromDay: string | null;
+                toDay: string | null;
+            };
+            delivery: components["schemas"]["AdCounts"];
+            days: components["schemas"]["AdDayCounts"][];
+            timing: {
+                windowMinutes: number;
+                elapsedMinutes: number;
+                remainingMinutes: number;
+            };
+            activity: {
+                changes: number;
+                pauses: number;
+                /** Format: date-time */
+                lastActionAt: string | null;
+            };
+        };
+        AdCampaignDeletedView: {
+            campaignId: string;
+            audit: components["schemas"]["AdAuditEntryView"];
         };
         PaymentQuoteView: {
             /** @enum {string} */
@@ -9813,6 +10449,132 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatThreadView"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_topics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantTopic"][];
+                };
+            };
+        };
+    };
+    LegalAssistantController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_thread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendAssistantMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_reply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_sendToConsultant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
                 };
             };
         };
@@ -11654,6 +12416,27 @@ export interface operations {
             };
         };
     };
+    EventRunningController_referrals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReferralSalesView"][];
+                };
+            };
+        };
+    };
     EventTicketingController_createReferral: {
         parameters: {
             query?: never;
@@ -11712,6 +12495,139 @@ export interface operations {
                         ordersRefunded: number;
                         refundsNeedingAttention: number;
                     };
+                };
+            };
+        };
+    };
+    EventRunningController_mySold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostSoldCounts"];
+                };
+            };
+        };
+    };
+    EventRunningController_myDoorEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorEventList"];
+                };
+            };
+        };
+    };
+    EventRunningController_listDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorStaffView"][];
+                };
+            };
+        };
+    };
+    EventRunningController_addDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddDoorStaffDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorStaffView"];
+                };
+            };
+        };
+    };
+    EventRunningController_removeDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                staffId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        removed: boolean;
+                    };
+                };
+            };
+        };
+    };
+    EventRunningController_checkIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanTicketDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorCheckInResult"];
                 };
             };
         };
@@ -14729,13 +15645,13 @@ export interface operations {
                  *     now — a two-day summit is still upcoming on its second morning.
                  */
                 view: "upcoming" | "past";
-                format?: "in_person" | "online";
-                type?: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+                format?: "in_person" | "online" | "hybrid";
+                type?: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
                 /**
                  * @description The browse-by-category chip row. Independent of `format` and `type`: a
                  *     music event can be online or in person, and a workshop or a summit.
                  */
-                category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+                category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
                 /**
                  * @description The featured rail is `?featured=true&perPage=1`, not a second endpoint and
                  *     not an extra key hung off the list envelope — the ResponseInterceptor
@@ -14832,6 +15748,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventView"][];
+                };
+            };
+        };
+    };
+    EventController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOptionsView"];
                 };
             };
         };

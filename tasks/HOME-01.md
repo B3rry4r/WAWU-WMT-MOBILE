@@ -1,7 +1,7 @@
 ---
 id: HOME-01
 title: Today: home screen, loading, TGIF off
-owner: DEV
+owner: YOU
 area: HOME
 order: 170
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H1, H11, H36]
 ---
 # HOME-01 · Today: home screen, loading, TGIF off
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

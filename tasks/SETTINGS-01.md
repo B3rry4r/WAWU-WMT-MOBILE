@@ -1,7 +1,7 @@
 ---
 id: SETTINGS-01
 title: Settings, notifications, privacy and blocked
-owner: DEV
+owner: YOU
 area: SETTINGS
 order: 95
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [Z2, Z3, Z4, Z5, Z12]
 ---
 # SETTINGS-01 · Settings, notifications, privacy and blocked
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

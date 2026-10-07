@@ -2399,6 +2399,186 @@
     ]
    }
   },
+  "/api/hub/legal/assistant/topics": {
+   "get": {
+    "operationId": "LegalAssistantController_topics",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/LegalAssistantTopic"
+         }
+        }
+       }
+      }
+     }
+    },
+    "summary": "The problems offered as taps when the assistant opens (S14).",
+    "tags": [
+     "LegalAssistant"
+    ]
+   }
+  },
+  "/api/hub/legal/assistant": {
+   "post": {
+    "operationId": "LegalAssistantController_start",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalAssistantThread"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Open the conversation, or pick up the unfinished one. A new one starts\nwith the assistant's two opening lines and the topic taps.",
+    "tags": [
+     "LegalAssistant"
+    ]
+   }
+  },
+  "/api/hub/legal/assistant/{id}": {
+   "get": {
+    "operationId": "LegalAssistantController_thread",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalAssistantThread"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "LegalAssistant"
+    ]
+   }
+  },
+  "/api/hub/legal/assistant/{id}/messages": {
+   "post": {
+    "operationId": "LegalAssistantController_send",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SendAssistantMessageDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalAssistantThread"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The client says something: typed (`body`) or a tap (`quickReplyId`).\nBefore the brief is sent the assistant answers; after, the message goes\nto the consultant on the matter's thread.",
+    "tags": [
+     "LegalAssistant"
+    ]
+   }
+  },
+  "/api/hub/legal/assistant/{id}/reply": {
+   "post": {
+    "operationId": "LegalAssistantController_reply",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalAssistantThread"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Ask the assistant again after `503 assistant_unavailable`. Counted like a\nmessage, and one at a time per conversation (409 `assistant_busy`).",
+    "tags": [
+     "LegalAssistant"
+    ]
+   }
+  },
+  "/api/hub/legal/assistant/{id}/send": {
+   "post": {
+    "operationId": "LegalAssistantController_sendToConsultant",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalAssistantThread"
+        }
+       }
+      }
+     }
+    },
+    "summary": "\"Send to a consultant\" (S16): the brief goes to WAWU Legal's consultant\nqueue and the matter opens at `awaiting_quote`. Nothing is charged.\nSending again answers the same thread and opens nothing new.",
+    "tags": [
+     "LegalAssistant"
+    ]
+   }
+  },
   "/api/hub/legal/availability": {
    "get": {
     "operationId": "LegalController_availability",
@@ -7540,6 +7720,38 @@
     "tags": [
      "EventTicketing"
     ]
+   },
+   "get": {
+    "operationId": "EventRunningController_referrals",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/EventReferralSalesView"
+         }
+        }
+       }
+      }
+     }
+    },
+    "summary": "The host's shared links, each with its tickets sold (E18).",
+    "tags": [
+     "EventRunning"
+    ]
    }
   },
   "/api/hub/events/{id}/cancel": {
@@ -7596,6 +7808,211 @@
     "summary": "Call it off. Voids every ticket and refunds every buyer \u2014 a real\nFlutterwave refund per order, not a status flip.",
     "tags": [
      "EventTicketing"
+    ]
+   }
+  },
+  "/api/hub/events/mine/sold": {
+   "get": {
+    "operationId": "EventRunningController_mySold",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HostSoldCounts"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Sold per event for every event the caller hosts (E17).",
+    "tags": [
+     "EventRunning"
+    ]
+   }
+  },
+  "/api/hub/events/door/mine": {
+   "get": {
+    "operationId": "EventRunningController_myDoorEvents",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoorEventList"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The events the caller works the door at.",
+    "tags": [
+     "EventRunning"
+    ]
+   }
+  },
+  "/api/hub/events/{id}/door-staff": {
+   "get": {
+    "operationId": "EventRunningController_listDoorStaff",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/DoorStaffView"
+         }
+        }
+       }
+      }
+     }
+    },
+    "summary": "Who the host lets check tickets in.",
+    "tags": [
+     "EventRunning"
+    ]
+   },
+   "post": {
+    "operationId": "EventRunningController_addDoorStaff",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AddDoorStaffDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoorStaffView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Add someone to the door, by WAWU id or handle.",
+    "tags": [
+     "EventRunning"
+    ]
+   }
+  },
+  "/api/hub/events/{id}/door-staff/{staffId}": {
+   "delete": {
+    "operationId": "EventRunningController_removeDoorStaff",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "staffId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "removed": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "removed"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "summary": "Take someone off the door.",
+    "tags": [
+     "EventRunning"
+    ]
+   }
+  },
+  "/api/hub/events/{id}/door/check-in": {
+   "post": {
+    "operationId": "EventRunningController_checkIn",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ScanTicketDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoorCheckInResult"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Scan at the door, as the host or their door staff. Let them in (E20)\nwith the holder's name, already used (E23) with when and by whom, or\nnot valid (E24), with the live counts.",
+    "tags": [
+     "EventRunning"
     ]
    }
   },
@@ -14732,7 +15149,8 @@
        "type": "string",
        "enum": [
         "in_person",
-        "online"
+        "online",
+        "hybrid"
        ]
       }
      },
@@ -14747,7 +15165,9 @@
         "summit",
         "webinar",
         "meetup",
-        "competition"
+        "competition",
+        "conference",
+        "concert"
        ]
       }
      },
@@ -14759,10 +15179,10 @@
       "schema": {
        "type": "string",
        "enum": [
+        "conference",
         "music",
         "business",
         "training",
-        "conference",
         "church",
         "entertainment",
         "fashion",
@@ -14900,6 +15320,28 @@
      }
     },
     "summary": "The host's own submissions at every status, with the reason for the last\nrejection or takedown. Any authenticated user can have submitted an event,\nso there is no creator gate here.",
+    "tags": [
+     "Event"
+    ]
+   }
+  },
+  "/api/hub/events/options": {
+   "get": {
+    "operationId": "EventController_options",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EventOptionsView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The label to show for each category, format and kind, beside the value to\nsend (EVENTS-02): \"Business & Finance\" is `business`. Declared before\n`:id` for the same reason `mine` is.",
     "tags": [
      "Event"
     ]
@@ -19833,6 +20275,22 @@
      "body"
     ]
    },
+   "SendAssistantMessageDto": {
+    "type": "object",
+    "properties": {
+     "body": {
+      "type": "string",
+      "description": "What the client typed. At most 2000 characters.",
+      "maxLength": 2000
+     },
+     "quickReplyId": {
+      "type": "string",
+      "description": "The `id` of one of the thread's live `quickReplies`.",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9_:]+$"
+     }
+    }
+   },
    "CreateLegalRequestDto": {
     "type": "object",
     "properties": {
@@ -20877,6 +21335,26 @@
     "required": [
      "reason"
     ]
+   },
+   "AddDoorStaffDto": {
+    "type": "object",
+    "properties": {
+     "wawuUserId": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "handle": {
+      "type": "string",
+      "description": "With or without the \"@\". Same characters a handle may hold.",
+      "maxLength": 31,
+      "pattern": "^@?[a-zA-Z0-9_.]+$"
+     },
+     "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30
+     }
+    }
    },
    "EventDecisionReasonDto": {
     "type": "object",
@@ -21988,6 +22466,45 @@
      "name"
     ]
    },
+   "NewEventTicketTypeDto": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "pattern": "\\S"
+     },
+     "priceNaira": {
+      "type": "number",
+      "description": "Naira, like every ticket price this backend stores. 0 is a free ticket.",
+      "minimum": 0,
+      "maximum": 10000000
+     },
+     "quantity": {
+      "type": "number",
+      "description": "How many exist. A venue has a capacity, so there is no unlimited option.",
+      "minimum": 1,
+      "maximum": 1000000
+     },
+     "tier": {
+      "type": "string",
+      "enum": [
+       "free",
+       "regular",
+       "vip",
+       "vvip",
+       "early_bird",
+       "group"
+      ]
+     }
+    },
+    "required": [
+     "name",
+     "priceNaira",
+     "quantity"
+    ]
+   },
    "CreateEventDto": {
     "type": "object",
     "properties": {
@@ -22015,7 +22532,8 @@
       "type": "string",
       "enum": [
        "in_person",
-       "online"
+       "online",
+       "hybrid"
       ]
      },
      "type": {
@@ -22025,7 +22543,9 @@
        "summit",
        "webinar",
        "meetup",
-       "competition"
+       "competition",
+       "conference",
+       "concert"
       ]
      },
      "startsAt": {
@@ -22047,6 +22567,7 @@
      },
      "location": {
       "type": "string",
+      "description": "The city or venue line the card shows. Optional (EVENTS-02): the app's\nhost wizard asks only for the street address, so when this is left out\nthe server fills it from `address`, and leaves it empty when there is no\naddress either. A value sent here is stored as sent, as before.",
       "maxLength": 160,
       "pattern": "\\S"
      },
@@ -22074,10 +22595,10 @@
       "type": "string",
       "description": "What the event is about. Defaults to `other` when not stated.",
       "enum": [
+       "conference",
        "music",
        "business",
        "training",
-       "conference",
        "church",
        "entertainment",
        "fashion",
@@ -22100,6 +22621,13 @@
       "items": {
        "$ref": "#/components/schemas/EventSpeakerDto"
       }
+     },
+     "ticketTypes": {
+      "description": "The ticket types, sent with the event in the same submit (EVENTS-02), so\nthe event and its tickets go to review together. Omitted or empty, the\nevent sells nothing, exactly as before. The tiers can still be replaced\nafterwards through PUT /events/:id/tickets.",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/NewEventTicketTypeDto"
+      }
      }
     },
     "required": [
@@ -22108,8 +22636,7 @@
      "hostOrg",
      "format",
      "type",
-     "startsAt",
-     "location"
+     "startsAt"
     ]
    },
    "UpdateEventDto": {
@@ -22138,7 +22665,8 @@
       "type": "string",
       "enum": [
        "in_person",
-       "online"
+       "online",
+       "hybrid"
       ]
      },
      "type": {
@@ -22148,7 +22676,9 @@
        "summit",
        "webinar",
        "meetup",
-       "competition"
+       "competition",
+       "conference",
+       "concert"
       ]
      },
      "startsAt": {
@@ -22193,10 +22723,10 @@
       "type": "string",
       "description": "What the event is about. Defaults to `other` when not stated.",
       "enum": [
+       "conference",
        "music",
        "business",
        "training",
-       "conference",
        "church",
        "entertainment",
        "fashion",
@@ -22812,6 +23342,140 @@
     "required": [
      "card"
     ]
+   },
+   "CreateAdCreativeDto": {
+    "type": "object",
+    "properties": {
+     "headline": {
+      "type": "string"
+     },
+     "subline": {
+      "type": "string",
+      "nullable": true,
+      "description": "Place, date and price as the team types them. Leave it out for no second line."
+     },
+     "ctaLabel": {
+      "type": "string"
+     },
+     "ctaDestination": {
+      "type": "string",
+      "description": "What the button opens. The allow-list is the AdCtaDestination enum: `event` today.",
+      "enum": [
+       "event"
+      ]
+     },
+     "ctaDestinationId": {
+      "type": "string",
+      "description": "For `event`, an Event id. The event must be published and not over."
+     },
+     "artworkUrl": {
+      "type": "string",
+      "nullable": true,
+      "description": "An https link to the picture. Leave it out for a card without one."
+     }
+    },
+    "required": [
+     "headline",
+     "ctaLabel",
+     "ctaDestination",
+     "ctaDestinationId"
+    ]
+   },
+   "CreateAdCampaignDto": {
+    "type": "object",
+    "properties": {
+     "advertiser": {
+      "type": "string"
+     },
+     "placement": {
+      "type": "string",
+      "enum": [
+       "tgif_card",
+       "today_slot"
+      ]
+     },
+     "startsAt": {
+      "type": "string",
+      "description": "UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled."
+     },
+     "endsAt": {
+      "type": "string",
+      "description": "UTC. Must come after startsAt, and must not have passed yet."
+     },
+     "weight": {
+      "type": "number",
+      "description": "Ranks bookings that overlap on one placement. Range: src/ads/ads-limits.ts.",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "creative": {
+      "$ref": "#/components/schemas/CreateAdCreativeDto"
+     }
+    },
+    "required": [
+     "advertiser",
+     "placement",
+     "startsAt",
+     "endsAt",
+     "creative"
+    ]
+   },
+   "UpdateAdCreativeDto": {
+    "type": "object",
+    "properties": {
+     "headline": {
+      "type": "string"
+     },
+     "subline": {
+      "type": "string",
+      "nullable": true
+     },
+     "ctaLabel": {
+      "type": "string"
+     },
+     "ctaDestination": {
+      "type": "string",
+      "enum": [
+       "event"
+      ]
+     },
+     "ctaDestinationId": {
+      "type": "string"
+     },
+     "artworkUrl": {
+      "type": "string",
+      "nullable": true
+     }
+    }
+   },
+   "UpdateAdCampaignDto": {
+    "type": "object",
+    "properties": {
+     "advertiser": {
+      "type": "string"
+     },
+     "placement": {
+      "type": "string",
+      "enum": [
+       "tgif_card",
+       "today_slot"
+      ]
+     },
+     "startsAt": {
+      "type": "string"
+     },
+     "endsAt": {
+      "type": "string"
+     },
+     "weight": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "creative": {
+      "$ref": "#/components/schemas/UpdateAdCreativeDto"
+     }
+    }
    },
    "RecordAdEventDto": {
     "type": "object",
@@ -28262,6 +28926,256 @@
      "outcome"
     ]
    },
+   "HostSoldCount": {
+    "type": "object",
+    "properties": {
+     "eventId": {
+      "type": "string"
+     },
+     "ticketsSold": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "eventId",
+     "ticketsSold"
+    ]
+   },
+   "HostSoldCounts": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/HostSoldCount"
+      }
+     }
+    },
+    "required": [
+     "items"
+    ]
+   },
+   "DoorEventView": {
+    "type": "object",
+    "properties": {
+     "eventId": {
+      "type": "string"
+     },
+     "eventName": {
+      "type": "string"
+     },
+     "startsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "location": {
+      "type": "string"
+     },
+     "venueName": {
+      "type": "string",
+      "nullable": true
+     },
+     "status": {
+      "type": "string"
+     },
+     "cancelledAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "label": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "eventId",
+     "eventName",
+     "startsAt",
+     "location",
+     "venueName",
+     "status",
+     "cancelledAt",
+     "label"
+    ]
+   },
+   "DoorEventList": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/DoorEventView"
+      }
+     }
+    },
+    "required": [
+     "items"
+    ]
+   },
+   "EventReferralSalesView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "code": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "ticketsSold": {
+      "type": "number"
+     },
+     "revenueNaira": {
+      "type": "number"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "id",
+     "code",
+     "label",
+     "ticketsSold",
+     "revenueNaira",
+     "createdAt"
+    ]
+   },
+   "DoorStaffView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "wawuUserId": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "displayName": {
+      "type": "string",
+      "nullable": true
+     },
+     "handle": {
+      "type": "string",
+      "nullable": true
+     },
+     "avatarUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "addedAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "id",
+     "wawuUserId",
+     "label",
+     "displayName",
+     "handle",
+     "avatarUrl",
+     "addedAt"
+    ]
+   },
+   "CheckedInByView": {
+    "type": "object",
+    "properties": {
+     "role": {
+      "type": "string",
+      "enum": [
+       "host",
+       "door_staff"
+      ]
+     },
+     "label": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "role",
+     "label"
+    ]
+   },
+   "DoorCheckInResult": {
+    "type": "object",
+    "properties": {
+     "outcome": {
+      "type": "string",
+      "enum": [
+       "valid",
+       "already_used",
+       "invalid"
+      ]
+     },
+     "ticket": {
+      "type": "object",
+      "properties": {
+       "code": {
+        "type": "string"
+       },
+       "tierName": {
+        "type": "string"
+       },
+       "holderName": {
+        "type": "string",
+        "nullable": true
+       },
+       "checkedInAt": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+       },
+       "checkedInBy": {
+        "$ref": "#/components/schemas/CheckedInByView",
+        "nullable": true
+       }
+      },
+      "required": [
+       "code",
+       "tierName",
+       "holderName",
+       "checkedInAt",
+       "checkedInBy"
+      ],
+      "nullable": true
+     },
+     "totals": {
+      "type": "object",
+      "properties": {
+       "sold": {
+        "type": "number"
+       },
+       "checkedIn": {
+        "type": "number"
+       },
+       "stillToArrive": {
+        "type": "number"
+       },
+       "remaining": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "sold",
+       "checkedIn",
+       "stillToArrive",
+       "remaining"
+      ]
+     }
+    },
+    "required": [
+     "outcome",
+     "ticket",
+     "totals"
+    ]
+   },
    "DayAvailability": {
     "type": "object",
     "properties": {
@@ -29902,7 +30816,8 @@
       "type": "string",
       "enum": [
        "in_person",
-       "online"
+       "online",
+       "hybrid"
       ]
      },
      "type": {
@@ -29912,7 +30827,9 @@
        "summit",
        "webinar",
        "meetup",
-       "competition"
+       "competition",
+       "conference",
+       "concert"
       ]
      },
      "startsAt": {
@@ -30134,7 +31051,8 @@
       "type": "string",
       "enum": [
        "in_person",
-       "online"
+       "online",
+       "hybrid"
       ]
      },
      "type": {
@@ -30144,7 +31062,9 @@
        "summit",
        "webinar",
        "meetup",
-       "competition"
+       "competition",
+       "conference",
+       "concert"
       ]
      },
      "startsAt": {
@@ -32540,7 +33460,8 @@
       "type": "string",
       "enum": [
        "in_person",
-       "online"
+       "online",
+       "hybrid"
       ]
      },
      "type": {
@@ -32550,7 +33471,9 @@
        "summit",
        "webinar",
        "meetup",
-       "competition"
+       "competition",
+       "conference",
+       "concert"
       ]
      },
      "startsAt": {
@@ -32593,10 +33516,10 @@
       "type": "string",
       "enum": [
        "community",
+       "conference",
        "music",
        "business",
        "training",
-       "conference",
        "church",
        "entertainment",
        "fashion",
@@ -32713,6 +33636,96 @@
      "speakers",
      "createdAt",
      "lastDecisionReason"
+    ]
+   },
+   "EventOptionsView": {
+    "type": "object",
+    "properties": {
+     "categories": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "value": {
+         "type": "string",
+         "enum": [
+          "community",
+          "conference",
+          "music",
+          "business",
+          "training",
+          "church",
+          "entertainment",
+          "fashion",
+          "lifestyle",
+          "other"
+         ]
+        },
+        "label": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "value",
+        "label"
+       ]
+      }
+     },
+     "formats": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "value": {
+         "type": "string",
+         "enum": [
+          "in_person",
+          "online",
+          "hybrid"
+         ]
+        },
+        "label": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "value",
+        "label"
+       ]
+      }
+     },
+     "types": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "value": {
+         "type": "string",
+         "enum": [
+          "workshop",
+          "summit",
+          "webinar",
+          "meetup",
+          "competition",
+          "conference",
+          "concert"
+         ]
+        },
+        "label": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "value",
+        "label"
+       ]
+      }
+     }
+    },
+    "required": [
+     "categories",
+     "formats",
+     "types"
     ]
    },
    "EventGoingView": {
@@ -33146,6 +34159,246 @@
      "brief",
      "completedAt",
      "legalRequestId"
+    ]
+   },
+   "LegalAssistantTopic": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "matter": {
+      "type": "string"
+     },
+     "matterLabel": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "label",
+     "matter",
+     "matterLabel"
+    ]
+   },
+   "LegalAssistantMessage": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "authorRole": {
+      "type": "string",
+      "enum": [
+       "client",
+       "consultant",
+       "assistant"
+      ]
+     },
+     "body": {
+      "type": "string"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "consultantName": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "authorRole",
+     "body",
+     "createdAt",
+     "consultantName"
+    ]
+   },
+   "LegalAssistantQuickReply": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "label"
+    ]
+   },
+   "LegalAssistantBriefRow": {
+    "type": "object",
+    "properties": {
+     "label": {
+      "type": "string"
+     },
+     "value": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "label",
+     "value"
+    ]
+   },
+   "LegalAssistantBrief": {
+    "type": "object",
+    "properties": {
+     "matter": {
+      "type": "string"
+     },
+     "matterLabel": {
+      "type": "string"
+     },
+     "rows": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/LegalAssistantBriefRow"
+      }
+     },
+     "ready": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "matter",
+     "matterLabel",
+     "rows",
+     "ready"
+    ]
+   },
+   "LegalAssistantConsultant": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string",
+      "nullable": true
+     },
+     "joinedAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "name",
+     "joinedAt"
+    ]
+   },
+   "LegalAssistantThread": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "stage": {
+      "type": "string",
+      "enum": [
+       "sent",
+       "profiling",
+       "brief_ready"
+      ]
+     },
+     "matter": {
+      "type": "string"
+     },
+     "matterLabel": {
+      "type": "string"
+     },
+     "messages": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/LegalAssistantMessage"
+      }
+     },
+     "quickReplies": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/LegalAssistantQuickReply"
+      }
+     },
+     "brief": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/LegalAssistantBrief"
+       }
+      ],
+      "nullable": true
+     },
+     "awaitingReply": {
+      "type": "boolean"
+     },
+     "legalRequestId": {
+      "type": "string",
+      "nullable": true
+     },
+     "requestStatus": {
+      "type": "string",
+      "nullable": true
+     },
+     "consultant": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/LegalAssistantConsultant"
+       }
+      ],
+      "nullable": true
+     },
+     "assistantStopped": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "stage",
+     "matter",
+     "matterLabel",
+     "messages",
+     "quickReplies",
+     "brief",
+     "awaitingReply",
+     "legalRequestId",
+     "requestStatus",
+     "consultant",
+     "assistantStopped"
+    ]
+   },
+   "LegalAssistantTranscript": {
+    "type": "object",
+    "properties": {
+     "intakeId": {
+      "type": "string"
+     },
+     "legalRequestId": {
+      "type": "string",
+      "nullable": true
+     },
+     "brief": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/LegalAssistantBrief"
+       }
+      ],
+      "nullable": true
+     },
+     "messages": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/LegalAssistantMessage"
+      }
+     }
+    },
+    "required": [
+     "intakeId",
+     "legalRequestId",
+     "brief",
+     "messages"
     ]
    },
    "ChatPerson": {
@@ -34464,6 +35717,722 @@
      "month",
      "items",
      "nextCursor"
+    ]
+   },
+   "AdCreativeView": {
+    "type": "object",
+    "properties": {
+     "headline": {
+      "type": "string"
+     },
+     "subline": {
+      "type": "string",
+      "nullable": true
+     },
+     "ctaLabel": {
+      "type": "string"
+     },
+     "ctaDestination": {
+      "type": "string",
+      "enum": [
+       "event"
+      ]
+     },
+     "ctaDestinationId": {
+      "type": "string"
+     },
+     "artworkUrl": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "headline",
+     "subline",
+     "ctaLabel",
+     "ctaDestination",
+     "ctaDestinationId",
+     "artworkUrl"
+    ]
+   },
+   "AdEventView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "rejected",
+       "removed",
+       "cancelled",
+       "published"
+      ]
+     },
+     "startsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "endsAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "open": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "status",
+     "startsAt",
+     "endsAt",
+     "open"
+    ]
+   },
+   "AdCounts": {
+    "type": "object",
+    "properties": {
+     "views": {
+      "type": "number"
+     },
+     "taps": {
+      "type": "number"
+     },
+     "skips": {
+      "type": "number"
+     },
+     "ctr": {
+      "type": "number",
+      "nullable": true
+     }
+    },
+    "required": [
+     "views",
+     "taps",
+     "skips",
+     "ctr"
+    ]
+   },
+   "AdCampaignView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "advertiser": {
+      "type": "string"
+     },
+     "placement": {
+      "type": "string",
+      "enum": [
+       "tgif_card",
+       "today_slot"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ]
+     },
+     "phase": {
+      "type": "string",
+      "enum": [
+       "upcoming",
+       "running",
+       "over"
+      ]
+     },
+     "startsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "endsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "weight": {
+      "type": "number"
+     },
+     "creative": {
+      "$ref": "#/components/schemas/AdCreativeView",
+      "nullable": true
+     },
+     "event": {
+      "$ref": "#/components/schemas/AdEventView",
+      "nullable": true
+     },
+     "servingNow": {
+      "type": "boolean"
+     },
+     "delivery": {
+      "$ref": "#/components/schemas/AdCounts"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "id",
+     "advertiser",
+     "placement",
+     "status",
+     "phase",
+     "startsAt",
+     "endsAt",
+     "weight",
+     "creative",
+     "event",
+     "servingNow",
+     "delivery",
+     "createdAt",
+     "updatedAt"
+    ]
+   },
+   "AdSummaryReportView": {
+    "type": "object",
+    "properties": {
+     "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "filters": {
+      "type": "object",
+      "properties": {
+       "placement": {
+        "type": "string",
+        "enum": [
+         "tgif_card",
+         "today_slot"
+        ],
+        "nullable": true
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "live",
+         "paused",
+         "draft",
+         "scheduled",
+         "ended"
+        ],
+        "nullable": true
+       },
+       "phase": {
+        "type": "string",
+        "enum": [
+         "upcoming",
+         "running",
+         "over"
+        ],
+        "nullable": true
+       },
+       "from": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+       },
+       "to": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+       }
+      },
+      "required": [
+       "placement",
+       "status",
+       "phase",
+       "from",
+       "to"
+      ]
+     },
+     "campaigns": {
+      "type": "number"
+     },
+     "delivery": {
+      "$ref": "#/components/schemas/AdCounts"
+     },
+     "deliveryByStatus": {
+      "type": "object",
+      "properties": {
+       "live": {},
+       "paused": {},
+       "draft": {},
+       "scheduled": {},
+       "ended": {}
+      },
+      "required": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ]
+     },
+     "deliveryByPlacement": {
+      "type": "object",
+      "properties": {
+       "tgif_card": {},
+       "today_slot": {}
+      },
+      "required": [
+       "tgif_card",
+       "today_slot"
+      ]
+     },
+     "byStatus": {
+      "type": "object",
+      "properties": {
+       "live": {},
+       "paused": {},
+       "draft": {},
+       "scheduled": {},
+       "ended": {}
+      },
+      "required": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ]
+     },
+     "byPlacement": {
+      "type": "object",
+      "properties": {
+       "tgif_card": {},
+       "today_slot": {}
+      },
+      "required": [
+       "tgif_card",
+       "today_slot"
+      ]
+     },
+     "byPhase": {
+      "type": "object",
+      "properties": {
+       "upcoming": {},
+       "running": {},
+       "over": {}
+      },
+      "required": [
+       "upcoming",
+       "running",
+       "over"
+      ]
+     },
+     "servingNow": {
+      "type": "object",
+      "properties": {
+       "tgif_card": {},
+       "today_slot": {}
+      },
+      "required": [
+       "tgif_card",
+       "today_slot"
+      ]
+     }
+    },
+    "required": [
+     "generatedAt",
+     "filters",
+     "campaigns",
+     "delivery",
+     "deliveryByStatus",
+     "deliveryByPlacement",
+     "byStatus",
+     "byPlacement",
+     "byPhase",
+     "servingNow"
+    ]
+   },
+   "AdOverlapView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "advertiser": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ]
+     },
+     "startsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "endsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "weight": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "advertiser",
+     "status",
+     "startsAt",
+     "endsAt",
+     "weight"
+    ]
+   },
+   "AdAuditEntryView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "action": {
+      "type": "string",
+      "enum": [
+       "paused",
+       "updated",
+       "scheduled",
+       "ended",
+       "created",
+       "resumed",
+       "deleted"
+      ]
+     },
+     "previousStatus": {
+      "type": "string",
+      "enum": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ],
+      "nullable": true
+     },
+     "newStatus": {
+      "type": "string",
+      "enum": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ],
+      "nullable": true
+     },
+     "changes": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "object",
+       "properties": {
+        "from": {},
+        "to": {}
+       },
+       "required": [
+        "from",
+        "to"
+       ]
+      },
+      "nullable": true
+     },
+     "adminId": {
+      "type": "string"
+     },
+     "adminEmail": {
+      "type": "string"
+     },
+     "adminRole": {
+      "type": "string",
+      "enum": [
+       "superadmin",
+       "reviewer",
+       "support",
+       "finance"
+      ]
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "id",
+     "action",
+     "previousStatus",
+     "newStatus",
+     "changes",
+     "adminId",
+     "adminEmail",
+     "adminRole",
+     "createdAt"
+    ]
+   },
+   "AdCampaignDetailView": {
+    "type": "object",
+    "properties": {
+     "overlapping": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdOverlapView"
+      }
+     },
+     "history": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdAuditEntryView"
+      }
+     },
+     "id": {
+      "type": "string"
+     },
+     "advertiser": {
+      "type": "string"
+     },
+     "placement": {
+      "type": "string",
+      "enum": [
+       "tgif_card",
+       "today_slot"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "live",
+       "paused",
+       "draft",
+       "scheduled",
+       "ended"
+      ]
+     },
+     "phase": {
+      "type": "string",
+      "enum": [
+       "upcoming",
+       "running",
+       "over"
+      ]
+     },
+     "startsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "endsAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "weight": {
+      "type": "number"
+     },
+     "creative": {
+      "$ref": "#/components/schemas/AdCreativeView",
+      "nullable": true
+     },
+     "event": {
+      "$ref": "#/components/schemas/AdEventView",
+      "nullable": true
+     },
+     "servingNow": {
+      "type": "boolean"
+     },
+     "delivery": {
+      "$ref": "#/components/schemas/AdCounts"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "overlapping",
+     "history",
+     "id",
+     "advertiser",
+     "placement",
+     "status",
+     "phase",
+     "startsAt",
+     "endsAt",
+     "weight",
+     "creative",
+     "event",
+     "servingNow",
+     "delivery",
+     "createdAt",
+     "updatedAt"
+    ]
+   },
+   "AdCampaignChangeView": {
+    "type": "object",
+    "properties": {
+     "campaign": {
+      "$ref": "#/components/schemas/AdCampaignDetailView"
+     },
+     "audit": {
+      "$ref": "#/components/schemas/AdAuditEntryView"
+     }
+    },
+    "required": [
+     "campaign",
+     "audit"
+    ]
+   },
+   "AdDayCounts": {
+    "type": "object",
+    "properties": {
+     "day": {
+      "type": "string"
+     },
+     "views": {
+      "type": "number"
+     },
+     "taps": {
+      "type": "number"
+     },
+     "skips": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "day",
+     "views",
+     "taps",
+     "skips"
+    ]
+   },
+   "AdCampaignReportView": {
+    "type": "object",
+    "properties": {
+     "campaign": {
+      "$ref": "#/components/schemas/AdCampaignView"
+     },
+     "range": {
+      "type": "object",
+      "properties": {
+       "from": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+       },
+       "to": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+       },
+       "fromDay": {
+        "type": "string",
+        "nullable": true
+       },
+       "toDay": {
+        "type": "string",
+        "nullable": true
+       }
+      },
+      "required": [
+       "from",
+       "to",
+       "fromDay",
+       "toDay"
+      ]
+     },
+     "delivery": {
+      "$ref": "#/components/schemas/AdCounts"
+     },
+     "days": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdDayCounts"
+      }
+     },
+     "timing": {
+      "type": "object",
+      "properties": {
+       "windowMinutes": {
+        "type": "number"
+       },
+       "elapsedMinutes": {
+        "type": "number"
+       },
+       "remainingMinutes": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "windowMinutes",
+       "elapsedMinutes",
+       "remainingMinutes"
+      ]
+     },
+     "activity": {
+      "type": "object",
+      "properties": {
+       "changes": {
+        "type": "number"
+       },
+       "pauses": {
+        "type": "number"
+       },
+       "lastActionAt": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+       }
+      },
+      "required": [
+       "changes",
+       "pauses",
+       "lastActionAt"
+      ]
+     }
+    },
+    "required": [
+     "campaign",
+     "range",
+     "delivery",
+     "days",
+     "timing",
+     "activity"
+    ]
+   },
+   "AdCampaignDeletedView": {
+    "type": "object",
+    "properties": {
+     "campaignId": {
+      "type": "string"
+     },
+     "audit": {
+      "$ref": "#/components/schemas/AdAuditEntryView"
+     }
+    },
+    "required": [
+     "campaignId",
+     "audit"
     ]
    },
    "PaymentQuoteView": {
