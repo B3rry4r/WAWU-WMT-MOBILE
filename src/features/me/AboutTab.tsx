@@ -9,6 +9,7 @@ import type { Work } from '@/features/works/api';
 import { stillOf } from '@/features/works/model';
 import { WorkCover } from '@/features/works/WorkCover';
 
+import { ABOUT_WORKS_SHOWN } from './api';
 import type { RoleLine } from './model';
 import { readableLink } from './model';
 
@@ -83,8 +84,12 @@ export function AboutTab({ works, facts, roles, skills, onAddWork, onOpenWork, o
           </View>
           {works.length > 0 ? (
             <View style={styles.thumbs}>
-              {works.map((work) => (
+              {works.slice(0, ABOUT_WORKS_SHOWN).map((work) => (
                 <WorkThumb key={work.id} work={work} onPress={() => onOpenWork(work.id)} />
+              ))}
+              {/* Fewer than three works keep the drawn size: the empty places hold their room (lead ruling U1). */}
+              {Array.from({ length: Math.max(0, ABOUT_WORKS_SHOWN - works.length) }, (_, i) => (
+                <View key={`room-${i}`} testID={`me-works-room-${i}`} style={styles.room} />
               ))}
             </View>
           ) : (
@@ -240,6 +245,7 @@ const styles = StyleSheet.create({
   add: { flexDirection: 'row', alignItems: 'center', gap: aboutMetrics.addGap },
   addText: { ...font(700), fontSize: aboutMetrics.add, lineHeight: canvasNormalLineHeight(aboutMetrics.add) },
   thumbs: { flexDirection: 'row', gap: aboutMetrics.thumbGap },
+  room: { flex: 1, height: aboutMetrics.thumbH },
   thumb: { flex: 1, height: aboutMetrics.thumbH, borderRadius: aboutMetrics.thumbRadius, overflow: 'hidden' },
   facts: { gap: aboutMetrics.factStack },
   bio: { fontSize: aboutMetrics.bio, lineHeight: aboutMetrics.bio * aboutMetrics.bioLine },

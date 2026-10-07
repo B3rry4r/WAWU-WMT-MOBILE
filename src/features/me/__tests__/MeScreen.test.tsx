@@ -214,6 +214,9 @@ describe('M1 · Me', () => {
     await screen.findByTestId('me-name');
     await fireEvent.press(screen.getByTestId('me-tab-about'));
     expect(await screen.findByTestId('me-work-w1')).toBeTruthy();
+    // One work keeps the drawn third of the row: the other two places hold their room.
+    expect(screen.getByTestId('me-works-room-0')).toBeTruthy();
+    expect(screen.getByTestId('me-works-room-1')).toBeTruthy();
     expect(screen.getByTestId('me-about-location')).toHaveTextContent('Lagos, Nigeria');
     expect(screen.getByTestId('me-about-since')).toHaveTextContent('On Who Made This since March 2025');
     expect(screen.getByTestId('me-about-website')).toHaveTextContent('lennoxfilms.com');
@@ -295,6 +298,86 @@ describe('M1 · states', () => {
     await boot();
     expect(await screen.findByTestId('me-count-followers')).toHaveTextContent('0 followers');
     expect(screen.getByTestId('me-count-pieces')).toHaveTextContent('0 pieces');
+  });
+});
+
+describe('M1 · round 2', () => {
+  it('a free piece with no picture gets the veil, so its white view count can be read in light mode (D1)', async () => {
+    answers = {
+      ...header(),
+      [`GET ${GRID}?page=1&perPage=18`]: ok([{ ...piece('v1', 'free', 0, 999), contentType: 'video', previewAssetUrl: 'https://files.test/v1.mp4' }], { pagination: { nextPage: null } }),
+    };
+    await boot();
+    expect(await screen.findByTestId('me-tile-v1-veil')).toBeTruthy();
+    expect(screen.getByTestId('me-tile-v1-caption')).toHaveTextContent('999');
+  });
+
+  it('a refresh that fails keeps the profile on screen; the page error is only for a profile never shown (D2)', async () => {
+    answers = { ...header(), [`GET ${STATS}`]: [ok(stats), refusal(500, 'Internal server error')] };
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    await render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+        <QueryClientProvider client={client}>
+          <MeScreen onEditProfile={jest.fn()} onAddWork={jest.fn()} onOpenWork={jest.fn()} />
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
+    expect(await screen.findByTestId('me-count-followers')).toHaveTextContent('12.5K followers');
+    // What a save on M8 does: every profile query reads again; this time the counts fail.
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ['profile'] });
+    });
+    await waitFor(() => expect(asked.filter((line) => line === `GET ${STATS}`)).toHaveLength(2));
+    expect(screen.queryByTestId('me-error')).toBeNull();
+    expect(screen.getByTestId('me-name')).toHaveTextContent('Lennox Emmanuel');
+    expect(screen.getByTestId('me-count-followers')).toHaveTextContent('12.5K followers');
+  });
+
+  it('a profile-stats failure on first load is the page error, not empty counts', async () => {
+    answers = { ...header(), [`GET ${STATS}`]: refusal(500, 'Internal server error') };
+    await boot();
+    expect(await screen.findByTestId('me-error')).toBeTruthy();
+    expect(screen.queryByTestId('me-counts')).toBeNull();
+  });
+
+  it('a brand-new account with no profile row sees "Nothing published yet", not an error (D3)', async () => {
+    answers = { ...header(), [`GET ${GRID}?page=1&perPage=18`]: refusal(404, 'User not found') };
+    await boot();
+    expect(await screen.findByTestId('me-grid-empty')).toHaveTextContent(/Nothing published yet/);
+    expect(screen.queryByTestId('me-grid-error')).toBeNull();
+  });
+
+  it('a 403 from creator/state means no paid messages, not a failure', async () => {
+    answers = {
+      ...header(),
+      [`GET ${STATE}`]: refusal(403, 'This account has no creator state - a creator account type is required.'),
+      [`GET ${LISTINGS}`]: ok([]),
+    };
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-tab-services'));
+    expect(await screen.findByTestId('me-services-empty')).toBeTruthy();
+    expect(asked).toContain(`GET ${STATE}`);
+    expect(screen.queryByTestId('me-services-error')).toBeNull();
+  });
+
+  it('a listing says "via paid messages" only while paid messages are on (U2)', async () => {
+    answers = { ...header(), [`GET ${STATE}`]: ok({ ...state, dmEnabled: false }), [`GET ${LISTINGS}`]: ok([listing]) };
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-tab-services'));
+    expect(await screen.findByTestId('me-service-listing-l1-sub')).toHaveTextContent(/^Listed as a professional$/);
+    expect(screen.queryByTestId('me-service-paid')).toBeNull();
+  });
+
+  it('About shows at most three works, and fewer keep the drawn size (U1)', async () => {
+    const four = ['w1', 'w2', 'w3', 'w4'].map((id) => ({ ...works.works[0], id }));
+    answers = { ...header(), [`GET ${WORKS}?limit=3`]: ok({ ...works, count: 4, works: four }) };
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-tab-about'));
+    expect(await screen.findByTestId('me-work-w3')).toBeTruthy();
+    expect(screen.queryByTestId('me-work-w4')).toBeNull();
   });
 });
 

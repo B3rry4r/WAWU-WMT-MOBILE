@@ -15,8 +15,9 @@ import { listingTitle, type PaidMessages } from './model';
  */
 const serviceMetrics = { between: 10, padV: 14, padH: 16, iconGap: 12, title: 15.5, sub: 13, subGap: 2 } as const;
 
-/** What a listed professional is reached by, as M2 writes it under each listing. */
-const LISTING_LINE = 'Listed as a professional · via paid messages';
+/** What M2 writes under each listing. People reach a professional through paid messages, so that part is said only while they are on (lead ruling U2). */
+const LISTED = 'Listed as a professional';
+const VIA_PAID = 'via paid messages';
 
 export type ServicesTabProps = { paid: PaidMessages | null; listings: readonly Listing[] };
 
@@ -38,7 +39,7 @@ export function ServicesTab({ paid, listings }: ServicesTabProps) {
         />
       ) : null}
       {listings.map((listing) => (
-        <ServiceRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={LISTING_LINE} />
+        <ServiceRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} />
       ))}
     </View>
   );

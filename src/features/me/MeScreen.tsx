@@ -12,7 +12,7 @@ import { readFailure } from '@/features/profile-edit/failure';
 import { SavedToast } from '@/features/profile-edit/SavedToast';
 import { layout, radius, space, useWawu } from '@/theme';
 
-import { ABOUT_WORKS_SHOWN, aboutWorksKey, fetchAboutWorks, fetchGridPage, fetchListings, fetchProfileStats, fetchServiceState, gridKey, listingsKey, servicesKey, statsKey, type MyProfile } from './api';
+import { aboutWorksKey, fetchAboutWorks, fetchGridPage, fetchListings, fetchProfileStats, fetchServiceState, gridKey, listingsKey, servicesKey, statsKey, type MyProfile } from './api';
 import { AboutTab } from './AboutTab';
 import { ContentGrid, GridSkeleton } from './ContentGrid';
 import {
@@ -84,7 +84,8 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork }: MeScreenProps
   }, [toast]);
 
   const wawuId = me.data?.wawuUserId ?? null;
-  const failed = me.isError || fields.isError || stats.isError;
+  // The whole-page error only when there is nothing to show: a refresh that fails (after a save on M8, say) keeps the profile on screen.
+  const failed = (me.isError && !me.data) || (fields.isError && !fields.data) || (stats.isError && !stats.data);
   const ready = me.data && fields.data && stats.data ? { profile: me.data, details: fields.data, counts: stats.data } : null;
 
   const share = async () => {
@@ -270,7 +271,7 @@ function AboutBody({ me, location, skills, memberSince, onAddWork, onOpenWork, o
   }
   return (
     <AboutTab
-      works={works.data.works.slice(0, ABOUT_WORKS_SHOWN)}
+      works={works.data.works}
       facts={{ bio: me.bio, location, memberSince: memberSinceLine(memberSince), website: me.websiteUrl }}
       roles={roleLinesOf(me.experience ?? [])}
       skills={skills}

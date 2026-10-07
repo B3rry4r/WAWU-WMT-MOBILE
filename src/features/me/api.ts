@@ -60,10 +60,20 @@ export async function fetchProfileStats(): Promise<Pick<ProfileStats, 'followerC
 
 export type GridPage = { pieces: ContentPiece[]; nextPage: number | null };
 
+/**
+ * One page of the signed-in person's own live pieces. An account that has never saved a profile has no row yet,
+ * and the Hub answers 404 "User not found" for its shelf: for the person's own id that is "nothing posted yet".
+ */
 export async function fetchGridPage(wawuId: string, page: number): Promise<GridPage> {
-  const body = (await unwrap(
-    api.GET('/api/hub/users/{wawuId}/content', { params: { path: { wawuId }, query: { page, perPage: GRID_PAGE_SIZE } } }),
-  )) as unknown as Envelope<ContentPiece[]>;
+  let body: Envelope<ContentPiece[]>;
+  try {
+    body = (await unwrap(
+      api.GET('/api/hub/users/{wawuId}/content', { params: { path: { wawuId }, query: { page, perPage: GRID_PAGE_SIZE } } }),
+    )) as unknown as Envelope<ContentPiece[]>;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === HTTP_NOT_FOUND) return { pieces: [], nextPage: null };
+    throw error;
+  }
   if (!body || !Array.isArray(body.data)) throw unreadable('content');
   const next = body.pagination?.nextPage;
   return { pieces: body.data, nextPage: typeof next === 'number' && body.data.length > 0 ? next : null };

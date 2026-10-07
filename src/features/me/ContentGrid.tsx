@@ -62,7 +62,8 @@ function Tile({ tile }: { tile: GridTile }) {
           <Icon name={kindIcon(tile.kind)} size={gridMetrics.kindIcon} color={colors.textMuted} />
         </View>
       )}
-      {tile.locked ? <View testID={`me-tile-${tile.id}-veil`} style={[StyleSheet.absoluteFill, { backgroundColor: blackAt(gridMetrics.veil) }]} /> : null}
+      {/* The white caption needs the veil on a paid tile and on any tile with no picture behind it (light mode's sunken block is near white). */}
+      {tile.locked || !still ? <View testID={`me-tile-${tile.id}-veil`} style={[StyleSheet.absoluteFill, { backgroundColor: blackAt(gridMetrics.veil) }]} /> : null}
       {tile.locked ? (
         <View style={styles.lock}>
           <Icon name="Lock" size={gridMetrics.lock} color={colors.textOnAccent} strokeWidth={gridMetrics.lockStroke} />
