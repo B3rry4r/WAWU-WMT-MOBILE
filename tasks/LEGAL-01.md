@@ -7,7 +7,7 @@ order: 28
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -306,6 +306,61 @@ Failing output on f49927a: `d9-before.out` (5 failed, 1 passed of the 6 D9 tests
 5. **note, unchanged from round 3:** another person on `POST /legal/intake/chat/{requestId}` gets 403, not 404 (finding 2 of round 3).
 
 **NOT RUN.** Clock skew between two Hubs on different machines (the handover stamp): unblocked by two Hub processes whose system clocks differ by more than the few milliseconds of the handover window; at most one message per handover could be mis-ordered. A real model (prompt quality, the safety review): unblocked by a non-production `GEMINI_API_KEY` in a local `.env`. The full backend suite on 14b3404 (this round's change is confined to the legal chat path, and the brief named the protected suite, the concurrency spec and the task specs): unblocked by running it in its own network namespace from a fresh migrated and seeded database. The web's behaviour on a 429 (now only before a consultant has written): unblocked by the web repo calling the route against a limited account. The dashboard half (G-231), V9 against the droplet and the screens (LEGAL-02): as in round 3. The rival build `wmt/LEGAL-01-b` was not touched, by instruction.
+
+## Builder round 5
+
+**Builder round 5: 7 Oct 2026, two things: (1) a test-data defect the lead found in the full-suite run (the purge spec purged a SEEDED creator), and (2) the verifier's D9 (the assistant could not see a consultant line past row 40, so it kept answering, uncounted).** Heads: backend `wmt/LEGAL-01` 7eb680b (on 14b3404), mobile `wmt/LEGAL-01` (the commit that carries this report, on a merge of the verifier's e4c4475; the pushed head is the one in the hand-back). Stand-in AI only. Product code changed only in `legal-chat.service.ts` and `legal-assistant-allowance.ts` (D9); no route, response shape, limit, migration or schema change.
+
+### Part 1. The purge spec deleted seeded rows
+
+**Defect.** `legal-assistant.concurrency.contract.spec.ts`, "the bookkeeping table is owned and purged with the account", called `new AccountPurgeService(prisma).purge(ME)` with ME the seeded creator Chidi Umeh (`...0002`). That really purges him: his content, comments, profile, credits, KYC and the rest, for every suite that runs after it in the same database (foreign-key failures in me.contract, block-hides-people, content-piece, event.contract, purchase.contract and others).
+
+**Proof it was the cause (fresh migrated and seeded database, `npx jest --runInBand src/legal-intake` on 14b3404, 4 suites green):** `ContentPiece` 3 -> **2**, `UserProfile` 3 -> **2**, `Comment` 1 -> **0**, and one row gone from each of `CreatorState`, `CreatorNoResponseTracker`, `CreditsState`, `EvgScore`, `KycSubmission`, `Notification`, `NotificationSettings`, `PrivacySettings` (diff of every table's row count before and after). `SavedItem` 1, `Purchase` 1 and `Event` 0 did not move.
+
+**Fix (test only).** The spec now registers its own throwaway WAWU ID on the stand-in (`registerThrowawayIdentity`, a per-run-unique email and phone, as `community.contract.spec.ts` does), runs the whole flow (open, message, Send, one `LegalAssistantCall` row) with that account's own token, and purges THAT account (`expect([ME, OTHER]).not.toContain(own.sub)`). A `finally` purges it again (idempotent) so a failed run leaves nothing. It also makes a call row as the seeded ME first and asserts it SURVIVES the purge of the throwaway (the purge takes only its own). `cleanUp` now also finds requests created straight in the database. I read every write in all four spec files this task added or changed (`legal-assistant.contract`, `legal-assistant-prompt`, `legal-assistant.concurrency.contract`, `legal-intake.contract` is main's): every other `deleteMany`, `update` and `create` is on `Legal*` tables for ME or OTHER, and the seed holds no `Legal*` row (all six `Legal*` tables are 0 after seeding), so nothing else touches a seeded row.
+
+**After (fresh seeded database, whole `src/legal-intake src/account-purge src/data-export-request` run plus the concurrency spec 3 times):** the count of EVERY table identical before and after (diff empty; `ContentPiece` 3, `UserProfile` 3, `Comment` 1, `SavedItem` 1, `Event` 0, `Purchase` 1), and an md5 of the full row content of every table identical too (so no seeded row was even updated). Scratch: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bl01r5/` (`before-run.log`, `after-unfixed.txt`, `c-before.txt`, `c-after.txt`, `c-*-hash.txt`).
+
+**The test still proves what it claims.** Mutant: the `LegalAssistantCall` entry removed from `ACCOUNT_DATA_MAP`: the purge spec FAILS (`purge.deleted['LegalAssistantCall.wawuUserId']` Expected 1, Received undefined). Map restored.
+
+### Part 2. D9: "has a consultant written" asked of the whole thread, by both sides
+
+**Cause (verifier round 4, finding 1).** `LegalChatService.answerWaiting` read `orderBy createdAt asc, take: 40` and looked for a consultant among those OLDEST 40 rows; `reserveMatterMessage` asked the database about the WHOLE thread. A consultant line at row 41 or later was invisible to the assistant, so it kept answering messages that were neither counted nor refused (verifier: 40 and 300 uncounted AI calls on both routes).
+
+**Fix.**
+- `legal-assistant-allowance.ts`: new exported `consultantHasWritten(db, requestId)`, one `findFirst` of a consultant line in the thread, taking the transaction or the client. `reserveMatterMessage` uses it inside the lock, as before.
+- `legal-chat.service.ts` `answerWaiting`: the stand-down decision is now the same `consultantHasWritten(this.prisma, requestId)` on the WHOLE thread, before anything else. The model's history is the NEWEST 40 rows (`createdAt desc, id desc, take 40`, then reversed to chronological order).
+- Where the AI decides to answer on a matter thread: only `answerWaiting`, which both routes call (`POST /legal/intake/chat/{id}` through `send`, `POST /legal/assistant/{id}/messages` after Send through `sendOnMatter`). `openThread` runs only on an empty thread (no consultant possible). The pre-Send assistant `turn` is on the intake, not the matter thread. So both sides of the handover now use one function.
+
+**Specs (12 new, `legal-assistant.concurrency.contract.spec.ts`, describe "D9 (round 4 verifier)"; 59 in the file now).** Run against the product code of 14b3404 (the two product files restored from it) and against this code:
+
+| Spec | 14b3404 | this code |
+|------|------|------|
+| old route, 20 live client posts (each answered, 40 rows), consultant writes, 40 posts: all 201, 0 AI calls, 0 AI rows after the consultant, hour's spend unchanged | FAILS | passes |
+| the same on the assistant route after Send | FAILS | passes |
+| old route, 60 earlier client rows seeded (120 rows), the same 40 posts | FAILS | passes |
+| assistant route, the same | FAILS | passes |
+| 100 parallel posts after the consultant on a 120-row thread, 150 ms provider: all 201, 0 AI calls | FAILS | passes |
+| the model is given the NEWEST 40 rows, oldest of them first (60 earlier rows, one more post: 40 history entries, last is the new post, the 39 before are h021 to h059 in order) | FAILS | passes |
+| race, consultant writes 0, 40, 100, 200 ms into 50 parallel posts on a 90-row thread: AI calls at most the messages stamped before the consultant, and at most the allowance | FAILS at 0, 40, 100 ms (200 ms passes by timing) | passes, 4 of 4 |
+| M5: two consultant lines, 40 client posts between them and 5 after the second are all 201; a fresh matter still takes the full 30 of 40 parallel (30 x 201, 10 x 429, 30 AI calls) | passes (it is a mutant killer) | passes; **mutant (`_min` -> `_max` in `checkLimits`) FAILS it** |
+| M9: the person's advisory lock held in a separate Postgres session; `sendAsConsultant` AND a client post must both still be waiting after 1.5 s, no consultant row written; both finish after COMMIT | passes (mutant killer) | passes; **mutant (the `lockPerson` line removed from `writeAsConsultant`) FAILS it** (Expected false, Received true) |
+
+Round 4's 9 D9 specs and round 3's D8 specs unchanged and green (100 parallel before a consultant: 28 x 201). Failing output on 14b3404: `spec-on-14b3404.log` (9 failed, 50 passed of 59). Mutants restored after each (`git status` shows only the intended files).
+
+### Checks
+- Whole concurrency spec: **59/59 on 3 consecutive runs** (47 from rounds 2 to 4, 12 new).
+- `src/legal-intake src/account-purge src/data-export-request`: 8 suites, 118 passed, 3 skipped (the form spec's real-Gemini cases), **14 failed, all in `data-export.contract.spec.ts`**: the export email is never sent (`fulfil` returns false, the outbox stays empty) because the run's mock WAWU ID on :5231 is a stand-in without the Hub's internal service key; it does not touch legal code and I did not re-run it on a clean main (see NOT RUN). `account-data-map.spec.ts` and `data-export-map.spec.ts` pass.
+- `tsc --noEmit` 0. eslint 0 on the 3 changed `.ts` files. Tripwire on added lines `test/protected-routes|src/protected-routes|compareShape|protected-registry`: empty. Secret scan of the diff (long hex or base64 runs, `sk_`, `FLWSECK`, bearer tokens, key headers): none.
+- Gates `python3 scripts/gates/run.py`: 852 files, **16 fail, 55 warn**, the 17 FAIL lines diffed identical to the verifier's `origin/main` 0e7b617 list; no new marker.
+- Protected suite `DATABASE_URL=<bl01r5_protected_test> bash scripts/protected-routes/run.sh --fresh HEAD`: 253/253 (244 required), code 7eb680b, lock origin/main.
+- `npm run contract:build`: `contract/openapi.json` unchanged (`git status` empty); mobile `contract/SOURCE_COMMIT` now `7eb680b (wmt/LEGAL-01)`. No migration. Mobile `npm run check`: exit 0 (tsc 0, lint 0, 46 suites / 797 tests, gates 9 run, 216 files, 0 fail, 208 tasks).
+
+**Files.** Backend: `src/legal-intake/assistant/legal-assistant-allowance.ts`, `src/legal-intake/legal-chat.service.ts`, test `src/legal-intake/assistant/tests/legal-assistant.concurrency.contract.spec.ts`. Mobile: this file, `docs/LOG.md`, `contract/SOURCE_COMMIT`, generated files.
+
+**Decisions.** Default (agent), owner may override: a line the model has not seen because it is older than the newest 40 is simply not in its history (as before, but now it is the oldest that drops, not the newest, so the model always answers the message it was just given). An answer already in flight when a consultant writes may be stored after the consultant's line; it belongs to a message that was counted. The race spec asserts the bound on AI calls, not "no AI row after the consultant".
+
+**NOT RUN.** The full backend suite on 7eb680b: the lead runs it in a namespace after the push (unblocked by a fresh migrated and seeded database; after this round the legal specs leave every seeded table byte-identical, so the 6 to 27 foreign-key failures should be gone). `data-export.contract.spec.ts` on a clean `origin/main` to confirm its 14 failures are the environment's: unblocked by running it in the namespace with the mock WAWU ID on :4001 and the Hub's internal service key. Clock skew between two Hubs on different machines: as in round 4. A real model, the dashboard half (G-231), V9 against the droplet, screens (LEGAL-02): as in round 3.
 
 ## Owner sign-off
 

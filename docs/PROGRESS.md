@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 28 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 43 | 27 | 9 | 3 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat (You)
 
