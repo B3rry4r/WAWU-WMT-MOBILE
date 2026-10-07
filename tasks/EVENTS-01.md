@@ -231,6 +231,19 @@ Fix round for the verifier's D1 to D5 (U1, U2, U3 are left for the owner, untouc
 - **Pictures**: `python3 scripts/design/render_design.py E1 E2 E8 E9` beside my own 390 px light and dark screenshots from `npm run web` on the local stack (real sign-in): `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events01f/shots/` (`E1`, `E2`, `E8`, `E9`, each light and dark; `sbs-*` is design left, app right). Not committed. I do not say they match.
 - **Not done / blocked**: nothing blocked. Until backend PR 78 merges, main's contract has no `from-prices`: the mobile contract was synced from the branch (`SOURCE_COMMIT` bb10ef0), and the live Hub at the deployed address answers 404 for it, so E1 would draw no price there until the backend deploys. Fact that unblocks it: PR 78 merged and the Hub deployed.
 
+## Lead rulings after the second independent verifier (7 Oct 2026)
+
+Build round 3 on 8ae4261, then status `verifying`. An independent verifier re-runs it; a report written from the builder's own environment counts as builder evidence.
+
+- **P1 (list waits on prices).** Fix. Draw the rows as soon as `GET /events` answers. Prices arrive into the rows when `GET /events/from-prices` answers; if it fails, the rows stay without a price line. The prices call never puts the screen back on its skeleton and is not retried.
+- **T1 (paging untested).** Fix: specs that kill M08, M21, M22 and M23 (page 2 asked, "Show more" offered while the Hub says there is more, never page 1 twice).
+- **T2 (mixed tiers untested).** Fix: a spec with one sold-out tier and one open tier that kills M11 (`every` turned into `some`).
+- **E2 not refetching while open.** Refetch the tiers when the screen regains focus. No polling. A purchase that the Hub refuses as sold out refreshes the tiers then and there (that path belongs to the ticket purchase task).
+- **No year on dates.** Show the year only when the event is not in the current year ("Sun 16 Mar 2031"). This year's events read as the canvas draws them.
+- **WAT always.** Builder default 4 stands for events in Lagos time. For an event whose `timezone` is not `Africa/Lagos`, show the Hub's `timeLabel` instead of WAT. A wrong zone is a wrong fact.
+- **Non-uuid deep link.** Show the screen's own "This event is not available" state, never the validator's sentence.
+- **Merge order.** The lead merges backend PR #78 (`GET /events/from-prices`) before or with this branch, and regenerates the mobile contract from backend main at that point.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
