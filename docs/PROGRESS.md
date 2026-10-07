@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 30 |
-| building | 0 | 0 | 0 | 1 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 0 | 0 | 0 | 0 |
 | done | 43 | 27 | 9 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event (Developer 3)
 
@@ -111,6 +111,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-02 · Fix round 2, status verifying (backend wmt/EVENTS-02 206814c): migration renamed 20261007190000 after main's tail (F5); non-object ticket types are 400 with a spec (F8); gap row renumbered G-230 (F7); F6 blocked: PUT /events/:id/tickets is a protected web route, owner ruling or an app-only route needed. Protected 253/253, gates equal to main, event specs 107 passed.
 - 6 Oct 2026 · EVENTS-02 · Verified round 2, status building: F1 fixed (40 price and quantity inputs checked); gate, money, moderation, blocks, maps, protected 253/253, gates equal to main, trial merges clean on backend. Four defects open: F5 migration folder sorts before main's, F6 PUT /events/:id/tickets skips the host gate and re-review (reprice after approval, or with a lapsed tick), F7 gap id G-144 collides with PROS-02, F8 `ticketTypes: [[]]` is a 500.
 - 6 Oct 2026 · EVENTS-02 · Fix round 1, status verifying (backend wmt/EVENTS-02 1df8744): POST /events refuses non-integer ticket price and quantity with 400 (F1), spec added; F2 to F4 stay with the owner in the Verifier report.
 - 3 Oct 2026 · EVENTS-02 · Verified, status building: capability check passed live (two ticket types in one POST, pending, in the admin queue), V1, V3 (253/253 main and branch), V4 and V9 passed; V2 failed on F1 (POST /events turns a ticket price of "", true or "5000" into a number, so an empty price is saved as a free ticket; PUT /events/:id/tickets refuses them). Three owner questions (F2 admin queue shows no tiers, F3 tiers of unpublished events are public by id, F4 widened enums). The changed test is legitimate; G-55 confirmed.
@@ -125,4 +126,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · ADS-05 · Merged to main in merge train 2 (backend PR #72): count ad views, taps and skips, only for a card the person could be served; Developer 2's task.
 - 7 Oct 2026 · INBOX-07 · Merged to main in merge train 2 (backend PR #72): one inbox list with unread counts; Developer 2's task.
 - 6 Oct 2026 · RELEASE-01 · Merged to main (9226a1b): Google Play listing, data-safety form and the full data inventory (417 items, each mapped to a form row, with a check that fails on any unlisted model); the lead's task.
-- 6 Oct 2026 · RELEASE-01 · Verified round 5 (independent, docs only, status review): D18 and D19 closed and every round 4 minor and at-merge item closed; the inventory check exits 0 (116 models at 872cf45, which is still backend main, 116 listed) and has teeth (a deleted model row, a fake model, a misspelt one, an unknown form row and an old pin each fail, exit 1 to 9, file restored); my own scans of every writer in `src`, all 116 Hub and 14 WAWU ID models and ten random launch tasks (seed 8302) found nothing undeclared; R-39 wording, train 1's eight tasks shown `done`, counts (132 todo, 74 done), daggers, em-dashes (0), listing limits (13, 69, 2,134, 31) and `eas.json` hold; `npm run check` exit 0 (one known load timeout in OpenWalletScreen A26, 37 of 37 alone). Three minor notes, no defect; NOT RUN items unchanged (Play release, manifest, TLS, two LEGAL lead checks, NX-04 and D-5 searches, Nuvion rows).
