@@ -28,6 +28,10 @@ let mockVaultGate: Promise<void> | null = null;
 
 jest.mock('expo-splash-screen', () => ({ preventAutoHideAsync: jest.fn(), hideAsync: jest.fn() }));
 
+// Home reads the Hub once signed in (HOME-01). These tests are about the route guard, not
+// Home's data, so every request goes to a closed local port and never leaves the machine.
+jest.mock('@/api/env', () => ({ apiBaseUrl: 'http://127.0.0.1:9', identityBaseUrl: 'http://127.0.0.1:9' }));
+
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async (key: string) => {
     if (mockVaultGate) await mockVaultGate;
