@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 75 of 183.**
+**Launch tasks done: 76 of 183.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 43 | 30 | 25 | 31 |
+| todo | 43 | 29 | 25 | 31 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
-| done | 42 | 27 | 9 | 1 |
+| done | 43 | 27 | 9 | 1 |
 
 ## Done
 
@@ -69,6 +69,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
 - [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts (Developer)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
+- [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio (You)
 - [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
 - [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people (Developer)
 - [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN (You)
@@ -98,7 +99,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
-- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader
+- **Developer:** [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader, [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work
 - **Developer 2:** [ADS-06](../tasks/ADS-06.md) Admin ad endpoints, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
@@ -106,7 +107,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · HOME-02 · Merged to main: the For you and Following feed (H2 to H6) at `/feed`, reachable once HOME-01 links it; the lead's task.
 - 7 Oct 2026 · MONEY-20 · Merged to main (backend PR #74): every money service behind one wallet provider interface, Fintava kept behind `WALLET_PROVIDER`, rollback is one setting; the lead's task.
+- 7 Oct 2026 · HOME-02 · Verified round 2 (independent session, `82b8cfa` on backend `4892a59`): D1 and D2 closed, 168 shots across nine phone sizes from 320 x 568 to 430 x 932 with no clipped offer text and no overlap of the book, the preview-ended block or the frame counter (the same driver fails 22 of 24 on round 1's build), M7, M12 and M18 killed by the new tests, 16 of 30 mutants caught (the survivors are tests that read the constants they check or cannot see layout, none a product defect), V4, V6, V9 hold; one merge-time finding, G-215 and G-216 are also LEGAL-01's (next free G-221 and G-222); status review.
+- 7 Oct 2026 · HOME-02 · Round 2 built, awaiting verification: the offer bar wraps instead of clipping (D1), H4's book and H5's message fit between the tabs and the words from 320 x 568 to 430 x 932 and keep clear of the rail (D2), tests pin the once-per-screen view (M7), a locked piece never playing the full file (M12) and the frost at the preview end (M18), the "46 min" rounding rule is written down (U2); gaps renumbered G-215 to G-220 after the merge with main.
+- 6 Oct 2026 · HOME-02 · Verified (independent session, `b4b32bd` on backend `872cf45`): V1, V4, V6, V9 passed, V5 failed on two defects (the offer bar cuts "Pay from wallet" and its title at prices above about ₦2,500; at 360 x 640 the PDF book overlaps the free-pages bar), 17 of 20 mutants caught; back to building.
+- 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-215 to G-220.
 - 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
 - 7 Oct 2026 · ADS-05 · Merged to main in merge train 2 (backend PR #72): count ad views, taps and skips, only for a card the person could be served; Developer 2's task.
 - 7 Oct 2026 · INBOX-07 · Merged to main in merge train 2 (backend PR #72): one inbox list with unread counts; Developer 2's task.
@@ -116,8 +122,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · RELEASE-01 · Verified round 4 (independent, docs only, status building): the inventory check exits 0 (411 of 411 mapped, 72 form rows all cited, all 183 launch tasks and all 116 Hub and 14 WAWU ID models read); D10 to D17 and the minor items closed; owner corrections, six owner decisions, bills as the recorded R-39 fact, daggers, em-dash 0 and listing limits hold; two low defects open: the nine train 1 models (Hub 872cf45) are named wrongly or not at all and the inventory is pinned at a94f338 (D18), and HK-03 says only tokens are stored on the phone while `signupStore.ts` also keeps the pending sign-up's phone and attempt secret (D19); trial merge of main 6df916d conflicts only in the generated PROGRESS.md.
 - 6 Oct 2026 · RELEASE-01 · Builder round 4 (docs only, status verifying): the data-safety form is now built from an exhaustive inventory, `docs/release/DATA-INVENTORY.md` (every one of 107 Hub models, 14 planned models, 239 inputs and logged items across the 183 launch task files, 14 WAWU ID models and 10 sign-up fields, 14 receivers, 13 searched-for-and-not-found rows: 411 items, 411 mapped, 0 unmapped, checked by a command in the file), and every form row has a reference; the verifier's D10 to D17 are closed (legal consultation flow with matter details, booking, typed-name signature with IP and CAC inputs, CV fields, chat attachments, the school click, the device id and biometric label, the blank line, the owner heading, and the bills wording recorded as a fact: Nuvion has no bill payments, on hold in each BILLS-01 to 06 file, not a release decision); who consults and who files at CAC stay LEAD CHECKs with the fact that settles each.
 - 6 Oct 2026 · RELEASE-01 · Verified round 3 (independent, docs only): round 2 defects D5 to D9 and both minor items closed (own scan of all 39 AndroidManifest.xml and 15 .aar files matches the permissions table); new omissions found walking the launch tasks: legal consultation data undeclared (D10, medium), profile CV fields (D11), chat attachments (D12), school-link click (D13), approval device id (D14), plus an unsourced "bills frozen" phrased as an owner decision (D15), D-4 and D-5 under the owner heading (D16) and a broken table (D17); status building. OpenWalletScreen timed out once under load, 37 of 37 alone.
-- 6 Oct 2026 · RELEASE-01 · Builder round 3 (docs only, status verifying): the verifier's five defects fixed in `docs/release/` and `docs/BUILDS.md`: interests picked at sign-up declared (D5), the school receiving name, email and phone declared as shared and added to D-1 and the privacy-text list, marked to ship with the schools enrolment tasks (D6), bill inputs declared and marked frozen pending the wallet provider switch with nothing asserted about Nuvion (D7), `expo-file-system` and the two debug-only manifests added so the permissions table lists all six packages that declare any (D8), the Ads answer is a lead check against the shipped build (D9); Hub citation now a94f338; `docs/BUILDS.md` Fintava lines daggered.
-- 6 Oct 2026 · RELEASE-01 · Verified round 2 (independent, docs only): round 1 defects D1, D2 and D4 closed, D3 partly; the owner's corrections are applied as facts (organisation account, website and support email, the lead's icon checked pixel for pixel as a Lanczos downscale of `icon.png`, review account as a lead task, Fintava and Loma Bank daggered with none deleted, Nuvion only as the stated plan); no em-dash, limits 13, 69 and 2,134; 5 defects open (the form omits sign-up interests, the school receiving name, email and phone at enrolment and bill inputs, the permissions table omits `expo-file-system`, one owner-phrased Ads question); both capability checks and V10 NOT RUN; status building.
-- 6 Oct 2026 · RELEASE-01 · Builder round 2 (docs only, status verifying): the verifier's four defects fixed in `docs/release/` (B2 reworked now SETTINGS-02 is done, with what the privacy text must name; password, account type, licence number and event address declared; permissions table from the manifests; target API level 36 line) and the disclosure-and-consent, Flutterwave and review-line items kept as findings; owner update applied (organisation account, live website and support email, the lead's 512 x 512 icon in `docs/release/assets/`, the review account as a lead task, every Fintava and Loma Bank mention marked "to be replaced when the Nuvion switch lands", OWNER TO CONFIRM cut to six owner decisions).
-- 6 Oct 2026 · RELEASE-01 · Verified (independent, docs and `eas.json`): `eas.json` is one added line and `npm run check` exit 0; claims trace to DECISIONS and tasks, Naira only, no em-dash; data-safety evidence accurate against hub, wawu-id and `package.json`; B1, B3, B4, B5 real, B2 re-judged against SETTINGS-02 (`done`: in-app screens exist but the Hub serves JSON and no text is filled in, so a public page and the owner's text are still needed); 4 wording defects open (stale SETTINGS-02 status, password and licence number not in the form, one wrong permission line, no target API line); both capability checks and V10 NOT RUN; status building.
-- 4 Oct 2026 · RELEASE-01 · Built (docs and `eas.json` only, status verifying): `docs/release/` has the Play listing with the owner's Console checklist, the data-safety answers with evidence, and the screenshot plan (no listing-quality shot is possible yet: the tabs are placeholders); `eas.json` production profile gets `distribution: store`; both capability checks NOT RUN (owner and device); five blockers for the owner (account deletion, privacy text, Play Billing, report control, camera and picker modules).
