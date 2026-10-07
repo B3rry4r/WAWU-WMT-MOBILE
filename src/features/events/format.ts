@@ -10,7 +10,7 @@ const KOBO_PER_NAIRA = 100;
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
-type Wat = { weekday: string; day: number; month: string; hour: string; minute: string };
+type Wat = { weekday: string; day: number; month: string; year: number; hour: string; minute: string };
 
 /** An instant as the clock and calendar in Lagos show it. */
 export function watOf(iso: string): Wat {
@@ -19,6 +19,7 @@ export function watOf(iso: string): Wat {
     weekday: WEEKDAYS[d.getUTCDay()],
     day: d.getUTCDate(),
     month: MONTHS[d.getUTCMonth()],
+    year: d.getUTCFullYear(),
     hour: String(d.getUTCHours()).padStart(2, '0'),
     minute: String(d.getUTCMinutes()).padStart(2, '0'),
   };
@@ -30,10 +31,22 @@ export function badgeOf(iso: string): { month: string; day: string } {
   return { month: w.month.toUpperCase(), day: String(w.day) };
 }
 
-/** "Sun 12 Oct · 10:00 WAT" (E2). */
-export function whenLine(iso: string): string {
+/** The event's own clock, Lagos time unless the Hub says the event keeps another zone. */
+type Zoned = { timezone?: string | null; timeLabel?: string | null };
+const LAGOS = 'Africa/Lagos';
+const keepsLagosTime = (zone?: Zoned) => !zone?.timezone || zone.timezone === LAGOS;
+
+/**
+ * "Sun 12 Oct · 10:00 WAT" (E2). The year follows ("Sun 16 Mar 2031") only when the event is not in
+ * the current year. An event in another zone shows the Hub's `timeLabel` where WAT would be: a
+ * Lagos clock for it would be a wrong fact, so with no label only the date is drawn.
+ */
+export function whenLine(iso: string, zone?: Zoned, now: number = Date.now()): string {
   const w = watOf(iso);
-  return `${w.weekday} ${w.day} ${w.month} · ${w.hour}:${w.minute} WAT`;
+  const date = `${w.weekday} ${w.day} ${w.month}${w.year === watOf(new Date(now).toISOString()).year ? '' : ` ${w.year}`}`;
+  if (keepsLagosTime(zone)) return `${date} · ${w.hour}:${w.minute} WAT`;
+  const label = zone?.timeLabel?.trim();
+  return label ? `${date} · ${label}` : date;
 }
 
 /** "30 Sep". */

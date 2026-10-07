@@ -100,6 +100,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+## Hub entries this task adds (R-41)
+
+The ME-01 and EXPLORE-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._

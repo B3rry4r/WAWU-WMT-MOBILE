@@ -78,7 +78,8 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
 
   if (event.isPending) return <DetailSkeleton onBack={onBack} />;
   if (event.isError) {
-    const gone = isApiError(event.error) && event.error.kind === 'not_found';
+    // A link that is not an event id is refused by the Hub's validator (400); it reads the same as a missing event.
+    const gone = isApiError(event.error) && (event.error.kind === 'not_found' || event.error.kind === 'validation');
     return (
       <Frame onBack={onBack} insetTop={insets.top}>
         {gone ? (
@@ -115,7 +116,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
   const total = basketTotal(buyable, basket);
 
   const share = () => {
-    const message = [data.name, whenLine(data.startsAt), venueOf(data)].filter(Boolean).join('\n');
+    const message = [data.name, whenLine(data.startsAt, data), venueOf(data)].filter(Boolean).join('\n');
     Share.share({ message }).catch(() => undefined);
   };
 
@@ -134,7 +135,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
             </Text>
           </View>
           <View style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-            <InfoLine icon="Clock" text={whenLine(data.startsAt)} />
+            <InfoLine icon="Clock" text={whenLine(data.startsAt, data)} />
             {venueOf(data) ? <InfoLine icon="MapPin" text={venueOf(data)} /> : null}
             <View style={styles.hostLine}>
               <Avatar name={data.hostOrg} hue="lilac" size={detailMetrics.host} decorative />

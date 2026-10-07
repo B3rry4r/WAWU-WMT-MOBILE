@@ -61,7 +61,7 @@ Builder and verifier are always different sessions.
 43. [FIX-03](FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy)
 44. [EXPLORE-04](EXPLORE-04.md) Search: creators, communities, no results, failed · needs UI-02, INBOX-05 from Developer first
 45. [MONEY-15](MONEY-15.md) Transaction history and detail
-46. [EXPLORE-01](EXPLORE-01.md) Explore: browse, categories, loading, empty · needs EXPLORE-03, UI-02, UI-03, EVENTS-01, PROS-01, SCHOOLS-03, PROS-03 from Developer first
+46. [EXPLORE-01](EXPLORE-01.md) Explore: browse, categories, loading, empty · needs EXPLORE-03, UI-02, UI-03 from Developer first
 47. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02, BILLS-01 from Developer first
 48. [HOME-14](HOME-14.md) Pay tips from the wallet (backend)
 49. [WALLET-14](WALLET-14.md) Saved recipients and payout account
@@ -86,7 +86,7 @@ Builder and verifier are always different sessions.
 68. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs INBOX-03, SETTINGS-07 from Developer 2 first
 69. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02, BILLS-02 from Developer first
 70. [HOME-09](HOME-09.md) TGIF reader · needs HOME-10, INBOX-06, UI-02 from Developer first
-71. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02, BILLS-01 from Developer first
+71. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02 from Developer first
 72. [ME-10](ME-10.md) Saved, purchases, notifications, monthly earnings
 73. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
 74. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
@@ -94,11 +94,11 @@ Builder and verifier are always different sessions.
 76. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
 77. [ME-07](ME-07.md) Creator dashboard, my content, rejected, uploads used · needs ME-09, ME-17, UI-02, INBOX-12 from Developer first
 78. [ME-14](ME-14.md) Saved, purchases and notifications · needs UI-02, INBOX-13 from Developer first
-79. [ME-01](ME-01.md) My profile: content, services, about · needs SHELL-01, ME-05, ME-16, UI-02, UI-03, ME-06, INBOX-12, PROS-03 from Developer first
+79. [ME-01](ME-01.md) My profile: content, services, about · needs SHELL-01, ME-05, ME-16, UI-02, UI-03, ME-06 from Developer first
 80. [ME-02](ME-02.md) Someone else's profile and following · needs ME-16, SETTINGS-04, UI-02 from Developer first
 81. [ME-03](ME-03.md) The Me menu · needs UI-02, SCHOOLS-08 from Developer first
 82. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-83. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs SHELL-01, UI-02, UI-03, HOME-10, HOME-11, BILLS-01, EVENTS-01, LEGAL-02, SCHOOLS-03 from Developer first
+83. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs SHELL-01, UI-02, UI-03, HOME-10, HOME-11 from Developer first
 84. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
 85. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs AUTH-04, AUTH-05, UI-02, INBOX-12, ME-06, PROS-03 from Developer first
 86. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel
@@ -107,8 +107,10 @@ Builder and verifier are always different sessions.
 89. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
 90. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
 91. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
-92. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-93. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+92. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
+93. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
+94. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+95. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 

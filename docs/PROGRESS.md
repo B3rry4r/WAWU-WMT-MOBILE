@@ -3,21 +3,21 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 80 of 184.**
+**Launch tasks done: 87 of 186.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 72 | 0 | 24 | 27 |
-| building | 0 | 0 | 0 | 1 |
-| verifying | 0 | 0 | 0 | 0 |
+| todo | 70 | 0 | 23 | 25 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 1 | 0 | 0 | 0 |
-| done | 44 | 27 | 10 | 3 |
+| done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (Developer 3)
 
@@ -30,6 +30,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 - [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs (Developer)
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
+- [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price (Developer 3)
 - [OPS-03](../tasks/OPS-03.md) Run the backend locally for testing (You)
 - [SHELL-02](../tasks/SHELL-02.md) Signed-in session and API wiring (Developer)
 - [INBOX-08](../tasks/INBOX-08.md) Paid DM threads and the creator's queue (Developer 2)
@@ -37,6 +38,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-04](../tasks/OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers (You)
 - [SHELL-03](../tasks/SHELL-03.md) Tester builds (Developer)
 - [INBOX-09](../tasks/INBOX-09.md) Pause paid questions for creators who stop replying (Developer 2)
+- [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes (Developer 3)
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
 - [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
@@ -65,6 +67,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
+- [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
 - [ME-05](../tasks/ME-05.md) Profile fields (Developer)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
@@ -89,6 +92,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account (Developer)
 - [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy (Developer)
+- [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
@@ -98,11 +102,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
+- [HOME-09](../tasks/HOME-09.md) TGIF reader (You)
 - [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
+- [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
+- [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -112,25 +119,25 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** nothing unblocked
-- **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
-- **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending
+- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [PROS-03](../tasks/PROS-03.md) Get listed as a professional, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
+- 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
+- 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
+- 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
+- 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
+- 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
+- 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
+- 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
+- 7 Oct 2026 · ME-11 · Merged: featured works (2 s name lookup limit, 8-media wording, Remove for the owner, placeholder for broken pictures), backend PR #79.
+- 7 Oct 2026 · HOME-09 · Merged: the TGIF reader (no em-dashes in the book, no overlap down to 320 px, shared buttons, honest share wording), backend PR #80; Story and Save wait for the next development build.
+- 7 Oct 2026 · PROS-02 · Merged: professionals backend (location, categories), backend PR #47; Developer 3's task, merged by the lead.
+- 7 Oct 2026 · AUTH-08 · Merged: wawu-id PR #7 (fb8717e). Refresh and sign-out find the token by its id; follow-ups F-1 (sweep inside the rotation transaction), F-3 and F-4 recorded in the task.
+- 7 Oct 2026 · AUTH-08 · Verifier report (independent session, wawu-id `dd4326a` against `4715d17`): every security probe held over real HTTP with tokens minted on main and served by the branch (reuse of a rotated token old and new, a signed-out token cannot be revived through the null-jti fallback, a bad hash falls through to nothing, another account's jti refused with the account filter really applied, a password change ends null-jti and new rows, 40-trial races with both orders exercised, the sweep never touches a live row or another account and is bounded at 50, code rolled back to main still honours new rows); 200 rows carrying a jti answer refresh in 400 ms and sign-out in 186 ms (main 43 s and 26 s), but while 200 unexpired pre-change rows exist a late-position old token still takes 41.7 s and any refusal 29 to 54 s (the old path, gone within 30 days); migration clean over existing rows, diff empty, documented rollback works and re-applies; tsc 0, eslint 43 equal, session-security spec byte-identical, contract unchanged, `test:session-local` 38 of 38, `test:refresh-local` 29 of 29; the Expo app signed in and refreshed after expiry against the branch (sign-out not drivable in the app, none exists); 12 own mutants (10 killed by probes, 1 by the race spec, 2 equivalent); one low note (a refresh answers 500 if the expired-row sweep statement fails, F-1); status review.
+- 7 Oct 2026 · AUTH-08 · Builder report (wawu-id `dd4326a` on branch `wmt/AUTH-08`, status verifying): a refresh or sign-out finds the refresh token by its stored `jti` and verifies one hash instead of one per stored token, so 200 stored tokens answer in 356 ms (refresh) and 236 ms (sign-out) where main takes 31.6 s and 29.2 s; pre-change tokens (null `jti` row) still refresh once and only once until they expire; an account's expired rows are deleted on every issue and sign-out (50 at a time); additive migration `20261007120000_refresh_token_jti`, rollback run; the task text was wrong that old tokens carry no `jti` (they carried an unstored one), so the fallback is on a missing row, not a missing claim; answers CHECK-1 F-5 and the cause named in G-264.
 - 7 Oct 2026 · EVENTS-01 · Second independent verifier (own stack on 5441, 5442 and 8441, the real wawu-id, backend main and then the PR 78 branch; verified `2b58fc1` as briefed and the head `827dc56`): V1, V4, V9 passed, V5 passed at the head (D1 to D5 closed, checked in pictures), V6 and the filters passed with one defect: E1 waits on the new from-prices call (a 5xx adds about 4 s, a hung call keeps the skeleton). Paging has no test (4 mutants survive) and the all-sold rule has none for a mixed event (1 survives); 28 mutants, 19 killed. Five questions noted (no refetch while E2 is open, no year on dates, event time zone ignored, raw uuid message on a bad id, merge order with backend PR 78). Status back to building. Report in `tasks/EVENTS-01.md`.
-- 7 Oct 2026 · EVENTS-01 · Fix round 1 (verifier's D1 to D5), status verifying: section heading is the h2 style (700), 4 pt between E1 rows, the TICKETS label gap on E2, E1's "from" price is the cheapest tier that can be bought now (new backend route `GET /events/from-prices`, PR 78, protected routes unchanged; G-271 closed on the branch), and E9's disabled Sold out button is built.
-- 7 Oct 2026 · EVENTS-01 · Verified (fresh session, own stack on 4185 to 4187 with the real wawu-id, main merged): V1 passed (48 suites, 841 tests, gates 228 files 0 findings), V4, V6, V9 passed, capability checks passed, V5 failed on five defects (D1 section heading weight, D2 row gap, D3 tickets label gap, D4 hero and row "from" price counts a sold-out tier, D5 E9's disabled Sold out button has no owner), three questions for the owner; V10 NOT RUN (needs OPS-10 and a tester build). Status back to building. Report in `tasks/EVENTS-01.md`.
-- 7 Oct 2026 · EVENTS-01 · Built, status verifying (mobile `wmt/EVENTS-01`, main c0fb4e3; no backend change): E1 Events (featured card, This week and Upcoming lists, Going on each row), E8 filter sheet (When, Kind and Category from `GET /events/options`, "Show N events" from the Hub's total), E2 event detail with a stepper per tier and a running total across tiers, E9 sold out; routes `/events` and `/events/<id>`. Checked on the local stack (backend 6c0e435) with a real sign-in: the Going tap wrote one row read back from Postgres. `npm run check` 46 suites and 797 tests before, 48 and 841 after, gates 0 fail. Left to later tasks: the My events and Host event tabs and the Host banner (EVENTS-08, EVENTS-04), Get tickets (EVENTS-06). Gaps G-270 to G-273. V10 NOT RUN (needs OPS-10 and a tester build).
-- 7 Oct 2026 · AUTH-08 · New task (lead, order 182; tasks from 182 move down one): wawu-id refresh and sign-out look up the token by id instead of argon2-checking every stored token (CHECK-1 F-5, SETTINGS-01 G-264).
-- 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
-- 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
-- 7 Oct 2026 · CHECK-1 · Auditor report (independent session, mobile f0b81c9, backend 6c0e435, wawu-id 4715d17, status review): real sign-in against the local stack passes (cold start, resume, mid-session expiry, a bio written in the app read back through the API); 33 artboards compared picture against picture (16 match, 17 differ, all with recorded reasons, two with a minor unrecorded item), 24 of them have no way in from the app; findings F-1 (production build shows Expo's sitemap and default not-found screen), F-2 (R-38 names a bar the canvas and every task contradict), F-3 (R-39 names AUTH-07, which has no task file), F-5 (token refresh slows with each stored sign-in); capability check 3 is the owner's phone, NOT RUN.
-- 7 Oct 2026 · ADS-06 · Merged to main (backend PR #76): admin ad endpoints (create, edit, schedule, pause, resume, end, delete, reports) with ADS-05's counts and an audit row per action; reviewer test gap T1 left as a follow-up; Developer 2's task, merged by the lead.
-- 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.
-- 7 Oct 2026 · LEGAL-01 · Verifier report round 3 (independent session, backend f49927a, mobile 61cf8b0): no defect open, status review. D8 reproduces on ca1fd42 (100 parallel posts on the older chat route: 100 x 201 and 100 AI calls) and is closed on f49927a (28 x 201, 72 x 429, 28 AI calls; 50 old plus 50 new share one allowance, hour total exactly 30; the same with two Hubs on one database at 150 ms and 2 s), the 201 is byte-identical to main 0e7b617, the hung-provider case makes 2 brief calls not 3, D1 to D6 still hold, 9 of 9 of my limit and window mutants are killed, the migration folder sorts after main's newest and shares no stamp, protected suite 253/253, gates the same 16 fail as main (55 warn against 51, the four PROVISIONAL markers), G-231 and G-232 are unique across every ref, `npm run check` exit 0. Notes: another user on the older route is 403 on main and the branch; the allowance now also counts messages to a joined consultant (30 an hour); a NUL in `body` on the older route is a 500 on main too.
-- 7 Oct 2026 · LEGAL-01 · Builder round 3, awaiting re-verification: D8 closed (the older `POST /legal/intake/chat/{requestId}` now draws on the same per-person allowance as the assistant routes: 100 parallel posts after payment give 28 accepted and 28 AI calls, not 100), a release clears only its own lease (a late failure no longer starts a third brief call), the 30, 40 and 5 are pinned by literal-number tests (6 mutants run, 6 killed), the migration is `20261007200000_legal_assistant` (after main's `20261007190000`), and this task's gap rows are G-231 and G-232. Backend main 0e7b617 and mobile main d36ae51 merged; protected suite 253/253, gates equal to main's 16 FAIL lines, contract adds the same 7 paths. NOT RUN: a real model, a provider timeout (fenced adapter), the full suite on the merged head.
-- 7 Oct 2026 · LEGAL-01 · Verifier report round 2 (independent session): D1 to D6 and the migration order (U1) are closed and the M13 log test works; the 30 an hour, 40 per conversation and 5 brief tries an hour hold over real HTTP under 200 parallel sends, mixed sends and replies, and two Hub processes on one database (60 sends: 30 accepted, 30 refused, 30 AI calls); privacy, ownership, money, trial merge, protected suite 253/253 and the gates are clean; 45 mutants, 40 killed. Not ready by one low defect (D8): the older `POST /legal/intake/chat/{requestId}` has no limit after payment (100 of 100 accepted and 100 AI calls, against 28 on the new route), so D7 is closed only on the assistant routes; status back to building. Recorded for the lead: the hung-provider behaviour (2 to 3 brief calls, all counted, one request), G-215 and G-216 clash with HOME-02's (renumber to G-221 and G-222 at merge), and the rival `wmt/LEGAL-01-b` conflicts in 8 backend files, in the table and column names and in the routes.
-- 7 Oct 2026 · LEGAL-01 · Builder round 2, awaiting re-verification: the seven defects the verifier found are closed, each with a test that failed on the first version. The 30 an hour and 40 per conversation limits hold under parallel sends (the check and the write are one transaction under a per-person lock), `POST {id}/reply` counts toward them and is serialized (one AI call for 15 parallel replies), Send claims the intake before preparing the brief (one call for 20 parallel sends, a failed brief retryable 5 times an hour), a NUL byte is a 400, opening is idempotent per person (one in-progress assistant intake for 12 parallel opens, partial unique index in the migration, now `20261007120000_legal_assistant`), em-dashes are stripped from every assistant line including the paid-wait replies, messages after Send share the same hourly allowance, and a test holds every message body out of the logs. Full suite 4098 passed (only the host-network `hub-rate-limits` file fails in the namespace, 22/22 on the host), protected suite 253/253, gates the same 16 fail as main. Backend `wmt/LEGAL-01` ca1fd42; contract regenerated (7 new paths, none changed). Status verifying.
-- 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.

@@ -557,3 +557,122 @@ describe('The "from" price a person can pay (G-271)', () => {
     expect(rtl.screen.queryByText(/From ₦/i)).toBeNull();
   });
 });
+
+describe('The list draws before the prices answer (P1)', () => {
+  const gospel = event({ id: 'e-2', name: 'Gospel Night', location: 'Abuja', venueName: null, priceFromNaira: 3000 });
+  const serveWith = (prices: Reply) => {
+    handler = (c) => {
+      if (c.path === '/events/options') return ok(options);
+      if (c.path === '/events/from-prices') return prices;
+      if (featuredOnly(c)) return page([]);
+      if (c.path === '/events' && c.method === 'GET') return page([gospel]);
+      return undefined;
+    };
+  };
+
+  it('draws the rows while the prices call is still open, and never shows the skeleton for it', async () => {
+    serveWith({ hold: true });
+    await bootList();
+    expect(await rtl.screen.findByText('Gospel Night')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('events-loading')).toBeNull();
+    expect(rtl.screen.queryByText(/From ₦/i)).toBeNull();
+  });
+
+  it('does not retry a failed prices call, and the rows stay without a price line', async () => {
+    serveWith({ status: 500, body: { statusCode: 500, message: 'Prices are down' } });
+    await bootList();
+    expect(await rtl.screen.findByText('Gospel Night')).toBeTruthy();
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(calls.filter((c) => c.path === '/events/from-prices')).toHaveLength(1);
+    expect(rtl.screen.queryByTestId('events-loading')).toBeNull();
+    expect(rtl.screen.queryByText(/From ₦/i)).toBeNull();
+  });
+});
+
+describe('Show more asks the next page (T1)', () => {
+  const far = (n: number) => event({ id: `p-${n}`, name: `Far Event ${n}`, startsAt: later, ticketed: false });
+  const paged = (c: Call) => {
+    if (c.path === '/events/options') return ok(options);
+    if (featuredOnly(c)) return page([]);
+    if (c.path === '/events' && c.method === 'GET') {
+      const n = Number(c.query.get('page'));
+      const rows = n === 2 ? [far(3), far(4)] : [far(1), far(2)];
+      return {
+        status: 200,
+        body: { statusCode: 200, message: 'OK', data: rows, pagination: { currentPage: n, nextPage: n === 1 ? 2 : null, perPage: 20, total: 4 } },
+      };
+    }
+    return undefined;
+  };
+
+  it('offers "Show more" while the Hub has a next page, asks page 2 once, appends it and then stops offering', async () => {
+    handler = paged;
+    await bootList();
+    expect(await rtl.screen.findByText('Far Event 2')).toBeTruthy();
+    expect(rtl.screen.queryByText('Far Event 3')).toBeNull();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('events-more'));
+    expect(await rtl.screen.findByText('Far Event 4')).toBeTruthy();
+    expect(rtl.screen.getByText('Far Event 1')).toBeTruthy();
+    expect(rtl.screen.getByText('Far Event 3')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('events-more')).toBeNull();
+    const asked = calls.filter((c) => c.path === '/events' && c.query.get('featured') !== 'true').map((c) => c.query.get('page'));
+    expect(asked).toEqual(['1', '2']);
+  });
+});
+
+describe('Dates and zones on the detail (E2)', () => {
+  function serveEvent(over: Partial<EventView>) {
+    handler = (c) => {
+      if (c.path === '/events/e-1' && c.method === 'GET') return ok(event(over));
+      if (c.path === '/events/e-1/tickets') return ok([tier()]);
+      return undefined;
+    };
+  }
+
+  it('adds the year only when the event is not in the current year', async () => {
+    serveEvent({ startsAt: '2031-03-16T09:00:00.000Z' });
+    await bootDetail();
+    expect(await rtl.screen.findByText('Sun 16 Mar 2031 · 10:00 WAT')).toBeTruthy();
+  });
+
+  it('shows the Hub\'s time label, not WAT, for an event in another zone', async () => {
+    serveEvent({ timezone: 'America/New_York', timeLabel: '5:00 AM EST' });
+    await bootDetail();
+    await rtl.screen.findByText('Creators Summit');
+    expect(rtl.screen.getByText(/· 5:00 AM EST$/)).toBeTruthy();
+    expect(rtl.screen.queryByText(/WAT/)).toBeNull();
+  });
+
+  it('keeps WAT for an event in Lagos', async () => {
+    serveEvent({ timezone: 'Africa/Lagos', timeLabel: 'ignored' });
+    await bootDetail();
+    expect(await rtl.screen.findByText(/WAT$/)).toBeTruthy();
+  });
+
+  it('answers a link that is not an event id with the screen\'s own words, not the validator\'s', async () => {
+    handler = (c) =>
+      c.path.startsWith('/events/')
+        ? { status: 400, body: { statusCode: 400, message: 'Validation failed (uuid is expected)' } }
+        : undefined;
+    await bootDetail('not-a-uuid');
+    expect(await rtl.screen.findByTestId('event-gone')).toBeTruthy();
+    expect(rtl.screen.queryByText(/uuid/i)).toBeNull();
+  });
+});
+
+describe('Sold out needs every tier sold (T2)', () => {
+  it('keeps the buy bar when one tier is sold out and another is open', async () => {
+    handler = (c) => {
+      if (c.path === '/events/e-1' && c.method === 'GET') return ok(event());
+      if (c.path === '/events/e-1/tickets')
+        return ok([tier({ id: 't-gone', name: 'Early bird', soldOut: true, remaining: 0 }), tier({ id: 't-open', name: 'Regular' })]);
+      return undefined;
+    };
+    await bootDetail();
+    await rtl.screen.findByTestId('tier-t-open');
+    expect(rtl.screen.getByTestId('event-total-amount')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('event-sold-bar')).toBeNull();
+  });
+});

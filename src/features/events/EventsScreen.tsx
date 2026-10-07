@@ -86,6 +86,8 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
     queryFn: () => fetchFromPrices(priced),
     enabled: !list.isPending && !featured.isPending && priced.length > 0,
     placeholderData: keepPreviousData,
+    // Prices are a nicety: a failure leaves the rows without a price line and is never retried.
+    retry: false,
   });
   const weekMode = filtersAreDefault(filters) && !showAll && events.some((e) => startsThisWeek(e, now));
   const shown = weekMode ? events.filter((e) => startsThisWeek(e, now)) : events;
@@ -124,7 +126,7 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
         contentContainerStyle={[styles.body, { paddingBottom: bodyMetrics.bottom + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        {list.isPending || prices.isLoading ? (
+        {list.isPending ? (
           <EventsSkeleton />
         ) : list.isError ? (
           <ErrorState

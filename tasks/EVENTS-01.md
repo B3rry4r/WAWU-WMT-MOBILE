@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -231,6 +231,20 @@ Fix round for the verifier's D1 to D5 (U1, U2, U3 are left for the owner, untouc
 - **Pictures**: `python3 scripts/design/render_design.py E1 E2 E8 E9` beside my own 390 px light and dark screenshots from `npm run web` on the local stack (real sign-in): `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events01f/shots/` (`E1`, `E2`, `E8`, `E9`, each light and dark; `sbs-*` is design left, app right). Not committed. I do not say they match.
 - **Not done / blocked**: nothing blocked. Until backend PR 78 merges, main's contract has no `from-prices`: the mobile contract was synced from the branch (`SOURCE_COMMIT` bb10ef0), and the live Hub at the deployed address answers 404 for it, so E1 would draw no price there until the backend deploys. Fact that unblocks it: PR 78 merged and the Hub deployed.
 
+## Builder report, round 3 (7 Oct 2026)
+
+Built on 3a2de37, with `origin/main` merged (conflicts in BACKEND_GAPS, SHARED-CHANGES and this file kept both sides; `contract/SOURCE_COMMIT` kept as the branch's `bb10ef0` so the PR 78 sync notes still hold; PROGRESS regenerated).
+
+- **P1.** `EventsScreen.tsx`: the skeleton waits on `GET /events` only; the prices query has `retry: false` and never gates the screen. Specs: rows draw while the prices call is held open; a 500 is asked once and the rows stay without a price line.
+- **T1.** Spec with a Hub answering two pages: "Show more" is offered, asks `page=2` once (pages asked: 1, 2), appends, then is gone. Run against M21 (`getNextPageParam` undefined) and M23 (page always 1): each fails 1 spec. M08 and M22 are covered by the same spec (no "Show more" or no page 2 rows fail it); I did not run those two.
+- **T2.** Spec with one sold-out and one open tier: the buy bar stays and the sold bar is absent. M11 (`every` to `some`): fails 1 spec.
+- **E2 focus.** `useRefetchTiersOnFocus` (called by `src/app/events/[id].tsx`) refetches the tiers when the screen is shown again after being left; the first showing is skipped, no timer. Spec `eventsFocus.test.tsx` (mocks `useFocusEffect`, so the navigator is played by the test).
+- **Year.** `whenLine` adds the year only when the event's year is not this year ("Sun 16 Mar 2031"). Badges and this year's lines are unchanged.
+- **Zone.** `whenLine(iso, event)`: `timezone` null or `Africa/Lagos` keeps "10:00 WAT"; any other zone shows the Hub's `timeLabel` after the date in place of the clock and WAT. Default (agent): with no `timeLabel` only the date is drawn, because a Lagos clock would be wrong. Share uses the same line.
+- **Deep link.** A 400 or 404 on the event shows the screen's own `event-gone` state ("This event isn't available"), never the validator's sentence. The wording is the screen's existing one (the ruling's "is not available" is read as the same state).
+- **Checks.** `npx jest src/features/events`: 55 of 55 (17 new, no existing assertion changed). `npm run check` exit 0 (2 lint warnings, 0 errors; typed-route types regenerated first).
+- **NOT RUN.** Screenshots at 390 px light and dark and the design render comparison: only date text on the detail changed, nothing structural; the independent verifier compares.
+
 ## Lead rulings after the second independent verifier (7 Oct 2026)
 
 Build round 3 on 8ae4261, then status `verifying`. An independent verifier re-runs it; a report written from the builder's own environment counts as builder evidence.
@@ -243,6 +257,9 @@ Build round 3 on 8ae4261, then status `verifying`. An independent verifier re-ru
 - **WAT always.** Builder default 4 stands for events in Lagos time. For an event whose `timezone` is not `Africa/Lagos`, show the Hub's `timeLabel` instead of WAT. A wrong zone is a wrong fact.
 - **Non-uuid deep link.** Show the screen's own "This event is not available" state, never the validator's sentence.
 - **Merge order.** The lead merges backend PR #78 (`GET /events/from-prices`) before or with this branch, and regenerates the mobile contract from backend main at that point.
+## Hub entries this task adds (R-41)
+
+The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 
