@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 24 | 29 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
+| building | 0 | 0 | 1 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 43 | 27 | 9 | 3 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
 
@@ -113,6 +113,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · INBOX-04 · Verified (mobile 88a24f8, backend main 0e7b617 built on a fresh seeded database, real wawu-id, sign-in through the app's own screen): status building for one defect, D2 (I36's skeleton time pill overlaps the preview bar at 320 px, 31 px). V1 check exit 0 on branch and trial merge (49 suites, 840 tests, 226 files, 0 findings), I35 and I36 match in light and dark at 390, 430 and 320, every state reached by its real cause, the socket's first frame, jittered waits (smallest 637 ms, largest 25685 ms over 8 close kinds, never tight), 4401 refresh and 4403 sign-out, catch-up (7 events, list and badge equal the server), sign-in as B after A clean, background closes the socket. 27 of 32 own mutants killed, 5 test gaps. D1 for the lead: no row renderer yet, so a user with conversations sees a blank list under the chips and a badge until INBOX-19, 05, 10 or 18 land. NOT RUN: pull to refresh and device (V10), sign-out through a Settings screen (none yet), a brand-new signed-up account.
 - 7 Oct 2026 · INBOX-04 · Built on wmt/INBOX-04: the Inbox tab's list frame, the empty (I35), loading (I36) and error states, the app's live connection (`src/features/inbox/live.ts`) and the tab's unread badge (G-4), run against the real local backend; row kinds, header buttons and the other chips belong to later INBOX tasks. Status verifying.
 - 7 Oct 2026 · EVENTS-02 · Merged to main (backend PR #48): hybrid events, conference and concert kinds, ticket types sent with POST /events, hosting verified-only; F6 (repricing through the web's PUT /events/:id/tickets) split out for the owner; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Merged to main (backend PR #49): door staff, check-in at the door, sold counts and referral sales for hosts; Developer 3's task, merged by the lead.
@@ -127,4 +128,3 @@ From `docs/LOG.md`, newest first.
 - 3 Oct 2026 · EVENTS-05 · Built (backend eb2a835, status verifying): sold per hosted event (E17) counted as the dashboard counts it, shared links with tickets sold, door staff a host adds by WAWU id or handle, and a door check-in for host or staff with the holder's name and "already used by Door 1"; one additive table; protected 253/253, full suite 126 of 133 suites (7 pinned to :4001 not runnable here).
 - 7 Oct 2026 · EVENTS-02 · Verified round 3, status review (backend wmt/EVENTS-02 206814c): F5 migration folder sorts after every ref, F7 G-230 unique on all branches, F8 non-object ticket types 400 (36 requests, nothing saved, spec fails without the decorator); F6 reproduced on main 4892a59 and split out by the lead; protected 253/253, gates equal to main (16 fail), clean trial merge with main and EVENTS-05, mobile check exit 0. No open defect.
 - 7 Oct 2026 · EVENTS-02 · Fix round 2, status verifying (backend wmt/EVENTS-02 206814c): migration renamed 20261007190000 after main's tail (F5); non-object ticket types are 400 with a spec (F8); gap row renumbered G-230 (F7); F6 blocked: PUT /events/:id/tickets is a protected web route, owner ruling or an app-only route needed. Protected 253/253, gates equal to main, event specs 107 passed.
-- 6 Oct 2026 · EVENTS-02 · Verified round 2, status building: F1 fixed (40 price and quantity inputs checked); gate, money, moderation, blocks, maps, protected 253/253, gates equal to main, trial merges clean on backend. Four defects open: F5 migration folder sorts before main's, F6 PUT /events/:id/tickets skips the host gate and re-review (reprice after approval, or with a lapsed tick), F7 gap id G-144 collides with PROS-02, F8 `ticketTypes: [[]]` is a 500.
