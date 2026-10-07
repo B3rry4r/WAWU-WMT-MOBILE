@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 69 | 0 | 23 | 25 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
+| building | 0 | 0 | 0 | 1 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 49 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (Developer 3)
 
@@ -127,6 +127,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
 - 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
 - 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
 - 7 Oct 2026 · LEGAL-03 · Builder round 3: delivered files stored as keys and signed fresh for 15 minutes, file name and booking-zone rules, notification text without the matter, specs for M11 and M18, migration renamed `20261013100000`; status verifying.
@@ -141,4 +142,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
 - 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
