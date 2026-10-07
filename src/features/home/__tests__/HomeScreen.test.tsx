@@ -184,6 +184,28 @@ describe('H1 · Today', () => {
     expect(faded.length).toBeGreaterThan(0);
   });
 
+  it("draws Home's figure at H1's 38, not the Wallet tab's 42", async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    const style = StyleSheet.flatten(screen.getByTestId('today-balance').props.style) as { fontSize?: number };
+    expect(style.fontSize).toBe(38);
+  });
+
+  it("gives Home's money glow its own gradient id, so it never takes the Wallet tab's on the web", async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    type Node = { type?: string; props?: { name?: string; fill?: unknown }; children?: (Node | string)[] | null };
+    const all = (node: Node | string | null, out: Node[] = []): Node[] => {
+      if (!node || typeof node === 'string') return out;
+      out.push(node);
+      node.children?.forEach((child) => all(child, out));
+      return out;
+    };
+    const card = all(screen.toJSON() as Node).find((n) => (n.props as { testID?: string } | undefined)?.testID === 'today-balance-card') ?? null;
+    const gradients = all(card).filter((n) => n.type === 'RNSVGRadialGradient').map((n) => n.props?.name);
+    expect(gradients).toEqual(['today-balance-glow']);
+  });
+
   it("a user sees today's TGIF from the Hub and opens the reader from it", async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());

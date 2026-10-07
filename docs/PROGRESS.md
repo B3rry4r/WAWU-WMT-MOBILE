@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 66 | 0 | 23 | 26 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 52 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 
@@ -130,6 +130,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · HOME-01 · Builder round 3 (status verifying): Follow on creator cards is MediaCard's shared `action` (FollowButton deleted; the 13 label and ring left to SHARED-03); tests T1 (figure at 38) and T2 (own glow id) kill the verifier's two survivors.
 - 7 Oct 2026 · HOME-01 · Verifier report round 2 (status building): D1 and D2 closed; D3 partly closed. The creator card is now the shared MediaCard, but Follow is a redraw passed through `footer` where MediaCard's `action` slot was made for cCard's Follow. The Wallet tab is unchanged above the bar (W1, W4, W5, W6 pixel diff against main); FittedBalance fits ₦999,999,999.99 at 320; Home and Wallet share one cached answer. V9 re-run with the real WAWU ID. Mutants 20 of 22 killed (T1 and T2 are test gaps).
 - 7 Oct 2026 · HOME-01 · Builder round 2 (status verifying): D1 the eye at 70% (the Wallet tab's own eye), D2 a failed TGIF day read says so with Try again, D3 the creator card is the shared MediaCard (Follow through `footer`); the balance card reads and words its states as the Wallet tab does (shared reads, `homeView`, `stateWords`, `MoneyGround`, `FittedBalance`); TGIF and money-shadow tokens; SHARED-CHANGES HOME-01 #3.
 - 7 Oct 2026 · HOME-01 · Verifier report (status building): V1, V4 and V9 passed; real WAWU ID sign-in, a Follow, an unfollow and the TGIF switch written by the app and read back from the Hub and the database; 14 of 14 mutants killed. Three defects: D1 the balance eye is full white where H1 paints it at 70%, D2 a failed TGIF day read hides the card with no message or Try again, D3 the creator card redraws MediaCard's stacked picture, scrim and caption (SHARED-CHANGES HOME-01 #2 defers the swap). A live Fintava figure is NOT RUN (Fintava unset).
@@ -144,4 +145,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SHARED-02 · Verifier report, round 2 (mobile `13596e1`, main `c4471f3`): D1 (no SHARED-CHANGES row lost, none went backwards), D2 ("Profile saved" once from the Me tab, from Settings and on a cold `?from=me`, light and dark) and D3 (M1's button only; W1 identical) closed; T1 to T7 killed, 4 own mutants killed; `npm run check` 0 (71 suites, 1286 tests); 144 picture pairs against main, only `/tgif` and M1's button differ; status review.
 - 7 Oct 2026 · SHARED-02 · Round 2: ME-11 #4's status restored (D1); "Profile saved" once wherever M8 closes to, M10 on the Me tab, M8's own elsewhere (D2); M1's Edit profile on `size="profile"` and W1's card on the generated `--shadow-money` / `--glow-money` (D3; W1 pixel-identical, M1 only the label); WALLET-11's payout test ends in 6 s in band (WALLET-01 #3); seven test gaps closed. Status verifying.
 - 7 Oct 2026 · SHARED-02 · Verifier report (independent session, mobile `6fa4f49`, main `5fec168`): V1 passed (`npm run check` 0; 67 suites, 1227 tests; gates 310 files, 0 findings); 144 before and after picture pairs, 132 identical, 12 differ, all `/tgif` by design, its five grounds now equal the canvas; guards and new props pass; 18 mutants, 11 killed, 7 survived (test gaps); three defects: D1 the merge dropped main's ME-11 #4 status, D2 a save on M8 from Settings shows no "Profile saved", D3 ME-01 #1 marked applied but M1's "Edit profile" still `sm` with `style`; status building.
-- 7 Oct 2026 · SHARED-02 · Built: the four tab hubs' shared changes applied (MediaCard `titleAccessory`, `footer`, `action`; FilterChips chip `icon` and `revealSelected`; Button size `profile`; TGIF, `--glow-money` and every `--shadow-*` generated as tokens; categories and the works routes under the signed-in guard; M8 hands back at once for M10's single "Profile saved"); 128 before and after screenshot pairs, 126 identical, the 2 TGIF ones changed by design. Status verifying.

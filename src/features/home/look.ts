@@ -60,9 +60,7 @@ const metricsBase = {
   cardWidth: 146,
   cardHeight: 196,
   cardsApart: 10,
-  /** `cCard`'s Follow: 32 high, the label 13 bold, on the accent, or white at 20% once followed; the tick 13. */
-  follow: 32,
-  followWords: 13,
+  /** `cCard`'s tick after the name, 13. (Its Follow is MediaCard's shared `action`.) */
   cardTick: 13,
   /**
    * `todayLoading` (H11): the heading 70% by 20 at 8, the cards 146 by 196. Its money card (203)
@@ -79,7 +77,7 @@ export const todayMetrics = {
   skeletonMoney: metricsBase.moneyPadTop + metricsBase.chipHeight + metricsBase.figureTop + metricsBase.figure + metricsBase.moneyPadBottom,
 } as const;
 
-/** White at a strength: the canvas's chip (12%) and the Following button (20%) over a dark card. */
+/** White at a strength: the canvas's Naira chip (12%) over the money card. */
 const whiteAt = (alpha: number) => darkColors.surfaceGlass.replace(/[\d.]+\)$/, `${alpha})`);
 
 /**
@@ -89,8 +87,6 @@ const whiteAt = (alpha: number) => darkColors.surfaceGlass.replace(/[\d.]+\)$/, 
 export const cardInk = {
   ink: darkColors.textOnAccent,
   chip: whiteAt(0.12),
-  following: whiteAt(0.2),
-  accent: darkColors.accent,
   /** `tgifRow`'s ground and its play mark on the white disc. */
   tgifGround: darkColors.tgifVerseGround,
   tgifLabel: darkColors.tgifLabel,
@@ -108,7 +104,6 @@ export const todayWords = StyleSheet.create({
   tgifTitle: type(todayMetrics.tgifTitle, 700, { letterSpacing: todayMetrics.tgifTitle * todayMetrics.tgifTitleTracking }),
   tgifMeta: type(todayMetrics.tgifMeta, 400, { opacity: todayMetrics.tgifMetaFaint }),
   tgifProblem: type(todayMetrics.tgifMeta, 600),
-  follow: type(todayMetrics.followWords, 700),
 });
 
 /** The page's side gutter, as every body on the canvas has it. */

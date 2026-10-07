@@ -7,7 +7,7 @@ order: 170
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-02, HOME-09, KYC-05]
 decisions: [R-2, R-6]
 passes: [V1, V4, V5, V6, V9]
@@ -400,6 +400,30 @@ Home's own tab row carries no `aria-selected` on the web build; the native app r
 | A phone | V10 is not in this task's passes. | A development build on a phone reaching a Hub (`docs/LOCAL.md`) |
 
 Cleanup: the Hub, WAWU ID and web server (PIDs this session started) are stopped. `vh01r2_hub_test` and `vh01r2_id_test` are dropped. The backend, WAWU ID and main-comparison worktrees are removed, and the exports are deleted. `/home/user/wt/vh01m2` is kept with this commit.
+
+## Builder report, round 3
+
+Lead's agent, 7 Oct 2026. Merged the verifier's round-2 report (`8d81945`) and origin/main `21e0387` (SHARED-03's task file) with merge commits. Every row in `SHARED-CHANGES.md` and `BACKEND_GAPS.md` is kept; where both sides had a row, the newer status wins (one duplicate HOME-09 F1 row marked `open` was dropped beside its `done by HOME-01` copy).
+
+**D3, closed by the lead's ruling.** Follow on a creator card is MediaCard's shared `action`: `action={ label, on: following, onPress, loading: busy, testID }` in `CreatorRail.tsx`. The hand-drawn `FollowButton` (Pressable and Text) is deleted, with the `follow`, `followWords` and `following` look values it used. The look still differs from the canvas: a 13.5 label where the canvas has 13, and Following has a hairline ring where the canvas has none. This is **not fixed per screen**. SHARED-03 (main's task list, item 6) changes it once in the shared `action` for every creator card. The initials for a creator with no photo also wait for SHARED-03's card placeholder (HOME-01 #3).
+
+**T1 and T2, the verifier's two surviving mutants, now killed** (`src/features/home/__tests__/HomeScreen.test.tsx`):
+- **T1:** "draws Home's figure at H1's 38, not the Wallet tab's 42" reads the figure's font size.
+- **T2:** "gives Home's money glow its own gradient id" requires the card's only radial gradient to be `today-balance-glow`.
+
+Mutant check: removing `base={m.figure}` fails T1 and dropping `glowId="today-balance-glow"` fails T2, each 1 of 21. `MoneyCard.tsx` was restored and its sha1 is the same before and after (`f4a3a758`).
+
+**Pictures.** Backend main `3041887` in a fresh worktree with its own `npm ci`, `prisma generate` and `nest build`. Hub :5361, stand-in WAWU ID :5362, web export :5363 (only those two API addresses in the bundle), fresh `bh01_hub_test`, sign-in through the app, sandbox read of customer A (₦250.00). Shots in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bh01/shots-r3/`, light and dark:
+- `H1-wallet`, `H1-wallet-scrolled`, `H1-masked`;
+- `H1-followed`: Follow is the shared Button. Pressing it wrote one `FollowRelationship` row each time, and a fresh sign-in read Following back.
+
+Everything was stopped, the database dropped and the backend worktree removed. The round-2 shots in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bh01/shots/` stand for every part this round did not touch.
+
+**Files.** `src/features/home/CreatorRail.tsx`, `src/features/home/look.ts`, `src/features/home/__tests__/HomeScreen.test.tsx`; docs (`tasks/HOME-01.md`, `docs/LOG.md`, the generated `tasks/INDEX.md` and `docs/PROGRESS.md`).
+
+**Checks.** `npm run check` as one command, exit 0: typecheck and lint clean, jest 75 suites and 1,350 tests all passed, gates 346 files 0 findings, baseline 0, 212 tasks. The home suites hold 33 tests (12 model, 21 screen).
+
+**NOT RUN.** A phone (V10; unblocked by a development build reaching a Hub). The frozen state on screen (G-10). V5 is the verifier's.
 
 ## Owner sign-off
 
