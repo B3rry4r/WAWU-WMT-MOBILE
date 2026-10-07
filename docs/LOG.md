@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.
 - 7 Oct 2026 · WALLET-01 · Verified (independent session, mobile 972d411, backend main 3041887, real WAWU ID): R-41 passed (no bills entry, every left-out entry's screen unbuilt), V4 passed on two seeds of non-canvas values (balance from the provider read, debits as totals with fees), V6 and V9 passed, V5 failed: D1 Back from a button-opened A26 reopens A26, D2 the balance is cut off with "…" at 320 px from six naira digits, D3 WalletScreen.test.tsx holds jest about 5 minutes in band (a React Query gc timer), D4 4 of 14 mutants survive; status back to building.
 - 7 Oct 2026 · WALLET-01 · Built: the Wallet tab (W1 with W4, W5, W6, plus no wallet, opening, frozen and error states) against GET /money/wallet, /money/wallet/balance and /money/transactions; entries to screens not built yet left out (R-41); G-310, G-311; status verifying.
 - 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).

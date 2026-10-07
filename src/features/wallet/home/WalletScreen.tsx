@@ -69,7 +69,7 @@ export function WalletScreen() {
     seen.current = focused;
   }, [focused, refreshAll]);
 
-  useLeadToOpenWallet(view.kind === 'no_wallet', focused, entry.open);
+  const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, entry.open);
 
   const onRefresh = useCallback(async () => {
     setPulled(true);
@@ -102,7 +102,7 @@ export function WalletScreen() {
             view={view}
             hidden={hidden}
             onToggleHidden={() => setHidden((was) => !was)}
-            onOpenWallet={entry.open}
+            onOpenWallet={openWallet}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
             recent={{
@@ -214,13 +214,19 @@ function StateCard({ children }: { children: ReactNode }) {
 }
 
 /**
- * With no wallet, being on the tab opens Open your wallet (A26), once per visit. Coming back from the
- * flow without a wallet stays on the tab (its way in is drawn there), so Back never loops; the next
- * visit from another tab opens A26 again.
+ * With no wallet, being on the tab opens Open your wallet (A26), once per visit. Every way this tab opens
+ * A26 (on its own, or the card's Open your wallet) goes through the returned `open`, which marks that the
+ * tab is now under the flow; the next time the tab comes back into view is that flow's Back, and it stays
+ * on the tab (its way in is drawn there), so Back never loops. Coming back from another tab is a new visit
+ * and opens A26 again.
  */
-export function useLeadToOpenWallet(noWallet: boolean, focused: boolean, open: () => void) {
+export function useLeadToOpenWallet(noWallet: boolean, focused: boolean, openFlow: () => void): () => void {
   const led = useRef(false);
   const wasFocused = useRef(focused);
+  const open = useCallback(() => {
+    led.current = true;
+    openFlow();
+  }, [openFlow]);
   useEffect(() => {
     const returned = focused && !wasFocused.current;
     wasFocused.current = focused;
@@ -229,11 +235,9 @@ export function useLeadToOpenWallet(noWallet: boolean, focused: boolean, open: (
       led.current = false;
       return;
     }
-    if (noWallet && !led.current) {
-      led.current = true;
-      open();
-    }
+    if (noWallet && !led.current) open();
   }, [focused, noWallet, open]);
+  return open;
 }
 
 const styles = StyleSheet.create({

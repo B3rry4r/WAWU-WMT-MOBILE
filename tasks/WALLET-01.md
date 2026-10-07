@@ -7,7 +7,7 @@ order: 155
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [MONEY-11, MONEY-12, MONEY-13, MONEY-15, UI-02, KYC-05]
 decisions: [R-1, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -175,6 +175,17 @@ Final `npm run check` on the report tree (before committing; `check2.log`): exit
 - The capability checks Send, Add money, Settings, bills tile, See all: their entries are left out (R-41); each is the named later task's check.
 
 Status: back to `building` with D1, D2, D3 open (D4 is a test gap to close with them).
+
+## Builder report, round 2
+
+Builder session, 7 Oct 2026, on `wmt/WALLET-01` with the verifier's report (bd29c48) and main 47e1f07 merged in. SHARED-02 (the `--shadow-money` token, WALLET-01 #1) is still `todo` on main, so the card keeps its named constants and the row stays open.
+
+- **D1 fixed.** `useLeadToOpenWallet` now returns the one `open` the tab uses for every way into A26 (on its own and the card's Open your wallet); each marks the tab as under the flow, so the Back that uncovers the tab always stays on it. New jest case "a Back from the A26 the card's Open your wallet opened lands on the tab, every time" (two rounds of button, then Back): fails on 972d411's `WalletScreen.tsx` (pushes `["/open-wallet","/open-wallet","/open-wallet"]`, the verifier's probe result) and passes now. Browser: user@ with no wallet, tab, A26, Back, then Open your wallet and Back twice: each Back lands on `/wallet` with the card, A26 not shown (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/drive.jsonl`, `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/shots-r2/nowallet-back-after-button-*.png`).
+- **D2 fixed (lead ruling).** `BalanceCard` measures the figure at the design's 42 with a hidden copy and the row's width, and `fitFigureSize` (model.ts) picks the largest size, in steps of 2 down from 42, at which the whole figure, kobo included, is one line; floor 18 (wallet.js line 118, W26's month totals, the flow's other figure on a card). Until both widths are known the figure is drawn invisibly, so a cut figure never shows. The shared `Money` is untouched (no prop needed). Proved at 320, 360 and 390 px, light and dark, with ₦0.00, ₦485,250.75, ₦4,852,507.75 and ₦98,765,432.10 against the local Hub (stand-in balance): every figure whole, never ellipsised, page never wider than the screen; sizes 320: 42 / 40 / 34 / 32, 360: 42 / 42 / 40 / 36, 390: 42 / 42 / 42 / 40 (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/fit.jsonl`; `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/shots-r2/fit-<figure>-<width>-<theme>.png`, 24 shots). Four jest cases cover `fitFigureSize` (fits, steps, floor, unmeasured). If a figure did not fit even at 18 it would stay at 18 (the shared `Money` is one line); at 320 px that takes about 20 characters, a balance above ₦100 trillion.
+- **D3 fixed.** `WalletScreen.test.tsx` gives the app's cache `gcTime: 0`, makes its held answers abortable, and cancels and empties the cache after each test; `walletTabFlow.test.tsx` does the same. In band: the three WALLET-01 files run 39 tests and the process ends 13 s after it starts. `npx jest --runInBand src/features/wallet` still takes about 310 s, because of `payoutAccountScreen.test.tsx` (WALLET-11's file, not this task's): alone it ends its tests in about 10 s and exits at 306 s. Filed as SHARED-CHANGES WALLET-01 #3 with the same fix; I did not edit another task's test.
+- **D4 closed.** Fixtures now use values the canvas never shows ("Ekiti Trial MFB", 810 000 0417 and 810 000 0528), so a screen drawing "Loma Bank" or "812 345 6789" fails (M5, M6). New cases: an open wallet whose account has no bank name is the wallet error, never half a card (M9); a row exactly six days old shows its weekday ("Thu") and seven days old its date (M11).
+
+**Checks.** `npm run check` as one command, run to its exit code: exit 0 in 115 s (tsc 0, lint 0, jest 66 suites, 1182 of 1182, gates 9 run / 306 files / 0 findings, baseline 0, tasks 211); log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/check-r2.log`. New and changed tests: WalletScreen 19, walletHomeModel 18, walletTabFlow 2 (39, all pass). Local stack for the browser runs: backend main 3041887 worktree, database `bw01_test`, ports 5375 to 5377, export with `--clear` and a private TMPDIR holding only `http://localhost:5375` and `:5376`; every browser request went to those three ports. Processes, worktree and database removed after.
 
 ## Owner sign-off
 

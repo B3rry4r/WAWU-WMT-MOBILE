@@ -48,8 +48,8 @@ type Reply = { status: number; body: unknown };
 type Answer = Reply | 'offline' | 'hold';
 
 const OWNER = '00000000-0000-4000-8000-0000000000f1';
-/** Made-up account details in the server's shape (MONEY-12). Never a real account. */
-const ACCOUNT = { accountNumber: '8123456789', accountName: 'Ada Eze', bankName: 'Loma Bank', bankCode: '090620', licenceLine: null, depositInsuranceLine: null, openedAt: '2026-10-04T09:00:00.000Z' };
+/** Made-up account details in the server's shape (MONEY-12), none of them the canvas's samples, so a screen that drew the canvas's figures would fail. Never a real account. */
+const ACCOUNT = { accountNumber: '8100000417', accountName: 'Ada Eze', bankName: 'Ekiti Trial MFB', bankCode: '090620', licenceLine: null, depositInsuranceLine: null, openedAt: '2026-10-04T09:00:00.000Z' };
 const pin = { isSet: true, changedAt: '2026-10-04T09:01:00.000Z', triesLeft: 5, lockedUntil: null };
 const UNREACHABLE = 'We could not reach your account. Your money is safe. Try again in a moment.';
 
@@ -103,7 +103,12 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const answer = routes[key]?.shift() ?? fallback[key];
   if (!answer) throw new Error(`no answer for ${key}`);
   if (answer === 'offline') throw new TypeError('Network request failed');
-  if (answer === 'hold') return new Promise<Response>(() => undefined);
+  // Held until the test ends: the cache's cancel aborts it, so nothing is left in flight.
+  if (answer === 'hold')
+    return new Promise<Response>((_resolve, reject) => {
+      if (request.signal.aborted) reject(new DOMException('Aborted', 'AbortError'));
+      request.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    });
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
@@ -138,7 +143,8 @@ const asked = (path: string) => sent.filter((s) => s.path === `/api/hub${path}`)
 beforeEach(() => {
   const { queryClient } = require('@/api/query') as typeof import('@/api/query');
   queryClient.clear();
-  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, retry: false } });
+  // No retries, and no cache timer outliving a test (the app's 5 minute default kept jest alive, round 1 D3).
+  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, retry: false, gcTime: 0 } });
   mockFocused = true;
   sent = [];
   routes = {};
@@ -156,10 +162,13 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  const { queryClient } = require('@/api/query') as typeof import('@/api/query');
   await rtl.act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
   });
   await rtl.cleanup();
+  await queryClient.cancelQueries();
+  queryClient.clear();
 });
 
 // The app's one cache holds a timer per query until it is emptied; empty it so jest can exit.
@@ -173,8 +182,8 @@ describe('W1 · Wallet · Naira', () => {
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(app.screen.getByText('Naira balance')).toBeTruthy();
     expect(app.screen.getByLabelText('485,250 naira 75 kobo')).toBeTruthy();
-    expect(app.screen.getByText('WAWU · Loma Bank')).toBeTruthy();
-    expect(app.screen.getByText('812 345 6789')).toBeTruthy();
+    expect(app.screen.getByText('WAWU · Ekiti Trial MFB')).toBeTruthy();
+    expect(app.screen.getByText('810 000 0417')).toBeTruthy();
     expect(allText(app)).not.toMatch(/Fintava|—/);
   });
 
@@ -201,7 +210,7 @@ describe('W1 · Wallet · Naira', () => {
   it('a user can copy the account number: its digits as sent go on the clipboard', async () => {
     const app = await boot();
     await app.fireEvent.press(await app.screen.findByTestId('wallet-copy'));
-    expect(mockCopied).toEqual(['8123456789']);
+    expect(mockCopied).toEqual(['8100000417']);
     expect(await app.screen.findByText('Copied')).toBeTruthy();
   });
 
@@ -231,7 +240,7 @@ describe('W4 · Wallet · loading', () => {
     expect(await app.screen.findByTestId('wallet-loading')).toBeTruthy();
     await app.waitFor(() => expect(asked('/money/wallet/balance')).toBe(1));
     expect(app.screen.getByTestId('wallet-loading')).toBeTruthy();
-    expect(app.screen.queryByText('812 345 6789')).toBeNull();
+    expect(app.screen.queryByText('810 000 0417')).toBeNull();
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
   });
 });
@@ -244,10 +253,10 @@ describe('W5 · Wallet · new account', () => {
     expect(await app.screen.findByTestId('wallet-no-transactions')).toBeTruthy();
     expect(app.screen.getByLabelText('0 naira')).toBeTruthy();
     expect(app.screen.getByText('No transactions yet')).toBeTruthy();
-    expect(app.screen.getByText('Send to 812 345 6789 from any Nigerian bank.')).toBeTruthy();
+    expect(app.screen.getByText('Send to 810 000 0417 from any Nigerian bank.')).toBeTruthy();
     expect(app.screen.queryByText('Transactions')).toBeNull();
     await app.fireEvent.press(app.screen.getByTestId('wallet-copy'));
-    expect(mockCopied).toEqual(['8123456789']);
+    expect(mockCopied).toEqual(['8100000417']);
   });
 });
 
@@ -259,7 +268,7 @@ describe('W6 · Wallet · can’t reach account', () => {
     expect(app.screen.getByText("We couldn't reach your account")).toBeTruthy();
     expect(app.screen.getByText(UNREACHABLE)).toBeTruthy();
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
-    expect(app.screen.queryByText('812 345 6789')).toBeNull();
+    expect(app.screen.queryByText('810 000 0417')).toBeNull();
     expect(allText(app)).not.toContain('₦');
     // The bank's refusal is not retried behind the person's back: one ask, until they tap Try again.
     expect(asked('/money/wallet/balance')).toBe(1);
@@ -284,6 +293,15 @@ describe('W6 · Wallet · can’t reach account', () => {
 });
 
 describe('the wallet read and the recent rows fail on their own', () => {
+  it('an open wallet whose account comes without its bank name is an error, never half a card', async () => {
+    fallback['GET /money/wallet'] = wallet('open', { ...ACCOUNT, bankName: '' });
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-error')).toBeTruthy();
+    expect(app.screen.getByText('Your wallet could not be read. Try again.')).toBeTruthy();
+    expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
+    expect(app.screen.queryByText('810 000 0417')).toBeNull();
+  });
+
   it('no connection on the wallet read: an error with Try again, which reads again', async () => {
     routes['GET /money/wallet'] = ['offline'];
     const app = await boot();
@@ -331,6 +349,27 @@ describe('no wallet yet (R-6)', () => {
     await app.waitFor(() => expect(mockPushed).toHaveLength(3));
   });
 
+  it('a Back from the A26 the card’s Open your wallet opened lands on the tab, every time (round 1 D1)', async () => {
+    fallback['GET /money/wallet'] = wallet('not_open', null);
+    const app = await boot();
+    await app.waitFor(() => expect(mockPushed).toHaveLength(1));
+    await app.act(async () => setFocused(false));
+    await app.act(async () => setFocused(true));
+    expect(await app.screen.findByTestId('wallet-none')).toBeTruthy();
+    for (const opened of [2, 3]) {
+      await app.fireEvent.press(app.screen.getByText('Open your wallet'));
+      expect(mockPushed).toHaveLength(opened);
+      // A26 covers the tab, then its Back uncovers it: only Back, nothing else.
+      await app.act(async () => setFocused(false));
+      await app.act(async () => setFocused(true));
+      await app.act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      });
+      expect(mockPushed).toHaveLength(opened);
+      expect(app.screen.getByTestId('wallet-none')).toBeTruthy();
+    }
+  });
+
   it('after the account opens (A10), the tab shows the new account: W5', async () => {
     routes['GET /money/wallet'] = [wallet('not_open', null)];
     fallback['GET /money/wallet/balance'] = balance(0);
@@ -340,7 +379,7 @@ describe('no wallet yet (R-6)', () => {
     await app.act(async () => setFocused(false));
     await app.act(async () => setFocused(true));
     expect(await app.screen.findByTestId('wallet-no-transactions')).toBeTruthy();
-    expect(app.screen.getByText('Send to 812 345 6789 from any Nigerian bank.')).toBeTruthy();
+    expect(app.screen.getByText('Send to 810 000 0417 from any Nigerian bank.')).toBeTruthy();
     expect(mockPushed).toHaveLength(1);
   });
 

@@ -1,9 +1,9 @@
 import { ApiError } from '@/api/errors';
 
 import type { WalletTransaction } from '../api/home';
-import { bankLine, fundingLine, homeView, recentRow, rowTime } from '../home/model';
+import { bankLine, fitFigureSize, fundingLine, homeView, recentRow, rowTime } from '../home/model';
 
-const ACCOUNT = { accountNumber: '8123456789', accountName: 'Ada Eze', bankName: 'Loma Bank' };
+const ACCOUNT = { accountNumber: '8100000417', accountName: 'Ada Eze', bankName: 'Ekiti Trial MFB' };
 const read = <T>(data: T | undefined, error: unknown = null, isPending = data === undefined) => ({ data, error, isPending });
 
 /** A made-up ledger row in the contract's shape (MONEY-15). */
@@ -64,10 +64,11 @@ describe('the Wallet tab picks its state from its reads', () => {
 describe('the words the card and the empty state use', () => {
   it('names the bank the server sends after "WAWU · "', () => {
     expect(bankLine('Loma Bank')).toBe('WAWU · Loma Bank');
+    expect(bankLine('Ekiti Trial MFB')).toBe('WAWU · Ekiti Trial MFB');
   });
 
   it('puts the account’s own number in W5’s line', () => {
-    expect(fundingLine('812 345 6789')).toBe('Send to 812 345 6789 from any Nigerian bank.');
+    expect(fundingLine('810 000 0417')).toBe('Send to 810 000 0417 from any Nigerian bank.');
   });
 });
 
@@ -124,7 +125,36 @@ describe('when a row happened, in Lagos time', () => {
     expect(rowTime('2025-12-31T08:00:00.000Z', now)).toBe('31 Dec 2025');
   });
 
+  it('a row exactly six days old still shows its weekday; seven days old shows the date', () => {
+    expect(rowTime('2026-10-01T08:00:00.000Z', now)).toBe('Thu');
+    expect(rowTime('2026-09-30T08:00:00.000Z', now)).toBe('30 Sep');
+  });
+
   it('writes nothing for a time it cannot read', () => {
     expect(rowTime('not a time', now)).toBe('');
+  });
+});
+
+describe('the balance’s size (a balance is never cut off)', () => {
+  it('keeps the design’s 42 while the figure fits', () => {
+    expect(fitFigureSize(220, 300, 42, 18, 2)).toBe(42);
+    expect(fitFigureSize(300, 300, 42, 18, 2)).toBe(42);
+  });
+
+  it('steps down to the largest size that fits', () => {
+    // 42 * 232 / 300 = 32.48, so 32
+    expect(fitFigureSize(300, 232, 42, 18, 2)).toBe(32);
+    const size = fitFigureSize(410, 232, 42, 18, 2);
+    expect((410 * size) / 42).toBeLessThanOrEqual(232);
+    expect((410 * (size + 2)) / 42).toBeGreaterThan(232);
+  });
+
+  it('never goes below the floor', () => {
+    expect(fitFigureSize(2000, 232, 42, 18, 2)).toBe(18);
+  });
+
+  it('draws the design’s size until both widths are measured', () => {
+    expect(fitFigureSize(0, 232, 42, 18, 2)).toBe(42);
+    expect(fitFigureSize(410, 0, 42, 18, 2)).toBe(42);
   });
 });

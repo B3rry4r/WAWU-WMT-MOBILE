@@ -140,3 +140,17 @@ export function recentRow(row: WalletTransaction, now: Date): RecentRow {
     : { kind: 'icon', icon: rowIcon(row), tone: row.direction === 'in' ? 'in' : 'neutral' };
   return { id: row.id, title, subtitle, amountKobo: signed, meta, lead };
 }
+
+/**
+ * The balance's font size: the design's size when the whole figure fits on one line, otherwise the largest
+ * size, in whole steps down from it, at which it does (the figure's width grows with its size, tracking
+ * included, so it scales by the ratio). Never below `floor`; a figure that does not fit even there keeps
+ * the floor (lead ruling, WALLET-01 round 2: a balance is never cut off, its kobo never wraps). `natural`
+ * is the figure's width drawn at `base`, `available` the width it has; 0 for either means not measured yet.
+ */
+export function fitFigureSize(natural: number, available: number, base: number, floor: number, step: number): number {
+  if (natural <= 0 || available <= 0 || natural <= available) return base;
+  const exact = (base * available) / natural;
+  const stepped = Math.floor(exact / step) * step;
+  return Math.max(floor, Math.min(base, stepped));
+}

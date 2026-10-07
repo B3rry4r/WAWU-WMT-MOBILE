@@ -25,7 +25,7 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 /** Made-up account details in the server's shape (MONEY-12). */
-const ACCOUNT = { accountNumber: '8123456789', accountName: 'Ada Eze', bankName: 'Loma Bank', bankCode: '090620', licenceLine: null, depositInsuranceLine: null, openedAt: '2026-10-07T09:00:00.000Z' };
+const ACCOUNT = { accountNumber: '8100000528', accountName: 'Ada Eze', bankName: 'Ekiti Trial MFB', bankCode: '090620', licenceLine: null, depositInsuranceLine: null, openedAt: '2026-10-07T09:00:00.000Z' };
 let opened = false;
 const ok = (data: unknown) => new Response(JSON.stringify({ statusCode: 200, message: 'OK', data }), { status: 200, headers: { 'content-type': 'application/json' } });
 
@@ -139,6 +139,8 @@ beforeAll(async () => {
 beforeEach(() => {
   opened = false;
   app.queryClient.clear();
+  // No cache timer outliving a test (round 1 D3).
+  app.queryClient.setDefaultOptions({ queries: { ...app.queryClient.getDefaultOptions().queries, gcTime: 0 } });
   mockVault.clear();
   mockVault.set('wawu.session.access', tokenFor('00000000-0000-4000-8000-0000000000f2'));
   mockVault.set('wawu.session.refresh', 'refresh-1');
@@ -146,7 +148,8 @@ beforeEach(() => {
 });
 
 // The app's one cache holds a timer per query until it is emptied; empty it so jest can exit.
-afterAll(() => {
+afterAll(async () => {
+  await app.queryClient.cancelQueries();
   app.queryClient.clear();
 });
 
@@ -172,8 +175,8 @@ describe('the Wallet tab with no wallet yet, on the real router', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'A10 PIN set' }));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
     expect(await screen.findByText('No transactions yet')).toBeTruthy();
-    expect(screen.getByText('Send to 812 345 6789 from any Nigerian bank.')).toBeTruthy();
-    expect(screen.getByText('WAWU · Loma Bank')).toBeTruthy();
+    expect(screen.getByText('Send to 810 000 0528 from any Nigerian bank.')).toBeTruthy();
+    expect(screen.getByText('WAWU · Ekiti Trial MFB')).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
   });
 });

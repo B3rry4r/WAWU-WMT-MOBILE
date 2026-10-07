@@ -12,7 +12,7 @@ import { groupedAccountNumber } from '@/features/open-wallet/pin';
 import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
-import { bankLine } from './model';
+import { bankLine, fitFigureSize } from './model';
 
 /**
  * design/_gen/kit.js line 22, `Acct`: a 28 corner (the kit's, not `--radius-money`'s 26; R-22), 22 all
@@ -40,6 +40,13 @@ export const ACCT = {
   /** The line over the bank line: `inset 0 1px 0`. */
   line: 1,
 } as const;
+/**
+ * A balance is never cut off (lead ruling, WALLET-01 round 2): when the figure is wider than the card it
+ * drops from 42 in steps of 2 until it fits, never below 18, the wallet flow's other figure on a card
+ * (wallet.js line 118, W26's month totals, `Amt(..., { size: 18 })`). `measure` is wide enough that the
+ * hidden copy used to measure the figure never wraps.
+ */
+const FIT = { floor: 18, step: 2, measure: 2000 } as const;
 const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, fill: 0.12 } as const;
 /** kit.js line 22: a 220 circle 60 past the right edge and 80 above the top, the accent at 55% fading out by 70% of its radius. */
 const GLOW = { size: 220, right: -60, top: -80, strength: 0.55, fadeAt: 0.7 } as const;
@@ -112,9 +119,7 @@ export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, on
           <Icon name={hidden ? 'EyeOff' : 'Eye'} size={ACCT.eye} color={ink} />
         </Pressable>
       </View>
-      <View style={styles.figure}>
-        <Money testID="wallet-balance" minorUnits={availableKobo} size={ACCT.figure} tone="textOnAccent" masked={hidden} />
-      </View>
+      <FittedBalance availableKobo={availableKobo} hidden={hidden} />
       <View style={styles.foot}>
         <View style={[styles.line, { backgroundColor: ink }]} />
         <View style={styles.account}>
@@ -126,6 +131,32 @@ export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, on
           </Text>
         </View>
         <CopyPill value={accountNumber} />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * The figure at the largest size that shows all of it, kobo included, on one line: a hidden copy at the
+ * design's size gives its natural width, the row gives the width there is, and `fitFigureSize` picks the
+ * size. Until both are known the figure is drawn at the design's size, invisibly, so a cut figure never shows.
+ */
+function FittedBalance({ availableKobo, hidden }: { availableKobo: number; hidden: boolean }) {
+  const [natural, setNatural] = useState(0);
+  const [room, setRoom] = useState(0);
+  const size = fitFigureSize(natural, room, ACCT.figure, FIT.floor, FIT.step);
+  const measured = natural > 0 && room > 0;
+  return (
+    <View style={styles.figure} onLayout={(e) => setRoom(e.nativeEvent.layout.width)}>
+      <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.measureClip}>
+        <View style={styles.measureBox}>
+          <View onLayout={(e) => setNatural(e.nativeEvent.layout.width)}>
+            <Money minorUnits={availableKobo} size={ACCT.figure} tone="textOnAccent" masked={hidden} />
+          </View>
+        </View>
+      </View>
+      <View testID="wallet-balance-fit" style={measured ? null : styles.unmeasured}>
+        <Money testID="wallet-balance" minorUnits={availableKobo} size={size} tone="textOnAccent" masked={hidden} />
       </View>
     </View>
   );
@@ -182,7 +213,11 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   label: { fontSize: ACCT.labelSize, lineHeight: canvasNormalLineHeight(ACCT.labelSize), opacity: ACCT.labelOpacity },
   eye: { opacity: ACCT.eyeOpacity },
-  figure: { marginTop: ACCT.figureTop },
+  figure: { marginTop: ACCT.figureTop, alignSelf: 'stretch' },
+  /** A box of no size that hides what it holds: the measuring copy lays out at full width without widening the page. */
+  measureClip: { position: 'absolute', top: 0, left: 0, width: 0, height: 0, overflow: 'hidden' },
+  measureBox: { width: FIT.measure, flexDirection: 'row', alignItems: 'flex-start', opacity: 0 },
+  unmeasured: { opacity: 0 },
   foot: { marginTop: ACCT.footTop, paddingTop: ACCT.footPadTop, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   line: { position: 'absolute', top: 0, left: 0, right: 0, height: ACCT.line, opacity: ACCT.lineOpacity },
   account: { flex: 1, minWidth: 0 },
