@@ -8,15 +8,18 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 70 | 0 | 23 | 25 |
-| building | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 1 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 1 |
+| review | 1 | 0 | 0 | 0 |
 | done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (Developer 3)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being built (or fixing verifier findings)
+
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (Developer 3)
 
 ## Done
 
@@ -117,7 +120,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** nothing unblocked
 - **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending
-- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [PROS-03](../tasks/PROS-03.md) Get listed as a professional, [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in
+- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [PROS-03](../tasks/PROS-03.md) Get listed as a professional, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
