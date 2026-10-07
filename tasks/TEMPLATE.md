@@ -6,7 +6,7 @@ area: e.g. WALLET, HOME, EVENTS
 order: a number after every task it depends on
 priority: launch | after-launch
 repo: wawu-wmt-mobile | wawu-backend | wawu-id | wawuafrica | wawu-dashboard
-type: setup | contract | ops | component | mobile-screen | flow | backend-endpoint | migration | third-party | money-path | removal | admin-screen | web-port
+type: setup | contract | ops | component | mobile-screen | flow | backend-endpoint | migration | third-party | money-path | removal | admin-screen | web-port | backend-refactor
 status: todo | building | verifying | review | done
 depends_on: [task ids]
 decisions: [D or R ids]

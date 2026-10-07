@@ -167,6 +167,7 @@ any of these.
 | `removal` | V1 V3 V4 V7 V9 |
 | `admin-screen` | V1 V6 V7 V9 |
 | `web-port` | V1 V3 V4 V5 V6 V7 V9 |
+| `backend-refactor` | V1 V2 V3 V9 (no route, field or behaviour changes: the contract must come out unchanged) |
 
 A mobile screen that takes money also lists V7 and V8. V10 runs once per
 checkpoint on the tester build, and on any task touching permissions, push, the
