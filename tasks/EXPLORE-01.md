@@ -7,7 +7,7 @@ order: 110
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [EXPLORE-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -160,6 +160,52 @@ Verifier: independent session (wrote none of this task), 7 Oct 2026. Mobile `wmt
 Environment note (no effect on the result): the first local start linked wawu-id `node_modules` from `/home/user/wawu-id`; its `prisma generate` rewrote four files of that checkout's generated client (`node_modules/.prisma/client`). They were regenerated from that checkout's own schema straight after (HEAD 4715d17, no `jti`), and the run used an unlinked copy of `.prisma` from then on.
 
 **Status: building** (defects 1, 2 and 3 open). Servers stopped, databases `vx01_hub_test` and `vx01_id_test` dropped, worktrees and build outputs removed after the run.
+
+## Verifier report, round 2
+
+Verifier: the round 1 verifier (wrote none of this task), 7 Oct 2026, narrow re-check of b26d150 (round 1 report edb61d3 and main 44ce9c9 with SHARED-02 merged in) in a fresh detached worktree. Backend origin/main 3041887 on a fresh `vx01_hub_test` (migrated, seeded), **the real WAWU ID** fb8717e (its own `npm ci`, nothing hard-linked; `vx01_id_test`), Hub 5411, WAWU ID 5412, web export 5413 (`--clear`, private TMPDIR; bundle holds only `localhost:5411` and `localhost:5412`). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vx01/r2/` (`shots/`, `logs/`, `mut/`); design renders as round 1 (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vx01/r2/../design/`).
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| V1 | passed | `npm run check` as one command: exit 0; tsc 0, lint 0, jest 73 suites 1317 passed, gates 9 run / 333 files scanned / 0 findings, baseline 0, 211 tasks (`logs/check1.log`). No hex, rgb, hsl or named colour and no em-dash in `src/features/explore` or `src/app/categories.tsx`. The branch changes no shared file against main 44ce9c9 (`src/` diff is only `src/features/explore/`, `src/app/(tabs)/explore.tsx`, `src/app/categories.tsx`). |
+| D1 | closed | `CategoryChips.tsx` is deleted. Categories draws the shared `FilterChips` with `icon` per item and `revealSelected`. None of the copied pieces is left in the feature: no `accessibilityRole="radio"`, `aria-checked`, `ringRoom`, `chipMetrics` or `chipIconMetrics` under `src/features/explore`. |
+| D2 | closed | `CreatorCard.tsx` is the shared `MediaCard` (stacked) with `titleAccessory` (tick) and `action` (Follow). No `LinearGradient`, `gradientEnds`, `scrimCard`, `expo-image` or `captionInset` is left in the feature. Following: see finding R2-2. |
+| D3 | closed | Round 1's reproduction, live: on Categories (Photography) the first creator's `POST /creators/<id>/follow` was held; that card turned Following and a second tap on it sent nothing; Follow on the second creator sent its own POST at once and turned Following; on release both stayed Following. Requests: one POST each. Both rows are in `FollowRelationship` (second creator 19:08:42.953, the held one 19:08:45.453), and `GET /explore/creators` read both `following: true` with the viewer's token (`shots/two-cards-light.png`). |
+| Refusal ruling | passed | Chidi blocked the viewer through `POST /settings/privacy/blocked` after X1 loaded; Follow got 403 ("You cannot follow this account." from the Hub), the button went back to Follow, and the notice read "Couldn’t follow @chidi-creates. Try again later." (the app's words, not the server's), `role="alert"`, `aria-live="polite"`, gone after 4.2 s (light) and 4.3 s (dark). No follow row was written; the block was removed after (`shots/X1-follow-refused-light.png`, `-dark.png`). |
+| Following ruling | passed | Following is white at 20% with no outline in both themes (`shots/X1-*`, `X2-*`, `X3-*`), as `cCard` draws it. |
+| revealSelected ruling | passed | `/categories?category=photography` opens with Photography at the row's start (box x 20.4, checked); `?category=gaming_esports` opens with Gaming & Esports in view; after that a chip switch leaves the chips in place (Fashion & Beauty at (160.9, 64) before and after the tap). |
+| Signed-out `/categories` | passed | Goes to `/welcome` through the route graph (`_layout.tsx` lists `categories` under the signed-in guard; the route file has no redirect of its own) (`shots/signed-out-categories-light.png`). |
+| V5 | passed with recorded differences | Pairs below. |
+| V6 | passed (unchanged) | X14 loading, X1 error and Try again, categories loading, empty (Gaming & Esports, Music & Audio), categories error and Try again, chip switch, page 2 (`page=2&perPage=24&category=photography`, `@pg26` drawn), all re-driven on b26d150 (`logs/drive-main.log`, `logs/drive-states.log`). |
+| V9 | passed | Signed in through the app's own Welcome and Sign in screens against the real WAWU ID; follows made on screen read back through the Hub API and the database (D3 row). |
+| Mutants | round 1 survivor killed; 5 of 7 new killed | `mut/results.txt`. Killed: blank categories kept (round 1's survivor), one pending flag for every card, pending never cleared, refusal shows no notice, follow and unfollow words swapped, Following back to white at 14%. Survived: notice stays 400 s instead of 4 s (the duration is untested), and Categories without `revealSelected` (the screen never asserts the opening chip is revealed). Both behaviours were seen working live (4.2 s; Gaming & Esports revealed). Finding R2-5. |
+| V10 | NOT RUN | No tester build with this branch. Unblocked when a development or tester build includes `wmt/EXPLORE-01`. |
+
+**V5 pairs, re-classified** (design `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vx01/r2/../design/`, app `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vx01/r2/shots/`, 390 wide at 2x, light and dark; 320 by 568 `X1-320`, `X3-320`, `X13-320`, no sideways scroll):
+- X1: matches in tiles, heading, rail, card, tick and Follow/Following. Differs for recorded reasons: `<BrandMark>` (R-37); search, bell, featured event, Upcoming events, See all, doors and Create left out (R-41, R-27, SHARED-CHANGES EXPLORE-01 F1); tile order from the server (G-180). Plain portraits, names and the Inbox badge are data.
+- X2: matches (nav, chip row with icons, two-column grid 218 high, Following white at 20%), except the All chip's padding (finding R2-1).
+- X3: matches, except that the opening chip is revealed at the row's start where the canvas leaves the row at All (lead ruling, round 2: revealSelected).
+- X13: matches (chips, compass, "Nobody is publishing in Gaming & Esports yet", the line under it); the row is revealed to Gaming & Esports (same ruling).
+- X14: matches the four tiles, heading bar and three cards; the hero block is left out with the featured event (R-41, EVENTS-01).
+- X15: not built (R-41), as round 1.
+
+### Findings, round 2
+
+R2-1. **differs (low, owner may override).** The All chip has no icon, so the shared `FilterChips` draws it with the kit `Chip`'s 15 at each side; X2, X3 and X13 draw every chip in `chipRow`, All included, at 11 start and 14 end with no icon. Measured: All is 50 wide against the canvas's 43, so every chip after it sits 7 further right. The builder recorded it (round 2 report). The cause is the shared component's rule (chipRow padding only when an icon is given), not this feature; fixing it means a `FilterChips` change (for example the `chipRow` padding chosen by the row, not by the icon), a SHARED-CHANGES request. Not a defect of this task.
+
+R2-2. **not a defect: a legitimate use of the footer slot.** Following goes through `MediaCard`'s `footer` holding the shared `Button` (sm, full, glass, 32 high); nothing of the Button or the card is redrawn (no Pressable, frame, label, ring or caption copied), so VERIFIER.md check 2 does not apply. The fill is `whiteAt(colors.surfaceGlass, 0.2)`: the token's own string with its alpha replaced, no colour literal; in both themes the token is `rgba(255, 255, 255, 0.14)`, giving `rgba(255, 255, 255, 0.2)`. Two notes for the lead: (a) the look is a style override on a shared Button rather than a prop ("add a prop", CLAUDE.md), and because `style` comes last it also replaces the Button's pressed colour (the press still scales); (b) `whiteAt` only works while the token is written as `rgba(...)`: a hex token would leave it at 14% with no error. A `MediaCard` `action.on` look at white 20% would remove both.
+
+R2-3. **defect (low, VERIFIER.md check 2; CLAUDE.md "never fork a component").** `src/features/explore/FollowNotice.tsx` is a copy of `src/features/profile-edit/SavedToast.tsx`, which is on main (ME-06): the same View with `accessibilityRole="alert"`, `accessibilityLiveRegion="polite"`, `textPrimary` fill, `surfacePage` words at `font(600)` 14.5, an 18 icon at stroke 2.2, `radius.input`, `space.xl` sides, `space.lg` padding, 10 gap, 48 high. Only the placement (bottom instead of top), the icon and tone (CircleAlert, danger), two lines and `pointerEvents` differ; the builder's own comment says it "takes M10's toast shape". No SHARED-CHANGES row was filed. Reproduce: `diff src/features/profile-edit/SavedToast.tsx src/features/explore/FollowNotice.tsx` (structure identical, differences listed above). The `forks` gate does not see function components (round 1 finding 1). Fix: one shared toast in `src/components/` with placement and tone props, used by both (a fenced change, SHARED-CHANGES), or the lead accepts it at merge as with SETTINGS-02's `BankRow`.
+
+R2-4. note: in a test run my seeded paging creators had ids that are not UUID v4, so their Follow was refused 400 by the Hub's validation and rolled back; real WAWU IDs are UUID v4, so this is test data, not the app. The D3 check above used two creators with UUID ids.
+
+R2-6. note (another task's flaky test): `src/features/settings/__tests__/settingsScreens.test.tsx`, "Z3 · Notifications › shows the loading view while the settings are on the way, then a retry when they never come" (SETTINGS-01, merged) failed once in the full run made with this report at load 2.1 ("Unable to find an element with testID: notify-loading", not a timeout) and once in three runs of the file alone; the next full run passed (exit 0, 73 suites, 1317 passed, gates 333 files 0 findings, 211 tasks). Untouched by this branch; it needs its own fix (WORKFLOW section 10: "A flaky suite. Fix it"), lead to ticket.
+
+R2-5. note (test gaps): the notice's 4 s and Categories passing `revealSelected` are untested (two surviving mutants); both were seen working live.
+
+Round 1 findings 5 to 7 are now settled by the lead's rulings (revealSelected, Following at white 20%, the refusal notice) and checked above. Round 1 findings 1 to 3 are closed (D1 to D3).
+
+**Status: building** (R2-3 open; low). Servers stopped, `vx01_hub_test` and `vx01_id_test` dropped, worktrees and the web export removed after the run.
 
 ## Owner sign-off
 

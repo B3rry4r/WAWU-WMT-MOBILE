@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 66 | 0 | 23 | 26 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 51 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [EXPLORE-01](../tasks/EXPLORE-01.md) Explore: browse, categories, loading, empty (You)
 
@@ -129,6 +129,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.
 - 7 Oct 2026 · EXPLORE-01 · Round 2: shared FilterChips and MediaCard replace the local chips and card (D1, D2), Follow pending per creator (D3), refused Follow rolls back with a short line, blank categories tested; status verifying.
 - 7 Oct 2026 · EXPLORE-01 · Verified round 1 (independent verifier, real WAWU ID fb8717e, Hub 3041887): V4, V6, V9 and R-41 passed, X15 confirmed not built, 11 of 12 mutants killed; 3 low defects open (CategoryChips forks FilterChips and CreatorCard redraws MediaCard, VERIFIER check 2, neither caught by the forks gate; a pending Follow drops Follow taps on every other card); status building.
 - 7 Oct 2026 · EXPLORE-01 · Built: Explore (category tiles, featured creators with Follow, loading, error) and Categories (chips, creators, empty, paging) against the local Hub; entries to screens not built yet left out (R-41); status verifying.
@@ -143,4 +144,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · WALLET-01 · Verified round 2 (2c91287): D1 to D4 closed (every Back from A26 lands on the tab, balances whole at 320/360/390 px up to ₦999,999,999.99, the three WALLET-01 test files end in 17 s in band, 9 of 9 mutants killed; the remaining in-band hold is WALLET-11's payout test, mutation timers); trial merge with main 5fec168 passes; new D5 (low): a balance that changes under the card, or Show after Hide, paints one frame cut with "…" before it is re-measured; status building.
 - 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.
 - 7 Oct 2026 · WALLET-01 · Verified (independent session, mobile 972d411, backend main 3041887, real WAWU ID): R-41 passed (no bills entry, every left-out entry's screen unbuilt), V4 passed on two seeds of non-canvas values (balance from the provider read, debits as totals with fees), V6 and V9 passed, V5 failed: D1 Back from a button-opened A26 reopens A26, D2 the balance is cut off with "…" at 320 px from six naira digits, D3 WalletScreen.test.tsx holds jest about 5 minutes in band (a React Query gc timer), D4 4 of 14 mutants survive; status back to building.
-- 7 Oct 2026 · WALLET-01 · Built: the Wallet tab (W1 with W4, W5, W6, plus no wallet, opening, frozen and error states) against GET /money/wallet, /money/wallet/balance and /money/transactions; entries to screens not built yet left out (R-41); G-310, G-311; status verifying.
