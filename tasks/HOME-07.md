@@ -1,7 +1,7 @@
 ---
 id: HOME-07
 title: Feed: course, template, creator and professional cards, empty and error
-owner: DEV
+owner: YOU
 area: HOME
 order: 148
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H7, H8, H9, H10, H12, H13]
 ---
 # HOME-07 · Feed: course, template, creator and professional cards, empty and error
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

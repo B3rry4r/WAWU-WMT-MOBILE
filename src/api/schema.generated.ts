@@ -782,6 +782,121 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/assistant/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The problems offered as taps when the assistant opens (S14). */
+        get: operations["LegalAssistantController_topics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open the conversation, or pick up the unfinished one. A new one starts
+         *     with the assistant's two opening lines and the topic taps.
+         */
+        post: operations["LegalAssistantController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LegalAssistantController_thread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The client says something: typed (`body`) or a tap (`quickReplyId`).
+         *     Before the brief is sent the assistant answers; after, the message goes
+         *     to the consultant on the matter's thread.
+         */
+        post: operations["LegalAssistantController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the assistant again after `503 assistant_unavailable`. Counted like a
+         *     message, and one at a time per conversation (409 `assistant_busy`).
+         */
+        post: operations["LegalAssistantController_reply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Send to a consultant" (S16): the brief goes to WAWU Legal's consultant
+         *     queue and the matter opens at `awaiting_quote`. Nothing is charged.
+         *     Sending again answers the same thread and opens nothing new.
+         */
+        post: operations["LegalAssistantController_sendToConsultant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/legal/availability": {
         parameters: {
             query?: never;
@@ -1687,7 +1802,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** The host's shared links, each with its tickets sold (E18). */
+        get: operations["EventRunningController_referrals"];
         put?: never;
         /** A shareable link that attributes its sales. */
         post: operations["EventTicketingController_createReferral"];
@@ -1711,6 +1827,96 @@ export interface paths {
          *     Flutterwave refund per order, not a status flip.
          */
         post: operations["EventTicketingController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/mine/sold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sold per event for every event the caller hosts (E17). */
+        get: operations["EventRunningController_mySold"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/door/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The events the caller works the door at. */
+        get: operations["EventRunningController_myDoorEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who the host lets check tickets in. */
+        get: operations["EventRunningController_listDoorStaff"];
+        put?: never;
+        /** Add someone to the door, by WAWU id or handle. */
+        post: operations["EventRunningController_addDoorStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door-staff/{staffId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take someone off the door. */
+        delete: operations["EventRunningController_removeDoorStaff"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scan at the door, as the host or their door staff. Let them in (E20)
+         *     with the holder's name, already used (E23) with when and by whom, or
+         *     not valid (E24), with the live counts.
+         */
+        post: operations["EventRunningController_checkIn"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2224,6 +2430,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/explore/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExploreController_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/explore/creators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExploreController_creators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/explore/featured-creators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExploreController_featured"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals/applications": {
         parameters: {
             query?: never;
@@ -2519,6 +2773,22 @@ export interface paths {
         patch: operations["PrivacySettingsController_updateMySettings"];
         trace?: never;
     };
+    "/api/hub/settings/tgif": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TgifPreferenceController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["TgifPreferenceController_update"];
+        trace?: never;
+    };
     "/api/hub/users/me": {
         parameters: {
             query?: never;
@@ -2657,6 +2927,137 @@ export interface paths {
             cookie?: never;
         };
         get: operations["UserProfileController_getContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/featured-works": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileWorksController_myWorks"];
+        put?: never;
+        post: operations["ProfileWorksController_addWork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/featured-works/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Declared above `me/featured-works/:id` so that route does not take "order" for an id. */
+        put: operations["ProfileWorksController_reorderWorks"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/featured-works/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProfileWorksController_removeWork"];
+        options?: never;
+        head?: never;
+        patch: operations["ProfileWorksController_editWork"];
+        trace?: never;
+    };
+    "/api/hub/users/me/education": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileWorksController_myEducation"];
+        put?: never;
+        post: operations["ProfileWorksController_addEducation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/education/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProfileWorksController_removeEducation"];
+        options?: never;
+        head?: never;
+        patch: operations["ProfileWorksController_editEducation"];
+        trace?: never;
+    };
+    "/api/hub/users/{wawuId}/featured-works": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfileWorksController_worksOf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/{wawuId}/featured-works/{workId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M35: one work. */
+        get: operations["ProfileWorksController_workOf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/{wawuId}/education": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M33: somebody's education. */
+        get: operations["ProfileWorksController_educationOf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3091,6 +3492,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The label to show for each category, format and kind, beside the value to
+         *     send (EVENTS-02): "Business & Finance" is `business`. Declared before
+         *     `:id` for the same reason `mine` is.
+         */
+        get: operations["EventController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/events/{id}": {
         parameters: {
             query?: never;
@@ -3154,6 +3576,27 @@ export interface paths {
         post: operations["EventController_save"];
         /** Un-bookmark it. Idempotent: removing one that was never there is a 200. */
         delete: operations["EventController_unsave"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The one live sponsored card for a placement, or `data: null` when nothing
+         *     is eligible (the app draws no card and no empty frame). Never cached: a
+         *     card must stop the moment its window ends or an admin pauses it.
+         */
+        get: operations["AdsController_serve"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3690,6 +4133,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** WAWU users with an open wallet, by name, @handle or phone (W7). Blocked people never appear. At most 20. */
+        get: operations["MoneyRecipientController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/recipients/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The people this user sent money to most recently, newest first (W7). At most 10. */
+        get: operations["MoneyRecipientController_recentRecipients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/about": {
         parameters: {
             query?: never;
@@ -3809,6 +4286,299 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/tgif/{date}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TgifController_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/react": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TgifController_react"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/react/{card}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["TgifController_unreact"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TgifController_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TgifController_share"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/live/catch-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the caller missed since a cursor: messages and read marks, oldest first. */
+        get: operations["LiveController_catchUp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chats, paid questions and communities in one list, latest activity first. */
+        get: operations["InboxController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/inbox/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Inbox tab's badge: the sum of every row's unread count. */
+        get: operations["InboxController_unread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M7's figures in one read: purchases, saved, unread notifications. */
+        get: operations["MeController_counts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved (M30): content, events and creators, newest first, by tab. */
+        get: operations["MeController_savedList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/saved/creators/{wawuId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save a creator (M30's Creators tab). Idempotent. */
+        put: operations["MeController_saveCreator"];
+        post?: never;
+        /** Remove a saved creator. Idempotent. */
+        delete: operations["MeController_unsaveCreator"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My purchases (M29): pieces bought, newest first, searchable, with course progress. */
+        get: operations["MeController_purchaseList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/lessons/{lessonId}/done": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark a lesson of a course piece finished (M29 "3 of 12 done"). Idempotent. */
+        put: operations["MeController_lessonDone"];
+        post?: never;
+        /** Mark a lesson not finished. Idempotent. */
+        delete: operations["MeController_lessonNotDone"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notifications (M31, M32), by chip, each with what opening it opens. */
+        get: operations["MeController_notificationList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A month's earnings from the caller's completed sales (M7, M18). Never a balance. */
+        get: operations["MeController_earningsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/earnings/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The completed sales behind a month's earnings, newest first. */
+        get: operations["MeController_earningSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ads/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The app reports that this person viewed, tapped or skipped the card of a
+         *     campaign (the id GET /ads returned). Counted once per person, kind and
+         *     UTC day: a repeat answers the same as the first and changes nothing, so
+         *     the app may retry freely and the answer says nothing about earlier counts.
+         *     A campaign that is not being served (unknown, draft, paused, ended, outside
+         *     its window) is a plain 404, the same for all of them.
+         */
+        post: operations["AdsEventsController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/banks": {
         parameters: {
             query?: never;
@@ -3843,46 +4613,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: WALLET-09 serves it.
          */
         post: operations["MoneyTransferController_nameCheck"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/recipients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * WAWU users with an open wallet, by name, @handle or phone (W7). Blocked people never appear. At most 20.
-         * @description Declared by MONEY-04, not served yet: WALLET-08 serves it.
-         */
-        get: operations["MoneyTransferController_recipients"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/recipients/recent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The people this user sent money to most recently, newest first (W7). At most 10.
-         * @description Declared by MONEY-04, not served yet: WALLET-08 serves it.
-         */
-        get: operations["MoneyTransferController_recentRecipients"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4095,7 +4825,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "event/speaker";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "event/speaker" | "profile/work";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -4184,6 +4914,12 @@ export interface components {
              *     instead — where the consultant can actually open it.
              */
             body: string;
+        };
+        SendAssistantMessageDto: {
+            /** @description What the client typed. At most 2000 characters. */
+            body?: string;
+            /** @description The `id` of one of the thread's live `quickReplies`. */
+            quickReplyId?: string;
         };
         CreateLegalRequestDto: {
             serviceCode: string;
@@ -4525,6 +5261,13 @@ export interface components {
              */
             reason: string;
         };
+        AddDoorStaffDto: {
+            /** Format: uuid */
+            wawuUserId?: string;
+            /** @description With or without the "@". Same characters a handle may hold. */
+            handle?: string;
+            label?: string;
+        };
         EventDecisionReasonDto: {
             reason: string;
         };
@@ -4684,6 +5427,10 @@ export interface components {
             showFollowing?: boolean;
             showInMemberLists?: boolean;
         };
+        UpdateTgifPreferenceDto: {
+            /** @description false hides TGIF on Today for this account; true shows it again. */
+            show: boolean;
+        };
         UpdateUserProfileDto: {
             /** @enum {string|null} */
             accountType?: "user" | "creator" | null;
@@ -4789,6 +5536,49 @@ export interface components {
             endedOn?: string | null;
             description?: string | null;
         };
+        CreateProfileWorkDto: {
+            title: string;
+            role: string;
+            year: number;
+            client?: string | null;
+            link?: string | null;
+            category?: string | null;
+            description?: string | null;
+            /**
+             * @description The keys (or the `fileUrl`s) `POST /uploads/presign` returned for the
+             *     `profile/work` folder, first one the cover. Each must be this person's
+             *     own upload; anything else is a 400.
+             */
+            media?: string[];
+        };
+        ReorderProfileWorksDto: {
+            ids: string[];
+        };
+        UpdateProfileWorkDto: {
+            title?: string;
+            role?: string;
+            year?: number;
+            client?: string | null;
+            link?: string | null;
+            category?: string | null;
+            description?: string | null;
+            /** @description The whole list, replaced. [] clears it. */
+            media?: string[];
+        };
+        CreateProfileEducationDto: {
+            school: string;
+            field?: string | null;
+            startYear: number;
+            /** @description Omitted or null means still studying there. */
+            endYear?: number | null;
+        };
+        UpdateProfileEducationDto: {
+            school?: string;
+            field?: string | null;
+            startYear?: number;
+            /** @description null means still studying there. */
+            endYear?: number | null;
+        };
         CreateCommunityDto: {
             /**
              * @description Bound: 3-80 characters. A community name is a list-row heading on both
@@ -4878,6 +5668,15 @@ export interface components {
             /** @description Display order. Defaulted by position when omitted. */
             order?: number;
         };
+        NewEventTicketTypeDto: {
+            name: string;
+            /** @description Naira, like every ticket price this backend stores. 0 is a free ticket. */
+            priceNaira: number;
+            /** @description How many exist. A venue has a capacity, so there is no unlimited option. */
+            quantity: number;
+            /** @enum {string} */
+            tier?: "free" | "regular" | "vip" | "vvip" | "early_bird" | "group";
+        };
         CreateEventDto: {
             name: string;
             description: string;
@@ -4885,9 +5684,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio?: string;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /**
              * @description ISO 8601. The authoritative instant — the only thing upcoming/past is
              *     decided on. Not required to be in the future: an event whose start passes
@@ -4901,7 +5700,13 @@ export interface components {
             timeLabel?: string;
             /** @description Display only, e.g. "WAT". */
             timezone?: string;
-            location: string;
+            /**
+             * @description The city or venue line the card shows. Optional (EVENTS-02): the app's
+             *     host wizard asks only for the street address, so when this is left out
+             *     the server fills it from `address`, and leaves it empty when there is no
+             *     address either. A value sent here is stored as sent, as before.
+             */
+            location?: string;
             address?: string;
             /**
              * @description The venue by NAME, e.g. "Eko Convention Centre".
@@ -4927,11 +5732,18 @@ export interface components {
              * @description What the event is about. Defaults to `other` when not stated.
              * @enum {string}
              */
-            category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+            category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
             /** Format: email */
             contactEmail?: string;
             contactPhone?: string;
             speakers?: components["schemas"]["EventSpeakerDto"][];
+            /**
+             * @description The ticket types, sent with the event in the same submit (EVENTS-02), so
+             *     the event and its tickets go to review together. Omitted or empty, the
+             *     event sells nothing, exactly as before. The tiers can still be replaced
+             *     afterwards through PUT /events/:id/tickets.
+             */
+            ticketTypes?: components["schemas"]["NewEventTicketTypeDto"][];
         };
         UpdateEventDto: {
             name?: string;
@@ -4939,9 +5751,9 @@ export interface components {
             hostOrg?: string;
             hostOrgBio?: string;
             /** @enum {string} */
-            format?: "in_person" | "online";
+            format?: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type?: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type?: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             startsAt?: string;
             endsAt?: string;
             timeLabel?: string;
@@ -4961,7 +5773,7 @@ export interface components {
              * @description What the event is about. Defaults to `other` when not stated.
              * @enum {string}
              */
-            category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+            category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
             /** Format: email */
             contactEmail?: string;
             contactPhone?: string;
@@ -4978,7 +5790,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -5006,7 +5818,7 @@ export interface components {
             triesLeft?: number;
             /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
             lockedUntil?: string;
-            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, selfie_checks_exhausted, reset_codes_exhausted: seconds to wait before trying again. */
+            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
             retryAfterSeconds?: number;
             /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
             checksLeft?: number;
@@ -5127,6 +5939,17 @@ export interface components {
             bankCode: string;
             accountNumber: string;
         };
+        MoneyPlainErrorEnvelope: {
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            /** @description 400. */
+            statusCode: number;
+            /** @description A sentence about the first field that is wrong. */
+            message: string;
+        };
         PolicySectionDto: {
             heading: string;
             body: string;
@@ -5136,6 +5959,10 @@ export interface components {
             /** @description The date the owner gives the text, YYYY-MM-DD. */
             effectiveDate: string;
             sections: components["schemas"]["PolicySectionDto"][];
+        };
+        PutFeaturedCreatorDto: {
+            /** @description Rail order, lowest first. Default 0. */
+            position?: number;
         };
         OpenChatDto: {
             /**
@@ -5174,6 +6001,67 @@ export interface components {
              *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
              */
             contentLength: number;
+        };
+        ReactTgifDto: {
+            /**
+             * @description Which card: verse, reality, remember, prayer or takeaway.
+             * @enum {string}
+             */
+            card: "verse" | "reality" | "remember" | "prayer" | "takeaway";
+            /**
+             * @description What the person says to it. Defaults to "amen", the only reaction.
+             * @enum {string}
+             */
+            kind?: "amen";
+        };
+        CreateAdCreativeDto: {
+            headline: string;
+            /** @description Place, date and price as the team types them. Leave it out for no second line. */
+            subline?: string | null;
+            ctaLabel: string;
+            /**
+             * @description What the button opens. The allow-list is the AdCtaDestination enum: `event` today.
+             * @enum {string}
+             */
+            ctaDestination: "event";
+            /** @description For `event`, an Event id. The event must be published and not over. */
+            ctaDestinationId: string;
+            /** @description An https link to the picture. Leave it out for a card without one. */
+            artworkUrl?: string | null;
+        };
+        CreateAdCampaignDto: {
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
+            startsAt: string;
+            /** @description UTC. Must come after startsAt, and must not have passed yet. */
+            endsAt: string;
+            /** @description Ranks bookings that overlap on one placement. Range: src/ads/ads-limits.ts. */
+            weight?: number;
+            creative: components["schemas"]["CreateAdCreativeDto"];
+        };
+        UpdateAdCreativeDto: {
+            headline?: string;
+            subline?: string | null;
+            ctaLabel?: string;
+            /** @enum {string} */
+            ctaDestination?: "event";
+            ctaDestinationId?: string;
+            artworkUrl?: string | null;
+        };
+        UpdateAdCampaignDto: {
+            advertiser?: string;
+            /** @enum {string} */
+            placement?: "tgif_card" | "today_slot";
+            startsAt?: string;
+            endsAt?: string;
+            weight?: number;
+            creative?: components["schemas"]["UpdateAdCreativeDto"];
+        };
+        RecordAdEventDto: {
+            /** @enum {string} */
+            type: "view" | "tap" | "skip";
         };
         NameCheckDto: {
             bankCode: string;
@@ -5442,6 +6330,14 @@ export interface components {
             accountName: string;
             matchesBvnName: boolean | null;
             updatedAt: string;
+        };
+        RecipientView: {
+            wawuUserId: string;
+            displayName: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            /** @enum {string|null} */
+            tick: "creator" | "professional" | null;
         };
         ReceiptPartyView: {
             name: string;
@@ -6441,6 +7337,70 @@ export interface components {
                 remaining: number;
             } | null;
         };
+        HostSoldCount: {
+            eventId: string;
+            ticketsSold: number;
+        };
+        HostSoldCounts: {
+            items: components["schemas"]["HostSoldCount"][];
+        };
+        DoorEventView: {
+            eventId: string;
+            eventName: string;
+            /** Format: date-time */
+            startsAt: string;
+            location: string;
+            venueName: string | null;
+            status: string;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            label: string;
+        };
+        DoorEventList: {
+            items: components["schemas"]["DoorEventView"][];
+        };
+        EventReferralSalesView: {
+            id: string;
+            code: string;
+            label: string;
+            ticketsSold: number;
+            revenueNaira: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        DoorStaffView: {
+            id: string;
+            wawuUserId: string;
+            label: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+            /** Format: date-time */
+            addedAt: string;
+        };
+        CheckedInByView: {
+            /** @enum {string} */
+            role: "host" | "door_staff";
+            label: string | null;
+        };
+        DoorCheckInResult: {
+            /** @enum {string} */
+            outcome: "valid" | "already_used" | "invalid";
+            ticket: {
+                code: string;
+                tierName: string;
+                holderName: string | null;
+                /** Format: date-time */
+                checkedInAt: string | null;
+                checkedInBy: components["schemas"]["CheckedInByView"];
+            } | null;
+            totals: {
+                sold: number;
+                checkedIn: number;
+                stillToArrive: number;
+                remaining: number;
+            };
+        };
         DayAvailability: {
             date: string;
             slots: {
@@ -6803,9 +7763,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -6857,9 +7817,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -6929,6 +7889,16 @@ export interface components {
             deliveredCount: number;
             suppressedByPreference: number;
         };
+        ExploreCreatorCard: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            field: string | null;
+            pieceCount: number;
+            verification: components["schemas"]["VerificationState"];
+            following: boolean;
+        };
         AboutView: {
             bankName: string;
             licenceLine: string | null;
@@ -6945,6 +7915,17 @@ export interface components {
             title: string | null;
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
+        };
+        AdCardView: {
+            id: string;
+            advertiser: string;
+            headline: string;
+            subline: string | null;
+            ctaLabel: string;
+            /** @enum {string} */
+            ctaDestination: "event";
+            ctaDestinationId: string;
+            artworkUrl: string | null;
         };
         AccountDeletionResponse: {
             deletionScheduledAt: string;
@@ -7151,6 +8132,9 @@ export interface components {
             contentReviews?: boolean | null;
             communityMessages?: boolean | null;
         };
+        TgifPreferenceView: {
+            show: boolean;
+        };
         ProfileExperienceView: {
             id: string;
             title: string;
@@ -7165,14 +8149,14 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             wawuUserId: string;
-            handle: string | null;
-            bio: string | null;
             /** @enum {string} */
             accountType: "creator" | "user";
             /** Format: date-time */
             unpaidWarnedAt: string | null;
             avatarUrl: string | null;
             coverUrl: string | null;
+            handle: string | null;
+            bio: string | null;
             interests: string[];
             instagramHandle: string | null;
             whatsappHandle: string | null;
@@ -7253,6 +8237,41 @@ export interface components {
             followerCount: number;
             followingCount: number;
             communityCount: number;
+        };
+        ProfileWorkCategoryView: {
+            name: string;
+            count: number;
+        };
+        ProfileWorkMediaView: {
+            url: string | null;
+            /** @enum {string} */
+            kind: "video" | "image";
+        };
+        ProfileWorkView: {
+            id: string;
+            title: string;
+            role: string;
+            client: string | null;
+            year: number;
+            link: string | null;
+            category: string | null;
+            description: string | null;
+            media: components["schemas"]["ProfileWorkMediaView"][];
+            position: number;
+            createdAt: string;
+        };
+        ProfileWorksView: {
+            count: number;
+            categories: components["schemas"]["ProfileWorkCategoryView"][];
+            works: components["schemas"]["ProfileWorkView"][];
+        };
+        ProfileEducationView: {
+            id: string;
+            school: string;
+            field: string | null;
+            startYear: number;
+            endYear: number | null;
+            current: boolean;
         };
         EnrolResponse: {
             externalHostUrl: string;
@@ -7377,9 +8396,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -7392,7 +8411,7 @@ export interface components {
             externalUrl: string | null;
             bannerUrl: string | null;
             /** @enum {string} */
-            category: "community" | "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
+            category: "community" | "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
             contactEmail: string | null;
             contactPhone: string | null;
             /** Format: date-time */
@@ -7413,6 +8432,23 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             lastDecisionReason: string | null;
+        };
+        EventOptionsView: {
+            categories: {
+                /** @enum {string} */
+                value: "community" | "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
+                label: string;
+            }[];
+            formats: {
+                /** @enum {string} */
+                value: "in_person" | "online" | "hybrid";
+                label: string;
+            }[];
+            types: {
+                /** @enum {string} */
+                value: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
+                label: string;
+            }[];
         };
         EventGoingView: {
             eventId: string;
@@ -7518,6 +8554,61 @@ export interface components {
             completedAt: string | null;
             legalRequestId: string | null;
         };
+        LegalAssistantTopic: {
+            id: string;
+            label: string;
+            matter: string;
+            matterLabel: string;
+        };
+        LegalAssistantMessage: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "consultant" | "assistant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            consultantName: string | null;
+        };
+        LegalAssistantQuickReply: {
+            id: string;
+            label: string;
+        };
+        LegalAssistantBriefRow: {
+            label: string;
+            value: string;
+        };
+        LegalAssistantBrief: {
+            matter: string;
+            matterLabel: string;
+            rows: components["schemas"]["LegalAssistantBriefRow"][];
+            ready: boolean;
+        };
+        LegalAssistantConsultant: {
+            name: string | null;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        LegalAssistantThread: {
+            id: string;
+            /** @enum {string} */
+            stage: "sent" | "profiling" | "brief_ready";
+            matter: string;
+            matterLabel: string;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            awaitingReply: boolean;
+            legalRequestId: string | null;
+            requestStatus: string | null;
+            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
+            assistantStopped: boolean;
+        };
+        LegalAssistantTranscript: {
+            intakeId: string;
+            legalRequestId: string | null;
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+        };
         ChatPerson: {
             wawuId: string;
             name: string;
@@ -7573,6 +8664,442 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
+        };
+        TgifCardStats: {
+            /** @enum {string} */
+            card: "verse" | "reality" | "remember" | "prayer" | "takeaway";
+            amen: number;
+            amenByMe: boolean;
+        };
+        TgifStats: {
+            date: string;
+            cards: components["schemas"]["TgifCardStats"][];
+            readers: number;
+            shares: number;
+            readByMe: boolean;
+            sharedByMe: boolean;
+        };
+        TgifReactionState: {
+            /** @enum {string} */
+            card: "verse" | "reality" | "remember" | "prayer" | "takeaway";
+            amen: number;
+            amenByMe: boolean;
+        };
+        TgifReadState: {
+            readers: number;
+            counted: boolean;
+        };
+        TgifShareState: {
+            shares: number;
+            counted: boolean;
+        };
+        LiveChatMessageEvent: {
+            /** @enum {string} */
+            type: "chat.message";
+            message: components["schemas"]["ChatMessage"];
+            cursor: string;
+        };
+        LiveChatReadEvent: {
+            /** @enum {string} */
+            type: "chat.read";
+            chatId: string;
+            readerWawuId: string;
+            mine: boolean;
+            lastReadAt: string | null;
+            lastReadMessageId: string | null;
+            cursor: string;
+        };
+        LiveCommunityMessageEvent: {
+            /** @enum {string} */
+            type: "community.message";
+            communityId: string;
+            message: components["schemas"]["CommunityMessage"];
+            cursor: string;
+        };
+        LiveCatchUp: {
+            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveCommunityMessageEvent"])[];
+            cursor: string;
+            hasMore: boolean;
+        };
+        InboxPreview: {
+            text: string | null;
+            /** @enum {string|null} */
+            attachment: "video" | "image" | "file" | null;
+            mine: boolean;
+            senderName: string | null;
+            sentAt: string;
+        };
+        InboxPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+        };
+        InboxChat: {
+            chatId: string;
+            other: components["schemas"]["InboxPerson"];
+            canMessage: boolean;
+        };
+        InboxPaidDm: {
+            /** @enum {string} */
+            side: "creator" | "fan";
+            other: components["schemas"]["InboxPerson"];
+            questionCount: number;
+            waitingCount: number;
+            nextDeadlineAt: string | null;
+        };
+        InboxCommunity: {
+            communityId: string;
+            name: string;
+            imageUrl: string | null;
+            /** @enum {string} */
+            kind: "open" | "private";
+            /** @enum {string} */
+            role: "host" | "member";
+        };
+        InboxItem: {
+            id: string;
+            /** @enum {string} */
+            kind: "paid_dm" | "community" | "chat";
+            lastActivityAt: string | null;
+            unreadCount: number;
+            preview: components["schemas"]["InboxPreview"] | null;
+            chat: components["schemas"]["InboxChat"] | null;
+            paidDm: components["schemas"]["InboxPaidDm"] | null;
+            community: components["schemas"]["InboxCommunity"] | null;
+        };
+        InboxPage: {
+            items: components["schemas"]["InboxItem"][];
+            nextCursor: string | null;
+        };
+        InboxUnread: {
+            total: number;
+            chats: number;
+            paidDms: number;
+            communities: number;
+        };
+        MeCountsView: {
+            purchases: number;
+            saved: number;
+            unreadNotifications: number;
+        };
+        SavedContentView: {
+            id: string;
+            title: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            /** @enum {string} */
+            accessType: "free" | "paid";
+            priceKobo: number | null;
+            thumbnailUrl: string | null;
+            bought: boolean;
+            creator: components["schemas"]["FeedCreator"];
+        };
+        SavedEventView: {
+            id: string;
+            name: string;
+            startsAt: string;
+            endsAt: string | null;
+            location: string;
+            bannerUrl: string | null;
+            /** @enum {string} */
+            status: "cancelled" | "published";
+        };
+        SavedEntryView: {
+            id: string;
+            /** @enum {string} */
+            kind: "creator" | "content" | "event";
+            savedAt: string;
+            content: components["schemas"]["SavedContentView"] | null;
+            event: components["schemas"]["SavedEventView"] | null;
+            creator: components["schemas"]["FeedCreator"] | null;
+        };
+        SavedPage: {
+            items: components["schemas"]["SavedEntryView"][];
+            nextCursor: string | null;
+        };
+        SavedCreatorState: {
+            creatorWawuId: string;
+            saved: boolean;
+        };
+        PurchasedPieceView: {
+            id: string;
+            title: string;
+            /** @enum {string} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            thumbnailUrl: string | null;
+            creator: components["schemas"]["FeedCreator"];
+        };
+        LessonProgressView: {
+            total: number;
+            done: number;
+        };
+        PurchaseEntryView: {
+            id: string;
+            purchasedAt: string;
+            content: components["schemas"]["PurchasedPieceView"];
+            lessons: components["schemas"]["LessonProgressView"] | null;
+        };
+        PurchasePage: {
+            items: components["schemas"]["PurchaseEntryView"][];
+            nextCursor: string | null;
+        };
+        LessonDoneState: {
+            lessonId: string;
+            contentId: string;
+            done: boolean;
+            lessons: components["schemas"]["LessonProgressView"];
+        };
+        NotificationTargetView: {
+            /** @enum {string} */
+            kind: "content" | "community" | "paid_question" | "profile";
+            id: string;
+            title: string | null;
+            deadlineAt: string | null;
+        };
+        NotificationFeedItem: {
+            id: string;
+            kind: string;
+            /** @enum {string} */
+            category: "content" | "other" | "money" | "messages";
+            title: string;
+            body: string;
+            tone: string;
+            amountKobo: number | null;
+            creditsCount: number | null;
+            actionLabel: string | null;
+            imageUrl: string | null;
+            actionHref: string | null;
+            read: boolean;
+            createdAt: string;
+            target: components["schemas"]["NotificationTargetView"] | null;
+            actor: components["schemas"]["FeedCreator"] | null;
+        };
+        NotificationFeedPage: {
+            items: components["schemas"]["NotificationFeedItem"][];
+            nextCursor: string | null;
+            unreadCount: number;
+        };
+        EarningsMonthView: {
+            month: string;
+            earnedKobo: number;
+        };
+        MyEarningsView: {
+            month: string;
+            earnedKobo: number;
+            salesCount: number;
+            previousMonth: string;
+            previousEarnedKobo: number;
+            changePct: number | null;
+            months: components["schemas"]["EarningsMonthView"][];
+        };
+        EarningSaleView: {
+            id: string;
+            /** @enum {string} */
+            stream: "tip" | "content" | "community_credits" | "paid_question";
+            earnedKobo: number;
+            occurredAt: string;
+            title: string | null;
+            contentId: string | null;
+        };
+        EarningSalePage: {
+            month: string;
+            items: components["schemas"]["EarningSaleView"][];
+            nextCursor: string | null;
+        };
+        AdCreativeView: {
+            headline: string;
+            subline: string | null;
+            ctaLabel: string;
+            /** @enum {string} */
+            ctaDestination: "event";
+            ctaDestinationId: string;
+            artworkUrl: string | null;
+        };
+        AdEventView: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            open: boolean;
+        };
+        AdCounts: {
+            views: number;
+            taps: number;
+            skips: number;
+            ctr: number | null;
+        };
+        AdCampaignView: {
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** @enum {string} */
+            phase: "upcoming" | "running" | "over";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+            creative: components["schemas"]["AdCreativeView"];
+            event: components["schemas"]["AdEventView"];
+            servingNow: boolean;
+            delivery: components["schemas"]["AdCounts"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdSummaryReportView: {
+            /** Format: date-time */
+            generatedAt: string;
+            filters: {
+                /** @enum {string|null} */
+                placement: "tgif_card" | "today_slot" | null;
+                /** @enum {string|null} */
+                status: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+                /** @enum {string|null} */
+                phase: "upcoming" | "running" | "over" | null;
+                /** Format: date-time */
+                from: string | null;
+                /** Format: date-time */
+                to: string | null;
+            };
+            campaigns: number;
+            delivery: components["schemas"]["AdCounts"];
+            deliveryByStatus: {
+                live: unknown;
+                paused: unknown;
+                draft: unknown;
+                scheduled: unknown;
+                ended: unknown;
+            };
+            deliveryByPlacement: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+            byStatus: {
+                live: unknown;
+                paused: unknown;
+                draft: unknown;
+                scheduled: unknown;
+                ended: unknown;
+            };
+            byPlacement: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+            byPhase: {
+                upcoming: unknown;
+                running: unknown;
+                over: unknown;
+            };
+            servingNow: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+        };
+        AdOverlapView: {
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+        };
+        AdAuditEntryView: {
+            id: string;
+            /** @enum {string} */
+            action: "paused" | "updated" | "scheduled" | "ended" | "created" | "resumed" | "deleted";
+            /** @enum {string|null} */
+            previousStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            /** @enum {string|null} */
+            newStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            changes: {
+                [key: string]: {
+                    from: unknown;
+                    to: unknown;
+                };
+            } | null;
+            adminId: string;
+            adminEmail: string;
+            /** @enum {string} */
+            adminRole: "superadmin" | "reviewer" | "support" | "finance";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdCampaignDetailView: {
+            overlapping: components["schemas"]["AdOverlapView"][];
+            history: components["schemas"]["AdAuditEntryView"][];
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** @enum {string} */
+            phase: "upcoming" | "running" | "over";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+            creative: components["schemas"]["AdCreativeView"];
+            event: components["schemas"]["AdEventView"];
+            servingNow: boolean;
+            delivery: components["schemas"]["AdCounts"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdCampaignChangeView: {
+            campaign: components["schemas"]["AdCampaignDetailView"];
+            audit: components["schemas"]["AdAuditEntryView"];
+        };
+        AdDayCounts: {
+            day: string;
+            views: number;
+            taps: number;
+            skips: number;
+        };
+        AdCampaignReportView: {
+            campaign: components["schemas"]["AdCampaignView"];
+            range: {
+                /** Format: date-time */
+                from: string | null;
+                /** Format: date-time */
+                to: string | null;
+                fromDay: string | null;
+                toDay: string | null;
+            };
+            delivery: components["schemas"]["AdCounts"];
+            days: components["schemas"]["AdDayCounts"][];
+            timing: {
+                windowMinutes: number;
+                elapsedMinutes: number;
+                remainingMinutes: number;
+            };
+            activity: {
+                changes: number;
+                pauses: number;
+                /** Format: date-time */
+                lastActionAt: string | null;
+            };
+        };
+        AdCampaignDeletedView: {
+            campaignId: string;
+            audit: components["schemas"]["AdAuditEntryView"];
         };
         PaymentQuoteView: {
             /** @enum {string} */
@@ -7635,14 +9162,6 @@ export interface components {
             bankName: string;
             accountNumber: string;
             accountName: string;
-        };
-        RecipientView: {
-            wawuUserId: string;
-            displayName: string;
-            handle: string | null;
-            avatarUrl: string | null;
-            /** @enum {string|null} */
-            tick: "creator" | "professional" | null;
         };
         TransferTimelineEntry: {
             /** @enum {string} */
@@ -8930,6 +10449,132 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatThreadView"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_topics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantTopic"][];
+                };
+            };
+        };
+    };
+    LegalAssistantController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_thread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendAssistantMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_reply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_sendToConsultant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
                 };
             };
         };
@@ -10771,6 +12416,27 @@ export interface operations {
             };
         };
     };
+    EventRunningController_referrals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReferralSalesView"][];
+                };
+            };
+        };
+    };
     EventTicketingController_createReferral: {
         parameters: {
             query?: never;
@@ -10829,6 +12495,139 @@ export interface operations {
                         ordersRefunded: number;
                         refundsNeedingAttention: number;
                     };
+                };
+            };
+        };
+    };
+    EventRunningController_mySold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostSoldCounts"];
+                };
+            };
+        };
+    };
+    EventRunningController_myDoorEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorEventList"];
+                };
+            };
+        };
+    };
+    EventRunningController_listDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorStaffView"][];
+                };
+            };
+        };
+    };
+    EventRunningController_addDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddDoorStaffDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorStaffView"];
+                };
+            };
+        };
+    };
+    EventRunningController_removeDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                staffId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        removed: boolean;
+                    };
+                };
+            };
+        };
+    };
+    EventRunningController_checkIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanTicketDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorCheckInResult"];
                 };
             };
         };
@@ -11444,10 +13243,10 @@ export interface operations {
                         name: string;
                         id: string;
                         category: string;
-                        tagline: string;
                         handle: string;
-                        field: string;
                         bio: string;
+                        tagline: string;
+                        field: string;
                         topics: string[];
                         openForRequests: boolean;
                         fullUntil: string | null;
@@ -11460,10 +13259,10 @@ export interface operations {
                             name: string;
                             id: string;
                             category: string;
-                            tagline: string;
                             handle: string;
-                            field: string;
                             bio: string;
+                            tagline: string;
+                            field: string;
                             topics: string[];
                             openForRequests: boolean;
                             fullUntil: string | null;
@@ -11500,10 +13299,10 @@ export interface operations {
                         name: string;
                         id: string;
                         category: string;
-                        tagline: string;
                         handle: string;
-                        field: string;
                         bio: string;
+                        tagline: string;
+                        field: string;
                         topics: string[];
                         openForRequests: boolean;
                         fullUntil: string | null;
@@ -11961,6 +13760,82 @@ export interface operations {
             };
         };
     };
+    ExploreController_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            label: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    ExploreController_creators: {
+        parameters: {
+            query?: {
+                /** @description One of the ids from GET /explore/categories. */
+                category?: "music_audio" | "film_video" | "photography" | "fashion_beauty" | "business_finance" | "technology" | "food_lifestyle" | "faith_spirituality" | "art_design" | "writing_publishing" | "sports_fitness" | "gaming_esports";
+                page?: number;
+                perPage?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ExploreCreatorCard"][];
+                        currentPage: number;
+                        perPage: number;
+                        total: number;
+                    };
+                };
+            };
+        };
+    };
+    ExploreController_featured: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ExploreCreatorCard"][];
+                    };
+                };
+            };
+        };
+    };
     ProfessionalController_apply: {
         parameters: {
             query?: never;
@@ -11988,10 +13863,10 @@ export interface operations {
                         category: string;
                         documents: string[];
                         wawuUserId: string;
+                        headline: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        headline: string;
                         about: string;
                         services: string[];
                         /** @enum {string} */
@@ -12027,10 +13902,10 @@ export interface operations {
                         category: string;
                         documents: string[];
                         wawuUserId: string;
+                        headline: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        headline: string;
                         about: string;
                         services: string[];
                         /** @enum {string} */
@@ -12072,10 +13947,10 @@ export interface operations {
                         category: string;
                         documents: string[];
                         wawuUserId: string;
+                        headline: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        headline: string;
                         about: string;
                         services: string[];
                         /** @enum {string} */
@@ -12606,6 +14481,48 @@ export interface operations {
             };
         };
     };
+    TgifPreferenceController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifPreferenceView"];
+                };
+            };
+        };
+    };
+    TgifPreferenceController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTgifPreferenceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifPreferenceView"];
+                };
+            };
+        };
+    };
     UserProfileController_getMe: {
         parameters: {
             query?: never;
@@ -12647,14 +14564,14 @@ export interface operations {
                         /** Format: date-time */
                         createdAt: string;
                         wawuUserId: string;
-                        handle: string | null;
-                        bio: string | null;
                         /** @enum {string} */
                         accountType: "creator" | "user";
                         /** Format: date-time */
                         unpaidWarnedAt: string | null;
                         avatarUrl: string | null;
                         coverUrl: string | null;
+                        handle: string | null;
+                        bio: string | null;
                         interests: string[];
                         instagramHandle: string | null;
                         whatsappHandle: string | null;
@@ -12873,6 +14790,281 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentPieceResponse"][];
+                };
+            };
+        };
+    };
+    ProfileWorksController_myWorks: {
+        parameters: {
+            query?: {
+                category?: string;
+                /** @description At most this many works (M33 shows three and "See all"). */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileWorksView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_addWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProfileWorkDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileWorkView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_reorderWorks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderProfileWorksDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileWorksView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_removeWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        deleted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    ProfileWorksController_editWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileWorkDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileWorkView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_myEducation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEducationView"][];
+                };
+            };
+        };
+    };
+    ProfileWorksController_addEducation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProfileEducationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEducationView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_removeEducation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        deleted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    ProfileWorksController_editEducation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileEducationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEducationView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_worksOf: {
+        parameters: {
+            query?: {
+                category?: string;
+                /** @description At most this many works (M33 shows three and "See all"). */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileWorksView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_workOf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+                workId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileWorkView"];
+                };
+            };
+        };
+    };
+    ProfileWorksController_educationOf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEducationView"][];
                 };
             };
         };
@@ -13453,13 +15645,13 @@ export interface operations {
                  *     now — a two-day summit is still upcoming on its second morning.
                  */
                 view: "upcoming" | "past";
-                format?: "in_person" | "online";
-                type?: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+                format?: "in_person" | "online" | "hybrid";
+                type?: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
                 /**
                  * @description The browse-by-category chip row. Independent of `format` and `type`: a
                  *     music event can be online or in person, and a workshop or a summit.
                  */
-                category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+                category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
                 /**
                  * @description The featured rail is `?featured=true&perPage=1`, not a second endpoint and
                  *     not an extra key hung off the list envelope — the ResponseInterceptor
@@ -13556,6 +15748,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventView"][];
+                };
+            };
+        };
+    };
+    EventController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOptionsView"];
                 };
             };
         };
@@ -13686,6 +15897,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventSaveView"];
+                };
+            };
+        };
+    };
+    AdsController_serve: {
+        parameters: {
+            query: {
+                /** @description `tgif_card` (the TGIF reader) or `today_slot` (Today, TGIF off). */
+                placement: "tgif_card" | "today_slot";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdCardView"];
                 };
             };
         };
@@ -15237,6 +17470,100 @@ export interface operations {
             };
         };
     };
+    MoneyRecipientController_search: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipientView"][];
+                };
+            };
+            /** @description q is missing, repeated, shorter than 2 characters (not counting a leading @) or longer than 60, or another field was sent. No `reason`: a malformed field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyPlainErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: recipient_search_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyRecipientController_recentRecipients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipientView"][];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     AboutController_about: {
         parameters: {
             query?: never;
@@ -15446,6 +17773,448 @@ export interface operations {
             };
         };
     };
+    TgifController_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifStats"];
+                };
+            };
+        };
+    };
+    TgifController_react: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactTgifDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifReactionState"];
+                };
+            };
+        };
+    };
+    TgifController_unreact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+                card: "verse" | "reality" | "remember" | "prayer" | "takeaway";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifReactionState"];
+                };
+            };
+        };
+    };
+    TgifController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifReadState"];
+                };
+            };
+        };
+    };
+    TgifController_share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifShareState"];
+                };
+            };
+        };
+    };
+    LiveController_catchUp: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The newest `cursor` the app holds: from an event, from the socket's
+                 *     `ready` frame, or from the last catch-up. Left out, nothing is returned
+                 *     and the cursor in the answer is where "now" is.
+                 */
+                cursor?: string;
+                /** @description 1 to 100, 50 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveCatchUp"];
+                };
+            };
+        };
+    };
+    InboxController_list: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+                /** @description Only rows of this kind (the Paid DMs and Communities chips). All kinds when left out. */
+                kind?: "chat" | "paid_dm" | "community";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxPage"];
+                };
+            };
+        };
+    };
+    InboxController_unread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxUnread"];
+                };
+            };
+        };
+    };
+    MeController_counts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeCountsView"];
+                };
+            };
+        };
+    };
+    MeController_savedList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description M30's tab: everything, or one kind. Default `all`. */
+                type?: "all" | "content" | "events" | "creators";
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPage"];
+                };
+            };
+        };
+    };
+    MeController_saveCreator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCreatorState"];
+                };
+            };
+        };
+    };
+    MeController_unsaveCreator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCreatorState"];
+                };
+            };
+        };
+    };
+    MeController_purchaseList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /**
+                 * @description "Search what you've bought": trimmed, then 2 to 60 characters. Matches
+                 *     part of a piece's title or its creator's handle, ignoring case.
+                 */
+                q?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchasePage"];
+                };
+            };
+        };
+    };
+    MeController_lessonDone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDoneState"];
+                };
+            };
+        };
+    };
+    MeController_lessonNotDone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDoneState"];
+                };
+            };
+        };
+    };
+    MeController_notificationList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description M31's chip. Default `all`. */
+                category?: "all" | "money" | "messages" | "content";
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationFeedPage"];
+                };
+            };
+        };
+    };
+    MeController_earningsSummary: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM in Africa/Lagos time, 2000-01 to 2099-12. Default: this month. */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyEarningsView"];
+                };
+            };
+        };
+    };
+    MeController_earningSales: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description YYYY-MM in Africa/Lagos time, 2000-01 to 2099-12. Default: this month. */
+                month?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarningSalePage"];
+                };
+            };
+        };
+    };
+    AdsEventsController_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordAdEventDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: boolean;
+                    };
+                };
+            };
+        };
+    };
     MoneyTransferController_banks: {
         parameters: {
             query?: never;
@@ -15506,82 +18275,6 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable */
             503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyTransferController_recipients: {
-        parameters: {
-            query: {
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipientView"][];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyTransferController_recentRecipients: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipientView"][];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
                 headers: {
                     [name: string]: unknown;
                 };

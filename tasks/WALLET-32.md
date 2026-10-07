@@ -3,7 +3,7 @@ id: WALLET-32
 title: Dollar account and swaps (first slice)
 owner: YOU
 area: WALLET
-order: 202
+order: 204
 priority: after-launch
 repo: wawu-backend
 type: money-path

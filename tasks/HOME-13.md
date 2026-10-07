@@ -1,7 +1,7 @@
 ---
 id: HOME-13
 title: Tip a creator
-owner: DEV
+owner: YOU
 area: HOME
 order: 118
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [H26, H27, H28]
 ---
 # HOME-13 · Tip a creator
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 
