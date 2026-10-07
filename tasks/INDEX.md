@@ -106,8 +106,9 @@ Builder and verifier are always different sessions.
 88. [SETTINGS-05](SETTINGS-05.md) Delete account · needs UI-02 from Developer first
 89. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
 90. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
-91. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-92. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+91. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
+92. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+93. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
