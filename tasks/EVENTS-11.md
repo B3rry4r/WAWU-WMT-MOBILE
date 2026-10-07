@@ -7,7 +7,7 @@ order: 183
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -112,6 +112,19 @@ Verifier session, independent (wrote none of this task). Backend `wmt/EVENTS-11`
 - **NOT RUN.** The full backend suite: the network namespace it needs (for its :4001 stand-in) was refused to this session; unblocked by running it in a namespace (or with WAWU_ID_BASE_URL on a free port) from a session allowed to. `hub-rate-limits.contract.spec.ts`: part of that run. Real WAWU ID (stand-in used). The `relock-approved` label (owner only; its effect was checked with `ci-check.sh ... 1`).
 
 **Verdict: building.** One open defect (D1). Everything else the brief lists holds, and the lock change is exactly the four parts named.
+
+## Builder report, round 3
+
+Backend `wmt/EVENTS-11` `b368f20` (origin/main `3041887`, unchanged, merge a no-op). Lead ruling for this round: fix D1 for both PUT /events/:id/tickets and PATCH /events/:id (they share the BACK_TO_REVIEW write), the write conditional on the status it was decided from, nothing resurrected, nothing written when the state changed, the lock not changed again. Evidence under the lead's scratchpad `be11/r3/`.
+
+- **D1 fix.** Both routes now lock the event row (`SELECT ... FOR UPDATE`) at the start of one interactive transaction, then re-read, re-check and write under that lock, so the decision and the write see the same state. PUT keeps its checks before the gate with the same answers and order (404, not yours 403, cancelled 409, tier price 400, sold 409, then the gate) and runs the event-dependent ones again under the lock (404, not yours, cancelled 409, sold 409); the no-change answer, the tier rows and the status write are all inside that transaction, and the status write is also an `updateMany` conditional on the status it was decided from. PATCH keeps the gate first; its read, the 404 and the takedown 403 now happen under the lock. No new error shapes. Outcomes of a race: the edit commits first, the event is `pending` and the remove (a conditional claim on `published`) is refused, 400 "decided by someone else a moment ago"; or the remove commits first and the edit answers as it does today for a removed event (PATCH 403, nothing written; PUT 200, tiers saved, status left `removed`, the round 1 default). Files: `src/event-ticketing/event-ticketing.service.ts`, `src/event/event.service.ts`.
+- **Spec** `src/event-ticketing/tests/event-edit-races.contract.spec.ts` (new): PUT racing a remove, 25 rounds; PATCH racing a remove, 25 rounds; a PUT and a PATCH after a takedown; 8 parallel PUTs leave one request's tiers (O2). Branch 4/4, three separate runs. On `6ea8612`: PUT race 20 of 25 rounds undo the takedown, PATCH 4 of 25, parallel PUTs leave 2 rows (3 of 4 fail). On origin/main: PATCH race 4 of 25 rounds undo the takedown (fails); the PUT race passes there because main's PUT never writes the status.
+- **Over HTTP** (built Hub, own database, 40 trials each, `live-race-branch.out`): PUT vs remove, takedown undone 0 (29 ended `removed` with the remove 200, 11 ended `pending` with the remove 400); PATCH vs remove, takedown undone 0 (40 ended `pending` with the remove 400). Round 1's live proof rerun on this build: every answer as before. (Its "admin queue contains event" line read False only because the 80 race events filled the queue's first page; the approve that follows succeeds only from `pending`, and did.)
+- **Protected suite:** no change needed. `.pipeline/protected-registry.json` and the suite files are byte-identical to `6ea8612`; with that lock against `b368f20`, **253/253, all 244 required**.
+- **O4, the `category` enum order.** Only the order changed, never the values (EventView and EventOptionsView, same set of 10; `GET /events/options` was byte-identical). Cause: `contract:enrich` reads each union through the TypeScript checker, which orders string-literal members by when it first meets each string. Round 2's `import type { TicketTier }` from the generated enums in `src/admin/events/admin-event-view.type.ts` made the checker meet the enum file's strings before it met `'community'` elsewhere (notification target kinds). Shown by experiment: with that import removed, the order went back to main's. This round's new type imports move it back again, so the regenerated contract now has main's order and differs from main only by the admin additions of round 2 (358 lines added, 2 `$ref` lines changed).
+- **Checks.** `src/event` + `src/admin/events` + `src/event-ticketing`: **154/154** (150 plus the 4 race tests). tsc 0. eslint 0 on every changed .ts file. Gates 16 fail, the same lines as main, 58 warn. Tripwire: no added line matches. Secret scan of the staged diff: nothing key-shaped. `contract:build` regenerated and committed (enum order only, above).
+- **Seen, not changed (for the lead):** PATCH on an event its host already cancelled (status `cancelled`) is accepted today and returns it to `pending` (main does the same). That is not a race and not a takedown, so it is left as it is.
+- **NOT RUN:** the full backend suite in a network namespace (only the event, admin events and protected suites were asked; unblocked by a namespace run). The `relock-approved` label (owner only; the lock is unchanged since round 2). Real WAWU ID (mock used). Fintava not touched.
 
 ## Owner sign-off
 

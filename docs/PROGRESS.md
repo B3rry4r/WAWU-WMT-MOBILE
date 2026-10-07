@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 68 | 0 | 23 | 26 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 48 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-11](../tasks/EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review (You)
 
@@ -126,6 +126,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-11 · Builder report, round 3 (backend `b368f20`, status verifying): D1 fixed for PUT /events/:id/tickets and PATCH /events/:id, both decided and written under a lock on the event row, so an edit racing an admin remove never undoes the takedown (race spec 25 rounds each: 0 wrong on the branch, PUT 20 and PATCH 4 wrong on 6ea8612, PATCH 4 wrong on main; 40 live trials each, 0 undone); parallel PUTs no longer mix tier rows; lock unchanged, protected 253/253; O4 is enum order only (TypeScript first-seen order) and is back to main's order.
 - 7 Oct 2026 · EVENTS-11 · Builder report, round 2 (backend `6ea8612`, status verifying): lead rulings recorded; the tiers of an event that is not published are a 404 to all but its host (R-42 F3, published answers byte-identical to main), the admin queue and detail carry the ticket types (R-42 F2, additive), EVENTS-05's spec seeds its tiers directly (no assertion changed), and the protected suite re-approves the event after the PUT probe; relocked, 253/253 on the new lock (needs the owner's relock-approved label); event specs 150/150.
 - 7 Oct 2026 · EVENTS-11 · Builder report (backend `814e5fb` on `wmt/EVENTS-11`, status verifying): PUT /events/:id/tickets now needs a current tick (the POST/PATCH gate, same 403s, before any write) and a tier change sends an approved event back to `pending`; the sold-ticket 409 is unchanged and first, the same tiers sent again change nothing; new spec 11/11 (8 fail on main), live HTTP before/after on built Hubs, gates equal to main, contract unchanged. Protected suite 246/253: 7 later event probes and EVENTS-05's spec (27) assert the old behaviour, not edited, for the lead and owner.
 - 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
@@ -140,4 +141,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · AUTH-08 · Merged: wawu-id PR #7 (fb8717e). Refresh and sign-out find the token by its id; follow-ups F-1 (sweep inside the rotation transaction), F-3 and F-4 recorded in the task.
 - 7 Oct 2026 · AUTH-08 · Verifier report (independent session, wawu-id `dd4326a` against `4715d17`): every security probe held over real HTTP with tokens minted on main and served by the branch (reuse of a rotated token old and new, a signed-out token cannot be revived through the null-jti fallback, a bad hash falls through to nothing, another account's jti refused with the account filter really applied, a password change ends null-jti and new rows, 40-trial races with both orders exercised, the sweep never touches a live row or another account and is bounded at 50, code rolled back to main still honours new rows); 200 rows carrying a jti answer refresh in 400 ms and sign-out in 186 ms (main 43 s and 26 s), but while 200 unexpired pre-change rows exist a late-position old token still takes 41.7 s and any refusal 29 to 54 s (the old path, gone within 30 days); migration clean over existing rows, diff empty, documented rollback works and re-applies; tsc 0, eslint 43 equal, session-security spec byte-identical, contract unchanged, `test:session-local` 38 of 38, `test:refresh-local` 29 of 29; the Expo app signed in and refreshed after expiry against the branch (sign-out not drivable in the app, none exists); 12 own mutants (10 killed by probes, 1 by the race spec, 2 equivalent); one low note (a refresh answers 500 if the expired-row sweep statement fails, F-1); status review.
 - 7 Oct 2026 · AUTH-08 · Builder report (wawu-id `dd4326a` on branch `wmt/AUTH-08`, status verifying): a refresh or sign-out finds the refresh token by its stored `jti` and verifies one hash instead of one per stored token, so 200 stored tokens answer in 356 ms (refresh) and 236 ms (sign-out) where main takes 31.6 s and 29.2 s; pre-change tokens (null `jti` row) still refresh once and only once until they expire; an account's expired rows are deleted on every issue and sign-out (50 at a time); additive migration `20261007120000_refresh_token_jti`, rollback run; the task text was wrong that old tokens carry no `jti` (they carried an unstored one), so the fallback is on a missing row, not a missing claim; answers CHECK-1 F-5 and the cause named in G-264.
-- 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
