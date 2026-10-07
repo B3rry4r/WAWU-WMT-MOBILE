@@ -9,17 +9,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 72 | 0 | 24 | 27 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 1 |
 | done | 44 | 27 | 10 | 3 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price (Developer 3)
+- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
 
@@ -113,12 +110,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** nothing unblocked
 - **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
-- **Developer 3:** [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 3:** [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [PROS-03](../tasks/PROS-03.md) Get listed as a professional
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · PROS-02 · Verifier report, round 3 (backend `8c0c57b`, mobile `2deafc8`): R2-1 closed (`20261011100000` sorts after main and all 64 branch heads, one folder with that stamp, fresh migrate and seed clean, only main's GIN drift in `migrate diff`), R2-2 closed (111 refused and 155 real cities accepted through the real route, none of the real ones refused), R2-3 closed (G-144 to G-146 on one ref only), R2-4 recorded as the lead's ruling; protected 253/253, tsc 0, gates 16 fail equal to main, tripwire empty, `src/professional` 51/51, `contract:build` unchanged, seeded rows unchanged, 4 of 4 mutants killed. No defect open, status review.
 - 7 Oct 2026 · PROS-02 · Builder fix round 3 (backend `8c0c57b`): the city refuses filler and invisible letters and smeared marks, the migration is restamped `20261011100000`, G-144 to G-146 confirmed unique, "Lagos, Nigeria" left for the owner.
 - 6 Oct 2026 · PROS-02 · Verifier report, round 2 (second independent session): all six round-1 defects reproduced closed against backend `fe4bb87` (blocked people both ways in list, total and profile; export section; reply and city fixes; gap ids), but backend main moved to `872cf45` during the check so the migration now sorts before six main folders, a city of Hangul filler letters is still blank on the card, and G-144 collides with open EVENTS-02; trial merge onto `872cf45` is clean (contract regenerates 6 order-only lines); protected 253/253, same 16 gate fails, 17 mutants 15 killed; status building
 - 6 Oct 2026 · PROS-02 · Verifier report, round 2: all six round-1 defects confirmed fixed (blocked people on the directory list, profile and the web's list in both directions, data export section, migration order, impossible reply times, city text, gap ids G-144 to G-146); full backend suite 153 suites, 3,672 of 3,691 passed, the same two suites failing as on main (152 suites, 3,647 of 3,665); protected 253/253; mobile check exit 0; two owner questions carried (feed card fields, `engineering` not regulated); status review
@@ -133,4 +131,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.
 - 7 Oct 2026 · LEGAL-01 · Verifier report round 3 (independent session, backend f49927a, mobile 61cf8b0): no defect open, status review. D8 reproduces on ca1fd42 (100 parallel posts on the older chat route: 100 x 201 and 100 AI calls) and is closed on f49927a (28 x 201, 72 x 429, 28 AI calls; 50 old plus 50 new share one allowance, hour total exactly 30; the same with two Hubs on one database at 150 ms and 2 s), the 201 is byte-identical to main 0e7b617, the hung-provider case makes 2 brief calls not 3, D1 to D6 still hold, 9 of 9 of my limit and window mutants are killed, the migration folder sorts after main's newest and shares no stamp, protected suite 253/253, gates the same 16 fail as main (55 warn against 51, the four PROVISIONAL markers), G-231 and G-232 are unique across every ref, `npm run check` exit 0. Notes: another user on the older route is 403 on main and the branch; the allowance now also counts messages to a joined consultant (30 an hour); a NUL in `body` on the older route is a 500 on main too.
 - 7 Oct 2026 · LEGAL-01 · Builder round 3, awaiting re-verification: D8 closed (the older `POST /legal/intake/chat/{requestId}` now draws on the same per-person allowance as the assistant routes: 100 parallel posts after payment give 28 accepted and 28 AI calls, not 100), a release clears only its own lease (a late failure no longer starts a third brief call), the 30, 40 and 5 are pinned by literal-number tests (6 mutants run, 6 killed), the migration is `20261007200000_legal_assistant` (after main's `20261007190000`), and this task's gap rows are G-231 and G-232. Backend main 0e7b617 and mobile main d36ae51 merged; protected suite 253/253, gates equal to main's 16 FAIL lines, contract adds the same 7 paths. NOT RUN: a real model, a provider timeout (fenced adapter), the full suite on the merged head.
-- 7 Oct 2026 · LEGAL-01 · Verifier report round 2 (independent session): D1 to D6 and the migration order (U1) are closed and the M13 log test works; the 30 an hour, 40 per conversation and 5 brief tries an hour hold over real HTTP under 200 parallel sends, mixed sends and replies, and two Hub processes on one database (60 sends: 30 accepted, 30 refused, 30 AI calls); privacy, ownership, money, trial merge, protected suite 253/253 and the gates are clean; 45 mutants, 40 killed. Not ready by one low defect (D8): the older `POST /legal/intake/chat/{requestId}` has no limit after payment (100 of 100 accepted and 100 AI calls, against 28 on the new route), so D7 is closed only on the assistant routes; status back to building. Recorded for the lead: the hung-provider behaviour (2 to 3 brief calls, all counted, one request), G-215 and G-216 clash with HOME-02's (renumber to G-221 and G-222 at merge), and the rival `wmt/LEGAL-01-b` conflicts in 8 backend files, in the table and column names and in the routes.
