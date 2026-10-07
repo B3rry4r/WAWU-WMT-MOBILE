@@ -45,8 +45,11 @@ const refusal = (statusCode: number, message: string) => ({ status: statusCode, 
 
 installFetch();
 const { AddWorkScreen } = require('../AddWorkScreen') as typeof import('../AddWorkScreen');
+const { PROFILE_FULL } = require('../failure') as typeof import('../failure');
 
 const CREATE = '/api/hub/users/me/featured-works';
+const MINE = '/api/hub/users/me/featured-works';
+const mine = (count: number) => ok({ owner: { wawuId: 'u1', displayName: 'Lennox Emmanuel', handle: 'lennox', avatarUrl: null }, count, categories: [], works: [] });
 const PRESIGN = '/api/hub/uploads/presign';
 const created = { id: 'w9', title: 'x', role: 'x', client: null, year: 2025, link: null, category: null, description: null, media: [], position: 0, createdAt: '2026-10-01T00:00:00.000Z' };
 const presigned = (n: number) => ok({ uploadUrl: `https://storage.test/put/${n}?sig=1`, key: `profile/work/u1/${n}.jpg`, fileUrl: `https://storage.test/profile/work/u1/${n}.jpg?sig=2` });
@@ -70,8 +73,9 @@ function frame(children: React.ReactNode) {
 async function boot() {
   const onBack = jest.fn();
   const onSaved = jest.fn();
-  await render(frame(<AddWorkScreen onBack={onBack} onSaved={onSaved} />));
-  return { onBack, onSaved };
+  const onOpenWorks = jest.fn();
+  await render(frame(<AddWorkScreen onBack={onBack} onSaved={onSaved} onOpenWorks={onOpenWorks} />));
+  return { onBack, onSaved, onOpenWorks };
 }
 
 async function type(testID: string, value: string) {
@@ -262,8 +266,21 @@ describe('M36 · Add a work', () => {
     await boot();
     await fillRequired();
     await fireEvent.press(screen.getByTestId('work-save'));
-    expect(await screen.findByTestId('work-banner')).toHaveTextContent(cap, { exact: false });
+    // The Hub's sentence is not shown: the app says how to make room (a work's own Remove).
+    expect(await screen.findByTestId('work-full-banner')).toHaveTextContent(PROFILE_FULL, { exact: false });
+    expect(screen.queryByText(cap)).toBeNull();
+    expect(screen.queryByTestId('work-banner')).toBeNull();
     expect(screen.getByTestId('work-title').props.value).toBe('Brand film · Kora Foods');
+    expect(screen.getByTestId('work-save')).toBeDisabled();
+  });
+
+  it('never shows the request validator\'s own sentence for the files: the app\'s words, with the limit', async () => {
+    answers = { [`POST ${CREATE}`]: refusal(400, 'media must contain no more than 8 elements') };
+    await boot();
+    await fillRequired();
+    await fireEvent.press(screen.getByTestId('work-save'));
+    expect(await screen.findByTestId('work-banner')).toHaveTextContent('Too many files. Up to 8 photos or videos.', { exact: false });
+    expect(screen.queryByText(/must contain/)).toBeNull();
   });
 
   it('when there is no connection, says so, keeps the text, and a second Save sends it', async () => {
@@ -318,5 +335,144 @@ describe('M36 · Add a work', () => {
     await fireEvent.press(screen.getByTestId('work-discard-confirm'));
     expect(onBack).toHaveBeenCalledTimes(1);
     await act(async () => undefined);
+  });
+});
+
+describe('M36 · the limits, said before Save', () => {
+  const room = (n: number) => Array.from({ length: n }, (_, i) => presigned(i + 1));
+  const puts = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`PUT /put/${i + 1}`, { status: 200, body: {} }]));
+  const picks = (n: number) => Array.from({ length: n }, (_, i) => file(i + 1));
+  const presigns = () => sent.filter((s) => s.path === PRESIGN);
+
+  it('says in words, before anything is chosen, how many files a work carries', async () => {
+    await boot();
+    expect(screen.getByTestId('work-media-hint')).toHaveTextContent('Up to 8 photos or videos.');
+    expect(screen.queryByTestId('work-media-notice')).toBeNull();
+  });
+
+  it('picking 9 files adds the first 8 and refuses the 9th with the app\'s own sentence: only 8 go up, and Save sends 8', async () => {
+    answers = { [`POST ${PRESIGN}`]: room(9), ...puts(9), [`POST ${CREATE}`]: ok(created, 201) };
+    mockPick.mockResolvedValueOnce(picks(9));
+    const { onSaved } = await boot();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add photos or a video' }));
+    expect(await screen.findByTestId('work-media-notice')).toHaveTextContent('A work can carry up to 8 photos or videos. 1 was not added.');
+    await waitFor(() => expect(sent.filter((s) => s.method === 'PUT')).toHaveLength(8));
+    await waitFor(() => expect(screen.queryByTestId('work-media-7-uploading')).toBeNull());
+    expect(presigns()).toHaveLength(8);
+    expect(screen.queryByTestId('work-media-8')).toBeNull();
+    expect(screen.getByTestId('work-media-7')).toBeTruthy();
+    expect(screen.queryByText(/must contain/)).toBeNull();
+
+    await fillRequired();
+    await fireEvent.press(screen.getByTestId('work-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect((posts()[0].body as { media: string[] }).media).toHaveLength(8);
+  });
+
+  it('with 8 files the box does nothing (the picker is not opened), and taking one out opens it again', async () => {
+    answers = { [`POST ${PRESIGN}`]: room(8), ...puts(8) };
+    mockPick.mockResolvedValueOnce(picks(8));
+    await boot();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add photos or a video' }));
+    await waitFor(() => expect(screen.queryByTestId('work-media-7-uploading')).toBeNull());
+    expect(screen.getByTestId('work-add-media')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('work-add-media'));
+    expect(mockPick).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByTestId('work-media-0-remove'));
+    expect(screen.getByTestId('work-add-media')).toBeEnabled();
+  });
+
+  it('a second pick that goes over adds only what fits and says how many were left out', async () => {
+    answers = { [`POST ${PRESIGN}`]: room(8), ...puts(8) };
+    mockPick.mockResolvedValueOnce(picks(6)).mockResolvedValueOnce(picks(4));
+    await boot();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add photos or a video' }));
+    await waitFor(() => expect(screen.queryByTestId('work-media-5-uploading')).toBeNull());
+    await fireEvent.press(screen.getByRole('button', { name: 'Add photos or a video' }));
+    expect(await screen.findByTestId('work-media-notice')).toHaveTextContent('2 were not added.', { exact: false });
+    await waitFor(() => expect(sent.filter((s) => s.method === 'PUT')).toHaveLength(8));
+    expect(presigns()).toHaveLength(8);
+  });
+
+  it.each([
+    ['work-title', 'Title', 121, 120],
+    ['work-role', 'Your role', 81, 80],
+    ['work-client', 'Client', 121, 120],
+    ['work-category', 'Category', 41, 40],
+    ['work-link', 'Link', 301, 300],
+  ])('%s: over the limit gives the app\'s own sentence under the field, holds Save off and sends nothing; at the limit it is fine', async (testID, _label, over, max) => {
+    answers = { [`POST ${CREATE}`]: ok(created, 201) };
+    await boot();
+    await fillRequired();
+    await type(testID, 'x'.repeat(over));
+    expect(screen.getByText(`Too long. Use ${max} characters or fewer (this has ${over}).`)).toBeTruthy();
+    expect(screen.getByTestId('work-save')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('work-save'));
+    expect(posts()).toHaveLength(0);
+    await type(testID, 'x'.repeat(max));
+    expect(screen.queryByText(/Too long/)).toBeNull();
+    expect(screen.getByTestId('work-save')).toBeEnabled();
+  });
+
+  it('a link that is far too long never shows the validator\'s sentence about 1000 characters', async () => {
+    await boot();
+    await fillRequired();
+    await type('work-link', `https://example.com/${'a'.repeat(1500)}`);
+    expect(screen.getByText(/Too long\. Use 300 characters or fewer/)).toBeTruthy();
+    expect(screen.queryByText(/shorter than or equal to/)).toBeNull();
+  });
+});
+
+describe('M36 · a full profile is not a dead end', () => {
+  it('at the cap it says how to make room, holds Save off, and Open your works goes to M34 for the person\'s own works', async () => {
+    answers = { [`GET ${MINE}`]: mine(50) };
+    const { onOpenWorks } = await boot();
+    await fillRequired();
+    expect(await screen.findByTestId('work-full-banner')).toHaveTextContent(PROFILE_FULL, { exact: false });
+    expect(screen.getByTestId('work-save')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('work-open-works'));
+    expect(onOpenWorks).toHaveBeenCalledWith('u1');
+  });
+
+  it('one below the cap shows no notice and Save is on', async () => {
+    answers = { [`GET ${MINE}`]: mine(49), [`POST ${CREATE}`]: ok(created, 201) };
+    await boot();
+    await fillRequired();
+    await waitFor(() => expect(sent.some((s) => s.method === 'GET' && s.path === MINE)).toBe(true));
+    await act(async () => undefined);
+    expect(screen.queryByTestId('work-full')).toBeNull();
+    expect(screen.getByTestId('work-save')).toBeEnabled();
+  });
+
+  it('when the count could not be read, Save is on and the Hub\'s refusal then brings up the same way out', async () => {
+    answers = { [`GET ${MINE}`]: refusal(500, 'boom'), [`POST ${CREATE}`]: refusal(400, 'A profile can feature at most 50 works. Remove one to add another.') };
+    await boot();
+    await fillRequired();
+    expect(screen.getByTestId('work-save')).toBeEnabled();
+    await fireEvent.press(screen.getByTestId('work-save'));
+    expect(await screen.findByTestId('work-full-banner')).toHaveTextContent(PROFILE_FULL, { exact: false });
+  });
+
+  it('after Save is refused for the cap the count is read again, so Open your works appears', async () => {
+    answers = { [`GET ${MINE}`]: [refusal(500, 'boom'), mine(50)], [`POST ${CREATE}`]: refusal(400, 'A profile can feature at most 50 works. Remove one to add another.') };
+    const { onOpenWorks } = await boot();
+    await fillRequired();
+    await fireEvent.press(screen.getByTestId('work-save'));
+    await fireEvent.press(await screen.findByTestId('work-open-works'));
+    expect(onOpenWorks).toHaveBeenCalledWith('u1');
+  });
+});
+
+describe('M36 · a chosen file that is not a picture', () => {
+  it('shows the quiet block with the picture icon, never a blank box', async () => {
+    answers = { [`POST ${PRESIGN}`]: presigned(1), 'PUT /put/1': { status: 200, body: {} } };
+    mockPick.mockResolvedValueOnce([file(1)]);
+    await boot();
+    await fireEvent.press(screen.getByRole('button', { name: 'Add photos or a video' }));
+    const image = await screen.findByTestId('work-media-0-image', { includeHiddenElements: true });
+    expect(screen.queryByTestId('work-media-0-placeholder')).toBeNull();
+    await fireEvent(image, 'error', { nativeEvent: { error: 'not an image' } });
+    expect(await screen.findByTestId('work-media-0-placeholder')).toBeTruthy();
+    expect(screen.queryByTestId('work-media-0-image', { includeHiddenElements: true })).toBeNull();
   });
 });

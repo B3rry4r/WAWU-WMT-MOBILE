@@ -1,4 +1,5 @@
-import { bodyOf, emptyForm, fieldOfMessage, hasProblems, isComplete, isDirty, mediaKindOf, problemsOf, type WorkForm } from '../form';
+import { bodyOf, emptyForm, fieldOfMessage, hasProblems, isComplete, isDirty, lengthOf, mediaHint, mediaKindOf, mediaRefused, mediaRoom, problemsOf, tooLong, type WorkForm } from '../form';
+import { WORK_LIMITS } from '../limits';
 
 const filled: WorkForm = { ...emptyForm, title: '  Brand film  ', role: ' Director ', year: '2025' };
 
@@ -72,5 +73,38 @@ describe('what a file is', () => {
   it('calls video/mp4 a video and the rest photos', () => {
     expect(mediaKindOf('video/mp4')).toBe('video');
     expect(mediaKindOf('image/png')).toBe('image');
+  });
+});
+
+describe('the limits M36 says before Save', () => {
+  it('holds each text field to the Hub\'s length, counted the way the Hub counts it, in the app\'s own words', () => {
+    for (const field of ['title', 'role', 'client', 'category', 'link'] as const) {
+      const max = WORK_LIMITS[field];
+      expect(problemsOf({ ...filled, [field]: 'x'.repeat(max) })[field]).toBeUndefined();
+      const over = problemsOf({ ...filled, [field]: 'x'.repeat(max + 1) })[field];
+      expect(over).toBe(`Too long. Use ${max} characters or fewer (this has ${max + 1}).`);
+      expect(over).toBe(tooLong(field, max + 1));
+    }
+  });
+
+  it('counts after the trim, and a run of spaces in a line of words as one, but not inside a link', () => {
+    expect(lengthOf('title', `  ${'a'.repeat(10)}  `)).toBe(10);
+    expect(lengthOf('title', 'a  b   c')).toBe(5);
+    expect(lengthOf('link', 'a  b')).toBe(4);
+    expect(hasProblems(problemsOf({ ...filled, title: `${'a'.repeat(WORK_LIMITS.title)}   ` }))).toBe(false);
+  });
+
+  it('says how many files a work carries, how many room is left, and how many were left out', () => {
+    expect(mediaHint).toBe(`Up to ${WORK_LIMITS.media} photos or videos.`);
+    expect(mediaRoom(0)).toBe(WORK_LIMITS.media);
+    expect(mediaRoom(WORK_LIMITS.media - 1)).toBe(1);
+    expect(mediaRoom(WORK_LIMITS.media)).toBe(0);
+    expect(mediaRoom(WORK_LIMITS.media + 3)).toBe(0);
+    expect(mediaRefused(1)).toBe('A work can carry up to 8 photos or videos. 1 was not added.');
+    expect(mediaRefused(3)).toBe('A work can carry up to 8 photos or videos. 3 were not added.');
+  });
+
+  it('matches the Hub\'s own numbers (wawu-backend profile-works.ts)', () => {
+    expect(WORK_LIMITS).toEqual({ media: 8, works: 50, title: 120, role: 80, client: 120, category: 40, link: 300 });
   });
 });

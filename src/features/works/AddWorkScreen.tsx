@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -9,9 +9,10 @@ import { AuthField } from '@/features/auth/AuthField';
 import { Banner } from '@/features/auth/Banner';
 import { EditFrame } from '@/features/profile-edit/EditFrame';
 
-import { createWork, worksRoot } from './api';
-import { saveFailure, uploadFailure, type SaveFailure } from './failure';
-import { bodyOf, emptyForm, hasProblems, isComplete, isDirty, problemsOf, type FormField, type MediaItem, type PickedFile, type WorkForm } from './form';
+import { createWork, fetchMyWorks, myWorksKey, worksRoot } from './api';
+import { PROFILE_FULL, saveFailure, uploadFailure, type SaveFailure } from './failure';
+import { bodyOf, emptyForm, hasProblems, isComplete, isDirty, mediaHint, mediaRefused, mediaRoom, problemsOf, type FormField, type MediaItem, type PickedFile, type WorkForm } from './form';
+import { WORK_LIMITS } from './limits';
 import { MediaPicker } from './MediaPicker';
 import { canPickMedia, pickMedia } from './pickMedia';
 import { uploadWorkFile } from './upload';
@@ -24,6 +25,8 @@ export type AddWorkScreenProps = {
   onBack: () => void;
   /** After the work is saved. The route decides where to go: back to where the person came from. */
   onSaved: () => void;
+  /** Opens M34 for the person's own works, where a work's Remove makes room when the profile is full. */
+  onOpenWorks: (wawuId: string) => void;
 };
 
 let nextItem = 0;
@@ -36,13 +39,16 @@ const newItem = (file: PickedFile): MediaItem => ({ id: `media-${(nextItem += 1)
  * or has failed, so nothing the person chose is dropped quietly. The Hub's own sentence for a field it
  * refuses (a year out of range, a link that is not a web address) shows under that field.
  */
-export function AddWorkScreen({ onBack, onSaved }: AddWorkScreenProps) {
+export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenProps) {
   const queryClient = useQueryClient();
   const scrollRef = useRef<ScrollView>(null);
   const [form, setForm] = useState<WorkForm>(emptyForm);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [failure, setFailure] = useState<SaveFailure>({});
   const [leaving, setLeaving] = useState(false);
+  const [pickNotice, setPickNotice] = useState<string | null>(null);
+  // How many works the person has, against the Hub's cap. A read that fails leaves this empty, and the Hub's own refusal still says it.
+  const mine = useQuery({ queryKey: myWorksKey, queryFn: fetchMyWorks, refetchOnMount: 'always' });
 
   const problems = problemsOf(form);
   const uploading = media.some((item) => item.state === 'uploading');
@@ -58,10 +64,15 @@ export function AddWorkScreen({ onBack, onSaved }: AddWorkScreenProps) {
       AccessibilityInfo.announceForAccessibility('Work added');
       onSaved();
     },
-    onError: (error) => setFailure(saveFailure(error)),
+    onError: (error) => {
+      const next = saveFailure(error);
+      setFailure(next);
+      if (next.full) void mine.refetch();
+    },
   });
+  const profileFull = mine.data ? mine.data.count >= WORK_LIMITS.works : failure.full === true;
   const busy = save.isPending;
-  const canSave = isComplete(form) && !hasProblems(problems) && !uploading && !failed && !busy;
+  const canSave = isComplete(form) && !hasProblems(problems) && !uploading && !failed && !busy && !profileFull;
 
   const edit = (field: FormField, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -79,7 +90,11 @@ export function AddWorkScreen({ onBack, onSaved }: AddWorkScreenProps) {
   };
 
   const add = async () => {
-    const files = await pickMedia();
+    const picked = await pickMedia();
+    if (picked.length === 0) return;
+    // A work carries up to the Hub's limit: what fits is added in the order chosen, the rest is refused here, in words, never sent.
+    const files = picked.slice(0, mediaRoom(media.length));
+    setPickNotice(files.length < picked.length ? mediaRefused(picked.length - files.length) : null);
     if (files.length === 0) return;
     const items = files.map(newItem);
     setMedia((current) => [...current, ...items]);
@@ -87,7 +102,7 @@ export function AddWorkScreen({ onBack, onSaved }: AddWorkScreenProps) {
   };
 
   const failedMessage = media.find((item) => item.state === 'failed')?.error;
-  const banner = failure.banner ?? failedMessage;
+  const banner = failure.full ? undefined : (failure.banner ?? failedMessage);
   const errorOf = (field: FormField) => (failure.field === field ? failure.message : problems[field]);
 
   const back = () => (dirty && !busy ? setLeaving(true) : onBack());
@@ -103,8 +118,26 @@ export function AddWorkScreen({ onBack, onSaved }: AddWorkScreenProps) {
         action={{ label: 'Save', onPress: () => save.mutate(), disabled: !canSave, loading: busy, testID: 'work-save' }}
       >
         {banner ? <Banner tone="danger" title="That did not work" body={banner} testID="work-banner" /> : null}
+        {profileFull ? (
+          <View testID="work-full" style={styles.full}>
+            <Banner tone="warning" title="Your works are full" body={PROFILE_FULL} testID="work-full-banner" />
+            {mine.data ? <Button label="Open your works" variant="secondary" full onPress={() => onOpenWorks(mine.data.owner.wawuId)} testID="work-open-works" /> : null}
+          </View>
+        ) : null}
         {canPickMedia ? (
-          <MediaPicker items={media} onAdd={() => void add()} onRemove={(id) => setMedia((current) => current.filter((m) => m.id !== id))} onRetry={(id) => void upload(media.find((m) => m.id === id) as MediaItem)} disabled={busy} />
+          <MediaPicker
+            items={media}
+            onAdd={() => void add()}
+            onRemove={(id) => {
+              setPickNotice(null);
+              setMedia((current) => current.filter((m) => m.id !== id));
+            }}
+            onRetry={(id) => void upload(media.find((m) => m.id === id) as MediaItem)}
+            disabled={busy}
+            hint={mediaHint}
+            notice={pickNotice}
+            full={mediaRoom(media.length) === 0}
+          />
         ) : null}
         <AuthField scrollRef={scrollRef} label="Title" testID="work-title" value={form.title} onChangeText={(v) => edit('title', v)} error={errorOf('title')} autoCapitalize="sentences" disabled={busy} />
         <View style={styles.pair}>
@@ -171,6 +204,7 @@ export function AddWorkScreen({ onBack, onSaved }: AddWorkScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  full: { gap: PAIR_GAP },
   pair: { flexDirection: 'row', gap: PAIR_GAP },
   half: { flex: 1, minWidth: 0 },
 });

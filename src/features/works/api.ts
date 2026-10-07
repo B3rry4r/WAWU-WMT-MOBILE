@@ -8,7 +8,9 @@ import type { components } from '@/api/schema.generated';
  *   count, and whose they are. The id may be the person's handle. The person's own page reads
  *   the same route;
  * - `GET /users/{wawuId}/featured-works/{workId}`: one work and its owner;
+ * - `GET /users/me/featured-works`: the person's own list (M36 reads how many works they have, against the cap);
  * - `POST /users/me/featured-works`: add a work;
+ * - `DELETE /users/me/featured-works/{id}`: remove one of their own (M35);
  * - `POST /uploads/presign` (folder `profile/work`) for each photo or video.
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only
@@ -38,6 +40,7 @@ export const worksRoot = ['works'] as const;
 export const worksKey = (wawuId: string, category: string | null) => [...worksRoot, wawuId, 'list', category] as const;
 export const workKey = (wawuId: string, workId: string) => [...worksRoot, wawuId, 'one', workId] as const;
 export const myIdKey = ['works', 'my-id'] as const;
+export const myWorksKey = [...worksRoot, 'mine'] as const;
 
 export async function fetchWorks(wawuId: string, category: string | null): Promise<Works> {
   const works = dataOf<Works>(
@@ -70,6 +73,18 @@ export async function fetchMyId(): Promise<string> {
 
 export async function createWork(body: NewWork): Promise<Work> {
   return dataOf<Work>(await unwrap(api.POST('/api/hub/users/me/featured-works', { body })), 'work');
+}
+
+/** The person's own works (one is enough: M36 wants the count and who they are, not the list). */
+export async function fetchMyWorks(): Promise<Works> {
+  const works = dataOf<Works>(await unwrap(api.GET('/api/hub/users/me/featured-works', { params: { query: { limit: 1 } } })), 'works');
+  if (!Array.isArray(works.works) || typeof works.count !== 'number' || typeof works.owner !== 'object') throw unreadable('works');
+  return works;
+}
+
+/** Removes one of the signed-in person's own works. The Hub answers 404 for a work that is not theirs or is already gone. */
+export async function removeWork(workId: string): Promise<void> {
+  await unwrap(api.DELETE('/api/hub/users/me/featured-works/{id}', { params: { path: { id: workId } } }));
 }
 
 export type Presigned = { uploadUrl: string; key: string };

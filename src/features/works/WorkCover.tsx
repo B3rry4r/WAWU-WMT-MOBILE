@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -20,14 +21,16 @@ export type WorkCoverProps = {
 
 /**
  * What fills a work's picture frame: its photo, the first frame of its video where this build can play one,
- * or a quiet block (with the kind of file it holds) where it cannot. The frame's size and corners belong to the
+ * or a quiet block (with the kind of file it holds) where it cannot, and where a picture fails to load. The frame's size and corners belong to the
  * parent, which clips this to them.
  */
 export function WorkCover({ media, playing = false, onEnded, testID }: WorkCoverProps) {
   const { colors } = useWawu();
   const url = media?.url ?? null;
-  if (media && url && media.kind === 'image') {
-    return <Image testID={testID} source={{ uri: url }} contentFit="cover" style={styles.fill} accessibilityElementsHidden />;
+  // The address that failed to load (a file that is not a picture, a link that has expired): that one shows the placeholder, never a blank box.
+  const [broken, setBroken] = useState<string | null>(null);
+  if (media && url && media.kind === 'image' && broken !== url) {
+    return <Image testID={testID} source={{ uri: url }} contentFit="cover" style={styles.fill} accessibilityElementsHidden onError={() => setBroken(url)} />;
   }
   if (media && url && media.kind === 'video' && canPlay) {
     return (
@@ -37,7 +40,7 @@ export function WorkCover({ media, playing = false, onEnded, testID }: WorkCover
     );
   }
   return (
-    <View testID={testID} style={[styles.fill, styles.block, { backgroundColor: colors.surfaceSunken }]}>
+    <View testID={testID ? `${testID}-placeholder` : undefined} style={[styles.fill, styles.block, { backgroundColor: colors.surfaceSunken }]}>
       <Icon name={media?.kind === 'video' ? 'Video' : 'Image'} size={placeholderIcon} color={colors.textMuted} />
     </View>
   );

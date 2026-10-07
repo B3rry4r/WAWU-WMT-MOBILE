@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 70 | 0 | 24 | 28 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 
@@ -119,6 +119,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · ME-11 · Builder round 2, awaiting verification (lead's agent; mobile `wmt/ME-11`, backend 213eff0): D1 the works routes never wait on WAWU ID past 2 s (stalled stand-in spec, live 2.06 s); D2 M36 says "Up to 8 photos or videos." and refuses a 9th at pick time in its own words; D3 owner-only Remove on M35 with a confirm step and an "Open your works" way out when M36 is at the cap; D4 a picture that fails to load shows the media-type placeholder on M34, M35 and M36 (G-255 filed for a server-side content check); D5 every field limit said before Save; T1 and T2 specs fail on their mutants (13 mobile and 3 backend mutants killed); status verifying.
 - 7 Oct 2026 · ME-11 · Verifier report (independent session, mobile aab01e7, backend 32e52b5, real wawu-id 4715d17, status building): V1, V2/V3 (17 old-vs-new answers additive, 253/253 protected, `owner` 404s byte-equal to an unknown person's), V4, V5, V6, V7 and V9 (real sign-in, photos added in the app, read back from the Hub, the database and a second account) pass; 15 of 18 own mutants killed. Open: D1 works routes hang when WAWU ID stalls (no timeout on the owner lookup), D2 nine photos shows a raw validator sentence, D3 the 50-work sentence says remove one and the app has no remove, D4 non-image bytes saved as a photo draw a blank box; test gaps T1 to T3 listed. NOT RUN: V10 on a phone, a real bucket, a real mp4, ME-02 and INBOX-10 entries.
 - 7 Oct 2026 · ME-11 · Built, awaiting verification (lead's agent, takeover from Developer 1): M34 All works, M35 A work and M36 Add a work at `/works/<id>`, `/works/<id>/<work id>` and `/add-work`, against the real Hub (sign-in through the app, photos presigned and uploaded to a storage stand-in, the work read back by a second account). One additive backend change on `wmt/ME-11` (no migration): the works answers carry `owner` (name, handle, picture) for M34's bar and M35's creator row. Gaps G-250 to G-254, shared-change rows ME-11 #1 to #6. NOT RUN: opening the creator (M5 not built), a phone, a real bucket, a real mp4.
 - 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
@@ -133,4 +134,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
 - 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).
-- 7 Oct 2026 · ADS-06 · Round 3 built, awaiting verification: merged main (ADS-03, ADS-04, ADS-05 and the rest are on it); migration renamed to `20261008100000_admin_ads_audit` (after every migration on main and open branches); the admin views now carry ADS-05's counts (`delivery`, per-day `days`, summary totals by status and placement, one set-based read per list page; G-194 and G-200 closed); ADS-05's G-198 and SHARED-CHANGES row #3 corrected; D1 (year 0000) fixed.

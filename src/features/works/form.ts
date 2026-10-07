@@ -1,4 +1,5 @@
 import type { NewWork } from './api';
+import { WORK_LIMITS, type TextLimit } from './limits';
 
 /** A photo or video the person chose, ready to upload. */
 export type PickedFile = {
@@ -11,6 +12,20 @@ export type PickedFile = {
   /** Where the screen can show it before it is saved. */
   previewUri: string;
 };
+
+/** What M36 says about the files, before Save: how many a work can carry. */
+export const mediaHint = `Up to ${WORK_LIMITS.media} photos or videos.`;
+
+/** Room left for files on a work that already has `have`. */
+export function mediaRoom(have: number): number {
+  return Math.max(0, WORK_LIMITS.media - have);
+}
+
+/** The app's own sentence when a pick is more than a work can carry: how many were left out. */
+export function mediaRefused(refused: number): string {
+  const left = refused === 1 ? '1 was' : `${refused} were`;
+  return `A work can carry up to ${WORK_LIMITS.media} photos or videos. ${left} not added.`;
+}
 
 export type MediaKind = 'image' | 'video';
 
@@ -46,10 +61,27 @@ export type Problems = Partial<Record<FormField, string>>;
 /** A year is four digits; the range it may sit in is the Hub's to say (its own sentence comes back on the field). */
 const YEAR = /^\d{4}$/;
 
+const LIMITED_FIELDS: readonly TextLimit[] = ['title', 'role', 'client', 'category', 'link'];
+
+/** The length the Hub counts: trimmed, and for a line of words (not a link) a run of spaces counted as one. */
+export function lengthOf(field: TextLimit, value: string): number {
+  const text = value.trim();
+  return (field === 'link' ? text : text.replace(/ {2,}/g, ' ')).length;
+}
+
+/** The app's own sentence for a field that is too long, said before anything is sent. */
+export function tooLong(field: TextLimit, length: number): string {
+  return `Too long. Use ${WORK_LIMITS[field]} characters or fewer (this has ${length}).`;
+}
+
 /** What is wrong before anything is sent. A field left empty is not "wrong": Save simply stays off until it is filled. */
 export function problemsOf(form: WorkForm): Problems {
   const problems: Problems = {};
   if (form.year.trim() !== '' && !YEAR.test(form.year.trim())) problems.year = 'Enter the year as four digits.';
+  for (const field of LIMITED_FIELDS) {
+    const length = lengthOf(field, form[field]);
+    if (length > WORK_LIMITS[field]) problems[field] = tooLong(field, length);
+  }
   return problems;
 }
 

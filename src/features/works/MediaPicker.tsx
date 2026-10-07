@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
@@ -22,10 +23,16 @@ export type MediaPickerProps = {
   onRemove: (id: string) => void;
   onRetry: (id: string) => void;
   disabled?: boolean;
+  /** What M36 says about how many files a work can carry, before Save. */
+  hint: string;
+  /** The app's sentence for a pick that was more than a work can carry. It replaces the hint until the next pick. */
+  notice?: string | null;
+  /** No room for another file: the box stays up (so the hint is read where the person looks) but does nothing. */
+  full?: boolean;
 };
 
 /** M36's "Add photos or a video" box, and under it each file chosen so far: uploading, ready, or failed with a way to try again. */
-export function MediaPicker({ items, onAdd, onRemove, onRetry, disabled }: MediaPickerProps) {
+export function MediaPicker({ items, onAdd, onRemove, onRetry, disabled, hint, notice, full }: MediaPickerProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
@@ -34,7 +41,8 @@ export function MediaPicker({ items, onAdd, onRemove, onRetry, disabled }: Media
         testID="work-add-media"
         accessibilityRole="button"
         accessibilityLabel="Add photos or a video"
-        disabled={disabled}
+        accessibilityState={{ disabled: Boolean(disabled || full) }}
+        disabled={disabled || full}
         onPress={onAdd}
         {...ring.handlers}
         style={[
@@ -43,11 +51,20 @@ export function MediaPicker({ items, onAdd, onRemove, onRetry, disabled }: Media
           ring.style,
         ]}
       >
-        <Icon name="ImagePlus" size={boxMetrics.icon} color={colors.textSecondary} />
-        <Text variant="body" tone="textSecondary" style={[font(600), { fontSize: boxMetrics.label }]}>
+        <Icon name="ImagePlus" size={boxMetrics.icon} color={full ? colors.textDisabled : colors.textSecondary} />
+        <Text variant="body" tone={full ? 'textDisabled' : 'textSecondary'} style={[font(600), { fontSize: boxMetrics.label }]}>
           Add photos or a video
         </Text>
       </Pressable>
+      {notice ? (
+        <Text variant="caption" tone="danger" testID="work-media-notice" accessibilityRole="alert">
+          {notice}
+        </Text>
+      ) : (
+        <Text variant="caption" tone="textMuted" testID="work-media-hint">
+          {hint}
+        </Text>
+      )}
       {items.length > 0 ? (
         <View testID="work-media-previews" style={styles.previews}>
           {items.map((item, index) => (
@@ -67,14 +84,16 @@ function Preview({ item, index, disabled, onRemove, onRetry }: PreviewProps) {
   const retryRing = useFocusRing();
   const video = item.file.contentType.startsWith('video/');
   const kind = video ? 'video' : 'photo';
+  // A chosen file the screen cannot draw (it is not a picture): the same quiet block a work card shows, with its icon.
+  const [broken, setBroken] = useState(false);
   return (
     <View testID={`work-media-${index}`} style={[styles.preview, { backgroundColor: colors.surfaceSunken }]}>
-      {video ? (
-        <View style={styles.center}>
-          <Icon name="Video" size={boxMetrics.icon} color={colors.textMuted} />
+      {video || broken ? (
+        <View testID={`work-media-${index}-placeholder`} style={styles.center}>
+          <Icon name={video ? 'Video' : 'Image'} size={boxMetrics.icon} color={colors.textMuted} />
         </View>
       ) : (
-        <Image source={{ uri: item.file.previewUri }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityElementsHidden />
+        <Image testID={`work-media-${index}-image`} source={{ uri: item.file.previewUri }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityElementsHidden onError={() => setBroken(true)} />
       )}
       {item.state === 'uploading' ? (
         <View testID={`work-media-${index}-uploading`} accessibilityRole="progressbar" accessibilityLabel={`Uploading ${kind} ${index + 1}`} style={[styles.center, { backgroundColor: colors.surfaceScrim }]}>

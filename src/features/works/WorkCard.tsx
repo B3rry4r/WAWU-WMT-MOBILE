@@ -32,7 +32,7 @@ export function WorkCard({ work, onPress, testID }: WorkCardProps) {
       style={[styles.card, ring.style]}
     >
       <View style={[styles.picture, { backgroundColor: colors.surfaceSunken }]}>
-        <WorkCover media={stillOf(work)} />
+        <WorkCover media={stillOf(work)} testID={testID ? `${testID}-cover` : undefined} />
       </View>
       <Text variant="body" numberOfLines={2} style={[font(600), styles.title]}>
         {work.title}

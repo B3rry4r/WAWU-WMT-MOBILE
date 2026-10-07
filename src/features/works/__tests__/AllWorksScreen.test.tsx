@@ -199,3 +199,17 @@ describe('M34 · All works', () => {
     expect(onBack).toHaveBeenCalled();
   });
 });
+
+describe('M34 · a picture that fails to load', () => {
+  it('the card shows the quiet block with the picture icon, never a blank box', async () => {
+    answers = { [`GET ${WORKS}`]: ok(all) };
+    await boot();
+    const cover = await screen.findByTestId('work-w1-cover', { includeHiddenElements: true });
+    expect(screen.queryByTestId('work-w1-cover-placeholder')).toBeNull();
+    await fireEvent(cover, 'error', { nativeEvent: { error: 'not an image' } });
+    expect(await screen.findByTestId('work-w1-cover-placeholder')).toBeTruthy();
+    // The other cards are untouched.
+    expect(screen.getByTestId('work-w2-cover', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('work-w2-cover-placeholder')).toBeNull();
+  });
+});

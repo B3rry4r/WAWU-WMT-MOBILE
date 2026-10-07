@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { AccessibilityInfo, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
-import { IconButton } from '@/components/Button';
+import { BottomSheet } from '@/components/BottomSheet';
+import { Button, IconButton } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
@@ -21,8 +22,8 @@ import { openLink } from '@/features/about/links';
 import { canPlay } from '@/features/feed/player';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
-import { fetchWork, workKey, type WorkDetail } from './api';
-import { readFailure } from './failure';
+import { fetchMyId, fetchWork, myIdKey, removeWork, workKey, worksRoot, type WorkDetail } from './api';
+import { readFailure, removeFailure } from './failure';
 import { factsOf, isWebLink, shareText } from './model';
 import { WorkCover } from './WorkCover';
 import { WorksFrame } from './WorksFrame';
@@ -37,6 +38,7 @@ const heroMetrics = { height: 280, scrim: 0.35, scrimEnd: 0.4, playButton: 56, p
 const bodyMetrics = { top: 38, stack: 14, thumb: 84, thumbRadius: 14, thumbGap: space.sm, thumbsShown: 3, bottomRoom: 140 } as const;
 const navTop = 6;
 const footMetrics = { avatar: 40, name: 14.5, top: space.md, bottom: 34, between: 10 } as const;
+const removeMetrics = { icon: 18, label: 14.5, gap: 8 } as const;
 const descriptionMetrics = { size: 14.5, line: 1.55 } as const;
 
 export type WorkScreenProps = {
@@ -45,17 +47,20 @@ export type WorkScreenProps = {
   onBack: () => void;
   /** Opens the creator's profile. Left out until that screen exists, and then the creator row is only a label. */
   onOpenCreator?: (wawuId: string) => void;
+  /** After the owner has confirmed Remove and the work is gone: the route goes back to M34, whose count has already been told to refresh. */
+  onRemoved: () => void;
 };
 
 /**
  * M35 · A work. Reads `GET /users/{wawuId}/featured-works/{workId}`: the work and whose it is. A
  * photo is the picture at the top; a video plays there where this build can play one. The other
- * photos and videos sit in a strip under the words, and choosing one brings it up to the top.
+ * photos and videos sit in a strip under the words, and choosing one brings it up to the top. The person who
+ * made the work (and nobody else) also sees Remove, which asks first and then deletes it (`DELETE /users/me/featured-works/{id}`).
  */
-export function WorkScreen({ wawuId, workId, onBack, onOpenCreator }: WorkScreenProps) {
+export function WorkScreen({ wawuId, workId, onBack, onOpenCreator, onRemoved }: WorkScreenProps) {
   const work = useQuery({ queryKey: workKey(wawuId, workId), queryFn: () => fetchWork(wawuId, workId) });
 
-  if (work.data) return <Work work={work.data} onBack={onBack} onOpenCreator={onOpenCreator} />;
+  if (work.data) return <Work work={work.data} onBack={onBack} onOpenCreator={onOpenCreator} onRemoved={onRemoved} />;
 
   if (work.isError) {
     const gone = isApiError(work.error) && work.error.kind === 'not_found';
@@ -91,15 +96,49 @@ export function WorkScreen({ wawuId, workId, onBack, onOpenCreator }: WorkScreen
   );
 }
 
-type WorkProps = { work: WorkDetail; onBack: () => void; onOpenCreator?: (wawuId: string) => void };
+type WorkProps = { work: WorkDetail; onBack: () => void; onOpenCreator?: (wawuId: string) => void; onRemoved: () => void };
 
-function Work({ work, onBack, onOpenCreator }: WorkProps) {
+function Work({ work, onBack, onOpenCreator, onRemoved }: WorkProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [shown, setShown] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [notice, setNotice] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  // Whose page this is decides whether Remove is offered: only the person who made the work. Until that is known (or if it cannot be read) it is not.
+  const me = useQuery({ queryKey: myIdKey, queryFn: fetchMyId });
+  const own = me.data !== undefined && me.data === work.owner.wawuId;
+
+  // The lists and the profile are told to read again. This work's own query is left alone: it would answer 404 to a screen that is on its way out.
+  const refreshLists = () => {
+    void queryClient.invalidateQueries({ queryKey: worksRoot, predicate: (query) => !(query.queryKey[2] === 'one' && query.queryKey[3] === work.id) });
+    void queryClient.invalidateQueries({ queryKey: ['profile'] });
+  };
+
+  const remove = useMutation({
+    mutationFn: () => removeWork(work.id),
+    onMutate: () => setRemoveError(null),
+    onSuccess: () => {
+      setAsking(false);
+      AccessibilityInfo.announceForAccessibility('Work removed');
+      refreshLists();
+      onRemoved();
+    },
+    onError: (error) => {
+      const out = removeFailure(error);
+      if (out.gone) {
+        // Already gone (removed on another device): the same result as removing it here.
+        setAsking(false);
+        refreshLists();
+        onRemoved();
+        return;
+      }
+      setRemoveError(out.message);
+    },
+  });
 
   const hero = work.media[shown] ?? null;
   const others = work.media.map((media, index) => ({ media, index })).filter((item) => item.index !== shown);
@@ -178,6 +217,14 @@ function Work({ work, onBack, onOpenCreator }: WorkProps) {
               ))}
             </ScrollView>
           ) : null}
+          {own ? (
+            <RemoveRow
+              onPress={() => {
+                setRemoveError(null);
+                setAsking(true);
+              }}
+            />
+          ) : null}
         </View>
       </ScrollView>
 
@@ -187,7 +234,29 @@ function Work({ work, onBack, onOpenCreator }: WorkProps) {
       </View>
 
       <Creator work={work} bottom={insets.bottom} onOpenCreator={onOpenCreator} />
+
+      <BottomSheet visible={asking} onClose={() => setAsking(false)} dismissible={!remove.isPending} label="Remove this work?" testID="work-remove-sheet">
+        <Text variant="sheetTitleSm">Remove this work?</Text>
+        <Text variant="muted">It stops showing on your profile. This cannot be undone.</Text>
+        {removeError ? <Banner tone="danger" title="That did not work" body={removeError} testID="work-remove-error" /> : null}
+        <Button label="Keep this work" full onPress={() => setAsking(false)} disabled={remove.isPending} testID="work-remove-keep" />
+        <Button label="Remove" variant="secondary" full loading={remove.isPending} onPress={() => remove.mutate()} testID="work-remove-confirm" />
+      </BottomSheet>
     </View>
+  );
+}
+
+/** The owner's way out of a full profile (and of a mistake): a quiet danger row under the work, which asks before it does anything. */
+function RemoveRow({ onPress }: { onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable testID="work-remove" accessibilityRole="button" accessibilityLabel="Remove this work" onPress={onPress} {...ring.handlers} style={[styles.remove, ring.style]}>
+      <Icon name="Trash2" size={removeMetrics.icon} color={colors.danger} />
+      <Text variant="body" style={[font(600), { color: colors.danger, fontSize: removeMetrics.label }]}>
+        Remove this work
+      </Text>
+    </Pressable>
   );
 }
 
@@ -262,4 +331,5 @@ const styles = StyleSheet.create({
   creator: { flexDirection: 'row', alignItems: 'center', gap: footMetrics.between, minHeight: layout.tapMin },
   creatorName: { flex: 1, fontSize: footMetrics.name },
   loading: { gap: space.lg },
+  remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: removeMetrics.gap, minHeight: layout.tapMin },
 });

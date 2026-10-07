@@ -6,7 +6,8 @@ import { AddWorkScreen } from '@/features/works/AddWorkScreen';
 /**
  * M36 · Add a work (`/add-work`). Signed in only; the route graph does not list it under the signed-in
  * guard yet (SHARED-CHANGES.md, ME-11), so a signed-out visit is sent to the welcome screen here. Back and
- * a saved work both return to where the person came from (the About tab, where the work now shows).
+ * a saved work both return to where the person came from (the About tab, where the work now shows). When the
+ * profile is full, "Open your works" goes to M34, where a work's Remove makes room.
  */
 export default function AddWorkRoute() {
   const router = useRouter();
@@ -15,5 +16,11 @@ export default function AddWorkRoute() {
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
-  return <AddWorkScreen onBack={leave} onSaved={leave} />;
+  return (
+    <AddWorkScreen
+      onBack={leave}
+      onSaved={leave}
+      onOpenWorks={(wawuId) => router.dismissTo({ pathname: '/works/[wawuId]', params: { wawuId } })}
+    />
+  );
 }
