@@ -286,6 +286,17 @@ E1 and E2 fixed; E3 left for the lead as told.
 
 **NOT RUN.** A real bucket (the stand-in checks expiry, not signatures): unblocked by a non-production bucket key in a local `.env`. A paid consultation and paid service end to end (payments set in the database): unblocked by Flutterwave sandbox keys for the web path and LEGAL-05 for the app's. The push payload: there is no push sender on main or the branch. The full backend suite (not in this brief): unblocked by a run in its own network namespace (common rules). `data-export.contract.spec.ts`: needs a mock on :4001, which this session may not use. Round 4 (backend c2a3652): read only, above. Mobile screens: none (`backend-endpoint`).
 
+## Lead rulings after the independent round 3 (7 Oct 2026)
+
+The independent round 3 (lead) is on 9895dd3; Dev 3's round 4 (backend c2a3652) fixes E1 and E2 but not N1 or T1. Build round 5 on top of round 4, then status `verifying`. The lead's independent verifier re-checks it.
+
+- **N1 (security, blocks the merge).** A delivered file can only be a legal document. `POST /legal/ops/requests/:id/deliverables` accepts a `url` only when it is a link on our own bucket's host (or a bare object key) whose key is under `legal/document/` (and, once LEGAL-07 lands, its own ops upload folder); anything else answers 400 naming `files.N.url`, and nothing is stored. Signing is guarded the same way at read time: a stored key outside those prefixes is never signed (the row shows without a link), so no old or hand-written row can turn into a link to `kyc/`, profile or any other object. Specs: the verifier's `kyc/id-document/...` probe on any host refused; a key under another prefix refused; a stored row with a foreign key never signed.
+- **Odd paths (E1, E2 and the related notes).** A `url` whose path decodes to a NUL, a lone surrogate (`%ED%A0%80`), invalid UTF-8 (`%FF`) or a control character (`%0a`) answers 400 and stores nothing; it is never stored whole and never handed back unsigned.
+- **T1.** A spec that fails when the legacy `deliverableUrl` is handed back unsigned.
+- **`+01` offset.** A `scheduledFor` with a short offset gets a 400 that names `scheduledFor`, like the other refused forms.
+- **E3 (the legacy `deliverableUrl` column stores the 7-day link).** The web reads that column through a protected route, so it is not changed here; recorded as a follow-up for the web cut-over.
+- **Migration.** Keep it after every folder on backend main and every open branch (EVENTS-11 now holds `20261014100000`; round 4's `20261014200000` sorts after it); check again right before pushing.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
