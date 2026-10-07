@@ -129,7 +129,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
         <Cover event={data} insetTop={insets.top} onBack={onBack} onShare={share} />
         <View style={styles.body}>
           <View style={styles.titleRow}>
-            <DateBadge startsAt={data.startsAt} />
+            <DateBadge startsAt={data.startsAt} zone={data} />
             <Text variant="body" accessibilityRole="header" style={[font(700), styles.title]}>
               {data.name}
             </Text>

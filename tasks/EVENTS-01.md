@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -295,6 +295,12 @@ Findings:
 - **Note (for the lead)**: a detail screen re-mounted within the query client's stale window shows cached tiers without a refetch (seen when the stack was reset by a URL change). Focus refetch covers a screen kept under another; a re-opened one relies on the global stale time. Not in the ruling; not counted as a defect.
 
 Result: D6 open, so status goes back to `building`. Everything else in this round passed.
+
+## Builder report, round 5 (7 Oct 2026)
+
+- **D6 fixed.** `watOf`, `badgeOf`, `shortDate` and `whenLine` (`src/features/events/format.ts`) read the calendar date in the event's own IANA zone through `Intl.DateTimeFormat` with `timeZone`; `DateBadge` (row and hero) and the detail screen pass the event's zone. `Africa/Lagos` or no timezone keeps Lagos time and the WAT label. A valid other zone shows its own date plus the Hub's `timeLabel` (no label: date only). A zone the runtime cannot resolve ("WAT", "EDT") draws the Lagos date alone: no clock, no zone claim. "This week" bucketing is by instant, so it is unchanged.
+- **Specs added** (`format.test.ts`, "the date is read in the event own zone (D6)"): UTC, America/New_York at 7 PM EDT on 14 Oct (reads Wed 14 Oct, badge 14), Pacific/Kiritimati (+14), unresolvable "WAT" and "EDT", missing timezone, Lagos. Against the old `format.ts` (scratch revert, restored) 4 of the 6 fail; with the fix all pass.
+- **NOT RUN:** pictures (no layout changed). `npm run check` result is in the LOG line.
 
 ## Owner sign-off
 

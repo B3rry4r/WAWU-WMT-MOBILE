@@ -132,3 +132,31 @@ describe('the basket', () => {
     expect([0, 1, 4].map(ticketCount)).toEqual(['No tickets', '1 ticket', '4 tickets']);
   });
 });
+
+describe('the date is read in the event own zone (D6)', () => {
+  const now = Date.parse('2026-10-07T12:00:00Z');
+  it('UTC: the UTC calendar and the label', () => {
+    expect(whenLine('2026-10-14T23:30:00Z', { timezone: 'UTC', timeLabel: '11:30 PM UTC' }, now)).toBe('Wed 14 Oct · 11:30 PM UTC');
+  });
+  it('New York at the day boundary: 7 PM EDT on 14 Oct is the 14th, not the 15th', () => {
+    const zone = { timezone: 'America/New_York', timeLabel: '7:00 PM EDT' };
+    expect(whenLine('2026-10-14T23:00:00Z', zone, now)).toBe('Wed 14 Oct · 7:00 PM EDT');
+    expect(badgeOf('2026-10-14T23:00:00Z', zone)).toEqual({ month: 'OCT', day: '14' });
+    expect(shortDate('2026-10-14T23:00:00Z', zone)).toBe('14 Oct');
+  });
+  it('Kiritimati (+14) is a day ahead of Lagos', () => {
+    const zone = { timezone: 'Pacific/Kiritimati', timeLabel: '9:00 AM LINT' };
+    expect(whenLine('2026-10-14T19:00:00Z', zone, now)).toBe('Thu 15 Oct · 9:00 AM LINT');
+    expect(badgeOf('2026-10-14T19:00:00Z', zone).day).toBe('15');
+  });
+  it('Lagos keeps the WAT clock', () => {
+    expect(whenLine('2026-10-14T23:00:00Z', { timezone: 'Africa/Lagos' }, now)).toBe('Thu 15 Oct · 00:00 WAT');
+  });
+  it('an unresolvable zone ("WAT", "EDT") draws the Lagos date alone: no clock, no zone claim', () => {
+    expect(whenLine('2026-10-14T23:00:00Z', { timezone: 'EDT', timeLabel: '7:00 PM EDT' }, now)).toBe('Thu 15 Oct');
+    expect(whenLine('2026-10-14T09:00:00Z', { timezone: 'WAT', timeLabel: '10:00 AM WAT' }, now)).toBe('Wed 14 Oct');
+  });
+  it('a missing timezone keeps Lagos time', () => {
+    expect(whenLine('2026-10-14T09:00:00Z', { timezone: null }, now)).toBe('Wed 14 Oct · 10:00 WAT');
+  });
+});

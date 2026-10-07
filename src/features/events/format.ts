@@ -12,46 +12,88 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 type Wat = { weekday: string; day: number; month: string; year: number; hour: string; minute: string };
 
-/** An instant as the clock and calendar in Lagos show it. */
-export function watOf(iso: string): Wat {
-  const d = new Date(new Date(iso).getTime() + WAT_OFFSET_MS);
-  return {
-    weekday: WEEKDAYS[d.getUTCDay()],
-    day: d.getUTCDate(),
-    month: MONTHS[d.getUTCMonth()],
-    year: d.getUTCFullYear(),
-    hour: String(d.getUTCHours()).padStart(2, '0'),
-    minute: String(d.getUTCMinutes()).padStart(2, '0'),
-  };
-}
-
-/** The date badge's two lines: "OCT" over "12". */
-export function badgeOf(iso: string): { month: string; day: string } {
-  const w = watOf(iso);
-  return { month: w.month.toUpperCase(), day: String(w.day) };
-}
-
-/** The event's own clock, Lagos time unless the Hub says the event keeps another zone. */
 type Zoned = { timezone?: string | null; timeLabel?: string | null };
 const LAGOS = 'Africa/Lagos';
 const keepsLagosTime = (zone?: Zoned) => !zone?.timezone || zone.timezone === LAGOS;
 
+/** The IANA zone whose calendar the event's date is read in: Lagos unless the Hub names another zone the runtime knows. */
+function calendarZone(zone?: Zoned): string {
+  if (keepsLagosTime(zone)) return LAGOS;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: zone?.timezone ?? LAGOS });
+    return zone?.timezone ?? LAGOS;
+  } catch {
+    return LAGOS;
+  }
+}
+
+/** True when the Hub names a zone the runtime cannot resolve ("WAT", "EDT"): its clock and date cannot be trusted. */
+const zoneUnresolved = (zone?: Zoned) => !keepsLagosTime(zone) && calendarZone(zone) === LAGOS;
+
+/** An instant as the clock and calendar in the event's zone show it (Lagos by default). */
+export function watOf(iso: string, zone?: Zoned): Wat {
+  const tz = calendarZone(zone);
+  if (tz === LAGOS) {
+    const d = new Date(new Date(iso).getTime() + WAT_OFFSET_MS);
+    return {
+      weekday: WEEKDAYS[d.getUTCDay()],
+      day: d.getUTCDate(),
+      month: MONTHS[d.getUTCMonth()],
+      year: d.getUTCFullYear(),
+      hour: String(d.getUTCHours()).padStart(2, '0'),
+      minute: String(d.getUTCMinutes()).padStart(2, '0'),
+    };
+  }
+  const parts: Record<string, string> = {};
+  for (const p of new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    weekday: 'short',
+  }).formatToParts(new Date(iso))) {
+    parts[p.type] = p.value;
+  }
+  const month = Number(parts.month) - 1;
+  const day = Number(parts.day);
+  const year = Number(parts.year);
+  return {
+    weekday: WEEKDAYS[new Date(Date.UTC(year, month, day)).getUTCDay()],
+    day,
+    month: MONTHS[month],
+    year,
+    hour: parts.hour.padStart(2, '0'),
+    minute: parts.minute.padStart(2, '0'),
+  };
+}
+
+/** The date badge's two lines: "OCT" over "12". */
+export function badgeOf(iso: string, zone?: Zoned): { month: string; day: string } {
+  const w = watOf(iso, zone);
+  return { month: w.month.toUpperCase(), day: String(w.day) };
+}
+
 /**
- * "Sun 12 Oct · 10:00 WAT" (E2). The year follows ("Sun 16 Mar 2031") only when the event is not in
- * the current year. An event in another zone shows the Hub's `timeLabel` where WAT would be: a
- * Lagos clock for it would be a wrong fact, so with no label only the date is drawn.
+ * "Sun 12 Oct · 10:00 WAT" (E2). The date is read in the event's own zone, so it always sits beside
+ * that zone's clock. The year follows ("Sun 16 Mar 2031") only when the event is not in the current
+ * year. An event in another zone shows the Hub's `timeLabel` where WAT would be (no label: date
+ * only). A zone the runtime cannot resolve draws the Lagos date alone: no clock, no zone claim.
  */
 export function whenLine(iso: string, zone?: Zoned, now: number = Date.now()): string {
-  const w = watOf(iso);
-  const date = `${w.weekday} ${w.day} ${w.month}${w.year === watOf(new Date(now).toISOString()).year ? '' : ` ${w.year}`}`;
+  const w = watOf(iso, zone);
+  const date = `${w.weekday} ${w.day} ${w.month}${w.year === watOf(new Date(now).toISOString(), zone).year ? '' : ` ${w.year}`}`;
   if (keepsLagosTime(zone)) return `${date} · ${w.hour}:${w.minute} WAT`;
+  if (zoneUnresolved(zone)) return date;
   const label = zone?.timeLabel?.trim();
   return label ? `${date} · ${label}` : date;
 }
 
 /** "30 Sep". */
-export function shortDate(iso: string): string {
-  const w = watOf(iso);
+export function shortDate(iso: string, zone?: Zoned): string {
+  const w = watOf(iso, zone);
   return `${w.day} ${w.month}`;
 }
 

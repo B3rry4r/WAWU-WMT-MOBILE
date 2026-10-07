@@ -24,10 +24,10 @@ export const badgeMetrics = {
   rowScale: 0.8,
 } as const;
 
-/** The month and day an event starts, in Lagos time. */
-export function DateBadge({ startsAt, scale = 1 }: { startsAt: string; scale?: number }) {
+/** The month and day an event starts, in the event's own zone (Lagos by default). */
+export function DateBadge({ startsAt, zone, scale = 1 }: { startsAt: string; zone?: { timezone?: string | null }; scale?: number }) {
   const { colors } = useWawu();
-  const { month, day } = badgeOf(startsAt);
+  const { month, day } = badgeOf(startsAt, zone);
   return (
     <View
       accessible
@@ -155,7 +155,7 @@ export function EventRow({ event, fromNaira, busy, onOpen, onToggleGoing }: Even
             <Image source={event.bannerUrl} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityElementsHidden />
           ) : null}
           <View style={styles.thumbBadge}>
-            <DateBadge startsAt={event.startsAt} scale={badgeMetrics.rowScale} />
+            <DateBadge startsAt={event.startsAt} zone={event} scale={badgeMetrics.rowScale} />
           </View>
         </View>
         <View style={styles.words}>
