@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 - 7 Oct 2026 · EVENTS-11 · Builder report (backend `814e5fb` on `wmt/EVENTS-11`, status verifying): PUT /events/:id/tickets now needs a current tick (the POST/PATCH gate, same 403s, before any write) and a tier change sends an approved event back to `pending`; the sold-ticket 409 is unchanged and first, the same tiers sent again change nothing; new spec 11/11 (8 fail on main), live HTTP before/after on built Hubs, gates equal to main, contract unchanged. Protected suite 246/253: 7 later event probes and EVENTS-05's spec (27) assert the old behaviour, not edited, for the lead and owner.
+- 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
