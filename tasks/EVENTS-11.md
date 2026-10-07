@@ -7,7 +7,7 @@ order: 184
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -271,6 +271,42 @@ Backend `wmt/EVENTS-11` `b92a591` (one commit on `d98e037`; origin/main `3041887
   - the full backend suite in a network namespace (not in this round's list);
   - real WAWU ID (mock used);
   - Flutterwave and Fintava (not called).
+
+## Verifier report, round 5
+
+Independent verifier session (wrote none of this task). Re-check of round 5: backend `wmt/EVENTS-11` `b92a591` (on `d98e037`; origin/main `3041887` unmoved), mobile `9106928`.
+- Fresh detached worktrees, each with a real copy of `node_modules` (`cp -r`, link count 1) for `prisma generate` and the builds.
+- Databases `ve11_*_test`, all dropped.
+- Branch Hub :5391, main Hub :5392, stand-in WAWU ID :5393, one migrated and seeded database.
+- Payments go through the Hub's own mock payment adapter at its seam (no Flutterwave secret is set). No Flutterwave, Fintava or wawuafrica.com call.
+- Evidence: the lead's scratchpad `ve11/r5/`.
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| D3, the abandoned checkout | **fixed.** The buyer opens a ₦5,000 checkout and walks away. Host PUT Regular ₦6,000 x 100 + VIP ₦20,000 x 10: 200, and the answer lists only the new tiers. The old row is kept with `retiredAt` set (not deleted). The event goes to `pending`. Admin queue and detail list only the new tiers. After approve, the public sees only the new tiers, `priceFromNaira` 6000 on the event and on its list row, and `ticketed` true. A second buyer ordering the old tier gets 409 "This ticket has changed. Please choose again." The abandoned order then verifies: 201, paid at ₦5,000, one ticket. The buyer's my-tickets lists it ("Regular"), and the host can check it in ("valid"). The new tiers keep every seat (100, 10). Organiser dashboard: sold 1, remaining 110, gross ₦5,000; after 2 more sold on the new Regular: sold 3, remaining 108, gross ₦17,000. "Keep the tier and add another": 200, the kept tier has the same id and is not retired, VIP is added, and the open order on the kept tier settles (remaining 99). A PUT with no tiers on an event whose only tier has an open checkout: 200, `ticketed` false, `priceFromNaira` null, tiers `[]`. Re-sending a tier identical to a retired one creates a new row on sale; the retired row stays retired. 22 of 22 checks pass. | `d3.out`, `web.out`, `resend.out` |
+| Races, over HTTP | **passed: 0 500s, 0 inconsistent final states in every race.** "Consistent" means tickets sold = paid quantity = tickets issued, and no order points at a missing tier. PUT vs opening a paid checkout, 30: 21 refused "has changed", 9 opened first with the tier retired. PUT vs a free purchase, 40. PUT vs a paid settle, 30: 10 settled on the retired tier, 20 sold first with PUT 409. Two PUTs and a purchase, 30. PUT, admin remove and a purchase, 30: no takedown undone. PUT, PATCH and two purchases, 30. D1: PUT vs remove, 40, and PATCH vs remove, 40: 0 undone. Hub log: 0 `40P01` lines, 0 ERROR lines. | `race-open.out`, `race4.out`, `race-d1-*.out`, `hub-b.log` |
+| New lock in checkout | **no cycle found.** Opening a paid checkout takes its tier row `FOR SHARE`, re-reads the event (plain read), then inserts the order, which takes `FOR KEY SHARE` on the event. PUT takes the event `FOR NO KEY UPDATE` (no conflict with `FOR KEY SHARE`), then the tier rows `FOR UPDATE` (waits for the `FOR SHARE`). Every path takes a tier lock at most once, and no path holding a tier lock waits for the event row lock: there is no cycle. Two checkouts share their locks. A free `issueOrder` updates the tier, then reads the event after it, so a PUT that committed first is seen. | code read, races above |
+| Migration | **passed.** `20261014100000_event_ticket_type_retired` sorts after every migration folder on backend main and on all 80 remote branches (the newest elsewhere is `20261013100000_legal_consultations`). It applies to a fresh database and the seed runs. In place: on a main-migrated database with 2 events, 3 tiers, a paid and a pending order and 2 tickets, every pre-existing column of every row is unchanged (row hash before and after) and `retiredAt` is null on all 3 tiers. `prisma migrate diff` shows only main's own `ContentPiece_specializations_idx` line, the same on main. Purge and export: `EventTicketType` has no user column, and the purge and export maps work by user columns, so no entry is the right decision; both map specs pass. | `mig-*.out`, `migdiff-*.out` |
+| Web | **passed.** For an event with no retired tier, `/events/:id/tickets` (599 bytes, host, stranger and signed-out) and GET /events/:id are byte-identical to main. GET /events: same 51 rows in the same order. The only 2 rows that differ, in `priceFromNaira` and `ticketed` only, are events with a retired tier, whose old tier main does not know to hide. | `web.out` |
+| Lock and protected suite | **passed.** Registry and suite files: 0 diff lines against `6ea8612`. `run.sh --fresh b92a591` with that lock: 253/253, all 244 required. | `prot-r5.out` |
+| Regression | **passed.** `src/event` + `src/admin/events` + `src/event-ticketing` + both map specs: 170/170. `event-purchase-races`: 7/7 on each of three runs. Whole-app specs: 9 suites, 176/176. tsc 0. eslint 0 on the 14 changed files. Gates: 16 fail, 58 warn, the same lines as main. Tripwire 0. `contract:build` leaves the contract unchanged. | `jest-*.out`, `purchase-races-*.out`, `tsc.out`, `eslint.out`, `gates-*.txt` |
+| Mutants (12 of my own on the retire logic) | **9 killed, 3 survive the specs.** Killed: public list shows retired tiers; referenced tiers deleted; three variants making a retired tier buyable; a pending order on a retired tier cannot settle; admin ticketTypes include retired tiers; from-price counts retired tiers; PUT keeps no identical tier. Survivors: R7 (remaining counts retired capacity), R8 (remaining subtracts sales on retired tiers), R10 (PUT matches against retired tiers too). Over HTTP the real code is right for all three (dashboard 110 and 108 above; the re-sent tier above). | `mutants.out` |
+
+### Findings
+
+No open defect.
+- **O7 · spec gap.** Three mutants of the retire logic survive the specs, though the behaviour is right over HTTP:
+  - the organiser's `remaining` with a retired tier (R7, R8);
+  - re-sending a tier identical to a retired one (R10).
+
+  A spec for each would pin them.
+- **O8 · note.** Once a ticket has sold on a retired tier, a PUT's sold 409 names both tiers with the same name ("Tickets have already sold for "Regular", "Regular"..."), one of them hidden from the host. This is the existing rule that sold tiers lock the event's tiers, with a confusing message.
+- **NOT RUN.**
+  - The full backend suite: it needs a network namespace for :4001, which this session is refused; unblocked by a session allowed to run one.
+  - Real WAWU ID: the stand-in was used.
+  - Real Flutterwave: the Hub's mock payment adapter was used.
+
+**Verdict: review.** D3 and O5 are fixed, and D1 and D2 stay fixed. The lock is unchanged since round 2.
 
 ## Owner sign-off
 
