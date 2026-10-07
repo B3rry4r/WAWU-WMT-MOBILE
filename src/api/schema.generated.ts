@@ -4286,6 +4286,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/tgif/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The five cards of the day, addressed to the caller by first name. */
+        get: operations["TgifController_day"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/share-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The verse of the day on the shared card, as a PNG (H35). */
+        get: operations["TgifController_shareImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tgif/{date}/stats": {
         parameters: {
             query?: never;
@@ -8664,6 +8698,18 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
+        };
+        TgifDayView: {
+            date: string;
+            series: string;
+            seriesTheme: string;
+            verse: string;
+            verseReference: string;
+            reality: string;
+            remember: string;
+            prayer: string;
+            takeaway: string;
+            shareLink: string | null;
         };
         TgifCardStats: {
             /** @enum {string} */
@@ -17769,6 +17815,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatUpload"];
+                };
+            };
+        };
+    };
+    TgifController_day: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifDayView"];
+                };
+            };
+        };
+    };
+    TgifController_shareImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The day's verse on the TGIF card, as a PNG image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
                 };
             };
         };

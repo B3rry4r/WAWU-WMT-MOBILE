@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 7 Oct 2026 · HOME-09 · Built, awaiting verification (the lead's agent, taken over from Developer 1): the TGIF reader at `/tgif` (H29 to H34: five cards, Amen on every card and inline on the prayer, Share, tap to continue, Done) and the share sheet (H35: the Hub's drawn card, WhatsApp, Chat into one of your chats). Backend `wmt/HOME-09`: `GET /tgif/{date}` (the 365-day text, the reader's first name in it) and `GET /tgif/{date}/share-image` (the verse card as a PNG); no table, no migration. Second count, Story and Save not drawn (G-240, G-242); gaps G-240 to G-244, shared-change rows HOME-09 #1 to #4 and F1.
 - 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
 - 7 Oct 2026 · ADS-06 · Merged to main (backend PR #76): admin ad endpoints (create, edit, schedule, pause, resume, end, delete, reports) with ADS-05's counts and an audit row per action; reviewer test gap T1 left as a follow-up; Developer 2's task, merged by the lead.
 - 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.
