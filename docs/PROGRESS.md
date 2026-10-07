@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 70 of 182.**
+**Launch tasks done: 76 of 183.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 44 | 31 | 27 | 30 |
+| todo | 43 | 29 | 25 | 30 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 1 |
 | review | 0 | 0 | 0 | 0 |
-| done | 39 | 27 | 7 | 1 |
+| done | 43 | 27 | 9 | 1 |
 
 ## Being verified
 
@@ -37,6 +37,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
+- [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
 - [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
 - [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
@@ -45,6 +46,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
+- [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here (Developer)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
@@ -71,6 +73,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-13](../tasks/MONEY-13.md) No wallet yet: money screens lead to Open your wallet (You)
 - [HOME-06](../tasks/HOME-06.md) Content detail: previews, fair ratings, counts (Developer)
 - [KYC-05](../tasks/KYC-05.md) Open your wallet: enter your BVN and NIN (You)
+- [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio (You)
 - [KYC-03](../tasks/KYC-03.md) Open your wallet: confirm details and address, selfie (You)
 - [SETTINGS-04](../tasks/SETTINGS-04.md) Data export and blocking that actually hides people (Developer)
 - [KYC-04](../tasks/KYC-04.md) Open your wallet: account opened, create PIN (You)
@@ -87,8 +90,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
+- [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
+- [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
+- [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -97,8 +103,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
-- **Developer:** [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio, [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader
-- **Developer 2:** [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts, [ADS-06](../tasks/ADS-06.md) Admin ad endpoints, [ADS-05](../tasks/ADS-05.md) Count ad views and taps
+- **Developer:** [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader, [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work
+- **Developer 2:** [ADS-06](../tasks/ADS-06.md) Admin ad endpoints, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
 - **Developer 3:** [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event, [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes
 
 ## Latest
@@ -106,17 +112,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification: the legal chat starts before any payment. New routes under `/legal/intake/assistant` let the WAWU Legal Assistant take the problem and write the brief into the intake, `send` opens the matter for a consultant with nothing charged, and the matter chat opens before payment so a consultant can join; matter options and quick replies come from the API as named schemas. Additive migration `20261006120000`; the real model and the dashboard screen are NOT RUN (G-210).
-- 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
-- 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
-- 6 Oct 2026 · ADS-04 · Merged to main in the lead's merge train (wmt/TRAIN-1): serve one sponsored card, `GET /ads?placement=`; Developer 2's task.
-- 6 Oct 2026 · ADS-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): the ads data model, `AdCampaign` and `AdCreative`; Developer 2's task.
-- 6 Oct 2026 · WALLET-08 · Merged to main in the lead's merge train (wmt/TRAIN-1): find a recipient by phone, name or handle, and recent recipients; the lead's task.
-- 6 Oct 2026 · EXPLORE-03 · Merged to main in the lead's merge train (wmt/TRAIN-1): Explore categories, creators by category and admin-featured creators; Developer 1's task.
-- 6 Oct 2026 · HOME-11 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF on Today saved to the account, GET and PATCH `/settings/tgif`; Developer 1's task.
-- 6 Oct 2026 · HOME-10 · Merged to main in the lead's merge train (wmt/TRAIN-1): TGIF reactions, readers and shares on three new tables; Developer 1's task.
-- 6 Oct 2026 · ME-16 · Merged to main in the lead's merge train (wmt/TRAIN-1): featured works and education, twelve new routes under `/users`, two new tables; Developer 1's task.
-- 4 Oct 2026 · HOME-10 · Built (backend, wmt/HOME-10): TGIF reactions, readers and shares, five new routes under /tgif, three new tables, status verifying; G-160 to G-163
-- 4 Oct 2026 · HOME-11 · Built, awaiting verification (DEV): `GET/PATCH /settings/tgif` saves "TGIF on Today" to the account (table `TgifPreference`, purge and export maps, contract regenerated); protected suite 244 of 244 fresh; gaps G-170, G-171.
-- 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.
-- 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
-- 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
+- 7 Oct 2026 · HOME-02 · Merged to main: the For you and Following feed (H2 to H6) at `/feed`, reachable once HOME-01 links it; the lead's task.
+- 7 Oct 2026 · MONEY-20 · Merged to main (backend PR #74): every money service behind one wallet provider interface, Fintava kept behind `WALLET_PROVIDER`, rollback is one setting; the lead's task.
+- 7 Oct 2026 · HOME-02 · Verified round 2 (independent session, `82b8cfa` on backend `4892a59`): D1 and D2 closed, 168 shots across nine phone sizes from 320 x 568 to 430 x 932 with no clipped offer text and no overlap of the book, the preview-ended block or the frame counter (the same driver fails 22 of 24 on round 1's build), M7, M12 and M18 killed by the new tests, 16 of 30 mutants caught (the survivors are tests that read the constants they check or cannot see layout, none a product defect), V4, V6, V9 hold; one merge-time finding, G-215 and G-216 are also LEGAL-01's (next free G-221 and G-222); status review.
+- 7 Oct 2026 · HOME-02 · Round 2 built, awaiting verification: the offer bar wraps instead of clipping (D1), H4's book and H5's message fit between the tabs and the words from 320 x 568 to 430 x 932 and keep clear of the rail (D2), tests pin the once-per-screen view (M7), a locked piece never playing the full file (M12) and the frost at the preview end (M18), the "46 min" rounding rule is written down (U2); gaps renumbered G-215 to G-220 after the merge with main.
+- 6 Oct 2026 · HOME-02 · Verified (independent session, `b4b32bd` on backend `872cf45`): V1, V4, V6, V9 passed, V5 failed on two defects (the offer bar cuts "Pay from wallet" and its title at prices above about ₦2,500; at 360 x 640 the PDF book overlaps the free-pages bar), 17 of 20 mutants caught; back to building.
+- 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-215 to G-220.
+- 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
+- 7 Oct 2026 · ADS-05 · Merged to main in merge train 2 (backend PR #72): count ad views, taps and skips, only for a card the person could be served; Developer 2's task.
+- 7 Oct 2026 · INBOX-07 · Merged to main in merge train 2 (backend PR #72): one inbox list with unread counts; Developer 2's task.
+- 6 Oct 2026 · RELEASE-01 · Merged to main (9226a1b): Google Play listing, data-safety form and the full data inventory (417 items, each mapped to a form row, with a check that fails on any unlisted model); the lead's task.
+- 6 Oct 2026 · RELEASE-01 · Verified round 5 (independent, docs only, status review): D18 and D19 closed and every round 4 minor and at-merge item closed; the inventory check exits 0 (116 models at 872cf45, which is still backend main, 116 listed) and has teeth (a deleted model row, a fake model, a misspelt one, an unknown form row and an old pin each fail, exit 1 to 9, file restored); my own scans of every writer in `src`, all 116 Hub and 14 WAWU ID models and ten random launch tasks (seed 8302) found nothing undeclared; R-39 wording, train 1's eight tasks shown `done`, counts (132 todo, 74 done), daggers, em-dashes (0), listing limits (13, 69, 2,134, 31) and `eas.json` hold; `npm run check` exit 0 (one known load timeout in OpenWalletScreen A26, 37 of 37 alone). Three minor notes, no defect; NOT RUN items unchanged (Play release, manifest, TLS, two LEGAL lead checks, NX-04 and D-5 searches, Nuvion rows).
+- 6 Oct 2026 · RELEASE-01 · Builder round 5 (docs only, status verifying): mobile main 6df916d merged; the inventory is re-pinned to backend 872cf45 and lists all 116 Hub models by real name (the nine train 1 models named, `FeaturedCreator` declared at NX-02 as a staff placement), 417 items found and mapped, 0 unmapped, and its check now fails on any schema model missing from section 1 (proved by deleting a row); HK-03 corrected (the pending sign-up's phone and attempt secret are in the secure store, new row I-417); R-39 applied (codes by email after AUTH-07, selfie step may be dropped, no "nothing about Nuvion" claim); train 1's eight tasks and the task counts (132 `todo`, 74 `done`) brought up to date.
+- 6 Oct 2026 · RELEASE-01 · Verified round 4 (independent, docs only, status building): the inventory check exits 0 (411 of 411 mapped, 72 form rows all cited, all 183 launch tasks and all 116 Hub and 14 WAWU ID models read); D10 to D17 and the minor items closed; owner corrections, six owner decisions, bills as the recorded R-39 fact, daggers, em-dash 0 and listing limits hold; two low defects open: the nine train 1 models (Hub 872cf45) are named wrongly or not at all and the inventory is pinned at a94f338 (D18), and HK-03 says only tokens are stored on the phone while `signupStore.ts` also keeps the pending sign-up's phone and attempt secret (D19); trial merge of main 6df916d conflicts only in the generated PROGRESS.md.
+- 6 Oct 2026 · RELEASE-01 · Builder round 4 (docs only, status verifying): the data-safety form is now built from an exhaustive inventory, `docs/release/DATA-INVENTORY.md` (every one of 107 Hub models, 14 planned models, 239 inputs and logged items across the 183 launch task files, 14 WAWU ID models and 10 sign-up fields, 14 receivers, 13 searched-for-and-not-found rows: 411 items, 411 mapped, 0 unmapped, checked by a command in the file), and every form row has a reference; the verifier's D10 to D17 are closed (legal consultation flow with matter details, booking, typed-name signature with IP and CAC inputs, CV fields, chat attachments, the school click, the device id and biometric label, the blank line, the owner heading, and the bills wording recorded as a fact: Nuvion has no bill payments, on hold in each BILLS-01 to 06 file, not a release decision); who consults and who files at CAC stay LEAD CHECKs with the fact that settles each.
