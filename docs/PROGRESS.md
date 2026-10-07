@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 72 | 0 | 24 | 27 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
+| building | 0 | 0 | 0 | 1 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (Developer 3)
 
@@ -119,6 +119,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-01 · Second independent verifier (own stack on 5441, 5442 and 8441, the real wawu-id, backend main and then the PR 78 branch; verified `2b58fc1` as briefed and the head `827dc56`): V1, V4, V9 passed, V5 passed at the head (D1 to D5 closed, checked in pictures), V6 and the filters passed with one defect: E1 waits on the new from-prices call (a 5xx adds about 4 s, a hung call keeps the skeleton). Paging has no test (4 mutants survive) and the all-sold rule has none for a mixed event (1 survives); 28 mutants, 19 killed. Five questions noted (no refetch while E2 is open, no year on dates, event time zone ignored, raw uuid message on a bad id, merge order with backend PR 78). Status back to building. Report in `tasks/EVENTS-01.md`.
 - 7 Oct 2026 · EVENTS-01 · Fix round 1 (verifier's D1 to D5), status verifying: section heading is the h2 style (700), 4 pt between E1 rows, the TICKETS label gap on E2, E1's "from" price is the cheapest tier that can be bought now (new backend route `GET /events/from-prices`, PR 78, protected routes unchanged; G-271 closed on the branch), and E9's disabled Sold out button is built.
 - 7 Oct 2026 · EVENTS-01 · Verified (fresh session, own stack on 4185 to 4187 with the real wawu-id, main merged): V1 passed (48 suites, 841 tests, gates 228 files 0 findings), V4, V6, V9 passed, capability checks passed, V5 failed on five defects (D1 section heading weight, D2 row gap, D3 tickets label gap, D4 hero and row "from" price counts a sold-out tier, D5 E9's disabled Sold out button has no owner), three questions for the owner; V10 NOT RUN (needs OPS-10 and a tester build). Status back to building. Report in `tasks/EVENTS-01.md`.
 - 7 Oct 2026 · EVENTS-01 · Built, status verifying (mobile `wmt/EVENTS-01`, main c0fb4e3; no backend change): E1 Events (featured card, This week and Upcoming lists, Going on each row), E8 filter sheet (When, Kind and Category from `GET /events/options`, "Show N events" from the Hub's total), E2 event detail with a stepper per tier and a running total across tiers, E9 sold out; routes `/events` and `/events/<id>`. Checked on the local stack (backend 6c0e435) with a real sign-in: the Going tap wrote one row read back from Postgres. `npm run check` 46 suites and 797 tests before, 48 and 841 after, gates 0 fail. Left to later tasks: the My events and Host event tabs and the Host banner (EVENTS-08, EVENTS-04), Get tickets (EVENTS-06). Gaps G-270 to G-273. V10 NOT RUN (needs OPS-10 and a tester build).
@@ -133,4 +134,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Verifier report round 2 (independent session): D1 to D6 and the migration order (U1) are closed and the M13 log test works; the 30 an hour, 40 per conversation and 5 brief tries an hour hold over real HTTP under 200 parallel sends, mixed sends and replies, and two Hub processes on one database (60 sends: 30 accepted, 30 refused, 30 AI calls); privacy, ownership, money, trial merge, protected suite 253/253 and the gates are clean; 45 mutants, 40 killed. Not ready by one low defect (D8): the older `POST /legal/intake/chat/{requestId}` has no limit after payment (100 of 100 accepted and 100 AI calls, against 28 on the new route), so D7 is closed only on the assistant routes; status back to building. Recorded for the lead: the hung-provider behaviour (2 to 3 brief calls, all counted, one request), G-215 and G-216 clash with HOME-02's (renumber to G-221 and G-222 at merge), and the rival `wmt/LEGAL-01-b` conflicts in 8 backend files, in the table and column names and in the routes.
 - 7 Oct 2026 · LEGAL-01 · Builder round 2, awaiting re-verification: the seven defects the verifier found are closed, each with a test that failed on the first version. The 30 an hour and 40 per conversation limits hold under parallel sends (the check and the write are one transaction under a per-person lock), `POST {id}/reply` counts toward them and is serialized (one AI call for 15 parallel replies), Send claims the intake before preparing the brief (one call for 20 parallel sends, a failed brief retryable 5 times an hour), a NUL byte is a 400, opening is idempotent per person (one in-progress assistant intake for 12 parallel opens, partial unique index in the migration, now `20261007120000_legal_assistant`), em-dashes are stripped from every assistant line including the paid-wait replies, messages after Send share the same hourly allowance, and a test holds every message body out of the logs. Full suite 4098 passed (only the host-network `hub-rate-limits` file fails in the namespace, 22/22 on the host), protected suite 253/253, gates the same 16 fail as main. Backend `wmt/LEGAL-01` ca1fd42; contract regenerated (7 new paths, none changed). Status verifying.
 - 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
-- 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
