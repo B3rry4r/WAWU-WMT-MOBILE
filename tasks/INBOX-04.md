@@ -7,7 +7,7 @@ order: 57
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [INBOX-07, INBOX-02, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -240,6 +240,9 @@ Verifier (a fresh session for round 2, independent of the builder). Head `e98754
 - I1 (round 1, the second `GET /inbox/unread` after the socket's first `ready`) left by the builder, accepted: bounded by the socket's waits.
 
 **Status:** no open defect. `status: review`. Open for the owner or lead: D1 (ordering), F-4409 (4409 versus LIVE.md).
+
+## Lead merge note (7 Oct 2026)
+Merged to mobile main after the independent round 2 check (no defect open; D2 closed, the five test gaps closed). Rulings: D1 (no row renderer yet, so a person with conversations sees a blank list under a correct badge) is not a blocker, because main's Inbox tab was a placeholder and the badge was already there; the rows come with INBOX-19, INBOX-05, INBOX-10, INBOX-18 and INBOX-20. F-4409: the client keeps stopping on 4409 until the app returns to the foreground (no fight between two devices); backend `docs/contract/LIVE.md` is to be corrected to match (follow-up). T1 (the error icon has no test; the two round 2 reports disagree on whether X1/X2 are killed) is a follow-up test. Phone update held until INBOX-19 draws the chat rows, so testers do not see a blank list; any earlier phone update will carry it. Developer 2's task, merged by the lead.
 
 ## Owner sign-off
 
