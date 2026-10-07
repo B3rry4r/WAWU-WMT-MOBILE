@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 44 | 31 | 27 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 39 | 27 | 7 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 
@@ -105,6 +105,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · MONEY-20 · Verified, status review (backend `wmt/MONEY-20` 23a4b77): no defect. Contract byte-identical, no migration, protected 253/253, gates the same 16 fail, full suite 3,937/3,952 (only hub-rate-limits, 22/22 on the host), ledger rows from the same deliveries identical to main, 28 mutants (19 killed). MONEY-17 must re-point `src/money/payments/` before it merges after this (it would not compile, boot or pass the seam spec).
 - 6 Oct 2026 · MONEY-20 · Built, awaiting verification (backend `wmt/MONEY-20`): one `WalletProvider` interface between `src/money/` and the wallet provider, Fintava behind it as an adapter, and `WALLET_PROVIDER` (default `fintava`; `nuvion` reserved, stops the server at boot) choosing it, so a rollback is one setting and a restart (R-39, owner: "an easy roll back"). No route, contract or schema change; nothing Fintava deleted. MONEY-20 takes order 181; tasks from 181 move down one; new task type `backend-refactor` (SHARED-CHANGES MONEY-20 #1).
 - 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
 - 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
@@ -119,4 +120,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · HOME-11 · Built, awaiting verification (DEV): `GET/PATCH /settings/tgif` saves "TGIF on Today" to the account (table `TgifPreference`, purge and export maps, contract regenerated); protected suite 244 of 244 fresh; gaps G-170, G-171.
 - 6 Oct 2026 · ADS-04 · Built, awaiting verification: `GET /ads?placement=tgif_card|today_slot` (backend branch `wmt/ADS-04`): one live card inside its dates, heaviest weight first, skips a campaign whose event is closed, `data: null` when nothing is eligible, never cached; no migration; owner questions G-191 to G-193.
 - 6 Oct 2026 · ADS-03 · Round 3 built, awaiting verification: the blank-text CHECK class is now written entirely as \u escapes (ASCII-only migration, spec guards it); refused set unchanged; migration edited in place.
-- 6 Oct 2026 · ADS-03 · Round 2 built, awaiting verification: weight range moved to `src/ads/ads-limits.ts` (the one PROVISIONAL marker, spec ties it to the CHECK); blank-text CHECKs now locale-independent and refuse zero-width and no-break characters; migration edited in place.
