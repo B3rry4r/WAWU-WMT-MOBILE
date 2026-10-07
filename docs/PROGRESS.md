@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
 | done | 41 | 27 | 9 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio (You)
 
@@ -109,6 +109,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · HOME-02 · Verified round 2 (independent session, `82b8cfa` on backend `4892a59`): D1 and D2 closed, 168 shots across nine phone sizes from 320 x 568 to 430 x 932 with no clipped offer text and no overlap of the book, the preview-ended block or the frame counter (the same driver fails 22 of 24 on round 1's build), M7, M12 and M18 killed by the new tests, 16 of 30 mutants caught (the survivors are tests that read the constants they check or cannot see layout, none a product defect), V4, V6, V9 hold; one merge-time finding, G-215 and G-216 are also LEGAL-01's (next free G-221 and G-222); status review.
 - 7 Oct 2026 · HOME-02 · Round 2 built, awaiting verification: the offer bar wraps instead of clipping (D1), H4's book and H5's message fit between the tabs and the words from 320 x 568 to 430 x 932 and keep clear of the rail (D2), tests pin the once-per-screen view (M7), a locked piece never playing the full file (M12) and the frost at the preview end (M18), the "46 min" rounding rule is written down (U2); gaps renumbered G-215 to G-220 after the merge with main.
 - 6 Oct 2026 · HOME-02 · Verified (independent session, `b4b32bd` on backend `872cf45`): V1, V4, V6, V9 passed, V5 failed on two defects (the offer bar cuts "Pay from wallet" and its title at prices above about ₦2,500; at 360 x 640 the PDF book overlaps the free-pages bar), 17 of 20 mutants caught; back to building.
 - 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-215 to G-220.
@@ -123,4 +124,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · RELEASE-01 · Verified round 3 (independent, docs only): round 2 defects D5 to D9 and both minor items closed (own scan of all 39 AndroidManifest.xml and 15 .aar files matches the permissions table); new omissions found walking the launch tasks: legal consultation data undeclared (D10, medium), profile CV fields (D11), chat attachments (D12), school-link click (D13), approval device id (D14), plus an unsourced "bills frozen" phrased as an owner decision (D15), D-4 and D-5 under the owner heading (D16) and a broken table (D17); status building. OpenWalletScreen timed out once under load, 37 of 37 alone.
 - 6 Oct 2026 · RELEASE-01 · Builder round 3 (docs only, status verifying): the verifier's five defects fixed in `docs/release/` and `docs/BUILDS.md`: interests picked at sign-up declared (D5), the school receiving name, email and phone declared as shared and added to D-1 and the privacy-text list, marked to ship with the schools enrolment tasks (D6), bill inputs declared and marked frozen pending the wallet provider switch with nothing asserted about Nuvion (D7), `expo-file-system` and the two debug-only manifests added so the permissions table lists all six packages that declare any (D8), the Ads answer is a lead check against the shipped build (D9); Hub citation now a94f338; `docs/BUILDS.md` Fintava lines daggered.
 - 6 Oct 2026 · RELEASE-01 · Verified round 2 (independent, docs only): round 1 defects D1, D2 and D4 closed, D3 partly; the owner's corrections are applied as facts (organisation account, website and support email, the lead's icon checked pixel for pixel as a Lanczos downscale of `icon.png`, review account as a lead task, Fintava and Loma Bank daggered with none deleted, Nuvion only as the stated plan); no em-dash, limits 13, 69 and 2,134; 5 defects open (the form omits sign-up interests, the school receiving name, email and phone at enrolment and bill inputs, the permissions table omits `expo-file-system`, one owner-phrased Ads question); both capability checks and V10 NOT RUN; status building.
-- 6 Oct 2026 · RELEASE-01 · Builder round 2 (docs only, status verifying): the verifier's four defects fixed in `docs/release/` (B2 reworked now SETTINGS-02 is done, with what the privacy text must name; password, account type, licence number and event address declared; permissions table from the manifests; target API level 36 line) and the disclosure-and-consent, Flutterwave and review-line items kept as findings; owner update applied (organisation account, live website and support email, the lead's 512 x 512 icon in `docs/release/assets/`, the review account as a lead task, every Fintava and Loma Bank mention marked "to be replaced when the Nuvion switch lands", OWNER TO CONFIRM cut to six owner decisions).
