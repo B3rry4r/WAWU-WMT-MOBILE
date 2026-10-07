@@ -114,6 +114,7 @@ describe('X1 · Explore', () => {
     await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
     expect(await rtl.screen.findByTestId('explore-loading')).toBeTruthy();
     expect(rtl.screen.getByLabelText('Loading Explore')).toBeTruthy();
+    expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
     expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
   });
 

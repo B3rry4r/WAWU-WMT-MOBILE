@@ -4,6 +4,7 @@ import { FlatList, RefreshControl, StyleSheet, useWindowDimensions, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import { Button, IconButton } from '@/components/Button';
 import { Skeleton, LoadingView } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -64,11 +65,11 @@ function GridSkeleton({ testID = 'categories-loading' }: { testID?: string }) {
 export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
-  const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories });
+  const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories }, queryClient);
   const list = categories.data ?? [];
   const [picked, setPicked] = useState<CategoryChoice | undefined>(undefined);
   const choice = picked ?? chosenCategory(initial, list);
-  const me = useQuery({ queryKey: meKey, queryFn: fetchMyId });
+  const me = useQuery({ queryKey: meKey, queryFn: fetchMyId }, queryClient);
   const follow = useFollow();
   const cell = useCellWidth();
   const [pulled, setPulled] = useState(false);
@@ -79,7 +80,7 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
     initialPageParam: 1,
     getNextPageParam: nextCreatorsPage,
     enabled: categories.isSuccess,
-  });
+  }, queryClient);
   const items: ExploreCreator[] = creators.data?.pages.flatMap((p) => p.items) ?? [];
   const { refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = creators;
 

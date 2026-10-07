@@ -5,6 +5,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import { BrandMark } from '@/components/BrandMark';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -50,9 +51,9 @@ export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
-  const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories });
-  const featured = useQuery({ queryKey: featuredKey, queryFn: fetchFeaturedCreators });
-  const me = useQuery({ queryKey: meKey, queryFn: fetchMyId });
+  const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories }, queryClient);
+  const featured = useQuery({ queryKey: featuredKey, queryFn: fetchFeaturedCreators }, queryClient);
+  const me = useQuery({ queryKey: meKey, queryFn: fetchMyId }, queryClient);
   const follow = useFollow();
   const [pulled, setPulled] = useState(false);
 
@@ -127,8 +128,9 @@ export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
 
   return (
     <View testID="explore-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <View style={styles.bar}>
-        <BrandMark width={exploreMetrics.mark} testID="explore-mark" />
+      {/* The bar draws only the mark (X1 has no title), so a screen reader hears it as the tab's heading. */}
+      <View style={styles.bar} accessible accessibilityRole="header" accessibilityLabel="Explore">
+        <BrandMark width={exploreMetrics.mark} decorative testID="explore-mark" />
       </View>
       <ScrollView
         testID="explore-scroll"

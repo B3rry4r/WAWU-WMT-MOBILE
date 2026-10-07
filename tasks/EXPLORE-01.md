@@ -7,7 +7,7 @@ order: 110
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [EXPLORE-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -98,7 +98,20 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+**Files.** `src/app/(tabs)/explore.tsx` (the tab now opens Explore), `src/app/categories.tsx` (new, `/categories?category=<id>`), `src/features/explore/`: `api.ts` (categories, featured, creators pages, follow and unfollow), `categories.ts`, `paging.ts`, `follow.ts` (one Follow state on every Explore list), `ExploreScreen.tsx` (X1), `ExploreSkeleton.tsx` (X14), `CategoriesScreen.tsx` (X2, X3, X13), `CategoryTiles.tsx`, `CategoryChips.tsx` (stand-in, SHARED-CHANGES EXPLORE-01 #1), `CreatorCard.tsx`, tests `__tests__/model.test.ts`, `__tests__/screens.test.tsx`. Docs: BACKEND_GAPS G-300 to G-302, SHARED-CHANGES EXPLORE-01 #1 to #3 and F1, docs/LOG.md.
+
+**Left out (R-27, R-41), with the task that adds each as drawn:** X1 search bar (opens X5) and Featured creators "See all" (X4): EXPLORE-02. X1 bell (M31): ME-14. X1 a creator card opening M5: ME-02 (Follow on the card is built). X1 FEATURED EVENT hero, Upcoming events, its "See all" and event cards (E2, E1), and X14's hero skeleton block: EVENTS-01. X1 and X15 doors: Find a professional (P1) PROS-01, Find a school (SC1) SCHOOLS-03, List your services (P5) PROS-03. X1, X14, X15 Create button (M19): ME-04. **X15 is not built at all**: everything it draws is the events rail and the doors above. Nothing on these artboards leads to a screen already built, so nothing else was wired.
+
+**Checks.** X1: tap a category (X3): jest `a user can tap a category tile...` and live (Photography tile opens X3 with Chidi). Follow: jest (Follow, Following, refused put back, own card has no Follow) and live (POST written, read back `zainab-pro following: true` with the user's token). Search, featured event, event row, See all, the doors: NOT RUN, left out (above). X15: NOT RUN, left out. X2: tap a chip (X3), Follow: jest and live. X3: switch chip, Follow: jest and live. V5: screenshots taken (list below), comparison is the verifier's. Every value comes from the Hub: categories, handles, fields and ticks from `GET /explore/*`; no event figure is on screen. V6: loading (requests held by the network), empty (X13: a category nobody publishes in, Gaming & Esports and Music & Audio on the seeded Hub), error (connection dropped on every try; Try again recovers), each live and in jest. X1 has no empty screen: with nobody featured the rail is not drawn and the tiles stay (jest).
+**V9 (local Hub, wawu-backend 3041887, DB `bx01_test`, stand-in WAWU ID on 5372).** Signed in through the app's own sign-in screen as `user@test.wawu.dev`; featured creators were set by a superadmin through `PUT /admin/featured-creators/:id`; Chidi's and Zainab's interests were written through `PATCH /users/me` as each creator, so Photography and Business & Finance hold one creator each. The stand-in WAWU ID answers sign-in bare while the app reads `{ data }`; for this run a 15-line preload (scratch only, not committed) wrapped `/auth/login` and `/auth/refresh` answers in the real envelope. The exported bundle held only `localhost:5371` and `:5372`.
+
+**Screenshots** (390 wide, light and dark): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bx01/shots/`: `X1`, `X1-following`, `X14-loading`, `X2`, `X3`, `X3-chip-switch`, `X13`, `categories-loading`, `categories-empty-music`, `categories-error`, `X1-error`, `X1-after-retry`, each `-light.png` and `-dark.png`.
+
+**Gates.** Before: tsc 0, gates 9 run / 297 files / 0 findings, 210 tasks, jest 1142 passed and 1 failed (`OpenWalletScreen.test.tsx` A26 timed out at 20 s under load; it passes in the full run after). After (main a167415 merged): `npm run check` exit 0: tsc 0, lint 0, jest 65 suites 1171 passed (28 new), gates 9 run / 310 files / 0 findings, baseline 0, 210 tasks. One earlier full run failed once on `WorkScreen.test.tsx` (M35 Remove, not touched here) at load average 10; it passed alone (26/26) and in the next full run.
+
+**Defaults (agent), owner may override.** Tiles and chips follow the server's category order (G-180), so X1 shows Music, Film, Photography, Fashion, Business, Technology, not the canvas's order. Icons for the four categories the canvas never draws: Business BriefcaseBusiness, Technology Smartphone, Food & Lifestyle Sun, Sports Dumbbell. All and More both open Categories on All. The creator tick shows first, else the professional tick. A card with no handle shows the name. With nobody featured, the Featured creators section is hidden. All's empty copy (not drawn): "Nobody is publishing yet" / "Come back once more people have published." The chip a link opens on is scrolled into view once if it starts out of view; after that the chips stay in place (X3). Follow on the card is the shared Button, size sm, held to the canvas's 32 height (its label is 13.5, the canvas 13); Following uses the glass look (white at 14% with a glass ring; the canvas draws white at 20%, no ring). The bar is announced as the heading "Explore" (X1 has no title).
+
+**NOT RUN.** V10 (no tester build with this branch; unblocked when a development or tester build includes it). V4 beyond follow (the one field one person writes and another reads: tested both sides through the API). Picture comparison (V5) is the verifier's.
 
 ## Verifier report
 

@@ -1,4 +1,6 @@
-import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useMutation, type InfiniteData } from '@tanstack/react-query';
+
+import { queryClient } from '@/api/query';
 
 import { exploreKey, setFollowing, type CreatorsPage, type ExploreCreator } from './api';
 
@@ -32,16 +34,15 @@ export function withFollowing(data: ExploreData, wawuId: string, following: bool
  * right by the Hub's answer, or put back when the Hub refuses. A second tap while one is on its way is ignored.
  */
 export function useFollow() {
-  const client = useQueryClient();
   const apply = (wawuId: string, following: boolean) =>
-    client.setQueriesData<ExploreData>({ queryKey: exploreKey }, (data: ExploreData) => withFollowing(data, wawuId, following));
+    queryClient.setQueriesData<ExploreData>({ queryKey: exploreKey }, (data: ExploreData) => withFollowing(data, wawuId, following));
 
   const mutation = useMutation({
     mutationFn: ({ wawuId, following }: { wawuId: string; following: boolean }) => setFollowing(wawuId, following),
     onMutate: ({ wawuId, following }) => apply(wawuId, following),
     onSuccess: (following, { wawuId }) => apply(wawuId, following),
     onError: (_error, { wawuId, following }) => apply(wawuId, !following),
-  });
+  }, queryClient);
 
   return {
     toggle: (creator: ExploreCreator) => {
