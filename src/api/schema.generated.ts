@@ -2526,6 +2526,73 @@ export interface paths {
         patch: operations["ProfessionalController_setListed"];
         trace?: never;
     };
+    "/api/hub/professionals/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_location"];
+        /** The city on your card and in the directory. A creator account only. */
+        put: operations["ProfessionalController_setLocation"];
+        post?: never;
+        delete: operations["ProfessionalController_clearLocation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_fields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The directory filtered by field, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One professional's profile, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directoryProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals": {
         parameters: {
             query?: never;
@@ -5355,7 +5422,7 @@ export interface components {
         };
         ApplyProfessionalDto: {
             /** @enum {string} */
-            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
             headline: string;
             about: string;
             services?: string[];
@@ -5367,6 +5434,10 @@ export interface components {
         };
         UpdateListingDto: {
             listed: boolean;
+        };
+        UpdateProfessionalLocationDto: {
+            /** @description Where you work, as people will read it: "Ikeja", "Port Harcourt". */
+            city: string;
         };
         CreateProfessionalReviewDto: {
             stars: number;
@@ -8084,6 +8155,71 @@ export interface components {
             pieceCount: number;
             verification: components["schemas"]["VerificationState"];
             following: boolean;
+        };
+        ProfessionalLocationView: {
+            city: string | null;
+        };
+        ProfessionalFieldView: {
+            id: string;
+            label: string;
+            categories: string[];
+            applyCategory: string;
+            regulated: boolean;
+        };
+        ProfessionalFieldRef: {
+            id: string;
+            label: string;
+        };
+        ProfessionalDirectoryEntry: {
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
+        ProfessionalDirectoryPage: {
+            items: components["schemas"]["ProfessionalDirectoryEntry"][];
+            currentPage: number;
+            perPage: number;
+            total: number;
+        };
+        ProfessionalDirectoryProfile: {
+            about: string;
+            issuingBody: string | null;
+            credentialKind: string;
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
         };
         ProfessionalListItem: {
             id: string;
@@ -13963,10 +14099,135 @@ export interface operations {
             };
         };
     };
+    ProfessionalController_location: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_setLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfessionalLocationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_clearLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_fields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalFieldView"][];
+                };
+            };
+        };
+    };
+    ProfessionalController_directory: {
+        parameters: {
+            query?: {
+                /** @description A field id from GET /professionals/fields, for example `accounting_tax`. */
+                field?: "accounting_tax" | "legal_compliance" | "design_creative" | "technology_it" | "engineering" | "healthcare" | "business_consulting";
+                page?: number;
+                perPage?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryPage"];
+                };
+            };
+        };
+    };
+    ProfessionalController_directoryProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryProfile"];
+                };
+            };
+        };
+    };
     ProfessionalController_list: {
         parameters: {
             query?: {
-                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
                 page?: number;
                 perPage?: number;
             };
