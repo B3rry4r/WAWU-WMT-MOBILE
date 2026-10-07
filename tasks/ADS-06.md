@@ -7,7 +7,7 @@ order: 35
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: [ADS-03]
 decisions: [R-15]
 passes: [V1, V2, V3, V4, V9]
@@ -189,6 +189,9 @@ No `differs-for-recorded-reason`.
 ### NOT RUN
 
 - The full backend suite (`jest --runInBand` over all 170 suites) on 9a059ef and on main: not run. The brief asked for the task's spec files, the protected suite and the seeded-row check, and those ran. Unblocked by: a request for it, the namespace runner copied from `scratchpad/w18ns` (run in its own network namespace with a mock on :4001, `hub-rate-limits` on the host network), and a quiet machine for the timing tests.
+
+## Lead merge note (7 Oct 2026)
+Merged to mobile main after verifier round 2 (no product defect open; D1 closed). Backend PR #76 merged as `6c0e435`, after LEGAL-01 (#75); migration `20261008100000_admin_ads_audit` sorts after LEGAL-01's `20261007200000`. Full backend suite in a private network namespace: the first run timed out `selfie-match`'s 5 s all-columns scan under load (not ads code); the rerun was 169 of 170, the one failure `hub-rate-limits`, 22/22 on the host; seeded tables unchanged. Contract re-synced from backend main (closes the verifier's C1). Follow-up, not in this merge: T1, the spec does not exercise the reviewer on create, pause, resume, end and delete (correct live). U2, F1 and U4 stay owner questions. No phone update: admin only. Developer 2's task, merged by the lead.
 
 ## Owner sign-off
 

@@ -3,19 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 79 of 183.**
+**Launch tasks done: 80 of 183.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 24 | 28 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 1 | 0 |
-| done | 44 | 27 | 9 | 3 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
+| review | 0 | 0 | 0 | 0 |
+| done | 44 | 27 | 10 | 3 |
 
 ## Done
 
@@ -48,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
+- [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
@@ -114,6 +111,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · ADS-06 · Merged to main (backend PR #76): admin ad endpoints (create, edit, schedule, pause, resume, end, delete, reports) with ADS-05's counts and an audit row per action; reviewer test gap T1 left as a follow-up; Developer 2's task, merged by the lead.
 - 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.
 - 7 Oct 2026 · LEGAL-01 · Verifier report round 3 (independent session, backend f49927a, mobile 61cf8b0): no defect open, status review. D8 reproduces on ca1fd42 (100 parallel posts on the older chat route: 100 x 201 and 100 AI calls) and is closed on f49927a (28 x 201, 72 x 429, 28 AI calls; 50 old plus 50 new share one allowance, hour total exactly 30; the same with two Hubs on one database at 150 ms and 2 s), the 201 is byte-identical to main 0e7b617, the hung-provider case makes 2 brief calls not 3, D1 to D6 still hold, 9 of 9 of my limit and window mutants are killed, the migration folder sorts after main's newest and shares no stamp, protected suite 253/253, gates the same 16 fail as main (55 warn against 51, the four PROVISIONAL markers), G-231 and G-232 are unique across every ref, `npm run check` exit 0. Notes: another user on the older route is 403 on main and the branch; the allowance now also counts messages to a joined consultant (30 an hour); a NUL in `body` on the older route is a 500 on main too.
 - 7 Oct 2026 · LEGAL-01 · Builder round 3, awaiting re-verification: D8 closed (the older `POST /legal/intake/chat/{requestId}` now draws on the same per-person allowance as the assistant routes: 100 parallel posts after payment give 28 accepted and 28 AI calls, not 100), a release clears only its own lease (a late failure no longer starts a third brief call), the 30, 40 and 5 are pinned by literal-number tests (6 mutants run, 6 killed), the migration is `20261007200000_legal_assistant` (after main's `20261007190000`), and this task's gap rows are G-231 and G-232. Backend main 0e7b617 and mobile main d36ae51 merged; protected suite 253/253, gates equal to main's 16 FAIL lines, contract adds the same 7 paths. NOT RUN: a real model, a provider timeout (fenced adapter), the full suite on the merged head.
@@ -128,4 +126,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-02 · Merged to main (backend PR #48): hybrid events, conference and concert kinds, ticket types sent with POST /events, hosting verified-only; F6 (repricing through the web's PUT /events/:id/tickets) split out for the owner; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Merged to main (backend PR #49): door staff, check-in at the door, sold counts and referral sales for hosts; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Verified round 4 (backend 554b831, mobile 5346c7f; both mains already merged, trial merges no-ops): status review, no defect open. T1 closed (mutants L6 and L7 each fail one test; 27 of 27 unmutated), no non-test change beyond main's (12 files, 10 byte-equal to round 3 by added lines, only the spec +55), migration `20261007100000_event_door_staff` sorts after `20261007090000_inbox_feed_index` and before `20261007120000_legal_assistant`, fresh DB applies and seeds with only main's known index drift, gates 16 fail / 51 warn / 76 accepted equal to main, protected suite 253/253, event-ticketing and both map specs 36/36, tripwire 0, mobile check exit 0 with the contract equal to the backend's. Live on the built Hub: staff 403 on host routes, removed staff 403, 10 parallel scans of one ticket give exactly 1 valid. One info item, T2: a whitespace-only label on a put-back survives a mutant (no stated rule). NOT RUN: full backend suite, paid Flutterwave ticket, Fintava.
-- 7 Oct 2026 · EVENTS-05 · Fix round 3 built, status verifying (backend 554b831, main 4892a59 merged): T1 closed with two tests (a put-back whose old label is taken gets a free one; a padded custom label is stored trimmed and collides), each failing with its mutant (L6, L7) applied; no production code changed. Migration renamed 20261007100000 after main's newest; mobile contract re-synced from the branch. Spec 27/27, protected 253/253, gates 16/51/76 as main, mobile check exit 0 (797 tests).
