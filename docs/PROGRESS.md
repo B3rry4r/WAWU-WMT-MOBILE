@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 43 | 29 | 25 | 29 |
+| todo | 43 | 29 | 24 | 29 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 1 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 43 | 27 | 9 | 3 |
+
+## Being verified
+
+- [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
 
 ## Done
 
@@ -102,13 +106,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader, [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work
-- **Developer 2:** [ADS-06](../tasks/ADS-06.md) Admin ad endpoints, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
+- **Developer 2:** [ADS-06](../tasks/ADS-06.md) Admin ad endpoints, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
 - **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · INBOX-04 · Built on wmt/INBOX-04: the Inbox tab's list frame, the empty (I35), loading (I36) and error states, the app's live connection (`src/features/inbox/live.ts`) and the tab's unread badge (G-4), run against the real local backend; row kinds, header buttons and the other chips belong to later INBOX tasks. Status verifying.
 - 7 Oct 2026 · EVENTS-02 · Merged to main (backend PR #48): hybrid events, conference and concert kinds, ticket types sent with POST /events, hosting verified-only; F6 (repricing through the web's PUT /events/:id/tickets) split out for the owner; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Merged to main (backend PR #49): door staff, check-in at the door, sold counts and referral sales for hosts; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Verified round 4 (backend 554b831, mobile 5346c7f; both mains already merged, trial merges no-ops): status review, no defect open. T1 closed (mutants L6 and L7 each fail one test; 27 of 27 unmutated), no non-test change beyond main's (12 files, 10 byte-equal to round 3 by added lines, only the spec +55), migration `20261007100000_event_door_staff` sorts after `20261007090000_inbox_feed_index` and before `20261007120000_legal_assistant`, fresh DB applies and seeds with only main's known index drift, gates 16 fail / 51 warn / 76 accepted equal to main, protected suite 253/253, event-ticketing and both map specs 36/36, tripwire 0, mobile check exit 0 with the contract equal to the backend's. Live on the built Hub: staff 403 on host routes, removed staff 403, 10 parallel scans of one ticket give exactly 1 valid. One info item, T2: a whitespace-only label on a put-back survives a mutant (no stated rule). NOT RUN: full backend suite, paid Flutterwave ticket, Fintava.
@@ -123,4 +128,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-02 · Verified round 3, status review (backend wmt/EVENTS-02 206814c): F5 migration folder sorts after every ref, F7 G-230 unique on all branches, F8 non-object ticket types 400 (36 requests, nothing saved, spec fails without the decorator); F6 reproduced on main 4892a59 and split out by the lead; protected 253/253, gates equal to main (16 fail), clean trial merge with main and EVENTS-05, mobile check exit 0. No open defect.
 - 7 Oct 2026 · EVENTS-02 · Fix round 2, status verifying (backend wmt/EVENTS-02 206814c): migration renamed 20261007190000 after main's tail (F5); non-object ticket types are 400 with a spec (F8); gap row renumbered G-230 (F7); F6 blocked: PUT /events/:id/tickets is a protected web route, owner ruling or an app-only route needed. Protected 253/253, gates equal to main, event specs 107 passed.
 - 6 Oct 2026 · EVENTS-02 · Verified round 2, status building: F1 fixed (40 price and quantity inputs checked); gate, money, moderation, blocks, maps, protected 253/253, gates equal to main, trial merges clean on backend. Four defects open: F5 migration folder sorts before main's, F6 PUT /events/:id/tickets skips the host gate and re-review (reprice after approval, or with a lapsed tick), F7 gap id G-144 collides with PROS-02, F8 `ticketTypes: [[]]` is a 500.
-- 6 Oct 2026 · EVENTS-02 · Fix round 1, status verifying (backend wmt/EVENTS-02 1df8744): POST /events refuses non-integer ticket price and quantity with 400 (F1), spec added; F2 to F4 stay with the owner in the Verifier report.
