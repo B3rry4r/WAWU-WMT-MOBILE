@@ -7,7 +7,7 @@ order: 28
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -389,6 +389,9 @@ Round 4's 9 D9 specs and round 3's D8 specs unchanged and green (100 parallel be
 4. **note, unchanged:** the dashboard reply waits behind the client's own in-flight messages (round 4, finding 3); another person on `POST /legal/intake/chat/{requestId}` gets 403, not 404 (round 3, finding 2).
 
 **NOT RUN.** Clock skew between two Hubs on different machines (the handover stamp): unblocked by two Hub processes whose system clocks differ by more than the few milliseconds of the handover window. A real model (prompt quality, the safety review): unblocked by a non-production `GEMINI_API_KEY` in a local `.env`. The full backend suite on 7eb680b: the lead runs it, as briefed (unblocked by a fresh migrated and seeded database in its own network namespace). The web's behaviour on a 429: unblocked by the web repo calling the route against a limited account. The dashboard half (G-231), V9 against the droplet and the screens (LEGAL-02): as in round 3. The rival build `wmt/LEGAL-01-b` was not touched, by instruction.
+
+## Lead merge note (7 Oct 2026)
+Merged to mobile main after verifier round 5 (no defect open). Backend PR #75 merged as `1aecedd`. Before merge the lead ran the full backend suite in a private network namespace: on round 3's head it failed 6 to 27 suites because the concurrency spec purged the seeded creator Chidi Umeh (fixed in round 5: the legal specs now leave every seeded table identical); on 7eb680b it is 170 of 171, the one failure `hub-rate-limits`, 22/22 on the host. Rulings made on the way: messages a client sends after a consultant has written are not counted (round 4, lead), and the AI's handover check reads the whole thread (round 5, D9). Gap rows are G-231 and G-232. Two builds of this task existed; with no owner ruling, the lead's default (whichever passes its independent check first) applies, so this build is merged and `wmt/LEGAL-01-b` is superseded. Follow-ups, not in this merge: the thread opener in `getThread` is an uncounted, unlocked AI call (already so on main: 20 parallel reads of an empty paid thread make up to 20 calls); the Gemini adapter has no timeout. No phone update: the screens are LEGAL-02. The lead's task.
 
 ## Owner sign-off
 
