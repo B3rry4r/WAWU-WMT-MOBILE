@@ -7,7 +7,7 @@ order: 8
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -228,6 +228,17 @@ Verifier, 6 Oct 2026, a fresh session that wrote none of this task's code. A fir
 - V5 and V6: the task has no artboards and no screen.
 
 **To close:** R2-1 (merge main, rename the migration, regenerate the contract), R2-2 (invisible letters and marks), R2-3 (renumber), with R2-4 answered by the owner.
+
+## Builder report, round 3
+
+Builder, 7 Oct 2026, fix round 3. Backend `wmt/PROS-02` `8c0c57b` (main merged by the merge agent at `53c67bc`), mobile main already merged (merge "Already up to date").
+
+- **R2-1 (migration order), fixed.** Newest on `origin/main` is `20261008100000_admin_ads_audit`; open `origin/wmt/*` branches go to `20261009120000_legal_consultations` and `20261010100000_schools_hidden`. The folder is now `20261011100000_professional_location` (sorts after all of them), and SHARED-CHANGES row `PROS-02 #1` carries the new stamp. Applied on a fresh `wawu_hub_test_pros_02_h` database, migrated and seeded.
+- **R2-2 (city draws nothing), fixed.** `UpdateProfessionalLocationDto` now also requires: no `Default_Ignorable_Code_Point` character (covers U+3164, U+FFA0, U+115F, U+1160, U+034F, zero-width, soft hyphen), no run of 4 or more combining marks, at least 2 letters. Still starts with a letter, 2 to 60 characters. Spec `refuses a city that draws nothing` covers the two Hangul fillers, the jamo fillers, a letter plus 40 marks, 4 marks on a letter inside a name, U+034F, a filler inside a real name, "A", "A." and "A'". Run against the old rule in a scratch copy (file restored from the saved fix afterwards) the spec fails (200 where 400); checked case by case with the old pattern: all except the lone "A" pass the old regex (the lone "A" was already refused by the 2-character minimum). Spec `accepts every real Nigerian city name` covers Ikeja, Port Harcourt, "Port  Harcourt" (saved collapsed), Ado-Ekiti, Ile-Ife, Abuja FCT, Ìbàdàn precomposed and decomposed, Ọ̀yọ́ (two forms), N'Djamena with both apostrophes, Yola. `npm run contract:build` regenerated `contract/openapi.json`: the only change is that the `pattern` on `city` is dropped (the generator does not emit a pattern with look-aheads); the maxLength 60 stays. The mobile app's API types come from this file; the rule is enforced server side.
+- **R2-3 (gap ids), confirmed unchanged.** G-144, G-145, G-146 appear in no `origin/main` or other `origin/wmt/*` BACKEND_GAPS.md (EVENTS-02 now uses G-230). Kept; nothing renumbered.
+- **R2-4 (city refuses "Lagos, Nigeria"), stands, `unclear` for the owner.** The rule was not changed for it. Commas, brackets and a slash are still refused; the owner decides whether the city takes the profile Location's comma form before ME-05 writes it.
+
+Checks: `tsc --noEmit` 0; `src/professional` 51/51; `account-data-map` and `data-export-map` 9/9; gates 16 fail (main's lines), 57 warn, 76 accepted; `scripts/protected-routes/run.sh --fresh` all 244 required pass. NOT RUN: the full backend suite (the disk had 30 MB free for the whole session, so only the specs above ran), and the eslint `--no-fix` run reports errors in the untouched `professional.contract.spec.ts` (main's baseline).
 
 ## Owner sign-off
 
