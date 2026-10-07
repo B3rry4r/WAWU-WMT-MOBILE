@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 68 | 0 | 23 | 26 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 49 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
 
@@ -127,6 +127,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SHARED-02 · Verifier report (independent session, mobile `6fa4f49`, main `5fec168`): V1 passed (`npm run check` 0; 67 suites, 1227 tests; gates 310 files, 0 findings); 144 before and after picture pairs, 132 identical, 12 differ, all `/tgif` by design, its five grounds now equal the canvas; guards and new props pass; 18 mutants, 11 killed, 7 survived (test gaps); three defects: D1 the merge dropped main's ME-11 #4 status, D2 a save on M8 from Settings shows no "Profile saved", D3 ME-01 #1 marked applied but M1's "Edit profile" still `sm` with `style`; status building.
 - 7 Oct 2026 · SHARED-02 · Built: the four tab hubs' shared changes applied (MediaCard `titleAccessory`, `footer`, `action`; FilterChips chip `icon` and `revealSelected`; Button size `profile`; TGIF, `--glow-money` and every `--shadow-*` generated as tokens; categories and the works routes under the signed-in guard; M8 hands back at once for M10's single "Profile saved"); 128 before and after screenshot pairs, 126 identical, the 2 TGIF ones changed by design. Status verifying.
 - 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.
 - 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
@@ -141,4 +142,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
 - 7 Oct 2026 · ME-11 · Merged: featured works (2 s name lookup limit, 8-media wording, Remove for the owner, placeholder for broken pictures), backend PR #79.
-- 7 Oct 2026 · HOME-09 · Merged: the TGIF reader (no em-dashes in the book, no overlap down to 320 px, shared buttons, honest share wording), backend PR #80; Story and Save wait for the next development build.

@@ -7,7 +7,7 @@ order: 183
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: []
 decisions: [R-41]
 passes: [V1, V5, V6]
@@ -95,7 +95,51 @@ Built by the lead's agent, 7 Oct 2026, on `wmt/SHARED-02` from `origin/main` 47e
 
 ## Verifier report
 
-_Not started._
+Independent verifier session (wrote none of this task), 7 Oct 2026, on `wmt/SHARED-02` 6fa4f49 (main 5fec168 merged in), detached worktrees `/home/user/wt/vs02m` (6fa4f49) and `/home/user/wt/vs02main` (5fec168), each with its own `npm ci`. Evidence under `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vs02/` (that folder also holds an older, unrelated backend verification's files dated 03:xx; this report's files are the 17:xx ones: `shots/`, `design/`, `tools/`, `diff.json`, `harness-report.json`, `shared02-mutants.json`, `shared02-mutants.log`, `check-*.log`, `export-*.log`, `drive-*.log`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 gates | passed: `npm run check` exit 0 as one command (typecheck and lint clean; jest 67 suites, 1227 tests, 0 failed; gates 9 run, 310 files scanned, 0 fail, 0 warn, 0 accepted; tasks 211, 279 artboards); `npm run tokens -- --check` "up to date"; no em-dash in any added line; no colour literal added outside the token files and tests | `check-before-report.log`, re-run after this report below |
+| Rows applied as asked | failed: 9 of the 11 rows as asked; D3 (ME-01 #1's swap left to a fix round that does not exist) and D1 (the merge dropped main's ME-11 #4 status) | below |
+| Nothing existing changed (pixel diff) | passed for pictures: 144 pairs (58 screens and states, light and dark, every scrolling screen a viewport at a time), 132 identical to the pixel, 12 differ, all `/tgif` (its first view and each of its five cards, both themes), by design (HOME-09 #1); failed for behaviour: D2 (a save from Settings now shows no "Profile saved") | `diff.json`, `shots/before`, `shots/after`, `shots/diff`, `shots/settings-save-*` |
+| TGIF against the canvas (V5) | passed: H29, H30, H31, H32 and H34 rendered with `render_design.py`; every card's ground now equals the canvas to the unit on every channel (before: up to 11 off, remember), and three glow samples per card are within 1 of the canvas (before: up to 13) | `design/`, `tgif-canvas-before-after-dark.png`, `-light.png` |
+| New props drawn (light and dark) | passed: a throwaway dev route (never committed, removed before this commit) draws every new prop | `shots/harness/`, `shots/harness-contact.png`, `harness-report.json` |
+| Guards | passed: signed-out web visits to `/add-work`, `/works/<id>` and `/works/<id>/<id>` land on `/welcome`, signed-in ones draw the screen; `/categories` is "Unmatched Route" in both builds (no route file until EXPLORE-01 merges, as the builder says); the four `Stack.Screen` lines removed: 4 of 18 `auth-guard` tests fail (exactly the four signed-out cases), restored with `git restore` | `drive-before-prod.log`, `drive-after-prod.log`, `shots/after/urls-prod.json` |
+| Scope fence | passed: every changed file is one a row names, its tests, the token sources and generator, `CardBackdrop.tsx` (draws the blends HOME-09 #1 deletes) or docs; matches the builder's list | `git diff --stat 5fec168 6fa4f49` |
+| Mutants | 18 of my own: 11 killed, 7 survived (test gaps, T1 to T7) | `shared02-mutants.json` |
+
+**How the pictures were made.** Web exports of 5fec168 and 6fa4f49 (`npx expo export --platform web --clear`, prod and `--dev`), each with a private `TMPDIR` under the evidence folder; `find node_modules -newer <stamp>` found 0 files written into `node_modules` by any of the five exports. Served on :5421 with a stand-in Hub on :5422 that answers every route from the contract's own schemas (the same contract file in both commits, the same requests from both builds: `hub-before.log` and `hub-after-prod.log` sort to the same counts) and a stand-in ID on :5423; signed-in screens with a session seeded in localStorage; every non-localhost request aborted (0 were). Playwright Chromium (/opt/pw-browsers), 390 x 844 at 2x, light and dark, animations off. Routes: the 9 signed-out screens, 4 guarded routes signed out, 22 signed-in screens (Home, Explore, Inbox, Wallet, Me, M8, M9, Settings and its four, M34, M35, M36, TGIF and each of its five cards, payout account, the five Open your wallet routes), and in the dev build `/dev/components` plus the 19 previews (pay sheet 10 states, PIN sheet, auth 8 screens). Every user of `MediaCard` (pay sheet, showcase), `FilterChips` (Inbox, M34, showcase), `Button` (every screen above) and the TGIF look (`/tgif`) is in that set.
+
+**The new props (harness, both themes).** `titleAccessory`: the tick 4 after the title on stacked and row cards, a long title shrinks with an ellipsis and the tick stays. `footer` 8 under the words, `action` 8 under the footer (or the words), 32 high, the caption's full width; `on` draws "Following" on glass. `width="100%"` fills its column (192 wide in a 192 column). Chips with icons: 11 / 14 padding, the icon in the label's colour, on and off, `row` and `option`. `revealSelected`: the last chip (Books, on at the first draw, out of view) is in view after the first draw. `Button size="profile"` 38 high, the label at 600 beside `sm` at 34 and 700. Screen reader (Chromium's ARIA tree): a card with an action is a `button` named "title, subtitle" for the words and a separate `button` "Follow"; a card with a footer and an action reads the footer text as text and the button separately. `action.loading`: a progressbar inside the button, `aria-disabled`, out of the tab order, a click does not reach `onPress`; `action.disabled`: the same without the spinner. A click on Follow presses Follow only, not the card; a click (and Enter) on the words presses the card.
+
+**Mutants** (each one change, tokens regenerated for the generator ones, 9 related jest files, `git restore` after; worktree clean at the end).
+Killed (11): action alone no longer splits the card for a screen reader; `on` not drawn on glass; `revealSelected` can fire twice; `stopOf` drops the alpha; `stopOf` keeps the alpha in the colour; generator drops `inset`; generator swaps blur and spread; generator turns `none` into "not generated" (tsc fails too); the light `--shadow-money` takes the dark value; the `tgif-` colour prefix dropped (13 tests fail); `Button` `profile` label at 700.
+Survived (7, each a test gap):
+- T1 `action.loading` not passed to the button (no test draws or presses a loading action).
+- T2 `action.disabled` not passed to the button (the same for disabled).
+- T3 the words lose `onAccessibilityAction` (no test fires the screen reader's activate on the words of a pressable card with an action).
+- T4 the title no longer shrinks before the accessory (`flexShrink` 0): no test checks the long-title case.
+- T5 the chip icon always `textPrimary`: the test's `JSON.stringify` finds the page colour in the label, not the icon.
+- T6 `revealSelected` ignores the inset at the end (`<= windowWidth`): no test puts the chip in the last 20 of the row.
+- T7 `CardBackdrop` draws the glow at full strength (`stopOpacity={1}`): no test reads the glow's stop.
+
+**Findings**
+
+- **D1 `defect` (the record): the merge 5910b35 dropped main's ME-11 #4 status.** On main 5fec168 the row's status reads "ME-01's part done: M4's "Add" opens `/add-work` and a work opens ... ME-02's part (M33, M35's creator row) open"; on 6fa4f49 it is back to "open". The merge took this branch's side of the SHARED-CHANGES conflict block, which also held main's ME-11 #3 to #6; #3 is rightly this branch's (applied), #5 and #6 are identical, #4 lost ME-01's update. The merge message says "row text identical", which is not so for ME-11 #4. Reproduce: `git show 5fec168:SHARED-CHANGES.md | grep -F "| ME-11 #4 |"` against `git show 6fa4f49:SHARED-CHANGES.md | grep -F "| ME-11 #4 |"` (last column). Fix: restore main's status column on that row.
+- **D2 `defect`: a save on M8 opened from Settings now shows no "Profile saved" at all.** `src/app/settings/index.tsx` opens `/edit-profile` from the Settings header (Z2). With ME-01 F1 applied, M8 calls `onSaved` at once and draws nothing; the route posts M10's notice and goes back, and only the Me tab draws it, so on Settings the person sees nothing. Before (5fec168) M8 showed "Profile saved" for 1.2 s, then went back. Reproduce (web export, signed in): open `/me`, then `/settings`, press the header, change the bio, Save: 5fec168 shows "Profile saved" at 250, 500 and 750 ms on `/edit-profile`, then `/settings` without it; 6fa4f49 is on `/settings` by 250 ms and "Profile saved" is never on screen in 3 s (`shots/settings-save-before/settings-*.png`, `shots/settings-save-after/settings-*.png`, `tools/settings_save.py`). From the Me tab the fix works: 5fec168 shows the words on M8 then again on M1, 6fa4f49 once, on M1 (`me-*.png` in the same folders). Today no in-app control opens `/settings` (the Me menu is ME-03's), so the path is reached by URL until ME-03 lands; the row asked for the notice once, and here it is shown zero times. Suggested default: the route shows M10 where the person lands (the notice drawn by Settings too), or M8 keeps its own toast when it will not return to the Me tab.
+- **D3 `defect`: ME-01 #1 is marked applied but M1's "Edit profile" still draws 13.5 at 700.** The row is "a size ... that draws 38 / 16 / 14 at 600; then `src/features/me/ProfileHeader.tsx` drops the `style` override". The size exists, but `ProfileHeader.tsx` line 117 is still `size="sm"` with `style={styles.edit}`, and SHARED-CHANGES hands the swap to "ME-01's own fix round", which cannot happen: ME-01 is `done` (merged in 5fec168, the file is on this branch). A SHARED-CHANGES row deferring the swap is a defect (docs/roles/VERIFIER.md check 2). Fix: the one-line swap in this task (size `profile`, the `style` and `styles.edit` gone), or the lead names the task that owns it; the Me tab's before and after shots then differ only in that label.
+- T1 to T7 above: test gaps, to be covered in the fix round (T1 and T2 matter most: the brief asks for the loading and disabled states, and the harness shows they work, but nothing keeps them working).
+- Note (web build only, not a defect): with a footer or action, the card's own `Pressable` stays in the web tab order as a stop with no role and no name (Tab order: `card-a`, `card-a-words`, `follow-a`), before the named words. Native drops it (`accessible={false}`). The phone is the product, so this is recorded only.
+- Agreed with the builder: only `/tgif` changed in pictures; the new TGIF grounds equal the canvas; tokens are generated, nothing hand-written in `src/theme` (`gen_tokens.py --check` passes, and the generator mutants show the tests read the generated values); WALLET-01 #2's test still walks the same path as before (a tab with a way in, A26 to A10, back on that tab, Back from A8 never on an earlier step), only the stand-in's name and the case title changed; ME-01 F1 from the Me tab shows "Profile saved" once.
+
+**NOT RUN**
+- A phone (iOS, Android): no development build here, so `stopOf`'s split on react-native-svg, `boxShadow` tokens and the new props on native are web-checked only (fact: a development build with H29 to H34 and a hub screen that uses the props).
+- VoiceOver and TalkBack on a card with a footer or action: Chromium's ARIA tree only (fact: a development build and a hub using the props).
+- `/categories` with a real route file: none exists until EXPLORE-01 merges (fact: EXPLORE-01's merge).
+- The props on a real hub screen: none uses them until the hubs swap their stand-ins (fact: each hub's fix round).
+- Shots name collision: `add-work` and `works/<id>` were shot signed out and signed in under the same file name, so the signed-out pictures were overwritten; the signed-out redirects are evidenced by the final URLs in `drive-*-prod.log` and the jest guard tests, not by a picture.
+
+**Verdict:** three defects open (D1, D2, D3) and seven test gaps; status `building`.
 
 ## Owner sign-off
 
