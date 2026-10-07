@@ -7,7 +7,7 @@ order: 155
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [MONEY-11, MONEY-12, MONEY-13, MONEY-15, UI-02, KYC-05]
 decisions: [R-1, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -186,6 +186,31 @@ Builder session, 7 Oct 2026, on `wmt/WALLET-01` with the verifier's report (bd29
 - **D4 closed.** Fixtures now use values the canvas never shows ("Ekiti Trial MFB", 810 000 0417 and 810 000 0528), so a screen drawing "Loma Bank" or "812 345 6789" fails (M5, M6). New cases: an open wallet whose account has no bank name is the wallet error, never half a card (M9); a row exactly six days old shows its weekday ("Thu") and seven days old its date (M11).
 
 **Checks.** `npm run check` as one command, run to its exit code: exit 0 in 115 s (tsc 0, lint 0, jest 66 suites, 1182 of 1182, gates 9 run / 306 files / 0 findings, baseline 0, tasks 211); log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/check-r2.log`. New and changed tests: WalletScreen 19, walletHomeModel 18, walletTabFlow 2 (39, all pass). Local stack for the browser runs: backend main 3041887 worktree, database `bw01_test`, ports 5375 to 5377, export with `--clear` and a private TMPDIR holding only `http://localhost:5375` and `:5376`; every browser request went to those three ports. Processes, worktree and database removed after.
+
+## Verifier report, round 2
+
+Narrow re-check, 7 Oct 2026, of mobile `wmt/WALLET-01` 2c91287 (my bd29c48 and main 47e1f07 merged in), same independent session as round 1; nothing fixed. Hub from backend origin/main 3041887 (fresh `vw01_hub_test`, :5405, `node_modules` hard-linked from the shared copy: its generator writes `generated/prisma` inside the worktree, not `node_modules`), real WAWU ID from wawu-id origin/main fb8717e with its own `npm ci` (`vw01_id_test`, :5406), web export with a private `TMPDIR` and `--clear` (bundle holds only `localhost:5405` and `:5406`; every browser request went to 5405, 5406 or 5407). Fintava stand-in on :5407 answering only the balance read (41 calls, all that path); W6 with Fintava unset. Sign-ins through the app's own screen. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw01/` (`drive-r2.jsonl`, `fit-r2.jsonl`, `shots-r2/`, `mutants-r2/`, `check-r2-*.log`, `r2-jest-*.log`, `probe/`). Servers stopped, databases dropped, worktrees `vw01b`, `vw01id`, `vw01t` removed.
+
+| Item | Result | Evidence |
+|---|---|---|
+| D1 Back loop | closed | Browser, user@ with no wallet, light and dark: the tab's own A26 then Back, then three rounds of the card's Open your wallet then Back, then Home and Wallet (a new visit, A26 opens) and the same four Backs again: 8 of 8 Backs land on `/wallet` with the no-wallet card and A26 gone, each theme (`drive-r2.jsonl`, scenario `backloop`; `nowallet` too). My round-1 jest probe on the new code: 2 pushes after the Back, passes (`probe-back-loop-r2.test.tsx.txt`). |
+| D2 balance cut off | closed for the settled figure; D5 below | `fit.py`, light and dark, 320 / 360 / 390 px, ₦0.00, ₦485,250.75, ₦4,852,507.75, ₦98,765,432.10, ₦999,999,999.99 (30 cases): every settled figure whole, kobo shown, never ellipsised (`scrollWidth` ≤ `clientWidth`), the page never wider than the screen. Sizes 320: 42 / 40 / 34 / 32 / 28; 360: 42 / 42 / 40 / 36 / 34; 390: 42 / 42 / 42 / 40 / 38 (floor 18 never reached); the card gets shorter with the figure (192 to 178 at 320). A big figure on first arrival is drawn invisibly until measured: no cut frame (98,765,432.10 and 999,999,999.99 at 320, rAF watcher over about 90 frames). Card shots `shots-r2/fit-<figure>-<width>-<theme>.png`, stacked in `fit-strip.png`. |
+| Measuring copy and screen readers | passed on the phone build; web build note | The hidden copy carries `accessibilityElementsHidden` (iOS) and `importantForAccessibility="no-hide-descendants"` (Android); Testing Library treats it as hidden, so `getByLabelText('485,250 naira 75 kobo')` finds exactly one in `WalletScreen.test.tsx`. In the web build those props do not become `aria-hidden`: the DOM has the label twice and the page text reads the balance twice (note, web build only, not a launch surface). |
+| Font scaling 1.3 | NOT RUN | The web build has no OS font scale. From the code: both copies are the same `Money` with the same props, so a font scale enlarges both alike and the ratio `fitFigureSize` uses still holds; the card has no fixed height. Unblocked by: an Android build with font size set to 130%. |
+| D3 jest exit | closed | `npx jest --runInBand` on the three WALLET-01 files: 39 tests, process ends 17 s after start (13 s of tests; `r2-jest-inband3.log`). `payoutAccountScreen.test.tsx` alone in band: 15 tests in 5.6 s, process exits at 307 s; the probe 15 s after the file shows 5 live 300 000 ms timers, all `Mutation.scheduleGc` from `MutationObserver.onUnsubscribe` (`probe/longtimers-payout-r2.out`). Diagnosis confirmed: WALLET-11's file (last changed in dbd990a, "WALLET-11 round 2"), not WALLET-01. One correction for SHARED-CHANGES WALLET-01 #3: the timers there are mutation timers, so the copied fix also needs `mutations: { gcTime: 0 }`, not only the query default. |
+| D4 test gap | closed | `mutants-r2/results.json`: round-1 survivors M5, M6, M9, M11 now killed; new N1 `fitFigureSize` rounds up, N2 ignores the floor, N3 the card button bypasses the shared `open` (round-1 D1), N4 an empty bank name accepted, N5 keeps 42 when the figure does not fit: all killed. 9 of 9. Worktree clean after. |
+| Regression | passed | `npm run check` as one command on 2c91287: exit 0 in 1 min 58 s (66 suites, 1182 of 1182, gates 9 / 306 files / 0 findings, baseline 0, tasks 211; jest exited by itself). V5 pairs `shots-r2/compare-W{1,4,5,6}-{light,dark}.png` classify exactly as round 1 (left-outs R-41, R-27, R-16, R-42; bank line BRIEF W1; W6 sentence G-310 unclear; no status bar). W6 by Fintava unset: one ask, Try again asks once more. Trial merge with mobile main 5fec168 (ME-01): three conflicts, all appended table rows or the generated page (`BACKEND_GAPS.md` G-310/G-311 beside G-290 to G-292, `SHARED-CHANGES.md` WALLET-01 rows beside ME-01 rows, `docs/PROGRESS.md`); kept both sides and regenerated: `npm run check` exit 0 (69 suites, 1222 of 1222, gates 9 / 318 files / 0 findings, tasks 211). No code conflict. The merge stayed local and was deleted. |
+
+### Findings
+- **D5 defect (low; a cut figure still shows for a frame).** When the balance changes under a mounted card, or on Show after Hide, the new figure is drawn at the old size and is cut with "…" until the hidden copy is measured again. Reproduction: creator-pro at 320 px, balance ₦0.00, go to Home, the bank's figure becomes ₦98,765,432.10, back to Wallet: a painted frame shows "₦98,765,…" before it settles at 32 px (`shots-r2/flash-cut-frame-320.png`, three of the four screencast frames). The rAF watcher records one cut frame in every case where the size must step down (18 of 30 in `fit-r2.jsonl`, e.g. ₦485,250.75 at 42 px in 236 px at 320), and on the eye: ₦4,852,507.75 at 320, Hide then Show, one frame at 42 px, then 34 (`fit-r2.jsonl`, "eye hide then show"). Cause: `measured` in `FittedBalance` is true from the first figure on, so a new figure is shown at once at the previous figure's size; the new width arrives only with the hidden copy's next `onLayout` (on the web after a ResizeObserver and a `setTimeout` in `UIManager.measure`, so after a paint).
+- **Note (web build only).** The measuring copy is read twice by a browser screen reader (no `aria-hidden` on the web); the phone builds hide it.
+- **Note.** SHARED-CHANGES WALLET-01 #3's suggested fix covers query timers; the payout file's are mutation timers.
+
+### NOT RUN
+- Font scale 1.3 on a device (see the table). Unblocked by: an Android tester build with the system font at 130%.
+- Screen readers on a device (TalkBack, VoiceOver). Unblocked by: the same build.
+
+Status: `building` with D5 open (low). D1 to D4 are closed.
 
 ## Owner sign-off
 
