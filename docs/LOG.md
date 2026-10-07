@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 7 Oct 2026 · ME-11 · Built, awaiting verification (lead's agent, takeover from Developer 1): M34 All works, M35 A work and M36 Add a work at `/works/<id>`, `/works/<id>/<work id>` and `/add-work`, against the real Hub (sign-in through the app, photos presigned and uploaded to a storage stand-in, the work read back by a second account). One additive backend change on `wmt/ME-11` (no migration): the works answers carry `owner` (name, handle, picture) for M34's bar and M35's creator row. Gaps G-250 to G-254, shared-change rows ME-11 #1 to #6. NOT RUN: opening the creator (M5 not built), a phone, a real bucket, a real mp4.
 - 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
 - 7 Oct 2026 · ADS-06 · Merged to main (backend PR #76): admin ad endpoints (create, edit, schedule, pause, resume, end, delete, reports) with ADS-05's counts and an audit row per action; reviewer test gap T1 left as a follow-up; Developer 2's task, merged by the lead.
 - 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.

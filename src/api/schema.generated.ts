@@ -8238,6 +8238,12 @@ export interface components {
             followingCount: number;
             communityCount: number;
         };
+        ProfileWorkOwnerView: {
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+        };
         ProfileWorkCategoryView: {
             name: string;
             count: number;
@@ -8261,6 +8267,7 @@ export interface components {
             createdAt: string;
         };
         ProfileWorksView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
             count: number;
             categories: components["schemas"]["ProfileWorkCategoryView"][];
             works: components["schemas"]["ProfileWorkView"][];
@@ -8272,6 +8279,20 @@ export interface components {
             startYear: number;
             endYear: number | null;
             current: boolean;
+        };
+        ProfileWorkDetailView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
+            id: string;
+            title: string;
+            role: string;
+            client: string | null;
+            year: number;
+            link: string | null;
+            category: string | null;
+            description: string | null;
+            media: components["schemas"]["ProfileWorkMediaView"][];
+            position: number;
+            createdAt: string;
         };
         EnrolResponse: {
             externalHostUrl: string;
@@ -15043,7 +15064,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileWorkView"];
+                    "application/json": components["schemas"]["ProfileWorkDetailView"];
                 };
             };
         };

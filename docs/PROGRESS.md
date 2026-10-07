@@ -7,11 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 72 | 0 | 24 | 28 |
+| todo | 71 | 0 | 24 | 28 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
+
+## Being verified
+
+- [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 
 ## Done
 
@@ -111,6 +115,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · ME-11 · Built, awaiting verification (lead's agent, takeover from Developer 1): M34 All works, M35 A work and M36 Add a work at `/works/<id>`, `/works/<id>/<work id>` and `/add-work`, against the real Hub (sign-in through the app, photos presigned and uploaded to a storage stand-in, the work read back by a second account). One additive backend change on `wmt/ME-11` (no migration): the works answers carry `owner` (name, handle, picture) for M34's bar and M35's creator row. Gaps G-250 to G-254, shared-change rows ME-11 #1 to #6. NOT RUN: opening the creator (M5 not built), a phone, a real bucket, a real mp4.
 - 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
 - 7 Oct 2026 · ADS-06 · Merged to main (backend PR #76): admin ad endpoints (create, edit, schedule, pause, resume, end, delete, reports) with ADS-05's counts and an audit row per action; reviewer test gap T1 left as a follow-up; Developer 2's task, merged by the lead.
 - 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.
@@ -125,4 +130,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · ADS-06 · Verifier (independent): V1, V2, V3, V4 and V9 run; pause stops serving on the next request on the real ADS-04 code (trial merge clean onto main and ADS-04; 372 specs pass there), every route refuses user, expired, forged, refresh and wrong-role tokens (176 of 176), 25 of 25 own mutants killed, protected suite 253 of 253 and the lock unchanged; one low defect open (D1: a time in the year 0000 is a 500 on create, edit and the list filters), status building.
 - 6 Oct 2026 · ADS-06 · Built, awaiting verification: admin ad endpoints (backend branch `wmt/ADS-06`): create, edit, schedule, pause, resume, end, delete a draft, list, detail and report under `/api/hub/admin/ads`, with an audit row for every change (migration `20261008100000_admin_ads_audit`); a pause stops serving on the next request; views, taps and skips were wired in round 3 from ADS-05's counts (G-194 closed).
 - 7 Oct 2026 · EVENTS-02 · Merged to main (backend PR #48): hybrid events, conference and concert kinds, ticket types sent with POST /events, hosting verified-only; F6 (repricing through the web's PUT /events/:id/tickets) split out for the owner; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · EVENTS-05 · Merged to main (backend PR #49): door staff, check-in at the door, sold counts and referral sales for hosts; Developer 3's task, merged by the lead.
