@@ -3,7 +3,7 @@ id: WALLET-18
 title: Receipts
 owner: YOU
 area: WALLET
-order: 186
+order: 187
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
