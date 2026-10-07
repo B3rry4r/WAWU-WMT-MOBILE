@@ -3,26 +3,22 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 76 of 183.**
+**Launch tasks done: 78 of 183.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 29 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 2 |
-| done | 43 | 27 | 9 | 1 |
-
-## Built and verified, waiting for the owner's sign-off
-
-- [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event (Developer 3)
-- [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff (Developer 3)
+| review | 0 | 0 | 0 | 0 |
+| done | 43 | 27 | 9 | 3 |
 
 ## Done
 
 - [OPS-01](../tasks/OPS-01.md) Record the owner's rulings (You)
 - [SETUP-01](../tasks/SETUP-01.md) Verify the mobile repo setup (Developer)
 - [INBOX-06](../tasks/INBOX-06.md) Free chat between users (Developer 2)
+- [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event (Developer 3)
 - [OPS-02](../tasks/OPS-02.md) Fintava test keys: the first real calls (You)
 - [SHELL-01](../tasks/SHELL-01.md) App shell: the five tabs (Developer)
 - [INBOX-01](../tasks/INBOX-01.md) Communities: my communities, links, join decisions (Developer 2)
@@ -39,6 +35,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
+- [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff (Developer 3)
 - [CHECK-0](../tasks/CHECK-0.md) Checkpoint 0: safe to start building (You)
 - [UI-03](../tasks/UI-03.md) Avatars, ticks and chips (Developer)
 - [ADS-03](../tasks/ADS-03.md) Ads data model (Developer 2)
@@ -112,6 +109,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-02 · Merged to main (backend PR #48): hybrid events, conference and concert kinds, ticket types sent with POST /events, hosting verified-only; F6 (repricing through the web's PUT /events/:id/tickets) split out for the owner; Developer 3's task, merged by the lead.
+- 7 Oct 2026 · EVENTS-05 · Merged to main (backend PR #49): door staff, check-in at the door, sold counts and referral sales for hosts; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Verified round 4 (backend 554b831, mobile 5346c7f; both mains already merged, trial merges no-ops): status review, no defect open. T1 closed (mutants L6 and L7 each fail one test; 27 of 27 unmutated), no non-test change beyond main's (12 files, 10 byte-equal to round 3 by added lines, only the spec +55), migration `20261007100000_event_door_staff` sorts after `20261007090000_inbox_feed_index` and before `20261007120000_legal_assistant`, fresh DB applies and seeds with only main's known index drift, gates 16 fail / 51 warn / 76 accepted equal to main, protected suite 253/253, event-ticketing and both map specs 36/36, tripwire 0, mobile check exit 0 with the contract equal to the backend's. Live on the built Hub: staff 403 on host routes, removed staff 403, 10 parallel scans of one ticket give exactly 1 valid. One info item, T2: a whitespace-only label on a put-back survives a mutant (no stated rule). NOT RUN: full backend suite, paid Flutterwave ticket, Fintava.
 - 7 Oct 2026 · EVENTS-05 · Fix round 3 built, status verifying (backend 554b831, main 4892a59 merged): T1 closed with two tests (a put-back whose old label is taken gets a free one; a padded custom label is stored trimmed and collides), each failing with its mutant (L6, L7) applied; no production code changed. Migration renamed 20261007100000 after main's newest; mobile contract re-synced from the branch. Spec 27/27, protected 253/253, gates 16/51/76 as main, mobile check exit 0 (797 tests).
 - 6 Oct 2026 · EVENTS-05 · Verified round 3 (backend e0a3501, mobile aa2d7e7 on 0b755ad): status building for one low test gap, T1 (the builder's 25 tests do not pin a put-back whose old label is taken, nor the trimming of a custom label; both killed by the round 2 verifier's spec, behaviour correct). D1, D2, D3, D4, M1b, M2, M3 closed: 12 rounds of parallel adds racing removals on the built Hub never shared a label, 250 at once all distinct, lowest free number reused, uniqueness is the advisory lock (the table has no constraint). Migration sorts after main's 20261006100000 and shares no name or stamp with the 68 other open branches. 16 mutants of my own: 16 killed by the union, 14 by the builder's spec. Protected 253/253, gates 16/51/76 as main, full suite 0 real failures.
@@ -125,5 +124,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-02 · Fix round 2, status verifying (backend wmt/EVENTS-02 206814c): migration renamed 20261007190000 after main's tail (F5); non-object ticket types are 400 with a spec (F8); gap row renumbered G-230 (F7); F6 blocked: PUT /events/:id/tickets is a protected web route, owner ruling or an app-only route needed. Protected 253/253, gates equal to main, event specs 107 passed.
 - 6 Oct 2026 · EVENTS-02 · Verified round 2, status building: F1 fixed (40 price and quantity inputs checked); gate, money, moderation, blocks, maps, protected 253/253, gates equal to main, trial merges clean on backend. Four defects open: F5 migration folder sorts before main's, F6 PUT /events/:id/tickets skips the host gate and re-review (reprice after approval, or with a lapsed tick), F7 gap id G-144 collides with PROS-02, F8 `ticketTypes: [[]]` is a 500.
 - 6 Oct 2026 · EVENTS-02 · Fix round 1, status verifying (backend wmt/EVENTS-02 1df8744): POST /events refuses non-integer ticket price and quantity with 400 (F1), spec added; F2 to F4 stay with the owner in the Verifier report.
-- 3 Oct 2026 · EVENTS-02 · Verified, status building: capability check passed live (two ticket types in one POST, pending, in the admin queue), V1, V3 (253/253 main and branch), V4 and V9 passed; V2 failed on F1 (POST /events turns a ticket price of "", true or "5000" into a number, so an empty price is saved as a free ticket; PUT /events/:id/tickets refuses them). Three owner questions (F2 admin queue shows no tiers, F3 tiers of unpublished events are public by id, F4 widened enums). The changed test is legitimate; G-55 confirmed.
-- 3 Oct 2026 · EVENTS-02 · Built, status verifying (backend wmt/EVENTS-02 with main a055b4f): POST /events takes two or more ticket types in the same request and both go to review together; ₦0 with no tier is free (R-8); hybrid format and Conference and Concert kinds (additive migration); `location` optional (filled from the address); GET /events/options maps labels to values ("Business & Finance" is business). Event specs 105 passed, protected 253/253 before and after, gates 16 fail / 13 warn equal to main. G-55 filed (the wizard never asks for the Kind).

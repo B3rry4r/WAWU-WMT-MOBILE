@@ -7,7 +7,7 @@ order: 24
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -388,6 +388,9 @@ An earlier X4 draft, `(given ?? undefined) \|\|`, is equivalent to the real code
 **NOT RUN.** (1) The full backend suite (`npm run test:contract`, all 160-odd suites): not asked this round, and only one spec file and a folder rename changed since round 3's full namespace run (0 real failures); unblocked by running it inside the namespace harness (`scratchpad/w18ns`) against this head. (2) A paid ticket bought through Flutterwave and anything on Fintava: no keys, and the task does not touch them. (3) V5 to V8, V10: not in this task's `passes` (EVENTS-08, EVENTS-09 build the screens). (4) The live servers: not contacted by rule. (5) The Fintava-key window scan: refused to read; I scanned my staged diff by hand for key-shaped strings (`FLWSECK`, `sk_`, private-key headers, long hex or base64 runs, bearer tokens): none, and it holds no BVN, NIN or phone number.
 
 **Verdict: status `review`, no defect open.** T1 is closed (both mutants killed), the branch carries no non-test change that is not main's, the migration order, fresh-database apply and schema drift are as claimed, the merge-equivalent build matches main's gate count (16 fail / 51 warn / 76 accepted), the protected suite is 253/253, the three jest suites are green, the mobile check exits 0 with the contract equal to the backend's, and the round 3 behaviours (staff 403 on host routes, removed staff 403, 10 parallel scans give exactly 1 `valid`) hold on the built Hub. T2 is a low-priority test gap with no stated rule behind it.
+
+## Lead merge note (7 Oct 2026)
+Merged to mobile main after verifier round 4 (no defect open; T1 closed, L6 and L7 killed by the two new tests). Backend PR #49 merged as `db3076f` before EVENTS-02 (#48), so the migration `20261007100000_event_door_staff` sorts before EVENTS-02's `20261007190000`. Full backend suite in a private network namespace: 166 of 167 suites; the one failure, `hub-rate-limits`, passes 22/22 on the host. Contract re-synced from backend main `0e7b617`. T2 (a whitespace-only label on a put-back gets "Door n" rather than the old label; no spec pins either) and round 3's N1, N2, U1 to U5 stay as recorded. No phone update: the door and organiser screens are later tasks. Developer 3's task, merged by the lead.
 
 ## Owner sign-off
 

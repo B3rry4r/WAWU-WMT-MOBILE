@@ -7,7 +7,7 @@ order: 4
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: [R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -187,6 +187,9 @@ No open defect of this task. F5, F7 and F8 are fixed; F6 is split out (above). O
 NOT RUN: Fintava (not used by this task, no keys). The real WAWU ID login (the mock was used). The full backend contract suite (nothing outside `src/event` changed, the lead's brief for this round names the protected suite, the event suites and gates only; unblocked by running `scripts/` full-suite in a namespace as in round 2). A suspended account (F9a: no way to create one here; unblocked by a Hub-side suspension read). Mobile `npm run api` (the backend contract reaches the app after the backend merge).
 
 Status set to `review`: no defect of this task is open.
+
+## Lead merge note (7 Oct 2026)
+Merged to mobile main after verifier round 3 (no defect of this task open; F5, F7, F8 closed). Backend PR #48 merged as `0e7b617`, after EVENTS-05 (#49). F6 (PUT /events/:id/tickets lets a host whose tick lapsed, or who was never verified, reprice an approved event with no re-review) is split out by the lead: the route is the web's, protected, predates this task and is unchanged by it, and the verifier reproduced it on main `4892a59`. Fixing it changes a protected route, so it waits for the owner's ruling (default, agent: PUT needs a current tick, a change to a published event's tiers sends it back to `pending`, the existing 409 once tickets are sold). F2, F3, F4, F9 stay as owner questions. Contract re-synced from backend main `0e7b617` (adds GET /events/options and the new enum values). No phone update: the hosting screens are later tasks. Developer 3's task, merged by the lead.
 
 ## Owner sign-off
 
