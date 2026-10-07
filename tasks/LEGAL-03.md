@@ -7,7 +7,7 @@ order: 70
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -232,6 +232,19 @@ Built on backend 3f6a64a (head of `origin/wmt/LEGAL-03`) with `origin/main` merg
 | F8, U1, U3 | recorded | Unchanged, as ruled. | |
 
 **NOT RUN.** A real bucket (only local signing, so a link's signature against real storage and an expired link answering 403 are unchecked); the push payload (no sender exists); `data-export.contract.spec.ts` (:4001 held by another session; it fails on main too); a paid consultation end to end (no Fintava or Flutterwave keys); two Hub processes on one database for the lock; the real WAWU-ID (the repo's mock was used); D7, the mobile contract regeneration, is the lead's at merge.
+
+## Builder report, round 4
+
+E1 and E2 fixed; E3 left for the lead as told.
+
+- **E1.** `DeliverFilesDto.files` now refuses any element that is not a plain object (null, string, number, boolean, array, nested array) with 400 `files must each be an object with fileName and url.`; wrong-typed fields already 400 on `files.N.fileName` / `url` / `pages`. `objectKeyFrom` also returns `''` for a non-string instead of throwing, so no path can TypeError on client input.
+- **E2.** New `storedKeyProblem(url)` in `src/storage/storage.service.ts`: on the path as written (so `/%2e%2e/` is seen before `new URL` resolves it away), decoded twice, it refuses malformed percent-encoding, control characters (NUL included), lone surrogates, `.` or `..` segments (also after `%2f`/`%5c`), and a key over 1024 bytes. `DeliveredFileDto.url` uses it: 400 `files.0.url cannot have control characters in its path.` and the like. `objectKeyFrom` calls it too and passes an unsafe link through unchanged, and `fileNameFromUrl` answers `Document` for a name with a control character, so a bad stored row cannot 500 a GET.
+- **E3.** Untouched.
+- **Spec.** `src/legal/tests/legal-deliverables-input.spec.ts`, 24 cases (14 bad `files` shapes, 8 url encodings, the read-side guards). In a scratch copy with the two source files reverted to HEAD, 11 of 24 fail; restored, 24 pass.
+- **Live probe.** Built Hub on :4173, mock-wawu-id on :4172, own database `wawu_hub_test_legal_03_h` (dropped after), superadmin logged in through `/admin/auth/login`, storage signing against local fake keys. 663 requests to `POST /legal/ops/requests/{id}/deliverables`: `files` as 21 odd values at every level (body, element, fileName, url, pages), 74 url encodings (NUL, `%2500`, `%252500`, lone surrogates, overlong UTF-8, `%u0000`, bad escapes, `..` in every encoded form, backslashes, userinfo and port forms, 700-character and multibyte long paths), and 12 raw malformed bodies. Result: 570 x 400, 93 x 200, **0 x 5xx**.
+- **Migration.** `EVENTS-11` (open `wmt/EVENTS-11`) added `20261014100000_event_ticket_type_retired`, after ours, so ours is renamed `20261014200000_legal_consultations` and the SHARED-CHANGES row (LEGAL-03 #1) says so. Main's newest is `20261012100000_schools_hidden`.
+- **Merge.** `origin/main` merged into both branches (no conflict in the backend; `docs/PROGRESS.md` in the mobile repo took main's generated copy).
+- **Checks.** See the log line; anything not run is below.
 
 ## Owner sign-off
 
