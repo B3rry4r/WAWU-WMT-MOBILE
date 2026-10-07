@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 87 of 185.**
+**Launch tasks done: 90 of 186.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 68 | 0 | 23 | 26 |
+| todo | 66 | 0 | 23 | 26 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 48 | 27 | 11 | 5 |
+| done | 51 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -103,13 +103,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
 - [HOME-09](../tasks/HOME-09.md) TGIF reader (You)
+- [WALLET-01](../tasks/WALLET-01.md) Wallet home: Naira account and its states (You)
 - [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
+- [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
+- [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -128,16 +131,16 @@ From `docs/LOG.md`, newest first.
 
 - 7 Oct 2026 · HOME-01 · Verifier report (status building): V1, V4 and V9 passed; real WAWU ID sign-in, a Follow, an unfollow and the TGIF switch written by the app and read back from the Hub and the database; 14 of 14 mutants killed. Three defects: D1 the balance eye is full white where H1 paints it at 70%, D2 a failed TGIF day read hides the card with no message or Try again, D3 the creator card redraws MediaCard's stacked picture, scrim and caption (SHARED-CHANGES HOME-01 #2 defers the swap). A live Fintava figure is NOT RUN (Fintava unset).
 - 7 Oct 2026 · HOME-01 · Builder report (branch `wmt/HOME-01`, status verifying): Home's Today with the Naira balance from Fintava or the way to Open your wallet, today's TGIF card (gone when TGIF is off), creators to discover with Follow in place, loading, empty and error states; the feed is shown in place under the same tab row (`/feed` removed); entries to screens not built yet left out (R-41); gaps G-280 to G-282, shared changes HOME-01 #1 and #2.
-- 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
-- 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
-- 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
-- 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
-- 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
-- 7 Oct 2026 · ME-11 · Merged: featured works (2 s name lookup limit, 8-media wording, Remove for the owner, placeholder for broken pictures), backend PR #79.
-- 7 Oct 2026 · HOME-09 · Merged: the TGIF reader (no em-dashes in the book, no overlap down to 320 px, shared buttons, honest share wording), backend PR #80; Story and Save wait for the next development build.
-- 7 Oct 2026 · PROS-02 · Merged: professionals backend (location, categories), backend PR #47; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · AUTH-08 · Merged: wawu-id PR #7 (fb8717e). Refresh and sign-out find the token by its id; follow-ups F-1 (sweep inside the rotation transaction), F-3 and F-4 recorded in the task.
-- 7 Oct 2026 · AUTH-08 · Verifier report (independent session, wawu-id `dd4326a` against `4715d17`): every security probe held over real HTTP with tokens minted on main and served by the branch (reuse of a rotated token old and new, a signed-out token cannot be revived through the null-jti fallback, a bad hash falls through to nothing, another account's jti refused with the account filter really applied, a password change ends null-jti and new rows, 40-trial races with both orders exercised, the sweep never touches a live row or another account and is bounded at 50, code rolled back to main still honours new rows); 200 rows carrying a jti answer refresh in 400 ms and sign-out in 186 ms (main 43 s and 26 s), but while 200 unexpired pre-change rows exist a late-position old token still takes 41.7 s and any refusal 29 to 54 s (the old path, gone within 30 days); migration clean over existing rows, diff empty, documented rollback works and re-applies; tsc 0, eslint 43 equal, session-security spec byte-identical, contract unchanged, `test:session-local` 38 of 38, `test:refresh-local` 29 of 29; the Expo app signed in and refreshed after expiry against the branch (sign-out not drivable in the app, none exists); 12 own mutants (10 killed by probes, 1 by the race spec, 2 equivalent); one low note (a refresh answers 500 if the expired-row sweep statement fails, F-1); status review.
-- 7 Oct 2026 · AUTH-08 · Builder report (wawu-id `dd4326a` on branch `wmt/AUTH-08`, status verifying): a refresh or sign-out finds the refresh token by its stored `jti` and verifies one hash instead of one per stored token, so 200 stored tokens answer in 356 ms (refresh) and 236 ms (sign-out) where main takes 31.6 s and 29.2 s; pre-change tokens (null `jti` row) still refresh once and only once until they expire; an account's expired rows are deleted on every issue and sign-out (50 at a time); additive migration `20261007120000_refresh_token_jti`, rollback run; the task text was wrong that old tokens carry no `jti` (they carried an unstored one), so the fallback is on a missing row, not a missing claim; answers CHECK-1 F-5 and the cause named in G-264.
-- 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
+- 7 Oct 2026 · SHARED-02 · Merged: shared components for the tab hubs (card, chip and button options, theme tokens, signed-in routes); 132 of 144 screens pixel-identical, the rest intended.
+- 7 Oct 2026 · SHARED-02 · Verifier report, round 2 (mobile `13596e1`, main `c4471f3`): D1 (no SHARED-CHANGES row lost, none went backwards), D2 ("Profile saved" once from the Me tab, from Settings and on a cold `?from=me`, light and dark) and D3 (M1's button only; W1 identical) closed; T1 to T7 killed, 4 own mutants killed; `npm run check` 0 (71 suites, 1286 tests); 144 picture pairs against main, only `/tgif` and M1's button differ; status review.
+- 7 Oct 2026 · SHARED-02 · Round 2: ME-11 #4's status restored (D1); "Profile saved" once wherever M8 closes to, M10 on the Me tab, M8's own elsewhere (D2); M1's Edit profile on `size="profile"` and W1's card on the generated `--shadow-money` / `--glow-money` (D3; W1 pixel-identical, M1 only the label); WALLET-11's payout test ends in 6 s in band (WALLET-01 #3); seven test gaps closed. Status verifying.
+- 7 Oct 2026 · SHARED-02 · Verifier report (independent session, mobile `6fa4f49`, main `5fec168`): V1 passed (`npm run check` 0; 67 suites, 1227 tests; gates 310 files, 0 findings); 144 before and after picture pairs, 132 identical, 12 differ, all `/tgif` by design, its five grounds now equal the canvas; guards and new props pass; 18 mutants, 11 killed, 7 survived (test gaps); three defects: D1 the merge dropped main's ME-11 #4 status, D2 a save on M8 from Settings shows no "Profile saved", D3 ME-01 #1 marked applied but M1's "Edit profile" still `sm` with `style`; status building.
+- 7 Oct 2026 · SHARED-02 · Built: the four tab hubs' shared changes applied (MediaCard `titleAccessory`, `footer`, `action`; FilterChips chip `icon` and `revealSelected`; Button size `profile`; TGIF, `--glow-money` and every `--shadow-*` generated as tokens; categories and the works routes under the signed-in guard; M8 hands back at once for M10's single "Profile saved"); 128 before and after screenshot pairs, 126 identical, the 2 TGIF ones changed by design. Status verifying.
+- 7 Oct 2026 · WALLET-01 · Merged: the Wallet tab (balance that always fits with its kobo, account number with Copy, recent activity, every state, no Bills); built now under R-41.
+- 7 Oct 2026 · WALLET-01 · Verified round 3 (15691dd): D5 closed (0 cut frames in 108 watched cases at 320/360/390 px, light and dark: first mount, balance changed under the card and while the tab is open, Hide/Show), the measuring copy aria-hidden (one balance in the accessibility tree), BalanceCard.test.tsx fails 3 of 4 on round 2 and passes now, 3 of 4 own mutants killed (K2 a test gap the browser covers), no conflict markers and every row kept; D1 to D4 still closed; status review.
+- 7 Oct 2026 · WALLET-01 · Round 3: a new or re-shown balance stays invisible until that figure is measured, so no cut frame is painted (D5); the measuring copy is aria-hidden on the web; status verifying.
+- 7 Oct 2026 · WALLET-01 · Verified round 2 (2c91287): D1 to D4 closed (every Back from A26 lands on the tab, balances whole at 320/360/390 px up to ₦999,999,999.99, the three WALLET-01 test files end in 17 s in band, 9 of 9 mutants killed; the remaining in-band hold is WALLET-11's payout test, mutation timers); trial merge with main 5fec168 passes; new D5 (low): a balance that changes under the card, or Show after Hide, paints one frame cut with "…" before it is re-measured; status building.
+- 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.
+- 7 Oct 2026 · WALLET-01 · Verified (independent session, mobile 972d411, backend main 3041887, real WAWU ID): R-41 passed (no bills entry, every left-out entry's screen unbuilt), V4 passed on two seeds of non-canvas values (balance from the provider read, debits as totals with fees), V6 and V9 passed, V5 failed: D1 Back from a button-opened A26 reopens A26, D2 the balance is cut off with "…" at 320 px from six naira digits, D3 WalletScreen.test.tsx holds jest about 5 minutes in band (a React Query gc timer), D4 4 of 14 mutants survive; status back to building.
+- 7 Oct 2026 · WALLET-01 · Built: the Wallet tab (W1 with W4, W5, W6, plus no wallet, opening, frozen and error states) against GET /money/wallet, /money/wallet/balance and /money/transactions; entries to screens not built yet left out (R-41); G-310, G-311; status verifying.
+- 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.

@@ -9,7 +9,7 @@ import { Icon, type IconName } from './icon';
 export const pressScale = 0.98;
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'white' | 'glass';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'profile';
 
 type Look = { bg?: ColorToken; pressed: ColorToken; fg: ColorToken; ring?: ColorToken };
 
@@ -24,11 +24,16 @@ const looks: Record<ButtonVariant, Look> = {
 /** `letter-spacing: -0.01em` on the design's button label. */
 const labelTracking = 0.01;
 
-/** design/_gen/kit.js line 15 (`Btn`, `S`): [height, side padding, label size, icon size] per size (DECISIONS R-22). */
+/**
+ * design/_gen/kit.js line 15 (`Btn`, `S`): [height, side padding, label size, icon size] per size, the label at 700
+ * (DECISIONS R-22). `profile` is not the kit's: it is "Edit profile" in a profile's name block (design/_gen/me.js
+ * line 20, `nameBlock`, M1 and M5), 38 high, 16 in, the label 14 at 600; it draws no icon, so its icon size is `sm`'s.
+ */
 const sizes = {
-  sm: { height: 34, padX: 14, fontSize: 13.5, icon: 15 },
-  md: { height: 44, padX: 18, fontSize: 14.5, icon: 17 },
-  lg: { height: 54, padX: 24, fontSize: 16, icon: 19 },
+  sm: { height: 34, padX: 14, fontSize: 13.5, icon: 15, weight: 700 },
+  md: { height: 44, padX: 18, fontSize: 14.5, icon: 17, weight: 700 },
+  lg: { height: 54, padX: 24, fontSize: 16, icon: 19, weight: 700 },
+  profile: { height: 38, padX: 16, fontSize: 14, icon: 15, weight: 600 },
 } as const;
 
 /** The kit's `gap:7px` between a button's icon and its label. */
@@ -103,7 +108,7 @@ export function Button({
         ) : icon ? (
           <Icon name={icon} size={dims.icon} color={fg} strokeWidth={2.2} />
         ) : null}
-        <NativeText numberOfLines={1} style={[font(700), { color: fg, fontSize: dims.fontSize, letterSpacing: -labelTracking * dims.fontSize }]}>
+        <NativeText numberOfLines={1} style={[font(dims.weight), { color: fg, fontSize: dims.fontSize, letterSpacing: -labelTracking * dims.fontSize }]}>
           {label}
         </NativeText>
         {iconRight && !loading ? <Icon name={iconRight} size={dims.icon} color={fg} strokeWidth={2.2} /> : null}

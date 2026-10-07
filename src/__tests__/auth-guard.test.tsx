@@ -1,6 +1,6 @@
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { render } from '@testing-library/react-native';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -181,5 +181,42 @@ describe('the keyboard', () => {
     await shown(<ForgotPasswordScreen onSend={async () => ({ expiresInSeconds: null })} onBackToSignIn={() => undefined} />);
     await fireEvent(screen.getByTestId('forgot-email'), 'focus', { nativeEvent: {} });
     expect(scrollTo).toHaveBeenCalledWith({ y: 40 - 20, animated: false });
+  });
+});
+
+describe('signed-in screens outside the tabs (SHARED-CHANGES EXPLORE-01 #2, ME-11 #3)', () => {
+  /** Each route's own screen, without the route file's own sign-in check, so only the route graph decides. */
+  const plain = (title: string) =>
+    function Plain() {
+      return (
+        <View>
+          <Text accessibilityRole="header">{title}</Text>
+        </View>
+      );
+    };
+  const guarded = {
+    ...routes,
+    categories: plain('Categories'),
+    'add-work': plain('Add a work'),
+    'works/[wawuId]/index': plain('Works'),
+    'works/[wawuId]/[workId]': plain('One work'),
+  };
+  const cases: [string, string][] = [
+    ['/categories', 'Categories'],
+    ['/add-work', 'Add a work'],
+    ['/works/u1', 'Works'],
+    ['/works/u1/w1', 'One work'],
+  ];
+
+  it.each(cases)('a signed-out visitor to %s lands on the welcome screen', async (url, title) => {
+    await renderRouter(guarded, { initialUrl: url });
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    expect(screen.queryByRole('header', { name: title })).toBeNull();
+  });
+
+  it.each(cases)('a signed-in visitor to %s sees it', async (url, title) => {
+    signedIn();
+    await renderRouter(guarded, { initialUrl: url });
+    await waitFor(() => expect(screen.getByRole('header', { name: title })).toBeTruthy());
   });
 });
