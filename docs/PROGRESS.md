@@ -7,15 +7,20 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 69 | 0 | 23 | 26 |
+| todo | 69 | 0 | 23 | 24 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
+| review | 1 | 0 | 0 | 1 |
 | done | 49 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (Developer 3)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (Developer 3)
 
 ## Done
 
@@ -117,24 +122,24 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** nothing unblocked
 - **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending
-- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [PROS-03](../tasks/PROS-03.md) Get listed as a professional
+- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [PROS-03](../tasks/PROS-03.md) Get listed as a professional, [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
 - 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.
 - 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
 - 7 Oct 2026 · ME-01 · Builder round 2, status verifying: D1 (veil on bare tiles), D2 (a failed refresh keeps the profile), D3 (new account's empty shelf) fixed; U1, U2 per the lead's rulings; tests for the four surviving mutants.
 - 7 Oct 2026 · ME-01 · Verifier report (independent session, mobile `39f0627`, backend main `3041887`, real wawu-id `fb8717e`): V1, R-41, V4 and V9 passed (every value traced with non-canvas data, a save on M8 read back from the Hub and the database and shown on M10, signed in through the app against the real WAWU ID); 13 own mutants, 9 killed, 4 survived (test gaps); three defects: D1 a free piece without a picture has an unreadable white view count in light mode, D2 a failed refresh after a save replaces the loaded profile with "Your profile did not load", D3 a brand-new account (no profile row) gets "Your content did not load" for ever because the content route answers 404; status building.
 - 7 Oct 2026 · ME-01 · Built, status verifying: the Me tab (M1, M2, M4, M10) on the Hub's profile, counts, content, services and works; QR, Menu, the tick prompt, Create and the Services taps left out for their tasks (R-41); G-290 to G-292.
+- 7 Oct 2026 · EVENTS-01 · Verifier round 4: D6 fixed (live: NYC 7 PM EDT reads 14 Oct on E1, E2, hero; unresolvable zone date only; no crash); 4 of 6 new specs fail on old code; npm run check passed; no open defects, status review.
+- 7 Oct 2026 · EVENTS-01 · Builder round 5: D6 fixed, event date read in the event's own zone (unresolvable zone: Lagos date alone, no clock); 6 specs added, 4 fail on old code; npm run check passed (66 suites, 1204 tests, gates 0 findings); status verifying.
+- 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
+- 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
+- 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
 - 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
 - 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
-- 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
-- 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
-- 7 Oct 2026 · ME-11 · Merged: featured works (2 s name lookup limit, 8-media wording, Remove for the owner, placeholder for broken pictures), backend PR #79.
-- 7 Oct 2026 · HOME-09 · Merged: the TGIF reader (no em-dashes in the book, no overlap down to 320 px, shared buttons, honest share wording), backend PR #80; Story and Save wait for the next development build.
-- 7 Oct 2026 · PROS-02 · Merged: professionals backend (location, categories), backend PR #47; Developer 3's task, merged by the lead.

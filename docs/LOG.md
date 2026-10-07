@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
 - 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.
 - 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
 - 7 Oct 2026 · ME-01 · Builder round 2, status verifying: D1 (veil on bare tiles), D2 (a failed refresh keeps the profile), D3 (new account's empty shelf) fixed; U1, U2 per the lead's rulings; tests for the four surviving mutants.
