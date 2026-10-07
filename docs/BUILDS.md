@@ -24,11 +24,13 @@ RELEASE-03, after launch.
   `https://api.wawuafrica.com` and `https://id.wawuafrica.com`. There is no
   staging server, and nothing runs on Railway.
 - **What runs where (DECISIONS R-25):** tester builds on phones talk to the
-  live services; they are not pointed at a local backend, and there is no standing tunnel. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava before OPS-10.
+  live services; they are not pointed at a local backend, and there is no standing tunnel. A task's phone check (V10) runs on a tester build once the backend it needs is deployed to the droplet; until then V10 is NOT RUN with that reason. A development build on the same Wi-Fi as the local backend (`docs/LOCAL.md`, OPS-03) may run it earlier. Money and identity checks that charge (BVN, selfie) never run against live Fintava† before OPS-10.
   Every check and verification runs against the local backend (wawu-backend
-  `scripts/local/up.sh`) with the Fintava sandbox, through `npm run web` or an
+  `scripts/local/up.sh`) with the Fintava† sandbox, through `npm run web` or an
   emulator. Money paths are exercised on a phone only once OPS-10 has put the
-  live Fintava setup on the droplet.
+  live Fintava† setup on the droplet.
+  † = to be replaced when the Nuvion switch lands (the wallet provider is changing from Fintava† to Nuvion, 6 Oct 2026;
+  `DECISIONS.md` R-39 records the switch, and the sandbox and live-setup wording here is redone when it lands, not deleted now).
 
 ## Who has what
 
@@ -89,9 +91,13 @@ team rule: the developer publishes to `preview` only.
   services.
 - `preview`: internal distribution, Android APK, channel `preview`, the live
   services.
-- `production`: store builds (AAB now; App Store with RELEASE-03), channel
-  `production`, the live services, and the build number managed by Expo
-  (`appVersionSource: remote`, `autoIncrement`).
+- `production`: store builds, `distribution: store`, Android app bundle
+  (`buildType: app-bundle`; App Store with RELEASE-03), channel `production`,
+  the live services, and the build number managed by Expo
+  (`appVersionSource: remote`, `autoIncrement`). It holds no credentials and
+  no `submit` profile: the Google service-account key stays on the owner's
+  machine and is given to `eas submit` when it asks (RELEASE-01). The Play
+  listing, data-safety answers and screenshot plan are in `docs/release/`.
 
 The API address goes in each profile's `env` as `EXPO_PUBLIC_API_URL`, and the
 WAWU ID address as `EXPO_PUBLIC_ID_URL`. Secrets never go into the app at all.
