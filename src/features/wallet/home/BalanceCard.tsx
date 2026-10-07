@@ -139,18 +139,29 @@ export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, on
 /**
  * The figure at the largest size that shows all of it, kobo included, on one line: a hidden copy at the
  * design's size gives its natural width, the row gives the width there is, and `fitFigureSize` picks the
- * size. Until both are known the figure is drawn at the design's size, invisibly, so a cut figure never shows.
+ * size. A figure is painted only once the hidden copy has measured that same figure (its text and whether
+ * it is hidden): a new balance, or Show after Hide, stays invisible until then, so no frame ever paints a
+ * figure cut at the size of the one before (round 2, D5). The hidden copy is remounted for each figure, so
+ * its layout is always reported, even when the new figure is as wide as the old.
  */
 function FittedBalance({ availableKobo, hidden }: { availableKobo: number; hidden: boolean }) {
-  const [natural, setNatural] = useState(0);
+  const figure = hidden ? 'hidden' : String(availableKobo);
+  const [natural, setNatural] = useState<{ figure: string; width: number }>({ figure: '', width: 0 });
   const [room, setRoom] = useState(0);
-  const size = fitFigureSize(natural, room, ACCT.figure, FIT.floor, FIT.step);
-  const measured = natural > 0 && room > 0;
+  const width = natural.figure === figure ? natural.width : 0;
+  const size = fitFigureSize(width, room, ACCT.figure, FIT.floor, FIT.step);
+  const measured = width > 0 && room > 0;
   return (
     <View style={styles.figure} onLayout={(e) => setRoom(e.nativeEvent.layout.width)}>
-      <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.measureClip}>
+      <View
+        pointerEvents="none"
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.measureClip}
+      >
         <View style={styles.measureBox}>
-          <View onLayout={(e) => setNatural(e.nativeEvent.layout.width)}>
+          <View key={figure} onLayout={(e) => setNatural({ figure, width: e.nativeEvent.layout.width })}>
             <Money minorUnits={availableKobo} size={ACCT.figure} tone="textOnAccent" masked={hidden} />
           </View>
         </View>

@@ -7,7 +7,7 @@ order: 155
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [MONEY-11, MONEY-12, MONEY-13, MONEY-15, UI-02, KYC-05]
 decisions: [R-1, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -211,6 +211,17 @@ Narrow re-check, 7 Oct 2026, of mobile `wmt/WALLET-01` 2c91287 (my bd29c48 and m
 - Screen readers on a device (TalkBack, VoiceOver). Unblocked by: the same build.
 
 Status: `building` with D5 open (low). D1 to D4 are closed.
+
+## Builder report, round 3
+
+Builder session, 7 Oct 2026, on `wmt/WALLET-01` with the verifier's round-2 report (da73833) and main 5fec168 merged in, merge commits only. The merge of main conflicted in `BACKEND_GAPS.md` and `SHARED-CHANGES.md` (WALLET-01's rows beside ME-01's); both sides are kept (5e2f112, before anything was pushed). SHARED-02 is still `todo` on main, so the card keeps its named shadow constants and WALLET-01 #1 stays open.
+
+- **D5 fixed.** `FittedBalance` keys its measurement to the figure (its text, or "hidden" while masked): the width the hidden copy reported counts only for the figure it measured, so a new balance, and Show after Hide, stays invisible until the hidden copy has measured that figure, and no frame paints it at the old size. The hidden copy is remounted per figure (`key`), so it always reports its layout, even when the new figure is as wide as the old.
+- **Screen readers on the web.** The hidden measuring copy now carries `aria-hidden` beside `accessibilityElementsHidden` and `importantForAccessibility="no-hide-descendants"`.
+- **Tests.** New `src/features/wallet/__tests__/BalanceCard.test.tsx` (4 cases, layouts sent by hand): invisible until measured, then the fitted size; a new figure invisible until it is measured; Show after Hide waits for a new measurement; one `aria-hidden` measuring copy, also hidden natively. On round 2's `BalanceCard.tsx` three of the four fail (a new figure and Show after Hide are shown at once; no `aria-hidden`); all four pass now.
+- **Frame watcher, re-run** (the verifier's `fit.py`, adapted to this stack as `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/fit3.py`: same rAF watcher, the balance changed under a mounted card by leaving and coming back to the tab, plus Hide then Show twice on ₦4,852,507.75), at 320 px, light and dark, against a local Hub from backend main 3041887 (`bw01_test`, stand-in balance on :5376, web on :5377): **0 cut frames** in all 14 cases: ₦0.00 at 42, ₦485,250.75 at 40, ₦4,852,507.75 at 34, ₦98,765,432.10 at 32, ₦999,999,999.99 at 28, and both Hide/Show rounds at 34; no page overflow; the measuring copy `aria-hidden`, the shown figure not. Log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/fit-r3.jsonl`, card shots `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/shots-r3/`.
+
+**Checks.** `npm run check` as one command, run to its exit code: exit 0 in 179 s (tsc 0, lint 0, jest 70 suites, 1226 of 1226, gates 9 run / 319 files / 0 findings, baseline 0, tasks 211); log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/check-r3.log`. Processes, worktree and `bw01_test` removed after the run; only ports 5375 to 5377 were used, the export held only the two localhost addresses, and every browser request went to those ports.
 
 ## Owner sign-off
 
