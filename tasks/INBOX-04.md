@@ -7,7 +7,7 @@ order: 57
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [INBOX-07, INBOX-02, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -165,6 +165,39 @@ Branch `wmt/INBOX-04` at 5ed2bb7 plus newest main (c0fb4e3 and later) merged. D2
 - **Tests added (50 inbox tests, was 43):** `InboxSkeleton.test.tsx` (style rules; jest has no layout, so the measurement is the web run above), seen-set limit (E1), room message sent twice (E2, deduped by message id), live event refetches an on-screen list (E4), 4401 count reset at ready (E5), 500 ms floor to the millisecond (E7). Each mutant (E1, E2, E4, E5, E7, and D2 itself) re-applied in place: the new test failed, then restored (git status clean of mutants).
 - **I5:** a non-network error (500) now uses `TriangleAlert`; a cut network keeps `WifiOff`. **I6** left: the second `GET /inbox/unread` comes from the socket's first `ready` reading again; skipping it could miss an event that arrives while the first read is in flight. **I3, I4** left as notes.
 - **D1** (blank list under a correct badge until INBOX-19, 10, 18, 5, 20 add row renderers) is an ordering note for the lead: those should land with or before this branch.
+
+### Verifier report, round 2 (7 Oct 2026)
+
+Verifier, independent of the builder. Head `e987544` (mobile origin/main `c0fb4e3` is already an ancestor: `git merge --no-commit --no-ff origin/main` says "Already up to date", so the trial merge is the same tree). Backend origin/main `6c0e435` (detached worktree, fresh migrated and `db:seed`ed database `vi04r2_hub_test`), the real wawu-id origin/main `4715d17` (own worktree, `npm ci` because `@nestjs/swagger` was missing, database `vi04r2_id_test`), Hub :5391, WAWU ID :5392, pass-through proxy :5393 (round 1's, unchanged), web export on :8391 (`expo export -p web --clear`, private TMPDIR). The bundle was checked for hosts before the last run: only `localhost:5392` and `localhost:5393`, no `wawuafrica.com`. Chromium at the sizes named, device scale 2, light and dark, sign-in always through the app's own screen. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vi04r2/` (`skel.out`, `shots/pairs`, `shots/build`, `mutate.out`, `icon.out`, `reg.out`, `check-branch.log`, `run/*.py`, `run/proxy.jsonl`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| D2 I36 skeleton at 320, 360, 390, 430, light and dark | passed | `skel.out`: 6 rows per run, every row measured with `getBoundingClientRect`: no bar past its column, none past or under the time pill, avatar clear of the column, no vertical overlap, no horizontal page scroll, 8 runs, 0 problems. At 320 the preview bar is 166 px (was 210, ended under the time) and ends 13 px before the time pill; at 360 it is 206; at 390 and 430 it is the design's 210 and the time pill ends 20 px from the edge. `shots/pairs/I36-390-{light,dark}.png` (artboard left, build right), `I36-sizes-{light,dark}.png` (320, 360, 390, 430 side by side). |
+| I36 against the render | passed, same recorded differences as round 1 | At 390 the six rows, 52 circle, 140 and 210 bars, 36 time pill and 156 px pitch match; the status bar, header buttons, other chips, + button and tab badge are other tasks' or the device's (round 1 table). |
+| Test gaps E1, E2, E4, E5, E7 | passed | Re-applied in place on e987544, `npx jest src/features/inbox` (50 tests): each now fails exactly the test the builder named: E1 "drops a repeat of any of the last 500 messages", E2 "drops a room message that arrives twice", E4 "a live event reads again every inbox list that is on screen", E5 "counts 4401s afresh after each good connection", E7 "waits at least half a second before the first retry, to the millisecond". `mutate.out`. |
+| Own mutants | 9 of 12 killed, 3 survived | Below. |
+| Server-error icon | passed | 500 (proxy answers 500, own sentence): the error state's icon is `icon-TriangleAlert`, light and dark, message "Stand-in server error", 3 GETs, Try again with the proxy cleared lands on the empty state. Cut network (proxy drops the connection): `icon-WifiOff`, "No connection. Check your internet and try again.", light and dark, Try again recovers. `icon.out`, `shots/build/error-{500,cut}-{light,dark}.png`. |
+| Regression, real Hub and real wawu-id | passed | Below. |
+| V1 code | passed | `npm run check` exit 0 on e987544 and on the trial merge (same tree): typecheck, lint, 50 suites 847 tests (inbox 50), gates 9 run, 227 files scanned, 0 findings, baseline 0, 209 tasks. Scope fence unchanged: the diff against main is `src/features/inbox/*` (incl. its tests), `src/app/(tabs)/inbox.tsx`, `BACKEND_GAPS.md`, `docs/LOG.md`, generated `docs/PROGRESS.md`, this task file; no `_layout.tsx`, `src/api`, `src/components`, `src/theme`. No hex, no `style={{`, no `fetch(` and no em-dash in the added lines. |
+
+**Own mutants** (`X1` to `X12`, in `run/mutate.py`, each restored, `git status` clean after): KILLED 9: X4 floor 500 to 499, X5 floor 500 to 501, X7 lines column loses `minWidth: 0`, X8 bars lose `maxWidth`, X9 list refetch predicate refetches nothing, X10 room dedupe keyed by community instead of message, X11 4401 threshold 2 to 3, X12 lines column loses `flex: 1`. SURVIVED 3: **X1** the error icon always `WifiOff`; **X2** the two icons swapped (network gets the triangle, a 500 gets the wifi); both: nothing in `InboxScreen.test.tsx` or any other test reads the error state's icon, so the round 2 server-error fix is correct in the browser (above) and unprotected by a test. **X3** the skeleton row `flexDirection` changed to `column`: jest has no layout (the builder says so); the measurement above is what covers it. X6 seen-set limit 500 to 501 also survives: no test can tell, because the test pins "at least the last 500", which 501 still honours (not a gap in behaviour).
+
+**Regression** (`reg.out`, `proxy.jsonl`): sign in as seeded `user@test.wawu.dev` through the app's sign-in screen: the first screen shows badge 1, the server's `GET /inbox/unread` total 1. A chat message sent by another real account raised the badge to 2 (server 2), a second from a third account to 3 (server 3), with no reload; light run 3.3 s and 4.2 s from before the sender's own login and POST to the badge (this includes the sender's own login and POST on a host under heavy load from other sessions; round 1 measured 1.07 s without that overhead, and I did not time the socket frame separately this round), dark run 2.3 s and 4.4 s, badge 4 and 5 equal to server 4 and 5. Sign-out: the app's own `signOut()` driven by a 4403 close (no sign-out control exists on this branch): `/welcome`, badge gone, no `GET /inbox...` and no socket upgrade in the next 5 s, both themes.
+
+**Findings**
+- **D2: closed.** Fixed and measured as above.
+- **D1: unchanged**, lead-ruled not a blocker in round 1 (blank list under a correct badge until INBOX-19, 10, 18, 5, 20 add row renderers); ordering note stands.
+- **T1 `info`, test gap, new:** the error state's icon (the I5 fix) has no test: mutants X1 and X2 survive. A test that renders the screen with a 500 and with a network error and reads the icon would kill both. Not a visible defect.
+- **I6 `info`, unchanged:** two reads of `GET /inbox/unread` on first `ready` (builder's recorded decision).
+- **Disclosure:** my first web export was missing `EXPO_PUBLIC_ID_URL`, so the app's first two sign-in attempts from the browser sent a CORS preflight (OPTIONS, no body, no credentials) to `https://id.wawuafrica.com/auth/login`; Chromium reported the preflight failed and the POST never went. I rebuilt with both variables set, checked the bundle for hosts, and made no other call to a live host.
+
+**NOT RUN**
+- Pull to refresh on a touch device: unblocked by a device or simulator run (V10).
+- A phone or emulator run (V10): unblocked by a development build.
+- Sign-out through the Settings screen: unblocked by SETTINGS-03's mobile screen landing (the branch has no sign-out control); driven by a 4403 close instead.
+- A refused refresh ending the session: not driven this round (not in scope).
+
+**Verdict:** no defect open; status `review`. T1 is a test gap for the builder to close if the lead wants the icon pinned.
 
 ## Owner sign-off
 
