@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 69 | 0 | 23 | 26 |
+| todo | 68 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [WALLET-01](../tasks/WALLET-01.md) Wallet home: Naira account and its states (You)
 
 ## Done
 
@@ -122,6 +126,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · WALLET-01 · Built: the Wallet tab (W1 with W4, W5, W6, plus no wallet, opening, frozen and error states) against GET /money/wallet, /money/wallet/balance and /money/transactions; entries to screens not built yet left out (R-41); G-310, G-311; status verifying.
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
@@ -136,4 +141,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
 - 7 Oct 2026 · SCHOOLS-02 · Fix round 3 built (backend `7d6b14c`, mobile `e2b1e08`): a NUL or lone surrogate in any school, course or intake text field is 400 naming the field (was 500 in `logo`, `applyUrl`, `reportEmail`), a body that is not a JSON object is 400 on the write routes, migration renamed `20261010100000_schools_hidden` (after main's and every open branch's newest), main merged into both branches, mobile contract equals the backend branch's; protected 253/253, 660 admin and schools tests pass, mobile check exit 0.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
-- 6 Oct 2026 · SCHOOLS-02 · Fix round 1 built (backend `492cbd0`): a `null` in a PATCH for a required field (and `startDate`, `hidden`) is now 400 naming the field, a start date in year 0000 is 400, a bad cursor is 400, hiding twice keeps the first time; specs 342/342, protected suite 253/253; back to verifying.
