@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 7 Oct 2026 · LEGAL-01 · Verified (independent session, branch `wmt/LEGAL-01-b` with main merged, backend `f9bd27b`): back to building. V1 and V3 passed (protected 253 of 253 both sides), V9 passed with the real model NOT RUN (no Gemini key); V2 and V4 failed on five defects: the migration sorts before main's newest, the brief drops early messages past 40, a message sent while the brief is written is left out yet sendable, a double-tap send answers 409, and en-dash ranges are rewritten.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification: the legal chat starts before any payment. New routes under `/legal/intake/assistant` let the WAWU Legal Assistant take the problem and write the brief into the intake, `send` opens the matter for a consultant with nothing charged, and the matter chat opens before payment so a consultant can join; matter options and quick replies come from the API as named schemas. Additive migration `20261006120000`; the real model and the dashboard screen are NOT RUN (G-210).
 - 7 Oct 2026 · HOME-02 · Merged to main: the For you and Following feed (H2 to H6) at `/feed`, reachable once HOME-01 links it; the lead's task.
 - 7 Oct 2026 · MONEY-20 · Merged to main (backend PR #74): every money service behind one wallet provider interface, Fintava kept behind `WALLET_PROVIDER`, rollback is one setting; the lead's task.
