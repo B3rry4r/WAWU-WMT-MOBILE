@@ -3,7 +3,7 @@ id: WALLET-23
 title: Account limits from Fintava
 owner: YOU
 area: WALLET
-order: 189
+order: 190
 priority: after-launch
 repo: wawu-backend
 type: money-path

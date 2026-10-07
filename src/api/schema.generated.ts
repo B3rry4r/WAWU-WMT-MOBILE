@@ -1802,7 +1802,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** The host's shared links, each with its tickets sold (E18). */
+        get: operations["EventRunningController_referrals"];
         put?: never;
         /** A shareable link that attributes its sales. */
         post: operations["EventTicketingController_createReferral"];
@@ -1826,6 +1827,96 @@ export interface paths {
          *     Flutterwave refund per order, not a status flip.
          */
         post: operations["EventTicketingController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/mine/sold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sold per event for every event the caller hosts (E17). */
+        get: operations["EventRunningController_mySold"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/door/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The events the caller works the door at. */
+        get: operations["EventRunningController_myDoorEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who the host lets check tickets in. */
+        get: operations["EventRunningController_listDoorStaff"];
+        put?: never;
+        /** Add someone to the door, by WAWU id or handle. */
+        post: operations["EventRunningController_addDoorStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door-staff/{staffId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take someone off the door. */
+        delete: operations["EventRunningController_removeDoorStaff"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/{id}/door/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scan at the door, as the host or their door staff. Let them in (E20)
+         *     with the holder's name, already used (E23) with when and by whom, or
+         *     not valid (E24), with the live counts.
+         */
+        post: operations["EventRunningController_checkIn"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3393,6 +3484,27 @@ export interface paths {
          *     so there is no creator gate here.
          */
         get: operations["EventController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The label to show for each category, format and kind, beside the value to
+         *     send (EVENTS-02): "Business & Finance" is `business`. Declared before
+         *     `:id` for the same reason `mine` is.
+         */
+        get: operations["EventController_options"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5149,6 +5261,13 @@ export interface components {
              */
             reason: string;
         };
+        AddDoorStaffDto: {
+            /** Format: uuid */
+            wawuUserId?: string;
+            /** @description With or without the "@". Same characters a handle may hold. */
+            handle?: string;
+            label?: string;
+        };
         EventDecisionReasonDto: {
             reason: string;
         };
@@ -5549,6 +5668,15 @@ export interface components {
             /** @description Display order. Defaulted by position when omitted. */
             order?: number;
         };
+        NewEventTicketTypeDto: {
+            name: string;
+            /** @description Naira, like every ticket price this backend stores. 0 is a free ticket. */
+            priceNaira: number;
+            /** @description How many exist. A venue has a capacity, so there is no unlimited option. */
+            quantity: number;
+            /** @enum {string} */
+            tier?: "free" | "regular" | "vip" | "vvip" | "early_bird" | "group";
+        };
         CreateEventDto: {
             name: string;
             description: string;
@@ -5556,9 +5684,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio?: string;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /**
              * @description ISO 8601. The authoritative instant — the only thing upcoming/past is
              *     decided on. Not required to be in the future: an event whose start passes
@@ -5572,7 +5700,13 @@ export interface components {
             timeLabel?: string;
             /** @description Display only, e.g. "WAT". */
             timezone?: string;
-            location: string;
+            /**
+             * @description The city or venue line the card shows. Optional (EVENTS-02): the app's
+             *     host wizard asks only for the street address, so when this is left out
+             *     the server fills it from `address`, and leaves it empty when there is no
+             *     address either. A value sent here is stored as sent, as before.
+             */
+            location?: string;
             address?: string;
             /**
              * @description The venue by NAME, e.g. "Eko Convention Centre".
@@ -5598,11 +5732,18 @@ export interface components {
              * @description What the event is about. Defaults to `other` when not stated.
              * @enum {string}
              */
-            category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+            category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
             /** Format: email */
             contactEmail?: string;
             contactPhone?: string;
             speakers?: components["schemas"]["EventSpeakerDto"][];
+            /**
+             * @description The ticket types, sent with the event in the same submit (EVENTS-02), so
+             *     the event and its tickets go to review together. Omitted or empty, the
+             *     event sells nothing, exactly as before. The tiers can still be replaced
+             *     afterwards through PUT /events/:id/tickets.
+             */
+            ticketTypes?: components["schemas"]["NewEventTicketTypeDto"][];
         };
         UpdateEventDto: {
             name?: string;
@@ -5610,9 +5751,9 @@ export interface components {
             hostOrg?: string;
             hostOrgBio?: string;
             /** @enum {string} */
-            format?: "in_person" | "online";
+            format?: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type?: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type?: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             startsAt?: string;
             endsAt?: string;
             timeLabel?: string;
@@ -5632,7 +5773,7 @@ export interface components {
              * @description What the event is about. Defaults to `other` when not stated.
              * @enum {string}
              */
-            category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+            category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
             /** Format: email */
             contactEmail?: string;
             contactPhone?: string;
@@ -7151,6 +7292,70 @@ export interface components {
                 remaining: number;
             } | null;
         };
+        HostSoldCount: {
+            eventId: string;
+            ticketsSold: number;
+        };
+        HostSoldCounts: {
+            items: components["schemas"]["HostSoldCount"][];
+        };
+        DoorEventView: {
+            eventId: string;
+            eventName: string;
+            /** Format: date-time */
+            startsAt: string;
+            location: string;
+            venueName: string | null;
+            status: string;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            label: string;
+        };
+        DoorEventList: {
+            items: components["schemas"]["DoorEventView"][];
+        };
+        EventReferralSalesView: {
+            id: string;
+            code: string;
+            label: string;
+            ticketsSold: number;
+            revenueNaira: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        DoorStaffView: {
+            id: string;
+            wawuUserId: string;
+            label: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+            /** Format: date-time */
+            addedAt: string;
+        };
+        CheckedInByView: {
+            /** @enum {string} */
+            role: "host" | "door_staff";
+            label: string | null;
+        };
+        DoorCheckInResult: {
+            /** @enum {string} */
+            outcome: "valid" | "already_used" | "invalid";
+            ticket: {
+                code: string;
+                tierName: string;
+                holderName: string | null;
+                /** Format: date-time */
+                checkedInAt: string | null;
+                checkedInBy: components["schemas"]["CheckedInByView"];
+            } | null;
+            totals: {
+                sold: number;
+                checkedIn: number;
+                stillToArrive: number;
+                remaining: number;
+            };
+        };
         DayAvailability: {
             date: string;
             slots: {
@@ -7513,9 +7718,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -7567,9 +7772,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -8146,9 +8351,9 @@ export interface components {
             hostOrg: string;
             hostOrgBio: string | null;
             /** @enum {string} */
-            format: "in_person" | "online";
+            format: "in_person" | "online" | "hybrid";
             /** @enum {string} */
-            type: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -8161,7 +8366,7 @@ export interface components {
             externalUrl: string | null;
             bannerUrl: string | null;
             /** @enum {string} */
-            category: "community" | "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
+            category: "community" | "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
             contactEmail: string | null;
             contactPhone: string | null;
             /** Format: date-time */
@@ -8182,6 +8387,23 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             lastDecisionReason: string | null;
+        };
+        EventOptionsView: {
+            categories: {
+                /** @enum {string} */
+                value: "community" | "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "lifestyle" | "other";
+                label: string;
+            }[];
+            formats: {
+                /** @enum {string} */
+                value: "in_person" | "online" | "hybrid";
+                label: string;
+            }[];
+            types: {
+                /** @enum {string} */
+                value: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
+                label: string;
+            }[];
         };
         EventGoingView: {
             eventId: string;
@@ -11956,6 +12178,27 @@ export interface operations {
             };
         };
     };
+    EventRunningController_referrals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReferralSalesView"][];
+                };
+            };
+        };
+    };
     EventTicketingController_createReferral: {
         parameters: {
             query?: never;
@@ -12014,6 +12257,139 @@ export interface operations {
                         ordersRefunded: number;
                         refundsNeedingAttention: number;
                     };
+                };
+            };
+        };
+    };
+    EventRunningController_mySold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostSoldCounts"];
+                };
+            };
+        };
+    };
+    EventRunningController_myDoorEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorEventList"];
+                };
+            };
+        };
+    };
+    EventRunningController_listDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorStaffView"][];
+                };
+            };
+        };
+    };
+    EventRunningController_addDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddDoorStaffDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorStaffView"];
+                };
+            };
+        };
+    };
+    EventRunningController_removeDoorStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                staffId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        removed: boolean;
+                    };
+                };
+            };
+        };
+    };
+    EventRunningController_checkIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanTicketDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoorCheckInResult"];
                 };
             };
         };
@@ -15031,13 +15407,13 @@ export interface operations {
                  *     now — a two-day summit is still upcoming on its second morning.
                  */
                 view: "upcoming" | "past";
-                format?: "in_person" | "online";
-                type?: "workshop" | "summit" | "webinar" | "meetup" | "competition";
+                format?: "in_person" | "online" | "hybrid";
+                type?: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
                 /**
                  * @description The browse-by-category chip row. Independent of `format` and `type`: a
                  *     music event can be online or in person, and a workshop or a summit.
                  */
-                category?: "music" | "business" | "training" | "conference" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
+                category?: "conference" | "music" | "business" | "training" | "church" | "entertainment" | "fashion" | "community" | "lifestyle" | "other";
                 /**
                  * @description The featured rail is `?featured=true&perPage=1`, not a second endpoint and
                  *     not an extra key hung off the list envelope — the ResponseInterceptor
@@ -15134,6 +15510,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventView"][];
+                };
+            };
+        };
+    };
+    EventController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOptionsView"];
                 };
             };
         };
