@@ -7,7 +7,7 @@ order: 170
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-02, HOME-09, KYC-05]
 decisions: [R-2, R-6]
 passes: [V1, V4, V5, V6, V9]
@@ -284,6 +284,122 @@ The round-1 shots of the feed tabs, the reader and the page error are not retake
 **Decisions (Default (agent), owner may override).** (1) `footer`, not `action`, for Follow (above). (2) No initials until HOME-01 #3. (3) The card's no-figure words are the Wallet tab's, replacing round 1's server sentences and W6 reassurance. (4) The eye state is per screen. (5) The TGIF error card shows the phone's day in its label.
 
 **NOT RUN.** A phone (V10; unblocked by a development build reaching a Hub). The frozen state on screen (G-10: nothing stores a freeze). V5 is the verifier's.
+
+## Verifier report, round 2
+
+Verifier session, 7 Oct 2026. It is the same verifier as round 1, and it wrote none of HOME-01.
+
+**Setup**
+- **Head:** `158708f`, checked out detached in `/home/user/wt/vh01m2`. It contains my round-1 report `9a4c356` and mobile main `44ce9c9`.
+- **Hub:** backend origin/main `3041887`, in a fresh worktree with its **own `npm ci`**. `prisma generate` and `nest build` ran there, with nothing hard-linked. The database was fresh, migrated and `db:seed`ed: `vh01r2_hub_test`.
+- **WAWU ID:** the real one, origin/main `fb8717e`, with its own `npm ci`, `prisma generate` and build. Its database was `vh01r2_id_test`, seeded by `scripts/local/seed-wawu-id.js`.
+- **For the Wallet comparison:** a detached main worktree at `44ce9c9`.
+- **Ports:** Hub :5395, WAWU ID :5396, and :5397 for the web exports. The branch and main exports were served in turn on :5397. Both were built with `expo export --platform web --clear` and a private TMPDIR. Each bundle names only `localhost:5395` and `localhost:5396` as API origins, and every browser request went only to :5395, :5396 or :5397.
+- **Sign-in:** through the app's own screens, against the real WAWU ID.
+- **Fintava:** unset. A wallet holder's real answer is therefore `503 provider_unreachable`.
+- **Picture-only balances:** where a figure had to be drawn (₦12,345.67, ₦98,765,432.10, ₦999,999,999.99), the browser wrote the balance answer **for the picture only**. Those captures are not V9 evidence.
+- **Seed:** as in round 1. `creator-basic` holds a `FintavaWallet` row, `creator-pro` is `opening`, and `user` has no wallet. "Tamunotonye Briggs" has a creator tick, Chidi Umeh a professional tick, and there are 1,234 readers.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vh01r2/`: `shots/`, `pairs/` (design or main left, branch right; `walletdiff-*` adds a third panel, the difference at 8x), `design/`, `logs/batch-*.log`, `drive-log.jsonl`, `mutants.json`, `check-1.log`, `check-final.log` and `tools/`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 code | passed, with D3 still open | `npm run check` as one command on `158708f`: exit 0 (`check-1.log`). Typecheck and lint clean; jest 73 of 73 suites and 1,317 of 1,317 tests; gates 9 run, 333 files scanned, 0 findings, baseline 0; 211 tasks. The final run on the report commit is in the "V1 final" row. **Scope:** compared with `44ce9c9`, the branch touches `src/features/home/`, the two `(tabs)` route files, `src/features/feed/FeedScreen.tsx`, the two shared tests from round 1, and three WALLET-01 files (`src/features/wallet/home/BalanceCard.tsx`, `model.ts`, `WalletScreen.tsx`). It also touches docs. No `src/components`, theme, `src/api`, `_layout.tsx` or `package.json` is touched, and no WALLET-01 test changed. |
+| R-41 | passed, unchanged | The left-out table is the same as round 1, and every destination task is still `todo`. The browser text of every capture holds no Send, Add, Bills, Scan, tiles, See all, search, bell or Create, and the jest test asserts the same. |
+| V4 | passed | The same traces as round 1. Home's money card now reads WALLET-01's `GET /money/wallet` first, then the balance (MONEY-11). TGIF readers came through as "1.2K reading today". The renamed creator and both ticks came from WAWU ID and the Hub. |
+| V5 picture | passed | Pairs for H1 (figure, and no wallet), H11 and H36, light and dark, plus the TGIF day error. Classified under Findings. |
+| V6 states | passed | Every state was entered by its real cause. **Loading:** Hub held (`H11-loading-*`). **No wallet:** real; Open your wallet opens `/open-wallet`. **Opening:** real. **Unreachable:** real, with Fintava unset. **TGIF day cut:** an error card with Try again, which recovers (D2). **Creators error:** Try again recovers. **Page error:** offline, then retried. **Tabs:** the bar's Home tab is `aria-selected` on Following and on For you. **TGIF off:** set through Settings Z2 (H36). |
+| V9 live seam | passed | **Follow:** the database had 0 rows before. `user` tapped Follow, and a `FollowRelationship` row (`…0001` to `…0003`, 19:45:08) appeared. The Hub's `GET /creators` answers `"following":true`. **TGIF switch:** there was no row before. Off in Z2 gives `TgifPreference.show=f`, and `GET /settings/tgif` answers `{"show":false}`. Today then has no card, no error and no empty frame. On again gives `show=t`, and the card is back. |
+| Wallet sharing | passed | Details under "Wallet sharing" below. |
+| Mutants | 20 of 22 killed | Details in the list after this table. |
+| V1 final | passed | `npm run check` on the report commit's tree, as one command (`check-final.log`): exit 0. Typecheck and lint clean; jest 73 of 73 suites, 1,317 of 1,317 tests; gates 333 files scanned, 0 findings, baseline 0; 211 tasks. |
+
+Mutants (`tools/mutants.py`, run against the home and wallet suites and `hubSharedProps`; the worktree was clean afterwards):
+- **Round 1's 14, mapped onto round-2 code:** all killed. M5 is now "unreachable retries the wallet read instead of the balance", and M11 is now "eye on a no-figure card".
+- **8 new mutants, 6 killed:**
+  - N1: the TGIF error card is never shown.
+  - N2: TGIF Try again asks for the creators instead.
+  - N3: the eye loses its 70%.
+  - N5: "opening" offers Open your wallet.
+  - N6: the balance is asked for with no open wallet.
+  - N8: the TGIF error shows with TGIF off.
+- **Survived:**
+  - N4: Home's figure drawn at W1's 42 instead of H1's 38.
+  - N7: Home's glow reusing the Wallet tab's SVG id.
+
+Both are test gaps, not wrong code; see T1 and T2.
+
+### Round-1 defects
+
+**D1 · closed.** The eye is WALLET-01's `BalanceEye`, white inside a 0.7-opacity view. Its effective opacity in the browser is 0.7 in both themes. The brightest eye pixel is (202,185,210) on the built card against (203–204,185,212) on the canvas (`pairs/H1-*`). Mutant N3 is killed.
+
+**D2 · closed.** With TGIF on and `GET /tgif/2026-10-07` cut, Today shows `TgifProblem`: the card's ground and label, "Today's TGIF didn't load." as an alert, and the shared `Button` (glass, sm) Try again. No TGIF card is shown (`tgif-day-error-*`). With the request let through, Try again brings the card and the error goes (`tgif-day-retried-*`). The card is hidden only when TGIF is really off, set through Settings. Mutants N1, N2 and N8 are killed.
+
+**D3 · partly closed, still open.**
+- **The picture, scrim and caption are closed.** `SuggestionCard` is the shared stacked `MediaCard`: the tick goes through `titleAccessory`, and the card's own picture, scrim and caption are gone.
+- **The Follow pill is a redraw, not the shared Button. It is a fork.** The pill goes in through `footer` as `FollowButton` (`CreatorRail.tsx`): a `Pressable` and a `Text` with their own colours (`cardInk.accent`, `cardInk.following`), their own 32 height and their own 13/700 label.
+- **Main already has the slot this pill should use.** SHARED-02 added `MediaCard`'s `action` slot for exactly this button: "Stacked only: the card's one button under the caption, 8 below the subtitle line (`cCard`'s Follow)". It draws the shared `Button` at `mediaMetrics.actionHeight` 32, primary for Follow and glass for Following (the `on` state). EXPLORE-01 #3 points Explore's creator card to it.
+- **The builder's reasons are kit-level differences.** They are a 13.5 label against the canvas's 13, and a hairline ring on glass. A difference of that kind goes to the shared component as a prop or a SHARED-CHANGES row. A screen does not redraw it, or Home and Explore draw the same `cCard` Follow two ways.
+- **Reproduction:** `src/features/home/CreatorRail.tsx`, `FollowButton`, passed as `footer={…}`.
+- **Fix:** pass `action={{ label: following ? 'Following' : 'Follow', on: following, onPress, loading: busy, testID }}`, and delete `FollowButton`. If the owner wants cCard's exact 13 label and no ring, that change is a SHARED-CHANGES row on `MediaCard`'s `action`, applied for every creator card.
+
+### Classifying the no-photo block
+
+**Matches the canvas.** A creator with no photo now shows `MediaCard`'s plain sunken block. `cCard` draws `background: center/cover url(photo) var(--surface-sunken)`, so the canvas's own look for a card without its photo is exactly that sunken ground. The missing photo itself is recorded in G-282 (no cover picture is served). Initials on the block (SHARED-CHANGES HOME-01 #3) would be an addition beyond the canvas, so the bare block is not a defect.
+
+### Wallet sharing (WALLET-01's files)
+
+**Behaviour and picture: unchanged.** I compared W1 (figure), W4 (loading, cold, with the Hub held), W5 (new account) and W6 (unreachable) between main `44ce9c9` and the branch, in light and dark at 390 x 845.
+- **Above the bar:** zero pixels differ in every pair.
+- **In the bar:** the labels and icons differ only in their antialiasing. Main renders them with coloured subpixels and the branch in grey. This is a compositing effect of the mounted Home tab (Home now draws a card under its SVG). The shapes, colours and positions are the same (`pairs/walletdiff-*`, `pairs/walletbar-zoom-dark.png`).
+- **W5 for a person with no wallet:** on both builds, tapping Wallet goes to `/open-wallet` (A26), and the two pages are pixel-identical.
+- **W4 with Home already loaded:** on the branch, a no-wallet person who has already loaded Home gets A26 at once, without W4's skeleton in between. The tab already holds Home's cached "not open" answer. That is the shared cache working, and the end screen is unchanged.
+
+**Tests:** WALLET-01's 4 test files are unchanged and pass in the full run. `hubSharedProps.test.tsx` finds the Wallet glow by its default id `wallet-balance-glow`.
+
+**`FittedBalance` at 320 x 568 never cuts the figure.**
+
+| Figure | Font size | Text width | Room |
+|---|---|---|---|
+| ₦98,765,432.10 | 32 px | 244 | 244 |
+| ₦999,999,999.99 | 30 px | 244 | 244 |
+
+In both cases the text's `scrollWidth` equals its `clientWidth`, so nothing is clipped (`fit-*-320-*`). The hidden measuring copy is `aria-hidden` and `importantForAccessibility="no-hide-descendants"`.
+
+**One cached answer:** after Home had read `GET /money/wallet` and the balance, I held every Hub request and opened the Wallet tab. It drew ₦12,345.67 at once, while its own refetches (`/money/wallet`, `/balance`, `/transactions`) were still held (`cache-wallet-while-held-light.png`). Both tabs use `walletHomeQuery(owner)` and `homeBalanceQuery(owner, open)` on the app's one `queryClient`.
+
+**Unreachable wording matches W6's ruling (G-310).** Home shows the title "We couldn't reach your account" and then the Hub's own sentence, "We could not reach your account. Your money is safe. Try again in a moment." The Wallet tab shows the same words, with Try again. The app no longer writes the canvas's custody line "Your money is safe. This is a connection problem between us and the bank.", which WALLET-01 lists as not a fact. The reassurance that does show is the server's own sentence, as G-310 says.
+
+### V5, re-classified for round 2
+
+| Element | Classification |
+|---|---|
+| Tab row; money card (chip, eye at 70%, figure size and faint kobo, ground, `--glow-money`, `--shadow-money`); TGIF card (`--tgif-verse-ground`, `--tgif-label` lilac, `--tgif-warm-glow`, play disc); heading; rail card size and spacing | **Matches** (`pairs/H1-*`) |
+| H11 shapes, H36 without a TGIF card | **Matches**; skeleton heights per H11's own note |
+| Creator card with no photo | **Matches** the canvas's sunken fallback; the photo itself is G-282 |
+| Follow pill | **D3** (a fork) |
+| Search, bell, Send, Add, Bills, Scan, the chip chevron, tiles, See all, the FAB, H36's sponsored card | **Recorded reason:** R-41 and R-27; Scan also under BRIEF "Not built at launch" |
+| "2 min" | **Recorded reason:** G-280 |
+| No-figure words on the money card | **Recorded reason:** the Wallet tab's own words through `stateWords` (WALLET-01, G-310), which replace round 1's |
+| Canvas phone chrome | Not part of the app |
+
+### Test gaps (not defects; the code is right today)
+
+- **T1:** nothing fails if Home's figure is drawn at W1's 42 instead of H1's 38 (mutant N4). The picture shows 38 today.
+- **T2:** nothing fails if Home's `MoneyGround` drops `glowId="today-balance-glow"` (mutant N7). The builder notes that on the web an SVG id is shared by the whole document, and both tabs stay mounted.
+
+### Still unclear (web only, from round 1)
+
+Home's own tab row carries no `aria-selected` on the web build; the native app reads the selection.
+
+### NOT RUN
+
+| Item | Why | What unblocks it |
+|------|-----|------------------|
+| A live Fintava figure | Fintava was unset for this verifier, and verifiers cannot read the sandbox key. | A Hub run with `FINTAVA_API_KEY` set for `dev.fintavapay.com`. The picture-only figure and jest cover the drawing. |
+| The frozen state | Nothing stores a freeze. | G-10 |
+| A phone | V10 is not in this task's passes. | A development build on a phone reaching a Hub (`docs/LOCAL.md`) |
+
+Cleanup: the Hub, WAWU ID and web server (PIDs this session started) are stopped. `vh01r2_hub_test` and `vh01r2_id_test` are dropped. The backend, WAWU ID and main-comparison worktrees are removed, and the exports are deleted. `/home/user/wt/vh01m2` is kept with this commit.
 
 ## Owner sign-off
 
