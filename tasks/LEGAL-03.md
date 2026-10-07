@@ -165,6 +165,22 @@ Back to `building` for D1, D2, D3, D4 and F5. Evidence scripts and logs: `/tmp/c
 
 **NOT RUN.** A paid consultation and a paid service end to end (the two payments are set in the database): unblocked by Flutterwave sandbox keys in a local `.env` for the web path, and by LEGAL-05 for the app's pay path. A real bucket (the stand-in checks expiry, not signatures): unblocked by a non-production bucket key in a local `.env`. The dashboard's screens for prices and delivery: unblocked when LEGAL-07 calls these routes. `src/data-export-request/tests/data-export.contract.spec.ts` (needs the Hub's internal service key on a mock at :4001, as the builder said): unblocked by running it in the namespace with that mock. The full backend suite: unblocked by running it in its own network namespace from a fresh migrated and seeded database. V9 against the droplet: unblocked by the deploy. Two Hub processes on one database for the lock: unblocked by repeating `race.mjs app` against two Hubs (the lock is in Postgres, one process was tested). Mobile screens: none exist for this task (`backend-endpoint`).
 
+## Lead rulings after the second verifier pass (7 Oct 2026)
+
+The second pass (backend 18d5ebc) is the independent one: the first "Verifier report" section came from a session in the builder's own environment, so it counts as builder evidence, not verification. Round 2 (backend 3f6a64a) is read but not yet run by anyone independent. Build round 3 on top of 3f6a64a, then status `verifying`.
+
+- **D1 (web booking with no lock).** Round 2's shared `holdHour` is the fix. Keep it; the next verifier re-runs `race.mjs web 8` and `race.mjs mixed 8` at 90 minutes.
+- **D2 (delivered links die after 7 days, and are bearer links).** Fix in this task. Store the object key, not a signed link. `GET /legal/requests/{id}/deliverables` signs a fresh read link on every call, after the ownership check, valid for 15 minutes, using the same helper the other readers use (`signedReadUrl` / `freshUrlFor` in `storage.service.ts`). Rows that hold only a stored url get their key derived from it once, on read. An ops upload route (an admin token cannot presign today) is NOT this task: add it as a row in `SHARED-CHANGES.md` for LEGAL-07, which builds the dashboard delivery screen.
+- **D3 (file names).** Fix in this task. Refuse with 400 naming `fileName`: `/` or `\`, a name that is `.` or `..`, bidirectional controls (U+202A to U+202E, U+2066 to U+2069), U+2028, U+2029, U+0085, U+FEFF, and a name made only of format or whitespace characters. HTML stays allowed: the app and the chat render it as plain text.
+- **D4 (`scheduledFor` with no zone).** The app's new `POST /legal/requests/{id}/booking` refuses a time with no `Z` or `+hh:mm` offset (400 naming `scheduledFor`). The web's `POST /legal/requests/{id}/consultation` is protected and keeps its behaviour; record it as a follow-up note in the report, not a change.
+- **D5 (surviving mutants).** Add specs that kill M11 (service-price floor lowered) and M18 (a length with no price becomes bookable). M3 is covered by round 2's spec; the verifier confirms it.
+- **D6.** Correct the gate line in the round 3 report ("one of main's 16 fails sits in `notification-event.ts`, a file this branch touches; the set is unchanged") and mention the new spec's lint count.
+- **D7.** Not the builder's: the lead regenerates the mobile contract from backend main at merge.
+- **U1 (one account re-posting to hold every slot).** Not a blocker; main's web route does the same. Follow-up task after launch.
+- **U2 (notification names the service).** Change it. A lock screen should not show what kind of legal matter someone has. Text: "Your consultant has sent you 2 documents. They are in your legal chat." (and the singular form for one).
+- **U3 (a delivery marks the consultant as joined).** Correct as built: a delivery is the consultant writing in the thread.
+- **F8 (seeded 25,000 and 45,000 naira).** Stays an owner confirmation; it does not block the merge, because admin can change both.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
