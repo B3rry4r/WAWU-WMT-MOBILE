@@ -149,6 +149,16 @@ Method notes. I never called exp.host, api.expo.dev or FCM (barred by rule; the 
 
 **Cross-check with the report above (read after mine was written, nothing changed to fit it).** Both sessions saw the same V1 numbers (gates 16 fail, 56 to 60 warn), the same protected 253 of 253, the same migration order and the same seeded-row leak (their D2 is my VB-3, same two spec lines, same 2 to 1). Both ran `kill -9` mid-send and saw `failed / send_interrupted`, nothing resent; they called that covered by the reaper, I report it as a loss (VB-1) because in my runs the kill landed before the HTTP request and Expo received 0 of 80. Their D4 (the sender compares Node-written timestamps with SQL `now()`, so a non-UTC database timezone breaks retries) is a finding I did not test and had only guessed at; I did not retest it. Findings only mine: VB-2 (a blocker still gets the push and the blocked person's id is in its data), VB-4 (the admin's rejection reason and review title and stars on the lock screen), VB-5, VB-6, VU-2 (`DELETE /account` leaves the token and pushes continue). Findings only theirs: D1 (NUL character answers 500), D3 (unmarked invented figures), D5, D12 (`legal_delivered` merge order), D13, D14.
 
+## Lead rulings after the two verifier reports (7 Oct 2026)
+For Developer 2's fix round. Both reports (D1 to D14 and VB-1 to VB-6, VU-1 to VU-2) stand; these settle the questions they leave open.
+- **VB-1 (crash loses the claimed batch):** a crash or a hung Expo must not lose pushes that were never sent. Claim small batches, and put a `sending` row the reaper finds back in the queue (once, with its retry count) unless Expo is known to have accepted it. Duplicates stay impossible (the unique key).
+- **VB-2 (blocks):** a block between actor and recipient, in either direction, means no push, and no push ever carries the id of someone the recipient blocked or is blocked by. Spec.
+- **VB-3 / D2 (spec deletes a seeded follow):** specs touch only rows they create; prove with row counts of every table before and after `jest src/push`.
+- **VB-4 (lock-screen text):** an admin's free-text reason never goes into a push (`content_rejected` says the piece was sent back; the reason is read in the app). `review_received` may carry the piece title and the stars (reviews are public). Amount-bearing kinds as G-266.
+- **VU-2 (deleted account):** no push to an account whose deletion is scheduled; the worker skips it and its tokens are deleted when deletion is scheduled or the account is purged.
+- **VB-5, VB-6:** the receipts-chunk spec must not depend on the 5 s default under load; a spec covers the client timeout path (unknown, never resent).
+- **Expo message fields** (priority, sound, channelId) and the other unclear items: Default (agent), owner may override; record what you choose.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
