@@ -1,0 +1,285 @@
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Avatar } from '@/components/Avatar';
+import { Card, GroupedList } from '@/components/Card';
+import { useFocusRing } from '@/components/focusRing';
+import { Icon, VerifiedTick } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
+import { Skeleton } from '@/components/Skeleton';
+import { Text } from '@/components/Text';
+import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
+
+import { fetchMe, fetchTgif, patchTgif, settingsKeys, type Me, type TgifPreference } from './api/hub';
+import { THEME_LABEL, useDevicePrefs } from './devicePrefs';
+import { sentenceOf } from './failure';
+import { ROW_TILE } from './metrics';
+import { maskPhone } from './phone';
+import { SettingsFrame } from './SettingsFrame';
+import { signOutOfThisPhone } from './signOutFlow';
+import { switchMetrics } from './Switch';
+import { SwitchRow, switchRowMetrics } from './SwitchRow';
+import { ThemeSheet } from './ThemeSheet';
+import { useSwitches } from './useSwitches';
+
+/** design/_gen/settings.js line 11 (Z2): the parts 12 apart. */
+const BODY_GAP = 12;
+/** Line 11: the header card is padded 12 by 14, its avatar is 52, 12 between avatar and words, the name 16 at 600 with a 15 tick 5 away, the line 13, 2 under it, the chevron 17. */
+const headerMetrics = { padV: 12, padH: 14, avatar: 52, between: 12, name: 16, tick: 15, tickGap: 5, line: 13, lineGap: 2, chevron: 17 } as const;
+/** Line 11, the Theme row: 56 high, a 15 title at 600, its value at 14 with a 17 chevron. */
+const themeRow = { minHeight: 56, title: 15, valueSize: 14, chevron: 17 } as const;
+/** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below. */
+const footMetrics = { padV: 4, signOut: 15 } as const;
+
+export type SettingsScreenProps = {
+  onBack: () => void;
+  /** The header card: opens the person's own details (Edit profile). */
+  onOpenProfile: () => void;
+  onOpenNotifications: () => void;
+  onOpenPrivacy: () => void;
+  onOpenPassword: () => void;
+  onOpenAbout: () => void;
+  onOpenTerms: () => void;
+  onOpenPolicy: () => void;
+  /** After the phone has signed out: leaves Settings, which the route graph does not guard (SHARED-CHANGES SETTINGS-01 #3). */
+  onSignedOut: () => void;
+};
+
+/**
+ * Z2 · Settings. The header card is read from `GET /users/me`; TGIF is `GET` and `PATCH /settings/tgif`
+ * (the Hub holds it, so it follows the person to another phone); Sound and Theme are this phone's own
+ * choices and are kept on it. Wallet and PIN is added by WALLET-06 and Delete account by SETTINGS-05, each
+ * where Z2 draws it.
+ */
+export function SettingsScreen(props: SettingsScreenProps) {
+  const me = useQuery({ queryKey: settingsKeys.me, queryFn: fetchMe });
+  const tgif = useSwitches<'show', TgifPreference>({
+    queryKey: settingsKeys.tgif,
+    read: fetchTgif,
+    write: (patch) => patchTgif(patch.show === true),
+    valueOf: (settings) => settings.show,
+  });
+  const { prefs, setSound, setTheme, ensurePrefs } = useDevicePrefs();
+  const [choosingTheme, setChoosingTheme] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const signingOut = useRef(false);
+
+  useEffect(() => {
+    void ensurePrefs();
+  }, [ensurePrefs]);
+
+  const signOut = async () => {
+    if (signingOut.current) return;
+    signingOut.current = true;
+    setLeaving(true);
+    try {
+      await signOutOfThisPhone();
+      props.onSignedOut();
+    } catch (error) {
+      setProblem(sentenceOf(error, 'You could not be signed out. Try again.'));
+    } finally {
+      signingOut.current = false;
+      setLeaving(false);
+    }
+  };
+
+  return (
+    <SettingsFrame title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
+      <Header me={me.data} loading={me.isPending} onOpen={props.onOpenProfile} onRetry={() => void me.refetch()} />
+      <GroupedList testID="settings-account">
+        <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
+        <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
+        <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
+      </GroupedList>
+      <GroupedList testID="settings-preferences">
+        {tgif.query.data ? (
+          <SwitchRow
+            testID="settings-tgif"
+            title="TGIF on Home"
+            subtitle="Daily verse and prayer"
+            on={tgif.isOn('show')}
+            busy={tgif.busy.includes('show')}
+            onChange={(next) => void tgif.set('show', next)}
+          />
+        ) : (
+          <PendingRow testID="settings-tgif-pending" title="TGIF on Home" subtitle="Daily verse and prayer" failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
+        )}
+        <SwitchRow testID="settings-sound" title="Sound" subtitle="Taps and alerts" on={prefs.sound} onChange={(next) => void setSound(next)} />
+        <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
+      </GroupedList>
+      {tgif.failure ? (
+        <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-tgif">
+          {tgif.failure}
+        </Text>
+      ) : null}
+      <GroupedList testID="settings-about">
+        <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This" onPress={props.onOpenAbout} />
+        <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
+        <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
+      </GroupedList>
+      <View style={styles.foot}>
+        <Pressable
+          testID="settings-sign-out"
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+          accessibilityState={{ busy: leaving }}
+          disabled={leaving}
+          onPress={() => void signOut()}
+        >
+          <Text variant="body" tone="danger" style={[font(600), { fontSize: footMetrics.signOut }]}>
+            {leaving ? 'Signing out' : 'Sign out'}
+          </Text>
+        </Pressable>
+        {problem ? (
+          <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem">
+            {problem}
+          </Text>
+        ) : null}
+      </View>
+      <ThemeSheet
+        visible={choosingTheme}
+        value={prefs.theme}
+        onPick={(choice) => {
+          void setTheme(choice);
+          setChoosingTheme(false);
+        }}
+        onClose={() => setChoosingTheme(false)}
+      />
+    </SettingsFrame>
+  );
+}
+
+type HeaderProps = { me: Me | undefined; loading: boolean; onOpen: () => void; onRetry: () => void };
+
+/** Name, tick, email and masked phone, from the account. While it loads it is a quiet card; if it fails it says so and can retry. */
+function Header({ me, loading, onOpen, onRetry }: HeaderProps) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  if (!me) {
+    return (
+      <Card style={styles.header} testID="settings-header-pending">
+        <Skeleton width={headerMetrics.avatar} height={headerMetrics.avatar} radius={radius.chip} />
+        <View style={styles.headerWords}>
+          {loading ? (
+            <>
+              <Skeleton width="55%" height={headerMetrics.name} radius={radius.chip} />
+              <Skeleton width="75%" height={headerMetrics.line} radius={radius.chip} />
+            </>
+          ) : (
+            <Pressable testID="settings-header-retry" accessibilityRole="button" accessibilityLabel="Your details did not load. Try again" onPress={onRetry}>
+              <Text variant="body" style={[font(600), { fontSize: headerMetrics.name }]}>
+                Your details did not load
+              </Text>
+              <Text variant="secondary" tone="accentFg" style={styles.headerLine}>
+                Try again
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </Card>
+    );
+  }
+  const name = [me.firstName, me.lastName].filter(Boolean).join(' ');
+  const tick = me.verification.creator.verified ? 'creator' : me.verification.professional.verified ? 'pro' : null;
+  const line = [me.email, maskPhone(me.phone)].filter(Boolean).join(' · ');
+  return (
+    <Pressable
+      testID="settings-header"
+      accessibilityRole="button"
+      accessibilityLabel={[name, line].filter(Boolean).join(', ')}
+      onPress={onOpen}
+      {...ring.handlers}
+      style={ring.style}
+    >
+      <Card style={styles.header}>
+        <Avatar name={name} size={headerMetrics.avatar} source={me.avatarUrl ?? undefined} decorative />
+        <View style={styles.headerWords}>
+          <View style={styles.nameLine}>
+            <Text variant="body" style={[font(600), styles.name]}>
+              {name}
+            </Text>
+            {tick ? <VerifiedTick kind={tick} size={headerMetrics.tick} /> : null}
+          </View>
+          {line ? (
+            <Text variant="secondary" tone="textMuted" style={styles.headerLine}>
+              {line}
+            </Text>
+          ) : null}
+        </View>
+        <Icon name="ChevronRight" size={headerMetrics.chevron} color={colors.textMuted} />
+      </Card>
+    </Pressable>
+  );
+}
+
+type PendingRowProps = { testID: string; title: string; subtitle: string; failed: boolean; onRetry: () => void };
+
+/** A switch whose value has not come back from the Hub: loading, or failed with a way to try again. It never guesses a value. */
+function PendingRow({ testID, title, subtitle, failed, onRetry }: PendingRowProps) {
+  if (!failed) {
+    return (
+      <View testID={testID} accessible accessibilityRole="progressbar" accessibilityLabel={`${title}, loading`} style={styles.pending}>
+        <View style={styles.pendingWords}>
+          <Text variant="body" style={[font(600), styles.pendingTitle]}>
+            {title}
+          </Text>
+          <Text variant="secondary" tone="textMuted">
+            {subtitle}
+          </Text>
+        </View>
+        <Skeleton width={switchMetrics.width} height={switchMetrics.height} radius={radius.chip} />
+      </View>
+    );
+  }
+  return (
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={`${title} did not load. Try again`} onPress={onRetry} style={styles.pending}>
+      <View style={styles.pendingWords}>
+        <Text variant="body" style={[font(600), styles.pendingTitle]}>
+          {title}
+        </Text>
+        <Text variant="secondary" tone="accentFg">
+          Could not load. Try again
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function ThemeRow({ value, onPress }: { value: string; onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID="settings-theme"
+      accessibilityRole="button"
+      accessibilityLabel={`Theme, ${value}`}
+      onPress={onPress}
+      {...ring.handlers}
+      style={({ pressed }) => [styles.themeRow, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
+    >
+      <Text variant="body" style={[font(600), { fontSize: themeRow.title, flex: 1 }]}>
+        Theme
+      </Text>
+      <Text variant="body" tone="textMuted" testID="settings-theme-value" style={{ fontSize: themeRow.valueSize }}>
+        {value}
+      </Text>
+      <Icon name="ChevronRight" size={themeRow.chevron} color={colors.textMuted} />
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: headerMetrics.between, paddingVertical: headerMetrics.padV, paddingHorizontal: headerMetrics.padH },
+  headerWords: { flex: 1, minWidth: 0 },
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: headerMetrics.tickGap },
+  name: { fontSize: headerMetrics.name, lineHeight: canvasNormalLineHeight(headerMetrics.name), flexShrink: 1 },
+  headerLine: { fontSize: headerMetrics.line, lineHeight: canvasNormalLineHeight(headerMetrics.line), marginTop: headerMetrics.lineGap },
+  themeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: themeRow.minHeight },
+  pending: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: switchRowMetrics.minHeight, paddingVertical: switchRowMetrics.padV },
+  pendingWords: { flex: 1, minWidth: 0 },
+  pendingTitle: { fontSize: switchRowMetrics.title, lineHeight: canvasNormalLineHeight(switchRowMetrics.title) },
+  foot: { alignItems: 'center', gap: space.md, paddingVertical: footMetrics.padV },
+});
