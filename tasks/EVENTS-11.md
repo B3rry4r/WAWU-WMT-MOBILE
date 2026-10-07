@@ -7,7 +7,7 @@ order: 184
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -147,6 +147,40 @@ Independent verifier session (wrote none of this task), narrow re-check of round
 - **NOT RUN.** The full backend suite (needs a network namespace for :4001, refused to this session; unblocked by a session allowed to run one). The paid-ticket verify path in the D2 race (needs a Flutterwave stand-in at the client seam; unblocked by a spec with the mocked client). Real WAWU ID (stand-in used).
 
 **Verdict: building.** D1 is fixed and the lock is unchanged, but round 3 introduced D2.
+
+## Builder report, round 4
+
+Backend `wmt/EVENTS-11` `d98e037` (one commit on `b368f20`; origin/main `3041887`, merge a no-op). Lead rulings for this round: fix D2 so a purchase and a PUT never deadlock (FOR NO KEY UPDATE, lock order consistent with `issueOrder`, PATCH checked the same way); PUT on a `removed` event answers PATCH's takedown 403 and writes nothing (replaces the round 1 default, verifier item 5); PATCH on a host-cancelled event stays as main has it (follow-up below). Evidence under the lead's scratchpad `be11/r4/`.
+
+- **D2 fix.** PUT and PATCH lock the event row `FOR NO KEY UPDATE` instead of `FOR UPDATE`. It still conflicts with every other update of the event row (an admin's decision, a second PUT or PATCH), so D1 stays fixed, but not with the `FOR KEY SHARE` lock Postgres takes on the event for each row inserted that points at it (an order, a ticket, a going mark, a save, a referral). So no insert ever waits on an edit, PATCH included: PATCH touches only the event and its speakers, and no other route locks a speaker row. PUT then locks the event's tier rows `FOR UPDATE` before it reads `sold`. A purchase (`issueOrder`) locks its tier row first, by incrementing `sold`, then takes only `FOR KEY SHARE` on the event, which never waits on the edit's event lock. The tier rows are the only locks the two contend for, and each takes them once, so one simply waits for the other and there is no cycle. A second PUT waits on the event lock before it touches a tier row. Purchase first: PUT answers the sold 409. PUT first: the purchase finds its tier replaced and is refused (409 "sold out" or 404), never seated on a deleted tier.
+- **Open payment.** A PUT while a buyer's payment is open (a `pending` order on a tier) used to fail on the order's foreign key: a 500 on main and on `b368f20`. It is now a 409 naming the tier ("A buyer is paying for "Regular" right now, so the tiers cannot be replaced yet. Add a new tier instead, or try again once that payment has finished."), nothing written. Re-sending the same tiers is still "no change", 200.
+- **Removed (ruling).** PUT on a `removed` event is 403 with PATCH's exact body (one shared `TAKEN_DOWN_MESSAGE`), checked before the gate and again under the lock, and nothing is written, the same tiers included. Live: remove 200, PUT "Repriced" ₦1 x 500,000 is 403 (body equal to PATCH's), restore 200, and the public reads Regular ₦5,000 x 100 as before the takedown.
+- **Specs.** New `event-purchase-races.contract.spec.ts`:
+  - PUT racing a free purchase on the same tier, 40 rounds;
+  - PUT racing a paid settle (`/events/orders/:orderId/verify` into `issueOrder`, payment client replaced at `FLUTTERWAVE_CLIENT` by a stand-in that confirms each charge), 20 rounds;
+  - the open-payment 409.
+
+  | Head | Result | Detail |
+  |---|---|---|
+  | Branch | 3/3, three runs | |
+  | `b368f20` | 3/3 fail | free race 37 of 40 rounds wrong (35 "buy 500", 2 "put 500"); paid race 18 of 20 wrong (all with a PUT 500, 15 with a verify 500 too); open payment 500 |
+  | Main (for reference) | 3/3 fail | the event stays published by design (no R-40); paid race 18 PUT 500s and 2 rounds leaving 2 tiers, one of them sold; open payment 500 |
+
+  Round 3's race spec reran: 4/4 three times; its post-takedown PUT now expects 403. Round 1's removed test now expects 403 with PATCH's body, nothing written, and a restore showing the old tiers.
+- **Over HTTP** (built Hub, own database, 40 trials each):
+  - PUT vs free purchase: 20 "purchase first" (order 201, PUT 409, published, 1 tier, 1 order) and 20 "PUT first" (PUT 200, purchase 409, pending, 1 tier, 0 orders).
+  - PUT vs remove: 25 removed (PUT 403), 15 pending (remove 400), takedown undone 0.
+  - The Hub log has 0 `40P01` lines and 0 errors.
+- **Protected suite:** no change needed. The lock is the round 2 lock, and with it, against `d98e037`: **253/253, all 244 required**.
+- **Checks.** `src/event` + `src/admin/events` + `src/event-ticketing`: **157/157**. tsc 0. eslint 0 on every changed .ts file. Gates: 16 fail, the same lines as main, 58 warn. Tripwire 0. Secret scan: nothing key-shaped. `contract:build` leaves the contract unchanged.
+- **Follow-ups for the lead (not changed here):**
+  1. PATCH on an event its own host cancelled (status `cancelled`) is accepted and returns it to `pending`, as on main.
+  2. Opening a paid order (`POST /events/:id/orders`) for a tier a PUT replaces in the same instant can still fail the order's foreign-key insert with a 500. That insert is not in a transaction with the tier read. It is pre-existing on main. The free path is clean: it settles through `issueOrder`.
+  3. An abandoned checkout (an order left `pending`) now blocks tier edits with the 409 above until it is settled or failed. On main it blocked them with a 500.
+- **NOT RUN:**
+  - the full backend suite in a network namespace (not in this round's list);
+  - Real WAWU ID (the mock was used);
+  - Flutterwave and Fintava: not called; the paid path ran against the stand-in at the client seam.
 
 ## Owner sign-off
 
