@@ -7,7 +7,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 43 | 29 | 24 | 28 |
+| todo | 72 | 0 | 24 | 28 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
@@ -103,7 +103,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Next up
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
-- **Developer:** [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader, [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work
+- **Developer:** nothing unblocked
 - **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
 - **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out
 
@@ -111,6 +111,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
 - 7 Oct 2026 · ADS-06 · Merged to main (backend PR #76): admin ad endpoints (create, edit, schedule, pause, resume, end, delete, reports) with ADS-05's counts and an audit row per action; reviewer test gap T1 left as a follow-up; Developer 2's task, merged by the lead.
 - 7 Oct 2026 · LEGAL-01 · Merged to main (backend PR #75): the legal assistant chat, Send to a consultant and the matter thread, with AI-spend limits that hold under parallel use and across two servers; messages to a consultant who has joined are not limited; `wmt/LEGAL-01-b` superseded; the lead's task.
 - 7 Oct 2026 · LEGAL-01 · Verifier report round 3 (independent session, backend f49927a, mobile 61cf8b0): no defect open, status review. D8 reproduces on ca1fd42 (100 parallel posts on the older chat route: 100 x 201 and 100 AI calls) and is closed on f49927a (28 x 201, 72 x 429, 28 AI calls; 50 old plus 50 new share one allowance, hour total exactly 30; the same with two Hubs on one database at 150 ms and 2 s), the 201 is byte-identical to main 0e7b617, the hung-provider case makes 2 brief calls not 3, D1 to D6 still hold, 9 of 9 of my limit and window mutants are killed, the migration folder sorts after main's newest and shares no stamp, protected suite 253/253, gates the same 16 fail as main (55 warn against 51, the four PROVISIONAL markers), G-231 and G-232 are unique across every ref, `npm run check` exit 0. Notes: another user on the older route is 403 on main and the branch; the allowance now also counts messages to a joined consultant (30 an hour); a NUL in `body` on the older route is a 500 on main too.
@@ -125,4 +126,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · ADS-06 · Built, awaiting verification: admin ad endpoints (backend branch `wmt/ADS-06`): create, edit, schedule, pause, resume, end, delete a draft, list, detail and report under `/api/hub/admin/ads`, with an audit row for every change (migration `20261008100000_admin_ads_audit`); a pause stops serving on the next request; views, taps and skips were wired in round 3 from ADS-05's counts (G-194 closed).
 - 7 Oct 2026 · EVENTS-02 · Merged to main (backend PR #48): hybrid events, conference and concert kinds, ticket types sent with POST /events, hosting verified-only; F6 (repricing through the web's PUT /events/:id/tickets) split out for the owner; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · EVENTS-05 · Merged to main (backend PR #49): door staff, check-in at the door, sold counts and referral sales for hosts; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · EVENTS-05 · Verified round 4 (backend 554b831, mobile 5346c7f; both mains already merged, trial merges no-ops): status review, no defect open. T1 closed (mutants L6 and L7 each fail one test; 27 of 27 unmutated), no non-test change beyond main's (12 files, 10 byte-equal to round 3 by added lines, only the spec +55), migration `20261007100000_event_door_staff` sorts after `20261007090000_inbox_feed_index` and before `20261007120000_legal_assistant`, fresh DB applies and seeds with only main's known index drift, gates 16 fail / 51 warn / 76 accepted equal to main, protected suite 253/253, event-ticketing and both map specs 36/36, tripwire 0, mobile check exit 0 with the contract equal to the backend's. Live on the built Hub: staff 403 on host routes, removed staff 403, 10 parallel scans of one ticket give exactly 1 valid. One info item, T2: a whitespace-only label on a put-back survives a mutant (no stated rule). NOT RUN: full backend suite, paid Flutterwave ticket, Fintava.

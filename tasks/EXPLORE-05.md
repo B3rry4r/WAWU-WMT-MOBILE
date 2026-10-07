@@ -1,7 +1,7 @@
 ---
 id: EXPLORE-05
 title: Search: communities, recent and popular searches, ticks
-owner: DEV
+owner: YOU
 area: EXPLORE
 order: 99
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # EXPLORE-05 · Search: communities, recent and popular searches, ticks
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 
