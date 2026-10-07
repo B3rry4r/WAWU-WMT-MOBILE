@@ -2,11 +2,13 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { VerifiedTick } from '@/components/icon';
-import { MediaCard } from '@/components/MediaCard';
+import { MediaCard, mediaMetrics } from '@/components/MediaCard';
 import { EmptyState } from '@/components/StateViews';
 import { Text as WawuText } from '@/components/Text';
+import { hueFor } from '@/features/feed/model';
 import { space } from '@/theme';
 
 import { useTodayClient } from './client';
@@ -16,10 +18,9 @@ import { suggestionLine, suggestionTick } from './model';
 
 /**
  * One creator on the rail: the shared stacked `MediaCard` (H1's `cCard`, 146 by 196), the tick after the name
- * through `titleAccessory`, and Follow as the card's shared `action` (lead ruling, HOME-01 round 3). The canvas's
- * Follow (a 13 label, white at 20% with no ring once followed) differs from `action`'s Button (13.5, glass with a
- * hairline ring); SHARED-03 changes that once in `action` for every card, not per screen. With no photo the
- * picture is MediaCard's quiet block (it has no slot for initials yet: SHARED-CHANGES HOME-01 #3, SHARED-03).
+ * through `titleAccessory`, and Follow as the card's shared `action` (lead ruling, HOME-01 round 3), which draws the
+ * canvas's Follow (13 at 700) and Following (white at 20%, no ring) for every creator card. With no photo the card
+ * shows the person's initials on their hue through `placeholder`.
  */
 function SuggestionCard({ item, onFollow, busy }: { item: CreatorSuggestion; onFollow: () => void; busy: boolean }) {
   const tick = suggestionTick(item);
@@ -32,6 +33,7 @@ function SuggestionCard({ item, onFollow, busy }: { item: CreatorSuggestion; onF
       title={item.name}
       subtitle={suggestionLine(item) ?? undefined}
       imageUrl={item.avatarUrl ?? undefined}
+      placeholder={<Avatar name={item.name} hue={hueFor(item.wawuId)} size={mediaMetrics.placeholderAvatar} decorative />}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : undefined}
       action={{ label: item.following ? 'Following' : 'Follow', on: item.following, onPress: onFollow, loading: busy, testID: `today-follow-${item.wawuId}` }}
     />

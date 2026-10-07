@@ -8,10 +8,14 @@ import { Icon, type IconName } from './icon';
 /** design/_ds/wawu/tokens/elevation.css `--press-scale`. */
 export const pressScale = 0.98;
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'white' | 'glass';
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'profile';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'white' | 'glass' | 'veil';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'profile' | 'card';
 
-type Look = { bg?: ColorToken; pressed: ColorToken; fg: ColorToken; ring?: ColorToken };
+/**
+ * `veil`: a fill drawn as its own layer at an opacity, for a colour the tokens hold only at full strength (white at
+ * 20% over a picture). The pill itself stays clear, so its pressed colour is the press scale alone.
+ */
+type Look = { bg?: ColorToken; pressed?: ColorToken; fg: ColorToken; ring?: ColorToken; veil?: { color: ColorToken; opacity: number } };
 
 const looks: Record<ButtonVariant, Look> = {
   primary: { bg: 'accent', pressed: 'accentPress', fg: 'textOnAccent' },
@@ -19,22 +23,27 @@ const looks: Record<ButtonVariant, Look> = {
   outline: { pressed: 'surfaceSunken', fg: 'textPrimary', ring: 'borderStrong' },
   white: { bg: 'textOnAccent', pressed: 'hueSand', fg: 'textOnLight' },
   glass: { bg: 'surfaceGlass', pressed: 'borderGlass', fg: 'textOnAccent', ring: 'borderGlass' },
+  /** design/_gen/explore.js and home.js `cCard`'s "Following": white at 20% over the card's picture, with no ring. */
+  veil: { fg: 'textOnAccent', veil: { color: 'textOnAccent', opacity: 0.2 } },
 };
 
-/** `letter-spacing: -0.01em` on the design's button label. */
+/** `letter-spacing: -0.01em` on the design's button label (a size may set its own). */
 const labelTracking = 0.01;
 
 /**
  * design/_gen/kit.js line 15 (`Btn`, `S`): [height, side padding, label size, icon size] per size, the label at 700
  * (DECISIONS R-22). `profile` is not the kit's: it is "Edit profile" in a profile's name block (design/_gen/me.js
  * line 20, `nameBlock`, M1 and M5), 38 high, 16 in, the label 14 at 600; it draws no icon, so its icon size is `sm`'s.
+ * `card` is not the kit's either: it is a creator card's Follow (design/_gen/explore.js and home.js `cCard`), 32 high,
+ * the label 13 at 700 with no letter-spacing; the side padding and icon are `sm`'s.
  */
-const sizes = {
+const sizes: Record<ButtonSize, { height: number; padX: number; fontSize: number; icon: number; weight: 600 | 700; tracking?: number }> = {
   sm: { height: 34, padX: 14, fontSize: 13.5, icon: 15, weight: 700 },
   md: { height: 44, padX: 18, fontSize: 14.5, icon: 17, weight: 700 },
   lg: { height: 54, padX: 24, fontSize: 16, icon: 19, weight: 700 },
   profile: { height: 38, padX: 16, fontSize: 14, icon: 15, weight: 600 },
-} as const;
+  card: { height: 32, padX: 14, fontSize: 13, icon: 15, weight: 700, tracking: 0 },
+};
 
 /** The kit's `gap:7px` between a button's icon and its label. */
 const iconGap = 7;
@@ -92,7 +101,13 @@ export function Button({
         {
           height: dims.height,
           paddingHorizontal: dims.padX,
-          backgroundColor: inactive ? colors.surfaceSunken : pressed ? colors[look.pressed] : look.bg ? colors[look.bg] : 'transparent',
+          backgroundColor: inactive
+            ? colors.surfaceSunken
+            : pressed && look.pressed
+              ? colors[look.pressed]
+              : look.bg
+                ? colors[look.bg]
+                : 'transparent',
           borderColor: look.ring ? colors[look.ring] : 'transparent',
           borderWidth: look.ring ? StyleSheet.hairlineWidth : 0,
           transform: [{ scale: pressed && !blocked ? pressScale : 1 }],
@@ -102,13 +117,20 @@ export function Button({
         style,
       ]}
     >
+      {look.veil && !inactive ? (
+        <View
+          testID={testID ? `${testID}-veil` : undefined}
+          pointerEvents="none"
+          style={[styles.veil, { backgroundColor: colors[look.veil.color], opacity: look.veil.opacity }]}
+        />
+      ) : null}
       <View style={styles.row}>
         {loading ? (
           <ActivityIndicator testID="button-spinner" size="small" color={fg} />
         ) : icon ? (
           <Icon name={icon} size={dims.icon} color={fg} strokeWidth={2.2} />
         ) : null}
-        <NativeText numberOfLines={1} style={[font(dims.weight), { color: fg, fontSize: dims.fontSize, letterSpacing: -labelTracking * dims.fontSize }]}>
+        <NativeText numberOfLines={1} style={[font(dims.weight), { color: fg, fontSize: dims.fontSize, letterSpacing: -(dims.tracking ?? labelTracking) * dims.fontSize }]}>
           {label}
         </NativeText>
         {iconRight && !loading ? <Icon name={iconRight} size={dims.icon} color={fg} strokeWidth={2.2} /> : null}
@@ -166,6 +188,7 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
 const styles = StyleSheet.create({
   base: { borderRadius: radius.button, alignItems: 'center', justifyContent: 'center' },
   full: { alignSelf: 'stretch' },
+  veil: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: radius.button },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: iconGap },
   round: { borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
 });

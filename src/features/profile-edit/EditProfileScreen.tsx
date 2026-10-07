@@ -10,6 +10,7 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
+import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
 import { Banner } from '@/features/auth/Banner';
 import { font, radius, space, useWawu } from '@/theme';
@@ -23,7 +24,6 @@ import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased
 import { HANDLE_PATTERN, PROFILE_LINK_PREFIX, limits } from './limits';
 import { canPickImage, pickImage } from './pickImage';
 import { PictureHeader } from './PictureHeader';
-import { SavedToast } from './SavedToast';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
 import { uploadPicture, type PictureFolder } from './upload';
@@ -262,7 +262,7 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           {added.length < PLATFORMS.length ? <AddHandleRow onPress={onOpenSocial} disabled={busy} /> : null}
         </View>
       </EditFrame>
-      {saved && ownNotice ? <SavedToast message="Profile saved" /> : null}
+      <Toast message={saved && ownNotice ? 'Profile saved' : null} testID="profile-saved" />
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">
         <Text variant="sheetTitleSm">Discard your changes?</Text>
         <Text variant="muted">What you changed has not been saved.</Text>

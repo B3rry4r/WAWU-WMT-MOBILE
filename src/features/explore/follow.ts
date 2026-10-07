@@ -1,5 +1,5 @@
 import { useMutation, type InfiniteData } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { queryClient } from '@/api/query';
 
@@ -9,7 +9,7 @@ import { displayHandle } from './CreatorCard';
 /** What an Explore query holds: a list (featured, categories), pages of a list (one category), or anything else. */
 type ExploreData = unknown;
 
-/** How long the "Couldn't follow" line stays up. A screen timing, not a fact. */
+/** How long the "Couldn't follow" line stays up (the shared `Toast`'s `duration`). A screen timing, not a fact. */
 export const FOLLOW_NOTICE_MS = 4000;
 
 function mark(list: ExploreCreator[], wawuId: string, following: boolean): ExploreCreator[] {
@@ -43,7 +43,8 @@ type Vars = { wawuId: string; following: boolean; handle: string };
 
 /**
  * Follow and Following on a creator card. The button turns at once, on every Explore list, and is put right by
- * the Hub's answer. When the Hub refuses, or the request fails, it is put back and a short line says so. A second
+ * the Hub's answer. When the Hub refuses, or the request fails, it is put back and a short line says so (`notice`,
+ * drawn by the screen's `Toast` for `FOLLOW_NOTICE_MS`, then `dismiss`). A second
  * tap on the same creator while their request is on its way is ignored; other creators can be followed meanwhile.
  */
 export function useFollow() {
@@ -68,12 +69,6 @@ export function useFollow() {
     queryClient,
   );
 
-  useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), FOLLOW_NOTICE_MS);
-    return () => clearTimeout(timer);
-  }, [notice]);
-
   const { mutate } = mutation;
   const toggle = useCallback(
     (creator: ExploreCreator) => {
@@ -85,5 +80,8 @@ export function useFollow() {
     [mutate],
   );
 
-  return { toggle, notice };
+  /** Takes the line down: the toast calls it `FOLLOW_NOTICE_MS` after each new line. */
+  const dismiss = useCallback(() => setNotice(null), []);
+
+  return { toggle, notice, dismiss };
 }

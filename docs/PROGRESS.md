@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 92 of 187.**
+**Launch tasks done: 93 of 187.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 66 | 0 | 23 | 26 |
+| todo | 65 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 53 | 27 | 11 | 5 |
+| done | 54 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -111,6 +111,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
 - [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
+- [SHARED-03](../tasks/SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder) (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -127,6 +128,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
+- 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
+- 7 Oct 2026 · SHARED-03 · Built: one shared `Toast` (ME-06's and Explore's copies deleted), chips beside icon chips at 11/14 (X3's All), `MediaCard` initials for a creator with no photo, THE creator-card Follow (`Button` `card` and `veil`, Explore on `action`), Z3 made deterministic (20 of 20), T3, T4 and R2-5 covered; 15 of 15 mutants killed; 148 picture pairs against main, 132 identical, 16 differ only by items 2, 3 and 6; `npm run check` 0 (76 suites, 1377 tests). Status verifying.
 - 7 Oct 2026 · HOME-01 · HOME-01 merged (round 3 passed; all four tab hubs on main; T3 and T4 test gaps moved to SHARED-03).
 - 7 Oct 2026 · HOME-01 · Verifier report round 3 (status review): D3 closed. Follow is MediaCard's shared `action`, and its 13 vs 13.5 label and Following ring are recorded under SHARED-03 item 6. T1 and T2 now killed. A Follow and an unfollow through the app read back from the Hub and the database. D1 and D2 still closed; the merge kept every row (HOME-09 F1 was a true duplicate). Mutants 23 of 25 killed; T3 and T4 are test gaps.
 - 7 Oct 2026 · HOME-01 · Builder round 3 (status verifying): Follow on creator cards is MediaCard's shared `action` (FollowButton deleted; the 13 label and ring left to SHARED-03); tests T1 (figure at 38) and T2 (own glow id) kill the verifier's two survivors.
@@ -139,6 +143,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.
 - 7 Oct 2026 · EXPLORE-01 · Round 2: shared FilterChips and MediaCard replace the local chips and card (D1, D2), Follow pending per creator (D3), refused Follow rolls back with a short line, blank categories tested; status verifying.
 - 7 Oct 2026 · EXPLORE-01 · Verified round 1 (independent verifier, real WAWU ID fb8717e, Hub 3041887): V4, V6, V9 and R-41 passed, X15 confirmed not built, 11 of 12 mutants killed; 3 low defects open (CategoryChips forks FilterChips and CreatorCard redraws MediaCard, VERIFIER check 2, neither caught by the forks gate; a pending Follow drops Follow taps on every other card); status building.
-- 7 Oct 2026 · EXPLORE-01 · Built: Explore (category tiles, featured creators with Follow, loading, error) and Categories (chips, creators, empty, paging) against the local Hub; entries to screens not built yet left out (R-41); status verifying.
-- 7 Oct 2026 · SHARED-02 · Merged: shared components for the tab hubs (card, chip and button options, theme tokens, signed-in routes); 132 of 144 screens pixel-identical, the rest intended.
-- 7 Oct 2026 · SHARED-02 · Verifier report, round 2 (mobile `13596e1`, main `c4471f3`): D1 (no SHARED-CHANGES row lost, none went backwards), D2 ("Profile saved" once from the Me tab, from Settings and on a cold `?from=me`, light and dark) and D3 (M1's button only; W1 identical) closed; T1 to T7 killed, 4 own mutants killed; `npm run check` 0 (71 suites, 1286 tests); 144 picture pairs against main, only `/tgif` and M1's button differ; status review.

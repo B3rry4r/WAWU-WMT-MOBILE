@@ -10,14 +10,14 @@ import { FilterChips } from '@/components/FilterChips';
 import { Skeleton, LoadingView } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { Toast } from '@/components/Toast';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { categoriesKey, creatorsKey, fetchCategories, fetchCreatorsPage, type ExploreCreator } from './api';
 import { categoryChips, chosenCategory, emptyCategoryCopy, type CategoryChoice } from './categories';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
-import { FollowNotice } from './FollowNotice';
-import { useFollow } from './follow';
+import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 import { nextCreatorsPage } from './paging';
 
 /**
@@ -33,7 +33,7 @@ export const categoriesMetrics = {
   chipsGap: 14,
   bottom: 40,
   skeletonCards: 4,
-  /** The refusal line sits this far above the safe area (FollowNotice's default). */
+  /** The refusal line sits this far above the safe area (the bottom toast's own 24). */
   noticeBottom: 24,
 } as const;
 
@@ -178,7 +178,16 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
         style={styles.list}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + categoriesMetrics.bottom }, centered && styles.centered]}
       />
-      <FollowNotice message={follow.notice} bottom={insets.bottom + categoriesMetrics.noticeBottom} />
+      <Toast
+        message={follow.notice}
+        tone="alert"
+        placement="bottom"
+        offset={insets.bottom + categoriesMetrics.noticeBottom}
+        lines={2}
+        duration={FOLLOW_NOTICE_MS}
+        onHide={follow.dismiss}
+        testID="follow-notice"
+      />
     </View>
   );
 }

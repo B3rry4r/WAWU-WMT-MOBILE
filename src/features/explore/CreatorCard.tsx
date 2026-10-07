@@ -1,9 +1,9 @@
-import { StyleSheet, type DimensionValue } from 'react-native';
+import type { DimensionValue } from 'react-native';
 
-import { Button } from '@/components/Button';
+import { Avatar } from '@/components/Avatar';
 import { VerifiedTick } from '@/components/icon';
 import { MediaCard, mediaMetrics } from '@/components/MediaCard';
-import { useWawu } from '@/theme';
+import { hueFor } from '@/features/feed/model';
 
 import type { ExploreCreator } from './api';
 
@@ -17,18 +17,7 @@ export const creatorCardMetrics = {
   gridHeight: 218,
   between: 10,
   tick: 13,
-  /** `cCard`'s "Following": white at 20%, no outline (the canvas's 0.2 white). */
-  followingAlpha: 0.2,
 } as const;
-
-/**
- * White at the strength `cCard` draws "Following" with, taken from the glass token (white at 14%) so no colour is
- * written here. `MediaCard`'s `action` draws its on state as the glass Button (white at 14% with an outline), so the
- * Following pill goes through `footer` as the same shared Button with this fill and no outline.
- */
-function whiteAt(glass: string, alpha: number): string {
-  return glass.replace(/[\d.]+\)$/, `${alpha})`);
-}
 
 /** Which tick a card shows: the creator tick first, else the professional tick (X1 draws one or the other). */
 export function tickOf(creator: Pick<ExploreCreator, 'verification'>): 'creator' | 'pro' | undefined {
@@ -51,9 +40,11 @@ export type CreatorCardProps = {
   testID?: string;
 };
 
-/** One creator on Explore: their portrait, handle and tick, what they do, and Follow. */
+/**
+ * One creator on Explore: their portrait (or their initials on their hue when they have none), handle and tick, what
+ * they do, and Follow. Follow and Following are `MediaCard`'s own `action`, drawn as on Home's creator rail.
+ */
 export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, height = creatorCardMetrics.railHeight, onToggleFollow, testID }: CreatorCardProps) {
-  const { colors } = useWawu();
   const tick = tickOf(creator);
   const followTestID = testID ? `${testID}-follow` : undefined;
   const following = Boolean(onToggleFollow) && creator.following;
@@ -66,26 +57,12 @@ export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, hei
       subtitle={creator.field ?? undefined}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={creatorCardMetrics.tick} /> : undefined}
       imageUrl={creator.avatarUrl ?? undefined}
+      placeholder={<Avatar name={creator.name} hue={hueFor(creator.wawuId)} size={mediaMetrics.placeholderAvatar} decorative />}
       width={width}
       height={height}
-      action={onToggleFollow && !following ? { label: 'Follow', onPress: onToggleFollow, testID: followTestID } : undefined}
-      footer={
-        onToggleFollow && following ? (
-          <Button
-            testID={followTestID}
-            label="Following"
-            variant="glass"
-            size="sm"
-            full
-            onPress={onToggleFollow}
-            style={[styles.following, { backgroundColor: whiteAt(colors.surfaceGlass, creatorCardMetrics.followingAlpha) }]}
-          />
-        ) : undefined
+      action={
+        onToggleFollow ? { label: following ? 'Following' : 'Follow', on: following, onPress: onToggleFollow, testID: followTestID } : undefined
       }
     />
   );
 }
-
-const styles = StyleSheet.create({
-  following: { height: mediaMetrics.actionHeight, borderWidth: 0 },
-});
