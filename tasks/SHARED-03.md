@@ -33,12 +33,15 @@ Close the shared-component items the hub checks found, so no feature keeps a loc
 4. **Test gaps** (EXPLORE-01 R2-5): the follow notice's duration (4 s), and Categories passing `revealSelected`.
 5. **Flaky test** (EXPLORE-01 R2-6): SETTINGS-01's `settingsScreens.test.tsx` "Z3 · Notifications › shows the loading view" fails about one run in three without load. Find the cause and make it deterministic without weakening what it checks.
 
+6. **One Follow button on creator cards** (HOME-01 round 2 D3 ruling): MediaCard's `action` is THE Follow button for creator cards. Make its look match the canvas's creator-card Follow (label 13, not 13.5; Following on white at 20% with no ring) through MediaCard's props, so no screen styles it by hand. Then switch Explore's `CreatorCard` from its `footer` + styled Button to `action`, and check Home's creator rail (already on `action` after HOME-01 round 3) picks up the look. Both cards draw Follow identically.
+
 ## Capability checks
 
 - [ ] No feature keeps a copy of the toast; both notices look as before (pictures, light and dark).
 - [ ] The All chip matches X3's spacing; every other chip on every screen is unchanged.
 - [ ] A creator with no photo shows initials on Home and Explore.
 - [ ] The Z3 test passes 20 runs in a row.
+- [ ] Home and Explore draw Follow through `action` only, identically, matching the canvas (pictures).
 - [ ] `npm run check` exits 0.
 
 ## Builder report
