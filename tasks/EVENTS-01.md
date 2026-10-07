@@ -367,6 +367,16 @@ Notes (not counted): `fromPrices` on the backend answers for any published id, i
 
 **Status:** open D7, D8, D9, D10 and T3, so `status: building`.
 
+## Lead rulings after the independent round 3 (7 Oct 2026)
+
+Build round 6 on 5d4d071, then status `verifying`. The lead's independent verifier re-checks it; a report written from the builder's own environment is builder evidence.
+
+- **D7 and D8 (zone).** Every date the events screens show is read in the event's own zone: the featured card's badge, the row badge, the tier "Ended" and "Opens" dates, and anything else that formats a date. Add screen tests with a non-Lagos event (America/New_York across a date boundary) that would have caught D7, D8 and the verifier's V11.
+- **D9 (prices on screen).** A later prices call that fails must not clear prices already shown: keep each row's price once it has arrived (query per page, or keep the last good answer), and only rows that never got a price show none.
+- **D10 (badge day).** Two digits, as the design draws it ("OCT 09").
+- **T3 and V10.** A test that fails when `retry: false` is removed from the prices query (use a test client that allows retries for that test), and a test that the route file wires the focus refetch.
+- **Hub entries (the verifier's question).** R-41 already decides it: an entry that leads to a screen already built at the time a hub merges is wired by that hub. So if EVENTS-01 merges before HOME-01 and EXPLORE-01, those hubs wire the Events entries in their own rounds (the lead tells their builders); if a hub merges first, EVENTS-01 adds its entries on that hub in its own next round. Either way EVENTS-01 does not edit a hub branch.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
