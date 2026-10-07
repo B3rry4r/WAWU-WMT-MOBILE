@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,9 +16,11 @@ import {
   defaultFilters,
   fetchEventsPage,
   fetchFeatured,
+  fetchFromPrices,
   fetchOptions,
   featuredKey,
   filtersAreDefault,
+  fromPricesKey,
   listKey,
   optionsKey,
   type EventFilters,
@@ -34,7 +36,7 @@ const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } a
 /** design/_gen/events.js `evTabs`: 22 between tabs, 15 semi-bold, an underline 2 thick, 11 above it. */
 const tabMetrics = { between: 22, font: 15, underline: 2, padBottom: 11 } as const;
 /** design/_gen/events.js `discover`: 14 above the body, 18 between the hero, the list and the banner; the list's heading line is `SH`. */
-const bodyMetrics = { top: 14, stack: 18, bottom: 40, heading: 18.5, seeAll: 14, headingGap: 4 } as const;
+const bodyMetrics = { top: 14, stack: 18, bottom: 40, seeAll: 14, listGap: 4 } as const;
 const SKELETON_ROWS = 3;
 
 /**
@@ -73,6 +75,18 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
     () => (list.data?.pages ?? []).flatMap((page) => page.events).filter((e) => e.id !== hero?.id),
     [list.data, hero?.id],
   );
+  // What a person can pay now (G-271), asked once the list and the featured card are known; an event with no
+  // tiers has no price to ask for. The Hub's own `priceFromNaira` counts sold-out and ended tiers, so it is not drawn.
+  const priced = useMemo(
+    () => [...(hero ? [hero] : []), ...events].filter((e) => e.ticketed).map((e) => e.id),
+    [hero, events],
+  );
+  const prices = useQuery({
+    queryKey: fromPricesKey(priced),
+    queryFn: () => fetchFromPrices(priced),
+    enabled: !list.isPending && !featured.isPending && priced.length > 0,
+    placeholderData: keepPreviousData,
+  });
   const weekMode = filtersAreDefault(filters) && !showAll && events.some((e) => startsThisWeek(e, now));
   const shown = weekMode ? events.filter((e) => startsThisWeek(e, now)) : events;
   const heading = weekMode ? 'This week' : filters.view === 'past' ? 'Past events' : 'Upcoming';
@@ -110,7 +124,7 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
         contentContainerStyle={[styles.body, { paddingBottom: bodyMetrics.bottom + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        {list.isPending ? (
+        {list.isPending || prices.isLoading ? (
           <EventsSkeleton />
         ) : list.isError ? (
           <ErrorState
@@ -126,7 +140,7 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
                 {going.failure}
               </Text>
             ) : null}
-            {hero ? <FeaturedCard event={hero} onOpen={() => onOpenEvent(hero.id)} /> : null}
+            {hero ? <FeaturedCard event={hero} fromNaira={prices.data?.[hero.id]} onOpen={() => onOpenEvent(hero.id)} /> : null}
             {shown.length === 0 ? (
               hero ? null : (
                 <EmptyState
@@ -138,9 +152,9 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
                 />
               )
             ) : (
-              <View>
+              <View style={styles.list}>
                 <View style={styles.headingLine}>
-                  <Text variant="h3" accessibilityRole="header" style={{ fontSize: bodyMetrics.heading }}>
+                  <Text variant="h2" accessibilityRole="header">
                     {heading}
                   </Text>
                   {moreToSee ? <SeeAll onPress={() => setShowAll(true)} /> : null}
@@ -149,6 +163,7 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
                   <EventRow
                     key={event.id}
                     event={event}
+                    fromNaira={prices.data?.[event.id]}
                     busy={going.busy.has(event.id)}
                     onOpen={() => onOpenEvent(event.id)}
                     onToggleGoing={() => void going.toggle(event.id)}
@@ -249,7 +264,8 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', gap: tabMetrics.between, paddingHorizontal: layout.gutter, borderBottomWidth: StyleSheet.hairlineWidth },
   tab: { paddingBottom: tabMetrics.padBottom, borderBottomWidth: tabMetrics.underline, marginBottom: -StyleSheet.hairlineWidth },
   body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, gap: bodyMetrics.stack },
-  headingLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: bodyMetrics.headingGap },
+  headingLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  list: { gap: bodyMetrics.listGap },
   more: { alignItems: 'center', paddingTop: space.lg },
   skeletons: { gap: bodyMetrics.stack },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.gap },

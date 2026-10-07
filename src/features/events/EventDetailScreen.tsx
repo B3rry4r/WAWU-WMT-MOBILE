@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
-import { IconButton } from '@/components/Button';
+import { Button, IconButton } from '@/components/Button';
 import { Icon, VerifiedTick } from '@/components/icon';
 import { Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -49,6 +49,7 @@ export const detailMetrics = {
   footTop: 12,
   footBottom: 34,
   count: 12,
+  labelSize: 11,
   total: 20,
   topInset: 6,
   fadeEnd: 0.4,
@@ -108,6 +109,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
     .sort((a, b) => Number(b.status.open) - Number(a.status.open));
   const buyable = rows.filter((r) => r.status.open && !called).map((r) => r.tier);
   const allSold = tiers.length > 0 && tiers.every((t) => t.soldOut || t.remaining <= 0);
+  const soldBar = allSold && !called;
   const basket: Basket = picked ?? (buyable[0] ? { [buyable[0].id]: 1 } : {});
   const count = basketCount(basket);
   const total = basketTotal(buyable, basket);
@@ -121,7 +123,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
     <View testID="event-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: buyable.length > 0 ? layout.tabbarH + insets.bottom : insets.bottom + space.s2xl }}
+        contentContainerStyle={{ paddingBottom: buyable.length > 0 || soldBar ? layout.tabbarH + insets.bottom : insets.bottom + space.s2xl }}
       >
         <Cover event={data} insetTop={insets.top} onBack={onBack} onShare={share} />
         <View style={styles.body}>
@@ -207,6 +209,17 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
           ) : null}
         </View>
       </ScrollView>
+      {soldBar ? (
+        <View
+          testID="event-sold-bar"
+          style={[
+            styles.foot,
+            { backgroundColor: colors.surfacePage, paddingBottom: Math.max(insets.bottom, detailMetrics.footBottom) },
+          ]}
+        >
+          <Button label="Sold out" full disabled onPress={() => void tickets.refetch()} testID="event-sold-button" />
+        </View>
+      ) : null}
       {buyable.length > 0 ? (
         <View
           testID="event-total"
@@ -324,7 +337,7 @@ const styles = StyleSheet.create({
   hostLine: { flexDirection: 'row', alignItems: 'center', gap: detailMetrics.inline },
   hostName: { flexShrink: 1 },
   spacer: { flex: 1 },
-  sectionLabel: { marginBottom: space.xs },
+  sectionLabel: { lineHeight: canvasNormalLineHeight(detailMetrics.labelSize) },
   tierSkeletons: { gap: space.md },
   soldNote: { paddingTop: space.lg },
   foot: {

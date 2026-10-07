@@ -24,6 +24,9 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   return new Response(JSON.stringify(reply.body), { status: reply.status ?? 200, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
+const fromPrices = (rows: (readonly [string, number | null])[]) =>
+  ok({ prices: rows.map(([eventId, priceFromNaira]) => ({ eventId, priceFromNaira })) });
+
 const page = (events: EventView[], total = events.length) => ({
   status: 200,
   body: { statusCode: 200, message: 'OK', data: events, pagination: { currentPage: 1, nextPage: null, perPage: 20, total } },
@@ -160,6 +163,7 @@ describe('E1 · Events', () => {
   function serve(rows: EventView[] = [summit, gospel, free]) {
     handler = (c) => {
       if (c.path === '/events/options') return ok(options);
+      if (c.path === '/events/from-prices') return fromPrices(rows.map((r) => [r.id, r.priceFromNaira]));
       if (featuredOnly(c)) return page(rows.filter((r) => r.featured).slice(0, 1));
       if (c.path === '/events' && c.method === 'GET') return page(rows, rows.length);
       return undefined;
@@ -464,8 +468,10 @@ describe('E2 · Event, E9 · Sold out', () => {
     await bootDetail();
     expect(await rtl.screen.findByTestId('event-sold-out')).toBeTruthy();
     expect(rtl.screen.getByText('Every ticket for this event has sold.')).toBeTruthy();
-    expect(rtl.screen.getAllByText('Sold out')).toHaveLength(2);
+    expect(rtl.screen.getAllByText('Sold out')).toHaveLength(3);
     expect(rtl.screen.queryByTestId('event-total')).toBeNull();
+    // The bottom button is drawn and cannot be pressed.
+    expect(rtl.screen.getByTestId('event-sold-button').props.accessibilityState).toMatchObject({ disabled: true });
   });
 
   it('a free tier shows Free, and a free pick totals Free', async () => {
@@ -512,5 +518,42 @@ describe('E2 · Event, E9 · Sold out', () => {
     expect(rtl.screen.getByTestId('event-loading')).toBeTruthy();
     await rtl.fireEvent.press(rtl.screen.getByTestId('event-back'));
     expect(props.onBack).toHaveBeenCalled();
+  });
+});
+
+describe('The "from" price a person can pay (G-271)', () => {
+  const summit = event({ id: 'e-feat', name: 'Featured Summit', featured: true, priceFromNaira: 5000 });
+  const gospel = event({ id: 'e-2', name: 'Gospel Night', location: 'Abuja', venueName: null, priceFromNaira: 3000 });
+  const closed = event({ id: 'e-4', name: 'Closed Night', location: 'Aba', venueName: null, priceFromNaira: 2000 });
+
+  const serveWith = (prices: Reply | undefined) => {
+    handler = (c) => {
+      if (c.path === '/events/options') return ok(options);
+      if (c.path === '/events/from-prices') return prices;
+      if (featuredOnly(c)) return page([summit]);
+      if (c.path === '/events' && c.method === 'GET') return page([summit, gospel, closed]);
+      return undefined;
+    };
+  };
+
+  it('draws what the Hub says can be bought now, never the event\'s own cheapest tier, and asks once for the page', async () => {
+    serveWith(fromPrices([['e-feat', 7500], ['e-2', 4000], ['e-4', null]]));
+    await bootList();
+    expect(await rtl.screen.findByText('from ₦7,500', { exact: false })).toBeTruthy();
+    expect(rtl.screen.getByText('From ₦4,000')).toBeTruthy();
+    expect(rtl.screen.queryByText('from ₦5,000', { exact: false })).toBeNull();
+    expect(rtl.screen.queryByText('From ₦3,000')).toBeNull();
+    // Nothing can be bought for Closed Night, so no price is drawn for it.
+    expect(rtl.screen.queryByText('From ₦2,000')).toBeNull();
+    const asked = calls.filter((c) => c.path === '/events/from-prices');
+    expect(asked).toHaveLength(1);
+    expect(asked[0].query.getAll('ids').join(',').split(',').sort()).toEqual(['e-2', 'e-4', 'e-feat']);
+  });
+
+  it('draws the events with no price when the prices cannot be read', async () => {
+    serveWith({ status: 500, body: { statusCode: 500, message: 'Prices are down' } });
+    await bootList();
+    expect(await rtl.screen.findByText('Gospel Night')).toBeTruthy();
+    expect(rtl.screen.queryByText(/From ₦/i)).toBeNull();
   });
 });

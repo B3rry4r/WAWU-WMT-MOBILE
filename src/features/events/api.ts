@@ -52,6 +52,7 @@ export const listKey = (filters: EventFilters) => ['events', 'list', filters] as
 export const featuredKey = (filters: EventFilters) => ['events', 'featured', filters] as const;
 export const countKey = (filters: EventFilters) => ['events', 'count', filters] as const;
 export const optionsKey = ['events', 'options'] as const;
+export const fromPricesKey = (ids: readonly string[]) => ['events', 'from-prices', ids] as const;
 export const detailKey = (id: string) => ['events', 'detail', id] as const;
 export const ticketsKey = (id: string) => ['events', 'tickets', id] as const;
 
@@ -105,6 +106,27 @@ export async function fetchOptions(): Promise<EventOptions> {
   const options = body?.data;
   if (!options || !Array.isArray(options.types) || !Array.isArray(options.categories)) throw unreadable('filters');
   return options;
+}
+
+/** The Hub's cap on ids in one `from-prices` call; a longer list goes in more than one. */
+const FROM_PRICES_CHUNK = 50;
+
+/**
+ * The "from" price a person can pay now, by event id (G-271): the cheapest tier that is on sale
+ * and has stock, or null when none can be bought. The event's own `priceFromNaira` counts every
+ * tier, sold out or ended ones too, so the screens do not draw it.
+ */
+export async function fetchFromPrices(ids: readonly string[]): Promise<Record<string, number | null>> {
+  const prices: Record<string, number | null> = {};
+  for (let at = 0; at < ids.length; at += FROM_PRICES_CHUNK) {
+    const body = (await unwrap(
+      api.GET('/api/hub/events/from-prices', { params: { query: { ids: ids.slice(at, at + FROM_PRICES_CHUNK) as string[] } } }),
+    )) as unknown as Envelope<{ prices?: { eventId: string; priceFromNaira: number | null }[] }>;
+    const rows = body?.data?.prices;
+    if (!Array.isArray(rows)) throw unreadable('prices');
+    for (const row of rows) prices[row.eventId] = row.priceFromNaira;
+  }
+  return prices;
 }
 
 export async function fetchEvent(id: string): Promise<EventView> {

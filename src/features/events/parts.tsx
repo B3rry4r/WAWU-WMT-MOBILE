@@ -6,7 +6,7 @@ import { gradientEnds } from '@/components/MediaCard';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { font, radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
 import type { EventView } from './api';
@@ -127,17 +127,19 @@ export const rowMetrics = {
 
 export type EventRowProps = {
   event: EventView;
+  /** What a person can pay now (the Hub's `from-prices`); null or missing draws no price line. */
+  fromNaira?: number | null;
   busy?: boolean;
   onOpen: () => void;
   onToggleGoing: () => void;
 };
 
 /** One event in the list: picture with its date, name, place, "from" price and the Going toggle. */
-export function EventRow({ event, busy, onOpen, onToggleGoing }: EventRowProps) {
+export function EventRow({ event, fromNaira, busy, onOpen, onToggleGoing }: EventRowProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const place = placeOf(event);
-  const price = priceLine(event);
+  const price = priceLine({ ticketed: event.ticketed, priceFromNaira: fromNaira ?? null });
   return (
     <View style={[styles.row, { borderBottomColor: colors.borderHairline }]}>
       <Pressable
@@ -157,13 +159,17 @@ export function EventRow({ event, busy, onOpen, onToggleGoing }: EventRowProps) 
           </View>
         </View>
         <View style={styles.words}>
-          <Text variant="body" numberOfLines={1} style={[font(600), { fontSize: rowMetrics.title }]}>
+          <Text
+            variant="body"
+            numberOfLines={1}
+            style={[font(600), { fontSize: rowMetrics.title, lineHeight: canvasNormalLineHeight(rowMetrics.title) }]}
+          >
             {event.name}
           </Text>
           {place ? (
             <View style={styles.place}>
               <Icon name="MapPin" size={rowMetrics.placeIcon} color={colors.textMuted} />
-              <Text variant="body" tone="textMuted" numberOfLines={1} style={[{ fontSize: rowMetrics.place }, styles.placeText]}>
+              <Text variant="body" tone="textMuted" numberOfLines={1} style={[styles.placeFont, styles.placeText]}>
                 {place}
               </Text>
             </View>
@@ -196,11 +202,11 @@ export const heroMetrics = {
 } as const;
 
 /** The featured event: the picture under a dark fade, its date, FEATURED, name, place and "from" price. */
-export function FeaturedCard({ event, onOpen }: { event: EventView; onOpen: () => void }) {
+export function FeaturedCard({ event, fromNaira, onOpen }: { event: EventView; fromNaira?: number | null; onOpen: () => void }) {
   const { colors, gradients } = useWawu();
   const ring = useFocusRing();
   const ends = gradientEnds(gradients.scrimCard.angle);
-  const line = [placeOf(event), heroPrice(event)].filter(Boolean).join(' · ');
+  const line = [placeOf(event), heroPrice({ ticketed: event.ticketed, priceFromNaira: fromNaira ?? null })].filter(Boolean).join(' · ');
   return (
     <Pressable
       testID="events-featured"
@@ -265,7 +271,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: rowMetrics.gap,
-    paddingVertical: rowMetrics.padV,
+    paddingTop: rowMetrics.padV,
+    // The canvas draws the divider inside the 96 high row (an inset shadow), so it takes its width from the bottom padding.
+    paddingBottom: rowMetrics.padV - StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   open: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: rowMetrics.gap, minWidth: 0 },
@@ -273,8 +281,9 @@ const styles = StyleSheet.create({
   thumbBadge: { position: 'absolute', left: rowMetrics.badgeInset, top: rowMetrics.badgeInset },
   words: { flex: 1, minWidth: 0 },
   place: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: rowMetrics.placeGap },
+  placeFont: { fontSize: rowMetrics.place, lineHeight: canvasNormalLineHeight(rowMetrics.place) },
   placeText: { flexShrink: 1 },
-  price: { marginTop: rowMetrics.priceGap, fontSize: rowMetrics.price },
+  price: { marginTop: rowMetrics.priceGap, fontSize: rowMetrics.price, lineHeight: canvasNormalLineHeight(rowMetrics.price) },
   hero: { height: heroMetrics.height, borderRadius: heroMetrics.corner, overflow: 'hidden' },
   heroBadge: { position: 'absolute', left: heroMetrics.badgeInset, top: heroMetrics.badgeInset },
   heroWords: {

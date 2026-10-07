@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -175,6 +175,20 @@ Differs-for-recorded-reason: the tab row, Host banner and Get tickets (WORKFLOW 
 **Not defects, checked as asked.** (1) `darkColors.accentFg` in `parts.tsx`: correct in light mode (screenshot), and the bypass of the theme hook has three merged precedents (`WelcomeScreen`, `SelfieScreen`, `feed/look.ts`), so it is not a defect. (2) The `*Metrics` objects holding canvas pixel values: the V1 literal-spacing gate passes on 228 files with 0 findings, and the same pattern is merged in `auth/Banner.tsx`, `wallet/BankField.tsx`, `open-wallet/*` (`bannerMetrics`, `bankFieldMetrics`), each citing the canvas line; not a defect. (3) The unrelated `OpenWalletScreen` timeout above.
 
 **Status:** open defects D1 to D5, so `status: building` (back to the builder). Everything else passed.
+
+## Builder report, round 2
+
+Fix round for the verifier's D1 to D5 (U1, U2, U3 are left for the owner, untouched). Mobile `wmt/EVENTS-01` (verifier's commit 0553663 merged, main merged, already up to date); backend `wmt/EVENTS-01` commit bb10ef0, PR https://github.com/B3rry4r/WAWU-Backend/pull/78.
+
+- **D1**: the section heading ("This week", "Upcoming", "Past events") is the theme's `h2` variant (18.5, 700) with no size override (`EventsScreen.tsx`).
+- **D2**: the list is a column with a 4 pt gap (`bodyMetrics.listGap`) between the heading and each row. The row text lines now use the canvas's `line-height: normal` (title, place, price), so a row is the drawn 96 and the divider takes its width from the bottom padding, as the canvas's inset shadow does. Measured in Chromium at 390 px: row pitch 100 pt on all three rows (was 98).
+- **D3**: the TICKETS label has no bottom margin and the canvas's normal line (14), so the first tier starts where the label ends (label bottom 442, tier top 442), as the canvas's `col(..., 0)` draws.
+- **D4**: backend, additive. `GET /events/from-prices?ids=<uuid>,...` (new route in `EventController`, before `:id`, signed in, at most 50 ids) returns, per published and not called-off event, the cheapest tier that has opened, has not closed (a null end means the event's start, as `buy` decides) and has stock, or null. `priceFromNaira` on `GET /events` and `GET /events/:id` is untouched, so no protected route's answer changed (`.pipeline/protected-registry.json` lists both). No migration, no schema change, no fenced source file; `contract/openapi.json` regenerated with `npm run contract:build` (+64 lines, 0 removed; SHARED-CHANGES EVENTS-01 #1 and #2). The app asks once for the hero and the page's ticketed events (in chunks of 50) and draws that price; no price while it cannot be read (no fallback to `priceFromNaira`); the list waits for it, so a wrong price is never drawn first. G-271 is closed on the branch in `BACKEND_GAPS.md`. Seen live: hero "from ₦7,500" with Early bird (₦5,000, ended and sold out) in the data.
+- **D5**: E9's bottom button is built: a disabled "Sold out" `Button` in the foot when every tier has sold and the event is not called off (`event-sold-bar`).
+- **Counts**: backend `tsc --noEmit` clean; `src/event/tests` 72 pass (2 new, in `event.contract.spec.ts`, against the real Postgres and the mock wawu-id); protected route suite `scripts/protected-routes/run.sh --fresh` 243 of 244 required pass, the one failure being `POST /payments/hosted-link` ("That redirect address is not allowed", a `.env` redirect setting in the local environment, no events route); backend gates 9 run, 16 fail 56 warn, all in files this branch does not touch (none under `src/event/`, same on main); baseline check passes. Mobile `npm run check` exit 0: 48 suites, 843 tests (was 841; +2 new), gates 9 run, 228 files, 0 fail 0 warn 0 accepted, baseline 0 entries, tasks 209 (the OpenWalletScreen timeout did not recur).
+- **Tests**: new, in `eventsScreens.test.tsx`: the price is the Hub's from-prices answer and never the event's own cheapest tier, one request for the page, the null case draws no price, a failed answer draws the events without a price, and the E9 button is disabled. Two edits to existing test lines, both because the behaviour they pinned was changed on purpose by the fix and nothing was loosened: the E1 `serve()` fake Hub now answers the new route with the rows' prices (so its assertions are unchanged), and the E9 count of "Sold out" texts is 3 (two pills and the button, as the canvas draws).
+- **Pictures**: `python3 scripts/design/render_design.py E1 E2 E8 E9` beside my own 390 px light and dark screenshots from `npm run web` on the local stack (real sign-in): `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events01f/shots/` (`E1`, `E2`, `E8`, `E9`, each light and dark; `sbs-*` is design left, app right). Not committed. I do not say they match.
+- **Not done / blocked**: nothing blocked. Until backend PR 78 merges, main's contract has no `from-prices`: the mobile contract was synced from the branch (`SOURCE_COMMIT` bb10ef0), and the live Hub at the deployed address answers 404 for it, so E1 would draw no price there until the backend deploys. Fact that unblocks it: PR 78 merged and the Hub deployed.
 
 ## Owner sign-off
 
