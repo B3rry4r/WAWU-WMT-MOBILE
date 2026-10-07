@@ -42,10 +42,3 @@ export const looks: Record<TgifCard, CardLook> = {
 
 /** Text and controls on a card: white, whatever the theme. */
 export const ink = darkColors.textOnAccent;
-/** The dark text on a white control. */
-export const inkOnLight = darkColors.textOnLight;
-/** The faint white that lifts a control off the card: the pills and the next button. */
-export const lift = darkColors.surfaceGlass;
-export const liftStrong = darkColors.borderGlass;
-/** The veil under the close button and the soft second glow's white. */
-export const veil = darkColors.lockedVeil;

@@ -114,7 +114,8 @@ describe('H35 · share the verse', () => {
   it("shows the sheet's words, the Hub's card in its own shape, and the two ways to send it that work today", async () => {
     await boot();
     expect(rtl.screen.getByText("Share today's verse")).toBeTruthy();
-    expect(rtl.screen.getByText('Posted as an image with a link back to TGIF.')).toBeTruthy();
+    expect(rtl.screen.getByText('The card goes to Chat as an image. WhatsApp gets the verse as text. Both carry the link.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Posted as an image/)).toBeNull();
     const preview = await rtl.screen.findByTestId('tgif-share-preview');
     expect([preview.props.source].flat()).toEqual([{ uri: card.uri }]);
     expect(preview.props.accessibilityLabel).toContain(day.verse);
@@ -126,6 +127,14 @@ describe('H35 · share the verse', () => {
     expect(rtl.screen.queryByText('Story')).toBeNull();
     expect(rtl.screen.queryByText('Save')).toBeNull();
     expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/WAWU|—/);
+  });
+
+  it('says only what each way of sending does, and names no link while the Hub has none (D7)', async () => {
+    await boot({ day: { ...day, shareLink: null } });
+    expect(rtl.screen.getByText('The card goes to Chat as an image. WhatsApp gets the verse as text.')).toBeTruthy();
+    expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/link|wawu\/tgif|Posted as an image/i);
+    await rtl.screen.findByTestId('tgif-share-preview');
+    expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/link|wawu\/tgif/i);
   });
 
   it('holds a place for the card while it is drawn, and offers a retry when it cannot be', async () => {

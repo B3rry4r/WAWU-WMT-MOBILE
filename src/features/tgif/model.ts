@@ -97,10 +97,17 @@ export function cardText(day: TgifDay, card: TgifCard): string {
  * The words' size. The canvas draws the verse at 32 and the other cards at 26 on
  * lines of about ninety characters; the Hub's real text runs up to four hundred,
  * so a long text steps down (size, then line height, follow from it) and never
- * leaves the screen. Each step point is the longest text that still fits the card's
- * body (544 high on a 844 screen, less on a phone with bars) at the size above it.
+ * leaves the card. Two rules, one after the other:
+ * - `wordSize`: by the text's length alone, for the moment before the card has been
+ *   laid out and there is no height to measure. Each step point is the longest text that
+ *   still fits a card's body on a 390 x 844 screen at the size above it.
+ * - `fitSize`: by the room the card really has (its scroll area's width and height, less
+ *   everything else in it), down to the smallest size on a short phone. A text that
+ *   still does not fit at the smallest size scrolls inside its own area; the controls
+ *   are never under it.
  */
-export const wordSizes = { verse: [32, 28, 24, 21], other: [26, 23, 20, 18] } as const;
+export const wordSizes = { verse: [32, 28, 24, 21, 18], other: [26, 23, 20, 18, 16] } as const;
+export const wordLeading = 1.25;
 const verseSteps = [170, 250, 330] as const;
 const otherSteps = [330, 420, 560] as const;
 
@@ -109,6 +116,51 @@ export function wordSize(card: TgifCard, text: string): number {
   const steps = card === 'verse' ? verseSteps : otherSteps;
   const over = steps.filter((limit) => text.length > limit).length;
   return sizes[over];
+}
+
+/**
+ * How many lines a text of `length` characters takes at `size` in a column `width` wide.
+ * Alan Sans (Bold and SemiBold, with the cards' tracking) averages 0.444 of the size per
+ * character over the whole book; a line holds a character budget of 0.46 of the size, a
+ * tenth more characters than that are lost to where words break, and one spare line is
+ * kept. Against a greedy word wrap with the font's real advances, over all 365 days, the
+ * five cards, every size below and widths of 272, 312 and 342, it never counts fewer lines
+ * than the real wrap (0 of 27,375 cases), and counts 1.4 more on average.
+ */
+export const fitRule = { avgChar: 0.46, wrapLoss: 1.1, spareLines: 1 } as const;
+
+export function estimateLines(length: number, size: number, width: number): number {
+  if (length <= 0) return 0;
+  const perLine = Math.max(1, Math.floor(width / (fitRule.avgChar * size)));
+  return Math.ceil((length * fitRule.wrapLoss) / perLine) + fitRule.spareLines;
+}
+
+/** The height of a text of `length` characters at `size` in a column `width` wide. */
+export function textHeight(length: number, size: number, width: number): number {
+  return estimateLines(length, size, width) * size * wordLeading;
+}
+
+/** The space a card's words have: the width of the column and the height left for the text itself. */
+export type WordRoom = { width: number; height: number };
+
+/** The largest size on the card's ladder whose text fits `room`; the smallest when none does (the text then scrolls). */
+export function fitSize(card: TgifCard, text: string, room: WordRoom): number {
+  const sizes = card === 'verse' ? wordSizes.verse : wordSizes.other;
+  for (const size of sizes) {
+    if (textHeight(text.length, size, room.width) <= room.height) return size;
+  }
+  return sizes[sizes.length - 1];
+}
+
+/**
+ * The line under the share sheet's title: what each way of sending really does. The Hub's
+ * drawn card goes into a chat as a picture; WhatsApp takes the verse as text (a picture needs
+ * the phone's share module, G-242). The link is named only while the Hub has one to send
+ * (`TGIF_SHARE_LINK`); with none, nothing is said about a link.
+ */
+export function shareLine(shareLink: string | null | undefined): string {
+  const base = 'The card goes to Chat as an image. WhatsApp gets the verse as text.';
+  return shareLink ? `${base} Both carry the link.` : base;
 }
 
 /** What goes out with a shared verse: the verse, where it is from, and the link when the Hub has one. */

@@ -5,6 +5,8 @@ import type { ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { darkColors } from '@/theme/tokens.generated';
+
 import { cardLabels, cardOrder } from '../model';
 
 type Answer = { status: number; body: unknown } | 'offline' | 'hold';
@@ -67,17 +69,23 @@ const statsOf = (amen: Partial<Record<(typeof cardOrder)[number], number>>, mine
   sharedByMe: false,
 });
 
-async function boot(props: { onClose?: () => void; onOpenInbox?: () => void } = {}) {
+async function boot(props: { onClose?: () => void; onOpenInbox?: () => void; now?: Date } = {}) {
   const { TgifReader } = require('../TgifReader') as typeof import('../TgifReader');
   const onClose = props.onClose ?? jest.fn();
-  await render(<TgifReader onClose={onClose} onOpenInbox={props.onOpenInbox} now={opened} />);
+  await render(<TgifReader onClose={onClose} onOpenInbox={props.onOpenInbox} now={props.now ?? opened} />);
   return { onClose };
 }
+
+/** The scroll area's size, as the phone lays it out. */
+const layOut = (width: number, height: number) =>
+  rtl.fireEvent(rtl.screen.getByTestId('tgif-body'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width, height } } });
 
 const text = () => rtl.screen.getByTestId('tgif-text').props.children as string;
 const label = () => rtl.screen.getByTestId('tgif-label').props.children as string;
 const calls = (key: string) => sent.filter((s) => s.key === key);
 const flat = (testID: string) => StyleSheet.flatten(rtl.screen.getByTestId(testID).props.style) as Record<string, unknown>;
+/** A pill the person has said is white (as Done is); an unsaid one is the faint glass. */
+const isSaid = (testID: string) => flat(testID).backgroundColor === darkColors.textOnAccent;
 
 beforeEach(() => {
   answers = {
@@ -149,8 +157,8 @@ describe('Amen', () => {
     await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.1K'));
     await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/react`)).toHaveLength(1));
     expect(calls(`POST /tgif/${DATE}/react`)[0].body).toEqual({ card: 'verse' });
-    const pill = await rtl.screen.findByTestId('tgif-amen');
-    expect(pill.props.accessibilityState.selected).toBe(true);
+    expect(await rtl.screen.findByTestId('tgif-amen')).toBeTruthy();
+    expect(isSaid('tgif-amen')).toBe(true);
   });
 
   it('moves the count at once, before the Hub has answered', async () => {
@@ -159,8 +167,28 @@ describe('Amen', () => {
     await boot();
     await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.1K'));
     expect(await rtl.screen.findByLabelText('Amen 2.2K')).toBeTruthy();
-    expect(rtl.screen.getByTestId('tgif-amen').props.accessibilityState.selected).toBe(true);
-    expect(rtl.screen.getByTestId('tgif-amen').props.accessibilityState.disabled).toBe(true);
+    expect(isSaid('tgif-amen')).toBe(true);
+  });
+
+  it('sends one tap at a time: a second tap while the first is on its way sends nothing', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok(statsOf({ verse: 2199 }))];
+    answers[`POST /tgif/${DATE}/react`] = ['hold'];
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.1K'));
+    await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.2K'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-amen'));
+    expect(calls(`POST /tgif/${DATE}/react`)).toHaveLength(1);
+    expect(calls(`DELETE /tgif/${DATE}/react/verse`)).toHaveLength(0);
+  });
+
+  it('takes the count down at once when an Amen is taken back, before the Hub has answered (M2)', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok(statsOf({ verse: 3 }, ['verse']))];
+    answers[`DELETE /tgif/${DATE}/react/verse`] = ['hold'];
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 3'));
+    expect(await rtl.screen.findByLabelText('Amen 2')).toBeTruthy();
+    expect(isSaid('tgif-amen')).toBe(false);
+    expect(calls(`DELETE /tgif/${DATE}/react/verse`)).toHaveLength(1);
   });
 
   it('a user can take their Amen back: the Hub is told, and the count returns', async () => {
@@ -168,11 +196,11 @@ describe('Amen', () => {
     answers[`DELETE /tgif/${DATE}/react/verse`] = [ok({ card: 'verse', amen: 2, amenByMe: false })];
     await boot();
     const pill = await rtl.screen.findByLabelText('Amen 3');
-    expect(pill.props.accessibilityState.selected).toBe(true);
+    expect(isSaid('tgif-amen')).toBe(true);
     await rtl.fireEvent.press(pill);
     await rtl.waitFor(() => expect(calls(`DELETE /tgif/${DATE}/react/verse`)).toHaveLength(1));
     expect(await rtl.screen.findByLabelText('Amen 2')).toBeTruthy();
-    expect(rtl.screen.getByTestId('tgif-amen').props.accessibilityState.selected).toBe(false);
+    expect(isSaid('tgif-amen')).toBe(false);
   });
 
   it('puts the count back and says so when the Amen could not be saved', async () => {
@@ -181,7 +209,30 @@ describe('Amen', () => {
     await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.1K'));
     expect(await rtl.screen.findByTestId('tgif-amen-problem')).toBeTruthy();
     expect(await rtl.screen.findByLabelText('Amen 2.1K')).toBeTruthy();
-    expect(rtl.screen.getByTestId('tgif-amen').props.accessibilityState.selected).toBe(false);
+    expect(isSaid('tgif-amen')).toBe(false);
+  });
+
+  it('puts the count back by itself when the Amen is refused, even if the numbers cannot be fetched again (M10)', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok(statsOf({ verse: 2149 })), 'offline'];
+    answers[`POST /tgif/${DATE}/react`] = [refused(500, 'Something went wrong')];
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.1K'));
+    expect(await rtl.screen.findByTestId('tgif-amen-problem')).toBeTruthy();
+    await rtl.waitFor(() => expect(calls(`GET /tgif/${DATE}/stats`)).toHaveLength(2));
+    expect(rtl.screen.getByLabelText('Amen 2.1K')).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('Amen 2.2K')).toBeNull();
+    expect(isSaid('tgif-amen')).toBe(false);
+  });
+
+  it('says a refused Amen could not be saved at once, not after the numbers have been asked for again (N1), and the pill takes a new tap', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok(statsOf({ verse: 2149 })), 'hold'];
+    answers[`POST /tgif/${DATE}/react`] = [refused(500, 'Something went wrong'), ok({ card: 'verse', amen: 2150, amenByMe: true })];
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByLabelText('Amen 2.1K'));
+    expect(await rtl.screen.findByTestId('tgif-amen-problem')).toBeTruthy();
+    expect(rtl.screen.getByText('Your Amen could not be saved. Try again.')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-amen'));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/react`)).toHaveLength(2));
   });
 
   it('says Amen to the card on screen: the reality card is not the verse card', async () => {
@@ -285,7 +336,7 @@ describe('H32 · the prayer', () => {
     await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/react`)).toHaveLength(1));
     expect(calls(`POST /tgif/${DATE}/react`)[0].body).toEqual({ card: 'prayer' });
     expect(await rtl.screen.findByLabelText('Amen 9K')).toBeTruthy();
-    expect(rtl.screen.getByTestId('tgif-amen').props.accessibilityState.selected).toBe(true);
+    expect(isSaid('tgif-amen')).toBe(true);
   });
 
   it('shows the inline Amen on the prayer and on no other card', async () => {
@@ -330,5 +381,83 @@ describe('States', () => {
     expect(rtl.screen.queryByTestId('tgif-share-sheet')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
     expect(await rtl.screen.findByTestId('tgif-share-sheet')).toBeTruthy();
+  });
+});
+
+describe('D2 · the words never run under the controls', () => {
+  /** What a phone leaves for the scroll area: the screen less the header (73) and the controls (144). */
+  const areaOf = (height: number) => height - 73 - 144;
+
+  const reality409 = ('Be strong. '.repeat(40) + 'Amen now.').slice(0, 409);
+  const verse270 = 'word '.repeat(54).trim();
+
+  it('draws the pills, "Tap to continue" and the arrow in a row of their own under the scroll area, not over it', async () => {
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    const body = rtl.within(rtl.screen.getByTestId('tgif-body'));
+    for (const id of ['tgif-controls', 'tgif-amen', 'tgif-share', 'tgif-hint', 'tgif-next']) expect(body.queryByTestId(id)).toBeNull();
+    const controls = rtl.within(rtl.screen.getByTestId('tgif-controls'));
+    for (const id of ['tgif-amen', 'tgif-share', 'tgif-hint', 'tgif-next']) expect(controls.getByTestId(id)).toBeTruthy();
+    expect(flat('tgif-controls').position).toBeUndefined();
+  });
+
+  it('keeps the canvas sizes, 32 on the verse and 26 on the rest, wherever the words have room for them', async () => {
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.act(async () => layOut(390, areaOf(844)));
+    expect(flat('tgif-text').fontSize).toBe(32);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+    expect(flat('tgif-text').fontSize).toBe(26);
+  });
+
+  it('sets the longest reality of the book, 409 characters, as large as its room allows, down to 16 on the smallest phone', async () => {
+    answers[`GET /tgif/${DATE}`] = [ok({ ...day, reality: reality409 })];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+    const sizeAt = async (width: number, height: number) => {
+      await rtl.act(async () => layOut(width, areaOf(height)));
+      return flat('tgif-text').fontSize as number;
+    };
+    expect(reality409).toHaveLength(409);
+    const sizes = [await sizeAt(390, 844), await sizeAt(375, 667), await sizeAt(360, 640), await sizeAt(320, 568)];
+    expect(sizes).toEqual([23, 20, 18, 16]);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(16);
+  });
+
+  it('sets a 270 character verse at 18 on the smallest phones and lets it scroll, with the scroll bar showing', async () => {
+    answers[`GET /tgif/${DATE}`] = [ok({ ...day, verse: verse270 })];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.act(async () => layOut(320, areaOf(568)));
+    expect(flat('tgif-text').fontSize).toBe(18);
+    expect(rtl.screen.getByTestId('tgif-body').props.showsVerticalScrollIndicator).toBe(false);
+    await rtl.act(async () => rtl.fireEvent(rtl.screen.getByTestId('tgif-body'), 'contentSizeChange', 320, areaOf(568) + 120));
+    expect(rtl.screen.getByTestId('tgif-body').props.showsVerticalScrollIndicator).toBe(true);
+  });
+});
+
+describe('M3 · the day is the phone\'s own', () => {
+  it('reads the phone\'s calendar day, not the UTC day, at half past midnight in Lagos', async () => {
+    const lagos = {
+      getFullYear: () => 2025,
+      getMonth: () => 8,
+      getDate: () => 27,
+      getUTCFullYear: () => 2025,
+      getUTCMonth: () => 8,
+      getUTCDate: () => 26,
+      toISOString: () => '2025-09-26T23:30:00.000Z',
+    } as unknown as Date;
+    const NEXT = '2025-09-27';
+    answers = {
+      [`GET /tgif/${NEXT}`]: [ok({ ...day, date: NEXT })],
+      [`GET /tgif/${NEXT}/stats`]: [ok({ ...statsOf({}), date: NEXT })],
+      [`POST /tgif/${NEXT}/read`]: [ok({ readers: 1, counted: true })],
+    };
+    await boot({ now: lagos });
+    expect(await rtl.screen.findByTestId('tgif-text')).toBeTruthy();
+    expect(rtl.screen.getByTestId('tgif-header-line').props.children).toBe('Saturday 27 September · SONS, NOT SLAVES');
+    expect(sent.map((s) => s.key).filter((k) => k.includes('2025-09-26'))).toEqual([]);
+    expect(calls(`GET /tgif/${NEXT}`)).toHaveLength(1);
   });
 });

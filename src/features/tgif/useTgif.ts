@@ -55,8 +55,8 @@ export type AmenMove = { card: TgifCard; on: boolean };
 
 /**
  * Say Amen to a card, or take it back. The count and the person's own mark change at
- * once, the Hub's answer replaces them, and a failure puts them back. A card takes one
- * tap at a time, so two quick taps never reach the Hub out of order.
+ * once, the Hub's answer replaces them, and a failure puts them back and says so at once. One
+ * tap is in flight at a time, so two quick taps never reach the Hub out of order.
  */
 export function useAmen(date: string) {
   const client = useQueryClient();
@@ -80,11 +80,16 @@ export function useAmen(date: string) {
       const now = client.getQueryData<TgifStats>(statsKey(date));
       if (now) client.setQueryData<TgifStats>(statsKey(date), withCard(now, state.card, (c) => ({ ...c, amen: state.amen, amenByMe: state.amenByMe })));
     },
-    onSettled: () => client.invalidateQueries({ queryKey: statsKey(date) }),
+    // Not awaited: the mutation is settled, and a refused Amen is told at once, while the numbers are asked for again (a few tries when the network is down).
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: statsKey(date) });
+    },
   });
   return {
-    say: (move: AmenMove) => mutation.mutate(move),
-    busy: mutation.isPending,
+    say: (move: AmenMove) => {
+      // One tap at a time: a tap while the last one is still on its way is not sent.
+      if (!mutation.isPending) mutation.mutate(move);
+    },
     failed: mutation.isError,
     clearFailure: () => mutation.reset(),
   };

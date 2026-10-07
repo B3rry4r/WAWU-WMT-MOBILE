@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 71 | 0 | 24 | 28 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [HOME-09](../tasks/HOME-09.md) TGIF reader (You)
 
@@ -119,6 +119,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · HOME-09 · Builder round 2, awaiting re-verification: D1 em-dashes out of the served book (15 verses, spec over a leap year), D2 the controls are a row under the scroll area and the size follows the room (24 pictures from 320 x 568 to 390 x 844, no overlap), D4 a non-string firstName is no name, D5 a capital with no name on every day, D6 the shared IconButton and Button replace the local copies (SHARED-CHANGES HOME-09 #5 for four missing props), D7 the sheet says only what each target does, N1 the refused Amen is told at once; tests for M2, M3, M10 and B10; D3 (Story, Save) stays blocked on HOME-09 #2. Backend tgif specs 41, protected 253/253, mutants 10 of 10 backend and 13 of 13 mobile killed.
 - 7 Oct 2026 · HOME-09 · Verifier report (independent session, mobile 234baf9, backend 44b2820, status back to building): both routes hold (auth, 731 dates incl. 29 Feb, hostile dates and names, SVG, protected suite 253/253, tgif specs 26/26, real wawu-id sign-in, an Amen, a share and a chat card written and read back); 7 defects open: 15 days of served verse text carry em-dashes (D1), the words run under the controls on 360 x 640 and smaller (D2), Story and Save not built (D3), a non-string firstName gives 500 (D4), the no-name fallback starts lowercase on 39 days (D5), local copies of IconButton and Button (D6), "Posted as an image with a link" is not true of WhatsApp or while TGIF_SHARE_LINK is unset (D7).
 - 7 Oct 2026 · HOME-09 · Built, awaiting verification (the lead's agent, taken over from Developer 1): the TGIF reader at `/tgif` (H29 to H34: five cards, Amen on every card and inline on the prayer, Share, tap to continue, Done) and the share sheet (H35: the Hub's drawn card, WhatsApp, Chat into one of your chats). Backend `wmt/HOME-09`: `GET /tgif/{date}` (the 365-day text, the reader's first name in it) and `GET /tgif/{date}/share-image` (the verse card as a PNG); no table, no migration. Second count, Story and Save not drawn (G-240, G-242); gaps G-240 to G-244, shared-change rows HOME-09 #1 to #4 and F1.
 - 7 Oct 2026 · AUTH-08 · New task (lead, order 182; tasks from 182 move down one): wawu-id refresh and sign-out look up the token by id instead of argon2-checking every stored token (CHECK-1 F-5, SETTINGS-01 G-264).
@@ -133,4 +134,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Builder round 2, awaiting re-verification: the seven defects the verifier found are closed, each with a test that failed on the first version. The 30 an hour and 40 per conversation limits hold under parallel sends (the check and the write are one transaction under a per-person lock), `POST {id}/reply` counts toward them and is serialized (one AI call for 15 parallel replies), Send claims the intake before preparing the brief (one call for 20 parallel sends, a failed brief retryable 5 times an hour), a NUL byte is a 400, opening is idempotent per person (one in-progress assistant intake for 12 parallel opens, partial unique index in the migration, now `20261007120000_legal_assistant`), em-dashes are stripped from every assistant line including the paid-wait replies, messages after Send share the same hourly allowance, and a test holds every message body out of the logs. Full suite 4098 passed (only the host-network `hub-rate-limits` file fails in the namespace, 22/22 on the host), protected suite 253/253, gates the same 16 fail as main. Backend `wmt/LEGAL-01` ca1fd42; contract regenerated (7 new paths, none changed). Status verifying.
 - 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
-- 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).

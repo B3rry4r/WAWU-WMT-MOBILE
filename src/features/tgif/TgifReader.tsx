@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -10,15 +10,19 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
 
-import type { TgifDay } from './api/tgif';
+import type { TgifCard, TgifDay } from './api/tgif';
 import { CardBackdrop } from './CardBackdrop';
 import { ink, looks } from './look';
-import { cardLabels, cardText, compactCount, headerLine, localDay, readerSteps, wordSize } from './model';
-import { CloseButton, NextButton, Pill, Progress } from './parts';
+import { cardLabels, cardText, compactCount, fitSize, headerLine, localDay, readerSteps, wordLeading, wordSize, type WordRoom } from './model';
+import { partMetrics, Progress } from './parts';
 import { ShareSheet } from './ShareSheet';
 import { useAmen, useCountRead, useDay, useStats } from './useTgif';
 
-/** design/_gen/home.js, H29 to H34: where everything sits on a card. The body keeps 170 clear below for the controls. */
+/**
+ * design/_gen/home.js, H29 to H34: where everything sits on a card. The canvas keeps 170 clear below
+ * the words for the controls; here the controls are a row of their own under the scroll area (so
+ * no text can ever run under them) and the words' own bottom padding is what is left of the 170.
+ */
 const readerMetrics = {
   headerGap: 14,
   title: 19,
@@ -27,7 +31,7 @@ const readerMetrics = {
   subtitleGap: 2,
   bodyPadTop: 30,
   bodyPadX: 24,
-  bodyPadBottom: 170,
+  bodyClear: 170,
   bodyGap: 18,
   quoteMark: 120,
   quoteMarkLine: 72,
@@ -36,11 +40,14 @@ const readerMetrics = {
   label: 12,
   labelTracking: 0.14,
   labelFaint: 0.8,
-  leading: 1.25,
   tracking: -0.025,
   reference: 15,
   referenceLeading: 1.5,
   inlineTop: 6,
+  inlineButton: 44,
+  /** The label's line (the body line height at 15) and the most lines a reference takes. */
+  labelLine: 21.75,
+  referenceLines: 2,
   controlsX: 24,
   controlsBottom: 44,
   controlsGap: 16,
@@ -49,6 +56,26 @@ const readerMetrics = {
   hintFaint: 0.65,
   problemFaint: 0.9,
 } as const;
+
+/** What is left of the canvas's 170 below the words once the controls take their own row: the pills, their gap, the arrow row and the bottom margin. */
+const bodyPadBottom =
+  readerMetrics.bodyClear - (partMetrics.pillHeight + readerMetrics.controlsGap + partMetrics.next + readerMetrics.controlsBottom);
+
+/** The room a card's words have inside a scroll area of `viewport`: its width less the sides, its height less the padding and everything else drawn with the words. */
+export function wordRoom(card: TgifCard, viewport: WordRoom): WordRoom {
+  const { bodyGap, labelLine, quoteMarkBox, reference, referenceLines, referenceLeading, inlineTop, inlineButton } = readerMetrics;
+  const others = {
+    verse: quoteMarkBox + labelLine + reference * referenceLeading * referenceLines + 3 * bodyGap,
+    prayer: labelLine + inlineTop + inlineButton + 2 * bodyGap,
+    reality: labelLine + bodyGap,
+    remember: labelLine + bodyGap,
+    takeaway: labelLine + bodyGap,
+  }[card];
+  return {
+    width: viewport.width - 2 * readerMetrics.bodyPadX,
+    height: viewport.height - readerMetrics.bodyPadTop - bodyPadBottom - others,
+  };
+}
 
 export type TgifReaderProps = {
   /** Leaves the reader: the close control, and Done on the last card. */
@@ -118,6 +145,10 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
   const steps = readerSteps();
   const [at, setAt] = useState(0);
   const [sharing, setSharing] = useState(false);
+  // The scroll area's size once it has been laid out; until then the text is sized by its length alone.
+  const [viewport, setViewport] = useState<WordRoom | null>(null);
+  // Whether the words are taller than their area: only then the scroll bar is shown.
+  const [overflow, setOverflow] = useState(false);
   const stats = useStats(date);
   const amen = useAmen(date);
 
@@ -128,7 +159,11 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
   const said = Boolean(mine?.amenByMe);
   const count = mine && mine.amen > 0 ? compactCount(mine.amen) : undefined;
   const text = cardText(day, card);
-  const size = wordSize(card, text);
+  const size = viewport ? fitSize(card, text, wordRoom(card, viewport)) : wordSize(card, text);
+  const onViewport = ({ nativeEvent }: LayoutChangeEvent) => {
+    const { width: w, height: h } = nativeEvent.layout;
+    setViewport((was) => (was && was.width === w && was.height === h ? was : { width: w, height: h }));
+  };
 
   const advance = () => {
     if (!last) {
@@ -153,14 +188,17 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
               {headerLine(day)}
             </Text>
           </View>
-          <CloseButton onPress={onClose} />
+          <IconButton testID="tgif-close" icon="X" label="Close" tone="glass" size={partMetrics.close} onPress={onClose} />
         </View>
       </View>
       <ScrollView
         testID="tgif-body"
+        onLayout={onViewport}
+        onContentSizeChange={(_w, h) => setOverflow(Boolean(viewport) && h > (viewport?.height ?? 0) + 1)}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={overflow}
+        persistentScrollbar={overflow}
         bounces={false}
       >
         <Pressable
@@ -182,7 +220,7 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
           <Text
             variant="body"
             testID="tgif-text"
-            style={[font(card === 'verse' ? 700 : 600), { fontSize: size, lineHeight: size * readerMetrics.leading, letterSpacing: readerMetrics.tracking * size, color: ink }]}
+            style={[font(card === 'verse' ? 700 : 600), { fontSize: size, lineHeight: size * wordLeading, letterSpacing: readerMetrics.tracking * size, color: ink }]}
           >
             {text}
           </Text>
@@ -199,30 +237,32 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
                 icon="HandHeart"
                 size="md"
                 variant={said ? 'glass' : 'white'}
-                disabled={amen.busy}
                 onPress={toggleAmen}
               />
             </View>
           ) : null}
         </Pressable>
       </ScrollView>
-      <View pointerEvents="box-none" style={[styles.controls, { bottom: Math.max(readerMetrics.controlsBottom, insets.bottom + space.lg) }]}>
+      <View
+        testID="tgif-controls"
+        style={[styles.controls, { paddingBottom: Math.max(readerMetrics.controlsBottom, insets.bottom + space.lg) }]}
+      >
         {amen.failed ? (
           <Text variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-amen-problem" style={[font(600), styles.problem]}>
             Your Amen could not be saved. Try again.
           </Text>
         ) : null}
         <View style={styles.pills}>
-          <Pill
+          <Button
             testID="tgif-amen"
+            label={count ? `Amen ${count}` : 'Amen'}
             icon="HandHeart"
-            label="Amen"
-            count={count}
-            active={said}
-            disabled={amen.busy}
+            size="sm"
+            variant={said ? 'white' : 'glass'}
+            style={styles.pill}
             onPress={toggleAmen}
           />
-          <Pill testID="tgif-share" icon="Share2" label="Share" onPress={() => setSharing(true)} />
+          <Button testID="tgif-share" label="Share" icon="Share2" size="sm" variant="glass" style={styles.pill} onPress={() => setSharing(true)} />
         </View>
         <View style={styles.continueRow}>
           <Pressable testID="tgif-hint" accessible={false} onPress={advance} style={styles.hintArea}>
@@ -230,7 +270,11 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
               Tap to continue
             </Text>
           </Pressable>
-          {last ? <Button testID="tgif-done" label="Done" size="md" variant="white" onPress={onClose} /> : <NextButton onPress={advance} />}
+          {last ? (
+            <Button testID="tgif-done" label="Done" size="md" variant="white" onPress={onClose} />
+          ) : (
+            <IconButton testID="tgif-next" icon="ArrowRight" label="Next card" tone="glass" size={partMetrics.next} onPress={advance} />
+          )}
         </View>
       </View>
       <ShareSheet visible={sharing} onClose={() => setSharing(false)} date={date} day={day} onOpenInbox={onOpenInbox} />
@@ -256,15 +300,16 @@ const styles = StyleSheet.create({
     gap: readerMetrics.bodyGap,
     paddingTop: readerMetrics.bodyPadTop,
     paddingHorizontal: readerMetrics.bodyPadX,
-    paddingBottom: readerMetrics.bodyPadBottom,
+    paddingBottom: bodyPadBottom,
   },
   quoteMarkBox: { height: readerMetrics.quoteMarkBox },
   quoteMark: { fontSize: readerMetrics.quoteMark, lineHeight: readerMetrics.quoteMarkLine, color: ink, opacity: readerMetrics.quoteMarkFaint },
   label: { fontSize: readerMetrics.label, letterSpacing: readerMetrics.labelTracking * readerMetrics.label, color: ink, opacity: readerMetrics.labelFaint },
   reference: { fontSize: readerMetrics.reference, lineHeight: readerMetrics.reference * readerMetrics.referenceLeading, color: ink, opacity: readerMetrics.labelFaint },
   inline: { marginTop: readerMetrics.inlineTop, alignSelf: 'flex-start' },
-  controls: { position: 'absolute', left: readerMetrics.controlsX, right: readerMetrics.controlsX, gap: readerMetrics.controlsGap },
+  controls: { paddingHorizontal: readerMetrics.controlsX, gap: readerMetrics.controlsGap },
   pills: { flexDirection: 'row', gap: readerMetrics.pillsGap },
+  pill: { height: partMetrics.pillHeight },
   continueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   hintArea: { flex: 1, justifyContent: 'center', minHeight: layout.tapMin },
   hint: { fontSize: readerMetrics.hint, color: ink, opacity: readerMetrics.hintFaint },

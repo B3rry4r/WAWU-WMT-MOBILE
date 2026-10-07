@@ -19,7 +19,7 @@ import { font, radius, space, useWawu } from '@/theme';
 
 import { chatsKey, fetchChats, newMessageId, sendCardToChat, type ChatSummary } from './api/chat';
 import { fetchShareCard, shareCardKey, type ShareCard, type TgifDay } from './api/tgif';
-import { cardFileName, pngSize, shareText, whatsappUrl } from './model';
+import { cardFileName, pngSize, shareLine, shareText, whatsappUrl } from './model';
 import { useCountShare } from './useTgif';
 
 /** design/_gen/home.js, H35: the sheet's parts. The preview is 220 high as drawn; a longer verse makes the card taller and the picture keeps its shape. */
@@ -115,7 +115,7 @@ function ShareBody({ onClose, date, day, onOpenInbox }: ShareBodyProps) {
   if (mode.kind === 'sent') return <Sent name={mode.name} onDone={onClose} />;
   return (
     <>
-      <Heading title="Share today's verse" line="Posted as an image with a link back to TGIF." />
+      <Heading title="Share today's verse" line={shareLine(day.shareLink)} />
       <Preview card={card.data} loading={card.isPending} error={card.isError ? card.error : null} onRetry={() => void card.refetch()} verse={day.verse} />
       <View style={styles.targets}>
         <Target testID="tgif-share-whatsapp" icon="MessageCircle" label="WhatsApp" onPress={() => void whatsapp()} />
