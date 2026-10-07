@@ -198,6 +198,22 @@ No defect is open. D1 to D6 are closed as the table shows.
 
 Status: `review`. Secret scan of the staged diff: see the commit step.
 
+## Builder fix after the lead's full suite (7 Oct 2026)
+
+**Defect.** The lead's full backend suite, on a trial merge with main, failed `src/money/tests/money-contract.spec.ts` › "types every field and parameter whose name ends in Kobo as an integer" with `/components/schemas/CreateCourseDto/priceKobo: number` and `/components/schemas/UpdateCourseDto/priceKobo: number`. Both DTOs validate with `@IsInt()`, but the swagger plugin emits `type: number` for a `number` field unless it is told otherwise.
+
+**Fix.** `src/schools/school-admin.dto.ts`: `priceKobo` on `CreateCourseDto` carries `@ApiProperty({ type: 'integer' })` and on `UpdateCourseDto` `@ApiPropertyOptional({ type: 'integer' })`, as main does in `src/money/dto/money-error.dto.ts`. The plugin still supplies the rest, so the generated schema keeps `minimum: 0`, `maximum: 2147483647` and the description ("Whole kobo (CONVENTIONS section 1).") on create, and `priceKobo` stays required on create. No other `*Kobo` field this branch adds reaches the contract with the wrong type: a walk of every schema property and parameter in the regenerated `contract/openapi.json` finds no field ending in Kobo that is not `integer`. `contract/openapi.json` regenerated with `npm run contract:build` (the two properties become `integer` and move to the top of their schema; nothing else changes).
+
+**Also in this round.** Backend `origin/main` was merged in twice with merge commits (PROS-02 and HOME-09 at `dae19ec`, then ME-11 at `492c21e`, which merged while this round was running). PROS-02 brought `20261011100000_professional_location`, after which `20261010100000_schools_hidden` sorted before main's newest, so the folder is renamed `20261012100000_schools_hidden` (never on main, additive, independent of PROS-02's table; SHARED-CHANGES row SCHOOLS-02 #1 updated). Mobile: main merged with a merge commit (`docs/PROGRESS.md` taken from main and `check_tasks.py --write` run; SHARED-CHANGES keeps both SCHOOLS-02 #1 and main's ME-11 rows), and `contract/openapi.json` is copied from the backend branch head `7233309` and the clients regenerated with `npm run api -- --identity` (`--backend` copies backend main, which does not carry this branch's routes); `src/api/schema.generated.ts` changes only in the order of the two `priceKobo` lines.
+
+**Commits.** Backend `wmt/SCHOOLS-02`: `14ecd7f` (merge main `dae19ec`), `4b87424` (migration restamp), `cfe7228` (the fix and the regenerated contract), `7233309` (merge main `492c21e`, contract regenerated, unchanged).
+
+**Before and after.** `npx jest src/money/tests/money-contract` on `7d6b14c` (no fix): 1 failed, 10 passed, the failure listing exactly the two `priceKobo: number` lines above. On `7233309`: 11 passed, 11 total.
+
+**Counts.** On a fresh, migrated and seeded database: `npx jest --runInBand --forceExit --testTimeout=120000 src/money/tests/money-contract src/schools src/admin/schools`: 4 suites, 67/67. Protected suite `scripts/protected-routes/run.sh --fresh HEAD` on a second fresh database: 253/253, all 244 required passed. `npx tsc --noEmit` exit 0; eslint on `school-admin.dto.ts` 0 problems; gates 16 FAIL lines, identical to backend main's (line numbers ignored). A first run of the schools spec answered `ECONNREFUSED` because nothing listens on :4001 on this machine; every count above is with a stand-in WAWU ID started for this run on a private port (`WAWU_ID_BASE_URL`).
+
+Status left at `review`.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
