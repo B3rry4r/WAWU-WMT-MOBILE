@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 86 of 184.**
+**Launch tasks done: 86 of 185.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 69 | 0 | 23 | 26 |
+| todo | 70 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -121,6 +121,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
 - 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
 - 7 Oct 2026 · ME-11 · Merged: featured works (2 s name lookup limit, 8-media wording, Remove for the owner, placeholder for broken pictures), backend PR #79.
@@ -135,4 +136,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · SCHOOLS-02 · Fix round 1 built (backend `492cbd0`): a `null` in a PATCH for a required field (and `startDate`, `hidden`) is now 400 naming the field, a start date in year 0000 is 400, a bad cursor is 400, hiding twice keeps the first time; specs 342/342, protected suite 253/253; back to verifying.
 - 6 Oct 2026 · SCHOOLS-02 · Verified (independent): V1, V3 passed (protected suite 253/253, 244 required, three runs; contract equal in meaning, migration after main's newest), V2 failed with 2 defects open (a `null` in a PATCH for a required field, and a start date of year 0000, both answer 500 not 400), V4 passed with the reader plan noted for SCHOOLS-04 and SCHOOLS-07, V9 partly run (dashboard and app NOT RUN); status back to building.
 - 6 Oct 2026 · SCHOOLS-02 · Built, awaiting verification: the dashboard's school routes (`/admin/schools`, `/admin/school-courses`, `/admin/school-intakes`): create, edit and hide a school, a course and an intake; admin tokens only; additive migration `20261006100000_schools_hidden` (SHARED-CHANGES row SCHOOLS-02 #1); backend branch `wmt/SCHOOLS-02`, protected 253/253.
-- 7 Oct 2026 · INBOX-04 · Merged to main: the Inbox tab (frame, empty, loading, error, live connection and tab badge); chat rows come with INBOX-19; Developer 2's task, merged by the lead.

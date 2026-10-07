@@ -366,3 +366,9 @@ both 2 Oct 2026.
 
 The full list of what the canvas contradicts, with both sides quoted, is in
 `docs/analysis/ANALYSIS-EVIDENCE.md` ("Conflicts with the current product").
+
+### R-40 · Changing ticket prices needs a current verification and goes back to review
+*Owner, 7 Oct 2026 ("yes then add it", on event price edits).*
+`PUT /events/:id/tickets`, the web's route for a host's ticket tiers and prices, follows the same rules as creating or editing an event: the host must hold a current verification (B3, hosting is verified-only), and a change to an approved event sends it back to review. Once a ticket is sold, tiers stay locked as they are today (409). This is a deliberate change to a protected route.
+
+**Carried out by:** EVENTS-11.
