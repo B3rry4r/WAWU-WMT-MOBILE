@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { localDay } from '@/features/tgif/model';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush }) }));
+jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => '00000000-0000-4000-8000-0000000000aa' }));
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
   useSession: () => ({ status: 'signedIn' }),
@@ -86,7 +88,11 @@ const day = {
 };
 const stats = (readers: number) => ({ date: DATE, cards: [], readers, shares: 0, readByMe: false, sharedByMe: false });
 
+const account = { accountNumber: '1154079370', accountName: 'Ada Sandbox', bankName: 'Loma Bank' };
+const walletOpen = ok({ state: 'open', account });
+
 const T = {
+  wallet: 'GET /money/wallet',
   balance: 'GET /money/wallet/balance',
   tgif: 'GET /settings/tgif',
   day: `GET /tgif/${DATE}`,
@@ -97,6 +103,7 @@ const T = {
 
 function everyAnswer(): Record<string, Answer[]> {
   return {
+    [T.wallet]: [walletOpen],
     [T.balance]: [ok({ availableKobo: 48525075, asOf: '2026-10-07T10:00:00Z' })],
     [T.tgif]: [ok({ show: true })],
     [T.day]: [ok(day)],
@@ -160,6 +167,21 @@ describe('H1 · Today', () => {
     expect(screen.getByTestId('today-balance')).not.toHaveTextContent('485,250');
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Show balance' }));
     expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75');
+  });
+
+  it('the eye is painted white at 70%, as H1 draws it', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-eye')).toBeTruthy());
+    type Node = { props?: { testID?: string; style?: unknown }; children?: (Node | string)[] | null };
+    const all = (node: Node | string | null, out: Node[] = []): Node[] => {
+      if (!node || typeof node === 'string') return out;
+      out.push(node);
+      node.children?.forEach((child) => all(child, out));
+      return out;
+    };
+    const eye = all(screen.toJSON() as Node).find((n) => n.props?.testID === 'today-balance-eye') ?? null;
+    const faded = all(eye).filter((n) => (StyleSheet.flatten(n.props?.style as object) as { opacity?: number } | undefined)?.opacity === 0.7);
+    expect(faded.length).toBeGreaterThan(0);
   });
 
   it("a user sees today's TGIF from the Hub and opens the reader from it", async () => {
@@ -245,32 +267,61 @@ describe('H36 · Today with TGIF off', () => {
 });
 
 describe('the balance card without a balance', () => {
-  it('a user with no wallet is led to Open your wallet (A26)', async () => {
-    answers[T.balance] = [refuse(409, 'wallet_not_open', "You don't have a wallet yet. Open your wallet to continue.")];
+  it('a user with no wallet is led to Open your wallet (A26), in the Wallet tab\'s words', async () => {
+    answers[T.wallet] = [ok({ state: 'not_open', account: null })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance-no_wallet')).toBeTruthy());
-    expect(screen.getByText("You don't have a wallet yet. Open your wallet to continue.")).toBeTruthy();
+    expect(screen.getByText("You don't have a wallet yet")).toBeTruthy();
+    expect(screen.getByText('Open your wallet to continue.')).toBeTruthy();
     expect(screen.queryByTestId('today-balance-eye')).toBeNull();
+    expect(sent).not.toContain(T.balance);
     await rtl.fireEvent.press(screen.getByTestId('today-open-wallet'));
     expect(mockPush).toHaveBeenCalledWith('/open-wallet');
   });
 
-  it('a wallet still opening says so in the Hub’s words, with Check again', async () => {
-    answers[T.balance] = [refuse(409, 'wallet_opening', 'Your account is still being opened. Check again in a moment.'), ok({ availableKobo: 0, asOf: '2026-10-07T10:00:00Z' })];
+  it('a wallet still opening says so, and Check again asks about the wallet again', async () => {
+    answers[T.wallet] = [ok({ state: 'opening', account: null }), walletOpen];
+    answers[T.balance] = [ok({ availableKobo: 0, asOf: '2026-10-07T10:00:00Z' })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance-opening')).toBeTruthy());
+    expect(screen.getByText('Your account is opening')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Check again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦0.00'));
   });
 
-  it("an unreachable bank shows W6's words and Try again, never a figure", async () => {
-    answers[T.balance] = [refuse(503, 'provider_unreachable', 'Provider unreachable'), ok({ availableKobo: 100, asOf: '2026-10-07T10:00:00Z' })];
+  it("an unreachable bank shows W6's title and the Hub's own sentence, never a figure, and Try again asks again", async () => {
+    answers[T.balance] = [refuse(503, 'provider_unreachable', 'We could not reach your account. Try again in a moment.'), ok({ availableKobo: 100, asOf: '2026-10-07T10:00:00Z' })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance-unreachable')).toBeTruthy());
     expect(screen.getByText("We couldn't reach your account")).toBeTruthy();
+    expect(screen.getByText('We could not reach your account. Try again in a moment.')).toBeTruthy();
+    expect(screen.queryByText(/money is safe/)).toBeNull();
     expect(screen.queryByTestId('today-balance')).toBeNull();
     await rtl.fireEvent.press(screen.getByTestId('today-balance-retry'));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦1.00'));
+  });
+});
+
+describe("today's TGIF that cannot be read", () => {
+  it('says so in its own card with Try again, and is not taken for TGIF switched off', async () => {
+    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }, ok(day)];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif-error')).toBeTruthy());
+    expect(screen.getByText("Today's TGIF didn't load.")).toBeTruthy();
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
+    expect(screen.getByTestId('today-balance')).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByTestId('today-tgif-retry'));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
+  });
+
+  it('with TGIF off, neither the card nor its error shows', async () => {
+    answers[T.tgif] = [ok({ show: false })];
+    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
   });
 });
 
@@ -292,9 +343,11 @@ describe('Today empty and in error', () => {
 
   it('with no connection at all, Today says it did not load, and Try again recovers', async () => {
     const fresh = everyAnswer();
-    answers = Object.fromEntries(Object.entries(fresh).map(([k, v]) => [k, ['offline' as const, ...v]]));
+    // The balance is asked for only once the wallet is known to be open, so it is never asked while offline.
+    answers = Object.fromEntries(Object.entries(fresh).map(([k, v]) => [k, k === T.balance ? v : ['offline' as const, ...v]]));
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
+    expect(sent).not.toContain(T.balance);
     expect(screen.getByText("Today didn't load")).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));

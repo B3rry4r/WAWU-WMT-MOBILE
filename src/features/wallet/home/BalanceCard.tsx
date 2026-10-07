@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
+import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
@@ -66,45 +67,16 @@ export type BalanceCardProps = {
 
 /** W1's balance card: the Naira balance with its kobo, the bank line and the account number with Copy. Dark in both themes. */
 export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, onToggleHidden }: BalanceCardProps) {
-  const { gradients, colors, shadows } = useWawu();
+  const { colors, shadows } = useWawu();
   const ink = colors.textOnAccent;
-  const ends = gradientEnds(gradients.surfaceMoney.angle);
-  const glow = stopOf(colors.glowMoney);
   return (
     <View testID="wallet-balance-card" style={[styles.card, { boxShadow: shadows.money }]}>
-      <View style={styles.clip}>
-        <LinearGradient
-          pointerEvents="none"
-          colors={gradients.surfaceMoney.colors as unknown as readonly [string, string, ...string[]]}
-          locations={gradients.surfaceMoney.locations as unknown as readonly [number, number, ...number[]]}
-          start={ends.start}
-          end={ends.end}
-          style={StyleSheet.absoluteFill}
-        />
-        <Svg pointerEvents="none" width={GLOW.size} height={GLOW.size} style={styles.glow}>
-          <Defs>
-            <RadialGradient id="wallet-balance-glow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={glow.color} stopOpacity={glow.opacity} />
-              <Stop offset={GLOW.fadeAt} stopColor={glow.color} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Circle cx={GLOW.size / 2} cy={GLOW.size / 2} r={GLOW.size / 2} fill="url(#wallet-balance-glow)" />
-        </Svg>
-      </View>
+      <MoneyGround corner={ACCT.radius} />
       <View style={styles.head}>
         <Text variant="body" tone="textOnAccent" style={styles.label}>
           Naira balance
         </Text>
-        <Pressable
-          testID="wallet-balance-eye"
-          accessibilityRole="button"
-          accessibilityLabel={hidden ? 'Show balance' : 'Hide balance'}
-          onPress={onToggleHidden}
-          hitSlop={space.md}
-          style={styles.eye}
-        >
-          <Icon name={hidden ? 'EyeOff' : 'Eye'} size={ACCT.eye} color={ink} />
-        </Pressable>
+        <BalanceEye hidden={hidden} onPress={onToggleHidden} />
       </View>
       <FittedBalance availableKobo={availableKobo} hidden={hidden} />
       <View style={styles.foot}>
@@ -124,6 +96,66 @@ export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, on
 }
 
 /**
+ * The money card's ground, shared by W1 and Home's H1 card (HOME-01): `--surface-money`, and the kit's 220 glow
+ * 60 past the right edge and 80 above the top in `--glow-money`, clipped to the card's corner. The card itself
+ * carries `--shadow-money` and draws everything else over this.
+ */
+export function MoneyGround({
+  corner,
+  glowId = 'wallet-balance-glow',
+}: {
+  corner: number;
+  /** The glow's gradient id, unique on a page: on the web an SVG id is shared by the whole document. */
+  glowId?: string;
+}) {
+  const { gradients, colors } = useWawu();
+  const ends = gradientEnds(gradients.surfaceMoney.angle);
+  const glow = stopOf(colors.glowMoney);
+  return (
+    <View pointerEvents="none" style={[styles.clip, { borderRadius: corner }]}>
+      <LinearGradient
+        pointerEvents="none"
+        colors={gradients.surfaceMoney.colors as unknown as readonly [string, string, ...string[]]}
+        locations={gradients.surfaceMoney.locations as unknown as readonly [number, number, ...number[]]}
+        start={ends.start}
+        end={ends.end}
+        style={StyleSheet.absoluteFill}
+      />
+      <Svg pointerEvents="none" width={GLOW.size} height={GLOW.size} style={styles.glow}>
+        <Defs>
+          <RadialGradient id={glowId} cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={glow.color} stopOpacity={glow.opacity} />
+            <Stop offset={GLOW.fadeAt} stopColor={glow.color} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={GLOW.size / 2} cy={GLOW.size / 2} r={GLOW.size / 2} fill={`url(#${glowId})`} />
+      </Svg>
+    </View>
+  );
+}
+
+/** The eye on a money card (W1, H1): 19, white at 70%; it hides the figure behind dots and shows it again. */
+export function BalanceEye({ hidden, onPress, testID = 'wallet-balance-eye' }: { hidden: boolean; onPress: () => void; testID?: string }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={hidden ? 'Show balance' : 'Hide balance'}
+      onPress={onPress}
+      hitSlop={space.md}
+      {...ring.handlers}
+      style={ring.style}
+    >
+      <View style={styles.eye}>
+        <Icon name={hidden ? 'EyeOff' : 'Eye'} size={ACCT.eye} color={colors.textOnAccent} />
+      </View>
+    </Pressable>
+  );
+}
+
+/**
  * The figure at the largest size that shows all of it, kobo included, on one line: a hidden copy at the
  * design's size gives its natural width, the row gives the width there is, and `fitFigureSize` picks the
  * size. A figure is painted only once the hidden copy has measured that same figure (its text and whether
@@ -131,12 +163,23 @@ export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, on
  * figure cut at the size of the one before (round 2, D5). The hidden copy is remounted for each figure, so
  * its layout is always reported, even when the new figure is as wide as the old.
  */
-function FittedBalance({ availableKobo, hidden }: { availableKobo: number; hidden: boolean }) {
+export function FittedBalance({
+  availableKobo,
+  hidden,
+  base = ACCT.figure,
+  testID = 'wallet-balance',
+}: {
+  availableKobo: number;
+  hidden: boolean;
+  /** The design's size for the figure: W1's 42, H1's 38. */
+  base?: number;
+  testID?: string;
+}) {
   const figure = hidden ? 'hidden' : String(availableKobo);
   const [natural, setNatural] = useState<{ figure: string; width: number }>({ figure: '', width: 0 });
   const [room, setRoom] = useState(0);
   const width = natural.figure === figure ? natural.width : 0;
-  const size = fitFigureSize(width, room, ACCT.figure, FIT.floor, FIT.step);
+  const size = fitFigureSize(width, room, base, FIT.floor, FIT.step);
   const measured = width > 0 && room > 0;
   return (
     <View style={styles.figure} onLayout={(e) => setRoom(e.nativeEvent.layout.width)}>
@@ -149,12 +192,12 @@ function FittedBalance({ availableKobo, hidden }: { availableKobo: number; hidde
       >
         <View style={styles.measureBox}>
           <View key={figure} onLayout={(e) => setNatural({ figure, width: e.nativeEvent.layout.width })}>
-            <Money minorUnits={availableKobo} size={ACCT.figure} tone="textOnAccent" masked={hidden} />
+            <Money minorUnits={availableKobo} size={base} tone="textOnAccent" masked={hidden} />
           </View>
         </View>
       </View>
-      <View testID="wallet-balance-fit" style={measured ? null : styles.unmeasured}>
-        <Money testID="wallet-balance" minorUnits={availableKobo} size={size} tone="textOnAccent" masked={hidden} />
+      <View testID={`${testID}-fit`} style={measured ? null : styles.unmeasured}>
+        <Money testID={testID} minorUnits={availableKobo} size={size} tone="textOnAccent" masked={hidden} />
       </View>
     </View>
   );
@@ -206,7 +249,7 @@ function CopyPill({ value }: { value: string }) {
 
 const styles = StyleSheet.create({
   card: { borderRadius: ACCT.radius, padding: ACCT.pad, flexShrink: 0 },
-  clip: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: ACCT.radius, overflow: 'hidden' },
+  clip: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' },
   glow: { position: 'absolute', right: GLOW.right, top: GLOW.top },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   label: { fontSize: ACCT.labelSize, lineHeight: canvasNormalLineHeight(ACCT.labelSize), opacity: ACCT.labelOpacity },

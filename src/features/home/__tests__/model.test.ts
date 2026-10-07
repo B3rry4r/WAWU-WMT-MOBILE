@@ -1,6 +1,6 @@
 import { ApiError } from '@/api/errors';
 
-import { balanceView, discoverable, showsTgif, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
+import { discoverable, moneyCard, showsTgif, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
 
 const tick = (verified: boolean) => ({ verified, expiresAt: null });
 const person = (wawuId: string, over: Record<string, unknown> = {}) => ({
@@ -83,21 +83,37 @@ describe('creators to discover', () => {
 });
 
 describe('the balance card', () => {
-  it("shows Fintava's figure and never a zero in place of one it lacks", () => {
-    expect(balanceView({ availableKobo: 48525075, asOf: 'x' }, null)).toEqual({ kind: 'figure', kobo: 48525075 });
-    expect(balanceView(undefined, null)).toEqual({ kind: 'loading' });
+  const account = { accountNumber: '1154079370', accountName: 'Ada Sandbox', bankName: 'Loma Bank' };
+
+  it("shows the bank's figure and never a zero in place of one it lacks", () => {
+    expect(moneyCard({ kind: 'ready', account, availableKobo: 48525075 })).toEqual({ kind: 'figure', kobo: 48525075 });
+    expect(moneyCard({ kind: 'loading' })).toEqual({ kind: 'loading' });
   });
 
-  it("reads the wallet's answers by their code, in the Hub's words", () => {
-    const no = new ApiError('conflict', 409, "You don't have a wallet yet. Open your wallet to continue.", 'wallet_not_open');
-    expect(balanceView(undefined, no)).toEqual({ kind: 'no_wallet', message: no.message });
-    const opening = new ApiError('conflict', 409, 'Still opening.', 'wallet_opening');
-    expect(balanceView(undefined, opening)).toEqual({ kind: 'opening', message: 'Still opening.' });
-    expect(balanceView(undefined, new ApiError('server', 503, 'raw', 'provider_unreachable'))).toEqual({
-      kind: 'unreachable',
-      message: 'Your money is safe. This is a connection problem between us and the bank.',
+  it("says what the Wallet tab says for each state, with the card's one button", () => {
+    expect(moneyCard({ kind: 'no_wallet' })).toEqual({
+      kind: 'notice',
+      state: 'no_wallet',
+      title: "You don't have a wallet yet",
+      message: 'Open your wallet to continue.',
+      action: 'open_wallet',
     });
-    expect(balanceView(undefined, new ApiError('network', 0, 'No connection.'))).toEqual({ kind: 'error', message: 'No connection.' });
+    expect(moneyCard({ kind: 'opening' })).toMatchObject({ title: 'Your account is opening', action: 'check_wallet' });
+    expect(moneyCard({ kind: 'unreachable', message: 'We could not reach your account.' })).toMatchObject({
+      title: "We couldn't reach your account",
+      message: 'We could not reach your account.',
+      action: 'retry_balance',
+    });
+    expect(moneyCard({ kind: 'frozen', message: 'Held.' })).toMatchObject({ title: 'Your wallet is frozen', message: 'Held.', action: 'retry_balance' });
+    expect(moneyCard({ kind: 'wallet_error', error: new ApiError('network', 0, 'No connection.') })).toMatchObject({
+      title: "We couldn't load your wallet",
+      message: 'No connection.',
+      action: 'retry_wallet',
+    });
+    expect(moneyCard({ kind: 'balance_error', error: new ApiError('server', 500, 'Server error') })).toMatchObject({
+      title: "We couldn't load your balance",
+      action: 'retry_balance',
+    });
   });
 });
 

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
-import { pressScale } from '@/components/Button';
+import { Button, pressScale } from '@/components/Button';
+
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import type { TgifDay } from '@/features/tgif/api/tgif';
-import { radius } from '@/theme';
+import { radius, stopOf } from '@/theme';
 
 import { CardGlows } from './CardGlows';
 import { cardInk, todayMetrics as m, todayWords } from './look';
@@ -33,6 +34,7 @@ export function TgifCard({ day, readers, onOpen }: TgifCardProps) {
   const label = tgifDayLabel(day.date);
   const meta = tgifMeta(day, readers);
   const { tgifGlow: glow, tgifWarm: warm } = m;
+  const warmGlow = stopOf(cardInk.tgifWarm);
 
   return (
     <Pressable
@@ -51,7 +53,7 @@ export function TgifCard({ day, readers, onOpen }: TgifCardProps) {
         height={size.height}
         spots={[
           { x: size.width + glow.right - glow.size / 2, y: glow.size / 2 - glow.top, size: glow.size, color: cardInk.tgifGlow, strength: glow.strength },
-          { x: warm.size / 2 - warm.left, y: size.height + warm.bottom - warm.size / 2, size: warm.size, color: cardInk.tgifWarm, strength: warm.strength },
+          { x: warm.size / 2 - warm.left, y: size.height + warm.bottom - warm.size / 2, size: warm.size, color: warmGlow.color, strength: warmGlow.opacity },
         ]}
       />
       <View style={styles.words}>
@@ -66,9 +68,29 @@ export function TgifCard({ day, readers, onOpen }: TgifCardProps) {
         </Text>
       </View>
       <View style={[styles.play, { backgroundColor: cardInk.ink }]}>
-        <Icon name="Play" size={m.playIcon} color={cardInk.playMark} strokeWidth={m.playStroke} />
+        <Icon name="Play" size={m.playIcon} color={cardInk.tgifGround} strokeWidth={m.playStroke} />
       </View>
     </Pressable>
+  );
+}
+
+/**
+ * Today's TGIF when its day could not be read (TGIF is on, the read failed): the card's own ground and label,
+ * one line saying so and Try again, so it never looks like TGIF switched off.
+ */
+export function TgifProblem({ date, onRetry, retrying }: { date: string; onRetry: () => void; retrying: boolean }) {
+  return (
+    <View testID="today-tgif-error" style={[styles.card, { backgroundColor: cardInk.tgifGround }]}>
+      <View style={styles.words}>
+        <Text numberOfLines={1} style={[todayWords.tgifLabel, { color: cardInk.tgifLabel }]}>
+          {tgifDayLabel(date)}
+        </Text>
+        <Text accessibilityRole="alert" numberOfLines={2} style={[todayWords.tgifProblem, { color: cardInk.ink }]}>
+          {"Today's TGIF didn't load."}
+        </Text>
+      </View>
+      <Button label="Try again" variant="glass" size="sm" icon="RotateCw" loading={retrying} onPress={onRetry} testID="today-tgif-retry" />
+    </View>
   );
 }
 

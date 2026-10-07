@@ -1,9 +1,8 @@
-import { balanceProblem, type WalletBalance } from '@/api/money';
-import { isApiError } from '@/api/errors';
 import type { FeedScope } from '@/features/feed/api';
 import type { TgifPreference } from '@/features/settings/api/hub';
 import type { TgifDay } from '@/features/tgif/api/tgif';
 import { cardOrder, cardText, compactCount, dateText } from '@/features/tgif/model';
+import { stateWords, type HomeView as WalletHomeView } from '@/features/wallet/home/model';
 
 import type { CreatorSuggestion } from './api';
 
@@ -75,36 +74,39 @@ export function suggestionLine(item: CreatorSuggestion): string | null {
 }
 
 /**
- * What the balance card shows (H1, MONEY-11, MONEY-13):
- * - `figure`: Fintava's available balance, never one worked out here;
- * - `no_wallet`: nobody has a wallet until they open one (R-6); the card leads to A26;
- * - `opening`: Open your wallet finished and the account is still being made;
- * - `unreachable`: the bank did not answer (W6's words);
- * - `frozen`: the bank holds the wallet;
- * - `error`: anything else (no connection, a server fault), with Try again.
- * Each refusal carries the Hub's own sentence where it sent one.
+ * What Home's balance card shows (H1). It reads what the Wallet tab reads (`GET /money/wallet`, then the
+ * balance once a wallet is open, through WALLET-01's queries, so the two share one cached answer) and
+ * decides with WALLET-01's `homeView`, so the card and the tab never disagree:
+ * - `loading` until both have answered;
+ * - `figure`: the bank's available balance, never one worked out here;
+ * - `notice`: the Wallet tab's own words for the state, and what the card's one button does: open A26
+ *   (no wallet yet, R-6), ask about the wallet again (opening, or the wallet read failed), or ask for the
+ *   balance again (the bank did not answer, frozen, or the balance read failed).
  */
-export type BalanceView =
+export type MoneyCardState =
   | { kind: 'loading' }
   | { kind: 'figure'; kobo: number }
-  | { kind: 'no_wallet' | 'opening' | 'frozen' | 'unreachable' | 'error'; message: string };
+  | {
+      kind: 'notice';
+      state: 'no_wallet' | 'opening' | 'unreachable' | 'frozen' | 'wallet_error' | 'balance_error';
+      title: string;
+      message: string;
+      action: 'open_wallet' | 'check_wallet' | 'retry_wallet' | 'retry_balance';
+    };
 
-const fallbacks: Record<'no_wallet' | 'opening' | 'frozen' | 'unreachable' | 'error', string> = {
-  no_wallet: "You don't have a wallet yet. Open your wallet to continue.",
-  opening: 'Your account is still being opened. Check again in a moment.',
-  frozen: 'Your wallet is on hold at the bank.',
-  unreachable: 'Your money is safe. This is a connection problem between us and the bank.',
-  error: 'Your balance could not be read. Try again.',
-};
+const actions = {
+  no_wallet: 'open_wallet',
+  opening: 'check_wallet',
+  wallet_error: 'retry_wallet',
+  unreachable: 'retry_balance',
+  frozen: 'retry_balance',
+  balance_error: 'retry_balance',
+} as const;
 
-export function balanceView(data: WalletBalance | undefined, error: unknown): BalanceView {
-  if (data) return { kind: 'figure', kobo: data.availableKobo };
-  if (!error) return { kind: 'loading' };
-  const problem = balanceProblem(error);
-  const kind = problem === 'other' ? 'error' : problem;
-  // W6 draws its own sentence for an unreachable bank; every other refusal says the Hub's.
-  const said = kind !== 'unreachable' && isApiError(error) ? error.message.trim() : '';
-  return { kind, message: said || fallbacks[kind] };
+export function moneyCard(view: WalletHomeView): MoneyCardState {
+  if (view.kind === 'loading') return { kind: 'loading' };
+  if (view.kind === 'ready') return { kind: 'figure', kobo: view.availableKobo };
+  return { kind: 'notice', state: view.kind, ...stateWords(view), action: actions[view.kind] };
 }
 
 /** A read as Today needs to know it: still on its way, answered, or failed. */

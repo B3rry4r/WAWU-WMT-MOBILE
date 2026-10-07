@@ -1,19 +1,16 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { VerifiedTick } from '@/components/icon';
-import { gradientEnds } from '@/components/MediaCard';
+import { MediaCard } from '@/components/MediaCard';
 import { EmptyState } from '@/components/StateViews';
 import { Text as WawuText } from '@/components/Text';
-import { hueFor } from '@/features/feed/model';
-import { layout, radius, space, useWawu } from '@/theme';
+import { layout, radius, space } from '@/theme';
 
+import { useTodayClient } from './client';
 import { setFollowing, suggestionsKey, type CreatorSuggestion } from './api';
 import { cardInk, gutter, todayMetrics as m, todayWords } from './look';
 import { suggestionLine, suggestionTick } from './model';
@@ -37,50 +34,27 @@ function FollowButton({ name, following, busy, onPress, testID }: { name: string
   );
 }
 
+/**
+ * One creator on the rail: the shared stacked `MediaCard` (H1's `cCard`, 146 by 196), the tick after the name
+ * through `titleAccessory`, and the canvas's own Follow pill through `footer`. `action` would draw the shared
+ * `Button` (13.5 label, glass with a hairline ring once followed), where `cCard` draws a 13 label on white at
+ * 20% with no ring, so the pill goes through `footer` and nothing is forked. With no photo the picture is
+ * MediaCard's quiet block (it has no slot for initials yet: SHARED-CHANGES HOME-01 #3).
+ */
 function SuggestionCard({ item, onFollow, busy }: { item: CreatorSuggestion; onFollow: () => void; busy: boolean }) {
-  const { colors, gradients } = useWawu();
-  const scrim = gradients.scrimCard;
-  const ends = gradientEnds(scrim.angle);
   const tick = suggestionTick(item);
-  const line = suggestionLine(item);
   return (
-    <View
+    <MediaCard
       testID={`today-creator-${item.wawuId}`}
-      accessibilityLabel={[item.name, line].filter(Boolean).join(', ')}
-      style={[styles.card, { backgroundColor: colors.surfaceSunken }]}
-    >
-      {item.avatarUrl ? (
-        <Image source={{ uri: item.avatarUrl }} contentFit="cover" style={StyleSheet.absoluteFill} accessible={false} />
-      ) : (
-        <View style={styles.initials}>
-          <Avatar name={item.name} hue={hueFor(item.wawuId)} size={m.cardAvatar} decorative />
-        </View>
-      )}
-      <LinearGradient
-        pointerEvents="none"
-        colors={scrim.colors as unknown as readonly [string, string, ...string[]]}
-        locations={scrim.locations as unknown as readonly [number, number, ...number[]]}
-        start={ends.start}
-        end={ends.end}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.caption}>
-        <View>
-          <View style={styles.nameRow}>
-            <Text numberOfLines={1} style={[todayWords.cardName, styles.name, { color: cardInk.ink }]}>
-              {item.name}
-            </Text>
-            {tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : null}
-          </View>
-          {line ? (
-            <Text numberOfLines={1} style={[todayWords.cardLine, styles.line, { color: cardInk.ink }]}>
-              {line}
-            </Text>
-          ) : null}
-        </View>
-        <FollowButton name={item.name} following={item.following} busy={busy} onPress={onFollow} testID={`today-follow-${item.wawuId}`} />
-      </View>
-    </View>
+      layout="stacked"
+      width={m.cardWidth}
+      height={m.cardHeight}
+      title={item.name}
+      subtitle={suggestionLine(item) ?? undefined}
+      imageUrl={item.avatarUrl ?? undefined}
+      titleAccessory={tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : undefined}
+      footer={<FollowButton name={item.name} following={item.following} busy={busy} onPress={onFollow} testID={`today-follow-${item.wawuId}`} />}
+    />
   );
 }
 
@@ -98,22 +72,25 @@ export type CreatorRailProps = {
  * ME-02 with their screens (R-27, R-41).
  */
 export function CreatorRail({ creators, onRetry, retrying }: CreatorRailProps) {
-  const client = useQueryClient();
+  const client = useTodayClient();
   const [failed, setFailed] = useState<string | null>(null);
-  const follow = useMutation({
-    mutationFn: ({ item, on }: { item: CreatorSuggestion; on: boolean }) => setFollowing(item.wawuId, on),
-    onMutate: ({ item, on }) => {
-      setFailed(null);
-      client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following: on } : c)));
+  const follow = useMutation(
+    {
+      mutationFn: ({ item, on }: { item: CreatorSuggestion; on: boolean }) => setFollowing(item.wawuId, on),
+      onMutate: ({ item, on }) => {
+        setFailed(null);
+        client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following: on } : c)));
+      },
+      onSuccess: (following, { item }) => {
+        client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following } : c)));
+      },
+      onError: (_error, { item, on }) => {
+        client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following: !on } : c)));
+        setFailed(on ? `${item.name} wasn't followed. Try again.` : `${item.name} wasn't unfollowed. Try again.`);
+      },
     },
-    onSuccess: (following, { item }) => {
-      client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following } : c)));
-    },
-    onError: (_error, { item, on }) => {
-      client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following: !on } : c)));
-      setFailed(on ? `${item.name} wasn't followed. Try again.` : `${item.name} wasn't unfollowed. Try again.`);
-    },
-  });
+    client,
+  );
   const busyId = follow.isPending ? follow.variables?.item.wawuId : undefined;
 
   let body;
@@ -176,12 +153,6 @@ const styles = StyleSheet.create({
   section: { gap: m.railGap },
   rail: { marginRight: -gutter },
   railRow: { gap: m.cardsApart, paddingRight: gutter },
-  card: { width: m.cardWidth, height: m.cardHeight, borderRadius: radius.media, overflow: 'hidden' },
-  initials: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingBottom: m.cardAvatar },
-  caption: { position: 'absolute', left: m.cardInset, right: m.cardInset, bottom: m.cardInset, gap: m.cardStack },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: m.nameGap },
-  name: { flexShrink: 1 },
-  line: { marginTop: m.cardLineTop },
   follow: { height: m.follow, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   problem: { alignItems: 'flex-start', gap: space.md },
 });

@@ -1,6 +1,5 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { blackAt } from '@/components/shadow';
 import { font, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
@@ -19,7 +18,7 @@ const metricsBase = {
   bodyTop: 8,
   between: 20,
   bodyBottom: 32,
-  /** `balanceCard`: `padding:18px 18px 16px`, the figure 14 under the chip row. */
+  /** `balanceCard`: `padding:18px 18px 16px`, the figure 14 under the chip row (the shared fitted figure keeps 10 of it itself). */
   moneyPadTop: 18,
   moneyPadX: 18,
   moneyPadBottom: 18,
@@ -32,17 +31,9 @@ const metricsBase = {
   chipGap: 6,
   flag: 22,
   chipWords: 13,
-  /** The eye: 19, white at 70%. */
-  eye: 19,
-  eyeFaint: 0.7,
   /** A wallet answer in place of the figure: words 15, then the button 14 under them. */
   noticeTop: 12,
   noticeGap: 14,
-  /** The glow: a 220 circle 60 past the right edge and 80 above the top, clear at 70% of its far corner. */
-  moneyGlow: { right: 60, top: 80, size: 220, strength: 0.55 },
-  /** `--shadow-money`: dark, a 1 px edge of white at 8% (the hairline token); light, 0 24 40 -22 under the card. */
-  moneyEdge: 1,
-  moneyShadow: { y: 24, blur: 40, spread: -22 },
   /** `tgifRow`: 104 high, `padding:14px 16px`, `gap:14px`; words 11, 19 and 12.5; the play disc 48 with a 20 icon. */
   tgifHeight: 104,
   tgifPadY: 14,
@@ -58,27 +49,21 @@ const metricsBase = {
   play: 48,
   playIcon: 20,
   playStroke: 2.4,
-  /** The two glows: purple 200 at 40 past the right and 70 above; orange 160 at 30 past the left and 80 below. */
+  /**
+   * The two glows: the accent at 85% (H1's own strength; the reader's verse card has it at 70%), 200 at 40 past
+   * the right and 70 above; `--tgif-warm-glow`, 160 at 30 past the left and 80 below.
+   */
   tgifGlow: { right: 40, top: 70, size: 200, strength: 0.85 },
-  tgifWarm: { left: 30, bottom: 80, size: 160, strength: 0.35 },
+  tgifWarm: { left: 30, bottom: 80, size: 160 },
   /** `creators`: the heading, 12 to the rail; cards 146 by 196, 10 apart, the rail running off the right edge. */
   railGap: 12,
   cardWidth: 146,
   cardHeight: 196,
   cardsApart: 10,
-  /** `cCard`: the words 10 in from the sides and bottom, 8 between the name and the button. */
-  cardInset: 10,
-  cardStack: 8,
-  cardName: 14.5,
-  cardLine: 12,
-  cardLineFaint: 0.8,
-  cardLineTop: 2,
-  cardTick: 13,
-  nameGap: 4,
+  /** `cCard`'s Follow: 32 high, the label 13 bold, on the accent, or white at 20% once followed; the tick 13. */
   follow: 32,
   followWords: 13,
-  /** A card with no photo: the person's initials in the middle of the picture. */
-  cardAvatar: 64,
+  cardTick: 13,
   /**
    * `todayLoading` (H11): the heading 70% by 20 at 8, the cards 146 by 196. Its money card (203)
    * and TGIF bar (64) are drawn for a card with Send, Add, Bills and Scan and a shorter TGIF row;
@@ -98,25 +83,19 @@ export const todayMetrics = {
 const whiteAt = (alpha: number) => darkColors.surfaceGlass.replace(/[\d.]+\)$/, `${alpha})`);
 
 /**
- * Colours on the two dark cards, which are dark in both themes (H1 light and dark draw them
- * alike). White words, glass, the TGIF ground and its glows.
+ * Colours on the two dark cards, which are dark in both themes (H1 light and dark draw them alike): white
+ * words, the canvas's glass, and the TGIF tokens (HOME-01 #1, applied by SHARED-02).
  */
 export const cardInk = {
   ink: darkColors.textOnAccent,
   chip: whiteAt(0.12),
   following: whiteAt(0.2),
-  /** The light theme's money card sits on the page with `--shadow-money` (0 24 40 -22, the card's ink at 60%). */
-  moneyShadow: blackAt(0.6),
-  /** The TGIF card's ground is the verse card's: the debit card's ink (HOME-09 #1). */
-  tgifGround: darkColors.surfaceCardInk,
-  /** The small capitals (the canvas's pale lilac): the accent's light ink is the nearest token (HOME-01 #1). */
-  tgifLabel: darkColors.accentFg,
-  tgifGlow: darkColors.accent,
-  /** The warm glow (the canvas's orange at 35%): the warning orange is the nearest token. */
-  tgifWarm: darkColors.warning,
-  /** The play mark on the white disc: the card's ground, as the canvas draws it. */
-  playMark: darkColors.surfaceCardInk,
   accent: darkColors.accent,
+  /** `tgifRow`'s ground and its play mark on the white disc. */
+  tgifGround: darkColors.tgifVerseGround,
+  tgifLabel: darkColors.tgifLabel,
+  tgifGlow: darkColors.accent,
+  tgifWarm: darkColors.tgifWarmGlow,
 } as const;
 
 const type = (size: number, weight: 400 | 600 | 700, extra: TextStyle = {}): TextStyle => ({ ...font(weight), fontSize: size, ...extra });
@@ -128,8 +107,7 @@ export const todayWords = StyleSheet.create({
   tgifLabel: type(todayMetrics.tgifLabel, 700, { letterSpacing: todayMetrics.tgifLabel * todayMetrics.tgifLabelTracking }),
   tgifTitle: type(todayMetrics.tgifTitle, 700, { letterSpacing: todayMetrics.tgifTitle * todayMetrics.tgifTitleTracking }),
   tgifMeta: type(todayMetrics.tgifMeta, 400, { opacity: todayMetrics.tgifMetaFaint }),
-  cardName: type(todayMetrics.cardName, 700),
-  cardLine: type(todayMetrics.cardLine, 400, { opacity: todayMetrics.cardLineFaint }),
+  tgifProblem: type(todayMetrics.tgifMeta, 600),
   follow: type(todayMetrics.followWords, 700),
 });
 

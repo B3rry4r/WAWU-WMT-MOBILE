@@ -7,7 +7,7 @@ order: 170
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-02, HOME-09, KYC-05]
 decisions: [R-2, R-6]
 passes: [V1, V4, V5, V6, V9]
@@ -237,6 +237,53 @@ The creators part, failing the same way, says so and offers Try again, and build
 | A phone | V10 is not in this task's passes. | A development build on a phone reaching a Hub (`docs/LOCAL.md`) |
 
 Cleanup: the Hub, WAWU ID and web server (PIDs this session started) are stopped. `vh01_hub_test` and `vh01_id_test` are dropped. The backend and WAWU ID worktrees are removed, and the export and keys are deleted. The worktree `/home/user/wt/vh01m` is kept with this report commit.
+
+## Builder report, round 2
+
+Lead's agent, 7 Oct 2026. Merged the verifier's report (`9a4c356`) and origin/main `44ce9c9` (SHARED-02, WALLET-01, ME-01) with merge commits; in `SHARED-CHANGES.md` and `BACKEND_GAPS.md` every row is kept, with the newer status where both sides had a row (HOME-01 #1 and #2 now "applied by SHARED-02"; G-290 to G-311 from main kept).
+
+**D1, the eye at 70%.** The eye is now `BalanceEye`, the Wallet tab's own eye, exported from `src/features/wallet/home/BalanceCard.tsx`: Eye 19, white, inside a view at 0.7 opacity, in both themes. In the browser, the eye's subtree has opacity 0.7 in light and dark (`eye` events in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bh01/drive-log.jsonl`, crops `eye-crop-*`). Jest: "the eye is painted white at 70%, as H1 draws it". The local `eye`/`eyeFaint` metrics are gone.
+
+**D2, a failed TGIF day read.** With TGIF on and the day's read failed, Today draws `TgifProblem` (`TgifCard.tsx`): the card's ground and label, "Today's TGIF didn't load." (an alert) and Try again, which asks for the day again. The card is hidden only when the switch is off. Jest: the error card shows, the TGIF card does not, Try again brings the card; with TGIF off neither shows. Browser: `GET /tgif/<today>` cut, then Try again with the read back (`tgif-day-error-*`, `tgif-day-retried-*`).
+
+**D3, the creator card.** `SuggestionCard` is now the shared stacked `MediaCard` (146 by 196): `titleAccessory` for the tick and `footer` for Follow. Its own picture, scrim and caption are deleted. I chose `footer`, not `action`: `action` draws the shared `Button` (13.5 label, glass with a hairline ring once followed), while `cCard`'s Follow is a 13 label on white at 20% with no ring, so the canvas's pill goes in through `footer` and nothing is forked. MediaCard has no slot for a no-photo placeholder, so a creator without a photo now shows MediaCard's plain sunken block, not their initials, until SHARED-CHANGES HOME-01 #3 (a `placeholder` slot) exists. G-282 says so.
+
+**Tokens (HOME-01 #1).** The TGIF card reads `tgifVerseGround` (ground and play mark), `tgifLabel` and `tgifWarmGlow` (through `stopOf`). The purple glow is the accent at H1's own 85%. The money card carries `shadows.money` (`--shadow-money`, both themes). No stand-in constant is left (`cardInk` holds only tokens and the canvas's white strengths). `CardGlows` remains for the TGIF card's two positioned glows.
+
+**Wallet agreement (WALLET-01 on main).** Home's card no longer reads the balance by itself.
+- **Same reads:** it uses the Wallet tab's queries (`walletHomeQuery(owner)` for `GET /money/wallet`, then `homeBalanceQuery(owner, open)`), keyed by the same account, so both share one cached answer.
+- **Same decision:** it decides with the tab's `homeView`.
+- **Same words:** shared `stateWords(view)` in `src/features/wallet/home/model.ts`, which `WalletScreen` now uses too. For example, an unreachable bank is the title "We couldn't reach your account" plus the Hub's own sentence. The canvas's "Your money is safe…" is no longer written by the app (G-310).
+- **Same drawing:** the shared `MoneyGround` (`--surface-money`, `--glow-money`), `BalanceEye` and `FittedBalance` (at H1's 38: a large balance shrinks and is never cut off). All three are exported from WALLET-01's `BalanceCard.tsx`, which now uses them itself.
+- **Not shared:** the eye's hidden state is kept per screen (Home and Wallet each start shown). Default (agent), owner may override.
+
+Today's queries and the follow mutation use the provider's client, else the app's `queryClient` (`src/features/home/client.ts`), as the Wallet tab does, so Home renders under WALLET-01's router test with no provider.
+
+**Files.**
+- New: `src/features/home/MoneyCard.tsx` (replaces `BalanceCard.tsx`, deleted), `src/features/home/client.ts`.
+- Changed in `src/features/home/`: `TodayScreen.tsx`, `TgifCard.tsx` (`TgifProblem`), `CreatorRail.tsx`, `model.ts` (`moneyCard` replaces `balanceView`), `look.ts`, both test files.
+- Changed in WALLET-01's feature folder: `src/features/wallet/home/BalanceCard.tsx` (exports `MoneyGround`, `BalanceEye`, and `FittedBalance` with `base` and `testID`), `src/features/wallet/home/model.ts` (`stateWords`), `src/features/wallet/home/WalletScreen.tsx` (uses `stateWords`). WALLET-01's tests pass unchanged.
+- Docs: `SHARED-CHANGES.md` HOME-01 #3 (new), `BACKEND_GAPS.md` G-282 (wording).
+
+**V9 again** (backend origin/main `3041887` in a fresh worktree, its own `npm ci`, `prisma generate` and `nest build` there, nothing through hard links; Hub :5361, stand-in WAWU ID :5362, web export :5363 with only those two API origins; fresh `bh01_hub_test`; sign-in through the app's screen; Fintava sandbox read of documented customer A only). Re-shot in light and dark, in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bh01/shots/`:
+- the figure and its states: H1-wallet (₦250.00 from the sandbox), H1-wallet-scrolled, H1-masked, eye-crop;
+- no wallet: H1-no-wallet, H1-no-wallet-opens-A26;
+- follow: H1-followed (one `FollowRelationship` row each, read back after a fresh sign-in);
+- loading and TGIF off: H11-loading, H36-tgif-off (`TgifPreference.show` false, then back to true);
+- the TGIF day error: tgif-day-error, tgif-day-retried;
+- the creators part: creators-error, creators-empty;
+- the wallet states: balance-opening (a held `conflict` opening row, which `GET /money/wallet` answers as `opening`), balance-unreachable (Hub restarted with `FINTAVA_TIMEOUT_MS=50`);
+- compare-H1, compare-H11, compare-H36.
+
+The round-1 shots of the feed tabs, the reader and the page error are not retaken (that code did not change). Every process was stopped, the database dropped and the backend worktree removed.
+
+**After the shots:** `MoneyGround` takes its glow's gradient id (`glowId`; Home passes `today-balance-glow`, the Wallet tab keeps `wallet-balance-glow`), because on the web an SVG id is shared by the whole document and both tabs stay mounted. SHARED-02's `hubSharedProps.test.tsx` looks the Wallet tab's glow up by that id. Only the id changed, so the shots stand.
+
+**Checks.** `npm run check` as one command, exit 0: typecheck and lint clean, jest 73 suites and 1,317 tests all passed, gates 333 files 0 findings, baseline 0, 211 tasks. The run before it failed one test, Z3 `settingsScreens` ("loading view, then a retry"). That test is outside HOME-01, failed the same way on main before round 1, and passed alone (91 of 91) and in the next full run. The home suites hold 31 tests (12 model, 19 screen), up from 28. Mutants were not run this round.
+
+**Decisions (Default (agent), owner may override).** (1) `footer`, not `action`, for Follow (above). (2) No initials until HOME-01 #3. (3) The card's no-figure words are the Wallet tab's, replacing round 1's server sentences and W6 reassurance. (4) The eye state is per screen. (5) The TGIF error card shows the phone's day in its label.
+
+**NOT RUN.** A phone (V10; unblocked by a development build reaching a Hub). The frozen state on screen (G-10: nothing stores a freeze). V5 is the verifier's.
 
 ## Owner sign-off
 
