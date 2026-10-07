@@ -1,31 +1,34 @@
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View, type DimensionValue } from 'react-native';
+import { StyleSheet, type DimensionValue } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { VerifiedTick } from '@/components/icon';
-import { gradientEnds, mediaMetrics } from '@/components/MediaCard';
-import { Text } from '@/components/Text';
-import { font, radius, useWawu } from '@/theme';
+import { MediaCard, mediaMetrics } from '@/components/MediaCard';
+import { useWawu } from '@/theme';
 
 import type { ExploreCreator } from './api';
 
 /**
- * design/_gen/explore.js `cCard`: a portrait 150 by 200 on the rail (218 high in the Categories grid), corner 20,
- * `--scrim-card` over it, and a caption 10 in from the sides and bottom: `@handle` 14.5 bold with a 13 tick 4 after
- * it, the field 12 at 80% two below, then 8 down a 32 high pill, "Follow" on the accent or "Following" on white at 20%.
+ * design/_gen/explore.js `cCard`, drawn by the shared `MediaCard` (stacked): 150 by 200 on the rail, 218 high in the
+ * Categories grid, 10 between cards across and down, a 13 tick after the handle.
  */
 export const creatorCardMetrics = {
   railWidth: mediaMetrics.stackedWidth,
   railHeight: mediaMetrics.stackedHeight,
   gridHeight: 218,
-  /** `creatorsRail` and `cgrid`: 10 between cards, across and down. */
   between: 10,
   tick: 13,
-  tickGap: 4,
-  stack: 8,
-  button: 32,
+  /** `cCard`'s "Following": white at 20%, no outline (the canvas's 0.2 white). */
+  followingAlpha: 0.2,
 } as const;
+
+/**
+ * White at the strength `cCard` draws "Following" with, taken from the glass token (white at 14%) so no colour is
+ * written here. `MediaCard`'s `action` draws its on state as the glass Button (white at 14% with an outline), so the
+ * Following pill goes through `footer` as the same shared Button with this fill and no outline.
+ */
+function whiteAt(glass: string, alpha: number): string {
+  return glass.replace(/[\d.]+\)$/, `${alpha})`);
+}
 
 /** Which tick a card shows: the creator tick first, else the professional tick (X1 draws one or the other). */
 export function tickOf(creator: Pick<ExploreCreator, 'verification'>): 'creator' | 'pro' | undefined {
@@ -50,76 +53,39 @@ export type CreatorCardProps = {
 
 /** One creator on Explore: their portrait, handle and tick, what they do, and Follow. */
 export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, height = creatorCardMetrics.railHeight, onToggleFollow, testID }: CreatorCardProps) {
-  const { colors, gradients } = useWawu();
-  const scrim = gradients.scrimCard;
-  const ends = gradientEnds(scrim.angle);
+  const { colors } = useWawu();
   const tick = tickOf(creator);
-  const handle = displayHandle(creator);
+  const followTestID = testID ? `${testID}-follow` : undefined;
+  const following = Boolean(onToggleFollow) && creator.following;
 
   return (
-    <View testID={testID} style={[styles.card, { width, height, backgroundColor: colors.surfaceSunken }]}>
-      {creator.avatarUrl ? (
-        <Image
-          testID={testID ? `${testID}-photo` : undefined}
-          source={{ uri: creator.avatarUrl }}
-          contentFit="cover"
-          accessible={false}
-          style={StyleSheet.absoluteFill}
-        />
-      ) : null}
-      <LinearGradient
-        pointerEvents="none"
-        colors={scrim.colors as unknown as readonly [string, string, ...string[]]}
-        locations={scrim.locations as unknown as readonly [number, number, ...number[]]}
-        start={ends.start}
-        end={ends.end}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.caption}>
-        <View accessible accessibilityLabel={[creator.name, handle !== creator.name ? handle : null, creator.field].filter(Boolean).join(', ')}>
-          <View style={styles.handleLine}>
-            <Text variant="h3" tone="textOnAccent" numberOfLines={1} style={[font(700), styles.handle]}>
-              {handle}
-            </Text>
-            {tick ? <VerifiedTick kind={tick} size={creatorCardMetrics.tick} /> : null}
-          </View>
-          {creator.field ? (
-            <Text variant="secondary" tone="textOnAccent" numberOfLines={1} style={styles.field}>
-              {creator.field}
-            </Text>
-          ) : null}
-        </View>
-        {onToggleFollow ? (
+    <MediaCard
+      layout="stacked"
+      testID={testID}
+      title={displayHandle(creator)}
+      subtitle={creator.field ?? undefined}
+      titleAccessory={tick ? <VerifiedTick kind={tick} size={creatorCardMetrics.tick} /> : undefined}
+      imageUrl={creator.avatarUrl ?? undefined}
+      width={width}
+      height={height}
+      action={onToggleFollow && !following ? { label: 'Follow', onPress: onToggleFollow, testID: followTestID } : undefined}
+      footer={
+        onToggleFollow && following ? (
           <Button
-            testID={testID ? `${testID}-follow` : undefined}
-            label={creator.following ? 'Following' : 'Follow'}
-            variant={creator.following ? 'glass' : 'primary'}
+            testID={followTestID}
+            label="Following"
+            variant="glass"
             size="sm"
             full
             onPress={onToggleFollow}
-            style={styles.follow}
+            style={[styles.following, { backgroundColor: whiteAt(colors.surfaceGlass, creatorCardMetrics.followingAlpha) }]}
           />
-        ) : null}
-      </View>
-    </View>
+        ) : undefined
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.media, overflow: 'hidden', flexShrink: 0 },
-  caption: {
-    position: 'absolute',
-    left: mediaMetrics.captionInset,
-    right: mediaMetrics.captionInset,
-    bottom: mediaMetrics.captionInset,
-    gap: creatorCardMetrics.stack,
-  },
-  handleLine: { flexDirection: 'row', alignItems: 'center', gap: creatorCardMetrics.tickGap },
-  handle: { fontSize: mediaMetrics.stackedTitle, flexShrink: 1 },
-  field: {
-    fontSize: mediaMetrics.stackedSubtitle,
-    opacity: mediaMetrics.stackedSubtitleOpacity,
-    marginTop: mediaMetrics.stackedSubtitleGap,
-  },
-  follow: { height: creatorCardMetrics.button },
+  following: { height: mediaMetrics.actionHeight, borderWidth: 0 },
 });

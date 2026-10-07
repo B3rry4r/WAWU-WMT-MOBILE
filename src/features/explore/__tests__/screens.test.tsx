@@ -176,13 +176,48 @@ describe('X1 · Explore', () => {
     expect(sent).toContain('DELETE /creators/c1/follow');
   });
 
-  it('when the Hub refuses a follow, the button goes back to Follow', async () => {
+  it('when the Hub refuses a follow, the button goes back to Follow and the app says so in its own words', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
-    answers['POST /creators/c1/follow'] = [refused(400, 'Cannot follow this creator')];
+    answers['POST /creators/c1/follow'] = [refused(403, 'You cannot follow this account.')];
     await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
     await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Follow' }));
-    await settle();
+    expect(await rtl.screen.findByText('Couldn’t follow @adaeze. Try again later.')).toBeTruthy();
     expect(rtl.screen.getByRole('button', { name: 'Follow' })).toBeTruthy();
+    expect(rtl.screen.queryByText('You cannot follow this account.')).toBeNull();
+  });
+
+  it('a Follow still on its way does not stop a user following a second creator', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist'), card('c2', 'funmi', 'Accountant')] })];
+    answers['POST /creators/c1/follow'] = ['hold'];
+    answers['POST /creators/c2/follow'] = [ok({ following: true }, 201)];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
+    await rtl.screen.findByText('@funmi');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-c1-follow'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-c1-follow'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-c2-follow'));
+    await settle();
+    expect(sent.filter((r) => r === 'POST /creators/c1/follow')).toHaveLength(1);
+    expect(sent).toContain('POST /creators/c2/follow');
+    expect(rtl.within(rtl.screen.getByTestId('explore-featured-c2')).getByRole('button', { name: 'Following' })).toBeTruthy();
+  });
+
+  it('draws Following as the canvas does: white at 20%, no outline', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist', { following: true })] })];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
+    const button = await rtl.screen.findByRole('button', { name: 'Following' });
+    const style = Object.assign({}, ...[button.props.style].flat(Infinity).filter(Boolean));
+    expect(style.backgroundColor).toBe('rgba(255, 255, 255, 0.2)');
+    expect(style.borderWidth).toBe(0);
+  });
+
+  it('drops a category the Hub sends with a blank id or label', async () => {
+    answers['GET /explore/categories'] = [ok({ items: [{ id: '', label: 'No id' }, { id: 'nolabel', label: '' }, { id: 'music_audio', label: 'Music & Audio' }] })];
+    answers[featured] = [ok({ items: [] })];
+    const { fetchCategories } = require('../api') as typeof import('../api');
+    expect(await fetchCategories()).toEqual([{ id: 'music_audio', label: 'Music & Audio' }]);
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
+    const tiles = await rtl.screen.findByTestId('explore-tiles');
+    expect(rtl.within(tiles).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['All', 'Music & Audio']);
   });
 
   it('the viewer’s own card has no Follow (nobody follows themselves)', async () => {

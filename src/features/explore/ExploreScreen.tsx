@@ -17,6 +17,7 @@ import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
 import { ExploreSkeleton } from './ExploreSkeleton';
+import { FollowNotice } from './FollowNotice';
 import { useFollow } from './follow';
 
 /**
@@ -140,6 +141,7 @@ export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
       >
         {body}
       </ScrollView>
+      <FollowNotice message={follow.notice} />
     </View>
   );
 }

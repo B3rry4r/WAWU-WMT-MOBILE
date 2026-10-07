@@ -1,3 +1,4 @@
+import type { ChipItem } from '@/components/FilterChips';
 import type { IconName } from '@/components/icon';
 
 import type { CategoryId, ExploreCategory } from './api';
@@ -62,10 +63,10 @@ export function chosenCategory(param: unknown, categories: readonly ExploreCateg
 }
 
 /** The chips on X2: All, then every category the server lists (design/_gen/explore.js: "every one as a chip on Categories"). */
-export function categoryChips(categories: readonly ExploreCategory[]) {
+export function categoryChips(categories: readonly ExploreCategory[]): ChipItem<CategoryChoice>[] {
   return [
-    { value: 'all' as CategoryChoice, label: 'All', icon: undefined as IconName | undefined },
-    ...categories.map((c) => ({ value: c.id as CategoryChoice, label: c.label, icon: categoryIcon(c.id) as IconName | undefined })),
+    { value: 'all', label: 'All' },
+    ...categories.map((c): ChipItem<CategoryChoice> => ({ value: c.id as CategoryChoice, label: c.label, icon: categoryIcon(c.id) })),
   ];
 }
 

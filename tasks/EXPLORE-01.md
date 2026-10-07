@@ -7,7 +7,7 @@ order: 110
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [EXPLORE-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -112,6 +112,18 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 **Defaults (agent), owner may override.** Tiles and chips follow the server's category order (G-180), so X1 shows Music, Film, Photography, Fashion, Business, Technology, not the canvas's order. Icons for the four categories the canvas never draws: Business BriefcaseBusiness, Technology Smartphone, Food & Lifestyle Sun, Sports Dumbbell. All and More both open Categories on All. The creator tick shows first, else the professional tick. A card with no handle shows the name. With nobody featured, the Featured creators section is hidden. All's empty copy (not drawn): "Nobody is publishing yet" / "Come back once more people have published." The chip a link opens on is scrolled into view once if it starts out of view; after that the chips stay in place (X3). Follow on the card is the shared Button, size sm, held to the canvas's 32 height (its label is 13.5, the canvas 13); Following uses the glass look (white at 14% with a glass ring; the canvas draws white at 20%, no ring). The bar is announced as the heading "Explore" (X1 has no title).
 
 **NOT RUN.** V10 (no tester build with this branch; unblocked when a development or tester build includes it). V4 beyond follow (the one field one person writes and another reads: tested both sides through the API). Picture comparison (V5) is the verifier's.
+
+## Builder report, round 2
+
+**Merged:** the verifier's report (edb61d3) and main 44ce9c9 (SHARED-02), merge commits only; BACKEND_GAPS and SHARED-CHANGES keep every row, with main's "applied by SHARED-02" status on EXPLORE-01 #1 to #3.
+**D1 fixed:** `CategoryChips.tsx` deleted; Categories uses the shared `FilterChips` with `icon` per item and `revealSelected` (lead ruling: scrolling the opening chip into view is fine). All has no icon, so it takes the kit's plain chip padding (15), not `chipRow`'s 11 / 14.
+**D2 fixed:** `CreatorCard.tsx` is now the shared `MediaCard` (stacked): `titleAccessory` carries the tick, `action` carries Follow. No picture, scrim or caption is drawn in the feature any more. Following (lead ruling: the canvas's white at 20%) goes through `footer`, not `action`, because `action`'s on state is the glass Button (white at 14% with an outline). The footer holds the same shared `Button` (sm, full, 32 high) with the fill set to white at 0.2, taken from the glass token's colour, and no outline.
+**D3 fixed:** `useFollow` tracks a pending request per creator id. A second tap on the same creator is ignored, and other creators can be followed meanwhile. Test "a Follow still on its way does not stop a user following a second creator": the first POST is held, the second card sends and turns Following, and the first is sent once. Reverting to one pending flag for every card fails it.
+**Refusal (lead ruling):** a Follow or unfollow the Hub refuses, or that cannot reach the Hub, is rolled back and shows "Couldn’t follow @handle. Try again later." ("Couldn’t unfollow ..." for an unfollow) for 4 s, announced to a screen reader. These are the app's own words, never the server's sentence (test: a 403 "You cannot follow this account." shows only the app's line). `FollowNotice.tsx` takes M10's toast shape with an alert icon, above the bottom of the screen. The canvas draws no such state. Default (agent), owner may override.
+**Mutant gap closed:** test "drops a category the Hub sends with a blank id or label" (fetchCategories and the tiles). Removing the filter fails it.
+**`src/app/categories.tsx`:** its own signed-out redirect is gone. `_layout.tsx` lists `categories` under the signed-in guard (EXPLORE-01 #2, applied), and nothing else needed it.
+**Live (V9, same as round 1):** wawu-backend 3041887 on `bx01_test` (Hub 5371), stand-in WAWU ID on 5372 (same sign-in envelope shim as round 1; the verifier ran the real wawu-id, G-59), web export on 5373 with only localhost ports in the bundle. Signed in through the app's own sign-in screen. Follow on Zainab read back `zainab-pro following: true` through the API. Refusal: Chidi blocked the viewer through `POST /settings/privacy/blocked` after X1 loaded; Follow on him was answered 403, rolled back, and the notice showed. The block was removed after. Screenshots, light and dark: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bx01/shots-r2/` (round 1's 12 states plus `X1-follow-refused`).
+**Checks:** `npm run check` exit 0 in one run: tsc 0, lint 0, jest 73 suites 1317 passed (explore 31, 4 new), gates 9 run / 333 files / 0 findings, baseline 0, 211 tasks. Secret scan of the staged diff: no key-shaped strings. NOT RUN: V10 (no tester build with this branch; unblocked when a development or tester build includes `wmt/EXPLORE-01`).
 
 ## Verifier report
 

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Button, IconButton } from '@/components/Button';
+import { FilterChips } from '@/components/FilterChips';
 import { Skeleton, LoadingView } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -14,8 +15,8 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { categoriesKey, creatorsKey, fetchCategories, fetchCreatorsPage, type ExploreCreator } from './api';
 import { categoryChips, chosenCategory, emptyCategoryCopy, type CategoryChoice } from './categories';
-import { CategoryChips } from './CategoryChips';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
+import { FollowNotice } from './FollowNotice';
 import { useFollow } from './follow';
 import { nextCreatorsPage } from './paging';
 
@@ -32,6 +33,8 @@ export const categoriesMetrics = {
   chipsGap: 14,
   bottom: 40,
   skeletonCards: 4,
+  /** The refusal line sits this far above the safe area (FollowNotice's default). */
+  noticeBottom: 24,
 } as const;
 
 export type CategoriesScreenProps = {
@@ -139,7 +142,7 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
       </View>
       <View style={styles.chips}>
         {list.length > 0 ? (
-          <CategoryChips items={categoryChips(list)} value={choice} onChange={pick} label="Choose a category" testID="categories-chips" />
+          <FilterChips items={categoryChips(list)} value={choice} onChange={pick} label="Choose a category" revealSelected testID="categories-chips" />
         ) : null}
       </View>
       <FlatList
@@ -175,6 +178,7 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
         style={styles.list}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + categoriesMetrics.bottom }, centered && styles.centered]}
       />
+      <FollowNotice message={follow.notice} bottom={insets.bottom + categoriesMetrics.noticeBottom} />
     </View>
   );
 }
@@ -185,7 +189,7 @@ const styles = StyleSheet.create({
   side: { width: categoriesMetrics.navButton },
   titles: { flex: 1, minWidth: 0, alignItems: 'center' },
   title: { ...font(700), fontSize: categoriesMetrics.title, letterSpacing: categoriesMetrics.titleTracking * categoriesMetrics.title, textAlign: 'center' },
-  chips: { paddingTop: categoriesMetrics.bodyTop, paddingHorizontal: layout.gutter },
+  chips: { paddingTop: categoriesMetrics.bodyTop },
   list: { flex: 1 },
   content: { flexGrow: 1, paddingTop: categoriesMetrics.chipsGap, paddingHorizontal: layout.gutter, gap: creatorCardMetrics.between },
   centered: { justifyContent: 'center' },
