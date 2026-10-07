@@ -1,8 +1,9 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { QueryClientContext, useInfiniteQuery, useQuery, type QueryClient } from '@tanstack/react-query';
+import { useContext, useEffect, useState } from 'react';
 import { AccessibilityInfo, Linking, ScrollView, Share, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Banner } from '@/features/auth/Banner';
@@ -43,6 +44,14 @@ const BODY_GAP = space.lg;
 const SERVICE_SKELETON_H = 72;
 const ABOUT_SKELETON_H = 120;
 
+/**
+ * The cache above the screen, or the app's one cache when there is none (as the Inbox tab reads it), so the
+ * tab draws inside the tab navigator on its own. The app's root provides that same cache.
+ */
+function useCache(): QueryClient {
+  return useContext(QueryClientContext) ?? queryClient;
+}
+
 export type MeScreenProps = {
   onEditProfile: () => void;
   onAddWork: () => void;
@@ -61,9 +70,10 @@ export type MeScreenProps = {
 export function MeScreen({ onEditProfile, onAddWork, onOpenWork }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
-  const me = useQuery({ queryKey: meKey, queryFn: fetchMe });
-  const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields });
-  const stats = useQuery({ queryKey: statsKey, queryFn: fetchProfileStats });
+  const cache = useCache();
+  const me = useQuery({ queryKey: meKey, queryFn: fetchMe }, cache);
+  const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields }, cache);
+  const stats = useQuery({ queryKey: statsKey, queryFn: fetchProfileStats }, cache);
   const [tab, setTab] = useState<ProfileTab>('content');
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -103,7 +113,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork }: MeScreenProps
     initialPageParam: 1,
     getNextPageParam: (last) => last.nextPage ?? undefined,
     enabled: wawuId !== null && tab === 'content',
-  });
+  }, cache);
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (tab !== 'content' || !grid.hasNextPage || grid.isFetchingNextPage) return;
@@ -198,8 +208,9 @@ function ContentBody({ query }: { query: GridQuery }) {
 }
 
 function ServicesBody({ creator }: { creator: boolean }) {
-  const services = useQuery({ queryKey: servicesKey, queryFn: fetchServiceState, enabled: creator });
-  const listings = useQuery({ queryKey: listingsKey, queryFn: fetchListings });
+  const cache = useCache();
+  const services = useQuery({ queryKey: servicesKey, queryFn: fetchServiceState, enabled: creator }, cache);
+  const listings = useQuery({ queryKey: listingsKey, queryFn: fetchListings }, cache);
   if ((creator && services.isError) || listings.isError) {
     return (
       <ErrorState
@@ -242,7 +253,8 @@ type AboutBodyProps = {
 };
 
 function AboutBody({ me, location, skills, memberSince, onAddWork, onOpenWork, onOpenWebsite }: AboutBodyProps) {
-  const works = useQuery({ queryKey: aboutWorksKey, queryFn: fetchAboutWorks });
+  const cache = useCache();
+  const works = useQuery({ queryKey: aboutWorksKey, queryFn: fetchAboutWorks }, cache);
   if (works.isError) {
     return <ErrorState testID="me-about-error" title="Your featured works did not load" message={readFailure(works.error)} onRetry={() => void works.refetch()} />;
   }

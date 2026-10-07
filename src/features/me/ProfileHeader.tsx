@@ -78,8 +78,9 @@ export function ProfileTop({ coverUrl, top, canShare, onShare }: ProfileTopProps
   const ends = gradientEnds(180);
   return (
     <>
-      <View testID="me-cover" style={[styles.cover, { height: coverHeight(top), backgroundColor: colors.surfaceSunken }]}>
-        {coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Your cover picture" /> : null}
+      {/* The page's name for a screen reader: the tab is "Me", and M1 draws no title over the cover. */}
+      <View testID="me-cover" accessible accessibilityRole="header" accessibilityLabel="Me" style={[styles.cover, { height: coverHeight(top), backgroundColor: colors.surfaceSunken }]}>
+        {coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={StyleSheet.absoluteFill} /> : null}
         <LinearGradient
           pointerEvents="none"
           colors={[blackAt(headerMetrics.scrim), blackAt(0)]}
