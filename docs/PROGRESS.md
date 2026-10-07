@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 68 | 0 | 23 | 26 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 49 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-11](../tasks/EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review (You)
 
@@ -127,6 +127,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-11 · Builder report, round 5 (backend `b92a591`, status verifying): a PUT retires (new nullable `EventTicketType.retiredAt`, migration `20261014100000`) instead of deleting a tier an order points at, so an abandoned checkout no longer blocks the host (D3) and opening a checkout while a PUT replaces its tier is never a 500 (O5, 30 rounds, 0 500s); retired tiers are hidden and refused ("This ticket has changed.", O6), a pending order on one still settles; lock unchanged, protected 253/253, specs 170/170.
 - 7 Oct 2026 · EVENTS-11 · Builder report, round 4 (backend `d98e037`, status verifying): D2 fixed, PUT and PATCH lock the event row FOR NO KEY UPDATE and PUT locks the tier rows before reading `sold`, so a purchase and a PUT never deadlock (40 live trials, 0 deadlocks, 0 errors; new race spec fails on b368f20 with 37 of 40 rounds wrong); a PUT during an open payment is a 409, not a 500; PUT on a removed event is PATCH's takedown 403 (ruling); lock unchanged, protected 253/253, event specs 157/157.
 - 7 Oct 2026 · EVENTS-11 · Builder report, round 3 (backend `b368f20`, status verifying): D1 fixed for PUT /events/:id/tickets and PATCH /events/:id, both decided and written under a lock on the event row, so an edit racing an admin remove never undoes the takedown (race spec 25 rounds each: 0 wrong on the branch, PUT 20 and PATCH 4 wrong on 6ea8612, PATCH 4 wrong on main; 40 live trials each, 0 undone); parallel PUTs no longer mix tier rows; lock unchanged, protected 253/253; O4 is enum order only (TypeScript first-seen order) and is back to main's order.
 - 7 Oct 2026 · EVENTS-11 · Builder report, round 2 (backend `6ea8612`, status verifying): lead rulings recorded; the tiers of an event that is not published are a 404 to all but its host (R-42 F3, published answers byte-identical to main), the admin queue and detail carry the ticket types (R-42 F2, additive), EVENTS-05's spec seeds its tiers directly (no assertion changed), and the protected suite re-approves the event after the PUT probe; relocked, 253/253 on the new lock (needs the owner's relock-approved label); event specs 150/150.
@@ -141,4 +142,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
-- 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.

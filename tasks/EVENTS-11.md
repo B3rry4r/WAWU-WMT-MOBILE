@@ -7,7 +7,7 @@ order: 184
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -218,6 +218,59 @@ Independent verifier session (wrote none of this task), narrow re-check of round
 - **NOT RUN.** The full backend suite: it needs a network namespace for :4001, which this session is refused; unblocked by a session allowed to run one. Real WAWU ID: the stand-in was used. Real Flutterwave: the paid path ran through the Hub's mock adapter at its seam.
 
 **Verdict: building.** D2 is fixed, D1 stays fixed, the removed-event ruling holds, and the lock is unchanged. D3 (an abandoned checkout freezes a host's tiers with no end) is open.
+
+## Builder report, round 5
+
+Backend `wmt/EVENTS-11` `b92a591` (one commit on `d98e037`; origin/main `3041887`, merge a no-op). Lead ruling for this round: a PUT never deletes a ticket tier that any order (pending or paid) points at; it retires it (`retiredAt`), and retired tiers are hidden and cannot be bought, while a pending order on one still settles. The round 4 "a buyer is paying" 409 goes away, the sold 409 stays, the lock order is kept. Evidence under the lead's scratchpad `be11/r5/`.
+
+- **Schema.** New nullable `EventTicketType.retiredAt`, additive migration `20261014100000_event_ticket_type_retired`. It sorts after every folder on backend main and on all 80 remote backend branches; the newest of those is `20261013100000_legal_consultations` on LEGAL-03. `prisma migrate diff` against the migrated database gives only main's own GIN-index line. SHARED-CHANGES row EVENTS-11 #1.
+  - Purge map: no entry. It is not a user-id column, and a host's purge deletes their events, so the tiers cascade.
+  - Data export: not exported. Tiers carry no personal data and are not in the export today.
+  - `data-export-map` and `account-data-map` specs pass.
+- **PUT.** Same locks in the same order as round 4: event `FOR NO KEY UPDATE`, then the tier rows `FOR UPDATE`. The tiers sent are matched against the tiers on sale, field for field:
+  - an identical tier keeps its row (so the D3 case, "keep that tier and add another", touches nothing on the kept tier);
+  - a dropped or changed tier is **retired** if any order points at it, and **deleted** if none does;
+  - new tiers are created;
+  - nothing dropped and nothing created is "no change".
+
+  The sold 409 is unchanged (checked first, same message). The "a buyer is paying" 409 is gone.
+- **Retired tiers.**
+  - **Hidden from:** `GET /events/:id/tickets` (and PUT's own answer), the event views' `priceFromNaira` and `ticketed`, the admin queue and detail `ticketTypes`, and the organiser's "remaining" seats. A settled ticket on a retired tier counts as sold but takes no seat from the tiers on sale.
+  - **Buying one:** 409 "This ticket has changed. Please choose again.", which also replaces "sold out" when a tier was replaced under a purchase (O6).
+  - **Settling a pending order on one:** goes through `issueOrder` as before (verify or webhook), at the price the buyer saw. A new order cannot claim a retired tier.
+- **O5.** Opening a paid checkout now writes its order in a transaction that first locks the tier `FOR SHARE` and checks the tier and event again. A PUT replacing the tier then either finishes first (the checkout gets a plain 409/404) or waits and retires the tier instead of deleting it. A new free order checks the event again under its tier lock, so no seat is sold on an event a PUT just sent to review.
+- **Response shapes.** No route's response shape changes: `contract:build` leaves the contract unchanged and retired tiers are simply absent.
+- **Specs.** `event-purchase-races.contract.spec.ts`, rewritten, 7 tests:
+
+  | Test | Branch, 3 runs | On `d98e037` |
+  |---|---|---|
+  | D2 free purchase race, 40 rounds | 11/11 every run, round 3's race spec included | 16 rounds told "sold out" (O6) |
+  | D2 paid settle race (payment client stood in at `FLUTTERWAVE_CLIENT`), 20 rounds | | passes |
+  | O5 checkout-opening race, 30 rounds | | all 30 rounds wrong, 9 of them a 500 |
+  | D3 abandoned checkout (PUT 200, old tier retired, reviewer and public see only the new tiers and "from" price, the old checkout still verifies at ₦5,000 and issues its ticket, new tiers keep every seat) | | 409 |
+  | D3 as found (keep the tier, add one) | | 409 |
+  | Retired tier refused, before and after re-approval | | 409 |
+  | Sold rule unchanged | | |
+
+  On `d98e037`, 5 of the 7 fail.
+- **Over HTTP** (built Hub with its own database; its mock payment adapter at the client seam, no network):
+  - **D3 end to end:** checkout opened, PUT 200, the 5,000 tier retired, the public sees Regular ₦6,000 and VIP ₦20,000 (from ₦6,000), a second buyer on the old tier gets "This ticket has changed.", the old checkout verifies 201 (paid ₦5,000, 1 ticket), and remaining stays 100 and 10.
+  - **O5, 30 trials:** 14 checkout first (tier retired, 1 order), 16 PUT first (checkout 409 or 404, nothing written), **0 500s**.
+  - **D2 free, 30 trials:** 15 and 15, the refusal reads "This ticket has changed."
+  - The Hub log has 0 `40P01` lines and 0 errors.
+- **Protected suite:** no change needed. Lock unchanged since round 2; against `b92a591`, **253/253, all 244 required**.
+- **Checks.**
+  - `src/event` + `src/admin/events` + `src/event-ticketing` + both map specs: **170/170**.
+  - tsc 0.
+  - eslint 0 on every changed .ts file.
+  - Gates: 16 fail, the same lines as main, 58 warn.
+  - Tripwire 0; secret scan clean.
+- **Behaviour note (for the verifier):** an unchanged tier now keeps its row and id across a PUT. Before, every changed PUT gave every tier a new id.
+- **Follow-up (not this task):** PATCH on an event its host cancelled is accepted and returns it to `pending`, as on main.
+- **NOT RUN:**
+  - the full backend suite in a network namespace (not in this round's list);
+  - real WAWU ID (mock used);
+  - Flutterwave and Fintava (not called).
 
 ## Owner sign-off
 
