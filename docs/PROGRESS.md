@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 30 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 0 | 1 |
 | done | 43 | 27 | 9 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [EVENTS-02](../tasks/EVENTS-02.md) Event hosting backend: hybrid events, more event types, tickets sent with the event (Developer 3)
 
@@ -111,6 +111,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-02 · Verified round 3, status review (backend wmt/EVENTS-02 206814c): F5 migration folder sorts after every ref, F7 G-230 unique on all branches, F8 non-object ticket types 400 (36 requests, nothing saved, spec fails without the decorator); F6 reproduced on main 4892a59 and split out by the lead; protected 253/253, gates equal to main (16 fail), clean trial merge with main and EVENTS-05, mobile check exit 0. No open defect.
 - 7 Oct 2026 · EVENTS-02 · Fix round 2, status verifying (backend wmt/EVENTS-02 206814c): migration renamed 20261007190000 after main's tail (F5); non-object ticket types are 400 with a spec (F8); gap row renumbered G-230 (F7); F6 blocked: PUT /events/:id/tickets is a protected web route, owner ruling or an app-only route needed. Protected 253/253, gates equal to main, event specs 107 passed.
 - 6 Oct 2026 · EVENTS-02 · Verified round 2, status building: F1 fixed (40 price and quantity inputs checked); gate, money, moderation, blocks, maps, protected 253/253, gates equal to main, trial merges clean on backend. Four defects open: F5 migration folder sorts before main's, F6 PUT /events/:id/tickets skips the host gate and re-review (reprice after approval, or with a lapsed tick), F7 gap id G-144 collides with PROS-02, F8 `ticketTypes: [[]]` is a 500.
 - 6 Oct 2026 · EVENTS-02 · Fix round 1, status verifying (backend wmt/EVENTS-02 1df8744): POST /events refuses non-integer ticket price and quantity with 400 (F1), spec added; F2 to F4 stay with the owner in the Verifier report.
@@ -125,4 +126,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
 - 7 Oct 2026 · ADS-05 · Merged to main in merge train 2 (backend PR #72): count ad views, taps and skips, only for a card the person could be served; Developer 2's task.
 - 7 Oct 2026 · INBOX-07 · Merged to main in merge train 2 (backend PR #72): one inbox list with unread counts; Developer 2's task.
-- 6 Oct 2026 · RELEASE-01 · Merged to main (9226a1b): Google Play listing, data-safety form and the full data inventory (417 items, each mapped to a form row, with a check that fails on any unlisted model); the lead's task.
