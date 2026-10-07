@@ -7,7 +7,7 @@ order: 155
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-11, MONEY-12, MONEY-13, MONEY-15, UI-02, KYC-05]
 decisions: [R-1, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -222,6 +222,31 @@ Builder session, 7 Oct 2026, on `wmt/WALLET-01` with the verifier's round-2 repo
 - **Frame watcher, re-run** (the verifier's `fit.py`, adapted to this stack as `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/fit3.py`: same rAF watcher, the balance changed under a mounted card by leaving and coming back to the tab, plus Hide then Show twice on ₦4,852,507.75), at 320 px, light and dark, against a local Hub from backend main 3041887 (`bw01_test`, stand-in balance on :5376, web on :5377): **0 cut frames** in all 14 cases: ₦0.00 at 42, ₦485,250.75 at 40, ₦4,852,507.75 at 34, ₦98,765,432.10 at 32, ₦999,999,999.99 at 28, and both Hide/Show rounds at 34; no page overflow; the measuring copy `aria-hidden`, the shown figure not. Log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/fit-r3.jsonl`, card shots `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/shots-r3/`.
 
 **Checks.** `npm run check` as one command, run to its exit code: exit 0 in 179 s (tsc 0, lint 0, jest 70 suites, 1226 of 1226, gates 9 run / 319 files / 0 findings, baseline 0, tasks 211); log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bw01/check-r3.log`. Processes, worktree and `bw01_test` removed after the run; only ports 5375 to 5377 were used, the export held only the two localhost addresses, and every browser request went to those ports.
+
+## Verifier report, round 3
+
+Narrow re-check, 7 Oct 2026, of mobile `wmt/WALLET-01` 15691dd (my da73833 and main 5fec168 merged in), same independent session; nothing fixed. Hub from backend origin/main 3041887 (`vw01_hub_test`, :5405; its generator writes `generated/prisma` in the worktree), real WAWU ID from wawu-id origin/main fb8717e with its own `npm ci` (`vw01_id_test`, :5406), web export with a private `TMPDIR` and `--clear` on :5407 (bundle holds only `localhost:5405` and `:5406`). Fintava stand-in answering only the balance read (112 calls, all that path). Sign-ins through the app's own screen. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vw01/` (`fit3.py` and `fit3-verifier.jsonl`, my own frame watcher, not the builder's copy; `fit3-summary.txt`; `shots-r3/`; `drive-r3.jsonl`; `mutants-r3/`, `mutants-r2-again/`; `r3-*.log`; `check-r3.log`). Servers stopped, databases dropped, worktrees `vw01b` and `vw01id` removed.
+
+| Item | Result | Evidence |
+|---|---|---|
+| D5 cut frame | closed | `fit3.py`, 320 / 360 / 390 px, light and dark, every animation frame watched (cut means visible with `scrollWidth` above `clientWidth`, or wider than the card): (A) first mount of ₦0.00, ₦485,250.75, ₦4,852,507.75, ₦98,765,432.10, ₦999,999,999.99, a fresh session each; (B) the balance changed under the mounted card by leaving for Home and coming back; (C) the balance changed while the tab stays open (the browser's `visibilitychange` makes the cache ask again; the page never leaves `/wallet`), 0 to 98,765,432.10 to 485,250.75 to 999,999,999.99; (D) a change of the same width while open (73,914.06 to 73,914.07: it appears, it does not stay invisible); (E) Hide then Show twice on ₦4,852,507.75. 108 of 108 cases pass: 0 cut frames, 0 ellipses, 0 page overflow. Sizes as round 2 (320: 42 / 40 / 34 / 32 / 28). Cards `shots-r3/B-*.png`. |
+| Measuring copy and screen readers | passed | Every case: the copy carrying the balance label sits under `aria-hidden="true"`, the shown one does not (`fit3-verifier.jsonl`, `copies`). Chrome's accessibility tree (CDP `Accessibility.getFullAXTree`, not ignored nodes) holds exactly one balance node: "4,852,507 naira 75 kobo" when shown, "Balance hidden" when hidden, beside the three row amounts. Natively: `accessibilityElementsHidden` and `importantForAccessibility="no-hide-descendants"` on the same view (BalanceCard.test.tsx case 4). |
+| BalanceCard.test.tsx | passed | With round 2's `BalanceCard.tsx` (2c91287) put back for the run: 3 of 4 fail (a new figure shown at once, Show after Hide shown at once, no `aria-hidden`); with 15691dd's: 4 of 4 pass (`r3-balancecard-on-r2.log`). Worktree restored, `git status` clean. |
+| Mutants on the keyed measurement | 3 of 4 killed | `mutants-r3/results.json` (four wallet test files, 43 cases): K1 the measured width counted for any figure: killed; K3 the key ignores hiding: killed; K4 the copy loses `aria-hidden`: killed. K2 the hidden copy not remounted per figure: survives, because jest sends layouts by hand and cannot show a ResizeObserver staying quiet. In the browser case D above (same-width change) shows the remount works. Test gap, not a defect. |
+| Merge history | passed | `git grep -nE '^(<<<<<<<|>>>>>>>)'` on 15691dd: nothing. Every table row of `BACKEND_GAPS.md` and `SHARED-CHANGES.md` from both parents of e0eff58 (da73833 and 5fec168) is in the head. Two branch-side rows differ (`ME-06 #5`, `ME-11 #4`), and those carry main's newer text: the branch never changed them (identical to the merge base 47e1f07), and the head equals 5fec168's. |
+| D1 to D4 still closed | passed | D1: 8 of 8 Backs from A26 land on the tab, light and dark (`drive-r3.jsonl`). D2: case A above. D3: `npx jest --runInBand` on the four WALLET-01 test files, 43 tests, ends 17 s after start. D4: the 9 round-2 mutants (M5, M6, M9, M11, N1 to N5) all still killed (`mutants-r2-again/results.json`). |
+| Regression | passed | Trial merge: mobile origin/main is still 5fec168, already an ancestor of 15691dd, so the merge is a no-op. `npm run check` as one command: see the line under this table. |
+
+`npm run check` as one command on the report tree (code identical to 15691dd; `check-r3.log`): exit 0 in 3 min 9 s, tsc 0, lint 0, jest 70 suites, 1226 of 1226, gates 9 run / 319 files scanned / 0 findings, baseline 0, tasks 211; jest exited by itself.
+
+### Findings
+- **Test gap (no product defect).** Mutant K2 survives jest; the browser shows the behaviour it guards.
+- No defect open.
+
+### NOT RUN
+- Font scale 1.3 and TalkBack or VoiceOver on a device. Unblocked by: an Android tester build with the system font at 130%.
+
+Status: `review`. D1 to D5 are closed.
 
 ## Owner sign-off
 

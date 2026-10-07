@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 7 Oct 2026 · WALLET-01 · Verified round 3 (15691dd): D5 closed (0 cut frames in 108 watched cases at 320/360/390 px, light and dark: first mount, balance changed under the card and while the tab is open, Hide/Show), the measuring copy aria-hidden (one balance in the accessibility tree), BalanceCard.test.tsx fails 3 of 4 on round 2 and passes now, 3 of 4 own mutants killed (K2 a test gap the browser covers), no conflict markers and every row kept; D1 to D4 still closed; status review.
 - 7 Oct 2026 · WALLET-01 · Round 3: a new or re-shown balance stays invisible until that figure is measured, so no cut frame is painted (D5); the measuring copy is aria-hidden on the web; status verifying.
 - 7 Oct 2026 · WALLET-01 · Verified round 2 (2c91287): D1 to D4 closed (every Back from A26 lands on the tab, balances whole at 320/360/390 px up to ₦999,999,999.99, the three WALLET-01 test files end in 17 s in band, 9 of 9 mutants killed; the remaining in-band hold is WALLET-11's payout test, mutation timers); trial merge with main 5fec168 passes; new D5 (low): a balance that changes under the card, or Show after Hide, paints one frame cut with "…" before it is re-measured; status building.
 - 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.

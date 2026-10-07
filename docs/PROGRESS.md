@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 68 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 49 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [WALLET-01](../tasks/WALLET-01.md) Wallet home: Naira account and its states (You)
 
 ## Done
@@ -127,6 +124,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · WALLET-01 · Verified round 3 (15691dd): D5 closed (0 cut frames in 108 watched cases at 320/360/390 px, light and dark: first mount, balance changed under the card and while the tab is open, Hide/Show), the measuring copy aria-hidden (one balance in the accessibility tree), BalanceCard.test.tsx fails 3 of 4 on round 2 and passes now, 3 of 4 own mutants killed (K2 a test gap the browser covers), no conflict markers and every row kept; D1 to D4 still closed; status review.
 - 7 Oct 2026 · WALLET-01 · Round 3: a new or re-shown balance stays invisible until that figure is measured, so no cut frame is painted (D5); the measuring copy is aria-hidden on the web; status verifying.
 - 7 Oct 2026 · WALLET-01 · Verified round 2 (2c91287): D1 to D4 closed (every Back from A26 lands on the tab, balances whole at 320/360/390 px up to ₦999,999,999.99, the three WALLET-01 test files end in 17 s in band, 9 of 9 mutants killed; the remaining in-band hold is WALLET-11's payout test, mutation timers); trial merge with main 5fec168 passes; new D5 (low): a balance that changes under the card, or Show after Hide, paints one frame cut with "…" before it is re-measured; status building.
 - 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.
@@ -141,4 +139,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
-- 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
