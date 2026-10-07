@@ -120,7 +120,7 @@ Screenshots (all `-light.png` and `-dark.png`) in `/tmp/claude-0/-home-user/f6ab
 - Like, save and follow (+) on the rail work in place (HOME-04 routes; follow never offered on your own post); a view is counted once when a post fills the screen.
 - Courses, templates and the creator and professional cards (HOME-07) are skipped; a page holding only those reads on.
 - The offer bar offers the locked piece itself: "Unlock the full video / audio", "Read the full PDF", "Unlock the full set", then the length, pages or photo count and "Pay from wallet". Copy the canvas does not draw: the empty and error words, the reader's title bar.
-- Lengths under 10 minutes are a clock ("1:50"), longer in minutes ("18 min"). Skip buttons move 15 s. The waveform is the file's loudness in 44 bars (web).
+- Lengths under 10 minutes are a clock ("1:50"); from 10 minutes up they are whole minutes, rounded to the NEAREST minute with halves up ("18 min", 45:30 is "46 min", 1:50:00 is "110 min", and "The full 46-minute video" says the same figure). Skip buttons move 15 s. The waveform is the file's loudness in 44 bars (web).
 - The video plays muted when the browser refuses sound before a first touch.
 - The feed is drawn the same in both themes (the artboards' two phones are identical); the bottom bar keeps its theme colours until SHARED-CHANGES #4.
 

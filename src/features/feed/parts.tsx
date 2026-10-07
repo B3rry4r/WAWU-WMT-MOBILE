@@ -160,23 +160,27 @@ export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) 
 
 /**
  * The offer bar under a locked post (H3, H4, H5). It shows what unlocking gives and the
- * price; pressing it opens the unlock sheet (H14), which HOME-12 adds as drawn. Until then
+ * price. Its words wrap and the bar grows to hold them (as H4 draws the subtitle on two
+ * lines), so nothing is cut at a small width or a long price; pressing it opens the unlock sheet (H14), which HOME-12 adds as drawn. Until then
  * it starts nothing: no payment can begin from the feed.
  */
-export function OfferBar({ offer, priceKobo, testID }: { offer: Offer; priceKobo: number; testID?: string }) {
+export function OfferBar({ offer, priceKobo, compact = false, testID }: { offer: Offer; priceKobo: number; compact?: boolean; testID?: string }) {
   return (
-    <View testID={testID} style={[styles.offer, { backgroundColor: media.glass, borderColor: media.glassEdge }]}>
-      <Icon name={offer.icon} size={metrics.offerIcon} color={media.ink} />
+    <View
+      testID={testID}
+      style={[
+        styles.offer,
+        compact && { gap: metrics.offerGapCompact, paddingLeft: metrics.offerLeftCompact, paddingRight: metrics.offerRightCompact },
+        { backgroundColor: media.glass, borderColor: media.glassEdge },
+      ]}
+    >
+      <Icon name={offer.icon} size={compact ? metrics.offerIconCompact : metrics.offerIcon} color={media.ink} />
       <View style={styles.offerWords}>
-        <Text numberOfLines={1} style={[words.offerTitle, { color: media.ink }]}>
-          {offer.title}
-        </Text>
-        <Text numberOfLines={1} style={[words.offerSub, { color: media.ink }]}>
-          {offer.subtitle}
-        </Text>
+        <Text style={[words.offerTitle, { color: media.ink }]}>{offer.title}</Text>
+        <Text style={[words.offerSub, { color: media.ink }]}>{offer.subtitle}</Text>
       </View>
-      <View style={[styles.price, { backgroundColor: media.ink }]}>
-        <Money minorUnits={priceKobo} decimals={false} size={metrics.priceText} weight={700} tone="textOnLight" testID={testID ? `${testID}-price` : undefined} />
+      <View style={[styles.price, compact && { paddingHorizontal: metrics.pricePadCompact }, { backgroundColor: media.ink }]}>
+        <Money minorUnits={priceKobo} decimals={false} size={compact ? metrics.priceTextCompact : metrics.priceText} weight={700} tone="textOnLight" testID={testID ? `${testID}-price` : undefined} />
       </View>
     </View>
   );
@@ -280,7 +284,8 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   captionText: { marginTop: metrics.captionTop },
   offer: {
-    height: metrics.offerH,
+    minHeight: metrics.offerH,
+    paddingVertical: metrics.offerPadV,
     marginRight: metrics.barRight,
     borderRadius: metrics.offerRadius,
     borderWidth: 1,
@@ -292,6 +297,7 @@ const styles = StyleSheet.create({
   },
   offerWords: { flex: 1, minWidth: 0 },
   price: {
+    flexShrink: 0,
     height: metrics.priceH,
     paddingHorizontal: metrics.pricePad,
     borderRadius: metrics.priceRadius,

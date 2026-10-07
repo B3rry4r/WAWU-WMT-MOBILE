@@ -4,9 +4,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/icon';
 
 import { media, metrics, words } from './look';
-import { clock, isLocked, minutesAdjective, playableUrl, SKIP_SECONDS } from './model';
+import { clock, isLocked, minutesAdjective, playableUrl, roomPlacement, SKIP_SECONDS } from './model';
 import { canPlay, VideoSurface, type SeekRequest } from './player';
-import { fromTop, PostFrame, type PostProps } from './PostFrame';
+import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { Seekable, TrackBar } from './parts';
 
 /**
@@ -46,6 +46,22 @@ export function VideoPost(props: PostProps) {
   const share = time.length > 0 ? time.position / time.length : 0;
   const adjective = minutesAdjective(item.media?.durationLabel ?? item.durationLabel);
 
+  const playLayer = canPlay ? (
+    <Pressable
+      testID={`tap-${item.id}`}
+      accessibilityRole="button"
+      accessibilityLabel={playing ? 'Pause' : 'Play'}
+      onPress={toggle}
+      style={styles.tapLayer}
+    >
+      {active && !playing ? (
+        <View style={styles.paused} testID={`paused-${item.id}`} pointerEvents="none">
+          <Icon name="Play" size={metrics.pausedIcon} color={media.ink} fill={media.ink} />
+        </View>
+      ) : null}
+    </Pressable>
+  ) : null;
+
   return (
     <PostFrame
       {...props}
@@ -64,9 +80,20 @@ export function VideoPost(props: PostProps) {
           {previewEnded ? <View style={[StyleSheet.absoluteFill, { backgroundColor: media.veil }]} /> : null}
         </View>
       }
-      middle={
-        previewEnded ? (
-          <View style={[styles.ended, { top: fromTop(props.chromeTop, metrics.endedTop) }]} testID={`preview-ended-${item.id}`}>
+      middle={(space: MiddleSpace) => {
+        if (!previewEnded) return playLayer;
+        const { top, scale } = roomPlacement({
+          areaTop: space.top,
+          areaBottom: space.bottom,
+          canvasTop: fromTop(props.chromeTop, metrics.endedTop),
+          boxH: metrics.endedH,
+          extentH: metrics.endedH,
+        });
+        return (
+          <View
+            style={[styles.ended, { top, opacity: space.ready ? 1 : 0, transform: [{ scale }] }]}
+            testID={`preview-ended-${item.id}`}
+          >
             <View style={[styles.lockCircle, { backgroundColor: media.glass, borderColor: media.glassEdge }]}>
               <Icon name="Lock" size={metrics.endedIcon} color={media.ink} />
             </View>
@@ -77,22 +104,8 @@ export function VideoPost(props: PostProps) {
               {adjective ? `The full ${adjective} video is one tap away.` : 'The full video is one tap away.'}
             </Text>
           </View>
-        ) : canPlay ? (
-          <Pressable
-            testID={`tap-${item.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={playing ? 'Pause' : 'Play'}
-            onPress={toggle}
-            style={styles.tapLayer}
-          >
-            {active && !playing ? (
-              <View style={styles.paused} testID={`paused-${item.id}`} pointerEvents="none">
-                <Icon name="Play" size={metrics.pausedIcon} color={media.ink} fill={media.ink} />
-              </View>
-            ) : null}
-          </Pressable>
-        ) : null
-      }
+        );
+      }}
       above={
         canPlay && !previewEnded ? (
           <Seekable
@@ -117,6 +130,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: metrics.endedSide,
     right: metrics.endedSide,
+    height: metrics.endedH,
     alignItems: 'center',
     gap: metrics.endedGap,
     zIndex: 5,

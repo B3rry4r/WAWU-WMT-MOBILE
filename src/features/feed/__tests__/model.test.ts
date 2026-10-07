@@ -1,6 +1,8 @@
 import type { FeedEntry, FeedItem } from '../api';
 import { nairaToKobo } from '../api';
+import { metrics } from '../look';
 import {
+  bookPlacement,
   caption,
   clock,
   compactCount,
@@ -17,6 +19,7 @@ import {
   pillFor,
   playableUrl,
   postKind,
+  roomPlacement,
   shareAt,
   tickKind,
 } from '../model';
@@ -90,6 +93,13 @@ describe('locks and files', () => {
   it('a paid piece the viewer has not bought is locked and plays its public preview', () => {
     expect(isLocked(locked())).toBe(true);
     expect(playableUrl(locked())).toBe('https://cdn.test/preview.webm');
+  });
+
+  it('a locked piece never plays the full file, even when a full url is sent with it (M12)', () => {
+    const sent = locked({ fullAssetUrl: 'https://cdn.test/leaked-full.webm' });
+    expect(isLocked(sent)).toBe(true);
+    expect(playableUrl(sent)).toBe('https://cdn.test/preview.webm');
+    expect(playableUrl(sent)).not.toContain('leaked-full');
   });
 
   it('a free piece, or a bought one, plays the full file', () => {
@@ -175,15 +185,15 @@ describe('the offer bar', () => {
     expect(offerFor(locked({ media: { ...piece().media, durationLabel: '18:00' } }), 'video')).toEqual({
       icon: 'Lock',
       title: 'Unlock the full video',
-      subtitle: '18 min · Pay from wallet',
+      subtitle: '18 min · Pay\u00a0from\u00a0wallet',
     });
     expect(offerFor(locked({ contentType: 'pdf', media: { ...piece().media, pageCount: 84 } }), 'pdf')).toEqual({
       icon: 'BookOpen',
       title: 'Read the full PDF',
-      subtitle: '84 pages · Pay from wallet',
+      subtitle: '84 pages · Pay\u00a0from\u00a0wallet',
     });
     expect(offerFor(locked({ contentType: 'image', media: { ...piece().media, frameCount: 4 } }), 'photos')?.subtitle).toBe(
-      '4 photos · Pay from wallet',
+      '4 photos · Pay\u00a0from\u00a0wallet',
     );
   });
 });
@@ -218,5 +228,66 @@ describe('scrubbing and the waveform', () => {
 
   it('a person keeps the same avatar colour', () => {
     expect(hueFor('abc')).toBe(hueFor('abc'));
+  });
+});
+
+describe('H4: the book never reaches the words or the rail (D2)', () => {
+  const tabsBottom = (chromeTop: number) => chromeTop + metrics.middleTop - metrics.statusBar;
+  const place = (width: number, areaTop: number, areaBottom: number, chromeTop = metrics.statusBar) =>
+    bookPlacement({
+      width,
+      areaTop,
+      areaBottom,
+      canvasTop: chromeTop + metrics.bookTop - metrics.statusBar,
+      bookH: metrics.bookH,
+      extentH: metrics.bookExtentH,
+      reachRight: metrics.bookReachRight,
+      railClear: metrics.railClear,
+    });
+  /** The book and its back page as drawn: a scale grows from the middle of the 280 tall box. */
+  const drawn = (width: number, p: { top: number; scale: number }) => {
+    const middle = p.top + metrics.bookH / 2;
+    return {
+      top: middle - (metrics.bookExtentH / 2) * p.scale,
+      bottom: middle + (metrics.bookExtentH / 2) * p.scale,
+      right: width / 2 + metrics.bookReachRight * p.scale,
+    };
+  };
+
+  it('on the canvas phone it stays where the canvas draws it, full size', () => {
+    expect(place(390, 100, 460)).toEqual({ top: metrics.bookTop, scale: 1 });
+  });
+
+  it('on every phone from 320 x 568 to 430 x 932 it fits between the tabs and the words, and clear of the rail', () => {
+    for (const [width, height] of [[320, 568], [360, 640], [375, 667], [390, 844], [412, 915], [430, 932]]) {
+      const post = height - metrics.tabbar;
+      for (const foot of [190, 230, 270, 330]) {
+        const areaTop = tabsBottom(metrics.statusBar);
+        const areaBottom = post - (metrics.captionBottom - metrics.tabbar) - foot - metrics.middleGap;
+        const p = place(width, areaTop, areaBottom);
+        const box = drawn(width, p);
+        expect(box.top).toBeGreaterThanOrEqual(areaTop - 0.01);
+        expect(box.bottom).toBeLessThanOrEqual(Math.max(areaTop, areaBottom) + 0.01);
+        expect(box.right).toBeLessThanOrEqual(width - metrics.railRight - metrics.avatar - 8 + 0.01);
+        expect(p.scale).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('with no room at all it shrinks to nothing rather than overlapping', () => {
+    expect(place(360, 100, 90).scale).toBe(0);
+  });
+});
+
+describe('H5: the "Preview ended" message never reaches the words (D2 for H5)', () => {
+  it('sits at the canvas place when it fits, and is scaled into the room when it does not', () => {
+    const at = (areaBottom: number) =>
+      roomPlacement({ areaTop: 100, areaBottom, canvasTop: metrics.endedTop, boxH: metrics.endedH, extentH: metrics.endedH });
+    expect(at(500)).toEqual({ top: metrics.endedTop, scale: 1 });
+    const tight = at(250);
+    expect(tight.scale).toBeCloseTo(150 / metrics.endedH, 5);
+    const visualTop = tight.top + metrics.endedH / 2 - (metrics.endedH * tight.scale) / 2;
+    expect(visualTop).toBeGreaterThanOrEqual(100 - 0.01);
+    expect(visualTop + metrics.endedH * tight.scale).toBeLessThanOrEqual(250 + 0.01);
   });
 });

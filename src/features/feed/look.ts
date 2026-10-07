@@ -107,6 +107,18 @@ export const metrics = {
   trackHit: 24,
   /** Offer bar: 56 tall, 18 corners, 12 between parts, 14 in on the left and 8 on the right. */
   offerH: 56,
+  offerPadV: 8,
+  /**
+   * Under this width (a 320 or 340 phone) the bar gives the words more room: a smaller icon,
+   * tighter gaps and a narrower price button, so "Pay from wallet" still fits on one line.
+   */
+  compactBelow: 360,
+  offerGapCompact: 6,
+  offerLeftCompact: 10,
+  offerRightCompact: 6,
+  offerIconCompact: 18,
+  pricePadCompact: 8,
+  priceTextCompact: 13,
   offerRadius: 18,
   offerGap: 12,
   offerLeft: 14,
@@ -130,6 +142,9 @@ export const metrics = {
   dotH: 6,
   dotOn: 18,
   dotGap: 5,
+  /** The middle of a post (the book, the preview-ended message) starts under the tabs and ends this far above the words. */
+  middleTop: 100,
+  middleGap: 12,
   /** H4: the book, 128 from the top. */
   bookTop: 128,
   bookW: 200,
@@ -139,6 +154,15 @@ export const metrics = {
   bookPadH: 20,
   pageLeft: 16,
   pageTop: 10,
+  /**
+   * What the book takes up beyond its own box: the back page sticks out 16 to the right and
+   * its 4 degree tilt adds about 10 each way (the canvas's `rotate(4deg)`), so the whole is
+   * 300 tall (310 with the 10 it sits off the box's middle), and its right edge is 126 from the book's middle.
+   */
+  bookExtentH: 310,
+  bookReachRight: 126,
+  /** The rail's width on its left side (right 14 + the 46 avatar) and a gap, so the book never runs under it. */
+  railClear: 68,
   spine: 6,
   /** H4 to H6: the backdrop is blurred past the phone's edge. */
   backdropBleed: -30,
@@ -150,6 +174,8 @@ export const metrics = {
   endedCircle: 64,
   endedIcon: 28,
   endedWidth: 260,
+  /** The lock circle, its title and two lines of words: 64 + 12 + 27 + 12 + 2 x 21, rounded up. */
+  endedH: 162,
   /** H6: the art, the waveform and the controls. */
   artSize: 220,
   artRadius: 24,

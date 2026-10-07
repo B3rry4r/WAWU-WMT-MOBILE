@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { nairaToKobo, type FeedItem } from './api';
 import { useEngagement } from './engagement';
@@ -22,12 +22,19 @@ export type PostProps = {
 /** A distance the canvas measures from the phone's top, on this phone. */
 export const fromTop = (chromeTop: number, canvasTop: number) => chromeTop + canvasTop - metrics.statusBar;
 
+/**
+ * The room the post leaves for its middle (H4's book, H5's message): from under the tabs to
+ * just above the words, measured from this phone's own layout. `ready` turns true once the
+ * words have been measured; until then the middle should not draw (or be drawn invisible).
+ */
+export type MiddleSpace = { top: number; bottom: number; height: number; width: number; ready: boolean };
+
 type FrameProps = PostProps & {
   kind: PostKind;
   /** Under everything: the picture, the video or the backdrop. */
   backdrop: ReactNode;
   /** Over the picture and under the words: H4's book, H6's player, H5's message, the tap layer. */
-  middle?: ReactNode;
+  middle?: ReactNode | ((space: MiddleSpace) => ReactNode);
   /** Above the pill: the scrubber (H2), the frame dots (H3) or the reading bar (H4). */
   above?: ReactNode;
   /** Over the picture, top right: H3's frame counter. */
@@ -35,7 +42,15 @@ type FrameProps = PostProps & {
 };
 
 /** One full-screen post: its media, the scrim, the rail, and the words and offer at the foot. */
-export function PostFrame({ item, kind, active, width, height, myId, backdrop, middle, above, corner }: FrameProps) {
+export function PostFrame({ item, kind, active, width, height, myId, chromeTop, backdrop, middle, above, corner }: FrameProps) {
+  const [footHeight, setFootHeight] = useState(0);
+  const onFootLayout = (e: LayoutChangeEvent) => {
+    const next = Math.round(e.nativeEvent.layout.height);
+    if (next !== footHeight) setFootHeight(next);
+  };
+  const top = fromTop(chromeTop, metrics.middleTop);
+  const bottom = height - fromPostBottom(metrics.captionBottom) - footHeight - metrics.middleGap;
+  const space: MiddleSpace = { top, bottom, height: Math.max(0, bottom - top), width, ready: footHeight > 0 };
   const marks = useEngagement(item, active);
   const offer = offerFor(item, kind);
   const pill = pillFor(item, kind);
@@ -44,7 +59,7 @@ export function PostFrame({ item, kind, active, width, height, myId, backdrop, m
     <View testID={`post-${item.id}`} style={[styles.page, { width, height, backgroundColor: media.black }]}>
       {backdrop}
       <Scrim />
-      {middle}
+      {typeof middle === 'function' ? middle(space) : middle}
       {corner}
       <Rail
         item={item}
@@ -56,13 +71,13 @@ export function PostFrame({ item, kind, active, width, height, myId, backdrop, m
         onSave={marks.toggleSave}
         onFollow={marks.followCreator}
       />
-      <View pointerEvents="box-none" style={[styles.foot, { bottom: fromPostBottom(metrics.captionBottom) }]}>
+      <View pointerEvents="box-none" onLayout={onFootLayout} style={[styles.foot, { bottom: fromPostBottom(metrics.captionBottom) }]}>
         {above}
         <View pointerEvents="box-none" style={styles.words}>
           <Pill icon={pill.icon} text={pill.text} testID={`pill-${item.id}`} />
           <Byline item={item} follows={marks.follows} />
         </View>
-        {offer ? <OfferBar offer={offer} priceKobo={nairaToKobo(item.price)} testID={`offer-${item.id}`} /> : null}
+        {offer ? <OfferBar offer={offer} priceKobo={nairaToKobo(item.price)} compact={width < metrics.compactBelow} testID={`offer-${item.id}`} /> : null}
       </View>
     </View>
   );

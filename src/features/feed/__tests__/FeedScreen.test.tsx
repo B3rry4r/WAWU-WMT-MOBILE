@@ -83,7 +83,7 @@ const clients: QueryClient[] = [];
 
 async function boot() {
   const { FeedScreen } = require('../FeedScreen') as typeof import('../FeedScreen');
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   const screen = await rtl.render(
     <QueryClientProvider client={client}>
@@ -175,6 +175,35 @@ describe('H2 to H6 · the For you feed', () => {
     await rtl.waitFor(() => expect(sent).toContain('POST /content/a/view'));
   });
 
+  it('counts a view only for the post that fills the screen, and only once (M7)', async () => {
+    answers[FOR_YOU] = [page([content(item('a')), content(item('b'))])];
+    answers['POST /content/b/view'] = [ok({ views: 1, counted: true })];
+    const views = () => sent.filter((s) => /^POST \/content\/[ab]\/view$/.test(s));
+    const scrollTo = async (screen: ReturnType<typeof rtl.render> extends Promise<infer R> ? R : never, y: number) => {
+      await rtl.act(async () => {
+        rtl.fireEvent.scroll(screen.getByTestId('feed-for_you'), { nativeEvent: { contentOffset: { x: 0, y } } });
+      });
+    };
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('post-b')).toBeTruthy());
+    await rtl.waitFor(() => expect(views()).toEqual(['POST /content/a/view']));
+    // B is drawn (the list renders ahead) but is not on screen: no view for it.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(views()).toEqual(['POST /content/a/view']);
+
+    await scrollTo(screen, 754);
+    await rtl.waitFor(() => expect(views()).toEqual(['POST /content/a/view', 'POST /content/b/view']));
+    // Back to A, then to B again: neither is counted a second time.
+    await scrollTo(screen, 0);
+    await scrollTo(screen, 754);
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(views()).toEqual(['POST /content/a/view', 'POST /content/b/view']);
+  });
+
   it('a user sees a locked video with its lock and price, and the offer bar starts no payment', async () => {
     answers[FOR_YOU] = [
       page([
@@ -194,7 +223,7 @@ describe('H2 to H6 · the For you feed', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('offer-a')).toBeTruthy());
     expect(screen.getByText('Locked · 18 min')).toBeTruthy();
     expect(screen.getByText('Unlock the full video')).toBeTruthy();
-    expect(screen.getByText('18 min · Pay from wallet')).toBeTruthy();
+    expect(screen.getByText('18 min · Pay\u00a0from\u00a0wallet')).toBeTruthy();
     expect(screen.getByTestId('offer-a-price').props.accessibilityLabel).toBe('2,500 naira');
     const offer = screen.getByTestId('offer-a');
     expect(offer.props.onPress).toBeUndefined();
@@ -301,7 +330,7 @@ describe('H2 to H6 · the For you feed', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('counter-a')).toBeTruthy());
     expect(screen.getByText('Photo set · 2')).toBeTruthy();
     expect(screen.getByLabelText('Photo 2 of 2, locked')).toBeTruthy();
-    expect(screen.getByText('2 photos · Pay from wallet')).toBeTruthy();
+    expect(screen.getByText('2 photos · Pay\u00a0from\u00a0wallet')).toBeTruthy();
   });
 
   it('a user sees H4: a PDF as its book with the free pages the creator declared', async () => {

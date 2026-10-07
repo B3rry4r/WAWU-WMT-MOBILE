@@ -6,8 +6,8 @@ import { useFocusRing } from '@/components/focusRing';
 
 import { detailKey, fetchContentDetail } from './api';
 import { media, metrics, words } from './look';
-import { creatorName, freePages, isLocked, playableUrl } from './model';
-import { fromTop, PostFrame, type PostProps } from './PostFrame';
+import { bookPlacement, creatorName, freePages, isLocked, playableUrl } from './model';
+import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { TrackBar } from './parts';
 import { PdfReader } from './reader';
 
@@ -36,30 +36,46 @@ export function PdfPost(props: PostProps) {
         {...props}
         kind="pdf"
         backdrop={<View style={[StyleSheet.absoluteFill, { backgroundColor: media.backdrop }]} />}
-        middle={
-          <View pointerEvents="box-none" style={[styles.bookRow, { top: fromTop(props.chromeTop, metrics.bookTop) }]}>
-            <Pressable
-              testID={`book-${item.id}`}
-              accessibilityRole="button"
-              accessibilityLabel={locked ? `Read the free pages of ${item.title}` : `Read ${item.title}`}
-              onPress={() => setReading(true)}
-              {...ring.handlers}
-              style={[styles.book, ring.style]}
+        middle={(space: MiddleSpace) => {
+          const { top, scale } = bookPlacement({
+            width: space.width,
+            areaTop: space.top,
+            areaBottom: space.bottom,
+            canvasTop: fromTop(props.chromeTop, metrics.bookTop),
+            bookH: metrics.bookH,
+            extentH: metrics.bookExtentH,
+            reachRight: metrics.bookReachRight,
+            railClear: metrics.railClear,
+          });
+          return (
+            <View
+              pointerEvents="box-none"
+              testID={`book-row-${item.id}`}
+              style={[styles.bookRow, { top, opacity: space.ready ? 1 : 0 }]}
             >
-              <View style={[styles.backPage, { backgroundColor: media.page }]} />
-              <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
-                <View style={[styles.spine, { backgroundColor: media.spine }]} />
-                <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
-                  {by ?? ''}
-                </Text>
-                <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
-                  {item.title}
-                </Text>
-                <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
-              </View>
-            </Pressable>
-          </View>
-        }
+              <Pressable
+                testID={`book-${item.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={locked ? `Read the free pages of ${item.title}` : `Read ${item.title}`}
+                onPress={() => setReading(true)}
+                {...ring.handlers}
+                style={[styles.book, { transform: [{ scale }] }, ring.style]}
+              >
+                <View style={[styles.backPage, { backgroundColor: media.page }]} />
+                <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
+                  <View style={[styles.spine, { backgroundColor: media.spine }]} />
+                  <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
+                    {by ?? ''}
+                  </Text>
+                  <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+                </View>
+              </Pressable>
+            </View>
+          );
+        }}
         above={free ? <TrackBar share={free.fraction ?? 0} label={free.label} testID={`free-pages-${item.id}`} /> : null}
       />
       <PdfReader

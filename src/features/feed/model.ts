@@ -160,7 +160,8 @@ export function offerFor(item: FeedItem, kind: PostKind): Offer | null {
   const length = durationText(item.media?.durationLabel ?? item.durationLabel);
   const pages = item.media?.pageCount ?? item.pageCount;
   const frames = item.media?.frameCount;
-  const pay = 'Pay from wallet';
+  // Non-breaking spaces: when the subtitle wraps it breaks before "Pay", never inside it (H4 draws it whole).
+  const pay = 'Pay\u00a0from\u00a0wallet';
   switch (kind) {
     case 'video':
       return { icon: 'Lock', title: 'Unlock the full video', subtitle: join([length, pay]) };
@@ -186,6 +187,52 @@ export function freePages(
   const label = `${pages} ${pages === 1 ? 'page' : 'pages'} free`;
   const fraction = pageCount && pageCount > 0 ? Math.min(1, pages / pageCount) : null;
   return { label, fraction };
+}
+
+/**
+ * Where H4's book goes. On a phone with room it sits where the canvas puts it (128 from the
+ * top, full size). On a smaller screen it is scaled down, and slid into the room between the
+ * tabs and the words, so it and its back page never reach the words or run under the rail.
+ * `top` is where its (unscaled) box starts: a scale grows from the box's middle.
+ */
+export function bookPlacement(input: {
+  width: number;
+  /** The room between the tabs and the words, as `PostFrame` measures it. */
+  areaTop: number;
+  areaBottom: number;
+  /** The canvas's own top for the book on this phone. */
+  canvasTop: number;
+  bookH: number;
+  extentH: number;
+  reachRight: number;
+  railClear: number;
+}): { top: number; scale: number } {
+  const { width, areaTop, areaBottom, canvasTop, bookH, extentH, reachRight, railClear } = input;
+  const widthScale = (width / 2 - railClear) / reachRight;
+  return roomPlacement({ areaTop, areaBottom, canvasTop, boxH: bookH, extentH, maxScale: widthScale });
+}
+
+/**
+ * Where a block drawn at a fixed place on the canvas goes on THIS phone: its canvas place
+ * when it fits between the tabs and the words, else scaled down (never past `maxScale`, never
+ * to more than the room) and slid into the room. `top` is where the unscaled `boxH` tall box
+ * starts, because a scale grows from the box's middle; `extentH` is how tall the block looks
+ * (a tilted back page makes the book taller than its box).
+ */
+export function roomPlacement(input: {
+  areaTop: number;
+  areaBottom: number;
+  canvasTop: number;
+  boxH: number;
+  extentH: number;
+  maxScale?: number;
+}): { top: number; scale: number } {
+  const { areaTop, areaBottom, canvasTop, boxH, extentH, maxScale = 1 } = input;
+  const room = Math.max(0, areaBottom - areaTop);
+  const scale = Math.max(0, Math.min(1, maxScale, room / extentH));
+  const visualH = extentH * scale;
+  const middle = Math.min(Math.max(canvasTop + boxH / 2, areaTop + visualH / 2), areaBottom - visualH / 2);
+  return { top: middle - boxH / 2, scale };
 }
 
 /** Where a press on a track lands, as a share of its length (0 to 1). */
