@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 72 | 0 | 24 | 28 |
+| todo | 72 | 0 | 24 | 27 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 1 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (Developer 3)
 
 ## Done
 
@@ -109,12 +113,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** nothing unblocked
 - **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
-- **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out
+- **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-01 · Built, status verifying (mobile `wmt/EVENTS-01`, main c0fb4e3; no backend change): E1 Events (featured card, This week and Upcoming lists, Going on each row), E8 filter sheet (When, Kind and Category from `GET /events/options`, "Show N events" from the Hub's total), E2 event detail with a stepper per tier and a running total across tiers, E9 sold out; routes `/events` and `/events/<id>`. Checked on the local stack (backend 6c0e435) with a real sign-in: the Going tap wrote one row read back from Postgres. `npm run check` 46 suites and 797 tests before, 48 and 841 after, gates 0 fail. Left to later tasks: the My events and Host event tabs and the Host banner (EVENTS-08, EVENTS-04), Get tickets (EVENTS-06). Gaps G-270 to G-273. V10 NOT RUN (needs OPS-10 and a tester build).
 - 7 Oct 2026 · AUTH-08 · New task (lead, order 182; tasks from 182 move down one): wawu-id refresh and sign-out look up the token by id instead of argon2-checking every stored token (CHECK-1 F-5, SETTINGS-01 G-264).
 - 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
 - 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
@@ -129,4 +134,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
 - 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).
 - 7 Oct 2026 · ADS-06 · Round 3 built, awaiting verification: merged main (ADS-03, ADS-04, ADS-05 and the rest are on it); migration renamed to `20261008100000_admin_ads_audit` (after every migration on main and open branches); the admin views now carry ADS-05's counts (`delivery`, per-day `days`, summary totals by status and placement, one set-based read per list page; G-194 and G-200 closed); ADS-05's G-198 and SHARED-CHANGES row #3 corrected; D1 (year 0000) fixed.
-- 6 Oct 2026 · ADS-06 · Verifier (independent): V1, V2, V3, V4 and V9 run; pause stops serving on the next request on the real ADS-04 code (trial merge clean onto main and ADS-04; 372 specs pass there), every route refuses user, expired, forged, refresh and wrong-role tokens (176 of 176), 25 of 25 own mutants killed, protected suite 253 of 253 and the lock unchanged; one low defect open (D1: a time in the year 0000 is a 500 on create, edit and the list filters), status building.
