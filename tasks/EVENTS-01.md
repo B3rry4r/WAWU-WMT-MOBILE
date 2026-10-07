@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -301,6 +301,27 @@ Result: D6 open, so status goes back to `building`. Everything else in this roun
 - **D6 fixed.** `watOf`, `badgeOf`, `shortDate` and `whenLine` (`src/features/events/format.ts`) read the calendar date in the event's own IANA zone through `Intl.DateTimeFormat` with `timeZone`; `DateBadge` (row and hero) and the detail screen pass the event's zone. `Africa/Lagos` or no timezone keeps Lagos time and the WAT label. A valid other zone shows its own date plus the Hub's `timeLabel` (no label: date only). A zone the runtime cannot resolve ("WAT", "EDT") draws the Lagos date alone: no clock, no zone claim. "This week" bucketing is by instant, so it is unchanged.
 - **Specs added** (`format.test.ts`, "the date is read in the event own zone (D6)"): UTC, America/New_York at 7 PM EDT on 14 Oct (reads Wed 14 Oct, badge 14), Pacific/Kiritimati (+14), unresolvable "WAT" and "EDT", missing timezone, Lagos. Against the old `format.ts` (scratch revert, restored) 4 of the 6 fail; with the fix all pass.
 - **NOT RUN:** pictures (no layout changed). `npm run check` result is in the LOG line.
+
+## Verifier report, round 4 (7 Oct 2026)
+
+**Verifier (fresh session; did not build any of it).** Branch head 5d15db0 (`origin/main` already in it, merge was a no-op). Stack: backend `wmt/EVENTS-01` merged with backend main, hub 4185, the REAL wawu-id from `/home/user/WAWU-ID` on 4186, `npx expo start --web` on 4187; databases `wawu_hub_test_events_01_v4` and `wawu_hub_test_id_events_01_v4`; real sign-in. Chromium 390 px at 2x. Evidence and scripts: `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events01v4/` (`d6.py`, `d6b.py`, `shots/`). V10 (phone): NOT RUN, no device. U1 to U3 stay unclear for the owner. R-41 stays a recorded blocker.
+
+| Check | Result | Evidence |
+|---|---|---|
+| D6, E2 date line, 9 seeded events (today 7 Oct) | passed | NYC 23:00Z `America/New_York` + "7:00 PM EDT": "Wed 14 Oct · 7:00 PM EDT", badge 14 (was 15). Lagos `Africa/Lagos`: "Mon 12 Oct · 10:00 WAT". Lagos midnight (14 Oct 23:00Z): "Thu 15 Oct · 00:00 WAT". No timezone, no label (13 Oct 23:30Z): "Wed 14 Oct · 00:30 WAT". Kiritimati (+14) 14 Oct 19:00Z: "Thu 15 Oct · 9:00 AM LINT", badge 15. `WAT` text zone with a label: "Thu 15 Oct" alone, no clock, no zone claim. `Not/A_Zone!!` : "Wed 14 Oct" alone. 0 page errors |
+| D6, E1 row and hero badges | passed | All Upcoming rows: NYC Evening OCT 14, WAT text OCT 15, Kiritimati OCT 15, Lagos midnight OCT 15, No zone OCT 14, Garbage zone OCT 14; hero (Lagos) OCT 12; light and dark identical text |
+| Garbage zone, no crash | passed | live (above) plus Node: `new Intl.DateTimeFormat` throws RangeError for "WAT", "EDT", "Not/A_Zone!!", "", "  ", "Africa/Lagos " and a NUL string; every one lands in `calendarZone`'s try/catch and falls back to Lagos. Hermes: its Intl implements `timeZone` and `formatToParts` and throws RangeError for an unknown zone, the same path; reasoned, not run on a device |
+| "This week" / Past bucketing with foreign zone | passed | NYC event at now+6d23h is under "This week"; at now+7d1h only under See all (Upcoming); an NYC event ended 1 h ago is in neither. Bucketing is by instant, so the zone cannot move it |
+| Six new specs against the OLD `format.ts` | passed, with a note | scratch revert to e3895b7: 4 of 6 fail (UTC, New York, Kiritimati, unresolvable zone), 17 others pass; restored, 21 of 21 pass. "Lagos keeps WAT" and "missing timezone" pass on the old code by design: they guard that Lagos did not change. Same as the builder said |
+| Regression, E1 and E2 for a Lagos event, 390 px light and dark | passed | `shots/E1-light-week.png`, `E1-dark-week.png`, `E2-1-light.png`, `E2-1-dark.png` against round 3's `E1-light.png`: same heading, badge, row pitch, hero, controls; only data differs (seeded rows have no tiers so no price line). The diff touches no style |
+| `npm run check` as it lands | passed | exit 0: 66 suites, 1204 tests, gates 9 run, 311 files, 0 fail 0 warn 0 accepted, baseline 0, tasks 211; 2 lint warnings (`require()` in `eventsFocus.test.tsx`), 0 errors |
+
+Findings:
+- No defects. D6 is fixed.
+- **Note (minor, no action)**: the browser console logs a 404 on each detail screen of the seeded events (which have no ticket tiers); I did not trace which request. The screen draws fine.
+- **Note (minor)**: a zone with a stray space ("Africa/Lagos ") counts as unresolvable and draws the Lagos date alone: safe.
+
+Result: no open defects. Status `review`.
 
 ## Owner sign-off
 
