@@ -27,7 +27,7 @@ export const fromTop = (chromeTop: number, canvasTop: number) => chromeTop + can
  * just above the words, measured from this phone's own layout. `ready` turns true once the
  * words have been measured; until then the middle should not draw (or be drawn invisible).
  */
-export type MiddleSpace = { top: number; bottom: number; height: number; width: number; ready: boolean };
+export type MiddleSpace = { top: number; bottom: number; height: number; width: number; ready: boolean; /** Where the rail starts, from the post's top (0 until measured). */ railTop: number };
 
 type FrameProps = PostProps & {
   kind: PostKind;
@@ -38,19 +38,24 @@ type FrameProps = PostProps & {
   /** Above the pill: the scrubber (H2), the frame dots (H3) or the reading bar (H4). */
   above?: ReactNode;
   /** Over the picture, top right: H3's frame counter. */
-  corner?: ReactNode;
+  corner?: ReactNode | ((space: MiddleSpace) => ReactNode);
 };
 
 /** One full-screen post: its media, the scrim, the rail, and the words and offer at the foot. */
 export function PostFrame({ item, kind, active, width, height, myId, chromeTop, backdrop, middle, above, corner }: FrameProps) {
   const [footHeight, setFootHeight] = useState(0);
+  const [railTop, setRailTop] = useState(0);
+  const onRailLayout = (e: LayoutChangeEvent) => {
+    const next = Math.round(e.nativeEvent.layout.y);
+    if (next !== railTop) setRailTop(next);
+  };
   const onFootLayout = (e: LayoutChangeEvent) => {
     const next = Math.round(e.nativeEvent.layout.height);
     if (next !== footHeight) setFootHeight(next);
   };
   const top = fromTop(chromeTop, metrics.middleTop);
   const bottom = height - fromPostBottom(metrics.captionBottom) - footHeight - metrics.middleGap;
-  const space: MiddleSpace = { top, bottom, height: Math.max(0, bottom - top), width, ready: footHeight > 0 };
+  const space: MiddleSpace = { top, bottom, height: Math.max(0, bottom - top), width, ready: footHeight > 0, railTop };
   const marks = useEngagement(item, active);
   const offer = offerFor(item, kind);
   const pill = pillFor(item, kind);
@@ -60,7 +65,7 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
       {backdrop}
       <Scrim />
       {typeof middle === 'function' ? middle(space) : middle}
-      {corner}
+      {typeof corner === 'function' ? corner(space) : corner}
       <Rail
         item={item}
         liked={marks.liked}
@@ -70,6 +75,7 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
         onLike={marks.toggleLike}
         onSave={marks.toggleSave}
         onFollow={marks.followCreator}
+        onLayout={onRailLayout}
       />
       <View pointerEvents="box-none" onLayout={onFootLayout} style={[styles.foot, { bottom: fromPostBottom(metrics.captionBottom) }]}>
         {above}

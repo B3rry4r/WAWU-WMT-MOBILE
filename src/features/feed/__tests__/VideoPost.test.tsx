@@ -70,11 +70,16 @@ async function show(item: FeedItem, active = true) {
   const { VideoPost } = require('../VideoPost') as typeof import('../VideoPost');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
-  return rtl.render(
+  const screen = await rtl.render(
     <QueryClientProvider client={client}>
       <VideoPost item={item} active={active} width={390} height={754} myId={null} chromeTop={50} />
     </QueryClientProvider>,
   );
+  // Let the counted view's answer land inside act, so it does not update the post outside one.
+  await rtl.act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+  return screen;
 }
 
 /* The first render loads the feed's modules (slow on a loaded machine): pay that here, not in a test's own budget. */

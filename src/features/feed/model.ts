@@ -235,6 +235,23 @@ export function roomPlacement(input: {
   return { top: middle - boxH / 2, scale };
 }
 
+/**
+ * How wide H5's "Preview ended" words may be: the canvas's width, narrowed on a small phone so the
+ * words (centred on the screen) stop short of the rail instead of running under it.
+ */
+export function endedBodyWidth(width: number, maxWidth: number, railClear: number): number {
+  return Math.max(0, Math.min(maxWidth, width - 2 * railClear));
+}
+
+/**
+ * H3's frame counter sits top right. On a short phone the rail (bottom-anchored) rises to meet
+ * it; then it steps left of the rail. `railTop` is 0 until the rail is measured.
+ */
+export function counterRight(input: { side: number; railClearRight: number; counterBottom: number; railTop: number; gap: number }): number {
+  const { side, railClearRight, counterBottom, railTop, gap } = input;
+  return railTop > 0 && railTop < counterBottom + gap ? Math.max(side, railClearRight) : side;
+}
+
 /** Where a press on a track lands, as a share of its length (0 to 1). */
 export function shareAt(x: number, width: number): number {
   if (!(width > 0)) return 0;

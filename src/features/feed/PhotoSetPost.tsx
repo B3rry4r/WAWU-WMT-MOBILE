@@ -7,7 +7,8 @@ import { radius } from '@/theme';
 
 import type { MediaFrame } from './api';
 import { media, metrics, words } from './look';
-import { fromTop, PostFrame, type PostProps } from './PostFrame';
+import { counterRight } from './model';
+import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 
 /** The frames to draw: the Hub's list, or the public preview alone when the set has none yet. */
 function framesOf(props: PostProps): MediaFrame[] {
@@ -28,6 +29,7 @@ export function PhotoSetPost(props: PostProps) {
   const [index, setIndex] = useState(0);
   const first = frames[0]?.url ?? null;
   const next = frames[index + 1];
+  const counterTop = fromTop(props.chromeTop, metrics.counterTop);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const at = Math.round(e.nativeEvent.contentOffset.x / Math.max(1, width));
@@ -68,7 +70,7 @@ export function PhotoSetPost(props: PostProps) {
           )}
         />
       }
-      corner={
+      corner={(space: MiddleSpace) => (
         <>
           {next ? (
             <View pointerEvents="none" style={[styles.peek, { top: fromTop(props.chromeTop, metrics.peekTop) }]} testID={`peek-${item.id}`}>
@@ -79,14 +81,25 @@ export function PhotoSetPost(props: PostProps) {
               ) : null}
             </View>
           ) : null}
-          <View pointerEvents="none" style={[styles.counter, { top: fromTop(props.chromeTop, metrics.counterTop), backgroundColor: media.pill }]} testID={`counter-${item.id}`}>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.counter,
+              {
+                top: counterTop,
+                right: counterRight({ side: metrics.side, railClearRight: metrics.railClear, counterBottom: counterTop + metrics.counterH, railTop: space.railTop, gap: metrics.counterRailGap }),
+                backgroundColor: media.pill,
+              },
+            ]}
+            testID={`counter-${item.id}`}
+          >
             <Icon name="Images" size={metrics.counterIcon} color={media.ink} />
             <Text style={[words.counter, { color: media.ink }]}>
               {index + 1} / {total}
             </Text>
           </View>
         </>
-      }
+      )}
       above={
         total > 1 ? (
           <View style={styles.dots} pointerEvents="none" testID={`dots-${item.id}`}>

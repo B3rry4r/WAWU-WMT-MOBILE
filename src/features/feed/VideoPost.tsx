@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/icon';
 
 import { media, metrics, words } from './look';
-import { clock, isLocked, minutesAdjective, playableUrl, roomPlacement, SKIP_SECONDS } from './model';
+import { clock, endedBodyWidth, isLocked, minutesAdjective, playableUrl, roomPlacement, SKIP_SECONDS } from './model';
 import { canPlay, VideoSurface, type SeekRequest } from './player';
 import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { Seekable, TrackBar } from './parts';
@@ -20,6 +20,8 @@ export function VideoPost(props: PostProps) {
   const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ position: 0, length: 0 });
   const [ended, setEnded] = useState(false);
+  // The message's own height, measured: on a narrow phone its words wrap onto more lines.
+  const [messageH, setMessageH] = useState(0);
   const [seek, setSeek] = useState<SeekRequest>(null);
 
   // Coming back to the post starts it playing again (a locked video's ended preview stays ended).
@@ -86,12 +88,16 @@ export function VideoPost(props: PostProps) {
           areaTop: space.top,
           areaBottom: space.bottom,
           canvasTop: fromTop(props.chromeTop, metrics.endedTop),
-          boxH: metrics.endedH,
-          extentH: metrics.endedH,
+          boxH: messageH || metrics.endedH,
+          extentH: messageH || metrics.endedH,
         });
         return (
           <View
-            style={[styles.ended, { top, opacity: space.ready ? 1 : 0, transform: [{ scale }] }]}
+            onLayout={(e) => {
+              const next = Math.round(e.nativeEvent.layout.height);
+              if (next !== messageH) setMessageH(next);
+            }}
+            style={[styles.ended, { top, opacity: space.ready && messageH > 0 ? 1 : 0, transform: [{ scale }] }]}
             testID={`preview-ended-${item.id}`}
           >
             <View style={[styles.lockCircle, { backgroundColor: media.glass, borderColor: media.glassEdge }]}>
@@ -100,7 +106,7 @@ export function VideoPost(props: PostProps) {
             <Text accessibilityRole="header" style={[words.endedTitle, { color: media.ink }]}>
               Preview ended
             </Text>
-            <Text style={[words.endedBody, styles.endedBody, { color: media.ink }]}>
+            <Text style={[words.endedBody, { maxWidth: endedBodyWidth(space.width, metrics.endedWidth, metrics.endedRailClear), color: media.ink }]}>
               {adjective ? `The full ${adjective} video is one tap away.` : 'The full video is one tap away.'}
             </Text>
           </View>
@@ -130,7 +136,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: metrics.endedSide,
     right: metrics.endedSide,
-    height: metrics.endedH,
     alignItems: 'center',
     gap: metrics.endedGap,
     zIndex: 5,
@@ -143,5 +148,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  endedBody: { maxWidth: metrics.endedWidth },
 });

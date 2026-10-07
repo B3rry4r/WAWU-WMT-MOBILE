@@ -3,6 +3,8 @@ import { nairaToKobo } from '../api';
 import { metrics } from '../look';
 import {
   bookPlacement,
+  counterRight,
+  endedBodyWidth,
   caption,
   clock,
   compactCount,
@@ -289,5 +291,26 @@ describe('H5: the "Preview ended" message never reaches the words (D2 for H5)', 
     const visualTop = tight.top + metrics.endedH / 2 - (metrics.endedH * tight.scale) / 2;
     expect(visualTop).toBeGreaterThanOrEqual(100 - 0.01);
     expect(visualTop + metrics.endedH * tight.scale).toBeLessThanOrEqual(250 + 0.01);
+  });
+});
+
+describe('H5 and H3 keep clear of the rail on a small phone', () => {
+  it('the "Preview ended" words stop short of the rail from 320 to 430 wide, and keep the canvas width on the canvas phone', () => {
+    for (const width of [320, 360, 375, 390, 412, 430]) {
+      const w = endedBodyWidth(width, metrics.endedWidth, metrics.endedRailClear);
+      // Centred on the screen: its right edge must not pass the rail's left edge.
+      expect(width / 2 + w / 2).toBeLessThanOrEqual(width - metrics.railRight - metrics.avatar);
+      expect(w).toBeLessThanOrEqual(metrics.endedWidth);
+    }
+    expect(endedBodyWidth(390, metrics.endedWidth, metrics.endedRailClear)).toBe(metrics.endedWidth);
+    expect(endedBodyWidth(320, metrics.endedWidth, metrics.endedRailClear)).toBe(320 - 2 * metrics.endedRailClear);
+  });
+
+  it('the frame counter stays top right, and steps left of the rail only when the rail rises to it', () => {
+    const at = (railTop: number) =>
+      counterRight({ side: metrics.side, railClearRight: metrics.railClear, counterBottom: 128, railTop, gap: metrics.counterRailGap });
+    expect(at(0)).toBe(metrics.side);
+    expect(at(345)).toBe(metrics.side);
+    expect(at(120)).toBe(metrics.railClear);
   });
 });

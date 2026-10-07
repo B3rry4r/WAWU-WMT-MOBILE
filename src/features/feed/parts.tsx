@@ -80,6 +80,8 @@ export type RailProps = {
   onLike: () => void;
   onSave: () => void;
   onFollow: () => void;
+  /** The post measures where the rail starts, to keep other things clear of it on a short phone. */
+  onLayout?: (e: LayoutChangeEvent) => void;
 };
 
 /**
@@ -88,11 +90,11 @@ export type RailProps = {
  * HOME-13's: each adds its press as drawn. The saves count is not served (BACKEND_GAPS
  * G-215), so the bookmark has no figure under it.
  */
-export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow }: RailProps) {
+export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow, onLayout }: RailProps) {
   const name = creatorName(item.creator) ?? undefined;
   const ring = useFocusRing();
   return (
-    <View style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + metrics.tipSlot }]} testID={`rail-${item.id}`}>
+    <View onLayout={onLayout} style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + metrics.tipSlot }]} testID={`rail-${item.id}`}>
       <View style={styles.avatarRing}>
         <Avatar name={name} hue={hueFor(item.creatorWawuId)} source={item.creator?.avatarUrl ?? undefined} size={metrics.avatar} />
         {canFollow ? (

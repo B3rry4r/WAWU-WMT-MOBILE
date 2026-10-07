@@ -176,6 +176,10 @@ export const metrics = {
   endedWidth: 260,
   /** The lock circle, its title and two lines of words: 64 + 12 + 27 + 12 + 2 x 21, rounded up. */
   endedH: 162,
+  /** The message's words stop this far from the phone's middle short of the rail (right 14 + the 46 avatar + 4). */
+  endedRailClear: 64,
+  /** The frame counter steps left of the rail (when the rail rises to it) by this gap. */
+  counterRailGap: 8,
   /** H6: the art, the waveform and the controls. */
   artSize: 220,
   artRadius: 24,
