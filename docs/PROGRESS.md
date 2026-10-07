@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 86 of 185.**
+**Launch tasks done: 87 of 185.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 70 | 0 | 23 | 26 |
+| todo | 69 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 47 | 27 | 11 | 5 |
+| done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -88,6 +88,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account (Developer)
 - [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy (Developer)
+- [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
@@ -121,6 +122,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
 - 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
@@ -135,4 +137,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
 - 6 Oct 2026 · SCHOOLS-02 · Fix round 1 built (backend `492cbd0`): a `null` in a PATCH for a required field (and `startDate`, `hidden`) is now 400 naming the field, a start date in year 0000 is 400, a bad cursor is 400, hiding twice keeps the first time; specs 342/342, protected suite 253/253; back to verifying.
 - 6 Oct 2026 · SCHOOLS-02 · Verified (independent): V1, V3 passed (protected suite 253/253, 244 required, three runs; contract equal in meaning, migration after main's newest), V2 failed with 2 defects open (a `null` in a PATCH for a required field, and a start date of year 0000, both answer 500 not 400), V4 passed with the reader plan noted for SCHOOLS-04 and SCHOOLS-07, V9 partly run (dashboard and app NOT RUN); status back to building.
-- 6 Oct 2026 · SCHOOLS-02 · Built, awaiting verification: the dashboard's school routes (`/admin/schools`, `/admin/school-courses`, `/admin/school-intakes`): create, edit and hide a school, a course and an intake; admin tokens only; additive migration `20261006100000_schools_hidden` (SHARED-CHANGES row SCHOOLS-02 #1); backend branch `wmt/SCHOOLS-02`, protected 253/253.
