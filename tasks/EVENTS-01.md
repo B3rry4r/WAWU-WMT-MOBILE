@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -267,6 +267,34 @@ The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on t
 - **Deep link wording.** `EventDetailScreen.tsx` now reads "This event is not available" (the ruling's words). Neither the canvas nor `docs/designer/BRIEF.md` draws different text for that state.
 - **Mutants M08 and M22**, against the round 3 paging spec (`offers "Show more" while the Hub has a next page, asks page 2 once, ...`): M08 (`nextPage` forced to null in `api.ts`) fails 1 spec; M22 ("Show more" never offered, `EventsScreen.tsx`) fails 1 spec. Both killed, both reverted with `git restore`; no new spec needed.
 - **Checks.** `npm run check` result is in the LOG line. NOT RUN: pictures (nothing drawn changed).
+
+## Verifier report, round 3 (7 Oct 2026)
+
+**Verifier (fresh session; did not build any of it).** Branch head 2c1971c, `origin/main` (47e1f07) already in it. Stack: backend `wmt/EVENTS-01` (bb10ef0) merged with backend main 3041887 in a worktree, hub 4185, the REAL wawu-id from `/home/user/WAWU-ID` on 4186 (`scripts/local/up.sh`, no mock), `npm run web` on 4187; databases `wawu_hub_test_events_01_v3` and `wawu_hub_test_id_events_01_v3`. Chromium 390 px at 2x. Evidence and scripts: `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events01v3/` (`shots/m-E1,E2,E8,E9.png` are design light, app light, design dark, app dark; `p1b.py`, `focus.py`, `dates.py`, `reg.py`). V10 (phone): NOT RUN, no device. U1 to U3 stay unclear for the owner.
+
+| Check | Result | Evidence |
+|---|---|---|
+| P1 slow prices | passed | prices request held open 10 s: 3 rows drawn, 0 skeletons, no price line; released: "From ₦5,000" appears, still 0 skeletons, 1 request in total (never retried) |
+| P1 failing prices | passed | route answers 500: 3 rows, 0 skeleton, 0 error state, no "From" anywhere, 1 request after 15 s |
+| T1 mutants M08, M21, M22, M23 | passed | each applied in the worktree, `npx jest src/features/events`: 1 failed (the T1 paging spec), 54 passed; `git restore` after. Mutants as the builder describes them: M08 `nextPage` forced null (api.ts), M21 `getNextPageParam` undefined, M22 "Show more" never offered, M23 page always 1. I had no DECISIONS mutant list, so the ids follow the builder's descriptions |
+| T2 mutant M11 | passed | `tiers.every(` to `some(`: 1 failed (T2 spec), 54 passed; restored |
+| E2 refetch on focus | passed | live: DB stock changed while the detail stayed open, 8 s idle, no tickets GET and no change; pushed `/about` over it, changed DB, went back: "2 left" shown, exactly 1 new GET, none in the next 10 s. No `setInterval`, `refetchInterval` or `setTimeout` in `src/features/events` or `src/app/events` |
+| Year only when not this year | passed | "Mon 12 Oct" (this year), "Sun 16 Mar 2031 · 10:00 WAT" |
+| Non-Lagos zone | passed with D6 | `America/New_York` + timeLabel shows "7:00 PM EDT", no WAT; `Europe/London` with no timeLabel shows the date only (judged: acceptable, safer than a wrong clock) |
+| Bad deep link | passed | `/events/not-a-uuid`, `/events/123` and an unknown uuid all show "This event is not available" and "It may have been taken down or never existed."; no validator sentence |
+| R-41 hub entries | recorded blocker | `origin/main` Home and Explore tabs are `TabScreen` placeholders; `HOME-01` and `EXPLORE-01` are `status: todo` on main and `building` on their own branches, neither an ancestor of main. The builder's round 4 names the owed entries (H1/H36 Events tile, X1 hero and rows with See all, X14, X15) and the fact that unblocks them (both merged to main). Not a builder defect |
+| Regression D1 to D5, E1 E2 E8 E9, light and dark | passed | heading "This week" in AlanSans-Bold (700) 18.5; row pitch 100, 100; hero "from ₦7,500"; TICKETS label bottom 442 = first tier top 442; E9 "Sold out" button disabled (aria-disabled), a forced click makes 0 tickets GETs; layout of E1, E2, E8, E9 matches the design in both themes, only data and the not-yet-built Get tickets button differ |
+| `npm run check` as it lands | passed | 66 suites, 1198 tests, gates 9 run, 311 files, 0 fail 0 warn 0 accepted, baseline 0, tasks 211; 2 lint warnings (`require()` in `eventsFocus.test.tsx`), 0 errors; no generated file changed |
+| Contract vs PR 78 | no drift | `contract/SOURCE_COMMIT` bb10ef0 = `git ls-remote` head of backend `wmt/EVENTS-01` (bb10ef0). Backend main has moved (3041887, SCHOOLS-02 merged); I merged it in for the live stack and nothing on events broke. Backend not re-verified |
+
+Findings:
+- **D6 (defect, small)**: `whenLine` and the row/hero date badges take the DATE in Lagos time even when the zone is not Lagos. An event at 7:00 PM EDT on 14 Oct (23:00 UTC) reads "Thu 15 Oct · 7:00 PM EDT" on E2 (a wrong date beside the zone's own clock). The ruling's aim is no wrong zone fact; the date has the same problem for evening events. Fix: take the date in the event's zone (`timezone` is an IANA name when valid), or draw the label alone when the zone is not Lagos.
+- **Note (differs, judged fine)**: `timezone` is free text (max 40, no validation in the DTO), so "WAT" or "Lagos" counts as non-Lagos and shows the Hub's `timeLabel` ("10:00 AM") instead of "10:00 WAT". Safe, never a wrong fact. The lead may want `WAT`/`Africa/Lagos` both treated as Lagos.
+- **Note (builder choice, accepted)**: with no timeLabel and a non-Lagos zone only the date is drawn.
+- **Note (minor)**: the E9 button's `onPress={() => void tickets.refetch()}` is unreachable (a disabled button never fires; proven 0 GETs). Harmless dead handler.
+- **Note (for the lead)**: a detail screen re-mounted within the query client's stale window shows cached tiers without a refetch (seen when the stack was reset by a URL change). Focus refetch covers a screen kept under another; a re-opened one relies on the global stale time. Not in the ruling; not counted as a defect.
+
+Result: D6 open, so status goes back to `building`. Everything else in this round passed.
 
 ## Owner sign-off
 
