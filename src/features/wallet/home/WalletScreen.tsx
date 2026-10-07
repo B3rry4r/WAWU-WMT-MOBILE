@@ -15,7 +15,7 @@ import { layout, useWawu } from '@/theme';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
 import { BalanceCard, ACCT } from './BalanceCard';
-import { homeView, serverSentence, type HomeView } from './model';
+import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
 import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
 
@@ -137,8 +137,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
         <StateCard>
           <ErrorState
             testID="wallet-error"
-            title="We couldn't load your wallet"
-            message={serverSentence(view.error, 'Something went wrong. Try again.')}
+            {...stateWords(view)}
             icon={isApiError(view.error) && view.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
             onRetry={onRetryWallet}
           />
@@ -150,8 +149,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
           <EmptyState
             testID="wallet-none"
             icon="Wallet"
-            title="You don't have a wallet yet"
-            message="Open your wallet to continue."
+            {...stateWords(view)}
             action={{ label: 'Open your wallet', onPress: onOpenWallet }}
           />
         </StateCard>
@@ -162,8 +160,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
           <EmptyState
             testID="wallet-opening"
             icon="Clock"
-            title="Your account is opening"
-            message="Check again in a moment."
+            {...stateWords(view)}
             action={{ label: 'Check again', onPress: onRetryWallet }}
           />
         </StateCard>
@@ -171,13 +168,13 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
     case 'unreachable':
       return (
         <StateCard>
-          <ErrorState testID="wallet-unreachable" icon="CloudOff" title="We couldn't reach your account" message={view.message} onRetry={onRetryBalance} />
+          <ErrorState testID="wallet-unreachable" icon="CloudOff" {...stateWords(view)} onRetry={onRetryBalance} />
         </StateCard>
       );
     case 'frozen':
       return (
         <StateCard>
-          <ErrorState testID="wallet-frozen" icon="Snowflake" title="Your wallet is frozen" message={view.message} onRetry={onRetryBalance} />
+          <ErrorState testID="wallet-frozen" icon="Snowflake" {...stateWords(view)} onRetry={onRetryBalance} />
         </StateCard>
       );
     case 'balance_error':
@@ -185,8 +182,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
         <StateCard>
           <ErrorState
             testID="wallet-balance-error"
-            title="We couldn't load your balance"
-            message={serverSentence(view.error, 'Something went wrong. Try again.')}
+            {...stateWords(view)}
             icon={isApiError(view.error) && view.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
             onRetry={onRetryBalance}
           />

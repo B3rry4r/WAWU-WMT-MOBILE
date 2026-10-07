@@ -63,6 +63,27 @@ export function homeView(wallet: Read<WalletHome>, balance: Read<{ availableKobo
   }
 }
 
+/**
+ * The words for each state without a balance, one set for the Wallet tab (W1, W6) and Home's balance card
+ * (H1, HOME-01), so the two never say different things about the same answer.
+ */
+export function stateWords(view: Exclude<HomeView, { kind: 'loading' } | { kind: 'ready' }>): { title: string; message: string } {
+  switch (view.kind) {
+    case 'wallet_error':
+      return { title: "We couldn't load your wallet", message: serverSentence(view.error, 'Something went wrong. Try again.') };
+    case 'no_wallet':
+      return { title: "You don't have a wallet yet", message: 'Open your wallet to continue.' };
+    case 'opening':
+      return { title: 'Your account is opening', message: 'Check again in a moment.' };
+    case 'unreachable':
+      return { title: "We couldn't reach your account", message: view.message };
+    case 'frozen':
+      return { title: 'Your wallet is frozen', message: view.message };
+    case 'balance_error':
+      return { title: "We couldn't load your balance", message: serverSentence(view.error, 'Something went wrong. Try again.') };
+  }
+}
+
 /** "WAWU · " then the bank the server names (BRIEF W1: a slot the app fills, "Loma Bank"; R-1). */
 export function bankLine(bankName: string): string {
   return `WAWU · ${bankName}`;

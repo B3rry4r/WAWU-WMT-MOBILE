@@ -34,6 +34,7 @@ Close the shared-component items the hub checks found, so no feature keeps a loc
 5. **Flaky test** (EXPLORE-01 R2-6): SETTINGS-01's `settingsScreens.test.tsx` "Z3 · Notifications › shows the loading view" fails about one run in three without load. Find the cause and make it deterministic without weakening what it checks.
 
 6. **One Follow button on creator cards** (HOME-01 round 2 D3 ruling): MediaCard's `action` is THE Follow button for creator cards. Make its look match the canvas's creator-card Follow (label 13, not 13.5; Following on white at 20% with no ring) through MediaCard's props, so no screen styles it by hand. Then switch Explore's `CreatorCard` from its `footer` + styled Button to `action`, and check Home's creator rail (already on `action` after HOME-01 round 3) picks up the look. Both cards draw Follow identically.
+7. **Follow button test gaps** (HOME-01 round 3 survivors T3 and T4): add tests that fail when `action.on` is ignored (Following must draw on glass, not the accent) and when `action.loading` is ignored (the spinner must show while a follow is in flight). Re-apply both mutants and show each test failing.
 
 ## Capability checks
 
@@ -42,6 +43,7 @@ Close the shared-component items the hub checks found, so no feature keeps a loc
 - [ ] A creator with no photo shows initials on Home and Explore.
 - [ ] The Z3 test passes 20 runs in a row.
 - [ ] Home and Explore draw Follow through `action` only, identically, matching the canvas (pictures).
+- [ ] Mutants T3 (`on` ignored) and T4 (`loading` ignored) each fail a test.
 - [ ] `npm run check` exits 0.
 
 ## Builder report
