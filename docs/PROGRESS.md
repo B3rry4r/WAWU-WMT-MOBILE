@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 69 | 0 | 23 | 26 |
+| todo | 68 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [EVENTS-11](../tasks/EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review (You)
 
 ## Done
 
@@ -122,6 +126,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-11 · Builder report (backend `814e5fb` on `wmt/EVENTS-11`, status verifying): PUT /events/:id/tickets now needs a current tick (the POST/PATCH gate, same 403s, before any write) and a tier change sends an approved event back to `pending`; the sold-ticket 409 is unchanged and first, the same tiers sent again change nothing; new spec 11/11 (8 fail on main), live HTTP before/after on built Hubs, gates equal to main, contract unchanged. Protected suite 246/253: 7 later event probes and EVENTS-05's spec (27) assert the old behaviour, not edited, for the lead and owner.
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
@@ -136,4 +141,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
 - 7 Oct 2026 · SCHOOLS-02 · Fix round 3 built (backend `7d6b14c`, mobile `e2b1e08`): a NUL or lone surrogate in any school, course or intake text field is 400 naming the field (was 500 in `logo`, `applyUrl`, `reportEmail`), a body that is not a JSON object is 400 on the write routes, migration renamed `20261010100000_schools_hidden` (after main's and every open branch's newest), main merged into both branches, mobile contract equals the backend branch's; protected 253/253, 660 admin and schools tests pass, mobile check exit 0.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
-- 6 Oct 2026 · SCHOOLS-02 · Fix round 1 built (backend `492cbd0`): a `null` in a PATCH for a required field (and `startDate`, `hidden`) is now 400 naming the field, a start date in year 0000 is 400, a bad cursor is 400, hiding twice keeps the first time; specs 342/342, protected suite 253/253; back to verifying.
