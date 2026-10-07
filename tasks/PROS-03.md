@@ -105,7 +105,7 @@ Builder (resumed after a usage-limit crash), 7 Oct 2026. Mobile branch `wmt/PROS
 - **Gaps and shared changes:** BACKEND_GAPS G-320 to G-325; SHARED-CHANGES `PROS-03 #1` (shared Banner with an icon and info tone) and `#2` (screen frame with a foot); row 8 (`expo-document-picker`) is still open.
 - **NOT RUN:** the licence upload on a phone (G-321: `expo-document-picker` not installed, row 8 open; the upload row is not drawn on a phone); the upload end to end through real storage (the local Hub has no storage keys and answers 503 on `presign`; for the P6 picture only, the browser intercepted `presign` and the PUT, and the file's address went into the application); V10 (real Android phone); V9 through the real WAWU ID.
 - **Defaults (agent), owner may override:** one application per chosen field with the same credentials (G-324); a field with an application under review or listed is not offered again; the claims in P5, P6 and P10 kept as drawn and filed (G-320); P6 is shown for any field (the regulated note only for a regulated one, licence number and issuer optional elsewhere, a regulated field takes only a practising licence); rows on P8 are ordered listed, under review, turned down.
-- **Counts:** before (crashed builder, before merging newer main) 46 suites / 797 tests, gates 216 files 0 findings. After: see the PR (final `npm run check` after merging main).
+- **Counts:** before (crashed builder, before merging newer main) 46 suites / 797 tests, gates 216 files 0 findings. After (main merged, `npm run check` exit 0): 68 suites / 1229 tests, gates 323 files 0 findings.
 
 ## Verifier report
 
