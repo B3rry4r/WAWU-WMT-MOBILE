@@ -329,7 +329,7 @@ These are identifiers, not names a user reads. Changing them would break the Exp
 
 ### R-38 · The bottom bar does not get a Studio tab
 *Owner, 6 Oct 2026 ("bugs like this would not be condoned", about the boss brief v2.0's centre "Create ✨" Studio tab).*
-The bottom bar stays **Home · Communities · Explore · Messages · Settings**, and Create stays the floating button for creator accounts. This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
+The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · Inbox · Wallet · Me**, and Create stays the floating button for creator accounts. (Corrected 7 Oct 2026 after the CHECK-1 audit, F-2: this line first quoted the old web app's bar by mistake; the ruling itself, no Studio tab, is unchanged.) This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
 
 **Carried out by:** every navigation and AI-tools task; a verifier treats a bar with a sixth or swapped slot as a defect.
 
