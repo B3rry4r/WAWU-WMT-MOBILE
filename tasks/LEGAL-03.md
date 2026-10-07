@@ -7,7 +7,7 @@ order: 70
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -51,6 +51,21 @@ Admin sets the prices through LEGAL-07's screens.
 **NOT RUN.** `src/data-export-request/tests/data-export.contract.spec.ts` (14 of its tests fail here at `fulfil()` because the email goes through WAWU ID on :4001, which is not running; the failure is in sending the mail, not in the sections this branch added, and the data-export-map spec covers them). A paid consultation end to end (Flutterwave and Fintava keys are not here; the web booking path is covered by the protected suite and the app's pay path is MONEY work). Mobile `npm run check` exits 0 (this branch changes only BACKEND_GAPS.md, SHARED-CHANGES.md, the task file, LOG and generated lists in the mobile repo). Mobile `npm run api` is not run: the new routes are on the backend branch, not main, so the contract copy waits for the merge (as ME-10 #2).
 
 **Not done, by design.** The admin screens that set the prices are LEGAL-07's. The consultation rota (who is free when) has no source: the calendar is every weekday on the hour, 09:00 to 16:00 Lagos, 21 days (G-269). Phone has no price row until WAWU sets one, so it is not offered until then.
+
+## Builder report, round 2
+
+Fix round after the verifier (D1 to D4, F5). F6 to F9 untouched; F8 (the 25,000 and 45,000 naira seed rows: owner to confirm they are WAWU's current prices) stays recorded. Merged `origin/main` into both branches (main had not moved: already up to date). Backend commits on `wmt/LEGAL-03`; the new spec is `src/legal/tests/legal-consultations-round2.contract.spec.ts` (new file; no existing test, gate or baseline edited).
+
+- **D1, D2.** `DeliveredFileDto.url` now refuses control characters (NUL included) and lone surrogates with a 400 naming `url`, as `fileName` already did; the other string inputs on the new and changed write routes are enums, ISO dates, numbers, booleans or uuid path ids that the pipes already refuse (the web `consultation` body is unchanged). Cause of the lost audit row: a lone surrogate was stored as U+FFFD in the url but `AdminOpsAuditService.record` (fenced, logs and carries on by design) failed on the jsonb detail. The delivery now writes its `legal_delivered` audit row inside its own transaction, so files, chat lines, status change and audit row all happen or none does, and the client is notified only after commit. The audit service is not touched.
+- **D3.** One method, `LegalRequestsService.holdHour(tx, requestId, start, minutes)`, takes the booking advisory lock, lets go of a dead hold on that start and refuses on any overlap. The app's `POST /legal/requests/:id/booking` and the web's `POST /legal/requests/:id/consultation` both call it inside a transaction with their write, so they serialise on one lock and one check. The app's private copy and constant are gone.
+- **D4.** Delivery writes through `LegalAssistantAllowance.writeAsConsultant(client, ...)` (module wiring: `LegalIntakeModule` exports it, `LegalModule` imports it); the chat lines are stamped from the lock's time, one millisecond apart, so two files still give two ordered lines.
+- **F5.** Migration renamed to `20261012100000_legal_consultations`. Checked all `origin/*` refs right before the push: main's newest `20261008100000`, newest on any open branch `20261011100000_professional_location` (PROS-02), `20261010100000_schools_hidden` (SCHOOLS-02). SHARED-CHANGES row "LEGAL-03 #1" updated. Fresh database migrates; `prisma migrate diff` against the schema shows only main's known `DROP INDEX "ContentPiece_specializations_idx"`.
+
+**Proof the specs fail without the fix** (the six changed source files put back to the verified commit's versions, same specs, then restored): 12 of 17 fail: url with a NUL, a lone high or low surrogate, a reversed pair, a bad second file, the audit-in-the-same-step test (D1, D2); app against web, web against app and web against web at 90 minutes (D3; app against app and the non-overlapping pair pass, as they should); `writeAsConsultant` called and the delivery waiting on the client's lock (D4). With the fix 17 of 17 pass; the D3 specs repeat 12 rounds each.
+
+**Counts.** `tsc --noEmit` 0. `src/legal`, `src/legal-intake`, `src/account-purge` and `data-export-map` suites: 11 suites, 262 passed, 3 skipped. Gates 9, 875 files, 16 fail, 56 warn, 76 accepted (main's); `check_baseline.py` clean. Protected suite `run.sh --fresh`: 253 run, 244 of 244 required passed. `contract:build`: the only change in meaning is `pattern` on `DeliveredFileDto.url` (plus the generator's reordering of a few enum lists and schemas); mobile `npm run api` regenerated nothing (admin routes are excluded). Live on a built Hub (:4172, own database, real logins through the mock WAWU ID): url with NUL answers 400 `files.0.url cannot contain control characters.`, url with a lone surrogate 400 `files.0.url must be plain text.`, a good delivery 200 with one audit row; app booking against web booking at 90 minutes, sent together, 10 of 10 tries exactly one 200 and one 409 (the verifier saw 0 of 15).
+
+**NOT RUN.** As before: data-export contract spec (WAWU ID mail), paid consultation end to end (no keys). Not changed, by instruction: F6, F7, F8, F9.
 
 ## Verifier report
 
