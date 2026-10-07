@@ -1,7 +1,7 @@
 ---
 id: EXPLORE-02
 title: All creators and search
-owner: DEV
+owner: YOU
 area: EXPLORE
 order: 101
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [X4, X5, X6, X7]
 ---
 # EXPLORE-02 · All creators and search
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

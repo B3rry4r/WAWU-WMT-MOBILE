@@ -782,6 +782,121 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/assistant/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The problems offered as taps when the assistant opens (S14). */
+        get: operations["LegalAssistantController_topics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open the conversation, or pick up the unfinished one. A new one starts
+         *     with the assistant's two opening lines and the topic taps.
+         */
+        post: operations["LegalAssistantController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LegalAssistantController_thread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The client says something: typed (`body`) or a tap (`quickReplyId`).
+         *     Before the brief is sent the assistant answers; after, the message goes
+         *     to the consultant on the matter's thread.
+         */
+        post: operations["LegalAssistantController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the assistant again after `503 assistant_unavailable`. Counted like a
+         *     message, and one at a time per conversation (409 `assistant_busy`).
+         */
+        post: operations["LegalAssistantController_reply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/assistant/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Send to a consultant" (S16): the brief goes to WAWU Legal's consultant
+         *     queue and the matter opens at `awaiting_quote`. Nothing is charged.
+         *     Sending again answers the same thread and opens nothing new.
+         */
+        post: operations["LegalAssistantController_sendToConsultant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/legal/availability": {
         parameters: {
             query?: never;
@@ -4800,6 +4915,12 @@ export interface components {
              */
             body: string;
         };
+        SendAssistantMessageDto: {
+            /** @description What the client typed. At most 2000 characters. */
+            body?: string;
+            /** @description The `id` of one of the thread's live `quickReplies`. */
+            quickReplyId?: string;
+        };
         CreateLegalRequestDto: {
             serviceCode: string;
             /** @description Whatever the service's intake form collected. */
@@ -5892,6 +6013,51 @@ export interface components {
              * @enum {string}
              */
             kind?: "amen";
+        };
+        CreateAdCreativeDto: {
+            headline: string;
+            /** @description Place, date and price as the team types them. Leave it out for no second line. */
+            subline?: string | null;
+            ctaLabel: string;
+            /**
+             * @description What the button opens. The allow-list is the AdCtaDestination enum: `event` today.
+             * @enum {string}
+             */
+            ctaDestination: "event";
+            /** @description For `event`, an Event id. The event must be published and not over. */
+            ctaDestinationId: string;
+            /** @description An https link to the picture. Leave it out for a card without one. */
+            artworkUrl?: string | null;
+        };
+        CreateAdCampaignDto: {
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
+            startsAt: string;
+            /** @description UTC. Must come after startsAt, and must not have passed yet. */
+            endsAt: string;
+            /** @description Ranks bookings that overlap on one placement. Range: src/ads/ads-limits.ts. */
+            weight?: number;
+            creative: components["schemas"]["CreateAdCreativeDto"];
+        };
+        UpdateAdCreativeDto: {
+            headline?: string;
+            subline?: string | null;
+            ctaLabel?: string;
+            /** @enum {string} */
+            ctaDestination?: "event";
+            ctaDestinationId?: string;
+            artworkUrl?: string | null;
+        };
+        UpdateAdCampaignDto: {
+            advertiser?: string;
+            /** @enum {string} */
+            placement?: "tgif_card" | "today_slot";
+            startsAt?: string;
+            endsAt?: string;
+            weight?: number;
+            creative?: components["schemas"]["UpdateAdCreativeDto"];
         };
         RecordAdEventDto: {
             /** @enum {string} */
@@ -8388,6 +8554,61 @@ export interface components {
             completedAt: string | null;
             legalRequestId: string | null;
         };
+        LegalAssistantTopic: {
+            id: string;
+            label: string;
+            matter: string;
+            matterLabel: string;
+        };
+        LegalAssistantMessage: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "consultant" | "assistant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            consultantName: string | null;
+        };
+        LegalAssistantQuickReply: {
+            id: string;
+            label: string;
+        };
+        LegalAssistantBriefRow: {
+            label: string;
+            value: string;
+        };
+        LegalAssistantBrief: {
+            matter: string;
+            matterLabel: string;
+            rows: components["schemas"]["LegalAssistantBriefRow"][];
+            ready: boolean;
+        };
+        LegalAssistantConsultant: {
+            name: string | null;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        LegalAssistantThread: {
+            id: string;
+            /** @enum {string} */
+            stage: "sent" | "profiling" | "brief_ready";
+            matter: string;
+            matterLabel: string;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            awaitingReply: boolean;
+            legalRequestId: string | null;
+            requestStatus: string | null;
+            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
+            assistantStopped: boolean;
+        };
+        LegalAssistantTranscript: {
+            intakeId: string;
+            legalRequestId: string | null;
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+        };
         ChatPerson: {
             wawuId: string;
             name: string;
@@ -8686,6 +8907,199 @@ export interface components {
             month: string;
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
+        };
+        AdCreativeView: {
+            headline: string;
+            subline: string | null;
+            ctaLabel: string;
+            /** @enum {string} */
+            ctaDestination: "event";
+            ctaDestinationId: string;
+            artworkUrl: string | null;
+        };
+        AdEventView: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            open: boolean;
+        };
+        AdCounts: {
+            views: number;
+            taps: number;
+            skips: number;
+            ctr: number | null;
+        };
+        AdCampaignView: {
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** @enum {string} */
+            phase: "upcoming" | "running" | "over";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+            creative: components["schemas"]["AdCreativeView"];
+            event: components["schemas"]["AdEventView"];
+            servingNow: boolean;
+            delivery: components["schemas"]["AdCounts"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdSummaryReportView: {
+            /** Format: date-time */
+            generatedAt: string;
+            filters: {
+                /** @enum {string|null} */
+                placement: "tgif_card" | "today_slot" | null;
+                /** @enum {string|null} */
+                status: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+                /** @enum {string|null} */
+                phase: "upcoming" | "running" | "over" | null;
+                /** Format: date-time */
+                from: string | null;
+                /** Format: date-time */
+                to: string | null;
+            };
+            campaigns: number;
+            delivery: components["schemas"]["AdCounts"];
+            deliveryByStatus: {
+                live: unknown;
+                paused: unknown;
+                draft: unknown;
+                scheduled: unknown;
+                ended: unknown;
+            };
+            deliveryByPlacement: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+            byStatus: {
+                live: unknown;
+                paused: unknown;
+                draft: unknown;
+                scheduled: unknown;
+                ended: unknown;
+            };
+            byPlacement: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+            byPhase: {
+                upcoming: unknown;
+                running: unknown;
+                over: unknown;
+            };
+            servingNow: {
+                tgif_card: unknown;
+                today_slot: unknown;
+            };
+        };
+        AdOverlapView: {
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+        };
+        AdAuditEntryView: {
+            id: string;
+            /** @enum {string} */
+            action: "paused" | "updated" | "scheduled" | "ended" | "created" | "resumed" | "deleted";
+            /** @enum {string|null} */
+            previousStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            /** @enum {string|null} */
+            newStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            changes: {
+                [key: string]: {
+                    from: unknown;
+                    to: unknown;
+                };
+            } | null;
+            adminId: string;
+            adminEmail: string;
+            /** @enum {string} */
+            adminRole: "superadmin" | "reviewer" | "support" | "finance";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdCampaignDetailView: {
+            overlapping: components["schemas"]["AdOverlapView"][];
+            history: components["schemas"]["AdAuditEntryView"][];
+            id: string;
+            advertiser: string;
+            /** @enum {string} */
+            placement: "tgif_card" | "today_slot";
+            /** @enum {string} */
+            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            /** @enum {string} */
+            phase: "upcoming" | "running" | "over";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            weight: number;
+            creative: components["schemas"]["AdCreativeView"];
+            event: components["schemas"]["AdEventView"];
+            servingNow: boolean;
+            delivery: components["schemas"]["AdCounts"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdCampaignChangeView: {
+            campaign: components["schemas"]["AdCampaignDetailView"];
+            audit: components["schemas"]["AdAuditEntryView"];
+        };
+        AdDayCounts: {
+            day: string;
+            views: number;
+            taps: number;
+            skips: number;
+        };
+        AdCampaignReportView: {
+            campaign: components["schemas"]["AdCampaignView"];
+            range: {
+                /** Format: date-time */
+                from: string | null;
+                /** Format: date-time */
+                to: string | null;
+                fromDay: string | null;
+                toDay: string | null;
+            };
+            delivery: components["schemas"]["AdCounts"];
+            days: components["schemas"]["AdDayCounts"][];
+            timing: {
+                windowMinutes: number;
+                elapsedMinutes: number;
+                remainingMinutes: number;
+            };
+            activity: {
+                changes: number;
+                pauses: number;
+                /** Format: date-time */
+                lastActionAt: string | null;
+            };
+        };
+        AdCampaignDeletedView: {
+            campaignId: string;
+            audit: components["schemas"]["AdAuditEntryView"];
         };
         PaymentQuoteView: {
             /** @enum {string} */
@@ -10035,6 +10449,132 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatThreadView"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_topics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantTopic"][];
+                };
+            };
+        };
+    };
+    LegalAssistantController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_thread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendAssistantMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_reply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_sendToConsultant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
                 };
             };
         };

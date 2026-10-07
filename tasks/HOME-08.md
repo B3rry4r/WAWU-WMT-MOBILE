@@ -1,7 +1,7 @@
 ---
 id: HOME-08
 title: Content detail: free video and course layouts
-owner: DEV
+owner: YOU
 area: HOME
 order: 144
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H24, H25]
 ---
 # HOME-08 · Content detail: free video and course layouts
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

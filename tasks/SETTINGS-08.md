@@ -1,7 +1,7 @@
 ---
 id: SETTINGS-08
 title: Delete account in WAWU ID: 30 days, cancelled by signing in
-owner: DEV
+owner: YOU
 area: SETTINGS
 order: 177
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # SETTINGS-08 · Delete account in WAWU ID: 30 days, cancelled by signing in
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 
