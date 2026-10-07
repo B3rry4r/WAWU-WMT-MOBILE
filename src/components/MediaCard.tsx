@@ -30,7 +30,7 @@ export const mediaMetrics = {
   /** The Follow button's height: the shared `Button`'s `card` size. */
   actionHeight: 32,
   /**
-   * The initials a creator card shows when the person has no photo (`placeholder`). Not drawn on the canvas (`cCard`
+   * The initials a creator card shows for a person with no photo (`placeholder`). Not drawn on the canvas (`cCard`
    * falls back to the sunken ground); Default (agent), owner may override: 64, the size Today's card drew before it
    * moved onto this card.
    */
@@ -149,7 +149,7 @@ export function MediaCard({
 
   const src = imageUrl ?? image;
   const hasPicture = src !== undefined && src !== '';
-  // A stacked card centres its placeholder in the room the caption leaves, so it is measured once it is laid out.
+  // A stacked card centres its placeholder in the room the caption leaves, so the caption's height is measured after layout.
   const [captionHeight, setCaptionHeight] = useState(0);
   const showPlaceholder = Boolean(placeholder) && !hasPicture;
   const onCaptionLayout = showPlaceholder && stacked ? (e: LayoutChangeEvent) => setCaptionHeight(e.nativeEvent.layout.height) : undefined;

@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 66 | 0 | 23 | 26 |
+| todo | 65 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 53 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [SHARED-03](../tasks/SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder) (You)
 
 ## Done
 
@@ -127,6 +131,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SHARED-03 · Built: one shared `Toast` (ME-06's and Explore's copies deleted), chips beside icon chips at 11/14 (X3's All), `MediaCard` initials for a creator with no photo, THE creator-card Follow (`Button` `card` and `veil`, Explore on `action`), Z3 made deterministic (20 of 20), T3, T4 and R2-5 covered; 15 of 15 mutants killed; 148 picture pairs against main, 132 identical, 16 differ only by items 2, 3 and 6; `npm run check` 0 (76 suites, 1377 tests). Status verifying.
 - 7 Oct 2026 · HOME-01 · HOME-01 merged (round 3 passed; all four tab hubs on main; T3 and T4 test gaps moved to SHARED-03).
 - 7 Oct 2026 · HOME-01 · Verifier report round 3 (status review): D3 closed. Follow is MediaCard's shared `action`, and its 13 vs 13.5 label and Following ring are recorded under SHARED-03 item 6. T1 and T2 now killed. A Follow and an unfollow through the app read back from the Hub and the database. D1 and D2 still closed; the merge kept every row (HOME-09 F1 was a true duplicate). Mutants 23 of 25 killed; T3 and T4 are test gaps.
 - 7 Oct 2026 · HOME-01 · Builder round 3 (status verifying): Follow on creator cards is MediaCard's shared `action` (FollowButton deleted; the 13 label and ring left to SHARED-03); tests T1 (figure at 38) and T2 (own glow id) kill the verifier's two survivors.
@@ -141,4 +146,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EXPLORE-01 · Verified round 1 (independent verifier, real WAWU ID fb8717e, Hub 3041887): V4, V6, V9 and R-41 passed, X15 confirmed not built, 11 of 12 mutants killed; 3 low defects open (CategoryChips forks FilterChips and CreatorCard redraws MediaCard, VERIFIER check 2, neither caught by the forks gate; a pending Follow drops Follow taps on every other card); status building.
 - 7 Oct 2026 · EXPLORE-01 · Built: Explore (category tiles, featured creators with Follow, loading, error) and Categories (chips, creators, empty, paging) against the local Hub; entries to screens not built yet left out (R-41); status verifying.
 - 7 Oct 2026 · SHARED-02 · Merged: shared components for the tab hubs (card, chip and button options, theme tokens, signed-in routes); 132 of 144 screens pixel-identical, the rest intended.
-- 7 Oct 2026 · SHARED-02 · Verifier report, round 2 (mobile `13596e1`, main `c4471f3`): D1 (no SHARED-CHANGES row lost, none went backwards), D2 ("Profile saved" once from the Me tab, from Settings and on a cold `?from=me`, light and dark) and D3 (M1's button only; W1 identical) closed; T1 to T7 killed, 4 own mutants killed; `npm run check` 0 (71 suites, 1286 tests); 144 picture pairs against main, only `/tgif` and M1's button differ; status review.
