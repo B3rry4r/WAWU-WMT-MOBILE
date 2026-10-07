@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 89 of 186.**
+**Launch tasks done: 90 of 186.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 68 | 0 | 23 | 26 |
+| todo | 67 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 50 | 27 | 11 | 5 |
+| done | 51 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -108,6 +108,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
+- [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -124,6 +125,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SHARED-02 · Merged: shared components for the tab hubs (card, chip and button options, theme tokens, signed-in routes); 132 of 144 screens pixel-identical, the rest intended.
+- 7 Oct 2026 · SHARED-02 · Verifier report, round 2 (mobile `13596e1`, main `c4471f3`): D1 (no SHARED-CHANGES row lost, none went backwards), D2 ("Profile saved" once from the Me tab, from Settings and on a cold `?from=me`, light and dark) and D3 (M1's button only; W1 identical) closed; T1 to T7 killed, 4 own mutants killed; `npm run check` 0 (71 suites, 1286 tests); 144 picture pairs against main, only `/tgif` and M1's button differ; status review.
+- 7 Oct 2026 · SHARED-02 · Round 2: ME-11 #4's status restored (D1); "Profile saved" once wherever M8 closes to, M10 on the Me tab, M8's own elsewhere (D2); M1's Edit profile on `size="profile"` and W1's card on the generated `--shadow-money` / `--glow-money` (D3; W1 pixel-identical, M1 only the label); WALLET-11's payout test ends in 6 s in band (WALLET-01 #3); seven test gaps closed. Status verifying.
+- 7 Oct 2026 · SHARED-02 · Verifier report (independent session, mobile `6fa4f49`, main `5fec168`): V1 passed (`npm run check` 0; 67 suites, 1227 tests; gates 310 files, 0 findings); 144 before and after picture pairs, 132 identical, 12 differ, all `/tgif` by design, its five grounds now equal the canvas; guards and new props pass; 18 mutants, 11 killed, 7 survived (test gaps); three defects: D1 the merge dropped main's ME-11 #4 status, D2 a save on M8 from Settings shows no "Profile saved", D3 ME-01 #1 marked applied but M1's "Edit profile" still `sm` with `style`; status building.
+- 7 Oct 2026 · SHARED-02 · Built: the four tab hubs' shared changes applied (MediaCard `titleAccessory`, `footer`, `action`; FilterChips chip `icon` and `revealSelected`; Button size `profile`; TGIF, `--glow-money` and every `--shadow-*` generated as tokens; categories and the works routes under the signed-in guard; M8 hands back at once for M10's single "Profile saved"); 128 before and after screenshot pairs, 126 identical, the 2 TGIF ones changed by design. Status verifying.
 - 7 Oct 2026 · WALLET-01 · Merged: the Wallet tab (balance that always fits with its kobo, account number with Copy, recent activity, every state, no Bills); built now under R-41.
 - 7 Oct 2026 · WALLET-01 · Verified round 3 (15691dd): D5 closed (0 cut frames in 108 watched cases at 320/360/390 px, light and dark: first mount, balance changed under the card and while the tab is open, Hide/Show), the measuring copy aria-hidden (one balance in the accessibility tree), BalanceCard.test.tsx fails 3 of 4 on round 2 and passes now, 3 of 4 own mutants killed (K2 a test gap the browser covers), no conflict markers and every row kept; D1 to D4 still closed; status review.
 - 7 Oct 2026 · WALLET-01 · Round 3: a new or re-shown balance stays invisible until that figure is measured, so no cut frame is painted (D5); the measuring copy is aria-hidden on the web; status verifying.
@@ -134,8 +140,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.
 - 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
 - 7 Oct 2026 · ME-01 · Builder round 2, status verifying: D1 (veil on bare tiles), D2 (a failed refresh keeps the profile), D3 (new account's empty shelf) fixed; U1, U2 per the lead's rulings; tests for the four surviving mutants.
-- 7 Oct 2026 · ME-01 · Verifier report (independent session, mobile `39f0627`, backend main `3041887`, real wawu-id `fb8717e`): V1, R-41, V4 and V9 passed (every value traced with non-canvas data, a save on M8 read back from the Hub and the database and shown on M10, signed in through the app against the real WAWU ID); 13 own mutants, 9 killed, 4 survived (test gaps); three defects: D1 a free piece without a picture has an unreadable white view count in light mode, D2 a failed refresh after a save replaces the loaded profile with "Your profile did not load", D3 a brand-new account (no profile row) gets "Your content did not load" for ever because the content route answers 404; status building.
-- 7 Oct 2026 · ME-01 · Built, status verifying: the Me tab (M1, M2, M4, M10) on the Hub's profile, counts, content, services and works; QR, Menu, the tick prompt, Create and the Services taps left out for their tasks (R-41); G-290 to G-292.
-- 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
-- 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
-- 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).

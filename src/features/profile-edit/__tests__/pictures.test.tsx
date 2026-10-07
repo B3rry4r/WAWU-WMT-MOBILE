@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-secure-store', () => ({
@@ -43,12 +43,17 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 const { EditProfileScreen } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
 const draft = require('../draft') as typeof import('../draft');
 
+/** Opened as the Me tab opens it (`ownNotice={false}`): M8 hands back as soon as a save lands (M10 shows "Profile saved"). */
+const saved = jest.fn();
+const saveLands = () => waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+
 async function boot() {
+  saved.mockClear();
   const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
   await render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <QueryClientProvider client={client}>
-        <EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={jest.fn()} />
+        <EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={saved} ownNotice={false} />
       </QueryClientProvider>
     </SafeAreaProvider>,
   );
@@ -76,7 +81,7 @@ describe('M8 · changing the avatar and the cover', () => {
     // Nothing is on the profile until Save.
     expect(sent.filter((s) => s.method === 'PATCH')).toHaveLength(0);
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(sent.filter((s) => s.method === 'PATCH').map((s) => s.body)).toEqual([{ avatarUrl: 'https://files.example/read/avatars.jpg' }]);
   });
 
@@ -86,7 +91,7 @@ describe('M8 · changing the avatar and the cover', () => {
     await fireEvent.press(screen.getByTestId('edit-cover-pick'));
     await screen.findByTestId('edit-save');
     await fireEvent.press(await screen.findByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(sent.find((s) => s.url.endsWith('/uploads/presign'))?.body).toMatchObject({ folder: 'profile/cover' });
     expect(sent.filter((s) => s.method === 'PATCH').map((s) => s.body)).toEqual([{ coverUrl: 'https://files.example/read/profile/cover.jpg' }]);
   });
