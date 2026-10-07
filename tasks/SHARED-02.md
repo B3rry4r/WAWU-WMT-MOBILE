@@ -7,7 +7,7 @@ order: 183
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: [R-41]
 passes: [V1, V5, V6]
@@ -158,6 +158,27 @@ Same builder, 7 Oct 2026. The verifier's report (9803349) and `origin/main` c447
 **Checks.** `npm run check` exit 0 as one command: typecheck and lint clean; jest 71 suites, 1286 tests, 0 failed; gates 9 run, 320 files, 0 findings; tasks 211, 279 artboards. No em-dash added; secret scan of the staged diff: nothing key-shaped.
 
 **NOT RUN.** A phone (the D2 notice timing, the swapped card shadow and glow on iOS and Android: a development build); the Settings path in a browser (the Me menu's Settings row is ME-03's; jest covers the route and the screen); everything in round 1's NOT RUN that this round does not touch stands.
+
+## Verifier report, round 2
+
+Same independent verifier, 7 Oct 2026, narrow re-check of `wmt/SHARED-02` 13596e1 (9803349 and main c4471f3, ME-01 and WALLET-01 merged in) against main c4471f3. Fresh detached worktrees `/home/user/wt/vs02m` (13596e1) and `/home/user/wt/vs02main` (c4471f3), each with its own `npm ci`. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vs02/` (round-2 files are prefixed `r2-` or in `shots/d2/`; `shots/before`, `shots/after` and `shots/diff` now hold the round-2 pictures, and round 1's numbers are in `r1-archive/diff-round1.json`).
+
+| Check | Result | Evidence |
+|------|--------|----------|
+| V1 | passed: `npm run check` exit 0 as one command (typecheck and lint clean; jest 71 suites, 1286 tests, 0 failed; gates 9 run, 320 files scanned, 0 fail, 0 warn, 0 accepted; tasks 211, 279 artboards); `npm run tokens -- --check` up to date; the only em-dash added is inside WALLET-01's test pattern that checks no em-dash is shown | `r2-check.log` |
+| D1 SHARED-CHANGES rows | closed: main c4471f3 has 170 rows and 13596e1 has 175. No main row is missing. The 5 extra rows are the hub requests this task carries (HOME-01 #1 and #2, EXPLORE-01 #1 to #3). Every row's text matches main except its last column. 7 rows differ there, and each moves forward from main's "open" to "applied by SHARED-02": ME-11 #3, ME-01 #1, ME-01 F1, WALLET-01 #1, #2 and #3, and HOME-09 #1. No row's status went backwards, and ME-11 #4 is main's again | row-by-row comparison script, output in the hand-back |
+| D2 "Profile saved" exactly once | closed: in the browser (web export of 13596e1), light and dark, sampled every 150 ms for 4 s after Save. **From the Me tab**: shown once, on `/me` only (M8 shows none), ends on `/me`. **From `/settings`' header**: shown once, on M8 only, then back on `/settings`, where it does not show. **`/edit-profile?from=me` with nothing to go back to**: shown once, on M8, then Home | `r2-d2.json`, `shots/d2/`, `shots/r2-d2-contact.png`, `tools/d2.py` |
+| D3 the swaps | closed: `ProfileHeader.tsx` draws `size="profile"` with no `style`. M1 differs from main only inside the Edit profile button (light 1774 px, dark 1753 px, box 266 to 353 by 182 to 220, the label 14 at 600 where it was 13.5 at 700). W1 (an open wallet with a ₦48,250.50 balance from the stand-in Hub) reads `shadows.money` and `stopOf(colors.glowMoney)` and is identical to main to the pixel in both themes | `r2-diff.json`, `r2-wallet-me.png` |
+| WALLET-01 #3 | passed: `npx jest --runInBand` on `payoutAccountScreen.test.tsx` alone: 15 of 15, 4.2 s by jest's clock and 5.9 s wall, and no "did not exit" warning. The diff against main touches only the client setup (`gcTime: 0`, the `clients` list, `afterEach` cancel and clear); no assertion changed | `r2-payout.log` |
+| T1 to T7 | closed: my seven round-1 survivors re-applied unchanged, all 7 killed, each by its new round-2 test | `shared02-r2-mutants.json`, `shared02-r2-mutants.log` |
+| Own mutants on round 2's code | 4 of 4 killed: `from=me` without `canGoBack` (the route test fails); W1's card with `boxShadow: []` (2 tests fail); M8's toast drawn even when going back to the Me tab; M8's toast with `onSaved` never called | `shared02-r2-own-mutants.json` |
+| Regression pictures | passed: round 1's before/after run repeated, 13596e1 against main c4471f3 (the same exports, stand-ins and routes; the stand-in Hub now also answers an open wallet with a balance and valid handles, the same for both builds). 144 pairs: 130 identical, 14 differ. Of those, 12 are `/tgif` (the same pairs as round 1, changed by design) and 2 are `/me` (the Edit profile button only, both themes). Wallet, M8, Settings, Inbox, M34, M35 and every other screen and preview are identical. 0 requests left localhost, and 0 files were written into `node_modules` by the 4 exports | `r2-diff.json`, `shots/before`, `shots/after`, `shots/diff`, `r2-exports.out` |
+
+**Findings:** none open. One note, not a defect: WALLET-01 #2's status still says "main's `(tabs)/wallet` is still the placeholder until WALLET-01 merges". WALLET-01 has now merged, so the reason is out of date, but the decision it records (the case kept with its stand-in) still holds and the test runs.
+
+**NOT RUN:** a phone (the D2 notice timing, W1's shadow and glow through `boxShadow` and react-native-svg on iOS and Android). Fact that unblocks it: a development build. Round 1's other NOT RUN items that this round does not touch still stand.
+
+**Verdict:** D1, D2 and D3 are closed, T1 to T7 are covered, and no defect is open. Status `review`.
 
 ## Owner sign-off
 
