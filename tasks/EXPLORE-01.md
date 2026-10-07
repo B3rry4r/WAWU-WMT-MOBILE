@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [EXPLORE-03, UI-02, UI-03, EXPLORE-02, EVENTS-01, PROS-01, SCHOOLS-03, PROS-03]
+depends_on: [EXPLORE-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
 artboards: [X1, X15, X2, X3, X13, X14]
@@ -17,6 +17,16 @@ artboards: [X1, X15, X2, X3, X13, X14]
 
 Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
 
+
+## Lead note (7 Oct 2026): built now, with what exists (R-41)
+
+The owner asked for every tab to be built now. This hub is built before the tasks below; each entry on it that leads to one of their screens is left out here and added, exactly as drawn, by that task (R-27, R-41). Everything else on the artboards is built as drawn.
+
+- EXPLORE-02 (All creators and search)
+- EVENTS-01 (Events: list, filters, detail, sold out)
+- PROS-01 (Find a professional)
+- SCHOOLS-03 (Schools: directory, school page, course page, no results)
+- PROS-03 (Get listed as a professional)
 
 ## Read first
 

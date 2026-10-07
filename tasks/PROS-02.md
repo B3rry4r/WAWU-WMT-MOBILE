@@ -7,7 +7,7 @@ order: 8
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -298,6 +298,78 @@ Verifier, 7 Oct 2026, a fresh session that wrote none of this task's code. Check
 - V5 and V6: the task has no artboards and no screen.
 
 **To close:** nothing. Status `review`.
+
+## Verifier report, round 3 (second independent session)
+
+Verifier, 7 Oct 2026, a fresh session that wrote none of this task's code. Narrow round on backend `wmt/PROS-02` `8c0c57b` (backend `origin/main` `6c0e435` merged in at `53c67bc`; main has not moved since) and mobile `wmt/PROS-02` `2deafc8` (mobile `origin/main` `c0fb4e3` is already in it). Fresh detached worktrees, own databases `vp02r3_hub_test`, `vp02r3_protected_test` (dropped afterwards), stand-in WAWU ID on :5452 for the specs, :5451 for the protected suite's own mock; nothing was pushed to any backend branch. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vp02r3/`.
+
+**Lead ruling on R2-4, recorded.** The city stays a bare city name: commas, brackets and a slash are refused, and ME-05 will map the first part of the profile's Location ("Lagos" of "Lagos, Nigeria") before it writes `ProfessionalLocation`. R2-4 is therefore not counted as a defect. Confirmed live: "Abuja, FCT" and "Lagos, Nigeria" still answer 400, by design.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **passed.** Backend `tsc --noEmit` 0; eslint (no `--fix`) on the 10 changed `.ts` files exit 0; gates on the branch 9 run / 868 files / 16 fail / 57 warn / 76 accepted against `origin/main` exported and run the same way 9 / 863 / 16 / 56 / 76: the 16 FAIL lines are identical (sorted diff empty), the one extra warning is `src/professional/professional-reply-time.ts:15` (`PROVISIONAL(PRO-REPLY-SAMPLE)`, carried since round 1); tripwire over added lines `test/protected-routes\|src/protected-routes\|compareShape\|protected-registry`: 0 matches, and no file changed under `src/protected-routes`, `test/protected-routes` or `.pipeline`; the only em-dash in added lines is in a test-file comment, none user-facing; no TODO, "for now" or Flutterwave in added source. `npm run contract:build` exits 0 and leaves `contract/openapi.json` unchanged (`git status` clean). Mobile `npm run check`: see the line at the end of this report. | `tsc.txt`, `eslint.txt`, `gates-main.txt`, `gates-branch.txt`, `fail-main.txt`, `fail-branch.txt`, `warn-*.txt`, `tripwire.txt`, `contract-build.txt` |
+| V2 Contract | **passed.** `src/professional`: 2 suites, **51/51** (directory spec 28, web spec 23) on the seeded database. With my own mock-backed specs: `vp02-blocked`, `vp02-export` (round 2's), my `vp02r3-auth`, `data-export-map` and `account-purge`: 5 suites, 12 tests, all pass. The FULL backend suite was not run (see NOT RUN). | `professional-specs.txt`, `regress-specs.txt`, `blocked-export.txt` |
+| V3 Regression | **passed.** `DATABASE_URL=<vp02r3_protected_test> scripts/protected-routes/run.sh --fresh HEAD` (lock `origin/main` `6c0e435`): **253/253**, "protected route suite: all 244 required tests passed", exit 0. | `protected.txt` |
+| V4 Field trace | **passed.** Unchanged since round 2 in code except the city rule and the migration folder name (`git diff fe4bb87 8c0c57b` for the task's own files is the DTO, the spec, the folder rename and the contract); the specs above exercise city, reply time, price and blocked filtering. | specs |
+| V9 Live seam | **passed against the stand-in WAWU ID; real WAWU ID NOT RUN.** Tokens from the stand-in's `/auth/login`, the real route through the Nest app with the Hub's own `ValidationPipe` settings (`whitelist`, `forbidNonWhitelisted`, `transform`, same as `src/main.ts`). | `city-results.json`, `auth-matrix.json` |
+
+**1. R2-1, migration order: closed.**
+- Main's newest folder is `20261008100000_admin_ads_audit`. The newest folder on every one of the 64 `origin/wmt/*` branches, sorted: `HOME-09` and `ME-11` `20261008100000_admin_ads_audit`, `INBOX-03` `20261009090000_push_tokens`, `LEGAL-03` `20261009120000_legal_consultations`, `SCHOOLS-02` `20261010100000_schools_hidden`, then this branch `20261011100000_professional_location`: it sorts after all of them (`branch-newest.txt`).
+- The stamp `20261011100000` appears in exactly one folder across main and all 64 branches (no shared stamp). The migration SQL is the round-2 SQL, one `CREATE TABLE "ProfessionalLocation"`, additive.
+- Fresh database: `prisma migrate deploy` applied all 104 migrations, the last being `20261011100000_professional_location`; `npm run db:seed` completed; `migrate status` "Database schema is up to date!". `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` prints one statement, `DROP INDEX "ContentPiece_specializations_idx"`, the GIN index drift that main's own migrations document in a dozen comments (`migrate-deploy.txt`, `migrate-diff.txt`).
+- `git merge-base --is-ancestor origin/main 8c0c57b` true: the branch contains backend `origin/main` `6c0e435`. `git diff origin/main 8c0c57b --stat`: the 13 files the builder lists, nothing else. SHARED-CHANGES row `PROS-02 #1` on mobile carries `20261011100000`.
+
+**2. R2-2, a city that draws nothing: closed; no real city refused.** 266 probes through `PUT /professionals/location` with a creator token (`vp02r3-city.spec.ts`, `city-results.json`):
+- **111 refused, all 400:** U+3164 (one, doubled, leading, trailing, inside a name), U+FFA0, U+115F, U+1160 and all four together; U+034F alone, doubled, after a letter, inside a name; zero-width space, non-joiner, joiner, word joiner (alone, doubled, inside, trailing), LRM, RLM, bidi override and isolates, Arabic letter mark, invisible operators; soft hyphen alone, doubled, inside, leading, trailing; U+180E, variation selectors (U+FE00, U+FE0F, U+E0100), tag characters, Khmer U+17B4 and U+17B5, U+1D173; a letter plus 4, 5, 40 and 59 marks, 4 mixed marks, only marks, a mark first; a single letter in every form (`A`, `a`, `Ọ`, `O`+2 marks, `A.`, `A'`, `A-`, `'A'`, full-width, `Ǆ`); empty, spaces, tab, NBSP, ideographic space, dots, apostrophes, hyphens.
+- **155 accepted, all 200 and saved as expected** (NFC and NFD of each): Lagos, Ile-Ife, Port Harcourt, "Port  Harcourt" (saved "Port Harcourt"), Ọ̀yọ́ (precomposed and decomposed, both), Abẹ́òkúta (both forms), Kaduna, São Paulo, Zürich, and 95 more Nigerian places and Yoruba spellings (Ikeja, Abuja, Ibadan, Kano, Enugu, Benin City, Warri, Calabar, Uyo, Owerri, Aba, Jos, Ilorin, Maiduguri, Sokoto, Akure, Ado-Ekiti, Osogbo, Abeokuta, Lekki, Ikorodu, Ibeju-Lekki, Ogbomoso, Ijebu-Ode, Ikot Ekpene, Ikot-Abasi, Ede, Ila, Ife, Oyo, Ota, Nsukka, Lokoja, Makurdi, Yenagoa, Asaba, Awka, Onitsha, Nnewi, Umuahia, Abakaliki, Gusau, Katsina, Dutse, Birnin Kebbi, Minna, Bida, Zaria, Gombe, Bauchi, Yola, Jalingo, Damaturu, Lafia, Ugep, Obudu, Port-Harcourt, Sapele, Effurun, Abuja FCT, Victoria Island, Ikoyi, Surulere, Maitama, Gwarinpa, Ajah, Festac Town, N'Djamena with both apostrophes, Ìbàdàn, Ìlọrin, Ọ̀ṣogbo, Ṣagamu, Ìjẹ̀bú-Ọ̀dẹ̀, Ẹ̀pẹ́, Ẹ̀fọ̀n-Alààyè and others, plus Łódź, Kraków, København, Москва, 東京, القاهرة). **No real city was refused.**
+- 2 probes of mine behaved differently from my guess and are not defects: `Ik\uFEFFeja` saved as "Ik eja" and `Ikeja\uFEFF` as "Ikeja", because JavaScript's `\s` counts U+FEFF as white space and the DTO's transform collapses and trims it before the rule runs; nothing invisible is stored. NBSP, U+2003 and U+3000 inside or around a name behave the same (saved with one ordinary space).
+- Informational, not a defect (it draws something): two letters followed by apostrophes, full stops or spaces each carrying 3 combining marks (`AB` + `'` + 3 marks, repeated, 42 characters) are accepted, because "4 marks in a row" is counted per run. The text is visibly garbled, not blank, so the "draws nothing" criterion is met; a cap on the total number of marks would close it if the owner wants one. Also accepted and not a text-rule matter: full-width Latin, a Cyrillic first letter, words with no digits.
+
+**3. R2-3, gap ids: closed.** `G-144`, `G-145`, `G-146` each appear as a row in `BACKEND_GAPS.md` on exactly one ref across mobile `origin/main` (`c0fb4e3`) and all `origin/wmt/*` branches: `origin/wmt/PROS-02` (`gaps-all.txt`). No other branch has a row or a task-file mention of them except historic text: EVENTS-02's task file and LOG say it renumbered to G-230, and LEGAL-01-b's task file names "G-144 to G-149" as taken elsewhere. No duplicate id in the branch's own `BACKEND_GAPS.md`.
+
+**4. Regression.**
+- Blocked people, round 2's `vp02-blocked.spec.ts` unedited but for the database name: `webHasX/Z false, dirHasX/Z false, dirHasY true, anonHasX true, totalAnon 3, totalDir 1, profileX/Z 404, profileY 200` (`blocked-export.txt`). Export: round 2's `vp02-export.spec.ts` reads `[{"city":"Ile-Ife",...}]` for the owner and nothing of a second person's row; `data-export-map` and `account-data-map` pass unedited.
+- Auth matrix (`vp02r3-auth.spec.ts`, 48 requests: none / garbage token / buyer / creator): `GET /professionals/fields`, `/directory`, `/directory?field=accounting_tax`, `GET /professionals` 200 for all four; `/directory/{unknown uuid}` 404 and `/directory/not-a-uuid` 400 and `?field=bogus` 400 for all four; `GET /professionals/location` 401 / 401 / 200 / 200; `PUT` 401 / 401 / **403** / 200; `PUT` with an extra key 401 / 401 / 400 / 400; `PUT {}` 401 / 401 / 400 / 400; `DELETE` 401 / 401 / **403** / 200.
+- Seeded rows unchanged: exact row count of all 126 tables in `vp02r3_hub_test` (seeded, 104 migrations) before and after the task's `src/professional` specs: diff empty; the md5 of every table's rows before and after also identical, and still identical after all my own specs (`counts-before.txt`, `counts-after.txt`, `counts-final.txt`, `hash-*.txt`). `ProfessionalLocation` is 0 rows before and after.
+- Contract: `contract:build` unchanged (V1). The backend branch's contract against main's: 4 paths added (`/professionals/directory`, `/directory/{id}`, `/fields`, `/location`), 2 changed (`/professionals`, `/admin/professionals/queue`: the category enum gains `engineering`), 7 schemas added, `ApplyProfessionalDto` changed, nothing removed; `UpdateProfessionalLocationDto.city` has `minLength` 2 and `maxLength` 60 and no `pattern`, as the builder says. **Mobile's `contract/openapi.json` is NOT byte-equal to the backend branch's**: it is byte-equal to backend `origin/main` `6c0e435` (its `SOURCE_COMMIT`), because `npm run api` copies only from backend `origin/main`, so it cannot hold a branch's contract until the backend merges. The mobile branch changes no contract file (diff is five docs files). Recorded as the process, not a defect; whoever merges runs `npm run api -- --backend <backend>` after the backend lands, and the 4 paths and 7 schemas above are what will appear.
+
+**5. Mutants, 3 of mine on the city rule (plus one more).** Each applied to `update-professional-location.dto.ts` in the worktree, the task's directory spec run with `-t 'city|location'`, the file restored byte for byte afterwards (`cmp` equal, `git status` clean). The unmutated spec is 28/28, so each failure below is the mutant's.
+
+| # | Mutant | Task spec | Result |
+|---|--------|-----------|--------|
+| M1 | `(?!.*\p{Default_Ignorable_Code_Point})` removed | `refuses a city that draws nothing...` fails, 27 of 28 pass | killed |
+| M2 | `\p{M}{4}` to `\p{M}{5}` (the boundary) | same test fails | killed |
+| M3 | `(?:.*?\p{L}){2}` to `{1}` (minimum letters) | same test fails | killed |
+| M4 | the ignorable-character class narrowed to U+3164 only | same test fails | killed |
+
+4 of 4 killed (`mutants-out.txt`, `mut-M*-task.txt`).
+
+**Mobile check (the docs-only diff):** `npm run check` exit 0 on the tree with this report: 46 passed, 46 total; 797 passed, 797 total, gates 216 files 0 fail 0 warn 0 accepted, 209 tasks. The first run failed one test, `OpenWalletScreen` A26 "loading view first", on its 20 s timeout at load average 41 (the same known flake the round 2 verifiers recorded; no app code is in the diff); that file alone passes 37/37 and the rerun of the whole check passed (`mobile-check.txt`, `mobile-openwallet-alone.txt`, `mobile-check2.txt`).
+
+**Capability checks**
+- Filtering by a field on P1 returns professionals in that field: **passed** (directory spec, all fields; blocked spec's `field=accounting_tax`).
+- A card's "usually replies in" comes from real reply times: **passed** (directory spec, reply-time cases unchanged since round 2).
+
+**Findings**
+- No defect open.
+- `unclear` (carried, owner), unchanged from round 2 and not for this builder: the feed's professional card (HOME-05) has neither `city` nor `usualReplyMinutes`, HOME-07 depends on it; `engineering` is not a regulated category and widens the category enum on three routes (G-145); the directory has no city filter.
+- Note: the builder did not run the full backend suite in round 3 (disk). Round 2 ran it twice with no failure in professional code; round 3's change to code is the DTO rule and a folder rename, covered by the specs above.
+- Note: the builder's report says eslint errors in `professional.contract.spec.ts` are main's baseline; that file is untouched by the branch and is not in the 10 files I linted (exit 0).
+
+**Moving target, checked again after the first pass.** At the time of my migration check (about 11:05 UTC) the newest folder on `origin/wmt/LEGAL-03` was `20261009120000_legal_consultations`; the other verifier session saw it restamp to `20261012100000_legal_consultations` at 11:29 UTC, and my re-check at 12:05 UTC agrees: the newest folders are now `ME-11` `20261008100000`, `INBOX-03` `20261009090000`, `SCHOOLS-02` `20261010100000`, this branch `20261011100000`, `LEGAL-03` `20261012100000`. Backend `origin/main` is still `6c0e435`. R2-1 is closed as the brief wrote it (after main and after every branch it named); the two new tables are independent and Prisma applies either order, so whichever of the two merges second restamps after main's newest. Not a PROS-02 defect.
+
+**Where this report and the other round 3 report agree and differ.** Same verdict (no open defect, status review), same numbers where both measured (51/51, protected 253/253, gates 16 fail equal to main, 57 warn against 56). This one adds the migration check across all 64 branch heads, the 266 city probes, the auth matrix, row counts and checksums of all 126 seeded tables, the contract diff against main and four mutants; the other one ran the full backend suite on branch and main, a scan of every letter and mark code point, and reasoned about `pattern` leaving the contract. Both list the same note-level items (marks cap is per run, white space collapsed by the transform).
+
+**NOT RUN**
+- The full backend suite on `8c0c57b`: the brief's list for this round did not include it. Unblocked by running the lead's `ns/ns.sh` namespace runner with a worktree at `8c0c57b` on a machine with several GB free (this machine had 2 GB free at the start of this run).
+- V9 through the real WAWU ID login: the stand-in was used. Unblocked by `scripts/local/up.sh` with a real `wawu-id` and its keys.
+- A paid message through a real payment: reply-time rows are made by SQL in the specs. Unblocked by Fintava or Flutterwave sandbox keys.
+- The admin approval route: listings approved by SQL in the specs. Unblocked by `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD`.
+- V5 and V6: the task has no artboards and no screen.
+
+## Lead merge note (7 Oct 2026)
+
+Merged on the independent round 3 report (no open defect). Backend PR #47 merged as 2dbd38d after the lead's full suite on a trial merge with SCHOOLS-02, HOME-09 and ME-11 (the only failure not caused by load was SCHOOLS-02's, not this task's; rate limits 22 of 22 on the host). The city stays a bare city (lead ruling R2-4). The mobile contract is regenerated from backend main at merge.
 
 ## Owner sign-off
 

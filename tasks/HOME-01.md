@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-07, HOME-02, EXPLORE-02, ME-14, WALLET-02, WALLET-05, BILLS-01, HOME-09, EVENTS-01, LEGAL-02, SCHOOLS-03, ME-02, ME-04, KYC-05]
+depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-02, HOME-09, KYC-05]
 decisions: [R-2, R-6]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H1, H11, H36]
@@ -17,6 +17,22 @@ artboards: [H1, H11, H36]
 
 Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
 
+
+## Lead note (7 Oct 2026): built now, with what exists (R-41)
+
+The owner asked for every tab to be built now. This hub is built before the tasks below; each entry on it that leads to one of their screens is left out here and added, exactly as drawn, by that task (R-27, R-41). Everything else on the artboards is built as drawn.
+
+- HOME-07 (Feed: course, template, creator and professional cards, empty and error)
+- EXPLORE-02 (All creators and search)
+- ME-14 (Saved, purchases and notifications)
+- WALLET-02 (Send to a WAWU user)
+- WALLET-05 (Add money and withdraw)
+- BILLS-01 (Pay a bill: choose biller, meter and amount)
+- EVENTS-01 (Events: list, filters, detail, sold out)
+- LEGAL-02 (Legal: chat, profiling, brief, consultant joins)
+- SCHOOLS-03 (Schools: directory, school page, course page, no results)
+- ME-02 (Someone else's profile and following)
+- ME-04 (Create: pick a format, upload, preview)
 
 ## Read first
 
