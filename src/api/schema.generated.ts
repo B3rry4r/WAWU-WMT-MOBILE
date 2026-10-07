@@ -6065,6 +6065,68 @@ export interface components {
             effectiveDate: string;
             sections: components["schemas"]["PolicySectionDto"][];
         };
+        CreateSchoolDto: {
+            name: string;
+            /** @enum {string} */
+            category: "tech" | "business" | "creative" | "languages" | "vocational";
+            location: string;
+            foundedYear?: number | null;
+            expertise?: string[];
+            about: string;
+            /** @description A storage URL. Empty or null clears it. */
+            logo?: string | null;
+            applyUrl?: string | null;
+            reportEmail: string;
+        };
+        UpdateSchoolDto: {
+            name?: string;
+            /** @enum {string} */
+            category?: "tech" | "business" | "creative" | "languages" | "vocational";
+            location?: string;
+            foundedYear?: number | null;
+            expertise?: string[];
+            about?: string;
+            logo?: string | null;
+            applyUrl?: string | null;
+            reportEmail?: string;
+            hidden?: boolean;
+        };
+        CreateCourseDto: {
+            /** @description Whole kobo (CONVENTIONS section 1). */
+            priceKobo: number;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "online" | "in_person" | "hybrid";
+            syllabus?: string[];
+            outcomes?: string[];
+        };
+        UpdateCourseDto: {
+            priceKobo?: number;
+            title?: string;
+            weeks?: number;
+            /** @enum {string} */
+            mode?: "online" | "in_person" | "hybrid";
+            syllabus?: string[];
+            outcomes?: string[];
+            hidden?: boolean;
+        };
+        CreateIntakeDto: {
+            /** @description The day classes start, YYYY-MM-DD. */
+            startDate: string;
+            schedule: string;
+            /** @description Null or empty for an online intake. */
+            location?: string | null;
+            capacity: number;
+        };
+        UpdateIntakeDto: {
+            startDate?: string;
+            schedule?: string;
+            location?: string | null;
+            /** @description Never below the seats already taken. */
+            capacity?: number;
+            hidden?: boolean;
+        };
         PutFeaturedCreatorDto: {
             /** @description Rail order, lowest first. Default 0. */
             position?: number;
@@ -8020,6 +8082,66 @@ export interface components {
             title: string | null;
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
+        };
+        AdminSchoolSummary: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            hidden: boolean;
+            courseCount: number;
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminSchoolsPage: {
+            items: components["schemas"]["AdminSchoolSummary"][];
+            nextCursor: string | null;
+        };
+        AdminIntakeView: {
+            id: string;
+            courseId: string;
+            startDate: string;
+            schedule: string;
+            location: string | null;
+            capacity: number;
+            seatsTaken: number;
+            hidden: boolean;
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminCourseView: {
+            id: string;
+            schoolId: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            syllabus: string[];
+            outcomes: string[];
+            priceKobo: number;
+            hidden: boolean;
+            intakes: components["schemas"]["AdminIntakeView"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminSchoolDetail: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            foundedYear: number | null;
+            expertise: string[];
+            about: string;
+            logo: string | null;
+            applyUrl: string | null;
+            reportEmail: string;
+            hidden: boolean;
+            courses: components["schemas"]["AdminCourseView"][];
+            createdAt: string;
+            updatedAt: string;
         };
         AdCardView: {
             id: string;
@@ -13448,6 +13570,7 @@ export interface operations {
                         category: string;
                         handle: string;
                         bio: string;
+                        languages: string[];
                         tagline: string;
                         field: string;
                         topics: string[];
@@ -13455,7 +13578,6 @@ export interface operations {
                         fullUntil: string | null;
                         yearsExperience: number;
                         sessions: number;
-                        languages: string[];
                     }[] | {
                         items: {
                             verification: string;
@@ -13464,6 +13586,7 @@ export interface operations {
                             category: string;
                             handle: string;
                             bio: string;
+                            languages: string[];
                             tagline: string;
                             field: string;
                             topics: string[];
@@ -13471,7 +13594,6 @@ export interface operations {
                             fullUntil: string | null;
                             yearsExperience: number;
                             sessions: number;
-                            languages: string[];
                         }[];
                         currentPage: number;
                         perPage: number;
@@ -13504,6 +13626,7 @@ export interface operations {
                         category: string;
                         handle: string;
                         bio: string;
+                        languages: string[];
                         tagline: string;
                         field: string;
                         topics: string[];
@@ -13511,7 +13634,6 @@ export interface operations {
                         fullUntil: string | null;
                         yearsExperience: number;
                         sessions: number;
-                        languages: string[];
                     };
                 };
             };
@@ -14067,10 +14189,10 @@ export interface operations {
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
@@ -14106,10 +14228,10 @@ export interface operations {
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
@@ -14151,10 +14273,10 @@ export interface operations {
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";

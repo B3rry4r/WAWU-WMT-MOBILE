@@ -9499,6 +9499,12 @@
              "bio": {
               "type": "string"
              },
+             "languages": {
+              "type": "array",
+              "items": {
+               "type": "string"
+              }
+             },
              "tagline": {
               "type": "string"
              },
@@ -9523,12 +9529,6 @@
              },
              "sessions": {
               "type": "number"
-             },
-             "languages": {
-              "type": "array",
-              "items": {
-               "type": "string"
-              }
              }
             },
             "required": [
@@ -9538,14 +9538,14 @@
              "category",
              "handle",
              "bio",
+             "languages",
              "tagline",
              "field",
              "topics",
              "openForRequests",
              "fullUntil",
              "yearsExperience",
-             "sessions",
-             "languages"
+             "sessions"
             ]
            }
           },
@@ -9575,6 +9575,12 @@
                "bio": {
                 "type": "string"
                },
+               "languages": {
+                "type": "array",
+                "items": {
+                 "type": "string"
+                }
+               },
                "tagline": {
                 "type": "string"
                },
@@ -9599,12 +9605,6 @@
                },
                "sessions": {
                 "type": "number"
-               },
-               "languages": {
-                "type": "array",
-                "items": {
-                 "type": "string"
-                }
                }
               },
               "required": [
@@ -9614,14 +9614,14 @@
                "category",
                "handle",
                "bio",
+               "languages",
                "tagline",
                "field",
                "topics",
                "openForRequests",
                "fullUntil",
                "yearsExperience",
-               "sessions",
-               "languages"
+               "sessions"
               ]
              }
             },
@@ -9693,6 +9693,12 @@
           "bio": {
            "type": "string"
           },
+          "languages": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
           "tagline": {
            "type": "string"
           },
@@ -9717,12 +9723,6 @@
           },
           "sessions": {
            "type": "number"
-          },
-          "languages": {
-           "type": "array",
-           "items": {
-            "type": "string"
-           }
           }
          },
          "required": [
@@ -9732,14 +9732,14 @@
           "category",
           "handle",
           "bio",
+          "languages",
           "tagline",
           "field",
           "topics",
           "openForRequests",
           "fullUntil",
           "yearsExperience",
-          "sessions",
-          "languages"
+          "sessions"
          ]
         }
        }
@@ -11814,6 +11814,9 @@
           "headline": {
            "type": "string"
           },
+          "about": {
+           "type": "string"
+          },
           "submittedAt": {
            "type": "string",
            "format": "date-time"
@@ -11821,9 +11824,6 @@
           "rejectionReason": {
            "type": "string",
            "nullable": true
-          },
-          "about": {
-           "type": "string"
           },
           "services": {
            "type": "array",
@@ -11859,9 +11859,9 @@
           "documents",
           "wawuUserId",
           "headline",
+          "about",
           "submittedAt",
           "rejectionReason",
-          "about",
           "services",
           "credentialKind",
           "licenceNumber",
@@ -11923,6 +11923,9 @@
            "headline": {
             "type": "string"
            },
+           "about": {
+            "type": "string"
+           },
            "submittedAt": {
             "type": "string",
             "format": "date-time"
@@ -11930,9 +11933,6 @@
            "rejectionReason": {
             "type": "string",
             "nullable": true
-           },
-           "about": {
-            "type": "string"
            },
            "services": {
             "type": "array",
@@ -11968,9 +11968,9 @@
            "documents",
            "wawuUserId",
            "headline",
+           "about",
            "submittedAt",
            "rejectionReason",
-           "about",
            "services",
            "credentialKind",
            "licenceNumber",
@@ -12050,6 +12050,9 @@
           "headline": {
            "type": "string"
           },
+          "about": {
+           "type": "string"
+          },
           "submittedAt": {
            "type": "string",
            "format": "date-time"
@@ -12057,9 +12060,6 @@
           "rejectionReason": {
            "type": "string",
            "nullable": true
-          },
-          "about": {
-           "type": "string"
           },
           "services": {
            "type": "array",
@@ -12095,9 +12095,9 @@
           "documents",
           "wawuUserId",
           "headline",
+          "about",
           "submittedAt",
           "rejectionReason",
-          "about",
           "services",
           "credentialKind",
           "licenceNumber",
@@ -23485,6 +23485,266 @@
      "sections"
     ]
    },
+   "CreateSchoolDto": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "tech",
+       "business",
+       "creative",
+       "languages",
+       "vocational"
+      ]
+     },
+     "location": {
+      "type": "string",
+      "maxLength": 120
+     },
+     "foundedYear": {
+      "type": "number",
+      "nullable": true,
+      "minimum": 1800,
+      "maximum": 2026
+     },
+     "expertise": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "about": {
+      "type": "string",
+      "maxLength": 4000
+     },
+     "logo": {
+      "type": "string",
+      "nullable": true,
+      "description": "A storage URL. Empty or null clears it.",
+      "maxLength": 2000
+     },
+     "applyUrl": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 2000
+     },
+     "reportEmail": {
+      "type": "string",
+      "maxLength": 254
+     }
+    },
+    "required": [
+     "name",
+     "category",
+     "location",
+     "about",
+     "reportEmail"
+    ]
+   },
+   "UpdateSchoolDto": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "tech",
+       "business",
+       "creative",
+       "languages",
+       "vocational"
+      ]
+     },
+     "location": {
+      "type": "string",
+      "maxLength": 120
+     },
+     "foundedYear": {
+      "type": "number",
+      "nullable": true,
+      "minimum": 1800,
+      "maximum": 2026
+     },
+     "expertise": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "about": {
+      "type": "string",
+      "maxLength": 4000
+     },
+     "logo": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 2000
+     },
+     "applyUrl": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 2000
+     },
+     "reportEmail": {
+      "type": "string",
+      "maxLength": 254
+     },
+     "hidden": {
+      "type": "boolean"
+     }
+    }
+   },
+   "CreateCourseDto": {
+    "type": "object",
+    "properties": {
+     "priceKobo": {
+      "type": "integer",
+      "description": "Whole kobo (CONVENTIONS section 1).",
+      "minimum": 0,
+      "maximum": 2147483647
+     },
+     "title": {
+      "type": "string",
+      "maxLength": 160
+     },
+     "weeks": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 520
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "online",
+       "in_person",
+       "hybrid"
+      ]
+     },
+     "syllabus": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "outcomes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "priceKobo",
+     "title",
+     "weeks",
+     "mode"
+    ]
+   },
+   "UpdateCourseDto": {
+    "type": "object",
+    "properties": {
+     "priceKobo": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+     },
+     "title": {
+      "type": "string",
+      "maxLength": 160
+     },
+     "weeks": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 520
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "online",
+       "in_person",
+       "hybrid"
+      ]
+     },
+     "syllabus": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "outcomes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "hidden": {
+      "type": "boolean"
+     }
+    }
+   },
+   "CreateIntakeDto": {
+    "type": "object",
+    "properties": {
+     "startDate": {
+      "type": "string",
+      "description": "The day classes start, YYYY-MM-DD."
+     },
+     "schedule": {
+      "type": "string",
+      "maxLength": 120
+     },
+     "location": {
+      "type": "string",
+      "nullable": true,
+      "description": "Null or empty for an online intake.",
+      "maxLength": 120
+     },
+     "capacity": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100000
+     }
+    },
+    "required": [
+     "startDate",
+     "schedule",
+     "capacity"
+    ]
+   },
+   "UpdateIntakeDto": {
+    "type": "object",
+    "properties": {
+     "startDate": {
+      "type": "string"
+     },
+     "schedule": {
+      "type": "string",
+      "maxLength": 120
+     },
+     "location": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 120
+     },
+     "capacity": {
+      "type": "number",
+      "description": "Never below the seats already taken.",
+      "minimum": 1,
+      "maximum": 100000
+     },
+     "hidden": {
+      "type": "boolean"
+     }
+    }
+   },
    "PutFeaturedCreatorDto": {
     "type": "object",
     "properties": {
@@ -31734,6 +31994,272 @@
      "title",
      "effectiveDate",
      "sections"
+    ]
+   },
+   "AdminSchoolSummary": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "business",
+       "tech",
+       "creative",
+       "languages",
+       "vocational"
+      ]
+     },
+     "location": {
+      "type": "string"
+     },
+     "logo": {
+      "type": "string",
+      "nullable": true
+     },
+     "hidden": {
+      "type": "boolean"
+     },
+     "courseCount": {
+      "type": "number"
+     },
+     "createdAt": {
+      "type": "string"
+     },
+     "updatedAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "category",
+     "location",
+     "logo",
+     "hidden",
+     "courseCount",
+     "createdAt",
+     "updatedAt"
+    ]
+   },
+   "AdminSchoolsPage": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminSchoolSummary"
+      }
+     },
+     "nextCursor": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "items",
+     "nextCursor"
+    ]
+   },
+   "AdminIntakeView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "courseId": {
+      "type": "string"
+     },
+     "startDate": {
+      "type": "string"
+     },
+     "schedule": {
+      "type": "string"
+     },
+     "location": {
+      "type": "string",
+      "nullable": true
+     },
+     "capacity": {
+      "type": "number"
+     },
+     "seatsTaken": {
+      "type": "number"
+     },
+     "hidden": {
+      "type": "boolean"
+     },
+     "createdAt": {
+      "type": "string"
+     },
+     "updatedAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "courseId",
+     "startDate",
+     "schedule",
+     "location",
+     "capacity",
+     "seatsTaken",
+     "hidden",
+     "createdAt",
+     "updatedAt"
+    ]
+   },
+   "AdminCourseView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "schoolId": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "weeks": {
+      "type": "number"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "in_person",
+       "online",
+       "hybrid"
+      ]
+     },
+     "syllabus": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "outcomes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "priceKobo": {
+      "type": "integer"
+     },
+     "hidden": {
+      "type": "boolean"
+     },
+     "intakes": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminIntakeView"
+      }
+     },
+     "createdAt": {
+      "type": "string"
+     },
+     "updatedAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "schoolId",
+     "title",
+     "weeks",
+     "mode",
+     "syllabus",
+     "outcomes",
+     "priceKobo",
+     "hidden",
+     "intakes",
+     "createdAt",
+     "updatedAt"
+    ]
+   },
+   "AdminSchoolDetail": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "business",
+       "tech",
+       "creative",
+       "languages",
+       "vocational"
+      ]
+     },
+     "location": {
+      "type": "string"
+     },
+     "foundedYear": {
+      "type": "number",
+      "nullable": true
+     },
+     "expertise": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "about": {
+      "type": "string"
+     },
+     "logo": {
+      "type": "string",
+      "nullable": true
+     },
+     "applyUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "reportEmail": {
+      "type": "string"
+     },
+     "hidden": {
+      "type": "boolean"
+     },
+     "courses": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminCourseView"
+      }
+     },
+     "createdAt": {
+      "type": "string"
+     },
+     "updatedAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "category",
+     "location",
+     "foundedYear",
+     "expertise",
+     "about",
+     "logo",
+     "applyUrl",
+     "reportEmail",
+     "hidden",
+     "courses",
+     "createdAt",
+     "updatedAt"
     ]
    },
    "AdCardView": {
