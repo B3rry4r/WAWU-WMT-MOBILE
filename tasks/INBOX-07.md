@@ -7,7 +7,7 @@ order: 23
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [INBOX-01, INBOX-06, INBOX-08]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -228,3 +228,102 @@ None.
 - **Re-run, fresh seeded `wawu_hub_test`, own Postgres and own mock on :4001 inside a private network namespace (suites that hardcode :4001 need it):** tsc 0; eslint on `src/inbox` and `app.module.ts` 0 problems; whole repo per file and rule against a real checkout of the new main `872cf45`: 4,519 problems on both, no difference; gates main 799 files, 16 fail, 51 warn, 76 accepted / branch 807 files, the same 16, 51, 76; baseline 108 owned; full `test:contract` main 162 suites, 3,900 passed, 3 skipped, 31 failed / branch 163 suites, 3,936 passed (the 36 inbox tests), 3 skipped, 31 failed, the same 4 suites on both (`receipt-units`, `data-export` without `ADMIN_JWT_SECRET`, `fintava-stall`, `hub-rate-limits`: the last two fail on main too and are timing tests); inbox spec alone twice 36 of 36 with all-table counts equal to the fresh seed; route-shadowing and protected-route specs 261 of 261; `run.sh --fresh` all 244 required pass; `contract:build` no diff. Mobile `npm run check`: exit 0, 43 suites, 754 tests, gates 195 files 0 fail (no cold-cache timeout).
 - **INBOX-02 effect:** my 34 unread-agreement states (spec compares each row with `GET /chats`, `GET /communities/mine` and `GET /paid-dm/threads` on the merged code) all pass: no drift.
 
+
+## Verifier report, round 3
+
+Verifier, 7 Oct 2026, independent of the builder: I wrote none of this branch. Backend `wmt/INBOX-07` at `5f14adf` (the merge of backend main `872cf45`, train 1, plus the migration rename), mobile at `1bdd1c4` (builder addendum 2). Backend main `872cf45` and mobile main `6df916d` had not moved at the end of the run (re-fetched). No figure in "Builder addendum 2" was relied on; every number below was taken by me on these heads.
+
+Setup: detached worktrees `vi07r3b` (backend), `vi07r3m` (mobile report) and, for trials only, `vi07r3mt` (mobile merged with mobile main) and `vi07r3x` (backend main), all removed at the end; databases `vi07r3_*`, all dropped; Hub on :5181 and mock WAWU ID on :4001, both inside a private network namespace (one probe run on the host used the mock on :5181 for `hub-rate-limits`, see V1). `ws` 8.22.0 was copied from the mobile `node_modules` and `@types/ws` 8.18.2 fetched with `npm pack` (its sha512 equals the lockfile's) into my backend worktree only; without them `nest build` fails on `src/live/` (13 errors), a missing-package fact of the shared `node_modules`, not of the branch. Machine load stayed at 10 to 48 throughout (other sessions). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vi07r3/` (probe scripts in `probes/`, namespace scripts and outputs in `ns/`: `out/`, `out3/`, `outfull/`, `outrerun*/`; `migrate-*.log`, `gates-*.txt`, `tsc.log`, `eslint-changed.log`, `contract-build2.log`, `mobile-check-trial*.log`, `merge-*.txt`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Merge commit `5f14adf` | **passed** | See "1. The merge". |
+| Migration order and apply | **passed** | See "2. The migration". |
+| V1 Gates | **passed** (timing notes in "5") | tsc 0; eslint 0 problems on the 9 changed `.ts`; gates the same 16 fail lines as main; tripwire 0; `contract:build` leaves `contract/openapi.json` byte for byte. |
+| V2 Contract (core proofs re-run) | **passed** | See "3". Spec 36 of 36 twice; cursor harness output identical to round 2; capability check as written over HTTP. |
+| V3 Regression | **passed** | Protected suite 253 of 253 (`all 244 required tests passed`), lock and suite files identical to main; route-shadowing, `data-export-map` and `account-data-map` pass (53 tests with the inbox spec). |
+| V4 Field trace (unread, concurrency, blocks, INBOX-02 read marks) | **passed** | See "3" and "4". |
+
+### 1. The merge
+
+- `5f14adf` has parents `1d137e7` (the verified round 2 head) and `872cf45` (main). `git merge-tree` of those two parents conflicts in exactly `contract/openapi.json` and `src/app.module.ts`. The tree of `5f14adf` differs from that automatic merge in exactly three paths: those two files and the renamed migration. Nothing else changed.
+- `src/app.module.ts`: against main the merge adds only the `InboxModule` import and its list entry (after `LiveModule`); against `1d137e7` it removes no line (main's `TgifModule` and `LiveModule` are kept). `prisma/schema.prisma` and `scripts/enrich-contract.js` auto-merged; against main they add only the one `@@index([communityId, sentAt])` and the `src/inbox` entry in the nullable-ref list.
+- The 8 files under `src/inbox/` and its spec are byte-identical to the round 2 verified head `1d137e7`. So the round 2 mutant results (17 of 17 non-equivalent killed) still describe this code; I did not re-run them (see NOT RUN).
+- Against main the branch changes 13 files (2,256 insertions, 1 deletion): the same 13 as round 2; nothing in `src/direct-message`, `src/chat`, `src/community` or `src/live`.
+- `npm run contract:build` (build, emit, enrich) on `5f14adf`: `git diff` empty, sha256 of `contract/openapi.json` equal to the committed blob. Against main's file: 2 paths added (`/api/hub/inbox`, `/api/hub/inbox/unread`), 8 schemas added (`InboxPreview`, `InboxPerson`, `InboxChat`, `InboxPaidDm`, `InboxCommunity`, `InboxItem`, `InboxPage`, `InboxUnread`), 0 paths or schemas removed, 0 changed.
+
+### 2. The migration
+
+- Backend `origin/main` newest folder: `20261006100000_chat_read_at`. This branch's `20261007090000_inbox_feed_index` sorts after it. Folders on other remote branches and not on main, listed with `git ls-tree`: ADS-05 `20261006133700_ads_event_counts`, ADS-06 `20261006130000_admin_ads_audit`, LEGAL-01 `20261006210000_legal_assistant` (the latest of them), LEGAL-01-b `20261006120000_legal_assistant_chat`, EVENTS-05 `20261006110000_event_door_staff`, SCHOOLS-02 `20261006100000_schools_hidden`, EVENTS-02 `20261003180000_event_hybrid_conference_concert`, PROS-02 `20261004150000_professional_location`, MONEY-17 `20261004140800_wallet_payments` and `20261004140900_transaction_pin_inflight`. (HOME-10, HOME-11, EXPLORE-03 and INBOX-02 appear only under their pre-train names, which main already carries renamed.) Ours sorts after every one, so it applies last whatever order they land in; no name collides. The folder is a pure rename of the verified one (same SQL: one `CREATE INDEX`); the old name is gone from the tree.
+- Fresh database, `prisma migrate deploy`: 97 migrations applied, exit 0, ours last; `migrate status` "up to date". `prisma migrate diff` (database to schema): exactly one statement, `DROP INDEX "ContentPiece_specializations_idx"`, which main's own schema and migrations produce identically (checked on a database built from `origin/main`): nothing from this branch. `pg_indexes` holds `CommunityMessage_communityId_sentAt_idx` as btree on `("communityId", "sentAt")`.
+- A database already at main's newest (96 migrations): `migrate status` lists only `20261007090000_inbox_feed_index` as unapplied, `migrate deploy` applies it, exit 0, status then up to date.
+- Union trial (extra, not asked): main plus every unmerged branch migration above plus ours, 106 folders, applied in order on one fresh database: exit 0. LEGAL-01 and LEGAL-01-b cannot both be applied (both add `LegalIntake.channel`, error 42701); that is between those two branches, not this one, and I left LEGAL-01-b out of the union run.
+
+### 3. Core proofs re-run on the merged head
+
+Probes over HTTP against the built server (`node dist/src/main.js`, production mode) with real mock-WAWU-ID tokens, rotating loopback source addresses so the per-IP throttle never decided a result.
+
+- **The spec:** `src/inbox` 36 of 36, twice on a fresh seeded database (32.9 s then 15.3 s), and again with `data-export-map`, `account-data-map`, `route-shadowing` (4 suites, 53 tests, all pass) and in the full run.
+- **Cursor attack harness** (round 2's scripts, copied, not committed): `fuzz-decode.js` on the compiled decoder, `p-cursor-http.js`, `p-paging.js`, `p-replay.js`, `p-g190.js`, `p-g190b.js`: output **identical to round 2** for the decoder (75 forms refused, 24 accepted, 5,536 of 5,984 single-character substitutions refused, 200,000 random cursors 0 accepted, 0 non-400 throws apart from the `undefined` argument that HTTP never passes), the HTTP codes (25 forged shapes 400, 8 well-formed 200), the G-190 lines and the paging lines. Paging: 77 rows (12 chats, 12 rooms, 10 fan and 10 creator paid threads on one millisecond, 30 chats at +-1 ms and +-1 s, 3 empty host rooms last, a pending join and a never-written chat that must not show) paged at sizes 1, 2, 3, 5, 7, 10, 13, 20, 33, 50, 99, 100: exact order of an independent sort, no repeat, none lost; `kind` filters at sizes 1, 4, 100 (42, 15, 20 rows); rows arriving, tying and deleted mid-paging: 0 duplicates, 0 lost. A cursor from person A used by person B returned only B's own 3 rows, 0 of A's. The Hub log of that run holds 6 errors, all inside `PaidDmService` (INBOX-08's G-190, unchanged by this branch) and none from `src/inbox`.
+- **Capability check as written** (`p-unread.js`): two chats from other people and one waiting paid question: `GET /inbox/unread` 3 (`chats 2, paidDms 1`); after `POST /chats/:id/read` on one chat: 2; after the creator answers through `POST /paid-dm/questions/:id/replies`: 1. Rows sum equals the badge.
+- **Concurrency:** 5 senders x 20 messages sent at once to one person while 4 pollers read `/inbox/unread` and `/inbox?limit=100`: 100 of 100 stored (201), badge monotonic and never above 100 over 9 samples (load 40 limited the sample count), final badge 100, rows sum 100, `GET /chats` sum 100. Read marks racing with sends: first run 100 stored, final badge equals an independent SQL count equals `GET /chats` sum (46 each); `p-race.js` twice more (4 senders x 25 messages with read marks posted in a loop on every chat meanwhile): 100 stored and final badge, rows sum, independent SQL and `/chats` sum all equal (0, then 2); 33 and 29 samples, all within 0..100.
+- **Blocks:** a person blocked after a room had messages from them: the member's room count drops from 4 to 2 and equals `GET /communities/mine` (2); the preview is not from the blocked person; a chat created before the block stays listed with `canMessage: false` and unread 1, equal to `GET /chats`; a send after the block is 403; a blocked asker's paid thread still shows and counts. So the inbox hides blocked people where the source routes do (rooms) and keeps what they keep (chats and paid threads): G-188 unchanged.
+
+### 4. INBOX-02 and the unread counts
+
+INBOX-02's WebSocket (`/api/hub/live`) is push only: the client sends `auth` and `ping` frames, and a read goes through `POST /chats/:id/read`, which publishes `chat.read` only when the mark moved (`advanceMark` now returns whether it did and writes `readAt`). So the route to compare is that one. `p-live3.js`, run twice on a fresh database, 28 of 28 and 28 of 28 checks pass:
+
+- Two senders write three and one messages to A; A's socket receives all four `chat.message` pushes; at that moment `/inbox/unread` is 4, the inbox rows sum 4 and `/chats` sum 4.
+- A reads chat B up to its second message: `chat.read` arrives on A's socket (`mine: true`) and on the sender's (`mine: false`, the read tick) with `lastReadMessageId` equal to that message; at the moment it arrives the inbox row for B is 1, equal to `GET /chats` (1), and equal to a SQL count of B's messages after the event's `lastReadAt`; badge 2.
+- An older `messageId` after a newer one changes no count and publishes no event; a repeated full read changes nothing and publishes nothing.
+- Read in full: badge 1. A replies in the other chat (a send moves the sender's own mark, INBOX-06 behaviour): that chat clears to 0 in both `/inbox` and `/chats`. The other person reads: their badge 0.
+- Socket closed, two messages arrive: the badge counts 2 with no socket at all (the badge never depends on the socket). After reconnect `GET /live/catch-up` returns the 2 missed messages and the badge still says 2. Catch-up returns only the other person's read marks (`wawuUserId: not me`, by design in `live-catch-up.service.ts`), here the sender's mark equal to the message A sent last; A's own marks are not in it, A reads them from the list and the badge, which agree.
+- Rooms: member with 2 unread, host posts through `POST /communities/:id/messages` (201), `community.message` arrives, badge 3 equals `GET /communities/mine` (3); `POST /communities/:id/read` gives 0. INBOX-02 does not touch `CommunityReadMarker`.
+- (My first draft of this probe expected the catch-up to carry A's own mark; it failed, and the reason was my expectation, not the code: see the live-catch-up lines above. The corrected script is what passed; the first run's output is in `ns/out/p-live.out`, `ns/out2/`.)
+
+### 5. Standing checks
+
+- **tsc** `--noEmit`: exit 0. **eslint** (no `--fix`) on the 9 changed `.ts` files (`app.module.ts`, 7 under `src/inbox`, the spec): 0 problems.
+- **Gates** `python3 scripts/gates/run.py`: main (a `git archive` of `origin/main`, 799 files) and branch (807 files): the same 16 fail, 51 warn, 76 accepted; the output differs only in the files-scanned line; the same 16 fail lines. The inbox adds no warning and no marker.
+- **Tripwire:** 0 added lines match `test/protected-routes|src/protected-routes|compareShape|protected-registry`; `src/protected-routes`, `test/protected-routes` and `.pipeline/protected-registry.json` are identical to main.
+- **Protected suite** `scripts/protected-routes/run.sh --fresh HEAD` (lock from `origin/main` `872cf45`, own namespace, own mock): 253 of 253 (2 suites), "all 244 required tests passed", exit 0.
+- **Full suite**, own namespace, own fresh migrated and seeded database, mock on :4001 inside it (listener checked: mine before, during, after), CI admin secrets set, load average 10 to 48: 163 suites, 3,970 tests: 156 suites passed, 7 failed; 3,796 passed, 170 failed, 4 skipped (the extra skip against the builder's 3 is a conditional one such as `hasPooler` in `live-hardening`, environment). The 7 failing suites and what happened when each was rerun alone on a fresh seed:
+  - `hub-rate-limits.contract.spec.ts`: fails inside the namespace as the rules say; **on the host network (mock on :5181, fresh seed) 22 of 22 pass**.
+  - `ledger-status`, `recipient-throttle` and `admin-payments`: 5 s test or hook timeouts, and one `fetch failed` to the mock, at load 24 to 48; the four suites run together alone: 100 tests passed, 1 failed (the `money-pin` timeout below), so these three pass.
+  - `money-pin.contract.spec.ts`: one 5 s timeout ("no output carries the digits", argon2 work) in the full run and in 1 of 3 alone runs on this branch (passed 25 of 25 in the other two); the same test failed the same way in 1 of 3 runs on `origin/main`'s code at the same load (a first main attempt was void: my main worktree had no key file; the second, valid, set is the one counted). A timing test under load, not this branch.
+  - `fintava-stall.spec.ts`: 1 test over its 1,000 ms limit (1,039 ms) at load 19 to 27, then 120 of 120 on the branch and on main when rerun at load 13 to 15. Reported both ways, as the rules ask.
+  - `receipt-units.spec.ts`: 1 test over its 300 ms drawing bound (336 ms) at load 27, then 43 of 43 on the branch and on main at load 13.
+  No failure names `src/inbox`; the builder's own figure of 31 failed in 4 suites differs from mine because the load differed and I set `ADMIN_JWT_SECRET` (so `data-export` passed).
+- **Route shadowing** (`route-shadowing.regression.spec.ts`), **`data-export-map.spec.ts`** and **`account-data-map.spec.ts`** (every model a person owns is decided in `data-export-sections.ts`; the branch adds no model, only an index): pass, in the full run and alone.
+- **Mobile:** this branch's mobile diff is documentation only (`BACKEND_GAPS.md`, `SHARED-CHANGES.md`, `docs/LOG.md`, `docs/PROGRESS.md`, this file), `src/api` untouched. Trial merge of `origin/wmt/INBOX-07` with mobile `origin/main` (`6df916d`), in a throwaway worktree, not pushed: **conflicts in `BACKEND_GAPS.md` and `docs/PROGRESS.md`**, nothing else. `BACKEND_GAPS.md`: both sides add rows at one place (main's G-150 to G-193 and this branch's G-186 to G-190), resolved by keeping all rows in id order (G-186 to G-190 between G-185 and G-191); `docs/PROGRESS.md` is generated, resolved by regenerating. No gap id collides: G-186 to G-190 are used by no open mobile branch. On that merged trial: `npm run check` first run exit 1 with the one load timeout (`OpenWalletScreen.test.tsx` "a user sees a loading view first...", 20 s, while the backend full suite ran beside it; the `open-wallet` folder alone 177 of 177), then exit 0: 43 of 43 suites, 754 of 754 tests, gates 195 files 0 fail, 207 tasks. The merge is local and was deleted.
+
+### Findings
+
+**defect**
+
+None open.
+
+**differs-for-recorded-reason**
+
+None.
+
+**unclear (for the owner or the lead, none blocks the merge)**
+
+- Mobile merge order: whoever merges this branch to mobile main hits conflicts in `BACKEND_GAPS.md` (keep every row, id order) and `docs/PROGRESS.md` (regenerate) against `6df916d`. Mechanical.
+- LEGAL-01 and LEGAL-01-b both add `LegalIntake.channel`; they cannot both reach main. Not this task; the lead may want to know before the train.
+- G-186 to G-190 stand as in round 2 (no WAWU thread or Money rows yet; a fan sees no badge for a creator's reply; blocked people hidden in rooms only; empty chats and empty hosted rooms; INBOX-08's cursor 500 on a forged time, still open for an owner, unchanged by this branch and still confirmed: `GET /paid-dm/threads` 500 for year 10000, year 0 and a negative year; `GET /paid-dm/queue` 500 for year 0 and negative).
+- The decoder leniencies noted in round 2 (key case and shape, base64 envelope) are unchanged: no 500, no wrong page, no leak.
+
+### What was not run
+
+- V5 to V8: not in this task's passes.
+- V9 live seam against the real wawu-id: not re-run. The code under `src/inbox` is byte-identical to the round 1 and 2 verified code and the merge touched none of it; the probes used the mock WAWU ID with the Hub's internal service key set, so names came from the lookup route. Unblocked by: `scripts/local/up.sh --detach` against wawu-id `origin/main` on free ports with its own database prefix (about 1 GB and several minutes).
+- Round 2's mutants on the merged head: not re-run; `src/inbox` is byte-identical to the verified `1d137e7`, so the 17 killed and 2 equivalent survivors transfer. Unblocked by: `python3 scratchpad/vi07/mutate.py` against this worktree.
+- One uninterrupted green full backend suite: not obtained, load was 10 to 48 throughout; the 7 failing suites were rerun alone as listed, all green apart from the same timing tests passing or failing by load on main as well. Unblocked by: the same command (`scratchpad/vi07r3/ns/ns.sh` with `inner-full.sh`) at a load average under 4.
+- A full-suite run of `origin/main` for a like-for-like total: not run; main was compared suite by suite for `money-pin`, `fintava-stall` and `receipt-units` only. Unblocked by: the same script against a `git archive` of main.
+- "All-table counts equal to the fresh seed after the inbox spec" (a builder claim): not checked by me. Unblocked by: row counts per table of a freshly seeded database before and after `npx jest src/inbox`.
+- INBOX-02's WebSocket under sustained load and its reconnect storms: out of this task; I checked only that its read marks and pushes agree with the unread counts.
+
+### Check on this report's own head
+
+`npm run check` on the branch with my report (task file, LOG line, regenerated `docs/PROGRESS.md`): first run exit 1, 42 of 43 suites, the one failure the same `OpenWalletScreen.test.tsx` loading-view test timing out at 20 s on a cold cache (load 8 to 15; that folder passes alone, 177 of 177); second run **exit 0**: 43 of 43 suites, 754 of 754 tests, gates 195 files 0 fail, 207 tasks.

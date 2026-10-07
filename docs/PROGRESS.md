@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 35 | 29 | 31 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 1 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 1 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · INBOX-07 · Verified round 3 (independent) on the merged head (backend `5f14adf`, mobile `1bdd1c4`): the train merge changed only `app.module.ts`, the regenerated contract and the migration rename (`20261007090000_inbox_feed_index`, sorts after main and every open branch, applies on a fresh database and on one already at main's newest); `contract:build` leaves the contract unchanged; spec 36 of 36, round 2's cursor harness output identical, unread counts agree with INBOX-02's read marks and pushes, protected suite 253 of 253, gates the same 16 fail as main; no defect open, status review. Merging to mobile main conflicts in `BACKEND_GAPS.md` and `docs/PROGRESS.md` (mechanical).
 - 6 Oct 2026 · INBOX-07 · Verified round 2 (independent; the branch's earlier "round 2" section was written by the builder's session and was not relied on): D1 closed (forged cursor times outside Postgres' range, other date forms, offsets, leap seconds, tampered base64 and 10,000 character cursors all 400, none 500); capability check 3 then 2 then 1; 77 tied rows page exactly at 12 page sizes; badge exact under 100 concurrent messages; 17 of 17 non-equivalent mutants killed; G-190 judged not a defect of this task but still unassigned; protected 253 of 253; no defect open, status review.
 - 6 Oct 2026 · INBOX-07 · Builder update (status verifying): backend main train `872cf45` merged into the branch (`app.module.ts` kept both sides, contract regenerated); migration renamed to `20261007090000_inbox_feed_index` (later than every migration on main and open branches); full suite equals main plus the 36 inbox tests.
 - 5 Oct 2026 · INBOX-07 · Builder round 2 (status verifying): verifier defect D1 fixed (a forged inbox cursor outside Postgres' time range now answers 400, with tests); INBOX-08's same flaw filed as G-190.
@@ -111,4 +112,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · OPS-07 · Built (docs only, status verifying): `docs/WEB-ONLY-FEATURES.md` lists all 89 web-only rows as not in the app; none has a web-port task because none exists (all "no task yet"); 19 money and data groups covering 39 rows for the web team; 6 rows the app may already have; row 70 unclassified.
 - 4 Oct 2026 · KYC-04 · Verifier round 3: no defect open, status review. The already-set sentence is true for both an own set that landed (answer twice) and an earlier PIN, never says the typed PIN was not saved, and a jest test pins it; A8 re-reads on every return and never offers a stale Create, A9 never opens with live keys on a cached wallet, Back is disabled while checking, the two-line line keeps its icon beside its text. 64 of 64 seam runs ok in both themes (66 runs), 18 of 18 earlier mutants killed, 11 of 12 new ones killed (1 equivalent), `npm run check` exit 0 on the branch and on a trial merge with main 9b4f9ac, secret scan 0 hits. One low `unclear` finding (a failed background read mid-entry shows the error view; no phone trigger today).
 - 4 Oct 2026 · KYC-04 · Builder round 3 on `wmt/KYC-04`: the already-set end now says only what is true whether this person's own set landed first or a PIN was set before ("Your account has a transaction PIN. If you just set it, it is the one you typed. If you set one before, that earlier PIN still approves payments.", BRIEF section 12 and G-116 updated); A8 reads the wallet again on every return and A9 trusts no cached wallet while its own read is out; Back is disabled during "Checking your PIN"; the unknown-state line keeps its icon beside its text; the second entry leaves state when the request answers. New jest kills the verifier's M4 and M6, M1 to M15 and V4, V6, V10 all killed plus 8 new mutants; 40 seam runs (20 scenarios, light and dark) all ok. Status verifying.
-- 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
