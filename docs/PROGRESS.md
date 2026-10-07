@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 87 of 186.**
+**Launch tasks done: 88 of 186.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 69 | 0 | 23 | 26 |
+| todo | 68 | 0 | 23 | 26 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 48 | 27 | 11 | 5 |
+| done | 49 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -106,6 +106,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
+- [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
@@ -130,14 +131,14 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · WALLET-01 · Round 2: Back from A26 always lands on the tab (D1), the balance shrinks to fit and is never cut off (D2), the screen tests end cleanly (D3), non-canvas fixtures and two new cases (D4); status verifying.
 - 7 Oct 2026 · WALLET-01 · Verified (independent session, mobile 972d411, backend main 3041887, real WAWU ID): R-41 passed (no bills entry, every left-out entry's screen unbuilt), V4 passed on two seeds of non-canvas values (balance from the provider read, debits as totals with fees), V6 and V9 passed, V5 failed: D1 Back from a button-opened A26 reopens A26, D2 the balance is cut off with "…" at 320 px from six naira digits, D3 WalletScreen.test.tsx holds jest about 5 minutes in band (a React Query gc timer), D4 4 of 14 mutants survive; status back to building.
 - 7 Oct 2026 · WALLET-01 · Built: the Wallet tab (W1 with W4, W5, W6, plus no wallet, opening, frozen and error states) against GET /money/wallet, /money/wallet/balance and /money/transactions; entries to screens not built yet left out (R-41); G-310, G-311; status verifying.
+- 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.
+- 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
+- 7 Oct 2026 · ME-01 · Builder round 2, status verifying: D1 (veil on bare tiles), D2 (a failed refresh keeps the profile), D3 (new account's empty shelf) fixed; U1, U2 per the lead's rulings; tests for the four surviving mutants.
+- 7 Oct 2026 · ME-01 · Verifier report (independent session, mobile `39f0627`, backend main `3041887`, real wawu-id `fb8717e`): V1, R-41, V4 and V9 passed (every value traced with non-canvas data, a save on M8 read back from the Hub and the database and shown on M10, signed in through the app against the real WAWU ID); 13 own mutants, 9 killed, 4 survived (test gaps); three defects: D1 a free piece without a picture has an unreadable white view count in light mode, D2 a failed refresh after a save replaces the loaded profile with "Your profile did not load", D3 a brand-new account (no profile row) gets "Your content did not load" for ever because the content route answers 404; status building.
+- 7 Oct 2026 · ME-01 · Built, status verifying: the Me tab (M1, M2, M4, M10) on the Hub's profile, counts, content, services and works; QR, Menu, the tick prompt, Create and the Services taps left out for their tasks (R-41); G-290 to G-292.
 - 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
 - 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
 - 7 Oct 2026 · SCHOOLS-02 · Merged: schools admin (create, edit, hide schools and courses), backend PR #70; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · SCHOOLS-02 · Builder fix after the lead's full suite (backend `7233309`): `priceKobo` on CreateCourseDto and UpdateCourseDto is an integer in the contract (money-contract failed on `7d6b14c`, passes now), main merged into both branches, migration restamped `20261012100000_schools_hidden` after PROS-02's; schools and money-contract specs 67/67, protected 253/253, gates equal to main; status review.
-- 7 Oct 2026 · ME-11 · Merged: featured works (2 s name lookup limit, 8-media wording, Remove for the owner, placeholder for broken pictures), backend PR #79.
-- 7 Oct 2026 · HOME-09 · Merged: the TGIF reader (no em-dashes in the book, no overlap down to 320 px, shared buttons, honest share wording), backend PR #80; Story and Save wait for the next development build.
-- 7 Oct 2026 · PROS-02 · Merged: professionals backend (location, categories), backend PR #47; Developer 3's task, merged by the lead.
-- 7 Oct 2026 · AUTH-08 · Merged: wawu-id PR #7 (fb8717e). Refresh and sign-out find the token by its id; follow-ups F-1 (sweep inside the rotation transaction), F-3 and F-4 recorded in the task.
