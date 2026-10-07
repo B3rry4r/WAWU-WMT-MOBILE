@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 69 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
 
 ## Done
@@ -126,6 +123,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
 - 7 Oct 2026 · ME-01 · Builder round 2, status verifying: D1 (veil on bare tiles), D2 (a failed refresh keeps the profile), D3 (new account's empty shelf) fixed; U1, U2 per the lead's rulings; tests for the four surviving mutants.
 - 7 Oct 2026 · ME-01 · Verifier report (independent session, mobile `39f0627`, backend main `3041887`, real wawu-id `fb8717e`): V1, R-41, V4 and V9 passed (every value traced with non-canvas data, a save on M8 read back from the Hub and the database and shown on M10, signed in through the app against the real WAWU ID); 13 own mutants, 9 killed, 4 survived (test gaps); three defects: D1 a free piece without a picture has an unreadable white view count in light mode, D2 a failed refresh after a save replaces the loaded profile with "Your profile did not load", D3 a brand-new account (no profile row) gets "Your content did not load" for ever because the content route answers 404; status building.
 - 7 Oct 2026 · ME-01 · Built, status verifying: the Me tab (M1, M2, M4, M10) on the Hub's profile, counts, content, services and works; QR, Menu, the tick prompt, Create and the Services taps left out for their tasks (R-41); G-290 to G-292.
@@ -140,4 +138,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-09 · Merged: the TGIF reader (no em-dashes in the book, no overlap down to 320 px, shared buttons, honest share wording), backend PR #80; Story and Save wait for the next development build.
 - 7 Oct 2026 · PROS-02 · Merged: professionals backend (location, categories), backend PR #47; Developer 3's task, merged by the lead.
 - 7 Oct 2026 · AUTH-08 · Merged: wawu-id PR #7 (fb8717e). Refresh and sign-out find the token by its id; follow-ups F-1 (sweep inside the rotation transaction), F-3 and F-4 recorded in the task.
-- 7 Oct 2026 · AUTH-08 · Verifier report (independent session, wawu-id `dd4326a` against `4715d17`): every security probe held over real HTTP with tokens minted on main and served by the branch (reuse of a rotated token old and new, a signed-out token cannot be revived through the null-jti fallback, a bad hash falls through to nothing, another account's jti refused with the account filter really applied, a password change ends null-jti and new rows, 40-trial races with both orders exercised, the sweep never touches a live row or another account and is bounded at 50, code rolled back to main still honours new rows); 200 rows carrying a jti answer refresh in 400 ms and sign-out in 186 ms (main 43 s and 26 s), but while 200 unexpired pre-change rows exist a late-position old token still takes 41.7 s and any refusal 29 to 54 s (the old path, gone within 30 days); migration clean over existing rows, diff empty, documented rollback works and re-applies; tsc 0, eslint 43 equal, session-security spec byte-identical, contract unchanged, `test:session-local` 38 of 38, `test:refresh-local` 29 of 29; the Expo app signed in and refreshed after expiry against the branch (sign-out not drivable in the app, none exists); 12 own mutants (10 killed by probes, 1 by the race spec, 2 equivalent); one low note (a refresh answers 500 if the expired-row sweep statement fails, F-1); status review.
