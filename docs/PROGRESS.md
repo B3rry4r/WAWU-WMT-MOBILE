@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 24 | 29 |
-| building | 0 | 0 | 1 | 0 |
+| building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 1 | 0 |
 | done | 43 | 27 | 9 | 3 |
 
-## Being built (or fixing verifier findings)
+## Built and verified, waiting for the owner's sign-off
 
 - [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
 
@@ -106,13 +106,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked, [HOME-09](../tasks/HOME-09.md) TGIF reader, [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work
-- **Developer 2:** [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
+- **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
 - **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).
 - 7 Oct 2026 · ADS-06 · Round 3 built, awaiting verification: merged main (ADS-03, ADS-04, ADS-05 and the rest are on it); migration renamed to `20261008100000_admin_ads_audit` (after every migration on main and open branches); the admin views now carry ADS-05's counts (`delivery`, per-day `days`, summary totals by status and placement, one set-based read per list page; G-194 and G-200 closed); ADS-05's G-198 and SHARED-CHANGES row #3 corrected; D1 (year 0000) fixed.
 - 6 Oct 2026 · ADS-06 · Verifier (independent): V1, V2, V3, V4 and V9 run; pause stops serving on the next request on the real ADS-04 code (trial merge clean onto main and ADS-04; 372 specs pass there), every route refuses user, expired, forged, refresh and wrong-role tokens (176 of 176), 25 of 25 own mutants killed, protected suite 253 of 253 and the lock unchanged; one low defect open (D1: a time in the year 0000 is a 500 on create, edit and the list filters), status building.
 - 6 Oct 2026 · ADS-06 · Built, awaiting verification: admin ad endpoints (backend branch `wmt/ADS-06`): create, edit, schedule, pause, resume, end, delete a draft, list, detail and report under `/api/hub/admin/ads`, with an audit row for every change (migration `20261008100000_admin_ads_audit`); a pause stops serving on the next request; views, taps and skips were wired in round 3 from ADS-05's counts (G-194 closed).
@@ -127,4 +128,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · EVENTS-05 · Fix round 1 built, status verifying (backend 59a0600, main a94f338 merged): D1 blocked people are a 404 when added as door staff, D2 door labels unique under concurrency (lock per event, taken label is 409), D3 test that another event's staff row cannot be removed; migration renamed 20261005090000, EventDoorStaff decided in the export map. Backend spec 24 tests, protected 253/253, gates 16/34/76 as main.
 - 6 Oct 2026 · EVENTS-05 · Verified: 3 defects, status building (backend eb2a835 on a055b4f, mobile c1f30ee; main is now a94f338). D1: a host can add someone as door staff although one has blocked the other, and sees their name, handle and avatar (SETTINGS-04 answers such a lookup 404). D2: door labels are not unique, so three people added at once all read "Door 1". D3: removing a staff row of another event is not pinned by a test (mutant survives). Passed: door staff and other organisers refused on every organiser route, removed staff lose access at once, a forged or another event's code is `invalid` with identical answers, 20 parallel scans of one ticket give 1 valid and 19 already used (in process and over HTTP on the built Hub), no phone, email or BVN in any new response, counts equal ticket rows; protected 253/253, full suite 133 suites with 5 load failures that pass alone, 13 of 13 own mutants killed by the two specs together. Trial merge on main: one conflict (module imports), then `data-export-map.spec` fails until `EventDoorStaff` is decided in the export map, and the migration folder must be renamed to sort after `20261004141500`.
 - 3 Oct 2026 · EVENTS-05 · Built (backend eb2a835, status verifying): sold per hosted event (E17) counted as the dashboard counts it, shared links with tickets sold, door staff a host adds by WAWU id or handle, and a door check-in for host or staff with the holder's name and "already used by Door 1"; one additive table; protected 253/253, full suite 126 of 133 suites (7 pinned to :4001 not runnable here).
-- 7 Oct 2026 · EVENTS-02 · Verified round 3, status review (backend wmt/EVENTS-02 206814c): F5 migration folder sorts after every ref, F7 G-230 unique on all branches, F8 non-object ticket types 400 (36 requests, nothing saved, spec fails without the decorator); F6 reproduced on main 4892a59 and split out by the lead; protected 253/253, gates equal to main (16 fail), clean trial merge with main and EVENTS-05, mobile check exit 0. No open defect.
