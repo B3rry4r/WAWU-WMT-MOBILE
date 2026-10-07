@@ -9,11 +9,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 30 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 0 | 0 | 0 | 1 |
 | done | 43 | 27 | 9 | 1 |
 
-## Being verified
+## Built and verified, waiting for the owner's sign-off
 
 - [EVENTS-05](../tasks/EVENTS-05.md) Running an event: organiser numbers and door staff (Developer 3)
 
@@ -111,6 +111,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · EVENTS-05 · Verified round 4 (backend 554b831, mobile 5346c7f; both mains already merged, trial merges no-ops): status review, no defect open. T1 closed (mutants L6 and L7 each fail one test; 27 of 27 unmutated), no non-test change beyond main's (12 files, 10 byte-equal to round 3 by added lines, only the spec +55), migration `20261007100000_event_door_staff` sorts after `20261007090000_inbox_feed_index` and before `20261007120000_legal_assistant`, fresh DB applies and seeds with only main's known index drift, gates 16 fail / 51 warn / 76 accepted equal to main, protected suite 253/253, event-ticketing and both map specs 36/36, tripwire 0, mobile check exit 0 with the contract equal to the backend's. Live on the built Hub: staff 403 on host routes, removed staff 403, 10 parallel scans of one ticket give exactly 1 valid. One info item, T2: a whitespace-only label on a put-back survives a mutant (no stated rule). NOT RUN: full backend suite, paid Flutterwave ticket, Fintava.
 - 7 Oct 2026 · EVENTS-05 · Fix round 3 built, status verifying (backend 554b831, main 4892a59 merged): T1 closed with two tests (a put-back whose old label is taken gets a free one; a padded custom label is stored trimmed and collides), each failing with its mutant (L6, L7) applied; no production code changed. Migration renamed 20261007100000 after main's newest; mobile contract re-synced from the branch. Spec 27/27, protected 253/253, gates 16/51/76 as main, mobile check exit 0 (797 tests).
 - 6 Oct 2026 · EVENTS-05 · Verified round 3 (backend e0a3501, mobile aa2d7e7 on 0b755ad): status building for one low test gap, T1 (the builder's 25 tests do not pin a put-back whose old label is taken, nor the trimming of a custom label; both killed by the round 2 verifier's spec, behaviour correct). D1, D2, D3, D4, M1b, M2, M3 closed: 12 rounds of parallel adds racing removals on the built Hub never shared a label, 250 at once all distinct, lowest free number reused, uniqueness is the advisory lock (the table has no constraint). Migration sorts after main's 20261006100000 and shares no name or stamp with the 68 other open branches. 16 mutants of my own: 16 killed by the union, 14 by the builder's spec. Protected 253/253, gates 16/51/76 as main, full suite 0 real failures.
 - 6 Oct 2026 · EVENTS-05 · Second independent round 2 verify (backend 59a0600, mobile e42a809; backend main moved to 872cf45 during the round; the builder's round 3 e0a3501 landed meanwhile): D1 closed (a block either way is the same 404 as a missing account, by id and handle, nothing stored), D2 closed for uniqueness (advisory lock per event: 36 of 36 rounds of 6 parallel adds all distinct, two Hub instances, 60 at once, same on the built Hub), D3 and M2 closed; M1 open against 872cf45 on 59a0600. Two low items on 59a0600: D5 (default label is `taken + 1`, not the lowest free) and T1 (three parts of the D2 fix unpinned by the builder's 24 tests). Delta check of e0a3501: M1 and D5 closed, 86 tests green, T1 shrinks to one unpinned case (a re-added person's old label taken by someone else, my mutant F8); status left at the builder's verifying.
@@ -125,4 +126,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-02 · Round 2 built, awaiting verification: the offer bar wraps instead of clipping (D1), H4's book and H5's message fit between the tabs and the words from 320 x 568 to 430 x 932 and keep clear of the rail (D2), tests pin the once-per-screen view (M7), a locked piece never playing the full file (M12) and the frost at the preview end (M18), the "46 min" rounding rule is written down (U2); gaps renumbered G-215 to G-220 after the merge with main.
 - 6 Oct 2026 · HOME-02 · Verified (independent session, `b4b32bd` on backend `872cf45`): V1, V4, V6, V9 passed, V5 failed on two defects (the offer bar cuts "Pay from wallet" and its title at prices above about ₦2,500; at 360 x 640 the PDF book overlaps the free-pages bar), 17 of 20 mutants caught; back to building.
 - 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-215 to G-220.
-- 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
