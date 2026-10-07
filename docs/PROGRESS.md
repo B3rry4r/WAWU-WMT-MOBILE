@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 35 | 30 | 30 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 38 | 23 | 4 | 1 |
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [LEGAL-01](../tasks/LEGAL-01.md) Legal starts as a chat (You)
 
@@ -97,6 +97,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-201 (no dashboard screen for the consultant's half), G-202.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
@@ -111,4 +112,3 @@ From `docs/LOG.md`, newest first.
 - 4 Oct 2026 · KYC-04 · Verifier round 2: round 1's two defects are fixed as ruled (a failed re-read keeps A10 with Try again, a session change drops everything and leaves the flow; 14 of 14 probes pass, round 1's 3 surviving mutants killed, 15 new mutants 11 killed or caught by my probes), 1 defect open on A10: when the person's own set landed and its answer arrived twice, the already-set end says the PIN just typed was not saved though the stored hash is that PIN (reproduced on the real seam, both themes). Status back to building. `npm run check` exit 0 on the branch and on a trial merge with main 7c6c7b2; secret scan 0 hits.
 - 4 Oct 2026 · KYC-04 · Verifier: 2 defects open on A10, status back to building. 1: after an unanswered set whose re-read also fails, the next set answers `pin_already_set` and the flow ends as done though the stored PIN is the earlier one (reproduced on the real seam). 2: a session end that keeps the app signed in (refresh answering another account) does not start A9 and A10 over: the first account's digits join the second's PIN and the screen sticks on "Setting your PIN". V1, V4 to V9 otherwise passed; 11 mutants (7 killed); secret scan 0 hits.
 - 4 Oct 2026 · KYC-04 · Builder round 2 on `wmt/KYC-04`: A10 never ends as set on a PIN the server held before (a lost answer with a failed check stays on A10 with Try again; `409 pin_already_set` says the earlier PIN stands, G-116), and A9 and A10 drop everything and leave the flow on any session change; 7 new tests fail on round 1's code, 10 of 10 mutants killed; status verifying.
-- 4 Oct 2026 · KYC-04 · Open your wallet step 3 built on `wmt/KYC-04`, mobile only: A7 hands the open account to A8 (bank name, account name and number with Copy from `GET /money/wallet`, Limit row only when the server sends one), A9 and A10 set the transaction PIN (`POST /money/pin`, a mismatch in W11's wrong-PIN look, wording in the brief), then back where the flow started; G-114, G-115, SHARED-CHANGES KYC-04 #1, #2, R1; status verifying.

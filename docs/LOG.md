@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-201 (no dashboard screen for the consultant's half), G-202.
 - 4 Oct 2026 · SETTINGS-02 · Merged to main by the lead (a4f1148, Developer 1's task): About, terms and privacy policy; backend PR #65 (a94f338); migration renamed to 20261004141500 and one gate marker fixed at merge. OTA update follows.
 - 4 Oct 2026 · KYC-04 · Merged to main by the lead (eac8297): Open your wallet step 3, 'Your wallet is open', create and confirm the transaction PIN; three rounds, no defect open. OTA update follows.
