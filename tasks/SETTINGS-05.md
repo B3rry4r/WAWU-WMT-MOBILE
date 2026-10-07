@@ -1,7 +1,7 @@
 ---
 id: SETTINGS-05
 title: Delete account
-owner: DEV
+owner: YOU
 area: SETTINGS
 order: 179
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [Z6, Z7, Z8]
 ---
 # SETTINGS-05 · Delete account
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

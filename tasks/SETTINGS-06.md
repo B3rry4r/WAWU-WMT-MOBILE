@@ -1,7 +1,7 @@
 ---
 id: SETTINGS-06
 title: Delete account in the Hub: empty wallet first, freeze, restore on cancel
-owner: DEV
+owner: YOU
 area: SETTINGS
 order: 175
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # SETTINGS-06 · Delete account in the Hub: empty wallet first, freeze, restore on cancel
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

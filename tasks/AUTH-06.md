@@ -1,7 +1,7 @@
 ---
 id: AUTH-06
 title: After sign-up: creator setup, interests, people to follow
-owner: DEV
+owner: YOU
 area: AUTH
 order: 173
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [A11, A12, A13]
 ---
 # AUTH-06 · After sign-up: creator setup, interests, people to follow
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 
