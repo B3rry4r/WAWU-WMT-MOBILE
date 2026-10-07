@@ -82,6 +82,7 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
         testID="inbox-error"
         title="Couldn’t load your inbox"
         message={isApiError(inbox.error) ? inbox.error.message : 'Something went wrong. Try again.'}
+        icon={isApiError(inbox.error) && inbox.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
         onRetry={() => void refetch()}
       />
     );

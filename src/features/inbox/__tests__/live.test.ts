@@ -151,6 +151,25 @@ describe('the live connection', () => {
     expect(events.map((e) => e.type)).toEqual(['chat.message', 'community.message', 'chat.read', 'chat.read']);
   });
 
+  it('drops a repeat of any of the last 500 messages, not only the newest', async () => {
+    const { client, events } = make();
+    client.retain();
+    await connectAndReady();
+    for (let i = 0; i < 500; i += 1) last().say(message(`m${i}`, `c${i}`));
+    last().say(message('m0', 'again'));
+    expect(events).toHaveLength(500);
+  });
+
+  it('drops a room message that arrives twice, as the catch-up resends one', async () => {
+    const { client, events } = make();
+    client.retain();
+    await connectAndReady();
+    last().say(roomMessage('r1', 'c1'));
+    last().say(roomMessage('r1', 'c1'));
+    last().say(roomMessage('r2', 'c2'));
+    expect(events).toHaveLength(2);
+  });
+
   it('answers the server only with auth and ping, and drops a socket that stops answering ping', async () => {
     const { client } = make();
     client.retain();
@@ -283,6 +302,31 @@ describe('reconnecting', () => {
     last().drop(4401);
     await flush();
     expect(refreshToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts 4401s afresh after each good connection: one on a good token never refreshes', async () => {
+    random = 1;
+    const { client } = make();
+    client.retain();
+    await connectAndReady();
+    last().drop(4401);
+    await advance(2_000);
+    await connectAndReady();
+    last().drop(4401);
+    await flush();
+    expect(refreshToken).not.toHaveBeenCalled();
+  });
+
+  it('waits at least half a second before the first retry, to the millisecond', async () => {
+    random = 0;
+    const { client } = make();
+    client.retain();
+    await connectAndReady();
+    last().drop(1006);
+    await advance(499);
+    expect(FakeSocket.all).toHaveLength(1);
+    await advance(1);
+    expect(FakeSocket.all).toHaveLength(2);
   });
 
   it('stops when the refresh is refused: the session is over', async () => {

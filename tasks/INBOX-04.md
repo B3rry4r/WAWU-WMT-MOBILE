@@ -7,7 +7,7 @@ order: 57
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [INBOX-07, INBOX-02, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -158,6 +158,13 @@ Verifier, 7 Oct 2026, independent of the builder. Head `88a24f8` (mobile main `d
 - A brand-new registered account (sign-up sends a phone code through Fintava SMS, off limits): the empty state was shown for the seeded account with no conversations, a real zero-row answer.
 - The Hub's own "21st unsigned socket" 429: driven by a stand-in refusal of the upgrade, same client path.
 - Status: `building`, because D2 is open. D1 needs the lead's ordering decision.
+
+### Builder addendum, round 2 (7 Oct 2026)
+
+Branch `wmt/INBOX-04` at 5ed2bb7 plus newest main (c0fb4e3 and later) merged. D2 fixed in `InboxSkeleton.tsx` only: the lines column has `minWidth: 0` and each bar `maxWidth: '100%'`, so the bars shrink with the row. Measured in the web build (stub Hub for the skeleton only, no real backend needed; `scripts` not added): bars past their column and past the time pill's left edge, before 44 px and 31 px at 320, after 0 and 0 at 320, 390 and 430, both themes; 390 and 430 screenshots (I36 and I35) are pixel-identical before and after. Screenshots: `/tmp/claude-0/-home-user/4c848b71-b74a-5dd5-8510-8e4464e23881/scratchpad/inbox04-builder/I36-{320,390,430}-{light,dark}-{before,after}.png`, same for I35.
+- **Tests added (50 inbox tests, was 43):** `InboxSkeleton.test.tsx` (style rules; jest has no layout, so the measurement is the web run above), seen-set limit (E1), room message sent twice (E2, deduped by message id), live event refetches an on-screen list (E4), 4401 count reset at ready (E5), 500 ms floor to the millisecond (E7). Each mutant (E1, E2, E4, E5, E7, and D2 itself) re-applied in place: the new test failed, then restored (git status clean of mutants).
+- **I5:** a non-network error (500) now uses `TriangleAlert`; a cut network keeps `WifiOff`. **I6** left: the second `GET /inbox/unread` comes from the socket's first `ready` reading again; skipping it could miss an event that arrives while the first read is in flight. **I3, I4** left as notes.
+- **D1** (blank list under a correct badge until INBOX-19, 10, 18, 5, 20 add row renderers) is an ordering note for the lead: those should land with or before this branch.
 
 ## Owner sign-off
 

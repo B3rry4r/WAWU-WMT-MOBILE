@@ -13,11 +13,11 @@ export function InboxSkeleton({ testID = 'inbox-loading' }: { testID?: string })
       {Array.from({ length: skeletonMetrics.rows }, (_, i) => (
         <View key={i} style={styles.row}>
           <Skeleton width={skeletonMetrics.avatar} height={skeletonMetrics.avatar} radius={radius.chip} />
-          <View style={styles.lines}>
-            <Skeleton width={skeletonMetrics.name[0]} height={skeletonMetrics.name[1]} radius={skeletonMetrics.lineRadius} />
-            <Skeleton width={skeletonMetrics.preview[0]} height={skeletonMetrics.preview[1]} radius={skeletonMetrics.lineRadius} />
+          <View testID={`inbox-skeleton-lines-${i}`} style={styles.lines}>
+            <Skeleton testID={`inbox-skeleton-name-${i}`} width={skeletonMetrics.name[0]} height={skeletonMetrics.name[1]} radius={skeletonMetrics.lineRadius} style={styles.bar} />
+            <Skeleton testID={`inbox-skeleton-preview-${i}`} width={skeletonMetrics.preview[0]} height={skeletonMetrics.preview[1]} radius={skeletonMetrics.lineRadius} style={styles.bar} />
           </View>
-          <Skeleton width={skeletonMetrics.time[0]} height={skeletonMetrics.time[1]} radius={skeletonMetrics.lineRadius} />
+          <Skeleton testID={`inbox-skeleton-time-${i}`} width={skeletonMetrics.time[0]} height={skeletonMetrics.time[1]} radius={skeletonMetrics.lineRadius} />
         </View>
       ))}
     </LoadingView>
@@ -26,5 +26,7 @@ export function InboxSkeleton({ testID = 'inbox-loading' }: { testID?: string })
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: skeletonMetrics.between, paddingVertical: skeletonMetrics.padV },
-  lines: { flex: 1, gap: skeletonMetrics.lines },
+  /** The words take what the circle and the time leave, so on a narrow phone the bars shrink with the row instead of running under the time. At 390 they keep the design's 140 and 210. */
+  lines: { flex: 1, minWidth: 0, gap: skeletonMetrics.lines },
+  bar: { maxWidth: '100%' },
 });

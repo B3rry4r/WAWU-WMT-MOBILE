@@ -119,6 +119,21 @@ describe('the Inbox tab badge', () => {
     await rtl.waitFor(() => expect(shown()).toBe(4), { timeout: 3000 });
   });
 
+  it('a live event reads again every inbox list that is on screen', async () => {
+    const { QueryObserver } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
+    const { inboxListKey } = require('../api') as typeof import('../api');
+    await adoptSession({ accessToken: token, refreshToken: 'r' });
+    await rtl.render(<Badge />);
+    const list = jest.fn(async () => ({ items: [], nextCursor: null }));
+    const watch = new QueryObserver(queryClient, { queryKey: inboxListKey('all'), queryFn: list });
+    const stop = watch.subscribe(() => undefined);
+    await rtl.waitFor(() => expect(list).toHaveBeenCalledTimes(1));
+    const socket = await connect();
+    await rtl.act(async () => socket.say(message('m1', 'c1')));
+    await rtl.waitFor(() => expect(list).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    stop();
+  });
+
   it('a burst of messages is read as one change', async () => {
     unreadTotals = [1, 6];
     await adoptSession({ accessToken: token, refreshToken: 'r' });
