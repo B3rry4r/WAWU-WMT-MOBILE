@@ -1,7 +1,7 @@
 ---
 id: EXPLORE-01
 title: Explore: browse, categories, loading, empty
-owner: DEV
+owner: YOU
 area: EXPLORE
 order: 110
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [X1, X15, X2, X3, X13, X14]
 ---
 # EXPLORE-01 · Explore: browse, categories, loading, empty
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

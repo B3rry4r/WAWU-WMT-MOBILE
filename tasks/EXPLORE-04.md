@@ -1,7 +1,7 @@
 ---
 id: EXPLORE-04
 title: Search: creators, communities, no results, failed
-owner: DEV
+owner: YOU
 area: EXPLORE
 order: 106
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [X8, X9, X10, X11, X12]
 ---
 # EXPLORE-04 · Search: creators, communities, no results, failed
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

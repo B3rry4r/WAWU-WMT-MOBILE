@@ -1,7 +1,7 @@
 ---
 id: HOME-12
 title: Unlock from the feed
-owner: DEV
+owner: YOU
 area: HOME
 order: 127
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [H14, H15, H16, H17, H18]
 ---
 # HOME-12 · Unlock from the feed
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 
