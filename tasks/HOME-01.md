@@ -7,7 +7,7 @@ order: 170
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-02, HOME-09, KYC-05]
 decisions: [R-2, R-6]
 passes: [V1, V4, V5, V6, V9]
@@ -424,6 +424,49 @@ Everything was stopped, the database dropped and the backend worktree removed. T
 **Checks.** `npm run check` as one command, exit 0: typecheck and lint clean, jest 75 suites and 1,350 tests all passed, gates 346 files 0 findings, baseline 0, 212 tasks. The home suites hold 33 tests (12 model, 21 screen).
 
 **NOT RUN.** A phone (V10; unblocked by a development build reaching a Hub). The frozen state on screen (G-10). V5 is the verifier's.
+
+## Verifier report, round 3
+
+Verifier session, 7 Oct 2026. It is the same verifier as rounds 1 and 2, and it wrote none of HOME-01. This was a narrow re-check of head `737b96e`, which contains my round-2 report `8d81945` and main `21e0387`, checked out detached in `/home/user/wt/vh01m3`.
+
+**Live setup**
+- **Hub:** backend origin/main `3041887`, with its own `npm ci`, `prisma generate` and `nest build`, on a fresh migrated and seeded `vh01r3_hub_test`.
+- **WAWU ID:** the real one, `fb8717e`, with its own `npm ci` and build, on `vh01r3_id_test`.
+- **Ports:** Hub :5395, WAWU ID :5396, web export :5397 (`--clear`, private TMPDIR). The bundle names only `localhost:5395` and `localhost:5396` as API origins, and every request went to localhost:5395, :5396 or :5397.
+- **Sign-in:** through the app's own screens.
+- **Fintava:** unset. The ₦12,345.67 figure was written by the browser for the picture only.
+- **Evidence:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vh01r3/`: `shots/`, `pairs/H1-*`, `logs/batch.log`, `mutants.json`, `check-1.log` and `check-final.log`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| D3, Follow through MediaCard `action` | closed | `CreatorRail.tsx` passes `action={{ label, on: following, onPress, loading: busy, testID }}`. `FollowButton` is gone, and so are its look values (`follow`, `followWords`, `cardInk.following`, `cardInk.accent`, `todayWords.follow`). A grep of `src/features/home` finds no `footer=`, no `FollowButton` and none of those values. The two `Pressable`s left are `HomeTabs`' tabs (role `tab`, from round 1) and the whole TGIF card, the card's own press; neither is a button. In the browser, Follow and Following are the shared `Button`: primary, then glass (`H1-after-follow-dark.png`). |
+| The 13 vs 13.5 label and the Following ring | recorded, not this task's defect | SHARED-03 item 6 on main changes `MediaCard`'s `action` once, for every creator card, to the canvas's 13 label and to white at 20% with no ring. |
+| T1, T2 | both killed | Re-applied my round-2 survivors. N4 (Home figure at W1's 42) now fails "draws Home's figure at H1's 38". N7 (Home's glow without its own id) now fails "gives Home's money glow its own gradient id". |
+| A Follow and unfollow through the app | passed | **Follow:** the database had 0 rows before. `user` tapped Follow on Tamunotonye Briggs; one `FollowRelationship` row appeared (`…0001` to `…0003`, 20:03:51) and the Hub's `GET /creators` answered `following:true`. A fresh sign-in drew Following. **Unfollow:** `user` tapped Following; the button turned back to Follow, the database was back to 0 rows, and the Hub answered `following:false`. |
+| `npm run check` as one command | passed | Exit 0 on `737b96e` (`check-1.log`). Typecheck and lint clean; jest 75 of 75 suites and 1,350 of 1,350 tests; gates 9 run, 346 files scanned, 0 findings, baseline 0; 212 tasks. The final run on the report commit is the "V1 final" row. |
+| D1 still closed | passed | Effective eye opacity is 0.7 in both themes. The brightest eye pixel is (202,185,210) against the canvas's (203–204,185,212). |
+| D2 still closed | passed | `GET /tgif/2026-10-07` cut: the error card with Try again shows, and Try again with the read back brings the card (`tgif-day-error-*`, `tgif-day-retried-*`). |
+| Merge rows | passed | Every `SHARED-CHANGES.md` and `BACKEND_GAPS.md` row key from both parents (`8d81945` and `21e0387`) is in the merge, with no duplicate key. **The dropped HOME-09 F1 row was a true duplicate:** main had it as `open` and the branch as `done by HOME-01`, and every other column is byte-identical. The merge keeps the one row with the newer status. |
+| V5, H1 pairs re-classified | passed | `pairs/H1-{light,dark}.png`. **Matches:** the tab row, the money card (chip, eye at 70%, figure and faint kobo, ground, glow, shadow), the TGIF card, the heading, and the rail card size and spacing. **Recorded:** the Follow label and the Following ring (SHARED-03 item 6); the no-photo sunken block (the canvas's own `var(--surface-sunken)` fallback, with the photo itself in G-282); the left-outs (R-41, R-27; Scan under BRIEF "Not built at launch"); "2 min" (G-280). |
+| R-41 left-outs | unchanged | The same left-out table as round 1, and still no left-out entry on screen. |
+| Mutants | 23 of 25 killed | All 22 from round 2 are now killed, N4 and N7 included. Of 3 new mutants on the round-3 `action` wiring, 1 is killed (R3: the label never switches). 2 survive; see T3 and T4. |
+| V1 final | passed | `npm run check` on the report commit's tree, as one command (`check-final.log`): exit 0. Typecheck and lint clean; jest 75 of 75 suites, 1,350 of 1,350 tests; gates 346 files scanned, 0 findings, baseline 0; 212 tasks. |
+
+**Test gaps (not defects; the code is right today, as the Following capture shows):**
+- **T3:** mutant R1 survives. Passing `on: false` would draw Following on the accent instead of glass, and no test fails.
+- **T4:** mutant R2 survives. Passing `loading: false` would hide the spinner during a follow, and no test fails.
+
+**No defect is open, so the status is `review`.**
+
+**NOT RUN**
+
+| Item | What unblocks it |
+|---|---|
+| A live Fintava figure | A Hub run with `FINTAVA_API_KEY` set for `dev.fintavapay.com` |
+| The frozen state | G-10 |
+| A phone (V10 is not in this task's passes) | A development build reaching a Hub (`docs/LOCAL.md`) |
+
+Cleanup: the Hub, WAWU ID and web server (PIDs this session started) are stopped. `vh01r3_hub_test` and `vh01r3_id_test` are dropped. The backend and WAWU ID worktrees are removed, and the export and keys are deleted. `/home/user/wt/vh01m3` is removed after the push.
 
 ## Owner sign-off
 
