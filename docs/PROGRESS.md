@@ -8,12 +8,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 29 | 25 | 31 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 0 | 0 | 0 | 0 |
 | done | 41 | 27 | 9 | 1 |
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [HOME-02](../tasks/HOME-02.md) For you feed: video, photo set, book, locked, audio (You)
 
@@ -109,6 +109,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · HOME-02 · Round 2 built, awaiting verification: the offer bar wraps instead of clipping (D1), H4's book and H5's message fit between the tabs and the words from 320 x 568 to 430 x 932 and keep clear of the rail (D2), tests pin the once-per-screen view (M7), a locked piece never playing the full file (M12) and the frost at the preview end (M18), the "46 min" rounding rule is written down (U2); gaps renumbered G-215 to G-220 after the merge with main.
 - 6 Oct 2026 · HOME-02 · Verified (independent session, `b4b32bd` on backend `872cf45`): V1, V4, V6, V9 passed, V5 failed on two defects (the offer bar cuts "Pay from wallet" and its title at prices above about ₦2,500; at 360 x 640 the PDF book overlaps the free-pages bar), 17 of 20 mutants caught; back to building.
 - 6 Oct 2026 · HOME-02 · Built, awaiting verification (taken over from DEV by the lead's agents): the For you and Following feed on the Home tab (H2 video, H3 photo set, H4 PDF with free pages read in place, H5 locked preview that frosts, H6 audio with waveform) on `GET /feed/entries`; like, save, follow and view counting; loading, empty and error by real cause; web plays in place, phone players are SHARED-CHANGES HOME-02 #2; gaps G-215 to G-220.
 - 7 Oct 2026 · ME-10 · Merged to main in merge train 2 (backend PR #72): counts, saved, purchases with course progress, notifications with targets, monthly earnings; the lead's task.
@@ -123,4 +124,3 @@ From `docs/LOG.md`, newest first.
 - 6 Oct 2026 · RELEASE-01 · Builder round 3 (docs only, status verifying): the verifier's five defects fixed in `docs/release/` and `docs/BUILDS.md`: interests picked at sign-up declared (D5), the school receiving name, email and phone declared as shared and added to D-1 and the privacy-text list, marked to ship with the schools enrolment tasks (D6), bill inputs declared and marked frozen pending the wallet provider switch with nothing asserted about Nuvion (D7), `expo-file-system` and the two debug-only manifests added so the permissions table lists all six packages that declare any (D8), the Ads answer is a lead check against the shipped build (D9); Hub citation now a94f338; `docs/BUILDS.md` Fintava lines daggered.
 - 6 Oct 2026 · RELEASE-01 · Verified round 2 (independent, docs only): round 1 defects D1, D2 and D4 closed, D3 partly; the owner's corrections are applied as facts (organisation account, website and support email, the lead's icon checked pixel for pixel as a Lanczos downscale of `icon.png`, review account as a lead task, Fintava and Loma Bank daggered with none deleted, Nuvion only as the stated plan); no em-dash, limits 13, 69 and 2,134; 5 defects open (the form omits sign-up interests, the school receiving name, email and phone at enrolment and bill inputs, the permissions table omits `expo-file-system`, one owner-phrased Ads question); both capability checks and V10 NOT RUN; status building.
 - 6 Oct 2026 · RELEASE-01 · Builder round 2 (docs only, status verifying): the verifier's four defects fixed in `docs/release/` (B2 reworked now SETTINGS-02 is done, with what the privacy text must name; password, account type, licence number and event address declared; permissions table from the manifests; target API level 36 line) and the disclosure-and-consent, Flutterwave and review-line items kept as findings; owner update applied (organisation account, live website and support email, the lead's 512 x 512 icon in `docs/release/assets/`, the review account as a lead task, every Fintava and Loma Bank mention marked "to be replaced when the Nuvion switch lands", OWNER TO CONFIRM cut to six owner decisions).
-- 6 Oct 2026 · RELEASE-01 · Verified (independent, docs and `eas.json`): `eas.json` is one added line and `npm run check` exit 0; claims trace to DECISIONS and tasks, Naira only, no em-dash; data-safety evidence accurate against hub, wawu-id and `package.json`; B1, B3, B4, B5 real, B2 re-judged against SETTINGS-02 (`done`: in-app screens exist but the Hub serves JSON and no text is filled in, so a public page and the owner's text are still needed); 4 wording defects open (stale SETTINGS-02 status, password and licence number not in the form, one wrong permission line, no target API line); both capability checks and V10 NOT RUN; status building.
