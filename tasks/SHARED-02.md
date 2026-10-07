@@ -10,7 +10,7 @@ type: component
 status: todo
 depends_on: []
 decisions: [R-41]
-passes: [V1, V5]
+passes: [V1, V5, V6]
 artboards: []
 ---
 # SHARED-02 · Shared-change pass for the four tab hubs
