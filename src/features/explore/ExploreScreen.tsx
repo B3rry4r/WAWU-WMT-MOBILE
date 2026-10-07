@@ -9,6 +9,7 @@ import { queryClient } from '@/api/query';
 import { BrandMark } from '@/components/BrandMark';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { Toast } from '@/components/Toast';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { layout, space, useWawu } from '@/theme';
 
@@ -17,8 +18,7 @@ import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
 import { ExploreSkeleton } from './ExploreSkeleton';
-import { FollowNotice } from './FollowNotice';
-import { useFollow } from './follow';
+import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 
 /**
  * design/_gen/explore.js `topBar` and `body`: the bar pads 6 above, 20 at the sides and 14 below, the mark 34 wide;
@@ -141,7 +141,7 @@ export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
       >
         {body}
       </ScrollView>
-      <FollowNotice message={follow.notice} />
+      <Toast message={follow.notice} tone="alert" placement="bottom" lines={2} duration={FOLLOW_NOTICE_MS} onHide={follow.dismiss} testID="follow-notice" />
     </View>
   );
 }

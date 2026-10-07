@@ -239,6 +239,32 @@ describe('H1 · Today', () => {
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Follow'));
   });
 
+  it('draws a creator already followed as Following on white at 20%, not on the accent (T3: `on` reaches the button)', async () => {
+    const { darkColors, lightColors } = require('@/theme/tokens.generated') as typeof import('@/theme/tokens.generated');
+    answers[T.creators] = [creatorsPage([creator(ADA, 'Adaeze O.', { following: true }), creator(FUNMI, 'Funmi A.')])];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Following'));
+    const flat = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style);
+    const accents = [darkColors.accent, lightColors.accent];
+    expect(accents).not.toContain(flat(`today-follow-${ADA}`).backgroundColor);
+    expect(flat(`today-follow-${ADA}-veil`)).toMatchObject({ backgroundColor: '#FFFFFF', opacity: 0.2 });
+    // Beside it, a creator not followed keeps Follow on the accent, with no veil.
+    expect(accents).toContain(flat(`today-follow-${FUNMI}`).backgroundColor);
+    expect(screen.queryByTestId(`today-follow-${FUNMI}-veil`)).toBeNull();
+  });
+
+  it('shows the spinner on Follow while the follow is on its way, and only on that card (T4: `loading` reaches the button)', async () => {
+    answers[`POST /creators/${ADA}/follow`] = ['hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toBeTruthy());
+    expect(screen.queryByTestId('button-spinner')).toBeNull();
+    await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
+    await rtl.waitFor(() => expect(rtl.within(screen.getByTestId(`today-follow-${ADA}`)).getByTestId('button-spinner')).toBeTruthy());
+    expect(screen.getByTestId(`today-follow-${ADA}`).props.accessibilityState).toMatchObject({ busy: true });
+    expect(rtl.within(screen.getByTestId(`today-follow-${FUNMI}`)).queryByTestId('button-spinner')).toBeNull();
+    expect(screen.getByTestId(`today-follow-${FUNMI}`).props.accessibilityState).toMatchObject({ busy: false });
+  });
+
   it('a refused follow goes back and says so', async () => {
     answers[`POST /creators/${ADA}/follow`] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }];
     const screen = await boot();

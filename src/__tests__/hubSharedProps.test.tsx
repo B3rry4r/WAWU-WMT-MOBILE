@@ -92,9 +92,11 @@ describe('MediaCard action (EXPLORE-01 #3)', () => {
     expect(follow).toHaveBeenCalledTimes(1);
   });
 
-  it('draws the on state ("Following") on glass', async () => {
-    await render(<MediaCard layout="stacked" title="@adaeze" action={{ label: 'Following', on: true, onPress: () => undefined }} />);
-    expect(styleOf(screen.getByRole('button', { name: 'Following' })).backgroundColor).toBe(darkColors.surfaceGlass);
+  it('draws the on state ("Following") as cCard does: white at 20% over the picture, no ring (SHARED-03 item 6)', async () => {
+    await render(<MediaCard layout="stacked" title="@adaeze" action={{ label: 'Following', on: true, onPress: () => undefined, testID: 'follow' }} />);
+    const button = styleOf(screen.getByRole('button', { name: 'Following' }));
+    expect(button).toMatchObject({ backgroundColor: 'transparent', borderWidth: 0 });
+    expect(styleOf(screen.getByTestId('follow-veil'))).toMatchObject({ backgroundColor: darkColors.textOnAccent, opacity: 0.2 });
   });
 
   it('comes after a footer when both are given', async () => {
@@ -145,12 +147,22 @@ describe('FilterChips icon (EXPLORE-01 #1)', () => {
     });
   });
 
-  it('is absent when not given: the chip keeps its 15 either side and draws no icon', async () => {
-    await render(<FilterChips label="Categories" items={categories} value="all" onChange={() => undefined} testID="cats" />);
+  it('is absent when not given: in a row with no icons a chip keeps its 15 either side and draws no icon', async () => {
+    const plainRow = categories.map(({ value, label }) => ({ value, label }));
+    await render(<FilterChips label="Categories" items={plainRow} value="all" onChange={() => undefined} testID="cats" />);
     const plain = styleOf(screen.getByTestId('cats-music'));
     expect(plain.paddingHorizontal).toBe(chipMetrics.padH);
     expect(plain.paddingLeft).toBeUndefined();
     expect(plain.flexDirection).toBeUndefined();
+    expect(screen.queryAllByTestId(/^icon-/, hiddenOk)).toHaveLength(0);
+  });
+
+  it('a chip with no icon of its own beside icon chips takes chipRow\'s 11 and 14 and draws no icon (SHARED-03 item 2, X3\'s All)', async () => {
+    await render(<FilterChips label="Categories" items={categories} value="all" onChange={() => undefined} testID="cats" />);
+    const music = styleOf(screen.getByTestId('cats-music'));
+    expect(music).toMatchObject({ paddingLeft: chipIconMetrics.padStart, paddingRight: chipIconMetrics.padEnd });
+    expect(music.flexDirection).toBeUndefined();
+    expect(screen.getByTestId('cats-music').children).toHaveLength(1);
     expect(screen.queryAllByTestId(/^icon-/, hiddenOk)).toHaveLength(2);
   });
 });

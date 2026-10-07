@@ -205,9 +205,41 @@ describe('X1 · Explore', () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist', { following: true })] })];
     await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
     const button = await rtl.screen.findByRole('button', { name: 'Following' });
-    const style = Object.assign({}, ...[button.props.style].flat(Infinity).filter(Boolean));
-    expect(style.backgroundColor).toBe('rgba(255, 255, 255, 0.2)');
-    expect(style.borderWidth).toBe(0);
+    const flat = (node: { props: Record<string, unknown> }) => Object.assign({}, ...[node.props.style].flat(Infinity).filter(Boolean));
+    expect(flat(button)).toMatchObject({ backgroundColor: 'transparent', borderWidth: 0 });
+    // MediaCard's action draws the white as its own layer at 20% (SHARED-03 item 6).
+    expect(flat(rtl.screen.getByTestId('explore-featured-c1-follow-veil'))).toMatchObject({ backgroundColor: '#FFFFFF', opacity: 0.2 });
+  });
+
+  it('the refusal line stays up for 4 seconds, then goes by itself', async () => {
+    const { FOLLOW_NOTICE_MS } = require('../follow') as typeof import('../follow');
+    expect(FOLLOW_NOTICE_MS).toBe(4000);
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers['POST /creators/c1/follow'] = [refused(403, 'You cannot follow this account.')];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} />));
+    const follow = await rtl.screen.findByRole('button', { name: 'Follow' });
+    // The clock is faked from the press on, so the notice's own timer is one the test drives.
+    jest.useFakeTimers();
+    try {
+      await rtl.fireEvent.press(follow);
+      for (let i = 0; i < 40 && !rtl.screen.queryByTestId('follow-notice'); i += 1) {
+        await rtl.act(async () => {
+          await Promise.resolve();
+          jest.advanceTimersByTime(1);
+        });
+      }
+      expect(rtl.screen.getByTestId('follow-notice')).toBeTruthy();
+      await rtl.act(async () => {
+        jest.advanceTimersByTime(3900);
+      });
+      expect(rtl.screen.getByTestId('follow-notice')).toBeTruthy();
+      await rtl.act(async () => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(rtl.screen.queryByTestId('follow-notice')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('drops a category the Hub sends with a blank id or label', async () => {
@@ -278,6 +310,35 @@ describe('X2, X3, X13 · Categories', () => {
     await rtl.render(wrap(<CategoriesScreen initial="gaming_esports" onBack={jest.fn()} />));
     expect(await rtl.screen.findByText('Nobody is publishing in Gaming & Esports yet')).toBeTruthy();
     expect(rtl.screen.getByText('Try another category, or come back once more people have published.')).toBeTruthy();
+  });
+
+  it('opens with the chosen chip scrolled into view when it starts out of view (Categories passes revealSelected)', async () => {
+    const { ScrollView } = require('react-native') as typeof import('react-native');
+    const { layout } = require('@/theme') as typeof import('@/theme');
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+    scrollTo.mockClear();
+    try {
+      answers[GAMING_PAGE_1] = [page([], 1, 0)];
+      await rtl.render(wrap(<CategoriesScreen initial="gaming_esports" onBack={jest.fn()} />));
+      const chip = await rtl.screen.findByTestId('categories-chips-gaming_esports');
+      const at = (x: number, width: number) => ({ nativeEvent: { layout: { x, y: 0, width, height: 36 } } });
+      await rtl.fireEvent(rtl.screen.getByTestId('categories-chips'), 'layout', at(0, 390));
+      await rtl.fireEvent(chip, 'layout', at(1500, 160));
+      expect(scrollTo).toHaveBeenCalledWith({ x: 1500 - layout.gutter, animated: false });
+    } finally {
+      scrollTo.mockRestore();
+    }
+  });
+
+  it('a refused Follow in a category says so above the safe area, as on Explore', async () => {
+    answers[PHOTO_PAGE_1] = [page([card('p1', 'amaka', 'Photographer')], 1, 1)];
+    answers['POST /creators/p1/follow'] = [refused(403, 'You cannot follow this account.')];
+    await rtl.render(wrap(<CategoriesScreen initial="photography" onBack={jest.fn()} />));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Follow' }));
+    const notice = await rtl.screen.findByTestId('follow-notice');
+    expect(rtl.within(notice).getByText('Couldn’t follow @amaka. Try again later.')).toBeTruthy();
+    // 34 of safe area (the test's insets) and the toast's own 24.
+    expect(Object.assign({}, ...[notice.props.style].flat(Infinity).filter(Boolean)).bottom).toBe(34 + 24);
   });
 
   it('a user sees a loading grid while a category loads', async () => {

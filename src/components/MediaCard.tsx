@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type DimensionValue } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, View, type DimensionValue, type LayoutChangeEvent } from 'react-native';
 
 import { font, radius, space, useWawu, type GradientToken } from '@/theme';
 
@@ -27,7 +27,14 @@ export const mediaMetrics = {
   /** `cCard` (home.js and explore.js): the tick 4 after the name, then 8 down to the Follow button, which is 32 high. */
   titleAccessoryGap: space.xs,
   footerGap: space.sm,
+  /** The Follow button's height: the shared `Button`'s `card` size. */
   actionHeight: 32,
+  /**
+   * The initials a creator card shows when the person has no photo (`placeholder`). Not drawn on the canvas (`cCard`
+   * falls back to the sunken ground); Default (agent), owner may override: 64, the size Today's card drew before it
+   * moved onto this card.
+   */
+  placeholderAvatar: 64,
 } as const;
 
 /** A CSS-style angle (180 is top to bottom, as in `--scrim-card`) as the start and end points `LinearGradient` takes. */
@@ -54,13 +61,14 @@ function Scrim({ token }: { token: GradientToken }) {
 }
 
 /**
- * The card's one button, drawn under the caption (`cCard`'s Follow): the shared `Button` at the full width of the
- * caption, 32 high, on the accent, or on glass when `on` (the canvas's "Following").
+ * The card's one button, drawn under the caption (`cCard`'s Follow): the shared `Button` at its `card` size (32 high,
+ * the label 13 at 700) across the caption, on the accent, or white at 20% with no ring when `on` (the canvas's
+ * "Following"). Every creator card draws Follow through this, never with a button of its own.
  */
 export type MediaCardAction = {
   label: string;
   onPress: () => void;
-  /** The button's on state ("Following"): glass instead of the accent. */
+  /** The button's on state ("Following"): white at 20% over the picture (`Button` `veil`) instead of the accent. */
   on?: boolean;
   /** A request is in flight: a spinner, and presses are ignored. */
   loading?: boolean;
@@ -91,6 +99,12 @@ export type MediaCardProps = {
   byline?: string;
   /** The picture. Without one a quiet block holds its place, so a layout never jumps when it arrives. */
   imageUrl?: string;
+  /**
+   * Drawn centred on the quiet block when there is no picture: a creator's initials on their hue
+   * (`<Avatar name hue size={mediaMetrics.placeholderAvatar} decorative />`). On a stacked card it is centred in the
+   * room above the caption, under the scrim. Hidden from a screen reader: the words already say who it is.
+   */
+  placeholder?: ReactNode;
   /** The picture as a bundled image (`require(...)`) or a URL, where `imageUrl` isn't used. */
   image?: string | number;
   /** What the picture shows, for a screen reader. Leave empty when the title already says it. */
@@ -117,6 +131,7 @@ export function MediaCard({
   action,
   byline,
   imageUrl,
+  placeholder,
   image,
   imageLabel,
   layout = 'row',
@@ -133,6 +148,11 @@ export function MediaCard({
     : { width: mediaMetrics.thumb, height: mediaMetrics.thumb, borderRadius: mediaMetrics.thumbRadius };
 
   const src = imageUrl ?? image;
+  const hasPicture = src !== undefined && src !== '';
+  // A stacked card centres its placeholder in the room the caption leaves, so it is measured once it is laid out.
+  const [captionHeight, setCaptionHeight] = useState(0);
+  const showPlaceholder = Boolean(placeholder) && !hasPicture;
+  const onCaptionLayout = showPlaceholder && stacked ? (e: LayoutChangeEvent) => setCaptionHeight(e.nativeEvent.layout.height) : undefined;
   const label = [title, byline, subtitle].filter(Boolean).join(', ');
   // A button under the caption must stay reachable on its own, so the words are grouped for a screen reader
   // instead of the whole card.
@@ -166,7 +186,18 @@ export function MediaCard({
   );
   const picture = (
     <View style={[styles.picture, frame, { backgroundColor: colors.surfaceSunken }]}>
-      {src !== undefined && src !== '' ? (
+      {showPlaceholder ? (
+        <View
+          testID={testID ? `${testID}-placeholder` : undefined}
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.placeholder, stacked ? { paddingTop: mediaMetrics.captionInset, paddingBottom: mediaMetrics.captionInset + captionHeight + mediaMetrics.footerGap } : null]}
+        >
+          {placeholder}
+        </View>
+      ) : null}
+      {hasPicture ? (
         <Image
           testID={testID ? `${testID}-image` : undefined}
           source={typeof src === 'string' ? { uri: src } : src}
@@ -180,7 +211,7 @@ export function MediaCard({
         <>
           <Scrim token={gradients.scrimCard} />
           {below ? (
-            <View style={[styles.caption, styles.captionStack]}>
+            <View onLayout={onCaptionLayout} style={[styles.caption, styles.captionStack]}>
               <View
                 testID={testID ? `${testID}-words` : undefined}
                 accessible
@@ -197,17 +228,18 @@ export function MediaCard({
                   testID={action.testID}
                   label={action.label}
                   onPress={action.onPress}
-                  variant={action.on ? 'glass' : 'primary'}
-                  size="sm"
+                  variant={action.on ? 'veil' : 'primary'}
+                  size="card"
                   full
                   loading={action.loading}
                   disabled={action.disabled}
-                  style={styles.action}
                 />
               ) : null}
             </View>
           ) : (
-            <View style={styles.caption}>{stackedWords}</View>
+            <View onLayout={onCaptionLayout} style={styles.caption}>
+              {stackedWords}
+            </View>
           )}
         </>
       ) : null}
@@ -293,6 +325,6 @@ const styles = StyleSheet.create({
   titleLine: { flexDirection: 'row', alignItems: 'center', gap: mediaMetrics.titleAccessoryGap },
   titleShrink: { flexShrink: 1 },
   captionStack: { gap: mediaMetrics.footerGap },
-  action: { height: mediaMetrics.actionHeight },
+  placeholder: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
 });
 

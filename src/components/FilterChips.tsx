@@ -17,8 +17,9 @@ export const chipMetrics = { height: 36, padH: 15, font: 14 } as const;
 export const optionChipMetrics = { height: 38, padH: 14, font: 14, border: 1 } as const;
 
 /**
- * design/_gen/explore.js `chipRow`, a chip with an icon: 11 at the start and 14 at the end (the outline counted in,
- * as above), and a 15 icon, stroke 2, in the label's colour, 6 before the label.
+ * design/_gen/explore.js `chipRow`, a row of chips with icons: every chip in it pads 11 at the start and 14 at the end
+ * (the outline counted in, as above), the one without an icon too (X2, X3 and X13 draw All that way); a 15 icon,
+ * stroke 2, in the label's colour, 6 before the label.
  */
 export const chipIconMetrics = { padStart: 11, padEnd: 14, size: 15, stroke: 2, iconGap: 6 } as const;
 
@@ -30,7 +31,10 @@ const ringRoom = Math.ceil(focusRingGap + focusRingWidth);
 export type ChipItem<T extends string> = {
   value: T;
   label: string;
-  /** Drawn before the label (`chipRow`); the chip's padding changes to make room. */
+  /**
+   * Drawn before the label (`chipRow`). When any chip in the row has one, every chip in the row takes `chipRow`'s
+   * padding (11 at the start, 14 at the end), with or without an icon of its own.
+   */
   icon?: IconName;
 };
 
@@ -56,6 +60,8 @@ export type FilterChipsProps<T extends string> = {
 type ChipProps = {
   label: string;
   icon?: IconName;
+  /** A chip in a row where some chip has an icon: `chipRow`'s padding, whether or not this one has an icon. */
+  iconRow: boolean;
   selected: boolean;
   onPress: () => void;
   variant: ChipVariant;
@@ -63,7 +69,7 @@ type ChipProps = {
   testID?: string;
 };
 
-function Chip({ label, icon, selected, onPress, variant, onLayout, testID }: ChipProps) {
+function Chip({ label, icon, iconRow, selected, onPress, variant, onLayout, testID }: ChipProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const tone = selected ? 'surfacePage' : variant === 'option' ? 'textPrimary' : 'textSecondary';
@@ -86,7 +92,8 @@ function Chip({ label, icon, selected, onPress, variant, onLayout, testID }: Chi
           borderColor: selected ? 'transparent' : colors.borderStrong,
           borderWidth: variant === 'option' ? optionChipMetrics.border : StyleSheet.hairlineWidth,
         },
-        icon ? [styles.iconChip, { paddingLeft: chipIconMetrics.padStart - border, paddingRight: chipIconMetrics.padEnd - border }] : null,
+        iconRow ? { paddingLeft: chipIconMetrics.padStart - border, paddingRight: chipIconMetrics.padEnd - border } : null,
+        icon ? styles.iconChip : null,
         ring.style,
       ]}
     >
@@ -124,6 +131,7 @@ export function FilterChips<T extends string>({
     scroller.current?.scrollTo({ x: x - inset, animated: false });
   };
   const watch = Boolean(revealSelected) && variant === 'row';
+  const iconRow = items.some((item) => item.icon);
 
   const chips = items.map((item) => (
     <Chip
@@ -131,6 +139,7 @@ export function FilterChips<T extends string>({
       testID={testID ? `${testID}-${item.value}` : undefined}
       label={item.label}
       icon={item.icon}
+      iconRow={iconRow}
       selected={item.value === value}
       variant={variant}
       onPress={() => onChange(item.value)}
