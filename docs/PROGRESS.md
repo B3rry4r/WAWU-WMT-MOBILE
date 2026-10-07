@@ -7,14 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 72 | 0 | 24 | 28 |
+| todo | 72 | 0 | 23 | 28 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| review | 1 | 0 | 1 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
@@ -108,13 +109,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
 - **Developer:** nothing unblocked
-- **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading
+- **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending
 - **Developer 3:** [PROS-02](../tasks/PROS-02.md) Professionals backend: the design's fields, city, reply time and price, [SCHOOLS-02](../tasks/SCHOOLS-02.md) Admin: create and edit schools, courses and intakes, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · INBOX-04 · Verified (mobile 88a24f8, backend main 0e7b617 built on a fresh seeded database, real wawu-id, sign-in through the app's own screen): status building for one defect, D2 (I36's skeleton time pill overlaps the preview bar at 320 px, 31 px). V1 check exit 0 on branch and trial merge (49 suites, 840 tests, 226 files, 0 findings), I35 and I36 match in light and dark at 390, 430 and 320, every state reached by its real cause, the socket's first frame, jittered waits (smallest 637 ms, largest 25685 ms over 8 close kinds, never tight), 4401 refresh and 4403 sign-out, catch-up (7 events, list and badge equal the server), sign-in as B after A clean, background closes the socket. 27 of 32 own mutants killed, 5 test gaps. D1 for the lead: no row renderer yet, so a user with conversations sees a blank list under the chips and a badge until INBOX-19, 05, 10 or 18 land. NOT RUN: pull to refresh and device (V10), sign-out through a Settings screen (none yet), a brand-new signed-up account.
+- 7 Oct 2026 · INBOX-04 · Built on wmt/INBOX-04: the Inbox tab's list frame, the empty (I35), loading (I36) and error states, the app's live connection (`src/features/inbox/live.ts`) and the tab's unread badge (G-4), run against the real local backend; row kinds, header buttons and the other chips belong to later INBOX tasks. Status verifying.
 - 7 Oct 2026 · AUTH-08 · New task (lead, order 182; tasks from 182 move down one): wawu-id refresh and sign-out look up the token by id instead of argon2-checking every stored token (CHECK-1 F-5, SETTINGS-01 G-264).
 - 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
 - 7 Oct 2026 · OPS · Developer 1's 29 open tasks moved to the lead (owner YOU), at the owner's instruction: Developer 1 is at their usage limit. Their 27 done tasks keep Developer 1 as owner.
@@ -128,5 +131,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
 - 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).
-- 7 Oct 2026 · ADS-06 · Round 3 built, awaiting verification: merged main (ADS-03, ADS-04, ADS-05 and the rest are on it); migration renamed to `20261008100000_admin_ads_audit` (after every migration on main and open branches); the admin views now carry ADS-05's counts (`delivery`, per-day `days`, summary totals by status and placement, one set-based read per list page; G-194 and G-200 closed); ADS-05's G-198 and SHARED-CHANGES row #3 corrected; D1 (year 0000) fixed.
-- 6 Oct 2026 · ADS-06 · Verifier (independent): V1, V2, V3, V4 and V9 run; pause stops serving on the next request on the real ADS-04 code (trial merge clean onto main and ADS-04; 372 specs pass there), every route refuses user, expired, forged, refresh and wrong-role tokens (176 of 176), 25 of 25 own mutants killed, protected suite 253 of 253 and the lock unchanged; one low defect open (D1: a time in the year 0000 is a 500 on create, edit and the list filters), status building.
