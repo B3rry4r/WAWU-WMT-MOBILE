@@ -11,7 +11,8 @@ import { SavedToast } from '@/features/profile-edit/SavedToast';
 import { space } from '@/theme';
 
 import { changePassword } from './api/identity';
-import { MIN_LENGTH, passwordFailure, passwordProblems, type PasswordFailure } from './passwordFailure';
+import { MIN_LENGTH, passwordFailure, passwordProblems, SIGNED_OUT_FIRST, type PasswordFailure } from './passwordFailure';
+import { startedInThisSession } from './sessionGuard';
 
 /** design/_gen/auth.js line 21 (A22): the title is `h1` at 28, tracking -0.03em, line 1.15; 10 down, 6 between title and line, parts 16 apart. */
 const TITLE = { size: 28, tracking: -0.03, leading: 1.15 } as const;
@@ -69,8 +70,15 @@ export function ChangePasswordScreen({ onBack, onDone }: ChangePasswordScreenPro
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
+    const sameSession = startedInThisSession();
     try {
       const pair = await changePassword(current, next);
+      // The person signed out (or another account signed in) while this was on its way: the new tokens are not
+      // adopted, or the phone would be signed back in as the account that left.
+      if (!sameSession()) {
+        setFailure(SIGNED_OUT_FIRST);
+        return;
+      }
       try {
         await adoptSession(pair);
       } catch {

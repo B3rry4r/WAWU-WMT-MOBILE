@@ -16,8 +16,14 @@ export const SERVER_WAIT_MS = 3000;
  * of it is worth nothing afterwards; then the phone forgets its tokens, and the route graph returns the person to
  * sign-in. If the server cannot be reached, or has not answered within `SERVER_WAIT_MS`, the phone still signs out:
  * the old token simply runs out on its own if the request never lands (BACKEND_GAPS G-262).
+ *
+ * If the secure store refuses to delete the saved tokens, the app is still signed out in memory and its cache is
+ * already emptied (the session module changes both before it touches the store), so the person is signed out for as
+ * long as the app runs. `storeCleared` is then false, and the screen says so and offers Sign out again, which asks
+ * the store a second time. A failure of anything else in the session's cleanup is not a store problem and is not
+ * reported as one: the saved tokens are read back to tell the two apart.
  */
-export async function signOutOfThisPhone(): Promise<{ serverEnded: boolean }> {
+export async function signOutOfThisPhone(): Promise<{ serverEnded: boolean; storeCleared: boolean }> {
   const stored = await loadTokens();
   let serverEnded = false;
   if (stored) {
@@ -32,6 +38,11 @@ export async function signOutOfThisPhone(): Promise<{ serverEnded: boolean }> {
     serverEnded = await Promise.race([asked, slow]);
     clearTimeout(timer);
   }
-  await signOut();
-  return { serverEnded };
+  try {
+    await signOut();
+  } catch {
+    if (!(await loadTokens())) return { serverEnded, storeCleared: true };
+    return { serverEnded, storeCleared: false };
+  }
+  return { serverEnded, storeCleared: true };
 }

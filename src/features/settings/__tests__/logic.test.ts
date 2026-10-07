@@ -73,7 +73,7 @@ describe('the data request line', () => {
 });
 
 describe('the phone line', () => {
-  it('keeps only the last four digits', () => {
+  it('keeps the first four and last four digits of a Nigerian number as Z2 draws it, and only the last four of any other', () => {
     expect(maskPhone('+2348031234412')).toBe('0803 ••• 4412');
     expect(maskPhone('08031234412')).toBe('0803 ••• 4412');
     expect(maskPhone('+447911123456')).toBe('••• 3456');
@@ -85,8 +85,10 @@ describe('the phone line', () => {
     expect(maskPhone('12')).toBe('');
   });
 
-  it('never leaves the middle digits in', () => {
+  it('never leaves the middle digits in, nor the whole number', () => {
     expect(maskPhone('+2348031234412')).not.toContain('123');
+    expect(maskPhone('+2348031234412')).not.toContain('8031234412');
+    expect(maskPhone('+2348031234412').replace(/\D/g, '')).toBe('08034412');
   });
 });
 

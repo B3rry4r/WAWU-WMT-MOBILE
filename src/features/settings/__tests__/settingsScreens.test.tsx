@@ -32,7 +32,7 @@ jest.mock('@/api/tokenStore', () => ({
 
 type Plain = { status: number; body: unknown; headers?: Record<string, string> };
 type Answer = Plain | 'offline' | 'hang' | ((body: unknown) => Promise<Plain>);
-type Sent = { method: string; path: string; body: unknown; query: string };
+type Sent = { method: string; path: string; body: unknown; query: string; url: string };
 
 let answers: Record<string, Answer | Answer[]> = {};
 let sent: Sent[] = [];
@@ -41,7 +41,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   const text = request.method === 'GET' ? '' : await request.text();
-  sent.push({ method: request.method, path: url.pathname, body: text ? JSON.parse(text) : undefined, query: url.search });
+  sent.push({ method: request.method, path: url.pathname, body: text ? JSON.parse(text) : undefined, query: url.search, url: request.url });
   const queued = answers[`${request.method} ${url.pathname}`];
   const answer = Array.isArray(queued) ? (queued.length > 1 ? queued.shift()! : queued[0]) : queued;
   if (!answer) return new Response(JSON.stringify({ statusCode: 404, message: 'Not Found', data: null }), { status: 404 });
@@ -173,7 +173,8 @@ describe('Z3 · Notifications', () => {
     await screen.findByTestId('notify-refunds');
     await tap('notify-refunds');
     expect(await screen.findByTestId('notify-problem')).toBeTruthy();
-    expect(screen.getByText('The server is having trouble.')).toBeTruthy();
+    expect(screen.getByText('That did not save. Try again.')).toBeTruthy();
+    expect(screen.queryByText('The server is having trouble.')).toBeNull();
     expect(checked('notify-refunds')).toBe(true);
   });
 
@@ -765,7 +766,8 @@ describe('Change password', () => {
     await boot();
     await fill('old-password', 'new-password-1');
     await tap('password-save');
-    expect(await screen.findByText('Your password was not changed')).toBeTruthy();
+    expect(await screen.findByText('Your password was changed')).toBeTruthy();
+    expect(screen.getByText('Sign in again with your new password.')).toBeTruthy();
     expect(mockAdopt).not.toHaveBeenCalled();
   });
 
@@ -781,5 +783,183 @@ describe('Change password', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+const CHANGE = 'POST /auth/change-password';
+
+describe('the passwords never travel in a URL (D4)', () => {
+  const NEW = 'new-password-1&x=y';
+  const OLD = 'old password/1?';
+  const boot = async () => {
+    const { ChangePasswordScreen } = mod<typeof import('../ChangePasswordScreen')>('../ChangePasswordScreen');
+    const p = { onBack: jest.fn(), onDone: jest.fn() };
+    await render(frame(<ChangePasswordScreen {...p} />));
+    return p;
+  };
+  const fill = async () => {
+    await fireEvent.changeText(screen.getByTestId('password-current'), OLD);
+    await fireEvent.changeText(screen.getByTestId('password-new'), NEW);
+  };
+  const forms = (secret: string) => [secret, encodeURIComponent(secret), encodeURI(secret), secret.replace(/ /g, '+'), btoa(secret)];
+  const noUrlHoldsAPassword = () => {
+    expect(sent.length).toBeGreaterThan(0);
+    for (const request of sent) {
+      expect(request.query).toBe('');
+      for (const secret of [OLD, NEW]) {
+        for (const form of forms(secret)) expect(request.url).not.toContain(form);
+      }
+    }
+  };
+
+  it.each([
+    ['saved', { status: 200, body: { data: { accessToken: 'access-2', refreshToken: 'refresh-2' } } } as Answer],
+    ['wrong current password', refusal(400, 'wrong', 'CURRENT_PASSWORD_WRONG')],
+    ['too many tries', refusal(429, 'slow', 'RATE_LIMITED', { 'retry-after': '120' })],
+    ['server fault', refusal(500, 'Internal server error')],
+  ])('sends both only in the JSON body of one POST, and nowhere in the URL (%s)', async (_name, answer) => {
+    jest.useFakeTimers();
+    try {
+      answers[CHANGE] = answer;
+      await boot();
+      await fill();
+      await tap('password-save');
+      await waitFor(() => expect(bodiesOf('POST', '/auth/change-password')).toHaveLength(1));
+      expect(bodiesOf('POST', '/auth/change-password')).toEqual([{ currentPassword: OLD, newPassword: NEW }]);
+      noUrlHoldsAPassword();
+      expect(sent.every((request) => request.method === 'POST' && request.path === '/auth/change-password')).toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+describe('no screen shows the server\'s own words', () => {
+  const RAW = ['Unauthorized', 'Internal server error', 'Validation failed (uuid v 4 is expected)', 'Bad Gateway', 'Forbidden resource'];
+  const raws = [
+    ['Unauthorized', 401],
+    ['Internal server error', 500],
+    ['Validation failed (uuid v 4 is expected)', 400],
+    ['Bad Gateway', 502],
+    ['Forbidden resource', 403],
+  ] as const;
+  const noRawWords = () => {
+    const shown = JSON.stringify(screen.toJSON());
+    for (const words of RAW) expect(shown).not.toContain(words);
+  };
+
+  it.each(raws)('Z3, a switch that fails (%s, %i)', async (words, status) => {
+    answers[NOTIFY] = ok(notifications);
+    answers[NOTIFY_SET] = refusal(status, words);
+    const { NotificationsScreen } = mod<typeof import('../NotificationsScreen')>('../NotificationsScreen');
+    await render(frame(<NotificationsScreen onBack={jest.fn()} />));
+    await screen.findByTestId('notify-refunds');
+    await tap('notify-refunds');
+    expect(await screen.findByTestId('notify-problem')).toBeTruthy();
+    noRawWords();
+  });
+
+  it.each(raws)('Z3, settings that cannot be loaded (%s, %i)', async (words, status) => {
+    answers[NOTIFY] = refusal(status, words);
+    const { NotificationsScreen } = mod<typeof import('../NotificationsScreen')>('../NotificationsScreen');
+    await render(frame(<NotificationsScreen onBack={jest.fn()} />));
+    expect(await screen.findByText('This could not be loaded')).toBeTruthy();
+    noRawWords();
+  });
+
+  it.each(raws)('Z4, the data request is refused (%s, %i)', async (words, status) => {
+    answers[PRIVACY] = ok(privacy);
+    answers[BLOCKED] = page([]);
+    answers[EXPORTS] = ok([]);
+    answers[EXPORT_ASK] = refusal(status, words);
+    const { PrivacyScreen } = mod<typeof import('../PrivacyScreen')>('../PrivacyScreen');
+    await render(frame(<PrivacyScreen onBack={jest.fn()} onOpenBlocked={jest.fn()} onOpenPolicy={jest.fn()} />));
+    await screen.findByText('Sent to your email');
+    await tap('privacy-export');
+    await tap('export-send');
+    expect(await screen.findByTestId('export-problem')).toBeTruthy();
+    noRawWords();
+  });
+
+  it.each(raws)('Z5, an unblock that fails (%s, %i)', async (words, status) => {
+    answers[BLOCKED] = page([person(1, 'Spam Account')]);
+    answers['DELETE /api/hub/settings/privacy/blocked/row-1'] = refusal(status, words);
+    const { BlockedScreen } = mod<typeof import('../BlockedScreen')>('../BlockedScreen');
+    await render(frame(<BlockedScreen onBack={jest.fn()} />));
+    await screen.findByText('Spam Account');
+    await tap('blocked-unblock-row-1');
+    expect(await screen.findByTestId('blocked-problem')).toBeTruthy();
+    noRawWords();
+  });
+
+  it.each(raws)('Z5, a list that cannot be loaded (%s, %i)', async (words, status) => {
+    answers[BLOCKED] = refusal(status, words);
+    const { BlockedScreen } = mod<typeof import('../BlockedScreen')>('../BlockedScreen');
+    await render(frame(<BlockedScreen onBack={jest.fn()} />));
+    expect(await screen.findByTestId('blocked-error')).toBeTruthy();
+    noRawWords();
+  });
+
+  it.each(raws)('Z2, a TGIF switch that fails (%s, %i)', async (words, status) => {
+    answers[ME] = ok(me);
+    answers[TGIF] = ok({ show: true });
+    answers[TGIF_SET] = refusal(status, words);
+    const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
+    await render(
+      frame(
+        <SettingsScreen
+          onBack={jest.fn()}
+          onOpenProfile={jest.fn()}
+          onOpenNotifications={jest.fn()}
+          onOpenPrivacy={jest.fn()}
+          onOpenPassword={jest.fn()}
+          onOpenAbout={jest.fn()}
+          onOpenTerms={jest.fn()}
+          onOpenPolicy={jest.fn()}
+          onSignedOut={jest.fn()}
+        />,
+      ),
+    );
+    await screen.findByTestId('settings-tgif');
+    await tap('settings-tgif');
+    expect(await screen.findByTestId('settings-problem-tgif')).toBeTruthy();
+    noRawWords();
+  });
+
+  it.each(raws)('the change-password banner on a failure the form has no field for (%s, %i)', async (words, status) => {
+    answers[CHANGE] = refusal(status, words);
+    const { ChangePasswordScreen } = mod<typeof import('../ChangePasswordScreen')>('../ChangePasswordScreen');
+    await render(frame(<ChangePasswordScreen onBack={jest.fn()} onDone={jest.fn()} />));
+    await fireEvent.changeText(screen.getByTestId('password-current'), 'old-password');
+    await fireEvent.changeText(screen.getByTestId('password-new'), 'new-password-1');
+    await tap('password-save');
+    await waitFor(() => expect(bodiesOf('POST', '/auth/change-password')).toHaveLength(1));
+    await act(async () => undefined);
+    noRawWords();
+    expect(JSON.stringify(screen.toJSON())).not.toContain('Validation failed');
+  });
+
+  it('puts every kind of failure into one of the app\'s own short sentences, with no em-dash', () => {
+    const { sentenceOf } = mod<typeof import('../failure')>('../failure');
+    const { ApiError } = mod<typeof import('@/api/errors')>('@/api/errors');
+    const kinds = ['unauthorized', 'forbidden', 'not_found', 'conflict', 'validation', 'rate_limited', 'server', 'network', 'unknown'] as const;
+    for (const kind of kinds) {
+      for (const words of RAW) {
+        const said = sentenceOf(new ApiError(kind, 500, words), 'That did not save. Try again.');
+        expect(said).not.toContain(words);
+        expect(said).not.toContain('—');
+        expect(said.length).toBeGreaterThan(0);
+        expect(said.length).toBeLessThan(80);
+      }
+    }
+    expect(sentenceOf(new ApiError('unauthorized', 401, 'Unauthorized'), 'x')).toBe('You were signed out. Sign in again.');
+    expect(sentenceOf(new ApiError('server', 500, 'Internal server error'), 'That did not save. Try again.')).toBe('That did not save. Try again.');
+    expect(sentenceOf(new ApiError('rate_limited', 429, 'Throttled', 'RATE_LIMITED', 600), 'x')).toBe('Too many tries. Wait 10 minutes and try again.');
+    expect(sentenceOf(new ApiError('network', 0, 'whatever'), 'x')).toBe('No connection. Check your internet and try again.');
+    // The app's own "could not be read" sentence (an answer with status 200) is kept.
+    expect(sentenceOf(new ApiError('unknown', 200, 'Your privacy settings could not be read. Try again.'), 'x')).toBe(
+      'Your privacy settings could not be read. Try again.',
+    );
+    expect(sentenceOf(new Error('Network request failed'), 'That did not save. Try again.')).toBe('That did not save. Try again.');
   });
 });

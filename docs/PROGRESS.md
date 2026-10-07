@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 70 | 0 | 24 | 28 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
 
@@ -119,6 +119,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SETTINGS-01 · Builder round 2 (mobile only, from e45eedd): a save or Unblock answering after sign-out writes nothing into the next account's cache (D1), no settings screen sends a request without a session (D2), a test fails if either password ever enters a URL (D4), screens say the app's own short sentences instead of the server's words, a secure-store refusal at sign-out leaves the person signed out on screen with a plain sentence, a late change-password answer no longer signs the phone back in; the phone mask stays as Z2 draws it and the cached phone is accepted (D3, defaults for the owner to override). Real Hub 6c0e435 and WAWU ID 4715d17 on fresh databases: 46 regression checks (light and dark) and 6 targeted drivers pass, 13 of 13 mutants killed. Status verifying.
 - 7 Oct 2026 · SETTINGS-01 · Verifier report (independent session, mobile 97423b2, backend 6c0e435, wawu-id 4715d17; real sign-in against a fresh Hub and WAWU ID): `npm run check` exit 0 (49 suites, 866 tests, gates 0 findings), Z2 to Z5 and Z12 compared in both themes (differences are R-37, the later tasks' rows, one caption wrap, avatar hues), 16 of 16 toggles read back after a reload, every state entered by its cause, sign-out clears storage and ends the refresh token (1.0 s; 3.2 s with a slow server; offline leaves the token live on the server, G-262), change password holds the 5-guess limit and ends the other device's refresh token, 11 of 12 mutants killed. Not ready by three low defects: a save answer from the signed-out account lands in the next account's cache (D1), Settings re-requests with no token after sign-out and the next account can join that dead request (D2), the query cache holds the unmasked phone (D3); status back to building.
 - 7 Oct 2026 · SETTINGS-01 · Builder: Settings, Notifications, Privacy, Blocked accounts (and Nobody blocked) and Change password built in `src/features/settings` with routes under `src/app/settings`, against the real Hub (backend main 6c0e435) and WAWU ID (main 4715d17); no backend change needed (contract identical). V9 100 checks (light and dark) pass, 13 of 13 mutants killed, `npm run check` exit 0 (49 suites, 866 tests, gates 0 findings); gaps G-260 to G-264, shared changes SETTINGS-01 #1 to #4; status verifying.
 - 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
@@ -133,4 +134,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
 - 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).
-- 7 Oct 2026 · ADS-06 · Round 3 built, awaiting verification: merged main (ADS-03, ADS-04, ADS-05 and the rest are on it); migration renamed to `20261008100000_admin_ads_audit` (after every migration on main and open branches); the admin views now carry ADS-05's counts (`delivery`, per-day `days`, summary totals by status and placement, one set-based read per list page; G-194 and G-200 closed); ADS-05's G-198 and SHARED-CHANGES row #3 corrected; D1 (year 0000) fixed.

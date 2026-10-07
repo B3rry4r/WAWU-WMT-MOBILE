@@ -12,6 +12,7 @@ import { font } from '@/theme';
 
 import { fetchBlocked, settingsKeys, unblock, type BlockedAccount, type BlockedList } from './api/hub';
 import { loadProblem, sentenceOf } from './failure';
+import { startedInThisSession, useSignedIn } from './sessionGuard';
 import { SettingsFrame } from './SettingsFrame';
 
 /** design/_gen/settings.js line 16 (Z5): rows 10 above and below, an avatar of 48, 12 between, a 15 name at 600; the body keeps its parts 4 apart. */
@@ -41,7 +42,8 @@ export function hueOf(id: string): AvatarHue {
  * once; if that was the last one, the screen becomes Z12.
  */
 export function BlockedScreen({ onBack }: BlockedScreenProps) {
-  const list = useQuery({ queryKey: settingsKeys.blocked, queryFn: fetchBlocked });
+  const signedIn = useSignedIn();
+  const list = useQuery({ queryKey: settingsKeys.blocked, queryFn: fetchBlocked, enabled: signedIn });
   const client = useQueryClient();
   const [working, setWorking] = useState<readonly string[]>([]);
   const [problem, setProblem] = useState<string | null>(null);
@@ -56,12 +58,15 @@ export function BlockedScreen({ onBack }: BlockedScreenProps) {
   const remove = async (row: BlockedAccount) => {
     if (inFlight.current.has(row.id)) return;
     inFlight.current.add(row.id);
+    const sameSession = startedInThisSession();
     setWorking([...inFlight.current]);
     setProblem(null);
     try {
       await unblock(row.id);
-      drop(row.id);
+      // Signed out meanwhile (or another account in): the list now is someone else's, so the answer is dropped.
+      if (sameSession()) drop(row.id);
     } catch (error) {
+      if (!sameSession()) return;
       // A block that is already gone (another phone unblocked it) is what the person asked for.
       if (isApiError(error) && error.kind === 'not_found') {
         drop(row.id);

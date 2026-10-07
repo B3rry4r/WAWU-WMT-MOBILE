@@ -24,6 +24,14 @@ export function passwordProblems(current: string, next: string): { current?: str
   };
 }
 
+/** The password changed on the server but the person signed out before the answer came, so this phone holds no session for it. */
+export const SIGNED_OUT_FIRST: PasswordFailure = {
+  where: 'banner',
+  tone: 'warning',
+  title: 'Your password was changed',
+  body: 'You signed out before it finished. Sign in with your new password.',
+};
+
 export function passwordFailure(error: unknown): PasswordFailure {
   if (!isApiError(error)) {
     return { where: 'banner', tone: 'danger', title: 'Your password was not changed', body: 'Something went wrong. Try again.' };
@@ -51,5 +59,9 @@ export function passwordFailure(error: unknown): PasswordFailure {
     return { where: 'banner', tone: 'danger', title: 'Your session ended', body: 'Sign in again, then change your password.' };
   }
   if (error.kind === 'network') return { where: 'banner', tone: 'danger', title: 'No connection', body: 'Check your internet and try again.' };
-  return { where: 'banner', tone: 'danger', title: 'Your password was not changed', body: error.message };
+  // An answer the app could not read (status 200) is the app's own sentence and says the password did change.
+  if (error.kind === 'unknown' && error.status === 200 && error.message) {
+    return { where: 'banner', tone: 'warning', title: 'Your password was changed', body: 'Sign in again with your new password.' };
+  }
+  return { where: 'banner', tone: 'danger', title: 'Your password was not changed', body: 'Something went wrong. Try again.' };
 }

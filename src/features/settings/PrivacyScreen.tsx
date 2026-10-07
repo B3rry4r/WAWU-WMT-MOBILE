@@ -11,6 +11,7 @@ import { fetchBlocked, fetchExports, fetchPrivacy, patchPrivacy, requestExport, 
 import { ExportSheet } from './ExportSheet';
 import { exportLineOf, exportStateOf } from './exportState';
 import { loadProblem, sentenceOf } from './failure';
+import { useSignedIn } from './sessionGuard';
 import { PRIVACY_GROUPS, privacyOn, type PrivacyKey } from './groups';
 import { ROW_TILE } from './metrics';
 import { SettingsFrame } from './SettingsFrame';
@@ -44,8 +45,9 @@ export function PrivacyScreen({ onBack, onOpenBlocked, onOpenPolicy }: PrivacySc
     write: patchPrivacy,
     valueOf: privacyOn,
   });
-  const blocked = useQuery({ queryKey: settingsKeys.blocked, queryFn: fetchBlocked });
-  const exports = useQuery({ queryKey: settingsKeys.exports, queryFn: fetchExports });
+  const signedIn = useSignedIn();
+  const blocked = useQuery({ queryKey: settingsKeys.blocked, queryFn: fetchBlocked, enabled: signedIn });
+  const exports = useQuery({ queryKey: settingsKeys.exports, queryFn: fetchExports, enabled: signedIn });
   const client = useQueryClient();
   const [asking, setAsking] = useState(false);
   const ask = useMutation({

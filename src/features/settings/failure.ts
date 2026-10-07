@@ -1,9 +1,23 @@
 import { isApiError } from '@/api/client';
 import type { IconName } from '@/components/icon';
 
-/** What an ApiError says, or `fallback` for anything else. The server's own sentence is kept when it sent one. */
+/**
+ * What a screen says when a call fails: the app's own short sentence, never the server's words ("Unauthorized",
+ * "Internal server error", "Validation failed (uuid v 4 is expected)" are for logs, not for a person). The kind of
+ * failure picks the sentence; anything the app has no sentence for says `fallback`, which each screen words for what
+ * the person was doing. The one message kept is an app-written one: an answer the app could not read arrives as
+ * an ApiError with status 200, which no server refusal ever has.
+ */
 export function sentenceOf(error: unknown, fallback: string): string {
-  return isApiError(error) && error.message ? error.message : fallback;
+  if (!isApiError(error)) return fallback;
+  if (error.kind === 'network') return 'No connection. Check your internet and try again.';
+  if (error.kind === 'unauthorized') return 'You were signed out. Sign in again.';
+  if (error.kind === 'forbidden') return 'You do not have permission to do that.';
+  if (error.kind === 'rate_limited') {
+    return error.retryAfterSeconds ? `Too many tries. Wait ${waitInWords(error.retryAfterSeconds)} and try again.` : 'Too many tries. Wait a little and try again.';
+  }
+  if (error.kind === 'unknown' && error.status === 200 && error.message) return error.message;
+  return fallback;
 }
 
 /** Whether the request never reached the server. */

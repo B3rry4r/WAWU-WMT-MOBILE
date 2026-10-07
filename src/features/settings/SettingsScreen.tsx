@@ -18,6 +18,7 @@ import { sentenceOf } from './failure';
 import { ROW_TILE } from './metrics';
 import { maskPhone } from './phone';
 import { SettingsFrame } from './SettingsFrame';
+import { useSignedIn } from './sessionGuard';
 import { signOutOfThisPhone } from './signOutFlow';
 import { switchMetrics } from './Switch';
 import { SwitchRow, switchRowMetrics } from './SwitchRow';
@@ -32,6 +33,9 @@ const headerMetrics = { padV: 12, padH: 14, avatar: 52, between: 12, name: 16, t
 const themeRow = { minHeight: 56, title: 15, valueSize: 14, chevron: 17 } as const;
 /** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below. */
 const footMetrics = { padV: 4, signOut: 15 } as const;
+
+/** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
+export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';
 
 export type SettingsScreenProps = {
   onBack: () => void;
@@ -54,7 +58,8 @@ export type SettingsScreenProps = {
  * where Z2 draws it.
  */
 export function SettingsScreen(props: SettingsScreenProps) {
-  const me = useQuery({ queryKey: settingsKeys.me, queryFn: fetchMe });
+  const signedIn = useSignedIn();
+  const me = useQuery({ queryKey: settingsKeys.me, queryFn: fetchMe, enabled: signedIn });
   const tgif = useSwitches<'show', TgifPreference>({
     queryKey: settingsKeys.tgif,
     read: fetchTgif,
@@ -75,9 +80,11 @@ export function SettingsScreen(props: SettingsScreenProps) {
     if (signingOut.current) return;
     signingOut.current = true;
     setLeaving(true);
+    setProblem(null);
     try {
-      await signOutOfThisPhone();
-      props.onSignedOut();
+      const { storeCleared } = await signOutOfThisPhone();
+      if (storeCleared) props.onSignedOut();
+      else setProblem(STORE_REFUSED);
     } catch (error) {
       setProblem(sentenceOf(error, 'You could not be signed out. Try again.'));
     } finally {
