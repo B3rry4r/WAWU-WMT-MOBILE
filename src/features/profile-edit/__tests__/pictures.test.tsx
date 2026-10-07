@@ -43,7 +43,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 const { EditProfileScreen } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
 const draft = require('../draft') as typeof import('../draft');
 
-/** M8 hands back as soon as a save lands (M10's "Profile saved" is the Me tab's). */
+/** Opened as the Me tab opens it (`ownNotice={false}`): M8 hands back as soon as a save lands (M10 shows "Profile saved"). */
 const saved = jest.fn();
 const saveLands = () => waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
 
@@ -53,7 +53,7 @@ async function boot() {
   await render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <QueryClientProvider client={client}>
-        <EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={saved} />
+        <EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={saved} ownNotice={false} />
       </QueryClientProvider>
     </SafeAreaProvider>,
   );

@@ -9,8 +9,7 @@ import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
 import { groupedAccountNumber } from '@/features/open-wallet/pin';
-import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
-import { darkColors } from '@/theme/tokens.generated';
+import { canvasNormalLineHeight, font, radius, space, stopOf, useWawu } from '@/theme';
 
 import { bankLine, fitFigureSize } from './model';
 
@@ -48,23 +47,13 @@ export const ACCT = {
  */
 const FIT = { floor: 18, step: 2, measure: 2000 } as const;
 const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, fill: 0.12 } as const;
-/** kit.js line 22: a 220 circle 60 past the right edge and 80 above the top, the accent at 55% fading out by 70% of its radius. */
-const GLOW = { size: 220, right: -60, top: -80, strength: 0.55, fadeAt: 0.7 } as const;
 /**
- * elevation.css `--shadow-money`: light `0 24px 40px -22px` at 60% of the card's own ink (#16151B, the dark
- * card surface); dark an inset 1 px line of white at 8%. Not generated into the theme (its header lists it),
- * so the parts are kept here and the colours come from the tokens.
+ * kit.js line 22: a 220 circle 60 past the right edge and 80 above the top, fading out by 70% of its radius. Its
+ * colour and strength are the `--glow-money` token (the accent at 55%); the card's shadow is `--shadow-money`.
  */
-const SHADOW = { y: 24, blur: 40, spread: -22, alpha: 0.6, insetAlpha: 0.08 } as const;
+const GLOW = { size: 220, right: -60, top: -80, fadeAt: 0.7 } as const;
 /** How long Copy reads "Copied" before it reads "Copy" again (A8 does the same). Default (agent), owner may override. */
 const COPIED_MS = 2000;
-
-/** A token colour (#RRGGBB) at a strength, written #RRGGBBAA. */
-function tokenAt(hex: string, alpha: number): string {
-  return `${hex}${Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')}`;
-}
 
 export type BalanceCardProps = {
   /** Integer kobo, the bank's figure (`GET /money/wallet/balance`). */
@@ -77,14 +66,12 @@ export type BalanceCardProps = {
 
 /** W1's balance card: the Naira balance with its kobo, the bank line and the account number with Copy. Dark in both themes. */
 export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, onToggleHidden }: BalanceCardProps) {
-  const { dark, gradients, colors } = useWawu();
+  const { gradients, colors, shadows } = useWawu();
   const ink = colors.textOnAccent;
   const ends = gradientEnds(gradients.surfaceMoney.angle);
-  const shadow = dark
-    ? { offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: tokenAt(ink, SHADOW.insetAlpha), inset: true }
-    : { offsetX: 0, offsetY: SHADOW.y, blurRadius: SHADOW.blur, spreadDistance: SHADOW.spread, color: tokenAt(darkColors.surfaceCard, SHADOW.alpha) };
+  const glow = stopOf(colors.glowMoney);
   return (
-    <View testID="wallet-balance-card" style={[styles.card, { boxShadow: [shadow] }]}>
+    <View testID="wallet-balance-card" style={[styles.card, { boxShadow: shadows.money }]}>
       <View style={styles.clip}>
         <LinearGradient
           pointerEvents="none"
@@ -97,8 +84,8 @@ export function BalanceCard({ availableKobo, accountNumber, bankName, hidden, on
         <Svg pointerEvents="none" width={GLOW.size} height={GLOW.size} style={styles.glow}>
           <Defs>
             <RadialGradient id="wallet-balance-glow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={colors.accent} stopOpacity={GLOW.strength} />
-              <Stop offset={GLOW.fadeAt} stopColor={colors.accent} stopOpacity={0} />
+              <Stop offset="0" stopColor={glow.color} stopOpacity={glow.opacity} />
+              <Stop offset={GLOW.fadeAt} stopColor={glow.color} stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Circle cx={GLOW.size / 2} cy={GLOW.size / 2} r={GLOW.size / 2} fill="url(#wallet-balance-glow)" />

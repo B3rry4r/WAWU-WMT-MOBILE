@@ -61,7 +61,7 @@ const profile = {
 const details = { wawuUserId: 'u1', location: 'Lagos, Nigeria', skills: [], openTo: [], threadsHandle: null, socialOrder: [], memberSince: '2026-10-04T00:00:00.000Z' };
 
 installFetch();
-const { EditProfileScreen } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
+const { EditProfileScreen, TOAST_MS } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
 const { SocialLinksScreen } = require('../SocialLinksScreen') as typeof import('../SocialLinksScreen');
 const draft = require('../draft') as typeof import('../draft');
 
@@ -78,16 +78,20 @@ function frame(children: React.ReactNode) {
   );
 }
 
-/** The last screen's `onSaved`: a save has landed once it is called (M8 hands back at once; M10's toast is the Me tab's). */
+/**
+ * The last screen's `onSaved`: a save has landed once it is called. Most cases open M8 as the Me tab does
+ * (`ownNotice={false}`: it hands back at once, M10 shows "Profile saved"); `boot(true)` is M8 opened from
+ * anywhere else, which shows its own notice first.
+ */
 let lastSaved: jest.Mock = jest.fn();
 const saveLands = () => waitFor(() => expect(lastSaved).toHaveBeenCalledTimes(1));
 
-async function boot() {
+async function boot(ownNotice = false) {
   const onBack = jest.fn();
   const onOpenSocial = jest.fn();
   const onSaved = jest.fn();
   lastSaved = onSaved;
-  const view = await render(frame(<EditProfileScreen onBack={onBack} onOpenSocial={onOpenSocial} onSaved={onSaved} />));
+  const view = await render(frame(<EditProfileScreen onBack={onBack} onOpenSocial={onOpenSocial} onSaved={onSaved} ownNotice={ownNotice} />));
   return { onBack, onOpenSocial, onSaved, view };
 }
 
@@ -100,7 +104,33 @@ beforeEach(() => {
 const patches = () => sent.filter((s) => s.method === 'PATCH');
 
 describe('M8 · Edit profile', () => {
-  it('a user can change their name, bio and location, press Save, and is handed back at once (M10 shows Profile saved, once, on the Me tab)', async () => {
+  it('opened from anywhere but the Me tab, a user who saves sees M8\'s own "Profile saved", once, then is handed back', async () => {
+    jest.useFakeTimers();
+    serve();
+    const { onSaved } = await boot(true);
+    await fireEvent.changeText(await screen.findByTestId('edit-bio'), 'Teaching African creators to get paid.');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
+    expect(screen.getAllByText('Profile saved')).toHaveLength(1);
+    expect(onSaved).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(TOAST_MS + 100);
+    });
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
+  it('M8 keeps its own notice by default, so a new caller never loses "Profile saved"', async () => {
+    serve();
+    const onSaved = jest.fn();
+    await render(frame(<EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={onSaved} />));
+    await fireEvent.changeText(await screen.findByTestId('edit-bio'), 'Changed');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it('opened from the Me tab, a user who saves is handed back at once and M8 draws no notice (M10 shows it, once, on the Me tab)', async () => {
     serve();
     const { onSaved } = await boot();
     await screen.findByDisplayValue('Lennox Emmanuel');
@@ -292,7 +322,7 @@ describe('M9 · Social links, opened over M8', () => {
     const [open, setOpen] = useState(false);
     return (
       <>
-        <EditProfileScreen onBack={jest.fn()} onOpenSocial={() => setOpen(true)} onSaved={lastSaved} />
+        <EditProfileScreen onBack={jest.fn()} onOpenSocial={() => setOpen(true)} onSaved={lastSaved} ownNotice={false} />
         {open ? (
           <SocialLinksScreen
             onClose={() => {

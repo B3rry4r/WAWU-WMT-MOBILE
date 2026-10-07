@@ -7,7 +7,7 @@ order: 183
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: []
 decisions: [R-41]
 passes: [V1, V5, V6]
@@ -140,6 +140,24 @@ Survived (7, each a test gap):
 - Shots name collision: `add-work` and `works/<id>` were shot signed out and signed in under the same file name, so the signed-out pictures were overwritten; the signed-out redirects are evidenced by the final URLs in `drive-*-prod.log` and the jest guard tests, not by a picture.
 
 **Verdict:** three defects open (D1, D2, D3) and seven test gaps; status `building`.
+
+## Builder report, round 2
+
+Same builder, 7 Oct 2026. The verifier's report (9803349) and `origin/main` c4471f3 (ME-01 and WALLET-01 merged) are merged in (merge commits only). Worktree `node_modules` is a real copy (`cp -r`, no hard links), so the exports below ran through no shared checkout.
+
+**D1, the record.** ME-11 #4 takes main's status again ("ME-01's part done: ..."). Every row the two merges touched, checked against the base and main of each merge: merge 5910b35 (main 5fec168): ME-06 #5 kept main's; **ME-11 #4 lost main's (fixed now)**; ME-01 #1 and ME-01 F1 kept this branch's `applied by SHARED-02`, which is newer than main's "open". Merge of c4471f3: WALLET-01 #1 and #2 keep this branch's `applied` status (main's was "open"); WALLET-01 #3 comes from main. No row is missing; no row's text other than its status differs between main and the branch. BACKEND_GAPS.md is main's, unchanged.
+
+**D2 (lead ruling): "Profile saved" exactly once, wherever the person lands.** The Me tab opens M8 as `/edit-profile?from=me` (`src/app/(tabs)/me.tsx`). `src/app/edit-profile.tsx`: from the Me tab with somewhere to go back to, M8 gets `ownNotice={false}` (hands back at once, draws nothing) and the route posts M10's notice; from anywhere else (Settings' header) or with nothing to go back to, `ownNotice={true}` and no notice is posted. `EditProfileScreen` `ownNotice` (default true): its own "Profile saved" for `TOAST_MS` (1.2 s, announced to a screen reader), then `onSaved`, as before ME-01 F1. Tests: `editProfile.test.tsx` (own notice: shown once, `onSaved` only after 1.2 s; the default keeps it; from the Me tab: handed back at once, nothing drawn), `src/features/me/__tests__/editProfileRoute.test.tsx` (+4: from the Me tab `ownNotice` false and M10 posted; from Settings `ownNotice` true and nothing posted; `from=me` with nothing to go back to falls back to M8's own; the Me tab pushes `from: 'me'`, Settings pushes plain `/edit-profile`). Mutants, each killed: the route always `false` (2 tests fail), the screen's default `false` (1), M8's toast never drawn (2), the Me tab without `from` (1).
+
+**D3: the swaps on main's hubs.** `src/features/me/ProfileHeader.tsx`: "Edit profile" is `size="profile"` with no `style` (`styles.edit`, `editH`, `editPad` deleted). `src/features/wallet/home/BalanceCard.tsx`: `boxShadow: shadows.money`, the glow's stop from `stopOf(colors.glowMoney)`; `SHADOW`, `GLOW.strength`, `tokenAt` and the `darkColors` import deleted. Pictures (web export of the branch before and after the two swaps, same stand-in Hub with an open wallet and a balance, 390 x 844 at 2x, light and dark): **W1 identical to the pixel in both themes** (the generated tokens are the values the constants built); **M1 differs only inside the Edit profile button** (box at 266 to 353 by 182 to 220, 1774 and 1753 pixels light and dark: the label now 14 at 600 where it was 13.5 at 700; the 38 high pill is unchanged). `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bs02/shots/r2-before/`, `r2-after/`, `r2-diff/` (masks and `me-button-before-after-light.png`, `-dark.png`). Tests (`hubSharedProps.test.tsx`): M1's button 38 / 16 / 14 at 600; W1's card casts `darkShadows.money` and `lightShadows.money` and its glow stop is the accent at 55%; mutants killed: the button back to `sm`, the shadow emptied, the glow at full strength.
+
+**WALLET-01 #3.** `payoutAccountScreen.test.tsx`: its query clients take `gcTime: 0` for queries and mutations and are cancelled and cleared in `afterEach`; no assertion changed. `npx jest --runInBand` on the file alone: before 5 min 5 s wall ("Jest did not exit one second after the test run has completed"), after 6.0 s wall, 15 of 15 both times (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bs02/payout-before.log`, `payout-after.log`).
+
+**T1 to T7.** One test each in `hubSharedProps.test.tsx`, each run against its mutant (one change, then restored; `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bs02/r2-mutants.json`), all killed: T1 `action.loading` (spinner, busy, press ignored), T2 `action.disabled` (disabled look, press ignored, no spinner), T3 the screen reader's `activate` on the words presses the card and not Follow, T4 the title shrinks and the accessory does not, T5 each chip icon's drawn stroke is its label's colour (page, secondary, primary on `option`), T6 a chip ending inside the last 20 of the row is scrolled to, T7 the TGIF glow's stop as handed to react-native-svg is the accent at 70%.
+
+**Checks.** `npm run check` exit 0 as one command: typecheck and lint clean; jest 71 suites, 1286 tests, 0 failed; gates 9 run, 320 files, 0 findings; tasks 211, 279 artboards. No em-dash added; secret scan of the staged diff: nothing key-shaped.
+
+**NOT RUN.** A phone (the D2 notice timing, the swapped card shadow and glow on iOS and Android: a development build); the Settings path in a browser (the Me menu's Settings row is ME-03's; jest covers the route and the screen); everything in round 1's NOT RUN that this round does not touch stands.
 
 ## Owner sign-off
 

@@ -4,7 +4,10 @@ import { ScrollView, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { chipIconMetrics, chipMetrics, FilterChips, optionChipMetrics } from '@/components/FilterChips';
 import { mediaMetrics, MediaCard } from '@/components/MediaCard';
+import { NameBlock } from '@/features/me/ProfileHeader';
+import { CardBackdrop } from '@/features/tgif/CardBackdrop';
 import { looks } from '@/features/tgif/look';
+import { BalanceCard } from '@/features/wallet/home/BalanceCard';
 import { font, stopOf } from '@/theme';
 import { darkColors, darkShadows, lightColors, lightShadows } from '@/theme/tokens.generated';
 
@@ -249,5 +252,113 @@ describe('money card tokens (WALLET-01 #1, HOME-01 #1)', () => {
 
   it('a shadow token of none is no shadow at all', () => {
     expect(darkShadows.card).toEqual([]);
+  });
+});
+
+type Node = { type: string; props: Record<string, unknown>; children: Node[] | null };
+/** A drawn radial gradient's first stop as react-native-svg hands it to the phone: its colour and strength apart. */
+function glowStop(name: string) {
+  const walk = (n: Node | Node[] | string | null): Node | null => {
+    if (!n || typeof n === 'string') return null;
+    if (Array.isArray(n)) return n.map(walk).find(Boolean) ?? null;
+    if (n.type === 'RNSVGRadialGradient' && n.props.name === name) return n;
+    return walk(n.children);
+  };
+  const found = walk(screen.toJSON() as unknown as Node);
+  const argb = (found!.props.gradient as number[])[1];
+  return { rgb: (argb & 0xffffff).toString(16).toUpperCase().padStart(6, '0'), strength: (argb >>> 24) / 255 };
+}
+/** The accent's rgb, as `--tgif-verse-glow` and `--glow-money` carry it. */
+const accentRgb = darkColors.accent.slice(1);
+
+describe('round 2: the states and conditions nothing else held (T1 to T7)', () => {
+  const layout = (x: number, width: number) => ({ nativeEvent: { layout: { x, y: 0, width, height: 36 } } });
+
+  it('T1: a loading action shows the spinner, says it is busy and ignores a press', async () => {
+    const follow = jest.fn();
+    await render(<MediaCard layout="stacked" title="@adaeze" action={{ label: 'Follow', onPress: follow, loading: true, testID: 'follow' }} />);
+    expect(screen.getByTestId('button-spinner')).toBeTruthy();
+    expect(screen.getByTestId('follow').props.accessibilityState).toMatchObject({ busy: true, disabled: true });
+    await fireEvent.press(screen.getByTestId('follow'));
+    expect(follow).not.toHaveBeenCalled();
+  });
+
+  it('T2: a disabled action is drawn disabled and ignores a press', async () => {
+    const follow = jest.fn();
+    await render(<MediaCard layout="stacked" title="@adaeze" action={{ label: 'Follow', onPress: follow, disabled: true, testID: 'follow' }} />);
+    expect(screen.getByTestId('follow').props.accessibilityState).toMatchObject({ disabled: true, busy: false });
+    expect(styleOf(screen.getByTestId('follow')).backgroundColor).toBe(darkColors.surfaceSunken);
+    expect(screen.queryByTestId('button-spinner')).toBeNull();
+    await fireEvent.press(screen.getByTestId('follow'));
+    expect(follow).not.toHaveBeenCalled();
+  });
+
+  it("T3: on a pressable card with an action, a screen reader's activate on the words presses the card", async () => {
+    const open = jest.fn();
+    const follow = jest.fn();
+    await render(<MediaCard layout="stacked" title="@adaeze" testID="card" onPress={open} action={{ label: 'Follow', onPress: follow }} />);
+    const words = screen.getByTestId('card-words');
+    expect(words.props.accessibilityRole).toBe('button');
+    expect(words.props.accessibilityActions).toEqual([{ name: 'activate' }]);
+    await fireEvent(words, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(follow).not.toHaveBeenCalled();
+  });
+
+  it('T4: with an accessory, the title is what shrinks, so a long title keeps the tick in view', async () => {
+    await render(<MediaCard layout="stacked" title="A very long creator name that will not fit" titleAccessory={<View testID="tick" />} />);
+    expect(styleOf(screen.getByText('A very long creator name that will not fit')).flexShrink).toBe(1);
+    expect(styleOf(screen.getByTestId('tick')).flexShrink).toBeUndefined();
+  });
+
+  it("T5: a chip's icon is drawn in its label's colour: page on the chip that is on, secondary on a row chip, primary on an option chip", async () => {
+    const { unmount } = await render(<FilterChips label="Categories" items={categories} value="all" onChange={() => undefined} />);
+    const colours = () => ({
+      LayoutGrid: screen.getByTestId('icon-LayoutGrid', hiddenOk).props.stroke,
+      Camera: screen.getByTestId('icon-Camera', hiddenOk).props.stroke,
+    });
+    expect(colours()).toEqual({ LayoutGrid: darkColors.surfacePage, Camera: darkColors.textSecondary });
+    await unmount();
+    await render(<FilterChips variant="option" label="Categories" items={categories} value="all" onChange={() => undefined} />);
+    expect(colours()).toEqual({ LayoutGrid: darkColors.surfacePage, Camera: darkColors.textPrimary });
+  });
+
+  it('T6: a chip that ends inside the last 20 of the row (the end inset) still counts as out of view', async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+    scrollTo.mockClear();
+    const many = Array.from({ length: 6 }, (_, i) => ({ value: `c${i}`, label: `Category ${i}` }));
+    await render(<FilterChips label="Categories" items={many} value="c3" onChange={() => undefined} revealSelected testID="cats" />);
+    await fireEvent(screen.getByTestId('cats'), 'layout', layout(0, 390));
+    // Ends at 380: inside the row (390) but past its 20 end inset (370).
+    await fireEvent(screen.getByTestId('cats-c3'), 'layout', layout(270, 110));
+    expect(scrollTo).toHaveBeenCalledWith({ x: 270 - 20, animated: false });
+  });
+
+  it("T7: the TGIF card's glow is drawn at the token's strength, not at full strength", async () => {
+    await render(<CardBackdrop look={looks.verse} width={390} height={844} />);
+    const glow = glowStop('tgifGlow');
+    expect(glow.rgb).toBe(accentRgb);
+    expect(glow.strength).toBeCloseTo(0.7, 2);
+  });
+});
+
+describe('round 2: the hubs that are on main use what this task added (D3)', () => {
+  it('M1\'s "Edit profile" is the shared profile size, 38 high, 16 in, 14 at 600, with no style of its own', async () => {
+    await render(<NameBlock wawuId="u1" name="Ada Obi" avatarUrl={null} ticks={[]} bio={null} onEditProfile={() => undefined} />);
+    const button = screen.getByTestId('me-edit');
+    expect(styleOf(button)).toMatchObject({ height: 38, paddingHorizontal: 16 });
+    expect(styleOf(screen.getByText('Edit profile'))).toMatchObject({ fontSize: 14, fontFamily: font(600).fontFamily });
+  });
+
+  it.each([
+    ['dark', darkShadows.money],
+    ['light', lightShadows.money],
+  ] as const)("W1's balance card casts the generated --shadow-money (%s) and draws --glow-money", async (scheme, shadow) => {
+    mockScheme = scheme;
+    await render(<BalanceCard availableKobo={48525075} accountNumber="0123451234" bankName="Sample Bank" hidden={false} onToggleHidden={() => undefined} />);
+    expect(styleOf(screen.getByTestId('wallet-balance-card')).boxShadow).toEqual(shadow);
+    const glow = glowStop('wallet-balance-glow');
+    expect(glow.rgb).toBe(accentRgb);
+    expect(glow.strength).toBeCloseTo(0.55, 2);
   });
 });
