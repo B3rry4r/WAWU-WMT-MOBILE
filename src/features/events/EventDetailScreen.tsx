@@ -86,7 +86,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
           <EmptyState
             testID="event-gone"
             icon="CalendarX"
-            title="This event isn't available"
+            title="This event is not available"
             message="It may have been taken down or never existed."
           />
         ) : (

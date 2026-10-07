@@ -261,6 +261,13 @@ Build round 3 on 8ae4261, then status `verifying`. An independent verifier re-ru
 
 The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
+## Builder report, round 4 (7 Oct 2026)
+
+- **R-41 hub entries: NOT DONE, blocked.** On `origin/main` the Home and Explore tabs are still the `TabScreen` placeholders (`src/app/(tabs)/index.tsx`, `explore.tsx`); HOME-01 and EXPLORE-01 exist only on `origin/wmt/HOME-01` and `origin/wmt/EXPLORE-01` (both `status: building` after a verifier round), so there is no hub file here to add an entry to, and editing those branches or merging them here belongs to other tasks. Entries this task owes, from their builder reports: HOME-01 H1/H36 service tile "Events" (opens E1, `/events`); EXPLORE-01 X1 FEATURED EVENT hero and Upcoming events rows with their "See all" (hero and rows open E2, `/events/<id>`, See all opens E1), X14 hero skeleton block, and X15 (the events rail, not built at all). No SHARED-CHANGES row is needed (no fenced file involved). Fact that unblocks it: HOME-01 and EXPLORE-01 merged to main; then the entries are added with the shared navigation helpers, tests and 390 px light and dark pictures against `render_design.py H1 X1 X15`.
+- **Deep link wording.** `EventDetailScreen.tsx` now reads "This event is not available" (the ruling's words). Neither the canvas nor `docs/designer/BRIEF.md` draws different text for that state.
+- **Mutants M08 and M22**, against the round 3 paging spec (`offers "Show more" while the Hub has a next page, asks page 2 once, ...`): M08 (`nextPage` forced to null in `api.ts`) fails 1 spec; M22 ("Show more" never offered, `EventsScreen.tsx`) fails 1 spec. Both killed, both reverted with `git restore`; no new spec needed.
+- **Checks.** `npm run check` result is in the LOG line. NOT RUN: pictures (nothing drawn changed).
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
