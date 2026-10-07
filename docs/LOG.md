@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 - 7 Oct 2026 · WALLET-01 · Built: the Wallet tab (W1 with W4, W5, W6, plus no wallet, opening, frozen and error states) against GET /money/wallet, /money/wallet/balance and /money/transactions; entries to screens not built yet left out (R-41); G-310, G-311; status verifying.
+- 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
 - 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
 - 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).

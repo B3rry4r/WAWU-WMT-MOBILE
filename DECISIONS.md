@@ -378,3 +378,22 @@ The full list of what the canvas contradicts, with both sides quoted, is in
 The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect.
 
 **Carried out by:** HOME-01, ME-01, EXPLORE-01, WALLET-01 now; each later task named in their "Lead note (7 Oct 2026)" adds its own entry.
+
+### R-42 · The owner's answers of 7 Oct 2026 (decisions page)
+*Owner, 7 Oct 2026, on the "Fintava to Nuvion: approve and go" page.*
+- **Nuvion: start now.** The Nuvion build starts without waiting for Nuvion's NGN fees and limits; they are settings filled in when Nuvion answers, and nothing moves real money before they are set. The sandbox key is coming from the owner. This lifts the money freeze for the Nuvion work.
+- **Bills: off at launch,** switched off and not deleted ("Leave them switched off, don't delete for now").
+- **Opening a wallet** adds an ID document and a proof of address, as Nuvion requires.
+- **Adding money is by bank transfer only** at launch.
+- **Held money** (paid questions, tickets) moves through a WAWU operational account on Nuvion.
+- **Legal consultation prices confirmed:** chat ₦25,000 for 60 minutes, video ₦45,000 for 60 minutes, in person on request (LEGAL-03 F8 closed).
+- **Phone numbers:** yes to the fix for someone signing up with another person's phone (AUTH-07). The owner adds: "phone number should be verified with the BVN. Check if Nuvion's response makes this possible, else we have to figure out a fix." Carried out by AUTH-07 and the Nuvion identity work.
+- **Events:** reviewers see ticket types and prices in the dashboard; the ticket types of an event that is not approved are hidden from the public (EVENTS-02 F2 and F3).
+- **TGIF:** the second count beside Amen is readers that day (G-160).
+- **PR #26** (retire the Shop routes): the owner adds the relock-approved label.
+
+### R-43 · The 5 Oct plan is adopted (Verify, Create, Earn)
+*Owner, 7 Oct 2026 ("Adopt it: I'll send prices and rules").*
+The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Developer Brief v2.0 is adopted: free sign-up and drafts; publishing or uploading a file needs a paid tier (Verify, Verify Plus, Founding Maker, with 3, 6 or 10 products); points for AI tools with lots that expire and a cash-out rate; dollar prices outside Nigeria; Voice Intro in the person's own voice; referral points. This reverses the "no subscription, no tier" rule, the 5-item cap and naira-only for those features. **The owner sends the final prices and rules;** until then the plan's figures are config values, never facts. Still open and not to be assumed: whether points replace WAWU Credits, the commission ("WAWU keeps up to 10%" against the 85/15 split, R-5), the tier-expiry rule, and the Christmas event date. R-38 stands: no Studio tab; AI tools open from the Create button.
+
+**Carried out by:** the design round 2 brief (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`), then tasks cut from the new boards.
