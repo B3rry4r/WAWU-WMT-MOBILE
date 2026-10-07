@@ -5,6 +5,7 @@
   --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.5);
   --shadow-fab: 0 10px 24px -6px rgba(148, 17, 201, 0.65);
   --shadow-money: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --glow-money: rgba(148, 17, 201, 0.55);  /* the balance card's corner glow (kit.js `Acct`: a 220 circle), both themes */
   --shadow-debit-card: 0 24px 40px -18px rgba(41, 13, 67, 0.7);
   --shadow-cover: 0 30px 50px -10px rgba(0, 0, 0, 0.7);  /* book / audio art in the feed */
   --blur-veil: blur(22px) /* @kind other */;     /* locked content */
