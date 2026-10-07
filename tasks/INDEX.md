@@ -68,14 +68,15 @@ Builder and verifier are always different sessions.
 50. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs INBOX-03, SETTINGS-07 from Developer 2 first
 51. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02, HOME-12, BILLS-02 from Developer first
 52. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02, BILLS-01 from Developer first
-53. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
-54. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
-55. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
-56. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-57. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
-58. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
-59. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
-60. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+53. [ME-10](ME-10.md) Saved, purchases, notifications, monthly earnings
+54. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
+55. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets · needs EVENTS-07, INBOX-16 from Developer 3 first
+56. [OPS-10](OPS-10.md) Money on the production backend: live keys, webhook and charges
+57. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
+58. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
+59. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
+60. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, SCHOOLS-05, SETTINGS-05, SUPPORT-01 from Developer 2 first
+61. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
@@ -151,19 +152,18 @@ Builder and verifier are always different sessions.
 43. [HOME-07](HOME-07.md) Feed: course, template, creator and professional cards, empty and error · needs PROS-02, PROS-01 from Developer 3 first
 44. [HOME-10](HOME-10.md) TGIF reactions, readers and shares
 45. [HOME-09](HOME-09.md) TGIF reader · needs INBOX-06 from Developer 2 first
-46. [ME-10](ME-10.md) Saved, purchases, notifications, monthly earnings
-47. [ME-16](ME-16.md) Featured works and education
-48. [ME-11](ME-11.md) Featured works: all works, one work, add a work
-49. [ME-07](ME-07.md) Creator dashboard, my content, rejected, uploads used · needs INBOX-12, KYC-05, WALLET-13 from Developer 2 first
-50. [ME-14](ME-14.md) Saved, purchases and notifications · needs INBOX-13 from Developer 2 first
-51. [ME-01](ME-01.md) My profile: content, services, about · needs INBOX-12, PROS-03 from Developer 2 first
-52. [ME-02](ME-02.md) Someone else's profile and following
-53. [ME-03](ME-03.md) The Me menu · needs SCHOOLS-08 from Developer 3 first
-54. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs MONEY-11, MONEY-13, WALLET-02, WALLET-05, BILLS-01, EVENTS-01, LEGAL-02, SCHOOLS-03, KYC-05 from You first
-55. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs INBOX-12, KYC-05, PROS-03 from Developer 2 first
-56. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel · needs MONEY-06, MONEY-11 from You first
-57. [SETTINGS-08](SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in
-58. [SETTINGS-05](SETTINGS-05.md) Delete account · needs MONEY-11, MONEY-13, WALLET-05 from You first
+46. [ME-16](ME-16.md) Featured works and education
+47. [ME-11](ME-11.md) Featured works: all works, one work, add a work
+48. [ME-07](ME-07.md) Creator dashboard, my content, rejected, uploads used · needs ME-10, INBOX-12, KYC-05, WALLET-13 from You first
+49. [ME-14](ME-14.md) Saved, purchases and notifications · needs ME-10, INBOX-13 from You first
+50. [ME-01](ME-01.md) My profile: content, services, about · needs INBOX-12, PROS-03 from Developer 2 first
+51. [ME-02](ME-02.md) Someone else's profile and following
+52. [ME-03](ME-03.md) The Me menu · needs ME-10, SCHOOLS-08 from You first
+53. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs MONEY-11, MONEY-13, WALLET-02, WALLET-05, BILLS-01, EVENTS-01, LEGAL-02, SCHOOLS-03, KYC-05 from You first
+54. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs INBOX-12, KYC-05, PROS-03 from Developer 2 first
+55. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel · needs MONEY-06, MONEY-11 from You first
+56. [SETTINGS-08](SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in
+57. [SETTINGS-05](SETTINGS-05.md) Delete account · needs MONEY-11, MONEY-13, WALLET-05 from You first
 
 ## Developer 2
 
