@@ -7,7 +7,7 @@ order: 184
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [SHARED-02]
 decisions: [R-41]
 passes: [V1, V5, V6]
@@ -70,7 +70,45 @@ Built by the lead's agent, 7 Oct 2026, on `wmt/SHARED-03` from origin/main `ee28
 
 ## Verifier report
 
-_Not started._
+Independent verifier, 7 Oct 2026, on `wmt/SHARED-03` at `1b64a8f` against main `ee28b75`. I wrote none of this task's code. Two fresh detached worktrees, each with its own `npm ci` (nothing hard-linked). My own tools: a contract-driven stand-in Hub on :5462 and WAWU ID on :5463 (five fixed creators: a photo with a refused Follow, no photo and Following, no photo and no handle, a photo and Following, no photo with a held Follow), web exports on :5461. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vs03/` (`shots/main`, `shots/branch`, `pairs/`, `diff.json`, `facts-*.json`, `design/`, `mutants.json`, `mut/`, `z3/`, `logs/`, `tools/`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | `npm run check` as one command on 1b64a8f: exit 0. Typecheck and lint clean; jest 76 of 76 suites, 1,377 of 1,377 tests; gates 9 run, 346 files scanned, 0 findings, baseline 0; 212 tasks (`logs/check-branch.log`). No timeout. The branch's diff adds no em-dash; no colour literal outside tests (the three `#FFFFFF` are expected values in assertions); new sizes are named metrics with their canvas line (`toastMetrics`, Button `card`, `mediaMetrics.placeholderAvatar`). Scope: exactly the builder's file list (shared `Toast`, `Button`, `FilterChips`, `MediaCard`; the callers the items name; their tests; SHARED-CHANGES, LOG, PROGRESS). |
+| Item 1, toast | passed | One `src/components/Toast.tsx`; `SavedToast.tsx` and `FollowNotice.tsx` are deleted and nothing imports them. All six toast pairs (Profile saved on M1 and M8, Password changed, refused Follow on Explore and Categories, light and dark) are identical to the pixel inside the toast. Times on screen, main then branch: Profile saved on M1 2.49/2.50 s and 2.48/2.48 s, on M8 1.23/1.23 s and 1.25/1.27 s, Password changed 1.23/1.23 s and 1.26/1.24 s, Couldn't follow on Explore 4.02/4.02 s and 4.02/4.02 s, on Categories 4.02/3.99 s and 4.02/4.01 s (`facts-*-prod.json`). |
+| Item 2, chips | passed with a recorded difference | See R1. Inbox's chips are unchanged (All 49.64 wide on both); every pair of Inbox, M34 and the showcase is identical. |
+| Item 3, placeholder | passed (see N1 for web) | Initials only on the three cards with no photo, on Home and Explore (`EN`, `HM`, `UO`); none on the two with a photo; drawn under the scrim and centred above the caption (`pairs/home-*`, `pairs/categories-*`). |
+| Item 6, Follow | passed | Home and Explore draw Follow and Following with the same computed style: 32 high, label 13 at 700 with no letter-spacing, accent fill; Following transparent with no border and a white layer at 0.2. Matches `cCard` in both `home.js` and `explore.js` (identical CSS: 32 high, 13 at 700, `rgba(255,255,255,.2)`). Label glyphs on X1: canvas 39 x 9, branch 39 x 9 on Home and Explore, main 40 x 10. Explore's `CreatorCard` has no `footer`, no `Button` import, no `style` and no `whiteAt`. `veil` and `card` are used only by `MediaCard`; no existing size or variant changed (`sm` 34/13.5 still tested; every non-card Button pair is identical). |
+| Item 4 and 7, tests | passed | T3 and T4 re-applied by me: each fails exactly its new test (1 of 23 in `HomeScreen.test.tsx`). |
+| Item 5, Z3 | passed | Reproduced on main: run alone, 9 of 12 failed, each with `notify-error` already drawn when `notify-loading` was looked for (`z3/main-alone-*.log`). Branch: 20 of 20 alone and 5 of 5 whole-file runs passed. The hold is what fixes it: with only `await held` removed from the branch's test, 7 of 10 runs failed again. The fix checks everything the old test did (loading, then error, then Try again loads the switches) and adds two checks (no error while loading, no loading once the error is up). The whole file does not exit for about 5 minutes after it passes ("Jest did not exit"); main does the same, so it is not this task's. |
+| Nothing else moved | passed | 150 pairs (prod: 10 signed-out, 25 signed-in screens with every scroll page, 7 pressed states plus a held Follow; dev: showcase, ten pay sheets, PIN sheet, eight auth previews; light and dark): 130 identical, 20 differ. 18 are items 2, 3 and 6 only: Home 31,236 / 31,278 px, Explore 15,354 / 15,392, Categories All 53,657 / 53,501, Photography 42,829 / 42,876, Gaming & Esports 56 / 57 (sub-pixel edge of the revealed chip, the row moved by All), the same in the pressed shots (inside the cards; the toasts themselves identical), and the held Follow (42,508 / 42,515, the same cards). The other 2 (`dev_components-s3/s4-light`, 735 px) are the 34 px brand mark, a downscale of the same 1009 x 1100 PNG: same rect and asset on both builds, main re-shot identical to itself, and the two builds are identical when shot after a 4 s settle (`tools/bm2.py`), so it is decode timing, not a change. |
+| V5 picture | passed with R1 | X1 and X2 against Home, Explore and Categories, as above. H1 draws its cards under the tab bar, so its Follow is not visible; its `cCard` CSS is identical to X1's. |
+| V6 states | passed | Refused Follow (403 from the stand-in Hub) on Home, Explore and Categories; a Follow held in flight shows the spinner on that card only, on both builds; no-photo cards; Profile saved, Password changed; Z3 loading and error in jest. |
+| Mutants | 20 of 20 killed | Mine, each one change, the named suites run, the file restored and checked byte-identical, tree clean after (`mutants.json`, `mut/`): T3, T4; toast duration doubled, clock not restarted on a new line, toast takes presses, top 64; chip rule `every` instead of `some`, start and end padding swapped, icon padding on every row; placeholder drawn with a picture, placeholder not hidden, Home passes no placeholder; veil at 25%, veil drawn when disabled, card label 13.5, card height 34, card tracking back to the kit's, action back to `sm`; Z3: loading view left up beside the error, loading view never drawn. |
+
+**Builder defaults judged**
+
+- Toasts take no presses. Main's top toasts did take them: on main the centre of Profile saved (M1, M8) and Password changed hits the toast (`pointer-events: auto`), so a tap there was swallowed; on the branch it reaches what is under it (`me-scroll`, `edit-cover`, `password-screen`). Under all three, at rest, there is no control (the cover is not pressable; its camera button is below the toast). Explore's notice already passed presses through. A behaviour change, not a look or timing change; acceptable as recorded (Default (agent), owner may override). Not a defect.
+- `password-changed` test id: no test, e2e flow or doc names the old `profile-saved` id for Change password (the Change password tests find the words). Not a defect.
+
+**Findings**
+
+R1. **differs-for-recorded-reason (builder's Default (agent); pre-existing on main).** X2/X3's All chip is 43 wide; the branch draws it 44.64 (main 49.64) and the next chip starts at 72.64 (main 77.64; canvas about 71). Cause confirmed: computed `padding-left` 11px, `padding-right` 14px and `border-width` 1px; `chipRow` and the kit `Chip` both draw their outline as an inset shadow that takes no room, while `FilterChips` draws a 1 px layout border on the row variant (`StyleSheet.hairlineWidth` is 1 on web; about 0.33 on a 3x phone) and subtracts the border only for `option` chips (`border = variant === 'option' ? 1 : 0`). Main already had it on every row chip: Music & Audio is 141.56 on main and branch (11/14 plus two 1 px borders), and Inbox's kit chips are 2 wider than the kit's 15/15. So it is not introduced here. Two corrections to the builder's reasoning: a fix scoped to icon rows (subtract the hairline only when `iconRow`) would not move Inbox's or M34's chips, which have no icon; and `chipIconMetrics`' comment "(the outline counted in, as above)" is not true for row chips. Owner may override.
+
+N1. **note, web preview only (not a defect).** On Expo web the initials are read: Playwright's accessibility snapshot of a no-photo card reads `text: EN @emeka`. react-native-web 0.21 ignores `accessibilityElementsHidden` and `importantForAccessibility` (only `aria-hidden` reaches the DOM), so the slot, and `Avatar decorative` everywhere, are hidden on iOS and Android but not on web. That is the same for every `decorative` Avatar on main. `StatusPill` adds `aria-hidden` beside them, which would cover web too.
+
+**No defect is open, so the status is `review`.**
+
+**NOT RUN**
+
+| Item | What unblocks it |
+|---|---|
+| A phone: the veil layer, the placeholder's centring after layout, the native screen-reader hiding, the toasts on iOS and Android | A development build with `wmt/SHARED-03` on a device |
+| A real Hub and WAWU ID | Nothing this task needs: no route or contract changed (`contract/openapi.json` identical on both trees); the stand-ins served the contract's shapes |
+
+Note: `render_design.py` binds an ephemeral port on 127.0.0.1 of its own (outside 5461 to 5463); it was run as the brief asks.
+
+Cleanup: every server this session started was stopped by its PID; no database was used; exports, worktree `/home/user/wt/vs03main` and (after the push) `/home/user/wt/vs03m` removed.
 
 ## Owner sign-off
 
