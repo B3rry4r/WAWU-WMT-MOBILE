@@ -7,7 +7,7 @@ order: 170
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [SHELL-01, UI-02, UI-03, MONEY-11, MONEY-13, HOME-10, HOME-11, HOME-02, HOME-09, KYC-05]
 decisions: [R-2, R-6]
 passes: [V1, V4, V5, V6, V9]
@@ -163,7 +163,80 @@ Built by the lead's agent, 7 Oct 2026, mobile only (no backend change: every rou
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier session, 7 Oct 2026, independent of the builder (this session wrote none of HOME-01). Head `52b4142` (it contains mobile origin/main `a167415`), checked out detached in `/home/user/wt/vh01m`. Backend: origin/main `3041887` in a detached worktree, `prisma generate`, `nest build`, on a fresh migrated and `db:seed`ed database `vh01_hub_test`. **The real WAWU ID**, origin/main `fb8717e`, in its own detached worktree on a fresh migrated `vh01_id_test` seeded by the backend's `scripts/local/seed-wawu-id.js` (its local `node_modules` lacked `@nestjs/swagger`, so that package and its three missing dependencies were hard-linked from `shared-be`; no code changed). Hub :5395, WAWU ID :5396, web export :5397 (`expo export --platform web --clear` with a private TMPDIR). The bundle names `http://localhost:5395` and `http://localhost:5396` as its only API origins (no `wawuafrica.com`). Every browser request in every run went to localhost:5395, :5396 or :5397. The one exception is `storage.seed.local`, the seed's media host, which does not resolve; it was asked for only on the feed tabs. Each run signed in through the app's own Welcome, then Sign in, against the real WAWU ID: no token was injected and no answer was rewritten. Fintava was **unset** (no key, no base URL), so a wallet holder's real answer is `503 provider_unreachable`. Nothing called the sandbox or live. Chromium (/opt/pw-browsers) at device scale 2: 390 x 845 in light and dark, plus 320 x 568. Evidence is in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vh01/`: `shots/` (55 captures), `pairs/` (design left, built right), `design/` (renders of H1, H11, H36, H2 and H12), `drive-log.jsonl`, `logs/batch1.log`, `logs/batch2.log`, `mutants.json`, `check-1.log`, `jest-rerun-2.log`, `check-final.log` and `tools/` (driver, seed steps, mutant runner).
+
+Seed changes for this run (scratch database only):
+- `creator-basic` got a `FintavaWallet` row, so the real answer is `provider_unreachable`.
+- `creator-pro` got a `FintavaWalletOpening` row in state `opening`.
+- `user` has no wallet.
+- `creator-pro` was renamed in WAWU ID to "Tamunotonye Briggs", with interest "Pottery and ceramics" and a creator tick. `creator-basic` got a professional tick.
+- 1,234 and then 2,535 `TgifRead` rows for 7 Oct.
+- `user`'s seeded follow of `creator-pro` was removed, so the app could write it.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 code | passed, with findings D3 | **First `npm run check`** (`check-1.log`, machine load about 10): typecheck and lint clean; jest 65 suites, 1,171 tests, 2 failed. Both were 20 s timeouts in suites HOME-01 does not touch (`OpenWalletScreen.test.tsx` A26 loading, `settingsScreens.test.tsx` Z3). Rerun alone with `--runInBand`: 2 suites, 128 of 128 passed (`jest-rerun-2.log`). **Final `npm run check`** on the report commit: see the "V1 final run" row. **Diff against the builder's list:** it matches. The 23 files are `src/features/home/` (14), `src/app/(tabs)/index.tsx`, the deleted `src/app/(tabs)/feed.tsx`, `src/features/feed/FeedScreen.tsx`, two shared tests and five docs. No `_layout.tsx`, `src/components`, `src/theme`, `src/api`, `package.json` or `app.json` is touched. `FeedScreen.tsx` sits outside `src/features/home/`, but SHARED-CHANGES HOME-02 F1 asks HOME-01 to put Today in that tab row; the change only swaps its own `Tabs` for `HomeTabs` and adds `initialScope`/`onToday`, and HOME-02's feed tests pass unchanged. **Shared tests:** `shell.test.tsx` still asserts the bar's five tabs in order and exactly one lit; it now leaves out Home's own `feed-tab-*` row, which is not the bar. That is not a weaker test. `auth-guard.test.tsx` points `@/api/env` at `127.0.0.1:9`. Home now reads the Hub once signed in, and without the mock the jest run would call `api.wawuafrica.com`. No assertion changed. **`feed.tsx` deletion:** justified by HOME-02 R1 (Home shows the feed in place). `grep` finds no remaining link to `/feed`. **Copy and literals:** no em-dash, hex, `rgb(` or `Flutterwave` in added code. No canvas figure (485,250.75, 12.4K, "2 min", 26 SEP, "Sons, not slaves", Adaeze, Funmi, Zainab) in product code; these appear only in test fixtures. Tokens only (gates 0 findings). |
+| R-41 rule | passed | Every H1 and H36 entry is either built or in the left-out table. Each left-out destination belongs to a task that is still `todo`: EXPLORE-02 (X4, X5), ME-14 (M31), WALLET-02 (W7; UI-03's W7 is the avatar component, not the screen), WALLET-05 (W15), BILLS-01 (S2), EVENTS-01 (E1), LEGAL-02 (S14), SCHOOLS-03 (SC1), ME-02 (M5), ME-04 (M19), ADS-01 (H33), WALLET-20 (W24) and WALLET-21 (W2). `src/app/` has no route for any of them: `settings/notifications` is Z3, not M31; `works/[wawuId]` is M34, not M5; `add-work` is M36, not M19; `(tabs)/wallet` and `(tabs)/explore` are shell placeholders. Nothing drawn opens nothing, and no "coming soon" is shown. The browser text of every capture holds no Send, Add, Bills, Scan, tiles, See all, search, bell or Create, and jest asserts the same. The built entries open existing screens: the TGIF card goes to `/tgif` (`tgif-opens-reader-light.png`), Open your wallet goes to `/open-wallet` (`H1-no-wallet-opens-A26-light.png`), and Following and For you show the feed in place. |
+| V4 field trace | passed (live figure NOT RUN) | Traced from writer to reader. **Balance:** Fintava, then `GET /money/wallet/balance` (MONEY-11, `no-store`), then `fetchWalletBalance` (refuses a non-integer figure), then `balanceView`, then `<Money minorUnits>`. **TGIF day and series:** the Hub's book (`assets/tgif`), then `GET /tgif/{date}`, then `tgifDayLabel(day.date)` and `day.series`. **Readers:** `TgifRead` rows, then `GET /tgif/{date}/stats` `readers`, then `compactCount`. **Creators:** `UserProfile` plus WAWU ID names, then `GET /creators`, then the cards. **Follow:** `FollowRelationship`, then `following` on `GET /creators`. Non-canvas values followed on screen: 1,234 readers showed "1.2K reading today" and 2,535 showed "2.5K" (`V4-readers-light.png`). With the browser clock set to 14 Mar 2026, the card read "TGIF · SATURDAY 14 MAR", "SONS, NOT SLAVES" and "5 cards" with no readers part; the Hub served `"series":"SONS, NOT SLAVES"` for that day (`V4-day-0314-light.png`). The renamed creator showed as "Tamunotonye Briggs · Pottery and ceramics" with a creator tick, and `creator-basic` showed a professional tick. The viewer was left out of the rail: `creator-basic` saw only `creator-pro`, and the reverse. A live Fintava figure is NOT RUN (see below); the figure path is covered by jest and by mutants M5 and M11. |
+| V5 picture | failed (D1) | `pairs/H1-{light,dark}.png` compares H1 with the figure state. The balance answer was written by the browser **for the picture only** (₦12,345.67), and that capture is not V9 evidence. Also compared: `pairs/H1-nowallet-*`, `pairs/H11-*` and `pairs/H36-*`, plus 320 x 568 (`H1-320-*`, `H1-figure-320-light`, `H36-320-light`): nothing overflows sideways and the figure fits at 320. **Matches:** the tab row (position, weight, underline); the money card (radius, ground, glow, chip, figure size and the faint kobo); the TGIF card (height, glows, play disc, three lines of words); the section heading; the rail's card size and spacing; the bar. The feed's tab row sits about 6 pt higher than Today's, as H2 sits higher than H1 on the canvas (measured). Every other difference is classified under Findings. |
+| V6 states | failed (D2) | Each state was entered by its real cause. **Loading (H11):** the Hub's answers held (`H11-loading-*`). **No wallet:** the real `409 wallet_not_open`, and Open your wallet lands on `/open-wallet` (A26). **Opening:** the real `409 wallet_opening` and "Check again" (`balance-opening-*`). **Bank unreachable:** the real `503 provider_unreachable` with Fintava unset (`balance-unreachable-*`). **Page error:** the browser cut from the Hub ("Today didn't load"); Try again with the Hub back draws Today (`error-offline-*`, `error-retried-*`). **Creators error alone:** shows in place, and Try again brings them back (`creators-error-*`). **Empty rail:** `creator-basic` blocked the only other creator through `POST /settings/privacy/blocked` (`creators-empty-*`). **TGIF off (H36):** switched off on Z2 in the app (`H36-tgif-off-*`). **Tabs:** on Following and on For you the bar's Home tab has `aria-selected=true` and no other bar tab is selected; Today comes back (`tab-following-*`, `tab-for-you-*`). **Failed TGIF day read:** no state at all (D2). **Frozen:** NOT RUN. |
+| V9 live seam | passed | Real WAWU ID sign-in through the app's sign-in screen. **Follow:** the database had 0 rows, then `user` tapped Follow on Tamunotonye Briggs. The button turned to Following and one `FollowRelationship` row appeared (`…0001` to `…0003`, 15:37:59). The Hub's `GET /creators` as `user` answered `"following":true`. A fresh sign-in drew Following (`H1-after-follow-dark.png`). Unfollow from the app sent `DELETE`; the database was back to 0 rows and the button to Follow (`H1-unfollowed-dark.png`). **TGIF switch:** before, there was no `TgifPreference` row. Switched off on Z2 in the app: the row is `show=f` and `GET /settings/tgif` answers `{"show":false}`. Today then had no TGIF card and no empty frame. Switched back on in the app: `show=t` and the card returned (`tgif-back-on-light.png`). The no-wallet sentence, the readers and the wallet answers above came from the server only. |
+| V1 final run | passed | **Final `npm run check`** on the report commit's tree (`check-final.log`): exit 0. Typecheck and lint clean; jest 65 of 65 suites, 1,171 of 1,171 tests (HOME-01's 2 suites hold 28 of them); gates 9 run, 309 files scanned, 0 findings, baseline 0; 210 tasks, 279 artboards covered. |
+| Mutants | 14 of 14 killed | `tools/mutants.py`, home suite `--runInBand`, each mutant applied and then restored (the worktree was clean afterwards). Killed: M1 readers 0 shown; M2 a failed switch hides TGIF; M3 viewer not filtered; M4 tick order swapped; M5 unreachable shows the Hub's words; M6 page error ignores the wallet's answer; M7 no wallet opens `/wallet`; M8 refused follow not reverted; M9 title from `seriesTheme`; M10 month not shortened; M11 eye on a no-wallet card; M12 feed ignores the tab pressed; M13 TGIF off still asks for the day; M14 unfollow sends POST (`mutants.json`). |
+
+Capability checks:
+- **H1, as far as this task builds it: passed.**
+  - Following and For you: passed, live and in jest.
+  - Open the TGIF card (H29): passed, live.
+  - Follow in place: passed, live, with a database readback.
+  - Search, bell, Send, Add, Bills, Pay bills, Events, Legal, Schools, See all, the profile and Create belong to the tasks in the left-out table (R-41).
+- **H36: passed.** Today has no TGIF card and no empty frame. The Schools tile comes with SCHOOLS-03, as the four tiles do (R-41).
+- **Picture: failed** (D1).
+- **Every value from the API: passed** (V4).
+- **States: failed** (D2).
+- **No wallet leads to A26: passed**, live.
+
+### Findings
+
+**D1 · defect (V5, small).** The balance card's eye is drawn in full white. H1 paints it white at 70%, which reads as a soft lilac over the glow: sampled (204,185,212) in both canvas themes, against (255,255,255) on the built card. `look.ts` names this as `eyeFaint: 0.7` ("The eye: 19, white at 70%"), but nothing uses it. It is the only unused metric in `look.ts`. `EyeToggle` in `BalanceCard.tsx` passes `color={cardInk.ink}` with no opacity. Reproduction: any wallet holder with a figure, or `pairs/H1-light.png` at the card's top right.
+
+**D2 · defect (V6).** A TGIF day that cannot be read removes the card with no message and no Try again, so Today looks exactly as it does with TGIF switched off.
+
+Reproduction: TGIF on, then cut `GET /api/hub/tgif/2026-10-07` (`tgif-day-error-light.png`). The page shows the balance and the creators and no trace of TGIF. In `TodayScreen.tsx`, `tgifOn && tgifDay.data ? <TgifCard/> : null` swallows `tgifDay.isError`. Only a page reload asks again.
+
+The creators part, failing the same way, says so and offers Try again, and builder decision 7 says "each part says its own problem". Decision 4 ("a day that cannot be read leaves the card out") is an agent default, not a DECISIONS.md or BRIEF ruling. The capability check "Loading, empty and error states exist" is not met for this part.
+
+**D3 · defect (VERIFIER.md check 2, no stand-ins for what main has).** `SuggestionCard` in `CreatorRail.tsx` redraws `MediaCard`'s stacked layout itself: the picture filling the card, the `gradients.scrimCard` scrim through `gradientEnds`, and the caption 10 in from the sides. SHARED-CHANGES HOME-01 #2 defers the swap to `MediaCard`. The role file names exactly this ("A copy, or a SHARED-CHANGES row deferring the swap, is a defect"). It is the only copy of the stacked scrim in `src/`. The fix needs the fenced change HOME-01 #2 (`footer` and `titleAccessory` on `MediaCard`). The card then becomes `MediaCard layout="stacked"`, and its own picture, scrim and caption are deleted.
+
+**Differs for a recorded reason:**
+- **Entries left out under R-41 and R-27, each added by its own task (left-out table):** search and bell; Send, Add, Bills and Scan; the chip's chevron; "What would you like to do today?" with its four tiles; See all; the FAB (+); H36's sponsored card. Scan also appears under BRIEF "Not built at launch".
+- **BRIEF H1 and H36 (Schools tile, R-2, R-29):** not checkable yet. No tile is drawn, and no Shop tile appears anywhere. SCHOOLS-03 must add the tile as Schools.
+- **"2 min" is left out:** G-280, and the task's "Figures on these artboards are not facts".
+- **Creator cards have no photo** (initials on a hue over the sunken ground, where the canvas has coloured photos): G-282.
+- **TGIF label lilac and warm glow use the nearest tokens:** SHARED-CHANGES HOME-01 #1.
+- **H11 skeleton heights take the built cards' heights, and no tile shapes are drawn:** H11's own note ("skeletons match the real layout") and R-41.
+- **The canvas phone chrome** (9:41, the notch, the home indicator) is not part of the app.
+
+**Not drawn by any artboard, decided by the builder (agent defaults, owner may override; not defects):**
+- The no-wallet, opening, unreachable and error contents of the balance card (decision 2).
+- The series in the book's capitals, for example "FREE FROM…" (decision 4).
+- The rail being the directory's first page, including people already followed (decision 5, G-281).
+- The copy in decision 8.
+
+**Unclear (small, web only):**
+- On the web build, Home's own tab row (Today, Following, For you) carries no `aria-selected`, while the bar's tabs do. `HomeTab` passes `accessibilityState={{ selected }}`, which the native app reads. The pattern comes from HOME-02's earlier `Tab`.
+- Facts: "Your money is safe…" is W6's own wording and the Hub's own sentence. "New creators show up here as they join and publish" matches `GET /creators` eligibility (a creator with a live piece). No other fee, limit or promise is on screen.
+
+### NOT RUN
+
+| Item | Why | What unblocks it |
+|------|-----|------------------|
+| A live Fintava figure on the card, and the eye on it | Fintava was left unset for this verifier. The sandbox key is not readable by verifiers. | A Hub run with `FINTAVA_API_KEY` set for `dev.fintavapay.com` (lead's environment), reading sandbox customer A (`docs/fintava/sandbox/07-`). Jest, mutants M5 and M11, and the picture capture cover the rest. |
+| The frozen wallet state | Nothing stores a freeze; `423 wallet_frozen` is never answered (G-10). | G-10 |
+| "Check again" on a live opening wallet | Pressed only in jest. The live state was captured. | Flipping the `FintavaWalletOpening` row to `open` while the screen is up |
+| A phone | V10 is not in this task's passes. | A development build on a phone reaching a Hub (`docs/LOCAL.md`) |
+
+Cleanup: the Hub, WAWU ID and web server (PIDs this session started) are stopped. `vh01_hub_test` and `vh01_id_test` are dropped. The backend and WAWU ID worktrees are removed, and the export and keys are deleted. The worktree `/home/user/wt/vh01m` is kept with this report commit.
 
 ## Owner sign-off
 
