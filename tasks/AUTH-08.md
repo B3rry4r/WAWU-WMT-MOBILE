@@ -7,7 +7,7 @@ order: 182
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [AUTH-03]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -91,7 +91,86 @@ The same spec fails on main: copied unchanged into a detached checkout of `4715d
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md)._
+**Verifier:** independent session (wrote none of this). wawu-id `wmt/AUTH-08` `dd4326a` (one commit on origin/main `4715d17`, 6 files, matches the builder's list) against `4715d17`; mobile `origin/main` for the app. Built `dist/main.js` of both, real Postgres (`va08_test_*`, all dropped), real argon2 at the production cost, tokens minted by the real code. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/va08/` (below `va08/`). **The box was shared and busy:** load average 4 to 7 for the timing runs in pass 2, 20 to 58 for the mutant, jest and app runs.
+
+**Verdict: no open defect.** Every security probe held. One low note on a sweep failure inside a refresh (F-1), one test gap (F-2), one brittle spec timing (F-3), and the transition-period cost is real and now measured (F-4). Status `review`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **passed**: wawu-id `tsc` 0 on both, eslint 43 `.ts` errors on both (identical set), mobile `npm run check` exit 0 (46 suites, 797 tests, gates 9 run, 216 files scanned, 0 findings; a first run at load 30 had one 20 s jest timeout in `OpenWalletScreen.test.tsx`, a file this docs-only change does not touch, and passed on the second) | `va08/eslint-*.json`, section Regression |
+| V2 Contract (security: reuse, signed-out, bad hash, wrong account, password change, races, sweep, code rolled back) | **passed** 32 of 32, 3 races x 40 trials, 15 of 15, 10 of 10 (one observation, F-1) | `va08/pass1.out`, `pass1b.out`, `pass1b-r1wide.out`, `pass1c.out`, `pass1d.out` |
+| V3 Regression and migration | **passed**; full jest has load-only failures (re-run alone below) | `va08/rerun-summary.txt`, `jest-*.out`, section Migration |
+| Capability check 1 (speed) | **passed for rows that carry a jti; pre-change rows cost what they cost today** (F-4) | `va08/pass2-branch.out`, `pass2-main.out`, `logintime.out` |
+| Capability check 2 (pre-change token once only) | **passed** (T1, T2, P4a, R1 to R3 on null-jti tokens) | `va08/pass1.out` |
+| Capability check 3 (every session-security rule) | **passed** (T7, R1, R2, `session-security.spec.ts` 24 of 24, `test:session-local` 38 of 38) | `va08/pass1*.out`, `session-local-branch.out` |
+| V4 Field trace | **passed**: writer `issueTokens` (every route that mints a pair) stores `jti`; readers `rotateRefreshToken`, `revokeRefreshToken` by (account, jti) with the null-jti scan only when no row holds it; every other place that touches the table (`session-security.service.ts:112`, `auth.service.ts:765,805,1054,1092`) deletes by account and so ends null-jti and new rows alike | `va08/pass1.out` T7, code read |
+| V9 Live seam, the Expo app | **passed for sign-in and refresh after expiry; sign-out NOT RUN in the app** (it has none) | `va08/appdrive.out`, `app-*.png` |
+| Mutants | **10 of 11 live mutants killed by my probes, the 11th by the repo's race spec; 2 equivalent** | `va08/mutants.txt`, `mutants2.txt` |
+
+**Security (all over HTTP, :5351 branch and :5352 main, DB `va08_test_auth08_x`).** Tokens were minted on main first (real main login and refresh), the branch migration applied over those rows, then the branch served them. Main's tokens carry a signed `jti` in the payload but no row holds it (confirmed: payload keys `sub,jti,type,iat,exp`).
+- Reuse of a rotated token, old and new style: 401 each; the replacement works once (200), the next use 401, and what that replacement was swapped for works (T1 to T3). A pre-change token that was never used refreshes once only.
+- A signed-out new-style token: 401, no row appears or vanishes, sign-out again 200 and kills no other row, while the account held live null-jti rows that the fallback scan could have matched (T4). Contrast only (needs a DB write): a null-jti row that holds the hash of that exact token does work, which is the intended meaning of a pre-change row.
+- A new-style token whose jti row exists but whose hash fails: 401 even with a bait null-jti row holding the right hash; its sign-out deletes neither row (T5).
+- Cross-account: a token for A (signed with the run's key) naming B's jti, with B's row hash set to the hash of that very token, so only the account filter stands in the way: 401, B's row survives, sign-out answers 200 and deletes nothing, no row of A or B added or removed (T6). This kills the builder's surviving M5 (probe P1 in `va08/probe.mjs`); the builder's own wrong-account spec does not (F-2).
+- Password change: 5 tokens ended (two minted by main, one new-style, two crafted pre-change with and without a jti), C holds exactly 1 row (the hand-over) and it refreshes, another account's old and new tokens untouched (T7). There is no sign-out-all route; the other places that clear every token (`auth.service.ts` reset, delete, phone change) delete by account, which includes null-jti rows by construction.
+- Races (40 trials each, half the trials on null-jti pre-change tokens): rotation vs password change 0 bad (jitter 0 to 40 ms: rotation won 40; jitter 100 to 700 ms: rotation won 7, password change won 33, so both orders ran), and every time the only live token was the hand-over; rotation vs sign-out of the same token 0 bad (refresh won 10, sign-out won 30; when sign-out won, no row was left; when refresh won, the presented token is dead and the new one lives, as the SETTINGS-03 spec already allows); 2 to 4 parallel rotations of one token: exactly one winner in 40 of 40, one row left.
+- Sweep: deletes only the account's own expired rows (7 of 7 removed, 5 live rows kept including one expiring in 20 s, another account's expired and live rows untouched, also by sign-out); at most 50 per call (120 expired: 70, 20, 0 over three sign-ins, 423 ms for the first); also runs on refresh and sign-out; an expired token's sign-out answers 200 and refresh 401. 36 concurrent logins, refreshes and sign-outs on an account with a 60-row expired backlog: no 5xx; the server log holds no token.
+- Code rolled back to main with the column present: new-style tokens refresh once (found by hash), sign-out ends them, a password change ends them all; a token main issued during the rollback (null jti) then refreshes once on the branch again through the fallback.
+
+**Speed, HTTP, real Postgres, load 4 to 7 (ms; `va08/pass2-*.out`).**
+
+| Case | main | branch |
+|---|---|---|
+| 2 stored: refresh / sign-out | 430 / 378 | 410 / 205 |
+| 200 rows carrying a jti, live token newest: refresh / reuse refused / sign-out | 42991 / 28967 / 25816 | **400 / 10 / 186** |
+| 200 NULL-jti rows (the transition), live token newest: refresh / reuse refused / sign-out of the replacement | 23200 / 30980 / 42977 | **41681 / 36589** / 148 |
+| 200 null-jti rows, live token oldest: refresh | 471 | 259 |
+| 200 null-jti rows plus a new-style live token: refresh / reuse refused / sign-out / refresh after sign-out (refused) | 41990 / 33634 / 34314 / 33748 | **378 / 29078 / 227 / 53811** |
+| sign-in (median of 6, two runs): 200 live rows | 245, 457 | 263, 316 |
+| sign-in (median of 6, two runs): 200 expired rows (branch sweeps 50 per sign-in) | 280, 478 | 300, 386 |
+
+Reading: once rows carry a jti, refresh and sign-out are under half a second at 200 rows (main 26 to 43 s); a sign-in costs the same (the sweep adds at most about 100 ms). With the builder's own driver (`test:refresh-local`) the branch passes 29 of 29 (refresh 569 ms, sign-out 205 ms at 200 tokens, 2 tokens 515 ms) and main fails the same 4 checks the builder named (67207 ms and 97501 ms under load).
+
+**The transition (F-4).** Pre-change rows still cost what they cost today, and so does the refusal path while they last. With 200 unexpired null-jti rows: a pre-change token that sits late in the scan refreshes in 41.7 s (23.2 s on main for the same row; it is position dependent, 0.26 s when it is first), and any refusal (a reused or signed-out token of any style, since a new-style token cannot be told from a pre-change one by payload) scans all 200: 29 to 54 s. A new-style token with 200 null-jti rows beside it refreshes in 0.38 s. So the speed-up reaches an account when its device has done one refresh; an account like CHECK-1's `creator-pro` (53 old rows) still pays up to 53 hash checks on each old token's first refresh and on each refusal until those rows expire (30 days at most). Not a defect against the task text ("tokens issued before this change still work ... by the old path limited to unexpired records") but it is what the owner should expect on deploy day.
+
+**Migration.** Applied over a database holding 5 rows (md5 of id, user, hash, expiry, created_at identical before and after, 0 rows with a jti); `prisma migrate diff --from-config-datasource --to-schema` on the migrated database: "No difference detected" (and it does report the removed column and index against main's schema, so the check is not vacuous); the header's three rollback statements run as written: 5 rows kept, column gone, `migrate status` shows it pending, `migrate deploy` re-applied it and the diff is clean again (rows that held a jti come back with null, and their tokens work through the fallback). `20261007120000_refresh_token_jti` sorts after every folder on origin/main (latest `20261003120000_signup_sequence`) and every origin branch (latest other `20261006120000_signup_code_channel`, AUTH-07).
+
+**Regression.** `npx tsc --noEmit` 0 on both. eslint over `src test`: 43 errors in `.ts` on both with the identical file and rule set (`eslint test` also reports a parse error for each `test/*.mjs` script because the project service does not cover them: 4 on the branch, 3 on main, the new script being the same class as its three siblings). `session-security.spec.ts` byte-identical (same git blob `0141a72`) and passes 24 of 24 on the branch (rerun alone). `npm run contract:build` leaves `contract/openapi.json` unchanged (git status clean). `npm run test:session-local` 38 of 38 PASS and `npm run test:refresh-local` 29 of 29 PASS on the branch. Full jest at load 20 to 58, first pass: branch 4 failed suites / 29 failed tests, main 2 / 28, all `phone-signup`, `signup-sequence`, `pending-signup-no-session` argon2 timeouts plus the AUTH-08 speed test; different names on each side between runs. Re-run alone with `--testTimeout=180000` (flag only): branch: `phone-signup.service` 44 of 44, `pending-signup-no-session` 14 of 14, `signup-sequence.service` 22 of 22, `session-security` 24 of 24, `refresh-token-lookup` 19 of 20 (the 1000 ms clock line only: 2067 ms and 2369 ms at load 34 to 36, with one hash check; see F-3); main: the same three suites 44, 14, 22 of 44, 14, 22. No test fails by name on one side only. `refresh-token-lookup.spec.ts` is a new file (20 tests, +20 over main).
+
+**The app** (mobile `origin/main`, web export with a private `TMPDIR` and `--clear`, `EXPO_PUBLIC_ID_URL=http://localhost:5351`, `EXPO_PUBLIC_API_URL=http://localhost:5352`; the bundle holds exactly those two URLs and no `wawuafrica.com`; every other request was aborted by the harness and none was attempted). The Hub was a stand-in on :5352 that checks the bearer the way the Hub does (RS256 and expiry), because only wawu-id was under test. Access tokens were set to 20 s. Real sign-in screen: signed in, the refresh token carries a jti and its row was stored; with 200 stored rows and the access token expired, a reload made the app call `GET /auth/signup/progress` (401), `POST /auth/refresh` (200, 2926 ms at load about 40), repeat (200), then the Hub calls (200); the stored refresh token was replaced, the old row gone and the new one stored. `POST /auth/logout` with the refresh token the app held: 200; after the next expiry the app's refresh got 401, the tokens were cleared and it landed on `/welcome` (`app-3-after-signout.png`). No app change was needed. The app has no sign-out button and `signOut()` never calls `/auth/logout` on mobile main, so sign-out was driven with the same endpoint and token, not by the app.
+
+**Mutants** (own, in a separate worktree, each rebuilt and run against my HTTP probes `va08/probe.mjs` and the repo's two specs; timing probes were re-read at the load noted):
+
+| # | Mutation | Probes | Specs |
+|---|---|---|---|
+| M1 | account removed from the lookup (where and the belt check) | killed (P1) | only by the old spec's loose stand-in (13 SETTINGS-03 failures), not by the AUTH-08 wrong-account test |
+| M2 | account removed from the where only | equivalent (the belt check still refuses another account's row) | same noise |
+| M3 | a bad hash falls through to the scan | killed (P2) | killed |
+| M4 | scan includes rows that carry a jti | killed (P6 timing, 7215 ms) | killed |
+| M5 | sweep without the 50 bound | killed (P5c) | killed |
+| M6a | sweep query takes live rows, guard kept | equivalent (guard) | survives |
+| M6b | sweep query takes live rows, guard removed | killed (4 probes) | killed (9) |
+| M7 | sweep not scoped to the account | killed (P5b) | killed |
+| M8 | scan not limited to unexpired rows | killed (P7 timing, 9844 ms) | killed |
+| M9 | no hash check when a jti row is found | killed (P2) | killed |
+| M10 | rotation ignores the delete count | killed (P8, 3 parallel) | survives (F-2) |
+| M11 | no scan for a token that names a jti | killed (P4a, P4b, P7) | killed |
+| M12 | sign-out without the account lock | survives my probes (no race probe) | killed by the SETTINGS-03 race spec on the second run, survived the first |
+
+**Findings.**
+- **F-1 (unclear, low): a refresh fails 500 if the expired-row sweep statement fails.** The sweep catches its error, but inside the rotation transaction a failed statement aborts the Postgres transaction, so the insert after it fails and the refresh answers 500 (the old token's row is kept, a retry once the cause is gone works). Reproduced with a trigger that refuses deletes of expired rows (`va08/pass1c.out` S4): sign-in 200, sign-out 200 and ended, refresh 500, `Could not prune` logged. Sign-in and sign-out are not blocked, as the builder says; refresh is, and the builder's comment says so ("inside a transaction a failure here fails the statement after it anyway"). A real cause would be a deadlock or lock timeout on those deletes; 36 concurrent mixed calls over a 60-row backlog gave none. Not a security issue and not blocking. Default (agent), owner may override: accept; the fix is to run the sweep outside the transaction or inside a savepoint.
+- **F-2 (note): two specs gaps.** No repo spec kills M1 for the right reason (the cross-account probe that does: B's row hash set to the hash of A's forged token) and none kills M10 (two parallel rotations of one token). Both properties hold over HTTP here (P1, R3 and P8).
+- **F-3 (note): the AUTH-08 spec asserts a 1000 ms wall clock** on the 200-token refresh and sign-out: it failed at load 35 (2067 ms) with one hash check, and in every mutant run at load above 20. Its sibling assertions count hash checks and are load-proof; the clock one is the only flaky line. Passes when the box is quiet (builder 291 ms).
+- **F-4 (recorded): transition cost**, above.
+
+**NOT RUN.**
+- Timing on the production droplet and how many unexpired null-jti rows production holds. Unblocked by: deploying `wmt/AUTH-08` and running `select user_id, count(*) from refresh_tokens where expires_at > now() group by 1 order by 2 desc limit 10;` on the production wawu-id database, then timing `POST /auth/refresh` for the top account.
+- Sign-out through the app. Unblocked by: SETTINGS-01 (todo) building a sign-out that calls `POST /auth/logout`.
+- The real Hub (a stand-in checked the bearer). Unblocked by: `scripts/local/up.sh` from the backend repo, not needed for a wawu-id-only change.
+- A quiet-machine run of the full jest suite and of the AUTH-08 speed spec. Unblocked by: running `npx jest` when the load average is under 4.
+- The owner's phone.
+
+**Secret scan** of my staged diff (task file, LOG, PROGRESS): nothing found (`sk_`, `FLWSECK`, private-key headers, bearer tokens, `eyJ` tokens, 40+ hex or 60+ base64 runs), and no em-dash added. I wrote no product or test code; mutants live only in my own worktree `va08mut` (restored from git after each, removed with it).
 
 ## Owner sign-off
 

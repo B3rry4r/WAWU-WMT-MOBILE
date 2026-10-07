@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 71 | 0 | 24 | 28 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 44 | 27 | 10 | 3 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
 
 ## Done
@@ -119,6 +116,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · AUTH-08 · Verifier report (independent session, wawu-id `dd4326a` against `4715d17`): every security probe held over real HTTP with tokens minted on main and served by the branch (reuse of a rotated token old and new, a signed-out token cannot be revived through the null-jti fallback, a bad hash falls through to nothing, another account's jti refused with the account filter really applied, a password change ends null-jti and new rows, 40-trial races with both orders exercised, the sweep never touches a live row or another account and is bounded at 50, code rolled back to main still honours new rows); 200 rows carrying a jti answer refresh in 400 ms and sign-out in 186 ms (main 43 s and 26 s), but while 200 unexpired pre-change rows exist a late-position old token still takes 41.7 s and any refusal 29 to 54 s (the old path, gone within 30 days); migration clean over existing rows, diff empty, documented rollback works and re-applies; tsc 0, eslint 43 equal, session-security spec byte-identical, contract unchanged, `test:session-local` 38 of 38, `test:refresh-local` 29 of 29; the Expo app signed in and refreshed after expiry against the branch (sign-out not drivable in the app, none exists); 12 own mutants (10 killed by probes, 1 by the race spec, 2 equivalent); one low note (a refresh answers 500 if the expired-row sweep statement fails, F-1); status review.
 - 7 Oct 2026 · AUTH-08 · Builder report (wawu-id `dd4326a` on branch `wmt/AUTH-08`, status verifying): a refresh or sign-out finds the refresh token by its stored `jti` and verifies one hash instead of one per stored token, so 200 stored tokens answer in 356 ms (refresh) and 236 ms (sign-out) where main takes 31.6 s and 29.2 s; pre-change tokens (null `jti` row) still refresh once and only once until they expire; an account's expired rows are deleted on every issue and sign-out (50 at a time); additive migration `20261007120000_refresh_token_jti`, rollback run; the task text was wrong that old tokens carry no `jti` (they carried an unstored one), so the fallback is on a missing row, not a missing claim; answers CHECK-1 F-5 and the cause named in G-264.
 - 7 Oct 2026 · AUTH-08 · New task (lead, order 182; tasks from 182 move down one): wawu-id refresh and sign-out look up the token by id instead of argon2-checking every stored token (CHECK-1 F-5, SETTINGS-01 G-264).
 - 7 Oct 2026 · CHECK-1 · Audit merged (status stays review for the owner's sign-off): real sign-in against the local stack passes; 33 artboards compared (16 match, 17 differ for recorded reasons); 12 built routes have no way in until the tab hubs land; R-38's bar line corrected to the canvas bar (F-2); wawu-id refresh slows with many stored tokens (F-5, follow-up).
@@ -133,4 +131,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-01 · Verifier report (independent session): privacy, ownership, money, roles, failure paths and the trial merge pass; not ready, because the 30 an hour and 40 per conversation limits overshoot under parallel sends and `POST {id}/reply` is unlimited and duplicates replies (D1, D2), plus five smaller defects (D3 to D7); status back to building. 22 mutants, 19 killed.
 - 6 Oct 2026 · LEGAL-01 · Built, awaiting verification (taken over from DEV3): legal starts as a chat. The assistant runs on an unpaid intake (`/legal/assistant/*`, backend `wmt/LEGAL-01`), writes the brief into the intake, and Send opens the matter at awaiting_quote, where a consultant reads the brief and joins before any payment; the AI is the existing Gemini client, a recording stand-in in tests; G-215 (no dashboard screen for the consultant's half), G-216.
 - 7 Oct 2026 · ADS-06 · Verifier round 2 (independent; backend 9a059ef, mobile ed61212): status review, no product defect open. D1 closed (47 impossible-time forms on every call site are 400, nothing saved; note: 79b15eb already holds the fix, the pre-fix head f5e0469 still reproduces the 500); the admin views' views, taps and skips equal ADS-05's records (48 of 48 checks, a never-shown ad reads 0, no admin route writes a count); routes admin-only (176 of 176 refused, role table holds); migration `20261008100000` clashes with none of 74 branches and `migrate diff` shows only main's GIN drift; gates 16 fail as main, protected suite 253 of 253, task specs 476 of 476, seeded rows untouched; 19 mutants: 13 killed, 1 equivalent, 5 survived (reviewer allowed on create, pause, resume, end and delete is untested, T1, low). Two notes: mobile contract copy is main's (C1), and `npm run check` was exit 1 on ed61212 until PROGRESS.md was regenerated (M1).
-- 7 Oct 2026 · ADS-06 · Round 3 built, awaiting verification: merged main (ADS-03, ADS-04, ADS-05 and the rest are on it); migration renamed to `20261008100000_admin_ads_audit` (after every migration on main and open branches); the admin views now carry ADS-05's counts (`delivery`, per-day `days`, summary totals by status and placement, one set-based read per list page; G-194 and G-200 closed); ADS-05's G-198 and SHARED-CHANGES row #3 corrected; D1 (year 0000) fixed.
