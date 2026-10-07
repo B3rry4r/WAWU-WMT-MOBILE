@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -23,13 +23,10 @@ import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased
 import { HANDLE_PATTERN, PROFILE_LINK_PREFIX, limits } from './limits';
 import { canPickImage, pickImage } from './pickImage';
 import { PictureHeader } from './PictureHeader';
-import { SavedToast } from './SavedToast';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
 import { uploadPicture, type PictureFolder } from './upload';
 
-/** How long "Profile saved" stays up before the screen closes (M10 draws the toast over the profile). */
-const TOAST_MS = 1200;
 /** design/_gen/me.js line 36 (M8): the body stacks its parts 14 apart. */
 const BODY_GAP = 14;
 /** me.js line 35, `socField`: 52 high, 16 corner, 14 in from the sides, 10 between logo and words, 15 type; the logo is 18. */
@@ -45,7 +42,10 @@ export type EditProfileScreenProps = {
   onBack: () => void;
   /** A social row: opens M9. */
   onOpenSocial: () => void;
-  /** After "Profile saved" has been shown. The route decides where to go. */
+  /**
+   * As soon as the save lands. The route decides where to go; "Profile saved" is M10's, drawn once by the
+   * screen the person lands on (the Me tab), so this screen draws no toast of its own.
+   */
   onSaved: () => void;
 };
 
@@ -53,7 +53,7 @@ export type EditProfileScreenProps = {
  * M8 · Edit profile. Reads the person's profile and its details (`GET /users/me`,
  * `GET /users/me/profile-fields`): loading, error and the filled form each have
  * their own state. Save sends only what changed, to the two routes that hold it,
- * then shows "Profile saved" (M10).
+ * then hands back at once (`onSaved`): M10's "Profile saved" is the Me tab's.
  */
 export function EditProfileScreen(props: EditProfileScreenProps) {
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe, staleTime: 0, gcTime: 0 });
@@ -117,11 +117,6 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved }: FormProps
 
   // M9 sits above this screen and edits the same draft; it is dropped when this screen closes.
   useEffect(() => () => clearDraft(), []);
-  useEffect(() => {
-    if (!saved) return undefined;
-    const timer = setTimeout(onSaved, TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [saved, onSaved]);
 
   const added = addedOf(form);
   const problems = problemsOf(form, base);
@@ -142,8 +137,8 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved }: FormProps
     onMutate: () => setFailure({}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['profile'] });
-      AccessibilityInfo.announceForAccessibility('Profile saved');
       setSaved(true);
+      onSaved();
     },
     onError: (error) => setFailure(saveFailure(error)),
   });
@@ -254,7 +249,6 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved }: FormProps
           {added.length < PLATFORMS.length ? <AddHandleRow onPress={onOpenSocial} disabled={busy} /> : null}
         </View>
       </EditFrame>
-      {saved ? <SavedToast message="Profile saved" /> : null}
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">
         <Text variant="sheetTitleSm">Discard your changes?</Text>
         <Text variant="muted">What you changed has not been saved.</Text>

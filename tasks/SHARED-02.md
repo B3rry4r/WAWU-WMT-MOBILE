@@ -7,7 +7,7 @@ order: 183
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-41]
 passes: [V1, V5, V6]
@@ -52,7 +52,46 @@ HOME-01 #2 and EXPLORE-01 #3 both change `MediaCard`: design one set of optional
 
 ## Builder report
 
-_Not started._
+Built by the lead's agent, 7 Oct 2026, on `wmt/SHARED-02` from `origin/main` 47e1f07. No hub screen was changed: each hub swaps its stand-in in its own fix round.
+
+**Rows applied** (all marked `applied by SHARED-02` in `SHARED-CHANGES.md`; the hub rows were copied from the hub branches with only the status changed, so where a hub branch's merge meets one of them, only the status column differs).
+- **HOME-01 #2 and EXPLORE-01 #3, one design on `MediaCard`.** `titleAccessory` (after the title, 4 apart, stacked and row; the title shrinks before the accessory does). `footer` (stacked only: under the caption inside the picture, 8 below the words). `action={ label, onPress, on, loading, disabled, testID }` (stacked only: the shared `Button`, `size="sm"`, full width, 32 high, `primary`, or `glass` when `on`; after a footer when both are given). With a footer or an action, the card is no longer one screen-reader element: the words are (`<testID>-words`, the same label), so the button stays reachable; with `onPress` too, the words carry the press as `activate`. `width` now also takes `'100%'` (Categories' grid). With none of them the tree is the one main draws.
+- **EXPLORE-01 #1, `FilterChips`.** `ChipItem.icon`: 11 at the start, 14 at the end (less the 1 px outline on `option`, as that variant counts it), a 15 icon at stroke 2 in the label's colour, 6 before the label (`chipIconMetrics`). `revealSelected` (row only): the chip on at the first draw is scrolled into view once if it starts out of view, CategoryChips' behaviour, measured against the row's own width. Each chip is now `<testID>-<value>`.
+- **ME-01 #1, `Button`.** A new size `profile`: 38 high, 16 in, label 14 at 600. The size table now carries a label weight; `sm`, `md` and `lg` keep 700.
+- **HOME-09 #1 joined with HOME-01 #1, tokens.** `design/_ds/wawu/tokens/colors.css`: `--tgif-{verse,reality,remember,prayer,takeaway}-{ground,glow}` (the takeaway ground is `var(--tgif-verse-ground)`), `--tgif-label` (#E2B4F5), `--tgif-warm-glow` (rgba(255,160,60,.35)), set once in the dark block so both themes hold the same value. `src/features/tgif/look.ts` now reads them (one ground and one glow per card; the washes and the two-token reality glow are deleted) and `CardBackdrop.tsx` draws the one glow. New `stopOf(token)` in `@/theme` splits `rgba(r, g, b, a)` into an opaque colour and its strength, because react-native-svg replaces a stop colour's own alpha with `stopOpacity`.
+- **WALLET-01 #1 (and HOME-01 #1's shadow), tokens.** `scripts/design/gen_tokens.py` now turns every `--shadow-*` into a React Native `boxShadow` list per theme: `darkShadows`, `lightShadows` (`ShadowToken`), and `useWawu().shadows`. `--shadow-money` is light `0 24 40 -22` at rgba(22,21,27,.6), dark an inset 1 px of white at 8%. `--glow-money` (rgba(148,17,201,.55), both themes) is a colour token in `elevation.css` (the generator's colour prefixes gain `tgif-` and `glow-`). All through `npm run tokens`; nothing hand-written in `src/theme/tokens.generated.ts`, whose NOT GENERATED header loses the seven shadow lines.
+- **EXPLORE-01 #2 and ME-11 #3, `src/app/_layout.tsx`.** `categories`, `add-work`, `works/[wawuId]/index` and `works/[wawuId]/[workId]` are listed under the signed-in `Stack.Protected` guard.
+- **WALLET-01 #2.** `flowReturn.test.tsx`: main's `(tabs)/wallet` is still the placeholder (WALLET-01 is not merged), so the real route cannot be walked here. The first case is now what it always tested, "from a tab: back on that tab", its stand-in renamed `TabWayIn`, and the header names WALLET-01's `walletTabFlow.test.tsx` as the Wallet tab's own walk with W5.
+- **ME-01 F1.** `EditProfileScreen.tsx` calls `onSaved` as soon as the save lands; it draws no toast and makes no announcement of its own (`TOAST_MS` and the timer are gone). `SavedToast.tsx` stays for the Me tab. The edit-profile tests wait for `onSaved` where they waited for the toast.
+
+**Files.** `src/components/MediaCard.tsx`, `FilterChips.tsx`, `Button.tsx`; `src/theme/index.ts`, `src/theme/tokens.generated.ts` (generated); `scripts/design/gen_tokens.py`; `design/_ds/wawu/tokens/colors.css`, `elevation.css`; `src/app/_layout.tsx`; `src/features/tgif/look.ts`, `CardBackdrop.tsx`; `src/features/profile-edit/EditProfileScreen.tsx`; tests: new `src/__tests__/hubSharedProps.test.tsx` (36), `src/__tests__/auth-guard.test.tsx` (+8), `src/features/profile-edit/__tests__/editProfile.test.tsx`, `pictures.test.tsx`, `src/features/open-wallet/__tests__/flowReturn.test.tsx`; `SHARED-CHANGES.md`, `docs/LOG.md`, generated `tasks/INDEX.md` and `docs/PROGRESS.md`.
+
+**Capability checks** (left `[ ]` for the verifier).
+- *Each row applied and marked:* 11 rows say `applied by SHARED-02` (the nine in the scope table plus HOME-09 #1 and ME-11 #3 on main).
+- *Every existing user renders identically:* users found by grep. `MediaCard`: the pay sheet, the showcase. `FilterChips`: Inbox, All works (M34), the showcase. `Button`: every auth screen, the pay and PIN sheets, policies, settings (password, blocked, privacy), M8 and M9, works (M34, M35, M36), TGIF, payout account, Open your wallet, Inbox, `StateViews` (every error and empty state). Two web exports each of main (47e1f07) and the branch's final source (`npx expo export --clear`, private TMPDIR, prod and `--dev` for the dev-only showcase and previews), served on :5415 with a stand-in Hub on :5416 that answers every route from the contract's own schemas, the same answers for both builds, and a stand-in ID on :5417; signed-in screens use a session seeded in localStorage; every non-localhost request aborted (none was made). Playwright Chromium, 390 x 844 at 2x, light and dark, CSS animations off, and each scrolling screen shot a viewport at a time to its end. **51 routes and states, 128 pairs: 126 identical to the pixel; 2 differ, both `/tgif` (light and dark), by design**: the verse card's ground moves from the debit ink #2A1240 to the canvas's #2A0C3E (a sampled ground pixel 42,18,64 before, 42,12,62 after; largest channel difference 6) and its glow from the accent at 70% to the token at 70%. Shots: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bs02/shots/before/` and `after/`, the numbers in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bs02/diff.json`, the changed masks in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bs02/shots/diff/`.
+- *Tokens through `npm run tokens`:* the generated file was written only by `npm run tokens`, and `python3 scripts/design/gen_tokens.py --check` reports it up to date (run by hand: `npm run check` does not run it); tests read the generated values (both themes) against the canvas's.
+- *Each new prop drawn when given and absent when not:* `hubSharedProps.test.tsx`: titleAccessory (stacked, row, absent), footer (8 gap, the words grouped, card not one element; absent: one element with its label; row: not drawn), action (32 high, full width, accent, glass when on, press reaches the caller, after a footer; absent: no button; `'100%'` width), chip icon (padding, colour, option outline; absent: 15 either side and no icon), revealSelected (scrolls once to an out-of-view chip, not to one in view; absent: no layout handlers, no scroll), Button `profile` (38, 16, 14 at 600; `sm` still 700), the twelve TGIF tokens in both themes, each reader card's ground and split glow, `stopOf`, `--shadow-money` both themes, `--glow-money`, `--shadow-card: none` as no shadow. Routes (`auth-guard.test.tsx`): a signed-out visit to each of the four routes lands on welcome, a signed-in one draws it; with the four `Stack.Screen` lines removed the four signed-out cases fail (4 failed, then restored).
+
+**Checks.** Before (main 47e1f07, while an export ran beside it): typecheck and lint clean; jest 63 suites, 1143 tests, 2 failed, both 20 s timeouts under load (`OpenWalletScreen` A26 loading, `settingsScreens` Z3); gates (main snapshot) 297 files, 0 findings; tasks 211. After (branch, nothing else running): `npm run check` exit 0; typecheck and lint clean; jest 64 suites, 1187 tests, 0 failed (+1 suite and +44 tests, all this task's; the two timeouts above passed); gates 298 files, 0 findings; tasks 211.
+
+**Decisions (Default (agent), owner may override).**
+- `action` is the shared `Button` (sm, 32 high), not a new pill: its label is 13.5 at 700 and its glass is white at 14% with the glass ring, where `cCard`'s Follow is 13 at 700 and white at 20% with no ring. EXPLORE-01's stand-in drew the same `Button`; HOME-01's stand-in drew the canvas's exact pill and can keep it as a `footer` if the verifier holds Today to those values.
+- The new Button size is named `profile` (where it is drawn: the name block on M1 and M5), not a `labelWeight` prop, so a size stays one complete look.
+- The generator exports every shadow token, not only `--shadow-money`: one rule for the whole family. Row 7's `--shadow-sheet` is therefore now `shadows.sheet`; `src/components/shadow.ts` and its two users are row 7's and were not touched (the kit's `Seg` lift still has no token).
+- WALLET-01 #2 keeps the case running (above) instead of dropping it, so main loses no coverage while WALLET-01 is unmerged.
+- ME-01 F1 is applied as written: until ME-01 merges, a save on main closes M8 with no "Profile saved" at all, since M10 is ME-01's.
+- `docs/CONVENTIONS.md`, named in the brief, does not exist on main; `CLAUDE.md` and `docs/WORKFLOW.md` were followed.
+
+**Findings for the hubs' fix rounds.** HOME-01's `SuggestionCard` draws the person's initials when there is no photo; `MediaCard` draws its quiet block there and has no slot for initials (not asked for in any row). HOME-01's Follow says "Follow <name>" to a screen reader; `action` says its `label`, as every `Button` does.
+
+**NOT RUN.**
+- The new props on a real screen: no screen on main uses them until each hub swaps its stand-in (fact: the hub's fix round on this branch's merge).
+- A phone: no development build here, web only. Most at risk: `stopOf`'s split on react-native-svg on iOS and Android (fact: H29 to H34 on a development build).
+- VoiceOver and TalkBack on a card with a footer or action (fact: a development build and a hub using the props).
+- The other four TGIF cards on screen (only the verse card opens first; their values are unit-tested).
+- Screens the screenshots did not reach: the export sheet and the TGIF share sheet (both opened only by a press), and A5 and A6 (`/open-wallet-details`, `/open-wallet-selfie` send a fresh visit back to A26). Their buttons use `sm`, `md` or `lg`, whose table entries did not change.
+- Signed-in screens were drawn against the stand-in Hub, not the real one: the evidence is "identical before and after", not the screens' data.
+- Until EXPLORE-01 merges `src/app/categories.tsx`, Expo Router warns once that no route named `categories` exists and skips that entry (fact: EXPLORE-01's merge).
 
 ## Verifier report
 

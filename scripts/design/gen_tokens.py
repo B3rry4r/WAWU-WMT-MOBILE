@@ -12,9 +12,10 @@ Cascade rule, copied from colors.css: dark is the default (:root) and light
 only overrides some tokens. A token light does not redefine keeps its dark
 value, exactly as the browser resolves it.
 
-Tokens this generator cannot express as a Flutter value (blur filters, CSS
-shadows) are listed in the generated file's
-header under NOT GENERATED, so their absence is visible rather than silent.
+Box shadows (`--shadow-*`) become React Native `boxShadow` lists, per theme.
+Tokens this generator cannot express as a React Native value (blur filters,
+fonts) are listed in the generated file's header under NOT GENERATED, so their
+absence is visible rather than silent.
 """
 from __future__ import annotations
 
@@ -110,6 +111,36 @@ def gradient(value: str) -> dict | None:
     return {"angle": float(m.group(1)), "colors": colors, "locations": locations}
 
 
+LENGTH = re.compile(r"-?[\d.]+(px)?$")
+
+
+def shadow(value: str) -> list[dict] | None:
+    """A CSS box-shadow as React Native `boxShadow` entries; `none` is an empty list."""
+    v = value.strip()
+    if v == "none":
+        return []
+    out = []
+    for part in (p.strip() for p in re.split(r",(?![^(]*\))", v)):
+        inset = part.startswith("inset ")
+        if inset:
+            part = part[len("inset "):].strip()
+        m = re.match(r"((?:-?[\d.]+(?:px)?\s+){2,4})(.+)$", part)
+        if not m:
+            return None
+        lengths = [float(x[:-2] if x.endswith("px") else x) for x in m.group(1).split()]
+        if any(not LENGTH.match(x) for x in m.group(1).split()):
+            return None
+        c = color(m.group(2))
+        if c is None:
+            return None
+        lengths += [0.0] * (4 - len(lengths))
+        entry = {"offsetX": lengths[0], "offsetY": lengths[1], "blurRadius": lengths[2], "spreadDistance": lengths[3], "color": c}
+        if inset:
+            entry["inset"] = True
+        out.append(entry)
+    return out
+
+
 def px(value: str) -> float | None:
     m = re.fullmatch(r"(-?[\d.]+)px", value.strip())
     return float(m.group(1)) if m else None
@@ -126,7 +157,7 @@ def ms(value: str) -> int | None:
 
 
 COLOR_PREFIXES = ("surface-", "border-", "text-", "accent", "positive", "warning", "danger",
-                  "info", "success", "locked", "tick-", "cur-", "hue-", "brand-")
+                  "info", "success", "locked", "tick-", "cur-", "hue-", "brand-", "tgif-", "glow-")
 TEXT_SIZES = ("text-display", "text-title", "text-h1", "text-h2", "text-h3", "text-body",
               "text-sec", "text-caption", "text-label", "text-tab")
 
@@ -137,9 +168,21 @@ def js(v) -> str:
     return json.dumps(v, ensure_ascii=False)
 
 
+def inline(d: dict) -> str:
+    return "{ " + ", ".join(f"{k}: {js(v)}" for k, v in d.items()) + " }"
+
+
 def obj(d: dict, indent: int = 2) -> str:
     pad = " " * indent
-    return "{\n" + "".join(f"{pad}{k}: {js(v) if not isinstance(v, dict) else obj(v, indent + 2)},\n" for k, v in d.items()) + " " * (indent - 2) + "}"
+
+    def value(v) -> str:
+        if isinstance(v, dict):
+            return obj(v, indent + 2)
+        if isinstance(v, list) and all(isinstance(x, dict) for x in v):
+            return "[" + ", ".join(inline(x) for x in v) + "]"
+        return js(v)
+
+    return "{\n" + "".join(f"{pad}{k}: {value(v)},\n" for k, v in d.items()) + " " * (indent - 2) + "}"
 
 
 def build() -> str:
@@ -166,7 +209,13 @@ def build() -> str:
     for k in ("scrim-feed", "scrim-card"):
         if k in dark and (g := gradient(dark[k])):
             gradients_dark[camel(k)] = gradients_light[camel(k)] = g
+    shadows_dark, shadows_light = {}, {}
     for k, v in dark.items():
+        if k.startswith("shadow-"):
+            ds, ls = shadow(v), shadow(light_full[k])
+            if ds is not None and ls is not None:
+                shadows_dark[camel(k[7:])], shadows_light[camel(k[7:])] = ds, ls
+                continue
         if k.startswith(("shadow-", "blur-", "font-", "numeric", "press-")):
             skipped.append(f"--{k}: {v}")
 
@@ -196,6 +245,13 @@ def build() -> str:
         f"export const darkGradients = {obj(gradients_dark)} as const;",
         "",
         f"export const lightGradients: Record<keyof typeof darkGradients, GradientToken> = {obj(gradients_light)};",
+        "",
+        "/** A box shadow as React Native's `boxShadow` takes it (lengths in logical px). */",
+        "export type ShadowToken = { offsetX: number; offsetY: number; blurRadius: number; spreadDistance: number; color: string; inset?: boolean };",
+        "",
+        f"export const darkShadows = {obj(shadows_dark)} as const;",
+        "",
+        f"export const lightShadows: Record<keyof typeof darkShadows, readonly ShadowToken[]> = {obj(shadows_light)};",
         "",
         f"export const space = {obj(space)} as const;",
         "",

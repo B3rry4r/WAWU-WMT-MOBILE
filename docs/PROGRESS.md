@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 70 | 0 | 23 | 26 |
+| todo | 69 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 48 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
 
 ## Done
 
@@ -122,6 +126,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 7 Oct 2026 · SHARED-02 · Built: the four tab hubs' shared changes applied (MediaCard `titleAccessory`, `footer`, `action`; FilterChips chip `icon` and `revealSelected`; Button size `profile`; TGIF, `--glow-money` and every `--shadow-*` generated as tokens; categories and the works routes under the signed-in guard; M8 hands back at once for M10's single "Profile saved"); 128 before and after screenshot pairs, 126 identical, the 2 TGIF ones changed by design. Status verifying.
 - 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
 - 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
 - 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
@@ -136,4 +141,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · AUTH-08 · Verifier report (independent session, wawu-id `dd4326a` against `4715d17`): every security probe held over real HTTP with tokens minted on main and served by the branch (reuse of a rotated token old and new, a signed-out token cannot be revived through the null-jti fallback, a bad hash falls through to nothing, another account's jti refused with the account filter really applied, a password change ends null-jti and new rows, 40-trial races with both orders exercised, the sweep never touches a live row or another account and is bounded at 50, code rolled back to main still honours new rows); 200 rows carrying a jti answer refresh in 400 ms and sign-out in 186 ms (main 43 s and 26 s), but while 200 unexpired pre-change rows exist a late-position old token still takes 41.7 s and any refusal 29 to 54 s (the old path, gone within 30 days); migration clean over existing rows, diff empty, documented rollback works and re-applies; tsc 0, eslint 43 equal, session-security spec byte-identical, contract unchanged, `test:session-local` 38 of 38, `test:refresh-local` 29 of 29; the Expo app signed in and refreshed after expiry against the branch (sign-out not drivable in the app, none exists); 12 own mutants (10 killed by probes, 1 by the race spec, 2 equivalent); one low note (a refresh answers 500 if the expired-row sweep statement fails, F-1); status review.
 - 7 Oct 2026 · AUTH-08 · Builder report (wawu-id `dd4326a` on branch `wmt/AUTH-08`, status verifying): a refresh or sign-out finds the refresh token by its stored `jti` and verifies one hash instead of one per stored token, so 200 stored tokens answer in 356 ms (refresh) and 236 ms (sign-out) where main takes 31.6 s and 29.2 s; pre-change tokens (null `jti` row) still refresh once and only once until they expire; an account's expired rows are deleted on every issue and sign-out (50 at a time); additive migration `20261007120000_refresh_token_jti`, rollback run; the task text was wrong that old tokens carry no `jti` (they carried an unstored one), so the fallback is on a missing row, not a missing claim; answers CHECK-1 F-5 and the cause named in G-264.
 - 7 Oct 2026 · SCHOOLS-02 · Verified again (independent lead session, backend `492cbd0`): V2 failed with 3 defects (a NUL inside `logo` or `applyUrl`, a lone surrogate in `reportEmail`, and an empty array as a PATCH body each answer 500), V1/V3 failed on the rules (branch lacks backend main `0e7b617`, migration stamp equals `20261006100000_chat_read_at` and sorts before main's newest, mobile contract is not the backend branch's); protected suite 253/253 on a trial merge, 15 of 15 mutants killed, the earlier two 500s are closed. Status back to building.
-- 7 Oct 2026 · SCHOOLS-02 · Fix round 3 built (backend `7d6b14c`, mobile `e2b1e08`): a NUL or lone surrogate in any school, course or intake text field is 400 naming the field (was 500 in `logo`, `applyUrl`, `reportEmail`), a body that is not a JSON object is 400 on the write routes, migration renamed `20261010100000_schools_hidden` (after main's and every open branch's newest), main merged into both branches, mobile contract equals the backend branch's; protected 253/253, 660 admin and schools tests pass, mobile check exit 0.

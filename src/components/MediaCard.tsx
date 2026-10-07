@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type DimensionValue } from 'react-native';
 
 import { font, radius, space, useWawu, type GradientToken } from '@/theme';
 
+import { Button } from './Button';
 import { useFocusRing } from './focusRing';
 import { Text } from './Text';
 
@@ -23,6 +24,10 @@ export const mediaMetrics = {
   stackedSubtitle: 12,
   stackedSubtitleOpacity: 0.8,
   stackedSubtitleGap: 2,
+  /** `cCard` (home.js and explore.js): the tick 4 after the name, then 8 down to the Follow button, which is 32 high. */
+  titleAccessoryGap: space.xs,
+  footerGap: space.sm,
+  actionHeight: 32,
 } as const;
 
 /** A CSS-style angle (180 is top to bottom, as in `--scrim-card`) as the start and end points `LinearGradient` takes. */
@@ -48,12 +53,36 @@ function Scrim({ token }: { token: GradientToken }) {
   );
 }
 
+/**
+ * The card's one button, drawn under the caption (`cCard`'s Follow): the shared `Button` at the full width of the
+ * caption, 32 high, on the accent, or on glass when `on` (the canvas's "Following").
+ */
+export type MediaCardAction = {
+  label: string;
+  onPress: () => void;
+  /** The button's on state ("Following"): glass instead of the accent. */
+  on?: boolean;
+  /** A request is in flight: a spinner, and presses are ignored. */
+  loading?: boolean;
+  disabled?: boolean;
+  testID?: string;
+};
+
 export type MediaCardProps = {
   title: string;
   /** The line under the title: who made it, what kind, how long. */
   subtitle?: string;
   /** A verified Tick or a pill, shown on the subtitle line after the creator's name. */
   subtitleAccessory?: ReactNode;
+  /** Drawn after the title, 4 apart (`cCard`: the name, then its 13 tick). */
+  titleAccessory?: ReactNode;
+  /**
+   * Stacked only: anything under the caption, inside the picture, 8 below the subtitle line (`cCard`).
+   * With `action` as well, the footer comes first.
+   */
+  footer?: ReactNode;
+  /** Stacked only: the card's one button under the caption, 8 below the subtitle line (`cCard`'s Follow). */
+  action?: MediaCardAction;
   /**
    * Row only: the creator's name, first on the subtitle line. With it the line
    * reads name, accessory, then "· subtitle", as H14's unlock sheet draws
@@ -68,18 +97,24 @@ export type MediaCardProps = {
   imageLabel?: string;
   /** `row`: thumbnail beside the words (a sheet header). `stacked`: picture above the words (a shelf). */
   layout?: 'row' | 'stacked';
-  /** Stacked only. Defaults to the shelf's 150 by 200 picture. */
-  width?: number;
+  /** Stacked only. Defaults to the shelf's 150 by 200 picture; a grid passes `'100%'`. */
+  width?: DimensionValue;
   height?: number;
   onPress?: () => void;
   testID?: string;
 };
+
+/** With a button under the caption, the words carry the card's own press for a screen reader. */
+const activate = [{ name: 'activate' as const }];
 
 /** A piece of content: its picture, its title and who made it. */
 export function MediaCard({
   title,
   subtitle,
   subtitleAccessory,
+  titleAccessory,
+  footer,
+  action,
   byline,
   imageUrl,
   image,
@@ -98,6 +133,37 @@ export function MediaCard({
     : { width: mediaMetrics.thumb, height: mediaMetrics.thumb, borderRadius: mediaMetrics.thumbRadius };
 
   const src = imageUrl ?? image;
+  const label = [title, byline, subtitle].filter(Boolean).join(', ');
+  // A button under the caption must stay reachable on its own, so the words are grouped for a screen reader
+  // instead of the whole card.
+  const below = stacked && Boolean(footer || action);
+  const stackedTitle = (
+    <Text variant="h3" tone="textOnAccent" numberOfLines={1} style={[font(700), styles.stackedTitle, titleAccessory ? styles.titleShrink : null]}>
+      {title}
+    </Text>
+  );
+  const stackedWords = (
+    <>
+      {titleAccessory ? (
+        <View style={styles.titleLine}>
+          {stackedTitle}
+          {titleAccessory}
+        </View>
+      ) : (
+        stackedTitle
+      )}
+      {subtitle || subtitleAccessory ? (
+        <View style={styles.stackedSubtitleLine}>
+          {subtitle ? (
+            <Text variant="secondary" tone="textOnAccent" numberOfLines={1} style={styles.stackedSubtitle}>
+              {subtitle}
+            </Text>
+          ) : null}
+          {subtitleAccessory}
+        </View>
+      ) : null}
+    </>
+  );
   const picture = (
     <View style={[styles.picture, frame, { backgroundColor: colors.surfaceSunken }]}>
       {src !== undefined && src !== '' ? (
@@ -113,30 +179,54 @@ export function MediaCard({
       {stacked ? (
         <>
           <Scrim token={gradients.scrimCard} />
-          <View style={styles.caption}>
-            <Text variant="h3" tone="textOnAccent" numberOfLines={1} style={[font(700), styles.stackedTitle]}>
-              {title}
-            </Text>
-            {subtitle || subtitleAccessory ? (
-              <View style={styles.stackedSubtitleLine}>
-                {subtitle ? (
-                  <Text variant="secondary" tone="textOnAccent" numberOfLines={1} style={styles.stackedSubtitle}>
-                    {subtitle}
-                  </Text>
-                ) : null}
-                {subtitleAccessory}
+          {below ? (
+            <View style={[styles.caption, styles.captionStack]}>
+              <View
+                testID={testID ? `${testID}-words` : undefined}
+                accessible
+                accessibilityLabel={label}
+                accessibilityRole={onPress ? 'button' : undefined}
+                accessibilityActions={onPress ? activate : undefined}
+                onAccessibilityAction={onPress}
+              >
+                {stackedWords}
               </View>
-            ) : null}
-          </View>
+              {footer}
+              {action ? (
+                <Button
+                  testID={action.testID}
+                  label={action.label}
+                  onPress={action.onPress}
+                  variant={action.on ? 'glass' : 'primary'}
+                  size="sm"
+                  full
+                  loading={action.loading}
+                  disabled={action.disabled}
+                  style={styles.action}
+                />
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.caption}>{stackedWords}</View>
+          )}
         </>
       ) : null}
     </View>
   );
   const words = stacked ? null : (
     <View style={styles.words}>
-      <Text variant="h3" numberOfLines={1} style={font(600)}>
-        {title}
-      </Text>
+      {titleAccessory ? (
+        <View style={styles.titleLine}>
+          <Text variant="h3" numberOfLines={1} style={[font(600), styles.titleShrink]}>
+            {title}
+          </Text>
+          {titleAccessory}
+        </View>
+      ) : (
+        <Text variant="h3" numberOfLines={1} style={font(600)}>
+          {title}
+        </Text>
+      )}
       {byline ? (
         <View style={styles.subtitleLine}>
           <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.byline}>
@@ -161,7 +251,6 @@ export function MediaCard({
       ) : null}
     </View>
   );
-  const label = [title, byline, subtitle].filter(Boolean).join(', ');
   const style = stacked ? styles.stacked : styles.row;
   const body = (
     <>
@@ -170,11 +259,19 @@ export function MediaCard({
     </>
   );
   return onPress ? (
-    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} {...ring.handlers} style={[style, ring.style]}>
+    <Pressable
+      testID={testID}
+      accessible={!below}
+      accessibilityRole={below ? undefined : 'button'}
+      accessibilityLabel={below ? undefined : label}
+      onPress={onPress}
+      {...ring.handlers}
+      style={[style, ring.style]}
+    >
       {body}
     </Pressable>
   ) : (
-    <View testID={testID} accessible accessibilityLabel={label} style={style}>
+    <View testID={testID} accessible={!below} accessibilityLabel={below ? undefined : label} style={style}>
       {body}
     </View>
   );
@@ -193,5 +290,9 @@ const styles = StyleSheet.create({
   stackedTitle: { fontSize: mediaMetrics.stackedTitle },
   stackedSubtitleLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: mediaMetrics.stackedSubtitleGap },
   stackedSubtitle: { fontSize: mediaMetrics.stackedSubtitle, opacity: mediaMetrics.stackedSubtitleOpacity, flexShrink: 1 },
+  titleLine: { flexDirection: 'row', alignItems: 'center', gap: mediaMetrics.titleAccessoryGap },
+  titleShrink: { flexShrink: 1 },
+  captionStack: { gap: mediaMetrics.footerGap },
+  action: { height: mediaMetrics.actionHeight },
 });
 
