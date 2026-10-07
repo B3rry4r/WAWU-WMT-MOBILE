@@ -7,7 +7,7 @@ order: 70
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -180,6 +180,26 @@ The second pass (backend 18d5ebc) is the independent one: the first "Verifier re
 - **U2 (notification names the service).** Change it. A lock screen should not show what kind of legal matter someone has. Text: "Your consultant has sent you 2 documents. They are in your legal chat." (and the singular form for one).
 - **U3 (a delivery marks the consultant as joined).** Correct as built: a delivery is the consultant writing in the thread.
 - **F8 (seeded 25,000 and 45,000 naira).** Stays an owner confirmation; it does not block the merge, because admin can change both.
+
+## Builder report, round 3
+
+Built on backend 3f6a64a (head of `origin/wmt/LEGAL-03`) with `origin/main` merged into both branches (merge, no rebase). Backend head 9895dd3. Status `verifying`.
+
+- **D1.** Round 2's shared `holdHour` kept, no change; its spec still passes (`legal-consultations-round2`, 12 rounds of each route pairing at 90 minutes).
+- **D2.** `deliver` now stores the object key (`objectKeyFrom` of the posted link), in the audit row too; a file posted again under a new link for the same key is skipped. `GET /legal/requests/{id}/deliverables` signs a fresh link on every call, after the ownership check, with `StorageService.signedReadUrl(key, 900)` (15 minutes); a row or a legacy `deliverableUrl` that still holds a signed link has its key derived from it on read (nothing rewritten). A value that is not one of this bucket's is returned as it is. The old single-file route and `deliverableUrl` keep the posted link (the web reads it). `LegalModule` imports `StorageModule`. The ops upload route is not built: SHARED-CHANGES `LEGAL-03 #2`, for LEGAL-07.
+- **D3.** `fileName` is refused with 400 naming `fileName` for `/`, `\`, `.` and `..`, U+202A to U+202E, U+2066 to U+2069, U+2028, U+2029, U+0085, U+FEFF, and a name of only format or whitespace characters. The DTO's trim no longer uses `String.trim` (it strips the BOM and the line separators at the edges, which would have let them through as a clean name). HTML stays allowed.
+- **D4.** The app's `POST /legal/requests/{id}/booking` refuses a `scheduledFor` with no `Z` or `+hh:mm` offset (400 naming `scheduledFor`). **Follow-up note, not a change:** the web's protected `POST /legal/requests/{id}/consultation` still reads a time with no zone in the server's zone; it keeps its behaviour until its own removal or change task.
+- **D5.** New specs kill M11 (service price floor lowered to a negative number: 2 tests fail) and M18 (a length with no price bookable: 2 tests fail), for zoom and phone, plus a price with no length.
+- **D6 (report correction).** Gates 9, 898 files, **16 fail, 58 warn, 76 accepted, identical to `origin/main` 3a0cc5a's run** (885 files, 16/58/76); the set is unchanged. One of main's 16 fails sits in `notification-event.ts`, a file this branch touches (a deferral in a comment, line number moved). `check_baseline.py` clean. The new spec `legal-consultations-round3.contract.spec.ts` has 14 eslint errors and 2 warnings (all `no-unsafe-*` on supertest `.data`, the class main's own legal specs show); the non-test files changed in round 3 have 0.
+- **U2.** The notification reads "Your consultant has sent you 2 documents. They are in your legal chat." (one file: "Your consultant has sent you a document. It is in your legal chat."). It no longer names the service.
+- **Migration.** SCHOOLS-02 took `20261012100000_schools_hidden` on main, so ours is renamed `20261013100000_legal_consultations`; it sorts after main's newest and after every open origin `wmt/*` migration (newest `20261012100000_schools_hidden`, on main, EVENTS-11 and SCHOOLS-02). SHARED-CHANGES `LEGAL-03 #1` updated. `contract/openapi.json` regenerated (`fileName` and `scheduledFor` descriptions only); not copied to mobile (D7 is the lead's).
+- **U1, U3, F8** untouched; F8 (owner confirmation of 25,000 and 45,000 naira) stays recorded.
+
+**Proof the specs fail without the fix** (one source change at a time, then `git restore`): M11 2 of 44 fail; M18 2 fail; D2 key stored as the posted link 1 fail; D2 list not re-signed 2 fail; D3 slash rule dropped 4 fail; D4 offset rule dropped 3 fail; U2 old text 1 fail.
+
+**Counts.** `tsc --noEmit` 0. New spec 44 of 44. `src/legal`, `src/legal-intake`, `account-data-map`, `data-export-map`: 12 suites, 306 passed, 3 skipped. Protected-routes `run.sh --fresh`: all 244 required tests passed. `npm run contract:build` run, file committed.
+
+**NOT RUN.** A real bucket: the new specs replace `StorageService` with a fake that signs a link naming the key and lifetime (no keys, no `.env`); the real `signedReadUrl` is the shared helper other readers use and is not re-tested here. Paid consultation end to end (no Flutterwave keys). Two Hub processes on one database for the lock.
 
 ## Owner sign-off
 
