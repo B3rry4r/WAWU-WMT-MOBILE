@@ -3,6 +3,7 @@
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
 
+- 7 Oct 2026 · AUTH-07 · Verified (fresh session): no defect open, status review. The mailed code is never logged, its limits hold under parallel requests (no overshoot) and match the phone code's, `sms` answers byte-identically to main (32 requests), other mail callers answer identically, the migration applies and rolls back on existing rows, A3/A4/A15 match their renders apart from the channel words. Open for the owner: a stranger can hold anyone's phone number with `email` (F1, G-212); release order and the `email` default (F2); trial merge with MONEY-20 leaves two tasks at order 181.
 - 6 Oct 2026 · AUTH-07 · Built, awaiting verification: sign-up verifies by a 6-digit code mailed to the email, no SMS (A3, A4 "Verify your email", A15); one wawu-id setting `SIGNUP_VERIFY_CHANNEL=email|sms` (default email) so the owner can roll back; the phone-code routes and the Fintava SMS provider stay. Run end to end against a local wawu-id with mail captured: zero texts sent.
 - 6 Oct 2026 · LEAD · Merge train 1 is on main: backend PR #71 merged as 872cf45, deployed, health OK; contract resynced from it (unchanged). New rulings R-38 (no Studio tab in the bottom bar) and R-39 (Fintava to Nuvion, reversibly; codes by email).
 - 6 Oct 2026 · INBOX-02 · Merged to main in the lead's merge train (wmt/TRAIN-1): live updates for chat over a WebSocket, with a since-cursor catch-up; Developer 2's task.
