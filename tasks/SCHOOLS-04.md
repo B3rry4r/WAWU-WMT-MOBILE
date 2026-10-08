@@ -7,7 +7,7 @@ order: 20
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -213,6 +213,23 @@ Verifier V3, 8 Oct 2026. Independent session. Backend `wmt/SCHOOLS-04` `3971fea`
 | Odd inputs | passed | 1,500 requests across `/schools`, `/schools/{id}`, `/schools/courses/{id}` and `/search?tab=schools|all`: NUL, lone surrogates, 200,000-character `q`, `%`, `_`, `\`, regex and SQL text, arrays and objects as params, bad uuids (upper case, no dashes, braces, NUL, trailing slash), limits 0, -1, -0, 1e999, NaN, Infinity, hex, 9223372036854775807, `[]`. 761 x 200, 727 x 400, 8 x 404, **no 5xx**; the only transport failures are the four 200,000-character URLs, which Node refuses before Nest (431 by curl). No ERROR line in the Hub log. LIKE wildcards are literal: counts for `%`, `_`, `\` (31, 17, 2) equal the database's escaped `ILIKE` counts. |
 | Seats and hidden rows | passed | `seatsTaken` set directly to 0, 4, 10, 11, 2147483647, 9 on a capacity-10 intake: `seatsLeft` 10, 6, 0, 0, 0, 1, never negative. A hidden course: 404 direct, absent from the school page; a hidden intake is dropped; a hidden school: its course 404 and the school 404. |
 | `/search` other tabs vs main | passed | 180 requests (18 terms x 5 tab values x with and without a login), built `origin/main` and the branch on the same database: 0 differences. |
+
+**Partial report 2 (static passes, mutants).**
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Merge as it will land | passed | `origin/main` merged into both branches (merge commits `3971fea` backend, `794fe02` mobile); `npx tsc --noEmit` 0. |
+| Gates | passed | branch 918 files, main 909: 16 fail / 59 warn / 76 accepted on both, the 16 FAIL lines identical; `check_baseline.py` ok. |
+| V3 protected suite | passed | `run.sh --fresh HEAD` twice: 253 passed, "all 244 required tests passed", both times. |
+| Contract | passed | `npm run contract:build` regenerates the committed file exactly. Against main: 3 paths and 6 schemas added, `/search` differs only in the `tab` enum (`schools` added), 0 removed, 0 changed. Mobile `contract/openapi.json` is byte-equal (`cmp`), types regenerated; SHARED-CHANGES SCHOOLS-04 #1 and #2 are accurate. |
+| Mobile `npm run check` | passed | 76 suites, 1,377 tests, gates 0 fail, task check; no error line. |
+| Specs on the branch | passed | `src/schools` 4 suites, 35/35 (own database, mock on 4215). |
+| Mutants of the verifier's own | 14 of 16 killed | Each applied in a scratch worktree, `src/schools` and `src/search-response` run (97 tests), `git restore`. Killed: name `gt` to `gte`; id `gt` to `gte`; id `gt` to `lt`; order id desc; `take` without the extra row; keyset on id alone; course served when its school is hidden; hidden intakes on the school page; hidden courses matching a search; category ignored; seats off by one; `full` boundary; wildcards unescaped. **Survived: M4 and M11.** |
+
+**Finding F1 (open, spec gap).** M4: the keyset `OR` gains a third branch `{ id: { gt: after.id } }` (rows with an earlier name and a later id come back, which duplicates rows in a walk). All 97 tests pass. Cause: `schools-paging.contract.spec.ts` builds its schools with `uid(n)` ids that rise with the names, so no row has an earlier name and a later id. The live walks above (random ids) would catch it. Fix: a spec whose ids run against the name order (for example the lowest id on the last name), a walk at limits 1, 2, 3 that must equal `ORDER BY name, id`, and M4 re-applied showing it fail.
+M11 (`Math.max(0, capacity - seatsTaken)` without the clamp) also survives, and is **not** a defect: the `CourseIntake_seatsTaken_check` constraint (`seatsTaken <= capacity`) makes a negative count unreachable (a direct update to 11 of 10 is refused), so the clamp is defence in depth and an equivalent mutant.
+
+**Result.** Every live and static pass is green; the one open item is F1, a missing spec, not a wrong answer. Status `building` for F1 only; when it is fixed, the re-check is that spec plus M4 failing.
 
 ## Owner sign-off
 

@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 108 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 59 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 
@@ -137,6 +137,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · SCHOOLS-04 · Verifier round 3, status building: live keyset walks (85 schools, 40 hide and show trials), cursor tampering, D2 and D3, 1,500 odd inputs, gates, protected suite twice, contract and mobile check all pass; one open finding F1, a spec gap (paging spec ids rise with names, so a mutant with an extra id-only branch survives).
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 3, status verifying (backend `5a602f9`, holds main `8d7a054`): D2 fixed, the cursor's bounds come from the admin's name rule (360 UTF-16 units, 1498 characters, worst cases a flag plus selector and a control character plus selector), walked past through the admin route; D3 fixed, intakes by date then id on both pages; `matchedCourses` in creation order; FIX-07's one search-text rule kept and this branch's copy removed; new spec (10 tests) and 20 of 20 mutants killed.
 - 8 Oct 2026 · SCHOOLS-04 · Lead note: FIX-07 is on backend main; when merging it, keep its one search-text helper and remove this branch's copy in `searchTab`.
 - 8 Oct 2026 · SCHOOLS-04 · Lead rulings after the independent verifier: D2 (cursor bounds derived from the admin name rule, with a worst-case spec through the admin route), D3 (id tiebreak on the school page's intakes), specs for the six surviving mutants, an explicit matchedCourses order; SCHOOLS-05 gets a note to drop ids it already holds when appending a page.
@@ -151,4 +152,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
 - 8 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
 - 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
-- 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.

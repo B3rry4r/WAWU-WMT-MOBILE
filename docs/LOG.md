@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier round 3, status building: live keyset walks (85 schools, 40 hide and show trials), cursor tampering, D2 and D3, 1,500 odd inputs, gates, protected suite twice, contract and mobile check all pass; one open finding F1, a spec gap (paging spec ids rise with names, so a mutant with an extra id-only branch survives).
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 3, status verifying (backend `5a602f9`, holds main `8d7a054`): D2 fixed, the cursor's bounds come from the admin's name rule (360 UTF-16 units, 1498 characters, worst cases a flag plus selector and a control character plus selector), walked past through the admin route; D3 fixed, intakes by date then id on both pages; `matchedCourses` in creation order; FIX-07's one search-text rule kept and this branch's copy removed; new spec (10 tests) and 20 of 20 mutants killed.
 - 8 Oct 2026 · SCHOOLS-04 · Lead note: FIX-07 is on backend main; when merging it, keep its one search-text helper and remove this branch's copy in `searchTab`.
 - 8 Oct 2026 · SCHOOLS-04 · Lead rulings after the independent verifier: D2 (cursor bounds derived from the admin name rule, with a worst-case spec through the admin route), D3 (id tiebreak on the school page's intakes), specs for the six surviving mutants, an explicit matchedCourses order; SCHOOLS-05 gets a note to drop ids it already holds when appending a page.
