@@ -36,6 +36,13 @@ spending on AI is worth more). Below the minimum, they are told so and nothing c
 - `GET /points/convert/quote` and `POST /points/convert` (points, PIN, Idempotency-Key): consumes lots soonest-expiring first; pays the cash from WAWU's operational account into the person's wallet in their currency through MONEY-18's release path (purpose `points_cash_out`); WAWU pays the provider's charge on it (R-31).
 - Default (agent), owner may override: points from any source convert; the minimum is config's (TIER-01).
 
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Never time out a `cash_out` hold while the payout's outcome is unknown:** reconcile with the provider first, then commit or release. An unknown outcome is reconciled, never released blindly.
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
+
 ## Capability checks
 
 - [ ] A person converts points at the config rate: the points leave the soonest-expiring lots once and the cash lands in their wallet once.
