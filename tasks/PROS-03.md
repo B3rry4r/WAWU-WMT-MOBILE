@@ -7,7 +7,7 @@ order: 40
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [PROS-02, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -252,7 +252,7 @@ Build round 3 on `5859875`, then status `verifying`. The lead's independent veri
 
 ## Verifier report, round 3
 
-Verifier (independent of the builder), 8 Oct 2026, branch `wmt/PROS-03` from `47f0fac`, `origin/main` merged in (merge commit `24c8185`; the one conflict, generated `docs/PROGRESS.md`, regenerated with `npm run tasks -- --write`). Live stack: Hub from `origin/main` (`8359057`) on 4205, **`mock-wawu-id` from the backend repo** on 4206 (not the real WAWU ID), web build on 4207, database `wawu_hub_test_pros_03_v3` (dropped when done). PARTIAL REPORT, written pass by pass; later rows are added below as each pass finishes.
+Verifier (independent of the builder), 8 Oct 2026, branch `wmt/PROS-03` from `47f0fac`, `origin/main` merged in (merge commit `24c8185`; the one conflict, generated `docs/PROGRESS.md`, regenerated with `npm run tasks -- --write`). Live stack: Hub from `origin/main` (`8359057`) on 4205, **`mock-wawu-id` from the backend repo** on 4206 (not the real WAWU ID), web build on 4207, database `wawu_hub_test_pros_03_v3` (dropped when done). Evidence pictures and scripts are in the verifier scratch directory (not committed). The mock WAWU ID was wrapped in `{ data }` as the real one answers (builder's `wrap.js`).
 
 | Pass | Result | Evidence |
 |------|--------|----------|
@@ -272,6 +272,35 @@ Verifier (independent of the builder), 8 Oct 2026, branch `wmt/PROS-03` from `47
 **R3-1 (minor, not blocking) D9.** The diff of ME-01's `ServicesTab.tsx` is not only the entry's lines: `ServiceRow`'s inner words block was lifted into a new `RowWords` helper shared with the new `ListingRow`. Rendered output of the paid row is unchanged (same nodes, same styles), the paid row is a plain `accessible` group inside `Card` again, and `ListingRow` uses `useFocusRing` and a `surfaceSunken` pressed look. Judged `differs-for-recorded-reason`: sharing the words block keeps the two rows from drifting; but a strict reading of D9 ("keep only the entry's lines") would inline it. Lead to decide; I do not hold the task for it.
 
 **D6 on P7 (builder deviates).** The ruling says P7 to P6 with what was typed kept. The builder leaves the flow on system Back from P7 (as Done does), reason recorded in its report: P7 has no on-screen back and P6 after filing would offer a resend with no fields chosen. Live: Chromium back from P7 lands on `/`. Judged `differs-for-recorded-reason`: the ruling's premise is "does what the on-screen back does", P7 draws none, and P6 after a send holds no chosen fields to send, so the literal behaviour would show an inert Send. The lead may still want P7 to P6 (read-only, the typed text kept); noted, not held.
+
+## Verifier report, round 3 (completed)
+
+Verifier (independent of the builder; a new session, after the round-3 verifier stopped on a usage limit), 8 Oct 2026. Branch `wmt/PROS-03` from `6f52458`. `origin/main` had moved (`e1c975a`), so I merged it in (merge commit `f0178c2`; conflicts: `SHARED-CHANGES.md`, where main's rows are kept and ME-11 #2 keeps this branch's `LongField` wording with main's status, and generated `docs/PROGRESS.md`, regenerated with `npm run tasks -- --write`; no conflict marker left). Main brought SHARED-04's native modules, so `npm ci` was run. Live stack: Hub from backend `origin/main` (`9d90d57`, built in `/home/user/wt/PROS-03-v3-backend` because `/home/user/wt/PROS-02-backend` had no `node_modules`) on 4205 with database `wawu_hub_test_pros_03_v3c` (migrated and seeded, dropped when done); **`mock-wawu-id` from the backend repo** on 4236, wrapped in `{ data }` on 4206 as the real WAWU ID answers (not the real WAWU ID); `npm run web` on 4207; Chromium from `/opt/pw-browsers`. Evidence in my scratch directory `pros03v3c/` (not committed).
+
+The rows marked "(earlier session)" were written by the round-3 verifier before it stopped and were left uncommitted in the worktree; I kept them, read its scripts and checked them against its pictures (`pros03v3b/shots/d4-B2.png`, `d5-m2-after-hide.png`, `d8-p8.png`, `u3.png`, `pairs-{light,dark}.png`); each picture shows what its row says.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 `npm run check` on the merged branch (`f0178c2`) | passed, exit 0: jest 88 suites / 1502 tests, gates 9 run / 375 files / 0 findings, baseline 0, tasks 262 / 279 artboards | `pros03v3c/check.log` |
+| D3 routing, creator with applications (earlier session) | passed | Explore door opened P8 for a creator with a listed, a hidden and an under-review application (hidden listing reachable, Show works) |
+| D4 connection drop after the first field (earlier session, live, requests aborted in the browser) | passed | two fields, second POST dropped and the `mine` refetch failing: P6 kept licence and issuer, "Healthcare was sent. Business & Consulting could not be sent. No connection...", plus "Could not check for updates ... What you wrote is kept." with Try again; the retry cleared it, a resend filed only the missing field |
+| D4 503 on refetch when the app returns to the front (mine, live) | passed | `d4focus.py`: creator-basic on P5 chose Healthcare and Engineering, typed headline and about; the page was sent to the back (`visibilitychange` hidden) for 32 s, so the 30 s data went stale, then brought to the front with the Hub's GETs answered 503: `/users/me`, `/professionals/fields` and `/professionals/applications/mine` were each asked 3 times (two retries), and P5 stayed with both chips, the headline and the about, plus the inline "Could not check for updates ... What you wrote is kept." and Try again (`shots/d4-focus-P5-503.png`); Try again with the Hub back cleared it and kept the text. The same on P6 with licence `MDCN/9/77` and issuer `MDCN` typed: kept, inline message, Try again cleared it. No full-screen error in either |
+| D5 Hide/Show reaches M2 (earlier session) | passed | Me, Services, listing row opens P8, Hide, Back: M2 lost the listing row with no reload (`d5-m2-after-hide.png`); Show then Back: the row is back |
+| D5 judgement on `mine` only marked stale | fine | `refreshListings` invalidates `listingsKey` (refetched, so M2 is right) and marks `proKeys.mine` stale with `refetchType: 'none'` after Hide and Show only. P8 already shows the Hub's saved row from the PATCH answer, and every other reader of `mine` (P5's Add sheet, the Explore door, P8 on its next opening or focus) reads a stale query again before use. Nothing shows an old state |
+| D8 fields from the Hub (earlier session) | passed | a `business_entrepreneurship` turned-down row sits in Business & Consulting's card with Apply again (opens `/professional-apply?field=business_consulting`, headline prefilled), and there is one Business & Consulting card; a turned-down `real_estate` row keeps its card, decision and reason, with "Apply in another field" and no Apply again (`d8-p8.png`) |
+| U3 (earlier session) | passed | presign 503 (no storage keys): "Did not upload. Try again"; Send showed "Send is waiting: retry the file that did not upload, or remove it." and posted nothing; removing the file cleared the message (`u3.png`) |
+| V5 regression P5 to P10, 390 px, light and dark (earlier session) | passed, the same differences as round 2 | `pairs-{light,dark}.png` (design over build): header, section and button positions the same to within 1 px; recorded differences only: no status bar or home indicator on web, P6's note wraps "issued / it.", the Add chip after the services (G-322), P8's note without "(I21)" and the Inbox settings link (INBOX-12), no Become a creator on P10 (AUTH-06). The P6 file used a presign answered in the browser (this Hub has no storage). Taken before my merge of main; main changed no file these screens draw (`git diff --name-only 6f52458 f0178c2`: no `src/components`, theme, `src/features/{pro-listing,me,explore}` or API client file) |
+| V10 | NOT RUN | real Android phone (R-24) |
+
+Already covered by the partial report above and not repeated: D3 picture (X1, X15, light and dark), D3 routing for a `user` and a creator without applications, D6, D7, D9 diff (R3-1), D10, the two changed tests, T1 to T3.
+
+**U4 (new since main merged, for the lead, not a defect of this round).** Main now has SHARED-CHANGES row 8 applied (SHARED-04: `expo-document-picker` 57.0.3 installed), which is the fact G-321 waited on. On this branch `src/features/pro-listing/pickDocument.ts` still says `canPickDocument = false`, so a phone build still draws no upload row on P6 (no dead button; the task allowed it while row 8 was open). Wiring it is a small follow-up (this task's next round or a caller row like SHARED-07's), and it can only be checked on a phone (V10).
+
+**U5 (low, copy).** On a server error (503) the inline note reads "Could not check for updates. Something went wrong. Try again. What you wrote is kept." under a no-connection icon, with a Try again button below: "Try again" is said twice and the icon says connection when the cause is the server. Not held.
+
+**Merge-conflict risk.** EVENTS-01 also edits `ExploreScreen.tsx` and `(tabs)/explore.tsx`; this branch adds one prop, one import and one line after Featured creators in the first, and the `onListServices` wiring in the second. Whoever merges second resolves it by taking main in and moving the card after Upcoming events; I edited neither branch.
+
+**Findings across round 3.** No defect open. R3-1 (D9's shared `RowWords` helper) and the P7 system Back deviation (D6) are `differs-for-recorded-reason`, for the lead; U4 and U5 are for the lead. Status `review`.
 
 ## Owner sign-off
 

@@ -9,18 +9,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 110 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 3 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
-- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 
 ## Done
 
@@ -137,13 +134,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 - **Developer:** nothing unblocked
-- **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
+- **Developer 3:** [PROS-01](../tasks/PROS-01.md) Find a professional, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · PROS-03 · Verified round 3 (completed): main merged, `npm run check` exit 0; D4 live with a 503 on refetch when the app returns to the front and with a connection drop after the first field (form, fields, text and send result kept, inline retry), D5, D8 and U3 passed live, P5 to P10 pictures within 1 px; no defect open; R3-1, the P7 Back deviation, U4 (row 8 now applied, phone upload not wired) and U5 for the lead; V10 NOT RUN; status review.
 - 8 Oct 2026 · PROS-03 · Round 3 built on the lead rulings: Explore doors card with List your services (D3), a failed refetch keeps the flow (D4), Hide and Show refresh M2 (D5), system Back (D6), a 409 field is left out and the rest go (D7), one P8 card per field and no Apply again for a category no field files in (D8), ME-01's paid row back to a plain group (D9), LongField in ME-11 #2 (D10), T1 to T3 specs, Send waits for a file that did not upload (U3); status verifying.
 - 8 Oct 2026 · PROS-03 · Lead rulings after the independent verifier: D3 (PROS-03 draws Explore's doors card with its one door, opening P5 or P8), D4 to D10, T1 to T3, and a lead default for U3 (Send waits for a file that did not upload); the admin unlist sharing `listed` with Hide, and presign quota, are filed outside the task.
 - 8 Oct 2026 · PROS-03 · Verified independently (lead): V1, V9 passed against the real WAWU ID and a Hub from backend main; D1 and D2 closed (M2's row opens P8; P8, P5 and P7 measure equal at 2x); V4, V6, V7 failed with eight defects (D3 no Explore door, so no way into P5 or back to a hidden listing; D4 a failed refresh wipes the flow and its partial result; D5 Hide does not reach M2; D6 system Back on P6; D7 to D10 low); 17 mutants, 14 killed; U3 left as a product question; V10 NOT RUN; status building.
@@ -158,4 +156,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · POINTS-01 · POINTS-01 merged (backend PR #93, dd3a183): points lots, the ledger, GET /me/points.
 - 8 Oct 2026 · SHARED-04 · Verifier report, round 2 (independent, 652a301): status review, no defect open. D1, D2, F1 (the phone's JPEG walk equals the server's on 42,416 cases, 0 mismatches), T1 (the five boundary mutants die in the task's own specs), F3 and the two permission blocks hold on their real causes; web 16 of 16 pictures byte-identical to main; `npm run check` exit 0 (82 suites, 1,437 tests); 33 mutants of mine. Six low findings (a failed encode or an unreadable video leaves a cache file, a stale CL-03 sentence) and test gaps recorded; V10 and the merged APK manifest NOT RUN (preview build).
 - 8 Oct 2026 · SHARED-04 · Builder report, round 2 (lead rulings after the verifier): M8 and M36 say a failed pick plainly (a cancel stays silent), PNG and WebP keep their format and transparency, the selfie walks the JPEG as the server does (an appended JPEG is refused), the verifier's boundary specs are in the suite, copies are deleted once uploads settle, SYSTEM_ALERT_WINDOW and AD_ID removed from the release manifest. 21 mutants: 20 killed, 1 equivalent. Status verifying.
-- 8 Oct 2026 · SHARED-04 · Verifier report (independent, 0b4f3e6): status back to building, two defects on the pickers. D1: on M8 and M36 a picker error or a picked photo that cannot be read is silent (nothing on screen; M36 drops the file without a word). D2: a transparent PNG is written as a JPEG and loses its transparency. A6 holds every server limit at its boundary (100,000 characters, 2,048 px, 1 KB, end marker; real Skia and libjpeg bytes pass the backend walk), A8 copies, web build pixel- and byte-identical to main (16 pairs), prebuild resolves every plugin, expo-doctor 19 of 21 offline (schema and directory checks NOT RUN: network), fingerprint changes; 16 own mutants, 14 killed, 2 equivalent.
