@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 77 | 0 | 20 | 26 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 56 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
 
@@ -134,6 +134,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-11 · Verifier report (independent session, backend `096e30c`, mobile `a8d1949`): NOT READY, status building. The fix holds over real HTTP with the real wawu-id: main made 20 AI calls for 20 parallel reads of an empty paid thread (50 for 50, 45 for 100), none counted; the branch makes 1 call for 20, 50 and 100 reads on one Hub and on two Hubs over one database, every read sees one opener, and the call counts (29 spent: next message 429, main 201). Losing reads wait as long as the claimer's call (20 s only when the claimer is gone), lines arriving mid-call keep their place, 105 of 105 other legal answers byte-identical to main, protected 253/253, 12 of 13 own mutants killed by the spec and the 13th live. D1: the 5-an-hour opener cap counts written openers across all matters, so a sixth paid matter read within the hour gets no opener (main opens it). D2: the spec's "a failing provider: 20 parallel reads make 1 call" is not guaranteed by the design and failed 4 of 12 runs under load, in the deploy gate.
 - 8 Oct 2026 · FIX-11 · Built (backend `096e30c`, status verifying): the legal thread's opener is claimed under the person's lock and counted in the hourly allowance before its AI call; 20 parallel reads of an empty paid thread now make 1 call and all see one opener (main: 20 calls, 20 openers), the opener never lands after another line, at most 5 opener tries an hour (PROVISIONAL); new table `LegalChatOpenerCall` (additive migration); protected 253/253; 7 of 7 mutants killed; full suite NOT RUN (namespace refused).
 - 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
@@ -148,4 +149,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
 - 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
-- 7 Oct 2026 · SHARED-03 · Built: one shared `Toast` (ME-06's and Explore's copies deleted), chips beside icon chips at 11/14 (X3's All), `MediaCard` initials for a creator with no photo, THE creator-card Follow (`Button` `card` and `veil`, Explore on `action`), Z3 made deterministic (20 of 20), T3, T4 and R2-5 covered; 15 of 15 mutants killed; 148 picture pairs against main, 132 identical, 16 differ only by items 2, 3 and 6; `npm run check` 0 (76 suites, 1377 tests). Status verifying.
