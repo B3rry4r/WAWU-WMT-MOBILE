@@ -469,6 +469,16 @@ Built on `3093521` (the lead's rulings on `972893e`) with `origin/main` merged i
 - **Pictures** (390 px, 2x, light and dark, `npm run web` against Playwright's own routes; `scratchpad/events01k/shots/` beside `build/design_shots/`): H1, H11, X1, X15, X14 taken; I do not claim they match. H1 shows the Events tile in the first quarter under the heading.
 - `npm run check`: exit 0 (81 suites, 1459 tests, gates 0 findings, 249 tasks).
 
+## Verifier report, round 7 (8 Oct 2026)
+
+**Verifier (fresh session; wrote none of it).** Mobile `wmt/EVENTS-01` at `e423b76`, merged with `origin/main` (merge `e3ee212`, pushed; conflicts only `contract/SOURCE_COMMIT`, kept `bb10ef0`, and generated `docs/PROGRESS.md`). Backend: worktree of backend `wmt/EVENTS-01` (`bb10ef0`) merged with backend `origin/main` (`8359057`), local only, never pushed. Identity: the backend repo's `mock-wawu-id` (stated, as allowed), on 4186; Hub 4185; web 4187 (`expo start --web`, `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_ID_URL` set to localhost). DB `wawu_hub_test_events_01_v7`. This report is committed in parts; later parts follow.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 `npm run check` on the merged branch | passed, exit 0 | 81 suites, 1459 tests, lint 0 errors 2 warnings (the known `require()`), gates 9 run, 364 files scanned, 0 findings, baseline 0, 253 tasks |
+| Contract drift | passed | `contract/SOURCE_COMMIT` `bb10ef0` equals `git ls-remote` of backend `wmt/EVENTS-01` (`bb10ef0`). Backend main is now `8359057`, without PR 78's `from-prices`; contract and generated types differ from main only by those additions (178 lines), as the lead ruled |
+| T4 mutants | passed | Each applied in the worktree, the spec set (events, explore, home, `src/app`: 9 suites, 151 tests) run, `git restore src` after each: N2 killed (`the Explore tab route`, opens the featured event and a card), N3 killed (See all), N4 killed (featured event need not be first on the rail), N5b killed (2 failed: the new failure spec and the older one), N6 killed (hero day in the event's zone), N10 killed (Events tile first in the row, no empty slot), D12 (settled forced true) killed (X14 held, tiles draw once), D14 (year dropped) killed (2 failed, incl. `dateLine`). Working tree clean after each |
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
