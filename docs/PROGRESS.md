@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 74 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 56 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 
 ## Done
@@ -134,6 +131,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-06 · Verified round 2 (status review, no open defect): D1 closed, round 1's approve race 0 of 80 and reject race 0 of 20 on built Hubs with the real wawu-id; the admin read 35 of 35 (roles, every state, no protected answer widened); 162-step sweep identical to main except the new state's 5, decided and unknown approve and reject byte-identical; capability 42 of 42; every race 0 (main 34 of 60); protected 253/253; full suite 182 of 184 in its own namespace, the two misses passing alone on the host; backfill keeps main-made rows byte-equal; 19 of 19 mutants killed. The elevate outside the lock now leaves a raised tier on a lost approve, where main silently undid the rejection.
 - 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
@@ -148,4 +146,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-07 · Verified (status review; independent session, backend `4f4e4ee`, mobile `a333743`): no defect. Own sweep, main's and the branch's Hubs on one database, 2,156 paths x 4 callers: 7,692 byte-identical, 784 former 500s and the 148 recorded `tab=communities` 200s now the refusal, nothing else changed, branch 500s 0; every BMP code point and 4,084 astral ones on search and closest: only U+0000 answers other than 200 (500 on main, the refusal here); protected 253/253 and the full suite on trial merges with main `3041887` and, after FIX-08 merged mid-check, `f7e651a` (only hub-rate-limits fails there, 22/22 on the host); mutants 10 of 11 killed (spec gap: a NUL past character 50). Follow-ups recorded: SCHOOLS-04 drops its copy of the rule when it merges, 23 other GET routes on main still 500 for a NUL, closest has no length limit.
 - 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
-- 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
