@@ -43,7 +43,7 @@ Two gaps in NUV-07's guards, found by its verifier:
 ## Builder report
 
 Builder, 8 Oct 2026 (the lead's agents). wawu-backend `wmt/FIX-21` `301d56a` (merged backend main `657a152`, NUV-01 and
-TIER-01); this repo `wmt/FIX-21` on main `49ef608`. No migration, no route, no contract change (`contract:build` leaves
+TIER-01); this repo `wmt/FIX-21` on main `98f16c6`. No migration, no route, no contract change (`contract:build` leaves
 `contract/openapi.json` byte-identical to main). No Nuvion, Fintava, Flutterwave, wawuafrica.com or AI host was called.
 
 **Built** (backend):
@@ -101,7 +101,7 @@ TIER-01); this repo `wmt/FIX-21` on main `49ef608`. No migration, no route, no c
   bound at load 15) and `selfie-match.contract` 1 (a 5 s test limit). Each alone on the host at load 13 to 14:
   `hub-rate-limits` 22/22, `fintava-stall` 120/120, `selfie-match.contract` 182/182.
 - Mobile `npm run check`: **exit 0** (typecheck, lint, jest 76/76 suites and 1,377 tests, gates 9 run / 346 files / 0 fail / 0 warn,
-  258 tasks). A first run at load 12 had two screen tests over the 20 s limit (A26 `OpenWalletScreen`, the settings
+  260 tasks after merging main `98f16c6`). A first run at load 12 had two screen tests over the 20 s limit (A26 `OpenWalletScreen`, the settings
   screens), 128/128 alone; this task changes no app code. `npm run api -- --backend` the worktree: no change (this repo's
   contract already names backend `657a152`, and the branch's contract equals it).
 - **MONEY-17 beside it** (a local trial, `git merge-tree` of `83036e3` and `origin/wmt/MONEY-17` `66b86bb` exported to a
