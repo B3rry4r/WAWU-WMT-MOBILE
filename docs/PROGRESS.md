@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 102 | 0 | 20 | 26 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 56 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 
@@ -134,6 +134,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · NUV-01 · Verified (status building): 3 defects open: eslint 20 errors in 4 changed files, the same-day-cutoff refusal read as nothing moved (Nuvion says it will still process), and the "already exists" refusals saying no record exists. The receiver (a replay under 40 forged event ids is one row), the switch (33 boots), the rollback filters both ways, the PIN reset's clean 503 with the real wawu-id, the migration, Fintava's answers unchanged and the protected suite 253/253 passed; 32 mutants, 25 killed.
 - 8 Oct 2026 · NUV-01 · Lead applied SHARED-CHANGES NUV-01 #1 (NuvionWebhookModule mounted, backend 757780b), so the verifier checks the served receiver.
 - 8 Oct 2026 · NUV-01 · Built (status verifying): WALLET_PROVIDER=nuvion boots a Nuvion adapter (client with all 153 documented error types mapped, one area file per task NUV-02 to NUV-08, each `not_supported` until filled), PIN reset codes by email through WAWU ID, the signed webhook receiver (stored once, 5-minute window) and a handler registry; a `provider` column keeps a rollback off the other provider's rows (sweeps, balance, ledger consumer); migration 20261016150000; 16 of 16 mutants killed; limit refusals have one mapping point for NUV-07 (G-411); protected 253/253; gates as main plus 3 PROVISIONAL; stand-in only, the (key) check NOT RUN. SHARED-CHANGES NUV-01 #1 to #4, BACKEND_GAPS G-400 to G-402.
 - 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
@@ -148,4 +149,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-07 · Verified (status review; independent session, backend `4f4e4ee`, mobile `a333743`): no defect. Own sweep, main's and the branch's Hubs on one database, 2,156 paths x 4 callers: 7,692 byte-identical, 784 former 500s and the 148 recorded `tab=communities` 200s now the refusal, nothing else changed, branch 500s 0; every BMP code point and 4,084 astral ones on search and closest: only U+0000 answers other than 200 (500 on main, the refusal here); protected 253/253 and the full suite on trial merges with main `3041887` and, after FIX-08 merged mid-check, `f7e651a` (only hub-rate-limits fails there, 22/22 on the host); mutants 10 of 11 killed (spec gap: a NUL past character 50). Follow-ups recorded: SCHOOLS-04 drops its copy of the rule when it merges, 23 other GET routes on main still 500 for a NUL, closest has no length limit.
 - 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
-- 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).

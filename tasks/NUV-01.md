@@ -7,7 +7,7 @@ order: 197
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [MONEY-20]
 decisions: [R-39, R-42, R-44]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -223,5 +223,228 @@ WALLET-06).
   left in place: the safety check refused its removal; the lead may delete it.
 
 ## Verifier report
+
+Verifier, 8 Oct 2026 (independent; wrote none of this). Backend `wmt/NUV-01` `757780b` in detached worktree
+`/home/user/wt/vn01b`; main `965280e` (the builder's base) in `/home/user/wt/vn01main` for every comparison, that
+worktree later moved to `757780b` for the mutants; the real wawu-id `fb8717e` (origin/main, its own `npm ci`) in
+`/home/user/wt/vn01id`; mobile `ad6a939` in `/home/user/wt/vn01m`. Evidence: the lead's scratchpad `vn01/`. No Nuvion,
+Fintava or wawuafrica.com host was called: every built server ran inside a private network namespace with loopback
+only (`https://api.nuvion.dev` answered `EAI_AGAIN` from there, `v9/live.js`), and the specs ran under the builder's
+outbound guard. **Backend main moved** since the build, `965280e` to `ea79fca` (FIX-06; its migration
+`20261015100000_professional_takedown` sorts before this one). A trial `git merge-tree` of `ea79fca` and `757780b` is
+clean (tree `3bfed43`: the contract keeps `/api/hub/webhooks/nuvion`, the schema both new tables); nothing pushed or kept.
+
+**Verdict: building, three defects open.** eslint fails on four changed files (V1); Nuvion's same-day-cutoff refusal
+reads as "nothing moved" although Nuvion's docs say the transfer will still process; the "already exists" refusals say
+no record exists. Everything else the brief asked about passed, on the built servers and in the specs: the receiver
+(replay under a changed event id is one row), the switch, the rollback filters in both directions, the PIN reset's
+clean 503, the migration, Fintava's answers unchanged, and the protected suite.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | **failed** (eslint) | `tsc --noEmit` 0 (`tsc-b.log`). **eslint on the 59 changed `.ts` files: 20 errors in 4 files** (defect 1, `lint/four.out`); the other 55 clean. Gates: main `965280e` 16 fail / 58 warn / 76 accepted on 889 files; branch 16 / 61 / 76 on 925 files; the 16 FAIL lines byte-identical (`gates/main.fail`, `gates/branch.fail`); the 3 new warnings are exactly `PROVISIONAL(NUVION-TIMEOUTS)`, `(NUVION-RESEND-SAFETY)` and `(NUVION-WEBHOOK-WINDOW)`, each with `why=`. Tripwire: 0 added lines match. `npm run contract:build`: `contract/openapi.json` unchanged (sha256 `fb628dbe...ca2e` before and after); against main it adds one path (`POST /api/hub/webhooks/nuvion`, tag `PaymentWebhook`) and one schema (`NuvionWebhookAck`) and changes nothing else; the mobile copy has the same sha256. Key-shaped scan of the whole diff: nothing beyond the five fake `nv_test_sk_NUV01...` spec keys. Mobile `npm run check` on `ad6a939`: exit 0 (typecheck, lint, jest 76 suites / 1,377 tests, gates 0 fail / 0 warn on 346 files, 249 tasks, 279 artboards; `mobile/check-ad6a939.txt`). |
+| V2 Contract | passed | Additive only (above). `prisma migrate diff` from a freshly migrated database to the schema: the same single line on main and branch (`DROP INDEX "ContentPiece_specializations_idx"`, main's known drift; `mig/diff-*.sql`). |
+| V3 Regression | passed (timing aside) | Protected suite `run.sh --fresh HEAD` on `757780b`, lock origin/main `ea79fca` (lock files identical at `965280e`): 253/253, "all 244 required tests passed" (`prot/protected.txt`). Full suite in my own network namespace (copies of t3ns `ns2.sh`/`inner2.sh` as `ns/ns.sh`, `ns/inner.sh`; fresh migrated and seeded `vn01_full_test`; mock on :4001 inside it only), three serial `--runInBand --shard=i/3`: 188 suites, 5,024 tests, 4,967 passed, 4 skipped, 53 failed in 4 suites, none a file this task changed: `fintava-stall` 36 (timing; 120/120 alone), `hub-rate-limits` 11 (needs a non-loopback interface; 22/22 on the host), `production-boot` 5 (a 5 s `beforeAll` at load 32; 5/5 alone with a mock on :5724), `receipt-units` 1 (the 300 ms bound: 306.8 ms, and again over it alone at load 23; receipts are untouched here). Same totals as the builder's run (`ns/full-*.json`, `specs/rerun-*.txt`). |
+| V4 Shape | passed | The receiver answers `{statusCode, message, data: {outcome, event}}` as the contract says; its 400, 401, 413 and 503 carry no `reason` (not a money route). No money route answered a 500 under either provider (below). |
+| V6 States | passed | Each state from its real cause on the built server: no secret, missing headers, a stale timestamp, a body that is not JSON, a 2 MB body, the database refusing the insert (503, nothing stored; Nuvion's resend then 200 `recorded`, one row), WAWU ID's missing route (503). The client's states against my own stand-in (below). |
+| V8 Money | passed for what NUV-01 does (no money moves) | Replay and forgery on the built server (below); the mapping (below; defects 2 and 3 are in it). |
+| V9 Live seam | passed | Signed in through the real wawu-id `fb8717e` (register, email verified, `POST /auth/login`), its JWKS verifying the token; built main and branch servers on :5722 (below). |
+
+**Specs.** `src/nuvion` and `src/wallet-provider` on a fresh migrated `vn01_spec_test`: 6 suites, 287/287 (client 196,
+webhook 25, rollback 13, adapter 30, seam 18, PIN reset 5), as the builder reported (`specs/nuvion-specs.json`).
+
+**The client against Nuvion's docs** (`specs/client-probe.txt`: the built client against my own stand-in on :5723):
+- Every request carries `Authorization: Bearer <key>`, `Content-Type: application/json`, `Accept: application/json`
+  and `X-API-Version: 2026-02-06`. No idempotency header: Nuvion's idempotency key is the body's `unique_reference`
+  (at most 64 characters, api-reference__transfers.md), which the area files set.
+- Paging: `limit`, then `cursor=A`, `cursor=B`, until `has_next` is false; a loop A, B, A, a `has_next` with no or an
+  empty `next_cursor`, and a page without `has_next` are `bad_response`; `limit` 0 and 101 are refused before sending.
+- Unknown outcomes on a write, all `recordMayExist: true` and never resent: no answer, a timeout, a body cut mid-stream
+  (2xx `not_confirmed`, 4xx `outcome_unknown`), a 500 carrying a refusal type, a 302 to another host
+  (`redirect: 'error'`; nothing followed it), a 408 or 413 gateway page. 429 keeps `Retry-After: 120`; an HTTP-date
+  Retry-After falls back to 30. `X-Request-ID` kept; one with a space dropped. Nuvion's texts masked: digit runs to
+  their last 4, an email to its domain, the key and any `Bearer` token replaced; the key is in no error or JSON.
+- The 153 documented types: my own table taken from `errors.md` equals the spec's table and the map's keys (153 types,
+  statuses identical; `specs/doc-err.txt`). Each run on write, read and check through the built
+  `classifyNuvionFailure` (`specs/errmap.txt`). Spot-checked 34 against the docs' meaning. Agree with 30:
+  `auth_credentials_invalid`, `_revoked`, `auth_permission_denied`, `auth_api_version_*` (auth);
+  `auth_rate_limit_exceeded` (rate_limited); `validation_error`, `_required_field_missing`, `_amount_invalid`,
+  `transfer_purpose_code_required` (validation); `transfer_insufficient_funds`; the three limit types (refused, nothing
+  moved, the one G-411 mapping point); `account_not_active`, `_suspended`, `_closed`, `transfer_account_not_active`
+  (wallet_inactive); `transfer_outside_business_hours` (payouts_blocked); `transfer_compliance_rejected`,
+  `_recipient_flagged`, `_counterparty_not_approved` (refused); `transfer_already_processing` and
+  `idempotency_request_processing` (outcome_unknown); `idempotency_key_mismatch`, `duplicate_resource`,
+  `acquiring_payment_already_processed` (duplicate_reference); every 5xx type (outcome_unknown on a write, unavailable
+  on a read); `resolution_account_not_found`, `resource_not_found` (not_found); `endpoint_not_found` (refused);
+  `concurrent_modification_detected` (refused on a write, unavailable on a read); `kyc_identity_verification_failed`,
+  `kyc_sanctions_check_failed` (identity_refused). Disagree with 4: defects 2 and 3, finding 4.
+
+**The receiver on the built server** (`v9/live-boot-webhook-sweeps-progress.txt`; identical under `nuvion` and under
+`fintava`, so it is mounted under both): a signed delivery 200 `recorded`; the same again 200 `duplicate`; the same event
+id with a new timestamp 200 `duplicate`; **the exact signed delivery under a changed event id 200 `duplicate`, and again
+with the signature in upper case: one row**; 40 copies of a new delivery at once: 40 × 200, one row; **40 replays at once
+under 40 different forged event ids: 40 × 200, one row**. 401 and nothing stored: a wrong signature, another secret, a
+signature over the body only, a body changed after signing, each of the three headers missing, a timestamp 6 minutes old
+or 6 minutes ahead, `yesterday`, a microsecond epoch, an event id with a space. 200: 4 minutes old; Unix seconds. 400:
+`text/plain`. 413: a 2 MB body (the body parser, before the guard); 200: a 90 KB body. A burst of 150 valid and 150
+forged: 150 × 200 and 150 × 401, no 429. No secret, signature or body text in the server log. Under `fintava` without
+`NUVION_WEBHOOK_SECRET`: 401 "not configured", nothing stored. Stored: 157 `pending`, 1 `unrecognised` (an undocumented
+`transfers.exploded`), 1 `test`; after a 30-second sweep (40 s) all unchanged, `attempts` 0 (no handler lists an event yet).
+
+**The switch on the built server** (33 boots): unset, `fintava`, `  FINTAVA `, `nuvion`, ` NUVION `, the production host
+and a trailing slash boot (health 200; "Nuvion adapter ready (sandbox)" or "(production)"). Each of `NUVION_BASE_URL`,
+`NUVION_API_KEY` (also blank), `NUVION_WEBHOOK_SECRET` and `NUVION_OPERATIONAL_ACCOUNT_ID` missing: exit 1 naming it and
+the rollback. A base URL with `http://`, `:443`, `/v1`, upper case, `api.nuvion.dev.evil.example`, `x@api.nuvion.dev`,
+`api.nuvion.example` or `http://127.0.0.1:5723`: exit 1 naming `NUVION_BASE_URL`. `NUVION_API_VERSION=2026-01-01`
+exits 1; `2026-02-06` boots. A bad operational account id, a bad `NUVION_MONEY_TIMEOUT_MS`: exit 1 naming each. Under
+nuvion a wrong `FINTAVA_TIMEOUT_MS`, `FINTAVA_BASE_URL` or `FINTAVA_RESEND_SAFETY_MS` boots with the warning; under
+fintava the first two still exit 1. **Under nuvion a wrong `FINTAVA_FEE_BANK_TRANSFER_KOBO` or
+`FINTAVA_FEE_BALANCE_TRANSFER_BANDS` still stops the server** (`FeeConfigError`; finding 5). `fintava` with wrong
+`NUVION_*` values boots; `flutterwave` exits 1.
+
+**Fintava unchanged** (`v9/fintava-main.json`, `v9/fintava-branch.json`): main `965280e` and branch `757780b` built,
+`WALLET_PROVIDER` unset, the same signed-in person with the same wallet row; 25 answers compared (12 fee quotes with
+their parts and signed claims, `/money/wallet`, the balance, `/about`, identity, PIN, history, beneficiaries, payout
+account, setting the PIN, the PIN reset, a person without a wallet): 23 byte-identical; the other 2 differ only in a
+timestamp of the row I inserted into each database (`openedAt`, `verifiedAt`). In the diff, every changed path takes
+its old branch under fintava (the provider filters match every `fintava` and null row, the reset texts the same SMS,
+the Fintava client still throws on a wrong value).
+
+**Under nuvion, signed in** (`v9/live-fintava-nuvion-progress.txt`): `/money/wallet` and `/about` answer
+`bankName: ""` and `bankCode: ""` (no `NUVION_WALLET_*` set); the balance of a Fintava-held wallet and of a Nuvion-held
+one: 503 `provider_unreachable` (W6); `POST /money/identity/bvn`: 503; fee quotes 200 with Fintava's charges (NUV-07's to
+change). **The PIN reset through the real wawu-id: its route is missing (404, G-400), so the Hub answers 503
+`provider_unreachable` "We could not send the code right now", stores the reset `failed`, and does the same when asked
+again; under nuvion a Fintava-held wallet's reset is the same.** No 500 and no ERROR line in the server log.
+
+**Rollback on the built server** (`sweeps`): `pending` ledger rows an hour old with `provider` `fintava`, null and
+`nuvion`, and an `unknown` opening per provider. Under nuvion for 75 s: the `nuvion` row claimed (`statusChecks` 1) and
+the Nuvion opening checked; the `fintava` and null rows and the Fintava opening untouched. Then under fintava for 75 s:
+the `fintava` and null rows claimed and the Fintava opening checked; the Nuvion row and opening as the nuvion run left them.
+
+**Mutants** (32, each applied alone in `/home/user/wt/vn01main` moved to `757780b`, its spec run, the file put back
+from a copy and checked with `git diff`; baseline 269/269; `mut/results-all.txt`): 25 killed, 7 survived.
+Killed: a one-sided window (future timestamps taken); 13 digits read as seconds; the signature over the body only; no
+secret fails open; the window check removed; the signed timestamp stored as the receipt time (a replay under a new id
+stored twice); the event id made unique per timestamp (a retry stored twice); the dispatcher's claim ignoring another
+worker's lease; a handler's `wait` counted as done; a delivery with no handler marked processed; `already_processing`
+read as a refusal; `idempotency_key_mismatch` read as validation; a gateway 4xx page on a write read as refused; a lost
+write read as `unavailable`; the base URL matched by prefix; the version pin not enforced; `X-API-Version` not sent; the
+balance asking about any provider's wallet; the consumer resolving any provider's wallet; the status sweep's SQL
+claiming any provider's rows; a wrong `FINTAVA_*` value never stopping the server; WAWU ID's 404 read as sent; WAWU ID's
+5xx read as not sent; the event id check loosened; a limit refusal read as maybe moved.
+Survived (test gaps; the code is right): the window edge `<=` to `<`; the window 5 to 15 minutes (the spec derives its
+timestamps from the constant; my live check pins 5: 6 minutes refused, 4 taken); the ISO check cut to a date prefix;
+the "a 5xx is never a refusal" override removed (no spec sends a 5xx carrying a refusal type; my probe shows
+`outcome_unknown`); the seen-cursor set removed (my probe shows the loop A, B, A stopped); `limit` 100 refused (the
+edge); a null `provider` read as another provider's (the migration fills every existing row; the live fintava sweep
+claimed a null row).
+
+**Defects**
+1. `defect` (V1): eslint fails on 4 changed files with 20 errors; the builder reported 0 on all changed files.
+   Reproduce on `757780b`: `npx eslint src/nuvion/webhook/nuvion-webhook.service.ts src/wallet-provider/provider-rows.ts
+   test/nuvion/nuvion-standin.ts test/nuvion/outbound-guard.ts` gives "20 problems (20 errors, 0 warnings)": 16
+   `prettier/prettier` (12 in the stand-in, 2 in the webhook service, 1 each in provider-rows and outbound-guard), and
+   in `outbound-guard.ts` `@typescript-eslint/no-base-to-string` (33:20), `unbound-method` (48:20) and two
+   `no-unnecessary-type-assertion` (49:30, 58:13). `npx prettier --check` fails on the same four files.
+2. `defect` (money mapping): `error_transfer_same_day_cutoff_passed` (400) is `payouts_blocked` with
+   `recordMayExist: false`, but errors.md says "Same-day cutoff has passed; transfer will process next business day".
+   A transfer Nuvion will still process reads as "nothing moved", and `walletProviderErrorToHttp('payouts_blocked')`
+   answers 503 "Payments are not available right now. Try again in a moment.", so a payout (NUV-06) or a dollar wire
+   (NUV-09; USD wires are a same-day rail in guides__send-a-payout.md) can go out twice. By the client's own rule ("a
+   type that says a write may still be running ... never a refusal to act on") it is an unknown outcome, reconciled by
+   its `unique_reference`. Reproduce: `classifyNuvionFailure({ httpStatus: 400, body: { status: 'error', type:
+   'error_transfer_same_day_cutoff_passed', message: '...' }, call: 'write' })` gives `payouts_blocked`, and its
+   `NuvionError` `recordMayExist: false` (`specs/errmap.txt`, `specs/client-probe.txt`). The spec's table expects the
+   same, so it changes with the map. Until the sandbox shows what Nuvion does, the safe reading is `outcome_unknown`.
+3. `defect` (seam contract, low): the "already exists" types say a record exists, yet map to `refused` with
+   `recordMayExist: false`: `error_account_already_exists`, `error_account_already_verified`,
+   `error_counterparty_already_exists`, `error_wallet_already_exists` (409 each). The seam defines `recordMayExist` as
+   "True when money may have moved or a record may exist although the call failed", and the opening service already
+   keeps the rule "A refusal whose words say the record exists: never read as nothing was made". A create that meets one
+   after a lost answer or a double tap (NUV-04's account, NUV-06's counterparty) reads "nothing exists" and fails
+   instead of adopting. (A 409 of an unknown type on a write is already `duplicate_reference`.) Reproduce:
+   `classifyNuvionFailure({ httpStatus: 409, body: { status: 'error', type: 'error_account_already_exists' }, call:
+   'write' })` gives `refused`, and its `NuvionError` `recordMayExist: false` (`specs/client-probe.txt`).
+
+**Findings that are not defects**
+4. `unclear` (mapping, for NUV-02): `error_kyc_under_compliance_review`, `error_kyc_enhanced_due_diligence_required`
+   and `error_entity_status_due_diligence_required` say "under review" or "Nuvion will follow up", yet read as
+   `identity_refused`, which answers 422 "We could not confirm those identity details." NUV-02 can tell them apart by
+   `nuvionType` (kept on `NuvionError`) and should, or a person under review is told their details failed.
+5. Differs from the report's wording: "a leftover wrong `FINTAVA_*` value no longer stops a Nuvion server" holds for the
+   Fintava client's settings, not for the `FINTAVA_FEE_*` schedule, which `FeeSettings` reads and checks at boot under
+   any provider. Right today, because the quote still charges Fintava's fees under nuvion until NUV-07;
+   `.env.example` should say "a wrong Fintava client setting".
+6. `unclear` (`PROVISIONAL(NUVION-WEBHOOK-WINDOW)`, 5 minutes): Nuvion retries a delivery for up to 15 minutes. If a
+   retry carries the first attempt's `x-nuvion-event-timestamp` (the docs do not say; the delivery log records headers
+   "as sent"), every retry after 5 minutes is refused with 401 and the event is lost after an outage or a deploy
+   longer than 5 minutes. A stored delivery can never be stored twice (the event id and the signed pair are unique for
+   good), so a window of at least 15 minutes costs no replay safety for anything stored. Unblocked when the sandbox's
+   webhook log shows whether a second attempt carries a new timestamp.
+7. Undocumented events: a delivery naming an event outside `NUVION_WEBHOOK_EVENTS` is stored `unrecognised`, and the
+   dispatcher never reads it again, even after a later task adds that name and a handler; Nuvion stops retrying after
+   15 minutes, so only NUV-08's reconciliation could recover it. Documented events that no handler lists do stay
+   `pending` (live). A task that adds an event name should also mark its stored `unrecognised` rows `pending`.
+8. For NUV-02 and NUV-03 (the client): a lost answer on a `check` call is `unavailable` (`recordMayExist: false`, safe to
+   repeat), so anything that creates something at Nuvion (an entity, a document) must be a `write` call. The path guard
+   refuses `..` but not `%2e%2e` (`/accounts/%2e%2e/admin` is sent as `/admin`; the host cannot change): the areas
+   should `encodeURIComponent` every id they put in a path.
+9. Data kept: `NuvionWebhookEvent` keeps each delivery's raw body and parsed copy (names, account numbers, narrations)
+   with no person column, so neither the purge map nor the export names it; the same as `FintavaWebhookEvent` today. A
+   retention rule for both belongs to a later task.
+10. Under nuvion the bank line is empty until NUV-10 sets `NUVION_WALLET_BANK_NAME` (W1, A8 and About show `""`), and
+    the lines follow the running provider, not the wallet's row: after a rollback a Nuvion-held wallet shows Fintava's
+    bank and code (G-401 says so).
+
+**SHARED-CHANGES NUV-01 #2 (open): what breaks if NUV-04 or NUV-05 writes a Nuvion row before it.**
+`LedgerService.recordIn` creates `FintavaLedgerEntry` without `provider`, so the row takes the default `fintava`.
+(a) Under nuvion the status sweep claims only `COALESCE(provider,'fintava') = 'nuvion'` (shown live: it claimed the
+`nuvion` row and left the rest), so a Nuvion send whose answer was lost is never re-checked by the sweep and stays
+`pending`. (b) After a rollback to fintava the Fintava sweep claims that row as its own, asks Fintava for a reference
+Fintava never saw, and once the resend-safety time has passed `markAbsentFailed` marks it `failed`
+(`LEDGER_ABSENT_FAILURE`) although Nuvion moved the money: history shows a failed send for money that left, and a refund
+keyed on a failed debit (MONEY-17's failed payment, a hold's release) would credit it back in our ledger. (c) The
+consumer's reversal guard (`anyOtherProvider`) cannot see it as Nuvion's. Rows written straight through Prisma with
+`provider: 'nuvion'` are safe; rows written through `LedgerService` are not until #2 lands. #1 is applied (`757780b`,
+served on both providers). #3 is open: `PinResetView.sentTo`'s doc line still says a phone
+(`src/money/money-view.type.ts:164`), while under nuvion it is a masked email.
+
+**The decisions**
+- The receiver mounted through a SHARED-CHANGES row (#1): agree; the lead applied it and it is served under both providers.
+- Dedup on the event id and on the signed (timestamp, body); handlers only through the 30-second sweep; events no
+  handler lists stay `pending`: agree, shown live (40 replays under 40 forged ids are one row). Finding 7 for
+  undocumented events.
+- The PIN reset email through WAWU ID, no BVN-proved phone needed by email, the daily limit per person (and phone):
+  agree. Consequence: until G-400's wawu-id route ships every PIN reset under nuvion is 503 (shown with the real
+  wawu-id), so production must not switch to nuvion (NUV-10) before it.
+- `NUVION_WALLET_*` optional and `walletBankCode` empty: acceptable until NUV-10 (finding 10).
+- A non-Nuvion 4xx page on a write is an unknown outcome; `error_endpoint_not_found` refused: agree (408 and 413 gateway
+  pages probed).
+- `decideRetry` advises `wait` until NUV-08: agree; nothing is ever resent. Nuvion answers a repeated `unique_reference`
+  with the original transfer, so NUV-08 can resend safely under the same reference.
+- `NuvionEntity` one row per person, Nuvion's own status words, masked reasons, `accountDetailsStatus` added: agree for
+  the naira account; NUV-09 cannot fit a second (dollar) account in the single `accountId` and `currency`, and needs its
+  own columns or table.
+- The PROVISIONAL defaults: timeouts and resend safety agree (Fintava's measured values, overridable); the 5-minute
+  window: finding 6.
+
+**Mobile** (`ad6a939`): the diff from main is this file, the LOG, BACKEND_GAPS G-400 to G-402, SHARED-CHANGES #1 to #4
+and the contract sync (`SOURCE_COMMIT` `wmt/NUV-01@757780b`; `NuvionWebhookAck` lands in the app's types as
+`FintavaWebhookAck` already does; the route itself is left out by the `PaymentWebhook` exclusion). No stand-in for
+anything on main. `npm run check` with this report and the regenerated index: exit 0 (`mobile/check-report.txt`).
+
+**NOT RUN**
+- (key) `GET /bank-codes/NG` through the client against the sandbox: unblocked when a lead brief allows
+  `api.nuvion.dev` and `GET https://api.nuvion.dev/bank-codes/NG` answers 200 with the key in the local `.env`; then
+  `scripts/nuvion/bank-codes-check.ts`.
+- A real Nuvion delivery (header names, timestamp format, whether a retry carries a new timestamp, finding 6):
+  unblocked when NUV-10 registers the webhook and `POST /webhook-tests` reaches it.
+- The PIN reset email actually sent: unblocked when wawu-id serves `POST /internal/users/:userId/pin-reset-code`
+  (G-400); today it answers 404 and the Hub 503, as shown.
+- A stored delivery handed to a real handler on the built server: no handler lists an event until NUV-02 to NUV-08;
+  the webhook spec's registry tests cover it (done, wait, failed, two workers, no handler).
+- The full suite as one in-band process (three serial shards instead: memory, and load 15 to 32 from other sessions);
+  `receipt-units` green (its 300 ms bound needs a load average near 4).
 
 ## Owner sign-off
