@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · PROS-03 · Fix round 1: the Me tab's listing row opens P8 (R-41); P8, P5, P6 and P7 vertical metrics brought to the artboards in the feature's own styles (TextField's label drift filed as SHARED-CHANGES PROS-03 #3); a null account type meets the gate (spec kills the surviving mutant); main merged; status verifying.
 - 7 Oct 2026 · PROS-03 · Verified (round 1): V1, V4, V6, V7, V9 passed against the real WAWU ID and a Hub from backend main, V5 passed with a finding, V10 NOT RUN; two defects (the Me tab's listing row does not open P8, R-41; P8 and P5 vertical metrics drift from the artboards); status building.
 - 7 Oct 2026 · PROS-03 · Built: Offer your services (P5 to P7), Your listings (P8, P9), the creator gate (P10); one application per chosen field, licence file through `professional/document`; tests, gaps G-320 to G-325 and shared-change rows filed; status verifying.
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).

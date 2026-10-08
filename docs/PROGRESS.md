@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 65 | 0 | 23 | 25 |
-| building | 0 | 0 | 0 | 1 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 1 | 0 | 0 | 0 |
 | done | 54 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (Developer 3)
 
@@ -132,6 +132,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · PROS-03 · Fix round 1: the Me tab's listing row opens P8 (R-41); P8, P5, P6 and P7 vertical metrics brought to the artboards in the feature's own styles (TextField's label drift filed as SHARED-CHANGES PROS-03 #3); a null account type meets the gate (spec kills the surviving mutant); main merged; status verifying.
 - 7 Oct 2026 · PROS-03 · Verified (round 1): V1, V4, V6, V7, V9 passed against the real WAWU ID and a Hub from backend main, V5 passed with a finding, V10 NOT RUN; two defects (the Me tab's listing row does not open P8, R-41; P8 and P5 vertical metrics drift from the artboards); status building.
 - 7 Oct 2026 · PROS-03 · Built: Offer your services (P5 to P7), Your listings (P8, P9), the creator gate (P10); one application per chosen field, licence file through `professional/document`; tests, gaps G-320 to G-325 and shared-change rows filed; status verifying.
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
@@ -146,4 +147,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01 · Builder report (branch `wmt/HOME-01`, status verifying): Home's Today with the Naira balance from Fintava or the way to Open your wallet, today's TGIF card (gone when TGIF is off), creators to discover with Follow in place, loading, empty and error states; the feed is shown in place under the same tab row (`/feed` removed); entries to screens not built yet left out (R-41); gaps G-280 to G-282, shared changes HOME-01 #1 and #2.
 - 7 Oct 2026 · SHARED-03 · New task (lead, order 184; tasks from 184 move down one): one shared toast, the All chip's padding, a MediaCard placeholder, two test gaps and the flaky Z3 settings test, from the hub checks.
 - 7 Oct 2026 · EXPLORE-01 · Merged: the Explore tab (categories, featured creators with Follow, category pages with paging); one shared-toast follow-up in SHARED-03.
-- 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.

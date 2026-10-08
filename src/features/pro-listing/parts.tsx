@@ -53,7 +53,7 @@ export function AddChip({ label = 'Add', onPress, testID }: { label?: string; on
 }
 
 /** A small caps heading with its chips under it (kit `label` on `line-height: normal`, then 10 and the chips 7 apart). */
-const groupMetrics = { gap: 10 } as const;
+const groupMetrics = { labelToChips: 10 } as const;
 export function ChipGroup({ label, children, error }: { label: string; children: ReactNode; error?: string }) {
   return (
     <View style={styles.group}>
@@ -93,7 +93,8 @@ export function LongField({ label, value, onChangeText, error, hint, testID }: L
       <Text variant="secondary" tone="textSecondary" style={styles.longLabel}>
         {label}
       </Text>
-      <View style={[styles.box, { backgroundColor: colors.surfaceInput, borderColor: border, borderWidth: focused || error ? fieldMetrics.ring : StyleSheet.hairlineWidth }]}>
+      {/* The ring is an inset shadow, as the canvas draws it, so it adds no height to the 80 box. */}
+      <View style={[styles.box, { backgroundColor: colors.surfaceInput, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: focused || error ? fieldMetrics.ring : 1, color: border, inset: true }] }]}>
         <TextInput
           testID={testID}
           accessibilityLabel={label}
@@ -149,7 +150,7 @@ export function Note({ tone, icon, title, body, testID, children }: NoteProps) {
 const styles = StyleSheet.create({
   chip: { height: chipMetrics.height, paddingHorizontal: chipMetrics.padH, borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center' },
   chipText: { fontSize: chipMetrics.font },
-  group: { gap: groupMetrics.gap },
+  group: { gap: groupMetrics.labelToChips },
   groupLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: chipMetrics.between },
   long: { alignSelf: 'stretch' },
