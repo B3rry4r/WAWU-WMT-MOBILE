@@ -3,7 +3,7 @@ id: RELEASE-03
 title: iOS release
 owner: YOU
 area: RELEASE
-order: 221
+order: 257
 priority: after-launch
 repo: wawu-wmt-mobile
 type: setup
