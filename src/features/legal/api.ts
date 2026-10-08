@@ -76,7 +76,7 @@ function rowsOf(body: unknown): IntakeView[] {
  * consultant that no quote has answered yet (`requestStatus` `awaiting_quote`, where a consultant
  * joins before any payment); otherwise a new one. The Hub has no route that returns a sent
  * conversation on its own, so the person's intakes are read and the likely ones asked for; an
- * intake from the older form answers 404 and is passed over (BACKEND_GAPS G-451).
+ * intake from the older form answers 404 and is passed over (BACKEND_GAPS G-471).
  */
 export async function resolveThread(): Promise<LegalThread> {
   const rows = rowsOf(await unwrap(api.GET('/api/hub/legal/intake/mine')));

@@ -13,9 +13,13 @@ export type CaptureResult = { kind: 'image'; image: string } | { kind: 'cancelle
 
 /**
  * How this build takes A6's selfie. `ready`: `take` captures one, and
- * `Preview`, when the platform has a live camera, fills the oval. `unavailable`:
- * this build cannot take one, and A6 says so instead of a capture button.
+ * `Preview`, when the platform has a live camera, fills the oval; `settings`
+ * is there only while the person has turned the camera off for this app and
+ * the phone will not ask again: it opens the phone's settings, and A6 offers
+ * it in place of the capture button. `unavailable`: this build cannot take
+ * one (the phone's camera did not start), and A6 says so instead of a
+ * capture button.
  */
 export type SelfieCapture =
-  | { kind: 'ready'; take: () => Promise<CaptureResult>; Preview?: ComponentType }
+  | { kind: 'ready'; take: () => Promise<CaptureResult>; Preview?: ComponentType; settings?: () => void }
   | { kind: 'unavailable' };

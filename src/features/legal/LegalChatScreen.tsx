@@ -43,7 +43,7 @@ type Problem = { text: string; retry: (() => void) | null };
  * joins and the assistant stops (S17). Book (S17's card, S18) is LEGAL-04's.
  *
  * The conversation is read when the screen opens, when it is shown again, when the app comes back to the
- * foreground and when the live connection says it changed (`legal.thread`, BACKEND_GAPS G-452) or comes back; a
+ * foreground and when the live connection says it changed (`legal.thread`, BACKEND_GAPS G-472) or comes back; a
  * consultant's message arrives that way with no polling.
  */
 export function LegalChatScreen() {

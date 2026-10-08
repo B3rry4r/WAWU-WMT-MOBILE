@@ -3,18 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 97 of 227.**
+**Launch tasks done: 104 of 236.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 110 | 0 | 20 | 21 |
+| todo | 111 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
-| done | 58 | 27 | 11 | 5 |
+| review | 2 | 0 | 0 | 0 |
+| done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
@@ -115,7 +116,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
+- [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
+- [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
+- [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
+- [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -126,24 +134,24 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
-- 8 Oct 2026 · FIX-18 to FIX-21 · Lead filed the verifiers' findings outside their tasks: three small 500s (wallet history paging, a repeated export token, a gone socket in the trust-proxy check), control characters in school names, webhook deliveries kept forever, and the money-route checks missing class-level guards and the isolation level. FIX-16 also covers the web's apply form for a taken-down field. CHECK-2, CHECK-3 and later move down by 4.
-- 8 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
-- 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
-- 8 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
-- 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
-- 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
-- 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
-- 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
-- 8 Oct 2026 · FIX-06 · Verified round 2 (status review, no open defect): D1 closed, round 1's approve race 0 of 80 and reject race 0 of 20 on built Hubs with the real wawu-id; the admin read 35 of 35 (roles, every state, no protected answer widened); 162-step sweep identical to main except the new state's 5, decided and unknown approve and reject byte-identical; capability 42 of 42; every race 0 (main 34 of 60); protected 253/253; full suite 182 of 184 in its own namespace, the two misses passing alone on the host; backfill keeps main-made rows byte-equal; 19 of 19 mutants killed. The elevate outside the lock now leaves a raised tier on a lost approve, where main silently undid the rejection.
-- 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
-- 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
-- 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
-- 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
-- 8 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
-- 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
+- 8 Oct 2026 · SHARED-04 · SHARED-04 merged: native modules installed in one batch; the phone takes the wallet selfie, picks photos without location data, and copies. New preview build needed.
+- 8 Oct 2026 · FIX-24 · FIX-24 merged (backend PR #94, 9d90d57): delivered legal documents are the client's own or the legal team's only; LEGAL_DELIVERY_UPLOADER_IDS awaits the owner.
+- 8 Oct 2026 · FIX-24 · Verifier report (independent session, backend `a1beb10`, mobile `2b1cbb9` merged with main `a82e816`): no defect, status review. N2 closed by its real cause: round 4's reproduction leaks on main 657a152 (101 of 103, 132 of 132 bytes of B's file, ghost key 200) and passes on the branch (103 of 103, ghost 400); 25 of 25 key variants refused on the new route and every link naming our storage refused on /deliver; reads withhold every failing row and legacy value (28 of 28, one warn line per file, no stored value logged); setting boots and refusals as the builder says (7 live boots); the count query equals a hand count on two databases; protected 253 of 253 with the lock unchanged, 65 of 65 /legal answers byte-identical to main; module specs 595 passed; full suite 5,551 passed, 52 environmental (pass alone); V9 with real WAWU ID; mutants 13 of 15 killed. Notes O1 to O6 (IP-literal hosts on /deliver judged harmless by a SigV4 check, a spec gap for a ghost key in the owner's folder, the ruling's edges).
+- 8 Oct 2026 · FIX-24 · Builder: a delivered legal document must have an upload record by the request's owner or a LEGAL_DELIVERY_UPLOADER_IDS account (new setting, empty, PROVISIONAL, boot refuses a malformed value); new route 400 files.N.url and reads never sign a failing key (logged once); the protected /deliver applies the rule to links naming our storage, lock unchanged (253/253), foreign links wait for a relock. Backend wmt/FIX-24 a1beb10; live N2 reproduced on main, refused on the branch; 10 of 10 mutants killed; status verifying.
+- 8 Oct 2026 · POINTS-01 · POINTS-01 merged (backend PR #93, dd3a183): points lots, the ledger, GET /me/points.
+- 8 Oct 2026 · SHARED-04 · Verifier report, round 2 (independent, 652a301): status review, no defect open. D1, D2, F1 (the phone's JPEG walk equals the server's on 42,416 cases, 0 mismatches), T1 (the five boundary mutants die in the task's own specs), F3 and the two permission blocks hold on their real causes; web 16 of 16 pictures byte-identical to main; `npm run check` exit 0 (82 suites, 1,437 tests); 33 mutants of mine. Six low findings (a failed encode or an unreadable video leaves a cache file, a stale CL-03 sentence) and test gaps recorded; V10 and the merged APK manifest NOT RUN (preview build).
+- 8 Oct 2026 · SHARED-04 · Builder report, round 2 (lead rulings after the verifier): M8 and M36 say a failed pick plainly (a cancel stays silent), PNG and WebP keep their format and transparency, the selfie walks the JPEG as the server does (an appended JPEG is refused), the verifier's boundary specs are in the suite, copies are deleted once uploads settle, SYSTEM_ALERT_WINDOW and AD_ID removed from the release manifest. 21 mutants: 20 killed, 1 equivalent. Status verifying.
+- 8 Oct 2026 · SHARED-04 · Verifier report (independent, 0b4f3e6): status back to building, two defects on the pickers. D1: on M8 and M36 a picker error or a picked photo that cannot be read is silent (nothing on screen; M36 drops the file without a word). D2: a transparent PNG is written as a JPEG and loses its transparency. A6 holds every server limit at its boundary (100,000 characters, 2,048 px, 1 KB, end marker; real Skia and libjpeg bytes pass the backend walk), A8 copies, web build pixel- and byte-identical to main (16 pairs), prebuild resolves every plugin, expo-doctor 19 of 21 offline (schema and directory checks NOT RUN: network), fingerprint changes; 16 own mutants, 14 killed, 2 equivalent.
+- 8 Oct 2026 · SHARED-04 · Builder update (lead ruling): on the phone every picked photo for M8 and M36 goes up written again as a JPEG at 0.9 and its picked size, so no Exif block or GPS travels with it; videos go as chosen; the web build is the lead's separate task. Spec with a GPS-tagged fixture, 4 mutants killed. Status verifying.
+- 8 Oct 2026 · SHARED-04 · Builder report: the native module batch installed in one go (13 modules, a QR renderer, expo-file-system, expo-asset, four expo patch bumps) with their plugins; A6 takes the selfie with the front camera (640 px JPEG under 100,000 characters, nothing after its end), M8 and M36 open the photo library, A8 copies with expo-clipboard; expo-doctor 21 of 21, web build pixel-identical to main, `npm run check` exit 0. Status verifying.
+- 8 Oct 2026 · FIX-21 · FIX-21 merged (backend PR #92, 283aa8c): money-route checks read class-level guards; the limits lock refuses anything but READ COMMITTED.
+- 8 Oct 2026 · FIX-26 · Lead filed FIX-21 verifier findings F1 to F3: the limits lock must always run inside a real transaction, and the money-route coverage spec pins what it reads. CHECK-2 and later move down by 1.
+- 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
+- 8 Oct 2026 · FIX-21 · Verifier report (independent session, backend `301d56a`, mobile `5175272`): no open defect, status review. The coverage spec reads class and method guards as Nest runs them (its 458 routes are Nest's 458; 30 of 30 live answers on a built Hub signed in through wawu-id match the order it reads) and fails the verifier's two routes; the level check refuses REPEATABLE READ, SERIALIZABLE and READ UNCOMMITTED from the caller's own transaction, and 250 rounds of 2 and 10 movements at READ COMMITTED never pass a daily or monthly limit; live on the MONEY-17 trial a wrong level is a 500 naming nothing, nothing written. Protected 253/253, full suite 5,543 of 5,570 (only hub-rate-limits and fintava-stall, each green alone), 14 own mutants 10 killed. Findings: route shapes the spec cannot see (a dynamic module's controllers, a PIN guard subclass, class-level docs, global guards), 4 surviving mutants, and no lock without a transaction or with the service client passed as one (for the lead).
+- 8 Oct 2026 · FIX-21 · Builder report (backend 301d56a): the money-route coverage spec reads class and method guards as Nest runs them and counts any route with the PIN guard or a debit's own refusal as money-moving (the verifier's two routes fail it, pass once guarded); `assertMayMove` reads the transaction's isolation level and refuses anything but READ COMMITTED (50 rounds of 600 against a daily 1000 never both pass); protected 253/253; status verifying.
