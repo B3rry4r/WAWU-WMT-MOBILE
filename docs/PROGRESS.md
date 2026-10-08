@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 115 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 4 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 5 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -19,9 +19,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
 
 ## Done
@@ -146,6 +143,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · BRAND-01 · Verifier: V1 passed (npm run check exit 0, 95 suites, 1606 tests, gates 0 findings); icon measured by pixels (farthest opaque pixel 87% of the 66 dp safe radius, uncut under circle, squircle and rounded square, calibrated against the owner's own screenshot, artwork identical to the logo pack); splash 128 dp whole inside Android 12's circle; A1 cover has no words, WAWU or dashboard; Menu to Z1 to Settings works signed in, with the Hub failing and while Me loads, the other rows inert; 16 own mutants, 14 killed, 2 survived (test gaps, not product); no open defect, one unclear (icon leans right and down by box); V10 NOT RUN (needs the preview build); status review.
 - 8 Oct 2026 · BRAND-01 · Builder: the launcher icon rebuilt from the logo pack so the whole logo (drip included) sits inside the 66 dp safe circle (44% of the canvas; monochrome and store icon the same way; own notification icon); the splash logo 128 dp inside Android 12's circle; A1 shows the website's creators picture under the shade; M1's Menu button raises the Z1 sheet and its Settings row opens `/settings` (the other rows drawn and inert, R-46); 19 tests, 9 of 9 mutants killed; npm run check passed (95 suites, 1606 tests, gates 0 findings); V10 NOT RUN (needs the preview build); status verifying.
 - 8 Oct 2026 · Lead: R-46 the UI is always complete (owner). Unbuilt entries are drawn and inert with `unbuilt(<task>)`; filed COMPLETE-01 (helper and gate) to COMPLETE-06 (Explore, Home, Me, Wallet, the rest); later tasks moved down six places.
 - 8 Oct 2026 · R-45 · Owner: Nuvion is the wallet provider; Fintava stays only for bills payments, its wallet code kept unused. The website opens wallets first (WEBPAY-01 no longer waits on dollar wallets). BRAND-01 filed: the app icon, the welcome cover and the Settings entry. CHECK-2 and later move down by 1.
@@ -160,4 +158,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Builder round 6: D7, D8 every events date in the event's zone (hero badge, tier Ended/Opens); D9 prices kept when a later call fails; D10 two-digit badge day; T3, V10 and screen specs added, each fails on the old code; R-41 entries added on main's hubs (H1/H36 Events tile, X1 featured event, Upcoming events rail and See all, X14 block); npm run check passed (80 suites, 1450 tests, gates 0 findings, baseline 0, 212 tasks); status verifying.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 4: D6 fixed (live: NYC 7 PM EDT reads 14 Oct on E1, E2, hero; unresolvable zone date only; no crash); 4 of 6 new specs fail on old code; npm run check passed; no open defects, status review.
 - 7 Oct 2026 · EVENTS-01 · Builder round 5: D6 fixed, event date read in the event's own zone (unresolvable zone: Lagos date alone, no clock); 6 specs added, 4 fail on old code; npm run check passed (66 suites, 1204 tests, gates 0 findings); status verifying.
-- 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
