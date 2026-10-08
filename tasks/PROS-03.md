@@ -216,6 +216,22 @@ Independent verifier (lead's session; wrote none of this task's code, and is not
 
 **Status:** back to `building` for D3 to D10 (and T1 to T3 with them).
 
+## Lead rulings after the independent verifier (8 Oct 2026)
+
+Build round 3 on `5859875`, then status `verifying`. The lead's independent verifier re-checks it.
+
+- **D3 (Explore door; G-323's question).** R-41 answers it: the first of PROS-01, SCHOOLS-03 and PROS-03 to build draws Explore's doors card (X1, X15) with only its own door, and the others add theirs to that card. So PROS-03 draws the card now with "List your services" (Get paid to answer questions), as the canvas draws it, after Upcoming events if EVENTS-01 is on main by then, else after Featured creators. It opens P5 for a person with no application, and P8 for a person who has any (listed, pending, turned down or hidden), so a hidden listing can always be shown again; a `user` account gets P10 as P5 does. EVENTS-01 also edits `ExploreScreen.tsx`: whichever of the two merges second takes main in and resolves the conflict; neither edits the other's branch. Update G-323.
+- **D4 (a failed refresh throws the flow away).** The full-screen error is only for a first load that never got data. Once P5 to P7 have data, a failed refetch keeps the form, the chosen fields and what was typed on screen, and says so inline with a retry; the per-field send result ("X was sent, Y could not be sent") stays until the person acts. Spec with the connection dropping after the first field is sent, and with a 503 on refetch when the app returns to the front.
+- **D5 (Hide and Show do not reach M2).** After Hide or Show succeeds, refresh every query that shows the listing, M2's `listingsKey` included (invalidate both keys in one place). Spec: Hide on P8, Back, M2 reads the new state with no restart.
+- **D6 (system Back on P6).** The system back (Android button and the browser's back) does what the on-screen back does: P6 to P5 and P7 to P6, with what was typed kept. Spec.
+- **D7 (409 blocks the rest).** A field the Hub refuses with 409 ("You already have an application in this field") is taken out of the chosen fields, said once by name, and the remaining fields are sent in the same tap. Other refusals stay chosen so a retry sends them. Spec with three fields, the middle one 409.
+- **D8 (web-filed categories).** P8 shows one card per field: a row filed in a field's second category (`business_entrepreneurship`) belongs to that field's card, with the field list from the Hub, not a local table. A row in a category no field files in today (`real_estate`, filed on the web) keeps its card with its decision and reason, but offers no Apply again in the app; its place says "Apply in another field" instead. Specs for both.
+- **D9 (ME-01's row).** The paid messages row goes back to what ME-01 drew: a plain accessible group, not a disabled Pressable. The listing row uses `useFocusRing` and the pressed look every other pressable in `src/features/me` uses. Diff ME-01's file against main and keep only the entry's lines.
+- **D10.** Add `LongField` (`src/features/pro-listing/parts.tsx`) to SHARED-CHANGES ME-11 #2, so the shared multi-line field replaces both it and `BioField`.
+- **T1 to T3.** A spec on the real Me screen (not a mocked `MeScreen`) that a tap on the listing row opens P8; a spec that looks for the chevron; a spec on the listings route's Apply again keeping `?field=`. Re-apply each mutant and show it failing.
+- **U3 (owner's question, lead default until the owner answers).** Send waits while any chosen file shows "Did not upload": the person retries it or removes it, and Send says why it is waiting. An application never goes without a file the person still sees on screen. The owner may reverse this.
+- **Outside this task (the lead files them):** the admin unlist and the person's Hide share `listed`, so a person can show again a listing an admin pulled (PROS-02's backend); presign reserves storage quota before an upload that may be refused.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
