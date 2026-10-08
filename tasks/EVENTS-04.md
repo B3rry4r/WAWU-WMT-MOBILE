@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [EVENTS-02, UI-02, EVENTS-01]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -99,6 +99,30 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 ## Builder report
 
 _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+
+**Builder (8 Oct 2026, resumed after a usage-limit crash; the first builder's uncommitted work was reviewed and kept where sound).** Mobile `wmt/EVENTS-04`, backend `wmt/EVENTS-04` (e55a1bc). Depends on mobile #14 and backend #78 (EVENTS-01): merge those first. Mobile has `origin/wmt/EVENTS-01` and `origin/main` merged in; backend has `origin/main` merged in (it does not need #78).
+
+**Built (mobile).** `src/features/events/host/`: `HostScreen` (E13 to E15, one screen with a three-step wizard), `HostEnds` (E16 Sent for review, E21 gate), `SentBackScreen` (E22, route `/events/sent-back/<id>`, for My events to open), `hostForm.ts` (draft, rules, request body), `hostParts.tsx`, `hostApi.ts`, `HostBanner` (E1's Host your event). `src/features/events/chrome.tsx` is the nav bar and tabs now shared by Events and Host (EventsScreen uses it and gains the Host event tab and the banner, both through a new optional `onHost`). Routes: `src/app/events/host.tsx`, `src/app/events/sent-back/[id].tsx`; `src/app/events/index.tsx` passes `onHost`. Reuses `format.ts` (`watOf`, `toKobo`), `pickImage`/`presign` from profile-edit, shared TextField, Button, BottomSheet, FilterChips, EmptyState, ErrorState, Skeleton.
+
+**Built (backend, additive).** `GET /events/options` also serves `tickets` (host share percent from the commission setting, price, quantity and name bounds, the most ticket types) and `fields` (name, description, host and address lengths), read from the same constants `POST /events` enforces, so the wizard keeps no copy of a server limit and E15's "You keep 85% of every ticket. Set price to ₦0 for a free event." comes from the Hub. New upload folder `event/banner` (images). No route, field or type that exists was changed.
+
+**Capability checks.**
+- E13: name, description, organiser, Format (In person, Online, Hybrid), Continue; tests: blank, spaces, length edges, Continue stays put and names each missing field.
+- E14: Starts (day and time sheet, Lagos time), Ends, street address (needed unless Online), category, Continue; banner upload built, tile hidden until the phone can pick a picture (G-443, row 8 not applied: `canPickImage` is false).
+- E15: tier name, price, quantity, add and remove a tier, one POST with the event and its ticket types, free (₦0) allowed (R-8); a wrong tier is flagged and nothing else is blocked.
+- E16: Done. My events is EVENTS-08's.
+- E21: pre-check `GET /verification/me` before the wizard starts; also shown when the Hub refuses the submit for a missing tick. Price on the gate is the system's. Get verified is ME-12's.
+- E22: reviewer's words, street address flagged when the event has none, Send again (PATCH). Entry from My events is EVENTS-08's.
+- Hub entries (R-41): E1's Host event tab and Host your event banner are added here. Create's Event entry (ME-04) and Home's Events tile (EVENTS-01) are not this task's.
+
+**Defaults decided (recorded, work carried on).** The Kind (`type`, still required) is a picker under Format on step 1 because no artboard asks for it (G-442). Ends is a time on the start's day (G-443). Past starts are refused against the clock the screen is given. A failed refetch of the options or the tick never replaces the form. The phone's Back goes a step back with the text kept. Double submit is one request.
+
+**Tests.** `src/features/events/host/__tests__/hostForm.test.ts` (33, every bound at and one past its edge), `hostScreens.test.tsx` (22: gate, loading, offline and retry, validation, one POST body, double submit, 500 and offline keep the form, 400 sentence shown, tick refusal, E22, phone Back), `src/features/events/__tests__/hostEntry.test.tsx` (3). Backend: `src/event/tests/event-host-wizard.contract.spec.ts`, `src/storage/tests/event-banner-folder.spec.ts`; `npx jest --runInBand src/event src/storage` 8 suites, 180 tests pass against a local Hub database and the mock WAWU ID (not the real one).
+
+**Backend checks.** `tsc --noEmit` clean; `scripts/protected-routes/run.sh --fresh`: all 244 required tests passed; `scripts/gates/run.py`: 16 fail, none in a file this branch touches (Flutterwave and deferral findings already on main); `check_baseline.py` ok; `contract:build` run. Contract copied with `python3 scripts/api/sync_contract.py --backend <backend worktree>` (`npm run api` reads backend main only, which lacks the new fields until the backend merges).
+
+**NOT RUN.** V10 (a real Android phone): no device. Picture-against-picture screenshots at 390 px light and dark against `render_design.py E13 E14 E15 E16 E21 E22` (V5): NOT RUN by this builder (the resumed session ended before a Hub and `npm run web` were stood up); metrics in code are taken from `design/_gen/events_b.js` and `kit.js`, and the small text uses `canvasNormalLineHeight`, but no screen is claimed to match. The verifier compares them. A live submit against a running Hub and web build was not run; the screens are tested against the contract-shaped wire and the backend spec posts the same body to the real app. No SHARED-CHANGES row: no fenced file was edited (the generated contract files were regenerated).
+
 
 ## Verifier report
 

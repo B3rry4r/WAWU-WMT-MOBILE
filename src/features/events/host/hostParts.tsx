@@ -13,19 +13,19 @@ import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 import { STEPS, type Step } from './hostForm';
 
 /** design/_gen/events_b.js `stepper`: three 4 high bars 6 apart, 2 corners; 11.5 semi-bold names 6 under them. */
-const stepperMetrics = { bar: 4, barCorner: 2, gap: 6, label: 11.5 } as const;
+const stepperMetrics = { bar: 4, barCorner: 2, between: 6, label: 11.5 } as const;
 /** events_b.js `opt`: 42 high, 14 corner, 14 semi-bold, 8 apart; the picked one on the accent tint with a 1.5 accent ring. */
-export const optMetrics = { height: 42, corner: 14, font: 14, gap: 8, ring: 1.5 } as const;
+export const optMetrics = { height: 42, corner: 14, font: 14, between: 8, ring: 1.5 } as const;
 /** events_b.js `ta`: a box at least 90 high, 18 corner, 14 by 16 padding, 15 type on a 1.4 line. */
 const areaMetrics = { minHeight: 90, padV: 14, font: 15, leading: 1.4 } as const;
 /** kit.js `field` with a `trail` icon: 17 for a calendar or clock, 18 for a chevron. */
 export const trailMetrics = { clock: 17, chevron: 18 } as const;
 /** events_b.js form2's banner: 110 high, 20 corner, a 1.5 strong ring; a 24 ImagePlus 8 over a 13.5 semi-bold name. */
-const bannerTileMetrics = { height: 110, ring: 1.5, icon: 24, gap: 8, font: 13.5 } as const;
+const bannerTileMetrics = { height: 110, ring: 1.5, icon: 24, between: 8, font: 13.5 } as const;
 /** kit.js `banner`: 18 corner, 14 by 16 padding, a 19 icon nudged 1 down, 12 to the words, 3 between title and text. */
 const noteMetrics = { padV: 14, icon: 19, iconStroke: 2.2, nudge: 1, inner: 3 } as const;
 /** kit.js `field` hint: 12.5, a 15 icon at 2.2, 6 apart, 8 under the box. */
-const hintMetrics = { font: 12.5, icon: 15, iconStroke: 2.2, gap: 6 } as const;
+const hintMetrics = { font: 12.5, icon: 15, iconStroke: 2.2, between: 6 } as const;
 
 /** Basics / When and where / Tickets, the current step's bar and name lit. */
 export function Stepper({ step }: { step: Step }) {
@@ -380,8 +380,8 @@ const TIMES_MAX_H = 230;
 const LIST_MAX_H = 420;
 
 const styles = StyleSheet.create({
-  stepper: { flexDirection: 'row', gap: stepperMetrics.gap },
-  stepCol: { flex: 1, gap: stepperMetrics.gap },
+  stepper: { flexDirection: 'row', gap: stepperMetrics.between },
+  stepCol: { flex: 1, gap: stepperMetrics.between },
   bar: { height: stepperMetrics.bar, borderRadius: stepperMetrics.barCorner },
   label: { ...font(600), fontSize: fieldMetrics.label, marginBottom: space.sm },
   fieldRoot: { alignSelf: 'stretch' },
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   value: { flex: 1, fontSize: fieldMetrics.value },
-  hint: { flexDirection: 'row', alignItems: 'center', gap: hintMetrics.gap, marginTop: space.sm },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: hintMetrics.between, marginTop: space.sm },
   area: { minHeight: areaMetrics.minHeight, borderRadius: fieldMetrics.radius, paddingVertical: areaMetrics.padV, paddingHorizontal: space.lg },
   areaInput: {
     ...font(400),
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     padding: 0,
     textAlignVertical: 'top',
   },
-  optRow: { flexDirection: 'row', gap: optMetrics.gap },
+  optRow: { flexDirection: 'row', gap: optMetrics.between },
   opt: { flex: 1, height: optMetrics.height, borderRadius: optMetrics.corner, alignItems: 'center', justifyContent: 'center' },
   banner: {
     height: bannerTileMetrics.height,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     borderWidth: bannerTileMetrics.ring,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: bannerTileMetrics.gap,
+    gap: bannerTileMetrics.between,
     overflow: 'hidden',
   },
   bannerName: { fontSize: bannerTileMetrics.font, lineHeight: canvasNormalLineHeight(bannerTileMetrics.font) },

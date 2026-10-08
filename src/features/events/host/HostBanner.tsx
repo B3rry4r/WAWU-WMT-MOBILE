@@ -8,7 +8,7 @@ import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
  * design/_gen/events.js `hostBanner` (E1): a 22 corner accent card, 16 by 18 padding, 12 between the words and
  * the button; a 16 bold title over a 12.5 line at 85%, 2 apart; a small white Start.
  */
-const bannerMetrics = { padV: 16, padH: 18, gap: 12, title: 16, line: 12.5, lineGap: 2, lineOpacity: 0.85 } as const;
+const bannerMetrics = { padV: 16, padH: 18, between: 12, title: 16, line: 12.5, lineGap: 2, lineOpacity: 0.85 } as const;
 
 /** E1's "Host your event": opens the host wizard, or the tick gate (E21) for an account without a tick. */
 export function HostBanner({ onStart }: { onStart: () => void }) {
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: bannerMetrics.padH,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: bannerMetrics.gap,
+    gap: bannerMetrics.between,
   },
   words: { flex: 1, gap: bannerMetrics.lineGap },
   title: { fontSize: bannerMetrics.title, lineHeight: canvasNormalLineHeight(bannerMetrics.title) },

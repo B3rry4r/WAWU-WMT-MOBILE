@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField, fieldMetrics } from '@/components/TextField';
-import { layout, useWawu } from '@/theme';
+import { layout, space, useWawu } from '@/theme';
 
 import { detailKey, eventsKey, fetchEvent, fetchOptions, optionsKey } from '../api';
 import { NavBar } from '../chrome';
@@ -18,8 +18,8 @@ import { updateEvent } from './hostApi';
 import { addressError, needsAddress } from './hostForm';
 import { SentBackNote } from './hostParts';
 
-/** events_b.js `sentBack`: `body(..., { gap: 14 })`. */
-const bodyMetrics = { top: 14, gap: 14 } as const;
+/** events_b.js `sentBack`: `body(..., { between: 14 })`. */
+const bodyMetrics = { top: 14, between: 14 } as const;
 
 export type SentBackScreenProps = { id: string; onBack: () => void; onDone: () => void };
 
@@ -140,6 +140,6 @@ export function SentBackScreen({ id, onBack, onDone }: SentBackScreenProps) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, paddingBottom: bodyMetrics.top, gap: bodyMetrics.gap },
-  foot: { paddingTop: footMetrics.top, paddingHorizontal: layout.gutter, gap: 8 },
+  body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, paddingBottom: bodyMetrics.top, gap: bodyMetrics.between },
+  foot: { paddingTop: footMetrics.top, paddingHorizontal: layout.gutter, gap: space.sm },
 });

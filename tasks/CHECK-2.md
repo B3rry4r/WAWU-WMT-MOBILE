@@ -3,12 +3,12 @@ id: CHECK-2
 title: Checkpoint 2: money moves correctly
 owner: YOU
 area: CHECK
-order: 169
+order: 226
 priority: launch
 repo: all
 type: ops
 status: todo
-depends_on: [CHECK-1, OPS-10, BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, KYC-04, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11, WALLET-13, WALLET-17]
+depends_on: [CHECK-1, NUV-10, BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, KYC-04, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11, WALLET-13, WALLET-17, TIER-04, TIER-05, POINTS-03, POINTS-04, REF-01, WEBPAY-04, WEBPAY-05]
 decisions: [R-20, R-25]
 passes: [V8, V11]
 artboards: []
@@ -29,13 +29,15 @@ No payment path goes to real users until it has been attacked and reconciled.
 ## Scope
 
 An AUDITOR session runs V8 across every payment path, against the local backend with seeded data and the
-Fintava sandbox. Then staff make a small real payment on each path on the production backend (the DigitalOcean
-droplet, deployed by GitHub Actions) with live keys (OPS-10).
+provider stood in or, once the key works, the Nuvion sandbox. Then staff make a small real payment on each path on the
+production backend (the DigitalOcean droplet, deployed by GitHub Actions) with live keys (NUV-10, which replaced
+OPS-10 on 8 Oct 2026, PLAN-PAY). The paths include the tier, extra products, points, shortfall, cash-out and
+referral paths, on the app and on the website (R-44).
 
 ## Capability checks
 
 - [ ] For every payment path: the same request twice charges once; a wrong PIN five times locks; a failed payment reverses.
-- [ ] The nightly check reports zero differences between our ledger and Fintava.
+- [ ] The nightly check reports zero differences between our ledger and the wallet provider (Nuvion once NUV-10 has switched it; Fintava until then).
 - [ ] Staff have made a real small payment on each path on the production backend with live keys, with no mismatch; any mismatch is fixed before launch.
 
 ## Builder report

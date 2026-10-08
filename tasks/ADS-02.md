@@ -1,7 +1,7 @@
 ---
 id: ADS-02
 title: Admin screens: ads
-owner: DEV2
+owner: YOU
 area: ADS
 order: 43
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V6, V7, V9]
 artboards: []
 ---
 # ADS-02 · Admin screens: ads
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 2 had not pushed for 17 hours).
 
 ## Read first
 

@@ -1,7 +1,7 @@
 ---
 id: PROS-03
 title: Get listed as a professional
-owner: DEV3
+owner: YOU
 area: PROS
 order: 40
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [P5, P6, P7, P8, P9, P10]
 ---
 # PROS-03 · Get listed as a professional
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 

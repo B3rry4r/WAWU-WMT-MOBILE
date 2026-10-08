@@ -38,10 +38,10 @@ import {
 } from './hostForm';
 import { AreaField, BannerTile, ChoiceSheet, OptionRow, PickerField, SectionLabel, Stepper, WhenSheet } from './hostParts';
 
-/** events_b.js form1 to form3: `body(..., { gap: 14, pt: 14 })`, tickets at 12; the FORMAT label 10 over its options; a ticket card 14 in, 10 between its rows. */
-const bodyMetrics = { top: 14, gap: 14, ticketsGap: 12, labelGap: 10, cardPad: 14, cardGap: 10, rowGap: 10 } as const;
+/** events_b.js form1 to form3: `body(..., { between: 14, pt: 14 })`, tickets at 12; the FORMAT label 10 over its options; a ticket card 14 in, 10 between its rows. */
+const bodyMetrics = { top: 14, between: 14, ticketsGap: 12, labelGap: 10, cardPad: 14, cardGap: 10, pairBetween: 10 } as const;
 /** events_b.js form3's Add a ticket type: 12 padding, 16 corner, a 1.5 strong ring, a 16 Plus at 2.2, 7 to the words, 13.5 semi-bold. */
-const addMetrics = { pad: 12, corner: 16, ring: 1.5, icon: 16, iconStroke: 2.2, gap: 7, font: 13.5 } as const;
+const addMetrics = { pad: 12, corner: 16, ring: 1.5, icon: 16, iconStroke: 2.2, between: 7, font: 13.5 } as const;
 /** How far ahead a start can be picked, and the gap between the times offered. PROVISIONAL(HOST-PICKER, owner=DEV3, why=no ruling sizes them). */
 const PICKER = { days: 365, minutes: 30 } as const;
 
@@ -89,16 +89,13 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
   };
 
   // The phone's own Back does what the on-screen one does: a step back with the text kept, then out.
-  const backRef = useRef(back);
-  backRef.current = back;
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (sending) return true;
-      backRef.current();
+      if (!sending) back();
       return true;
     });
     return () => sub.remove();
-  }, [sending]);
+  });
 
   const loading = verification.isPending || options.isPending;
   // A refetch that fails after the form is up never replaces it: what the person typed stays on screen.
@@ -177,7 +174,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
       ) : (
         <>
           <ScrollView
-            contentContainerStyle={[styles.body, { gap: step === 2 ? bodyMetrics.ticketsGap : bodyMetrics.gap }]}
+            contentContainerStyle={[styles.body, { gap: step === 2 ? bodyMetrics.ticketsGap : bodyMetrics.between }]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -505,9 +502,9 @@ function HostSkeleton() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, paddingBottom: bodyMetrics.top, gap: bodyMetrics.gap },
+  body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, paddingBottom: bodyMetrics.top, gap: bodyMetrics.between },
   labelled: { gap: bodyMetrics.labelGap },
-  pair: { flexDirection: 'row', gap: bodyMetrics.rowGap },
+  pair: { flexDirection: 'row', gap: bodyMetrics.pairBetween },
   half: { flex: 1 },
   card: { borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, padding: bodyMetrics.cardPad, gap: bodyMetrics.cardGap },
   add: {
@@ -517,7 +514,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: addMetrics.gap,
+    gap: addMetrics.between,
   },
   remove: { alignSelf: 'flex-end' },
   foot: { paddingTop: footMetrics.top, paddingHorizontal: layout.gutter, gap: space.sm },

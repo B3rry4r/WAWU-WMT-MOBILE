@@ -14,7 +14,7 @@ import type { MyVerification } from './hostApi';
 /** events_b.js `foot`: 12 above the button, 24 below it (plus the safe area). */
 export const footMetrics = { top: 12, bottom: 24 } as const;
 /** kit.js `result`: an 88 circle, a 42 glyph at 2.2, 10 between the parts, the title 8 further down, the line 14.5; events_b.js `submitted`: 120 down, 20 between the result and its line. */
-const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, top: 120, gap: 20 } as const;
+const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, top: 120, between: 20 } as const;
 
 /** What a tick costs a year, from the system: one figure when both ticks cost the same, else "from" the lower. */
 export function tickPriceLine(pricing: MyVerification['pricing']): string {
@@ -71,7 +71,7 @@ export function Submitted({ name, onDone }: { name: string; onDone: () => void }
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
   center: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.gutter },
-  result: { flex: 1, paddingTop: RESULT.top, paddingHorizontal: layout.gutter, gap: RESULT.gap },
+  result: { flex: 1, paddingTop: RESULT.top, paddingHorizontal: layout.gutter, gap: RESULT.between },
   words: { alignItems: 'center', gap: RESULT.stack },
   title: { marginTop: RESULT.titleNudge, textAlign: 'center', lineHeight: canvasNormalLineHeight(type.size.title) },
   line: { fontSize: RESULT.line, lineHeight: canvasNormalLineHeight(RESULT.line), textAlign: 'center' },

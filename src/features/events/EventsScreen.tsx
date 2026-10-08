@@ -9,7 +9,7 @@ import { useFocusRing } from '@/components/focusRing';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { font, layout, radius, space, useWawu } from '@/theme';
+import { layout, radius, space, useWawu } from '@/theme';
 
 import {
   activeFilterCount,
