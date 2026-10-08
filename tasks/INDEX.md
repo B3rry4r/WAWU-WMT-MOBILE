@@ -153,9 +153,13 @@ Builder and verifier are always different sessions.
 135. [WEBPAY-04](WEBPAY-04.md) Buy a tier on the website
 136. [WEBPAY-05](WEBPAY-05.md) Buy points on the website
 137. [NUV-10](NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits
-138. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-139. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-140. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+138. [FIX-18](FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone
+139. [FIX-19](FIX-19.md) School and course names refuse control characters
+140. [FIX-20](FIX-20.md) Provider webhook deliveries are not kept forever
+141. [FIX-21](FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level
+142. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
+143. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+144. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
