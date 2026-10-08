@@ -7,7 +7,7 @@ order: 61
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [INBOX-01, INBOX-02, INBOX-04, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -140,6 +140,34 @@ Verifier, 8 Oct 2026, fresh session (did not write any of this code). Checked `w
 11. Note, no action: the server's 402 sentence says "Buy more to keep messaging", while Buy is not built until INBOX-13; the sentence is the server's.
 
 **Result: FAIL, status back to `building`.** Open defects: 1, 2, 3, 4, 5. For the lead: findings 6, 7, 9, 10. V10 NOT RUN.
+
+### Verifier report, round 2 (8 Oct 2026)
+
+Re-verified `wmt/INBOX-05` at 9d7b7d6 (fix commit 53d54b8, newest `origin/main` merged by the builder; nothing else on the branch changed `src/` outside `src/features/communities/`). Own worktrees, Postgres :5593, Hub :4805, WAWU ID :4806 (rebuilt from `origin/main` fb8717e), Expo web :8181, real sign-in. Evidence: `/tmp/claude-0/-home-user/4c848b71-b74a-5dd5-8510-8e4464e23881/scratchpad/inbox05-verify/shots/r2-*.png`, `check-r2b.log`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` on the pushed head, run alone: exit 0, tsc and lint clean, 81 suites 1472 tests, gates files scanned 370, 0 findings, tasks check passes (`check-r2b.log`). A first run made while other sessions were loading the machine failed one test, see finding 12. |
+| V4 Field trace | passed | Unchanged data paths; re-sent a message (balance 47 to 46, one new row), live delivery 0.33 s, reload leaves the balance. |
+| V5 Picture | passed | I24, I25, I26 re-captured light and dark after the fixes (`cmp-I2*-*.png`); the Edit and sign-in prompt states below use the same shared components. No change from round 1 beyond finding 7 and 8 differences. |
+| V6 States | passed for 1 and 2 | Each fix confirmed by its real cause, below. |
+| V7 Flow walk | passed | Cold start into `/community/<id>` signed in still opens the room; signed-out is asked to sign in; send, join, Browse unchanged. |
+| V9 Live seam | passed | Real sign-in, balance 47 to 46 on one send, server rows. |
+| V10 Device | NOT RUN | Unchanged: needs the owner's Android phone and a tester build. |
+
+Round 1 defects:
+1. FIXED. `GET /credits` aborted at the network, Communities opened (strip "Your balance could not be read"), network restored, left and came back: the strip reads "47 WAWU Credits" within 8 s. Also from a cold list failure: Try again recovers the list and the strip together, light and dark (`r2-strip-credits.png`).
+2. FIXED. Real 500 (message table renamed, then restored), Try again once: the room and its messages both load, no second error (`room-500-recovered-light.png`; "error still shown after 8s: 0").
+3. FIXED. Signed-out visit to `/community/<id>`: "Sign in to open this community" with a Sign in button that opens the sign-in screen, no Hub request at all, light and dark (`r2-strip-so.png`). Signed-in cold start into the room still works.
+4. FIXED. 2100-character message: "That message is too long. Shorten it and send it again." with Edit and Remove, no Send again; nothing posted and no charge (`edge-long-light.png`, balance 47 to 47).
+5. FIXED. New `useRoomMessages.test.tsx`: removing the guard in `send` alone fails a test, removing the guard in `run` alone fails a test (re-run by me on both mutants, 1 failed of 3 each). Round 1's mutation set is otherwise unchanged (11 of 14 killed then, now 13 of 14: the third survivor, both guards removed together, was killed by the Composer's own gate in round 1 after the Composer guard was also removed and is covered by the same tests).
+
+New finding:
+12. `defect` (low, test): `CommunitiesView.test.tsx` "a user who is in no room sees where rooms will be, and the rooms they could join" asserts `getByText('Afrobeats producers')` straight after the "none" text appears, before the suggestions have loaded. It passed in round 1, passed in a clean full run and in an isolated run, and failed once in a full run while other sessions were using the CPU ("Unable to find an element with text: Afrobeats producers"). WORKFLOW section 10: a flaky suite is fixed, never retried to green. Fix: `await findByText` for the suggestion.
+
+Findings 6 to 11 stay with the lead and the owner, unchanged.
+
+**Result: round 1 defects 1 to 5 all fixed and confirmed. One new low defect (12, flaky test). Status stays `building` until 12 is fixed; no app behaviour is open.**
 
 ## Owner sign-off
 
