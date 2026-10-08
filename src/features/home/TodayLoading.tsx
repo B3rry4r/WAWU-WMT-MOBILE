@@ -9,6 +9,9 @@ import { gutter, todayMetrics as m } from './look';
 /** How many card shapes the rail shows while loading: three, the last running off the edge (H11). */
 const RAIL_CARDS = 3;
 
+/** design/_gen/home.js `todayLoading`: a tile is a 60 square over a 46 by 10 label bar at corner 5, 10 apart. */
+const tileShape = { gap: 10, labelWidth: 46, labelHeight: 10, labelCorner: 5 } as const;
+
 /**
  * H11, Today while it loads: quiet shapes where the parts will be, each the size of the part it
  * stands in for. The services row (D11, H11) is its heading bar and one tile shape (60 square at corner 19.2 over a
@@ -26,7 +29,7 @@ export function TodayLoading({ withTgif }: { withTgif: boolean }) {
           {Array.from({ length: servicesPresent }, (_, i) => (
             <View key={i} style={styles.tile}>
               <Skeleton width={servicesMetrics.tile} height={servicesMetrics.tile} radius={servicesMetrics.corner} />
-              <Skeleton width={46} height={10} radius={5} />
+              <Skeleton width={tileShape.labelWidth} height={tileShape.labelHeight} radius={tileShape.labelCorner} />
             </View>
           ))}
         </View>
@@ -43,6 +46,6 @@ export function TodayLoading({ withTgif }: { withTgif: boolean }) {
 const styles = StyleSheet.create({
   stack: { gap: m.between },
   tiles: { flexDirection: 'row' },
-  tile: { width: '25%', alignItems: 'center', gap: 10 },
+  tile: { width: '25%', alignItems: 'center', gap: tileShape.gap },
   rail: { flexDirection: 'row', gap: m.cardsApart, marginRight: -gutter, overflow: 'hidden' },
 });
