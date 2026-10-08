@@ -37,7 +37,7 @@ import { uploadDocument } from './upload';
 export const SCREEN_TITLE = 'Offer your services';
 
 /** design/_gen/kit.js line 67, `result`: an 88 circle with a 42 glyph at 2.2, 10 between the parts, the title 8 lower; pros.js line 35 sets `pt: 120`, `gap: 20`. */
-const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, top: 120, between: 20 } as const;
+const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, paragraphMax: 290, top: 120, between: 20 } as const;
 /** pros.js line 34: the file's card is 14 by 16, a 12 gap to its words, 18 round; its name at 15 and its state at 12.5. */
 const fileMetrics = { ten: 10, lead2words: 12, padV: 14, name: 15, state: 12.5, cross: 18, lead: 44 } as const;
 
@@ -201,7 +201,9 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
           <Note tone="warning" icon="CircleAlert" title="This was not sent" body={problem} testID="pro-send-problem" />
         ) : null}
         <View style={styles.kinds}>
-          <Text variant="label">What are you showing us?</Text>
+          <Text variant="label" style={styles.kindsLabel}>
+            What are you showing us?
+          </Text>
           <FilterChips
             variant="option"
             label="What you are showing us"
@@ -407,6 +409,7 @@ function Sent({ labels, onDone, onMyListings }: { labels: string[]; onDone: () =
 
 const styles = StyleSheet.create({
   kinds: { gap: fileMetrics.ten },
+  kindsLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   file: { flexDirection: 'row', alignItems: 'center', gap: fileMetrics.lead2words, paddingVertical: fileMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.tile },
   fileWords: { flex: 1, gap: space.xs / 2 },
   footRow: { flexDirection: 'row', gap: fileMetrics.ten },
@@ -414,5 +417,6 @@ const styles = StyleSheet.create({
   result: { alignItems: 'center', gap: RESULT.stack, paddingHorizontal: space.sm },
   resultTitle: { marginTop: RESULT.titleNudge, textAlign: 'center', lineHeight: canvasNormalLineHeight(type.size.title) },
   resultLine: { fontSize: RESULT.line, lineHeight: canvasNormalLineHeight(RESULT.line), textAlign: 'center' },
-  centerText: { textAlign: 'center' },
+  /** The canvas sets `text-wrap: pretty` (kit.js line 33), so this line breaks before "your" at about 270 wide; 290 breaks it the same way on every platform. */
+  centerText: { textAlign: 'center', alignSelf: 'center', maxWidth: RESULT.paragraphMax },
 });

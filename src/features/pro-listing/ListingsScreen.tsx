@@ -10,7 +10,7 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
-import { font, radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 
 import { fetchFields, fetchIsCreator, fetchMine, proKeys, setListed, type Application, type ProField } from './api';
 import { CreatorGate } from './ApplyScreen';
@@ -86,7 +86,7 @@ export function ListingsScreen({ onBack, onApply }: ListingsScreenProps) {
   );
 }
 
-/** pros.js line 37: a 1.5 outline in the strong border, 18 round, 14 all round, 7 between a 16 plus and the 13.5 label in the accent. */
+/** pros.js line 37: a 1.5 outline (an inset shadow, so it adds no height) in the strong border, 18 round, 14 all round, 7 between a 16 plus and the 13.5 label in the accent. */
 const anotherMetrics = { ring: 1.5, pad: 14, iconToLabel: 7, icon: 16, font: 13.5 } as const;
 
 function ApplyAnother({ onPress }: { onPress: () => void }) {
@@ -99,10 +99,10 @@ function ApplyAnother({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Apply in another field"
       onPress={onPress}
       {...ring.handlers}
-      style={[styles.another, { borderColor: colors.borderStrong }, ring.style]}
+      style={[styles.another, { boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: anotherMetrics.ring, color: colors.borderStrong, inset: true }] }, ring.style]}
     >
       <Icon name="Plus" size={anotherMetrics.icon} color={colors.accentFg} strokeWidth={2.2} />
-      <Text variant="body" tone="accentFg" style={[font(600), { fontSize: anotherMetrics.font }]}>
+      <Text variant="body" tone="accentFg" style={styles.anotherText}>
         Apply in another field
       </Text>
     </Pressable>
@@ -143,7 +143,7 @@ function ListingCard({ row, fields, onApplyAgain }: { row: Application; fields: 
     <Card testID={`pro-row-${row.id}`} padded style={styles.card}>
       <View style={styles.head}>
         <View style={styles.words}>
-          <Text variant="body" style={[font(600), { fontSize: rowMetrics.name }]}>
+          <Text variant="body" style={styles.name}>
             {labelOfApplication(fields, row)}
           </Text>
           <Text variant="secondary" style={styles.headline}>
@@ -153,7 +153,7 @@ function ListingCard({ row, fields, onApplyAgain }: { row: Application; fields: 
         {pill}
       </View>
       {state === 'listed' || state === 'hidden' ? (
-        <View style={[styles.rule, { borderTopColor: colors.borderHairline }]}>
+        <View style={[styles.rule, { boxShadow: [{ offsetX: 0, offsetY: 1, blurRadius: 0, spreadDistance: 0, color: colors.borderHairline, inset: true }] }]}>
           <Text variant="secondary" style={styles.ruleText}>
             {state === 'listed' ? SHOWING : HIDDEN}
           </Text>
@@ -176,12 +176,14 @@ function ListingCard({ row, fields, onApplyAgain }: { row: Application; fields: 
 }
 
 const styles = StyleSheet.create({
-  another: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: anotherMetrics.iconToLabel, padding: anotherMetrics.pad, borderRadius: radius.tile, borderWidth: anotherMetrics.ring },
-  card: { gap: rowMetrics.between, borderRadius: radius.card },
+  another: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: anotherMetrics.iconToLabel, padding: anotherMetrics.pad, borderRadius: radius.tile },
+  card: { gap: rowMetrics.between, borderRadius: radius.card, paddingVertical: rowMetrics.padV, paddingHorizontal: space.lg },
+  name: { ...font(600), fontSize: rowMetrics.name, lineHeight: canvasNormalLineHeight(rowMetrics.name) },
   head: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between },
   words: { flex: 1, minWidth: 0 },
-  headline: { marginTop: rowMetrics.headlineGap, fontSize: rowMetrics.headline },
-  rule: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: rowMetrics.ruleTop, borderTopWidth: StyleSheet.hairlineWidth },
-  ruleText: { flex: 1, fontSize: rowMetrics.headline },
+  headline: { marginTop: rowMetrics.headlineGap, fontSize: rowMetrics.headline, lineHeight: canvasNormalLineHeight(rowMetrics.headline) },
+  rule: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: rowMetrics.ruleTop },
+  ruleText: { flex: 1, fontSize: rowMetrics.headline, lineHeight: canvasNormalLineHeight(rowMetrics.headline) },
+  anotherText: { ...font(600), fontSize: anotherMetrics.font, lineHeight: canvasNormalLineHeight(anotherMetrics.font) },
 });
 

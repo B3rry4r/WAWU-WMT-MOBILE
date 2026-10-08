@@ -63,7 +63,8 @@ export async function setListed(id: string, listed: boolean): Promise<Applicatio
 /** Whether this person has a creator account: P10 stops everyone else. */
 export async function fetchIsCreator(): Promise<boolean> {
   const me = dataOf<{ accountType?: unknown }>(await unwrap(api.GET('/api/hub/users/me')), 'account');
-  if (typeof me.accountType !== 'string') throw unreadable('account');
+  // The contract allows a null account type: that person has not chosen one, so they are not a creator (P10).
+  if (me.accountType !== null && typeof me.accountType !== 'string') throw unreadable('account');
   return me.accountType === 'creator';
 }
 

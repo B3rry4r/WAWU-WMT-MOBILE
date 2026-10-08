@@ -5,7 +5,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
-import { font, radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, radius, space, type, useWawu } from '@/theme';
 
 /** design/_gen/pros.js line 31, `picked`: 32 high, 12 across, 13 semi-bold, a 12 cross 6 after the word; "Add" is the same with a 13 plus and 5 between. */
 const chipMetrics = { between: 7, height: 32, padH: 12, font: 13, icon: 13, cross: 12, crossGap: 6, plusGap: 5 } as const;
@@ -52,11 +52,14 @@ export function AddChip({ label = 'Add', onPress, testID }: { label?: string; on
   );
 }
 
-/** A small caps heading with its chips under it (kit `label`, then 10 and the chips 7 apart). */
+/** A small caps heading with its chips under it (kit `label` on `line-height: normal`, then 10 and the chips 7 apart). */
+const groupMetrics = { gap: 10 } as const;
 export function ChipGroup({ label, children, error }: { label: string; children: ReactNode; error?: string }) {
   return (
     <View style={styles.group}>
-      <Text variant="label">{label}</Text>
+      <Text variant="label" style={styles.groupLabel}>
+        {label}
+      </Text>
       <View style={styles.chips}>{children}</View>
       {error ? (
         <Text variant="caption" tone="danger" accessibilityRole="alert">
@@ -146,10 +149,11 @@ export function Note({ tone, icon, title, body, testID, children }: NoteProps) {
 const styles = StyleSheet.create({
   chip: { height: chipMetrics.height, paddingHorizontal: chipMetrics.padH, borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center' },
   chipText: { fontSize: chipMetrics.font },
-  group: { gap: space.md },
+  group: { gap: groupMetrics.gap },
+  groupLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: chipMetrics.between },
   long: { alignSelf: 'stretch' },
-  longLabel: { ...font(600), fontSize: fieldMetrics.label, marginBottom: space.sm },
+  longLabel: { ...font(600), fontSize: fieldMetrics.label, lineHeight: canvasNormalLineHeight(fieldMetrics.label), marginBottom: space.sm },
   box: { minHeight: longMetrics.minHeight, borderRadius: fieldMetrics.radius, paddingVertical: longMetrics.padV, paddingHorizontal: space.lg },
   input: { ...font(400), fontSize: longMetrics.fontSize, lineHeight: longMetrics.fontSize * longMetrics.leading, padding: 0, minHeight: longMetrics.minHeight - 2 * longMetrics.padV, textAlignVertical: 'top' },
   message: { marginTop: space.xs },
