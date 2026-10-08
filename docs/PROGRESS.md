@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 97 of 223.**
+**Launch tasks done: 97 of 227.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 106 | 0 | 20 | 21 |
+| todo | 110 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -132,6 +132,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-18 to FIX-21 · Lead filed the verifiers' findings outside their tasks: three small 500s (wallet history paging, a repeated export token, a gone socket in the trust-proxy check), control characters in school names, webhook deliveries kept forever, and the money-route checks missing class-level guards and the isolation level. FIX-16 also covers the web's apply form for a taken-down field. CHECK-2, CHECK-3 and later move down by 4.
 - 8 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
 - 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
 - 8 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
@@ -146,4 +147,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
 - 8 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
-- 8 Oct 2026 · FIX-16 · Lead filed the dashboard and web catch-up for FIX-06's takedowns (List again, the taken-down state, the unlist toast that would turn untrue, the web's 409 sentence); ordered right after FIX-06. Lead default recorded with it: a takedown hides the listing only; account sanctions (event hosting, verification, notifications) stay separate admin actions.
