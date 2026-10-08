@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · FIX-21 · Builder report (backend 301d56a): the money-route coverage spec reads class and method guards as Nest runs them and counts any route with the PIN guard or a debit's own refusal as money-moving (the verifier's two routes fail it, pass once guarded); `assertMayMove` reads the transaction's isolation level and refuses anything but READ COMMITTED (50 rounds of 600 against a daily 1000 never both pass); protected 253/253; status verifying.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
 - 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
