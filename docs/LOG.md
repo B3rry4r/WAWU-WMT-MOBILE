@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
 - 8 Oct 2026 · FIX-16 · Lead filed the dashboard and web catch-up for FIX-06's takedowns (List again, the taken-down state, the unlist toast that would turn untrue, the web's 409 sentence); ordered right after FIX-06. Lead default recorded with it: a takedown hides the listing only; account sanctions (event hosting, verification, notifications) stay separate admin actions.

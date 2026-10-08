@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 77 | 0 | 20 | 26 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 56 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [INBOX-03](../tasks/INBOX-03.md) Phone push notifications (You)
 
@@ -134,6 +134,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
 - 8 Oct 2026 · FIX-16 · Lead filed the dashboard and web catch-up for FIX-06's takedowns (List again, the taken-down state, the unlist toast that would turn untrue, the web's 409 sentence); ordered right after FIX-06. Lead default recorded with it: a takedown hides the listing only; account sanctions (event hosting, verification, notifications) stay separate admin actions.
@@ -148,4 +149,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
 - 7 Oct 2026 · SHARED-03 · Built: one shared `Toast` (ME-06's and Explore's copies deleted), chips beside icon chips at 11/14 (X3's All), `MediaCard` initials for a creator with no photo, THE creator-card Follow (`Button` `card` and `veil`, Explore on `action`), Z3 made deterministic (20 of 20), T3, T4 and R2-5 covered; 15 of 15 mutants killed; 148 picture pairs against main, 132 identical, 16 differ only by items 2, 3 and 6; `npm run check` 0 (76 suites, 1377 tests). Status verifying.
 - 7 Oct 2026 · HOME-01 · HOME-01 merged (round 3 passed; all four tab hubs on main; T3 and T4 test gaps moved to SHARED-03).
-- 7 Oct 2026 · HOME-01 · Verifier report round 3 (status review): D3 closed. Follow is MediaCard's shared `action`, and its 13 vs 13.5 label and Following ring are recorded under SHARED-03 item 6. T1 and T2 now killed. A Follow and an unfollow through the app read back from the Hub and the database. D1 and D2 still closed; the merge kept every row (HOME-09 F1 was a true duplicate). Mutants 23 of 25 killed; T3 and T4 are test gaps.
