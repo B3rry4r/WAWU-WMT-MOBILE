@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 99 of 232.**
+**Launch tasks done: 100 of 232.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 112 | 0 | 20 | 21 |
+| todo | 111 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
-| done | 60 | 27 | 11 | 5 |
+| done | 61 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -117,6 +117,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
 - [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
@@ -135,6 +136,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
 - 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
 - 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
@@ -148,5 +150,4 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · TIER-01 · Verified (backend a0900cd, mobile db4f999): back to building with two defects. D1: GET /me/tier's contract types `tier`, `eventPass` and the tier's `badge` as never null (a `$ref` with a `nullable` sibling; `src/plans` is missing from the enricher's nullable-ref folders), so the app's generated MyTierView is wrong for a person with no tier. D2: a key written twice in plans.config.json boots and serves the last value (Verify at 1 kobo). Figures equal the brief (77 of 77); 58 of 64 broken files refused naming the field; currency rule, insert-only fix, states and isolation proved live through the real WAWU ID; protected 253/253; full suite 4,800 passed, the 14 failures timing or namespace-only; 22 of 24 mutants killed.
 - 8 Oct 2026 · TIER-01 · Lead applied SHARED-CHANGES TIER-01 #1 (PlansModule mounted, backend a0900cd) and #3 (contract and types from the branch), so the verifier checks the served routes.
 - 8 Oct 2026 · TIER-01 · Built (backend `wmt/TIER-01`): every price, product count, points amount, expiry, cost and cap of the 5 Oct plan in one file, `src/plans/plans.config.json` (the owner's example values in kobo and cents, four PROVISIONAL markers), checked whole at boot; a person's billing currency fixed at the first purchase and never changed by a route; `MakerTier` and `EventPass` with one reader; `GET /plans` in the caller's currency only and `GET /me/tier` (none, active, ending, ended). Mounting `PlansModule` is SHARED-CHANGES TIER-01 #1; gaps G-420, G-421; status verifying.
-- 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
-- 8 Oct 2026 · SHARED-04 to SHARED-07, FIX-22 · Lead filed the shared-change pass the audit found missing: 35 rows had no owner. SHARED-04 installs the native modules in one batch and turns on the wallet selfie, photo pickers and copy on the phone (today nobody can open a wallet on a phone); SHARED-07 the phone player, reader and share picture; SHARED-05 the route graph and the theme at launch; SHARED-06 the shared components, tokens and API client; FIX-22 the AI response schema. CHECK-2 and later move down by 5.
+- 8 Oct 2026 · NUV-01 · Verified round 2 (status building): 1 defect open, the migration stamp no longer sorts after backend main (LEGAL-03 merged 20261016160000_legal_consultations after this head; rename it when main is merged in). Every round 1 defect and lead ruling holds: eslint 0 on all 62 changed files; the same-day cutoff an unknown outcome, never resent; "already exists" and review types keep recordMayExist; under_review a plain 409; a 20-minute window both sides on the built server; undocumented events pending; encoded traversal refused; the ledger stamps and reads only its provider both ways; limit types below 500 are 403 limit_reached with the request id, a 5xx never a refusal; NUV-07's fixture right. Receiver replays under 40 forged ids one row, 44 boots, rollback sweeps both ways, PIN reset 503 with the real wawu-id, Fintava 27 of 29 answers byte-identical (2 differ only in row times); protected 253/253; 29 mutants, 25 killed, round 1's 7 survivors all killed.
