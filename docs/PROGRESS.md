@@ -7,17 +7,18 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 113 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| todo | 112 | 0 | 20 | 21 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 59 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 
@@ -131,12 +132,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
 - 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
@@ -149,6 +151,5 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
 - 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
 - 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
-- 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
-- 8 Oct 2026 · SHARED-04 to SHARED-07, FIX-22 · Lead filed the shared-change pass the audit found missing: 35 rows had no owner. SHARED-04 installs the native modules in one batch and turns on the wallet selfie, photo pickers and copy on the phone (today nobody can open a wallet on a phone); SHARED-07 the phone player, reader and share picture; SHARED-05 the route graph and the theme at launch; SHARED-06 the shared components, tokens and API client; FIX-22 the AI response schema. CHECK-2 and later move down by 5.
-- 8 Oct 2026 · SHARED-CHANGES · Lead audit of rows still marked open for done tasks: 27 applied, 0 done elsewhere, 5 still owed (owned), 35 with no owner.
+- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
+- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.

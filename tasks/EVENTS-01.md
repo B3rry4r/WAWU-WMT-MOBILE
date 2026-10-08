@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -517,6 +517,13 @@ Everything else asked of this round passed. Stack: mock-wawu-id (envelope added 
 - **D13-E1b (defect, minor).** E1's featured card kicker and name sit 1 css px (2 px at 2x) above the render because the gap between the name and the place line is the shared `heroMetrics.stack` 4 where the canvas draws 3 (`margin-top:3px` on the place line, `4px` on the name). Fix: a 3 gap before the place line (a `marginTop` of 3 on `heroLine` with `gap` 0 and the name's 4, or two metrics), then re-measure: place line stays at 326, name at 273, kicker at 233.
 
 **Status:** one open defect (D13-E1b), so `status: building`.
+
+## Builder report, round 9 (8 Oct 2026)
+
+- **D13-E1b fixed.** `design/_gen/events.js` `featured` draws `margin-top:4px` on the name and `margin-top:3px` on the place line. `heroMetrics.stack` (one 4 as the `gap` of both) is replaced by `nameGap` 4 and `lineGap` 3, applied as `marginTop` on `heroName` and `heroLine`; the words block has no `gap`. The stack is 1 css px shorter, and it is bottom-anchored, so the kicker and the name move down 1 css px (2 px at 2x) and the place line stays at 326.
+- **Spec added:** "draws the gap before the featured card name as 4 and before the place line as 3, as the canvas does (D13-E1b)". With the margins removed in `parts.tsx` (scratch, restored) it fails; with them it passes. Events suites: 73 passed.
+- **NOT RUN:** the browser re-measure at 2x, light and dark, against `render_design.py E1`. The verifier measures it.
+- Merged origin/main (conflicts in `BACKEND_GAPS.md`, both sides kept; `docs/PROGRESS.md` regenerated).
 
 ## Owner sign-off
 
