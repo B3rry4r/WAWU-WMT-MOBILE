@@ -15,6 +15,17 @@ artboards: []
 ---
 # TIER-03 · Buy, renew or upgrade a tier from the wallet
 
+## Lead note (8 Oct 2026): from TIER-01's verification
+
+- **Fixing the billing currency (N3).** `BillingCurrencyService.fixAtFirstPurchase` inserts with `ON CONFLICT DO
+  NOTHING` and reads the row back. At READ COMMITTED (what every transaction in `src/` uses) concurrent first
+  purchases all get the winner's currency. At REPEATABLE READ or SERIALIZABLE the losers get Prisma `P2034` instead:
+  keep the purchase transaction at READ COMMITTED, or retry the whole purchase on `P2034`. It now takes the token's
+  `phone` and `country` (`{ wawuUserId, phone, country, purchaseRef }`).
+- **Two states nothing may write (N7).** Never write a `PersonBilling` row with `fixedBy = 'first_purchase'` and no
+  `purchaseRef`, and never write a `MakerTier` row whose `activeFrom` is in the future (a renewal moves
+  `activeUntil`; an upgrade starts today).
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
