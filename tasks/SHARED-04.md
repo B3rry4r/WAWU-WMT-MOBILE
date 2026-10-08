@@ -49,7 +49,7 @@ Eight SHARED-CHANGES rows ask for native modules that were never installed, beca
 
 ## Builder report
 
-Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `origin/main` c8928e3 with its own `npm ci` (no hard-linked `node_modules`), then `origin/main` 49ef608 (TIER-01 and NUV-01 merged) merged in with no conflict. No backend or dashboard change, so the backend and dashboard checks do not apply. Evidence `$E` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bsh04/`.
+Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `origin/main` c8928e3 with its own `npm ci` (no hard-linked `node_modules`), then `origin/main` 49ef608 (TIER-01 and NUV-01 merged, no conflict) and 5597ba7 (lead task files; only the generated `docs/PROGRESS.md` conflicted, taken from main and regenerated) merged in. No backend or dashboard change, so the backend and dashboard checks do not apply. Evidence `$E` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bsh04/`.
 
 **Installed** with `npx expo install`, at the versions it picked for SDK 57:
 - the rows' modules: expo-notifications 57.0.22, expo-camera 57.0.6, expo-image-manipulator 57.0.21, expo-brightness 57.0.2, expo-calendar 57.0.5, expo-image-picker 57.0.20, expo-document-picker 57.0.3, expo-clipboard 57.0.2, expo-video 57.0.5, expo-audio 57.0.5, react-native-webview 13.16.1, expo-sharing 57.0.22, expo-media-library 57.0.5;
@@ -115,7 +115,7 @@ Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `ori
   - Playwright Chromium at 390 px (`$E/web/drive.py`): A6 reached through A26 and A5, then A8, M8 and M36, light and dark.
   - **All 8 pairs are pixel-identical** (`$E/shots/base-*.png` against `$E/shots/branch-*.png`), and again after main 49ef608 was merged (`$E/shots/merged-*.png`; `$E/shots/sheet-branch.png`). M8 has both camera buttons and M36 the box on web, as on main.
   - 0 requests left 127.0.0.1, and no bundle names a native module.
-- **`npm run check` on the merged branch: exit 0** (`$E/check-branch.log`): typecheck and lint clean, 81 suites and 1,403 tests passed, gates 9 run on 353 files with 0 fail, 0 warn, 0 accepted, 258 tasks.
+- **`npm run check` on the merged branch: exit 0** (`$E/check-final2.log`, with main 5597ba7 in): typecheck and lint clean, 81 suites and 1,403 tests passed, gates 9 run on 353 files with 0 fail, 0 warn, 0 accepted, 259 tasks.
 
 **Mutants: 12 of my own, 11 killed, 1 equivalent** (`$E/mutants.json`; each was applied, the 7 spec files run, then `git restore`, and the file checked clean).
 - Killed: end-marker check removed (2 tests failed), back lens (1), never downscaled (3), cache file kept (2), copy always true (2), one file at a time (1), HEIC sent as it is (2), camera-off state not offered (1), oval mask removed (1), 2,048 px unchecked (1), quality not stepped (1).
