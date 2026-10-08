@@ -11799,6 +11799,9 @@
            "format": "date-time",
            "nullable": true
           },
+          "listed": {
+           "type": "boolean"
+          },
           "category": {
            "type": "string"
           },
@@ -11846,15 +11849,13 @@
           "issuingBody": {
            "type": "string",
            "nullable": true
-          },
-          "listed": {
-           "type": "boolean"
           }
          },
          "required": [
           "id",
           "status",
           "reviewedAt",
+          "listed",
           "category",
           "documents",
           "wawuUserId",
@@ -11865,8 +11866,7 @@
           "services",
           "credentialKind",
           "licenceNumber",
-          "issuingBody",
-          "listed"
+          "issuingBody"
          ]
         }
        }
@@ -11907,6 +11907,9 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+           },
+           "listed": {
+            "type": "boolean"
            },
            "category": {
             "type": "string"
@@ -11955,15 +11958,13 @@
            "issuingBody": {
             "type": "string",
             "nullable": true
-           },
-           "listed": {
-            "type": "boolean"
            }
           },
           "required": [
            "id",
            "status",
            "reviewedAt",
+           "listed",
            "category",
            "documents",
            "wawuUserId",
@@ -11974,8 +11975,7 @@
            "services",
            "credentialKind",
            "licenceNumber",
-           "issuingBody",
-           "listed"
+           "issuingBody"
           ]
          }
         }
@@ -11983,6 +11983,31 @@
       }
      }
     },
+    "tags": [
+     "Professional"
+    ]
+   }
+  },
+  "/api/hub/professionals/applications/mine/visibility": {
+   "get": {
+    "operationId": "ProfessionalController_myVisibility",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ProfessionalListingVisibilityView"
+         }
+        }
+       }
+      }
+     }
+    },
+    "summary": "Each approved listing of yours and where it stands: listed, hidden by\nyou, or taken down by an admin (FIX-06). P8 reads it beside .../mine.",
     "tags": [
      "Professional"
     ]
@@ -12035,6 +12060,9 @@
            "format": "date-time",
            "nullable": true
           },
+          "listed": {
+           "type": "boolean"
+          },
           "category": {
            "type": "string"
           },
@@ -12082,15 +12110,13 @@
           "issuingBody": {
            "type": "string",
            "nullable": true
-          },
-          "listed": {
-           "type": "boolean"
           }
          },
          "required": [
           "id",
           "status",
           "reviewedAt",
+          "listed",
           "category",
           "documents",
           "wawuUserId",
@@ -12101,12 +12127,14 @@
           "services",
           "credentialKind",
           "licenceNumber",
-          "issuingBody",
-          "listed"
+          "issuingBody"
          ]
         }
        }
       }
+     },
+     "409": {
+      "description": "Refused: the listing is not approved, or (reason.code listing_taken_down, with reason.takenDownAt) an admin took it down and only an admin lists it again (FIX-06). A Hide on a taken-down listing is accepted."
      }
     },
     "tags": [
@@ -14489,9 +14517,9 @@
       "name": "cursor",
       "required": false,
       "in": "query",
-      "description": "The `nextCursor` of the previous page: opaque, not to be built by hand.",
+      "description": "The `nextCursor` of the previous page: opaque, not to be built by hand,\nand never longer than the longest one this server gives out.",
       "schema": {
-       "maxLength": 1000,
+       "maxLength": 1498,
        "type": "string"
       }
      }
@@ -17765,7 +17793,7 @@
       }
      },
      "409": {
-      "description": "reason.code: wallet_not_open, wallet_opening",
+      "description": "reason.code: wallet_not_open, wallet_opening, target_not_payable",
       "content": {
        "application/json": {
         "schema": {
@@ -17783,6 +17811,16 @@
         }
        }
       }
+     },
+     "503": {
+      "description": "reason.code: fees_not_set",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MoneyErrorEnvelope"
+        }
+       }
+      }
      }
     },
     "security": [
@@ -17790,7 +17828,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "What a send, a withdrawal, a purchase or a bill will cost, before the\nPIN (W10, W17, H14): Fintava's charge plus WAWU's fee from config\n(R-10, R-31), each charge as its own part, the total, and a signed\nquote the paying request can send back. Nothing is reserved and\nFintava is not asked. A purchase or bill whose total is above\nMERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.",
+    "summary": "What a send, a withdrawal, a purchase or a bill will cost, before the\nPIN (W10, W17, H14): Fintava's charge plus WAWU's fee from config\n(R-10, R-31), each charge as its own part, the total, and a signed\nquote the paying request can send back. Nothing is reserved and\nFintava is not asked. A purchase or bill whose total is above\nMERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.\n\nNUV-07: the provider's charge comes from the running provider's\nsettings. While any of them is unset (Nuvion's, until the owner fills\nthem in) every quote is fees_not_set, before the wallet gate; under\nNuvion, which has no bill payments, a bill is target_not_payable.",
     "tags": [
      "MoneyFees"
     ],
@@ -19503,7 +19541,7 @@
       }
      },
      "403": {
-      "description": "reason.code: pin_required, pin_incorrect, daily_limit_exceeded, recipient_blocked",
+      "description": "reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, recipient_blocked",
       "content": {
        "application/json": {
         "schema": {
@@ -19543,7 +19581,7 @@
       }
      },
      "503": {
-      "description": "reason.code: provider_unreachable",
+      "description": "reason.code: provider_unreachable, fees_not_set",
       "content": {
        "application/json": {
         "schema": {
@@ -19634,7 +19672,7 @@
       }
      },
      "403": {
-      "description": "reason.code: pin_required, pin_incorrect, daily_limit_exceeded, bank_transfers_blocked",
+      "description": "reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, bank_transfers_blocked",
       "content": {
        "application/json": {
         "schema": {
@@ -19674,7 +19712,7 @@
       }
      },
      "503": {
-      "description": "reason.code: provider_unreachable",
+      "description": "reason.code: provider_unreachable, fees_not_set",
       "content": {
        "application/json": {
         "schema": {
@@ -19945,7 +19983,7 @@
       }
      },
      "403": {
-      "description": "reason.code: pin_required, pin_incorrect, daily_limit_exceeded",
+      "description": "reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded",
       "content": {
        "application/json": {
         "schema": {
@@ -19985,7 +20023,7 @@
       }
      },
      "503": {
-      "description": "reason.code: provider_unreachable",
+      "description": "reason.code: provider_unreachable, fees_not_set",
       "content": {
        "application/json": {
         "schema": {
@@ -23205,7 +23243,9 @@
        "statement_too_large",
        "statement_rate_limited",
        "statement_busy",
-       "recipient_search_rate_limited"
+       "recipient_search_rate_limited",
+       "fees_not_set",
+       "limit_reached"
       ],
       "type": "string"
      },
@@ -23255,6 +23295,15 @@
        "kyc_pending",
        "kyc_rejected",
        "kyc_not_submitted"
+      ],
+      "type": "string"
+     },
+     "limit": {
+      "description": "limit_reached: which limit the movement passes (NUV-07), WAWU's own or the provider's.",
+      "enum": [
+       "per_transaction",
+       "daily",
+       "monthly"
       ],
       "type": "string"
      },
@@ -27112,6 +27161,116 @@
      "otherCategories"
     ]
    },
+   "AdminProfessionalTakedownRecordView": {
+    "type": "object",
+    "properties": {
+     "standing": {
+      "type": "boolean"
+     },
+     "takenDownAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "takenDownByAdminId": {
+      "type": "string"
+     },
+     "takenDownByAdminEmail": {
+      "type": "string"
+     },
+     "takenDownByAdminRole": {
+      "type": "string",
+      "enum": [
+       "superadmin",
+       "reviewer",
+       "support",
+       "finance"
+      ]
+     },
+     "relistsAs": {
+      "type": "string",
+      "enum": [
+       "listed",
+       "hidden"
+      ]
+     },
+     "liftedAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "liftedByAdminId": {
+      "type": "string",
+      "nullable": true
+     },
+     "liftedByAdminEmail": {
+      "type": "string",
+      "nullable": true
+     },
+     "liftedByAdminRole": {
+      "type": "string",
+      "enum": [
+       "superadmin",
+       "reviewer",
+       "support",
+       "finance"
+      ],
+      "nullable": true
+     }
+    },
+    "required": [
+     "standing",
+     "takenDownAt",
+     "takenDownByAdminId",
+     "takenDownByAdminEmail",
+     "takenDownByAdminRole",
+     "relistsAs",
+     "liftedAt",
+     "liftedByAdminId",
+     "liftedByAdminEmail",
+     "liftedByAdminRole"
+    ]
+   },
+   "AdminProfessionalVisibilityView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "rejected",
+       "approved"
+      ]
+     },
+     "visibility": {
+      "type": "string",
+      "enum": [
+       "listed",
+       "hidden",
+       "taken_down"
+      ],
+      "nullable": true
+     },
+     "takenDownAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "latestTakedown": {
+      "$ref": "#/components/schemas/AdminProfessionalTakedownRecordView",
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "status",
+     "visibility",
+     "takenDownAt",
+     "latestTakedown"
+    ]
+   },
    "AdminProfessionalDocumentUrlView": {
     "type": "object",
     "properties": {
@@ -29413,8 +29572,8 @@
       "type": "string",
       "enum": [
        "live",
-       "draft",
-       "hidden"
+       "hidden",
+       "draft"
       ]
      },
      "createdAt": {
@@ -33068,6 +33227,36 @@
      "pieceCount",
      "verification",
      "following"
+    ]
+   },
+   "ProfessionalListingVisibilityView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "category": {
+      "type": "string"
+     },
+     "visibility": {
+      "type": "string",
+      "enum": [
+       "listed",
+       "hidden",
+       "taken_down"
+      ]
+     },
+     "takenDownAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "category",
+     "visibility",
+     "takenDownAt"
     ]
    },
    "ProfessionalLocationView": {
