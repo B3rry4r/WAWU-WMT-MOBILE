@@ -2544,6 +2544,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/professionals/applications/mine/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each approved listing of yours and where it stands: listed, hidden by
+         *     you, or taken down by an admin (FIX-06). P8 reads it beside .../mine.
+         */
+        get: operations["ProfessionalController_myVisibility"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals/applications/{id}/listing": {
         parameters: {
             query?: never;
@@ -4179,6 +4199,11 @@ export interface paths {
          *     quote the paying request can send back. Nothing is reserved and
          *     Fintava is not asked. A purchase or bill whose total is above
          *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
+         *
+         *     NUV-07: the provider's charge comes from the running provider's
+         *     settings. While any of them is unset (Nuvion's, until the owner fills
+         *     them in) every quote is fees_not_set, before the wallet gate; under
+         *     Nuvion, which has no bill payments, a bill is target_not_payable.
          */
         get: operations["MoneyFeesController_feeQuote"];
         put?: never;
@@ -5951,7 +5976,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -5973,6 +5998,11 @@ export interface components {
              * @enum {string}
              */
             blockedBy?: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted";
+            /**
+             * @description limit_reached: which limit the movement passes (NUV-07), WAWU's own or the provider's.
+             * @enum {string}
+             */
+            limit?: "per_transaction" | "daily" | "monthly";
             /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
             message: string;
             /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
@@ -6995,6 +7025,33 @@ export interface components {
             reviewedAt: string | null;
             otherCategories: components["schemas"]["AdminProfessionalOtherCategoryView"][];
         };
+        AdminProfessionalTakedownRecordView: {
+            standing: boolean;
+            /** Format: date-time */
+            takenDownAt: string;
+            takenDownByAdminId: string;
+            takenDownByAdminEmail: string;
+            /** @enum {string} */
+            takenDownByAdminRole: "superadmin" | "reviewer" | "support" | "finance";
+            /** @enum {string} */
+            relistsAs: "listed" | "hidden";
+            /** Format: date-time */
+            liftedAt: string | null;
+            liftedByAdminId: string | null;
+            liftedByAdminEmail: string | null;
+            /** @enum {string|null} */
+            liftedByAdminRole: "superadmin" | "reviewer" | "support" | "finance" | null;
+        };
+        AdminProfessionalVisibilityView: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "approved";
+            /** @enum {string|null} */
+            visibility: "listed" | "hidden" | "taken_down" | null;
+            /** Format: date-time */
+            takenDownAt: string | null;
+            latestTakedown: components["schemas"]["AdminProfessionalTakedownRecordView"];
+        };
         AdminProfessionalDocumentUrlView: {
             url: string;
         };
@@ -7521,7 +7578,7 @@ export interface components {
         AdminProductView: {
             stock: number;
             /** @enum {string} */
-            status: "live" | "draft" | "hidden";
+            status: "live" | "hidden" | "draft";
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -8412,6 +8469,14 @@ export interface components {
             pieceCount: number;
             verification: components["schemas"]["VerificationState"];
             following: boolean;
+        };
+        ProfessionalListingVisibilityView: {
+            id: string;
+            category: string;
+            /** @enum {string} */
+            visibility: "listed" | "hidden" | "taken_down";
+            /** Format: date-time */
+            takenDownAt: string | null;
         };
         ProfessionalLocationView: {
             city: string | null;
@@ -14336,6 +14401,7 @@ export interface operations {
                         status: "pending" | "rejected" | "approved";
                         /** Format: date-time */
                         reviewedAt: string | null;
+                        listed: boolean;
                         category: string;
                         documents: string[];
                         wawuUserId: string;
@@ -14349,7 +14415,6 @@ export interface operations {
                         credentialKind: "licence" | "qualification" | "portfolio";
                         licenceNumber: string | null;
                         issuingBody: string | null;
-                        listed: boolean;
                     };
                 };
             };
@@ -14375,6 +14440,7 @@ export interface operations {
                         status: "pending" | "rejected" | "approved";
                         /** Format: date-time */
                         reviewedAt: string | null;
+                        listed: boolean;
                         category: string;
                         documents: string[];
                         wawuUserId: string;
@@ -14388,8 +14454,26 @@ export interface operations {
                         credentialKind: "licence" | "qualification" | "portfolio";
                         licenceNumber: string | null;
                         issuingBody: string | null;
-                        listed: boolean;
                     }[];
+                };
+            };
+        };
+    };
+    ProfessionalController_myVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalListingVisibilityView"][];
                 };
             };
         };
@@ -14420,6 +14504,7 @@ export interface operations {
                         status: "pending" | "rejected" | "approved";
                         /** Format: date-time */
                         reviewedAt: string | null;
+                        listed: boolean;
                         category: string;
                         documents: string[];
                         wawuUserId: string;
@@ -14433,9 +14518,15 @@ export interface operations {
                         credentialKind: "licence" | "qualification" | "portfolio";
                         licenceNumber: string | null;
                         issuingBody: string | null;
-                        listed: boolean;
                     };
                 };
+            };
+            /** @description Refused: the listing is not approved, or (reason.code listing_taken_down, with reason.takenDownAt) an admin took it down and only an admin lists it again (FIX-06). A Hide on a taken-down listing is accepted. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -17881,7 +17972,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening */
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -17892,6 +17983,15 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18993,7 +19093,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: pin_required, pin_incorrect, daily_limit_exceeded, recipient_blocked */
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, recipient_blocked */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -19029,7 +19129,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -19084,7 +19184,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: pin_required, pin_incorrect, daily_limit_exceeded, bank_transfers_blocked */
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, bank_transfers_blocked */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -19120,7 +19220,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -19284,7 +19384,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: pin_required, pin_incorrect, daily_limit_exceeded */
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -19320,7 +19420,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
