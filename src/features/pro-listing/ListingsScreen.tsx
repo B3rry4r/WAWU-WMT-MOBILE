@@ -12,9 +12,9 @@ import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 
-import { fetchFields, fetchIsCreator, fetchMine, proKeys, setListed, type Application, type ProField } from './api';
+import { fetchFields, fetchIsCreator, fetchMine, proKeys, refreshListings, setListed, type Application, type ProField } from './api';
 import { CreatorGate } from './ApplyScreen';
-import { HIDDEN, SHOWING, fieldOfCategory, labelOfApplication, latestPerField, rowState, sentenceOf } from './model';
+import { HIDDEN, SHOWING, fieldOfCategory, hasField, labelOfApplication, latestPerField, rowState, sentenceOf } from './model';
 import { Note } from './parts';
 import { ProFrame } from './ProFrame';
 
@@ -56,7 +56,7 @@ export function ListingsScreen({ onBack, onApply }: ListingsScreenProps) {
       </ProFrame>
     );
   }
-  const rows = latestPerField(mine.data);
+  const rows = latestPerField(mine.data, fields.data);
   if (rows.length === 0) {
     return (
       <ProFrame title={LISTINGS_TITLE} onBack={onBack} gap={space.lg} centered testID="pro-listings-empty">
@@ -124,6 +124,7 @@ function ListingCard({ row, fields, onApplyAgain }: { row: Application; fields: 
     try {
       const saved = await setListed(row.id, state !== 'listed');
       client.setQueryData<Application[]>(proKeys.mine, (old) => old?.map((a) => (a.id === saved.id ? { ...a, listed: saved.listed } : a)));
+      void refreshListings(client, { refetchMine: false });
     } catch (error) {
       setProblem(sentenceOf(error, state === 'listed' ? 'Your listing could not be hidden. Try again.' : 'Your listing could not be shown. Try again.'));
     } finally {
@@ -168,7 +169,11 @@ function ListingCard({ row, fields, onApplyAgain }: { row: Application; fields: 
       {state === 'turned-down' ? (
         <>
           {row.rejectionReason ? <Note tone="warning" icon="Info" title="Why it was turned down" body={row.rejectionReason} testID={`pro-reason-${row.id}`} /> : null}
-          <Button label="Apply again" variant="secondary" size="sm" full onPress={() => onApplyAgain(fieldOfCategory(fields, row.category))} testID={`pro-again-${row.id}`} />
+          {hasField(fields, row) ? (
+            <Button label="Apply again" variant="secondary" size="sm" full onPress={() => onApplyAgain(fieldOfCategory(fields, row.category))} testID={`pro-again-${row.id}`} />
+          ) : (
+            <Button label="Apply in another field" variant="secondary" size="sm" full onPress={() => onApplyAgain(undefined)} testID={`pro-other-${row.id}`} />
+          )}
         </>
       ) : null}
     </Card>

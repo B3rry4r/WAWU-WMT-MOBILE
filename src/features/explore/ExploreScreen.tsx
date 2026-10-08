@@ -17,6 +17,7 @@ import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators } fr
 import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
+import { DoorsCard, type Door } from './DoorsCard';
 import { ExploreSkeleton } from './ExploreSkeleton';
 import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 
@@ -40,15 +41,17 @@ export const exploreMetrics = {
 export type ExploreScreenProps = {
   /** A category tile was tapped: `all` for All and More, else the category's id (X2, X3). */
   onOpenCategory: (category: CategoryChoice) => void;
+  /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. Absent, the door is not drawn. */
+  onListServices?: () => void;
 };
 
 /**
  * X1 and X14: Explore's browse, with a real error state (a request failed, with a retry). It reads the creator
  * categories and the featured creators. Entries whose screens are not built yet are not drawn (R-27, R-41): the
  * search bar and bell (EXPLORE-02, ME-14), the featured event, Upcoming events and its See all (EVENTS-01), Featured
- * creators' See all (EXPLORE-02), opening a creator (ME-02), the doors (PROS-01, SCHOOLS-03, PROS-03) and Create (ME-04).
+ * creators' See all (EXPLORE-02), opening a creator (ME-02), the other doors (PROS-01, SCHOOLS-03; PROS-03's "List your services" is in) and Create (ME-04).
  */
-export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -102,6 +105,7 @@ export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
     );
   } else {
     const creators = featured.data ?? [];
+    const doors: Door[] = onListServices ? [{ id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices }] : [];
     body = (
       <>
         <CategoryTiles
@@ -123,6 +127,7 @@ export function ExploreScreen({ onOpenCategory }: ExploreScreenProps) {
             </ScrollView>
           </View>
         ) : null}
+        {doors.length > 0 ? <DoorsCard doors={doors} /> : null}
       </>
     );
   }

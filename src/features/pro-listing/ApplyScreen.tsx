@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { BackHandler, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -13,9 +13,10 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
+import { isApiError } from '@/api/errors';
 import { canvasNormalLineHeight, font, radius, space, type, useWawu } from '@/theme';
 
-import { applyIn, fetchFields, fetchIsCreator, fetchMine, proKeys, type Application, type CredentialKind, type ProField } from './api';
+import { applyIn, fetchFields, fetchIsCreator, fetchMine, proKeys, refreshListings, type Application, type CredentialKind, type ProField } from './api';
 import {
   CREDENTIAL_KINDS,
   addService,
@@ -68,7 +69,8 @@ export function ApplyScreen(props: ApplyScreenProps) {
   const mine = useQuery({ queryKey: proKeys.mine, queryFn: fetchMine, enabled: isCreator });
 
   if (creator.data === false) return <CreatorGate title={SCREEN_TITLE} onBack={props.onBack} />;
-  const failed = creator.isError ? creator : fields.isError ? fields : mine.isError ? mine : null;
+  // The full-screen error is for a first load that never got data. Once the three answers are held, a failed refetch keeps the flow (D4).
+  const failed = creator.isError && creator.data === undefined ? creator : fields.isError && !fields.data ? fields : mine.isError && !mine.data ? mine : null;
   if (failed) {
     return (
       <ProFrame title={SCREEN_TITLE} onBack={props.onBack} gap={space.lg} centered testID="pro-error">
@@ -87,13 +89,55 @@ export function ApplyScreen(props: ApplyScreenProps) {
       </ProFrame>
     );
   }
-  return <ApplyFlow {...props} fields={fields.data} mine={mine.data} />;
+  const stale = creator.isError ? creator : fields.isError ? fields : mine.isError ? mine : null;
+  return (
+    <ApplyFlow
+      {...props}
+      fields={fields.data}
+      mine={mine.data}
+      refresh={stale ? { problem: sentenceOf(stale.error, 'Something went wrong. Try again.'), retry: () => void Promise.all([creator.isError && creator.refetch(), fields.isError && fields.refetch(), mine.isError && mine.refetch()]) } : null}
+    />
+  );
+}
+
+/** The system Back (the Android button, the browser's back) does what the on-screen back does while `back` is given. */
+function useSystemBack(back: (() => void) | null, webEntry: boolean): void {
+  const handler = useRef(back);
+  const on = back !== null;
+  useEffect(() => {
+    handler.current = back;
+  });
+  useEffect(() => {
+    if (!on) return undefined;
+    if (Platform.OS !== 'web') {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        handler.current?.();
+        return true;
+      });
+      return () => sub.remove();
+    }
+    if (!webEntry || typeof window === 'undefined') return undefined;
+    // One history entry stands for the step, so the browser's back lands on the step before it and not off the screen.
+    window.history.pushState({ proStep: true }, '');
+    let consumed = false;
+    const onPop = () => {
+      consumed = true;
+      handler.current?.();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (!consumed) window.history.back();
+    };
+  }, [on, webEntry]);
 }
 
 type Step = 'services' | 'credentials' | 'sent';
 type Doc = { key: number; name: string; state: 'uploading' | 'done' | 'failed'; url?: string; retry?: () => void };
 
-function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }: ApplyScreenProps & { fields: ProField[]; mine: Application[] }) {
+type Refresh = { problem: string; retry: () => void } | null;
+
+function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings, refresh }: ApplyScreenProps & { fields: ProField[]; mine: Application[]; refresh: Refresh }) {
   const client = useQueryClient();
   const free = openFields(fields, mine);
   const start = free.find((f) => f.id === initialField);
@@ -115,6 +159,7 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
   const [submitting, setSubmitting] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [sentLabels, setSentLabels] = useState<string[]>([]);
+  const [leftOut, setLeftOut] = useState<string[]>([]);
   const inFlight = useRef(false);
   const docKey = useRef(0);
 
@@ -123,9 +168,11 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
   const addable = free.filter((f) => !selected.includes(f.id));
   const problems = servicesProblems(form, selected);
   const uploading = docs.some((d) => d.state === 'uploading');
+  const notUploaded = docs.some((d) => d.state === 'failed');
   const credProblems = credentialProblems(creds, regulated, uploading);
 
   const toServices = () => setStep('services');
+  useSystemBack(step === 'credentials' ? toServices : step === 'sent' ? onDone : null, step === 'credentials');
 
   const next = () => {
     setChecked(true);
@@ -136,31 +183,45 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
 
   const send = async () => {
     setChecked(true);
-    if (Object.keys(credProblems).length > 0 || inFlight.current) return;
+    if (Object.keys(credProblems).length > 0 || notUploaded || inFlight.current) return;
     inFlight.current = true;
     setSubmitting(true);
     setProblem(null);
     const urls = docs.flatMap((d) => (d.state === 'done' && d.url ? [d.url] : []));
     const filed: ProField[] = [];
+    const refused: ProField[] = [];
     let failure: { field: ProField; error: unknown } | null = null;
     for (const field of chosen) {
       try {
         await applyIn(applicationBody(field, form, creds, urls));
         filed.push(field);
       } catch (error) {
+        // The Hub already holds an application in this field: it is not a reason to hold back the others (D7).
+        if (isApiError(error) && error.kind === 'conflict') {
+          refused.push(field);
+          continue;
+        }
         failure = { field, error };
         break;
       }
     }
     inFlight.current = false;
     setSubmitting(false);
-    if (filed.length > 0) void client.invalidateQueries({ queryKey: proKeys.mine });
+    if (filed.length > 0 || refused.length > 0) void refreshListings(client);
     const labels = [...sentLabels, ...filed.map((f) => f.label)];
     setSentLabels(labels);
-    setSelected((ids) => ids.filter((id) => !filed.some((f) => f.id === id)));
+    const out = [...leftOut, ...refused.map((f) => f.label)];
+    setLeftOut(out);
+    const gone = [...filed, ...refused];
+    setSelected((ids) => ids.filter((id) => !gone.some((f) => f.id === id)));
+    const alreadyIn = refused.length > 0 ? `${refused.map((f) => f.label).join(', ')} was left out: you already have an application in this field. ` : '';
     if (failure) {
       const sent = filed.length > 0 ? `${filed.map((f) => f.label).join(', ')} was sent. ` : '';
-      setProblem(`${sent}${failure.field.label} could not be sent. ${sentenceOf(failure.error, 'Something went wrong. Try again.')}`);
+      setProblem(`${alreadyIn}${sent}${failure.field.label} could not be sent. ${sentenceOf(failure.error, 'Something went wrong. Try again.')}`);
+      return;
+    }
+    if (labels.length === 0) {
+      setProblem(alreadyIn.trim());
       return;
     }
     setStep('sent');
@@ -185,7 +246,7 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
     void upload(key, picked);
   };
 
-  if (step === 'sent') return <Sent labels={sentLabels} onDone={onDone} onMyListings={onMyListings} />;
+  if (step === 'sent') return <Sent labels={sentLabels} leftOut={leftOut} onDone={onDone} onMyListings={onMyListings} />;
 
   if (step === 'credentials') {
     return (
@@ -197,6 +258,7 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
         foot={<Button label="Send for review" full loading={submitting} onPress={() => void send()} testID="pro-send" />}
       >
         {regulated ? <Note tone="warning" icon="ShieldAlert" title="This field is regulated" body="We check your licence with the body that issued it." testID="pro-regulated" /> : null}
+        <RefreshNote refresh={refresh} />
         {problem ? (
           <Note tone="warning" icon="CircleAlert" title="This was not sent" body={problem} testID="pro-send-problem" />
         ) : null}
@@ -242,6 +304,11 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
         {docs.map((d) => (
           <FileRow key={d.key} doc={d} onRemove={() => setDocs((rows) => rows.filter((r) => r.key !== d.key))} />
         ))}
+        {notUploaded ? (
+          <Text variant="caption" tone="danger" accessibilityRole="alert" testID="pro-send-waiting">
+            Send is waiting: retry the file that did not upload, or remove it.
+          </Text>
+        ) : null}
         {checked && credProblems.upload ? (
           <Text variant="caption" tone="danger" accessibilityRole="alert">
             {credProblems.upload}
@@ -283,6 +350,8 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
       testID="pro-services"
       foot={<Button label="Continue" full onPress={next} testID="pro-continue" />}
     >
+      <RefreshNote refresh={refresh} />
+      {problem ? <Note tone="warning" icon="CircleAlert" title="This was not sent" body={problem} testID="pro-send-problem" /> : null}
       <Text variant="muted">People find you here and pay to send the first message.</Text>
       <ChipGroup label="Which fields?" error={checked ? problems.fields : undefined}>
         {chosen.map((f) => (
@@ -357,6 +426,16 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings }:
   );
 }
 
+/** A refresh that failed after the flow had its data: the form stays, and this says so with a retry (D4). */
+function RefreshNote({ refresh }: { refresh: Refresh }) {
+  if (!refresh) return null;
+  return (
+    <Note tone="warning" icon="WifiOff" title="Could not check for updates" body={`${refresh.problem} What you wrote is kept.`} testID="pro-refresh-problem">
+      <Button label="Try again" variant="secondary" size="sm" onPress={refresh.retry} testID="pro-refresh-retry" />
+    </Note>
+  );
+}
+
 function FileRow({ doc, onRemove }: { doc: Doc; onRemove: () => void }) {
   const { colors } = useWawu();
   const state = doc.state === 'done' ? 'Uploaded' : doc.state === 'uploading' ? 'Uploading' : 'Did not upload. Try again';
@@ -378,7 +457,7 @@ function FileRow({ doc, onRemove }: { doc: Doc; onRemove: () => void }) {
   );
 }
 
-function Sent({ labels, onDone, onMyListings }: { labels: string[]; onDone: () => void; onMyListings: () => void }) {
+function Sent({ labels, leftOut, onDone, onMyListings }: { labels: string[]; leftOut: string[]; onDone: () => void; onMyListings: () => void }) {
   return (
     <ProFrame
       gap={RESULT.between}
@@ -400,6 +479,11 @@ function Sent({ labels, onDone, onMyListings }: { labels: string[]; onDone: () =
           {labels.join(', ')}
         </Text>
       </View>
+      {leftOut.length > 0 ? (
+        <Text variant="muted" style={styles.centerText} testID="pro-left-out">
+          {`${leftOut.join(', ')} was left out: you already have an application in this field.`}
+        </Text>
+      ) : null}
       <Text variant="muted" style={styles.centerText}>
         {"A person checks it. You'll see the outcome in your listings."}
       </Text>

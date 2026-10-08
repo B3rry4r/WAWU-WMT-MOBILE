@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-04
 title: Schools: browse, search, course detail
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 20
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # SCHOOLS-04 · Schools: browse, search, course detail
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 

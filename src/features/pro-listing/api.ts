@@ -1,6 +1,8 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components, paths } from '@/api/schema.generated';
+import { listingsKey } from '@/features/me/api';
+import type { QueryClient } from '@tanstack/react-query';
 
 /**
  * P5 to P10's calls, as the Hub's contract types them:
@@ -26,6 +28,15 @@ export const proKeys = {
   mine: ['pro-listing', 'mine'] as const,
   account: ['pro-listing', 'account'] as const,
 };
+
+/** Every query that shows the person's listings: P5 to P8 read `mine`, M2 on Me reads `listingsKey`. Refresh both in one place. */
+export function refreshListings(client: QueryClient, opts: { refetchMine?: boolean } = {}): Promise<unknown> {
+  // After Hide or Show the screen already holds the Hub's saved row, so `mine` is only marked stale (it is read again on the next focus).
+  return Promise.all([
+    client.invalidateQueries({ queryKey: proKeys.mine, refetchType: opts.refetchMine === false ? 'none' : 'active' }),
+    client.invalidateQueries({ queryKey: listingsKey }),
+  ]);
+}
 
 function unreadable(what: string): ApiError {
   return new ApiError('unknown', 200, `Your ${what} could not be read. Try again.`);

@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { useFocusRing } from '@/components/focusRing';
 import { IconTile, type IconTileTone } from '@/components/IconTile';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { canvasNormalLineHeight, font, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import type { Listing } from './api';
 import { listingTitle, type PaidMessages } from './model';
@@ -39,38 +40,77 @@ export function ServicesTab({ paid, listings, onOpenListings }: ServicesTabProps
         />
       ) : null}
       {listings.map((listing) => (
-        <ServiceRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} onPress={onOpenListings} />
+        onOpenListings ? (
+          <ListingRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} onPress={onOpenListings} />
+        ) : (
+          <ServiceRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} />
+        )
       ))}
     </View>
   );
 }
 
-type ServiceRowProps = { icon: IconName; tone: IconTileTone; title: string; sub: string; testID: string; onPress?: () => void };
+type ServiceRowProps = { icon: IconName; tone: IconTileTone; title: string; sub: string; testID: string };
 
-function ServiceRow({ icon, tone, title, sub, testID, onPress }: ServiceRowProps) {
-  const { colors } = useWawu();
-  const press = onPress ? { accessibilityRole: 'button' as const, onPress } : {};
+function ServiceRow({ icon, tone, title, sub, testID }: ServiceRowProps) {
   return (
     <Card testID={testID} style={styles.card}>
-      <Pressable disabled={!onPress} accessible accessibilityLabel={`${title}, ${sub}`} testID={`${testID}-open`} style={styles.row} {...press}>
-        <IconTile icon={icon} tone={tone} />
-        <View style={styles.words}>
-          <Text variant="body" style={styles.title}>
-            {title}
-          </Text>
-          <Text variant="meta" style={styles.sub} testID={`${testID}-sub`}>
-            {sub}
-          </Text>
-        </View>
-        {onPress ? <Icon name="ChevronRight" size={serviceMetrics.chevron} color={colors.textMuted} /> : null}
-      </Pressable>
+      <View accessible accessibilityLabel={`${title}, ${sub}`} style={styles.row}>
+        <RowWords icon={icon} tone={tone} title={title} sub={sub} testID={testID} />
+      </View>
     </Card>
+  );
+}
+
+/** A listing row that opens P8: the card itself is the button, with the keyboard ring and the pressed look the profile's chips have. */
+function ListingRow({ icon, tone, title, sub, testID, onPress }: ServiceRowProps & { onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={`${testID}-open`}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${sub}`}
+      onPress={onPress}
+      {...ring.handlers}
+      style={({ pressed }) => [
+        styles.card,
+        styles.pressable,
+        {
+          backgroundColor: pressed ? colors.surfaceSunken : colors.surfaceCard,
+          boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }],
+        },
+        ring.style,
+      ]}
+    >
+      <View testID={testID} style={styles.row}>
+        <RowWords icon={icon} tone={tone} title={title} sub={sub} testID={testID} />
+        <Icon name="ChevronRight" size={serviceMetrics.chevron} color={colors.textMuted} />
+      </View>
+    </Pressable>
+  );
+}
+
+function RowWords({ icon, tone, title, sub, testID }: ServiceRowProps) {
+  return (
+    <>
+      <IconTile icon={icon} tone={tone} />
+      <View style={styles.words}>
+        <Text variant="body" style={styles.title}>
+          {title}
+        </Text>
+        <Text variant="meta" style={styles.sub} testID={`${testID}-sub`}>
+          {sub}
+        </Text>
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   list: { gap: serviceMetrics.between },
   card: { paddingVertical: serviceMetrics.padV, paddingHorizontal: serviceMetrics.padH },
+  pressable: { borderRadius: radius.card, paddingVertical: serviceMetrics.padV, paddingHorizontal: serviceMetrics.padH },
   row: { flexDirection: 'row', alignItems: 'center', gap: serviceMetrics.iconGap },
   words: { flex: 1 },
   title: { ...font(600), fontSize: serviceMetrics.title, lineHeight: canvasNormalLineHeight(serviceMetrics.title) },

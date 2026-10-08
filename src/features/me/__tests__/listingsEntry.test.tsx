@@ -38,7 +38,8 @@ describe('M2 listing row opens P8 (R-41)', () => {
     );
     await fireEvent.press(screen.getByTestId('me-service-listing-l1-open'));
     expect(open).toHaveBeenCalledTimes(1);
-    await fireEvent.press(screen.getByTestId('me-service-paid-open'));
-    expect(open).toHaveBeenCalledTimes(1);
+    // The paid messages row is ME-01's plain group again: nothing to press (D9).
+    expect(screen.queryByTestId('me-service-paid-open')).toBeNull();
+    expect(screen.getByLabelText(/^Paid messages, /)).toBeTruthy();
   });
 });

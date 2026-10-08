@@ -34,7 +34,7 @@ export function labelOfApplication(fields: readonly ProField[], application: Pic
 
 /** A field is taken while an application in it waits or is listed; the Hub refuses a second one (409). */
 export function isTaken(field: ProField, mine: readonly Application[]): boolean {
-  return mine.some((a) => a.category === field.applyCategory && (a.status === 'pending' || a.status === 'approved'));
+  return mine.some((a) => field.categories.includes(a.category) && (a.status === 'pending' || a.status === 'approved'));
 }
 
 export function openFields(fields: readonly ProField[], mine: readonly Application[]): ProField[] {
@@ -44,7 +44,7 @@ export function openFields(fields: readonly ProField[], mine: readonly Applicati
 /** The turned-down application P8's "Apply again" starts from: the newest one in that field. */
 export function rejectedIn(field: ProField, mine: readonly Application[]): Application | undefined {
   return mine
-    .filter((a) => a.category === field.applyCategory && a.status === 'rejected')
+    .filter((a) => field.categories.includes(a.category) && a.status === 'rejected')
     .sort((a, b) => Date.parse(b.submittedAt) - Date.parse(a.submittedAt))[0];
 }
 
@@ -128,6 +128,9 @@ export function rowState(a: Pick<Application, 'status' | 'listed'>): RowState {
   return 'turned-down';
 }
 
+/** Whether the app can start a new application from this row's category: some field the Hub lists files in it. */
+export const hasField = (fields: readonly ProField[], row: Pick<Application, 'category'>): boolean => fieldOfCategory(fields, row.category) !== undefined;
+
 /** Newest first, so a field's latest answer leads (the Hub sends them that way already; the screen does not rely on it). */
 export function byNewest(rows: readonly Application[]): Application[] {
   return [...rows].sort((a, b) => Date.parse(b.submittedAt) - Date.parse(a.submittedAt));
@@ -139,12 +142,14 @@ const STATUS_RANK: Record<Application['status'], number> = { approved: 0, pendin
  * One row per field, in the order P8 draws them: listed first, then under review, then turned down, the newest first
  * inside each. An older turned-down application in a field that has a newer one is history, not a second card.
  */
-export function latestPerField(rows: readonly Application[]): Application[] {
+export function latestPerField(rows: readonly Application[], fields: readonly ProField[] = []): Application[] {
   const seen = new Set<string>();
   const out: Application[] = [];
   for (const row of byNewest(rows)) {
-    if (seen.has(row.category)) continue;
-    seen.add(row.category);
+    // A row filed in a field's second category belongs to that field's card; a category no field files in keeps its own.
+    const key = fieldOfCategory(fields, row.category)?.id ?? `category:${row.category}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     out.push(row);
   }
   return out.sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status]);

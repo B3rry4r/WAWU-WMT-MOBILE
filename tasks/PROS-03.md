@@ -1,19 +1,21 @@
 ---
 id: PROS-03
 title: Get listed as a professional
-owner: DEV3
+owner: YOU
 area: PROS
 order: 40
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [PROS-02, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [P5, P6, P7, P8, P9, P10]
 ---
 # PROS-03 · Get listed as a professional
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 
@@ -117,6 +119,22 @@ Builder (fix round 1, resumed after a usage-limit crash; I reviewed the crashed 
 - **U1 (recorded, no change).** Main has no shared equivalent of `Note` or `ProFrame` in `src/components` (main added `Toast` and changed `Button`, `FilterChips` and `MediaCard` only), so the local copies stay and SHARED-CHANGES `PROS-03 #1`, `#2` stand. U3 is left for the owner.
 - **Counts:** `npm run check` exit 0 on the merged branch: jest 80 suites / 1429 tests, gates 9 run / 362 files / 0 findings, tasks 212 / 279 artboards. Existing tests, gates and baseline untouched; cases added only. The first run had one gate finding (a literal `gap: 10` key in `parts.tsx`); renamed to `labelToChips`, a design-cited metric like the file's others.
 - **NOT RUN:** the live stack this round (Hub plus WAWU ID); the layout pictures use fixture answers in the browser, and no route or data path changed except the null account type. V10 (a phone).
+
+## Builder report, round 3
+
+Builder (round 3), 8 Oct 2026. Branch `wmt/PROS-03`, `origin/main` merged in (merge, generated files regenerated). Rulings built as written, with these notes.
+
+- **D3.** `src/features/explore/DoorsCard.tsx` (list of doors; one row, "List your services" / "Get paid to answer questions", the canvas's 13 by 14 row, 40 tile, 17 chevron) drawn by `ExploreScreen` after Featured creators when its route gives `onListServices`. EVENTS-01 is not on main (`tasks/EVENTS-01.md` is `todo`), so the card follows Featured creators; whichever merges second moves it after Upcoming events. The door goes through `src/features/pro-listing/door.ts`: P8 for a creator with any application (listed, pending, turned down, hidden), else P5; a `user` and a failed call go to P5 (which shows P10 or asks again). Specs in `src/features/explore/__tests__/screens.test.tsx` (the card has only that door; the three destinations). G-323 updated. Pictures at 390 px: NOT RUN (not taken in this round; the card's metrics are the canvas's `door` line 19 values, but no picture pair was made, so I do not say it matches).
+- **D4.** `ApplyScreen`: full-screen error only when a query never had data; with data held, a failed refetch shows "Could not check for updates" with Try again and keeps the form, chips, typed text and the per-field send result. Specs: connection drops after field one is sent; 503 on refetch on P5 and on P6.
+- **D5.** `refreshListings` (`pro-listing/api.ts`) invalidates `proKeys.mine` and M2's `listingsKey` in one place; Hide and Show call it (`mine` marked stale without an immediate refetch because the screen already holds the saved row; a successful apply refetches both). Spec: after Hide, `listingsKey` is invalidated.
+- **D6.** `useSystemBack`: Android back via `BackHandler`, browser back via one history entry on P6 and a `popstate` listener; P6 goes to P5 with text kept. **Deviation to check:** P7 has no on-screen back and going to P6 after filing would offer a resend with no fields chosen, so system Back on P7 leaves the flow as Done does. The web `popstate` path is NOT RUN in a browser; the native path is specced with a captured `BackHandler` handler.
+- **D7.** A 409 field is taken out of the chosen fields, named once ("X was left out: you already have an application in this field."), and the rest are sent in the same tap; any other refusal stops the loop and stays chosen. Spec: three fields, middle one 409, one tap files the other two. The earlier round's three-field spec used a 409 for its "stays chosen" case; I changed that one case to a 503 and its sentence (the behaviour it pinned is the one D7 reverses).
+- **D8.** `latestPerField(rows, fields)`, `isTaken` and `rejectedIn` use the Hub's `categories`, not a local table; a row in a category no field files in keeps its card and reason and shows "Apply in another field" (opens P5 with no field) in place of Apply again. Specs for both.
+- **D9.** `ServicesTab`: the paid messages row is ME-01's plain accessible group again; the listing row is a `Pressable` card with `useFocusRing`, the pressed `surfaceSunken` look of `ProfileHeader`'s chips, and the chevron. Diff against main: only the entry's lines. `listingsEntry.test.tsx`'s old assertion that the paid row is a disabled button now asserts it is a plain group.
+- **D10.** `LongField` added to SHARED-CHANGES ME-11 #2.
+- **U3.** Send does nothing while any file shows "Did not upload", and the screen says "Send is waiting: retry the file that did not upload, or remove it." Spec.
+- **T1 to T3.** `src/features/me/__tests__/listingsEntryReal.test.tsx` (the real `(tabs)/me` route and the real `MeScreen`: tap opens P8; chevron present, paid row has none); `src/features/pro-listing/__tests__/routes.test.tsx` (the listings route pushes `{ pathname: '/professional-apply', params: { field } }`). **Mutants** applied one at a time and restored with `git restore`: dropping `onOpenListings` from `me.tsx` fails T1 and T2 (2 failed); removing the `ChevronRight` fails T2 (1 failed, 1 passed); dropping `params: { field }` in the listings route fails T3 (1 failed).
+- Outside this task (lead files): admin unlist vs Hide sharing `listed`; presign reserving quota.
 
 ## Verifier report
 

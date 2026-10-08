@@ -283,10 +283,10 @@ describe('P5 to P7 · Offer your services', () => {
     expect(bodiesOf('POST', '/api/hub/professionals/applications')).toHaveLength(1);
   });
 
-  it('P6: when the middle of three fields is refused, the first stays sent, the third is not tried, the message says which, and a retry files the other two', async () => {
+  it('P6: when the middle of three fields fails (not a 409), the first stays sent, the third is not tried, the message says which, and a retry files the other two', async () => {
     answers[APPLY] = [
       ok(app()),
-      refusal(409, 'You already have an application under review for this category.'),
+      refusal(503, 'Service unavailable'),
       ok(app({ id: 'a3', category: 'entertainment_creative' })),
       ok(app({ id: 'a4', category: 'professional_services' })),
     ];
@@ -300,7 +300,7 @@ describe('P5 to P7 · Offer your services', () => {
     await type('pro-issuer', 'ICAN');
     await tap('pro-send');
     await screen.findByTestId('pro-send-problem');
-    expect(screen.getByText('Accounting & Tax was sent. Design & Creative could not be sent. You already have an application in this field.')).toBeTruthy();
+    expect(screen.getByText('Accounting & Tax was sent. Design & Creative could not be sent. Something went wrong. Try again.')).toBeTruthy();
     expect(screen.queryByTestId('pro-sent')).toBeNull();
     const first = bodiesOf('POST', '/api/hub/professionals/applications') as { category: string }[];
     expect(first.map((b) => b.category)).toEqual(['finance', 'entertainment_creative']);
@@ -564,5 +564,175 @@ describe('P8 and P9 · Your listings', () => {
     await boot();
     await screen.findByTestId('pro-gate');
     expect(sent.map((s) => s.path)).toEqual(['/api/hub/users/me']);
+  });
+});
+
+describe('PROS-03 round 3 · the lead rulings', () => {
+  const { BackHandler } = require('react-native') as typeof import('react-native');
+  const bootApply = async (props: { initialField?: string } = {}) => {
+    const { ApplyScreen } = mod<typeof import('../ApplyScreen')>('../ApplyScreen');
+    const handlers = { onBack: jest.fn(), onDone: jest.fn(), onMyListings: jest.fn() };
+    await render(frame(<ApplyScreen {...handlers} {...props} />));
+    await screen.findByTestId('pro-continue');
+    return handlers;
+  };
+  const toP6 = async (...ids: string[]) => {
+    for (const id of ids) {
+      await tap('pro-add-field');
+      await tap(`pro-pick-${id}`);
+    }
+    await type('pro-headline', HEADLINE);
+    await type('pro-about', ABOUT);
+    await tap('pro-continue');
+  };
+  const refetchMine = () => act(async () => void clients[clients.length - 1].invalidateQueries({ queryKey: ['pro-listing', 'mine'] }));
+
+  it('D4: the connection drops after the first field is sent: the form, the typed text and the send result stay, with a retry', async () => {
+    answers[APPLY] = [ok(app()), 'offline'];
+    answers[MINE] = [ok([]), 'offline'];
+    await bootApply();
+    await toP6('accounting_tax', 'design_creative');
+    await type('pro-licence', 'ICAN/1');
+    await type('pro-issuer', 'ICAN');
+    await tap('pro-send');
+    await screen.findByTestId('pro-send-problem');
+    expect(screen.getByText('Accounting & Tax was sent. Design & Creative could not be sent. No connection. Check your internet and try again.')).toBeTruthy();
+    await screen.findByTestId('pro-refresh-problem');
+    expect(screen.queryByTestId('pro-error')).toBeNull();
+    expect(screen.getByTestId('pro-licence').props.value).toBe('ICAN/1');
+    expect(screen.getByTestId('pro-issuer').props.value).toBe('ICAN');
+    answers[MINE] = ok([app()]);
+    await tap('pro-refresh-retry');
+    await waitFor(() => expect(screen.queryByTestId('pro-refresh-problem')).toBeNull());
+    expect(screen.getByTestId('pro-send-problem')).toBeTruthy();
+  });
+
+  it('D4: a 503 on the refetch when the app returns to the front keeps P5 and P6 with their chosen fields and typed text', async () => {
+    await bootApply();
+    await tap('pro-add-field');
+    await tap('pro-pick-design_creative');
+    await type('pro-headline', HEADLINE);
+    answers[MINE] = refusal(503, 'down');
+    await refetchMine();
+    await screen.findByTestId('pro-refresh-problem');
+    expect(screen.queryByTestId('pro-error')).toBeNull();
+    expect(screen.getByTestId('pro-field-design_creative')).toBeTruthy();
+    expect(screen.getByTestId('pro-headline').props.value).toBe(HEADLINE);
+    answers[MINE] = ok([]);
+    await tap('pro-refresh-retry');
+    await waitFor(() => expect(screen.queryByTestId('pro-refresh-problem')).toBeNull());
+    await type('pro-about', ABOUT);
+    await tap('pro-continue');
+    await type('pro-issuer', 'ICAN');
+    answers[MINE] = refusal(503, 'down');
+    await refetchMine();
+    await screen.findByTestId('pro-refresh-problem');
+    expect(screen.getByTestId('pro-credentials')).toBeTruthy();
+    expect(screen.getByTestId('pro-issuer').props.value).toBe('ICAN');
+  });
+
+  it('D6: the system Back does what the on-screen back does: P6 to P5 with the text kept, and P7 leaves', async () => {
+    const handlers: (() => boolean)[] = [];
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((_: string, h: () => boolean) => {
+      handlers.push(h);
+      return { remove: () => void handlers.splice(handlers.indexOf(h), 1) };
+    }) as never);
+    answers[APPLY] = ok(app({ category: 'entertainment_creative' }));
+    const { onDone } = await bootApply();
+    expect(handlers).toHaveLength(0);
+    await toP6('design_creative');
+    expect(handlers).toHaveLength(1);
+    await act(async () => void handlers[0]());
+    await screen.findByTestId('pro-services');
+    expect(screen.getByTestId('pro-headline').props.value).toBe(HEADLINE);
+    expect(screen.getByTestId('pro-about').props.value).toBe(ABOUT);
+    expect(screen.getByTestId('pro-field-design_creative')).toBeTruthy();
+    await tap('pro-continue');
+    await act(async () => fireEvent.press(screen.getByLabelText('Work samples')));
+    await tap('pro-send');
+    await screen.findByTestId('pro-sent');
+    expect(handlers).toHaveLength(1);
+    await act(async () => void handlers[0]());
+    expect(onDone).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+  });
+
+  it('D7: of three fields the middle one is a 409: it is taken out, said once by name, and the other two go in the same tap', async () => {
+    answers[APPLY] = [ok(app()), refusal(409, 'You already have an application under review for this category.'), ok(app({ id: 'a4', category: 'professional_services' }))];
+    await bootApply();
+    await toP6('accounting_tax', 'design_creative', 'business_consulting');
+    await type('pro-licence', 'ICAN/1');
+    await type('pro-issuer', 'ICAN');
+    await tap('pro-send');
+    await screen.findByTestId('pro-sent');
+    const posted = bodiesOf('POST', '/api/hub/professionals/applications') as { category: string }[];
+    expect(posted.map((b) => b.category)).toEqual(['finance', 'entertainment_creative', 'professional_services']);
+    expect(screen.getByText('Accounting & Tax, Business & Consulting')).toBeTruthy();
+    expect(screen.getAllByText('Design & Creative was left out: you already have an application in this field.')).toHaveLength(1);
+  });
+
+  it('U3: Send waits while a chosen file shows Did not upload, says why, and goes once the file is retried or removed', async () => {
+    answers[PRESIGN] = refusal(503, 'Storage is not configured');
+    mockPick.mockResolvedValue({ blob: new Blob(['%PDF'], { type: 'application/pdf' }), name: 'a.pdf', contentType: 'application/pdf', extension: 'pdf' });
+    answers[APPLY] = ok(app({ category: 'entertainment_creative' }));
+    await bootApply();
+    await toP6('design_creative');
+    await act(async () => fireEvent.press(screen.getByLabelText('Work samples')));
+    await tap('pro-upload');
+    await waitFor(() => expect(screen.getByText('Did not upload. Try again')).toBeTruthy());
+    await tap('pro-send');
+    expect(screen.getByTestId('pro-send-waiting')).toBeTruthy();
+    expect(bodiesOf('POST', '/api/hub/professionals/applications')).toHaveLength(0);
+    await act(async () => fireEvent.press(screen.getByLabelText('Remove a.pdf')));
+    expect(screen.queryByTestId('pro-send-waiting')).toBeNull();
+    await tap('pro-send');
+    await screen.findByTestId('pro-sent');
+    expect(bodiesOf('POST', '/api/hub/professionals/applications')).toHaveLength(1);
+  });
+
+  const bootListings = async () => {
+    const { ListingsScreen } = mod<typeof import('../ListingsScreen')>('../ListingsScreen');
+    const handlers = { onBack: jest.fn(), onApply: jest.fn() };
+    await render(frame(<ListingsScreen {...handlers} />));
+    return handlers;
+  };
+
+  it('D5: Hide on P8 reaches M2: the listings query Me reads is refreshed with no restart', async () => {
+    const { listingsKey } = mod<typeof import('@/features/me/api')>('@/features/me/api');
+    answers[MINE] = ok([app({ id: 'a1', status: 'approved', listed: true })]);
+    answers['PATCH /api/hub/professionals/applications/a1/listing'] = ok(app({ id: 'a1', status: 'approved', listed: false }));
+    await bootListings();
+    await screen.findByTestId('pro-listings');
+    const client = clients[clients.length - 1];
+    client.setQueryData(listingsKey, [{ id: 'a1', status: 'approved', listed: true }]);
+    expect(client.getQueryState(listingsKey)?.isInvalidated).toBe(false);
+    await tap('pro-toggle-a1');
+    await screen.findByText('Hidden. Nobody can find you');
+    expect(client.getQueryState(listingsKey)?.isInvalidated).toBe(true);
+  });
+
+  it('D8: a row filed in a field\u2019s second category belongs to that field\u2019s card, named from the Hub\u2019s field list', async () => {
+    answers[MINE] = ok([
+      app({ id: 'w1', category: 'business_entrepreneurship', status: 'approved', listed: true, headline: 'Filed on the web', submittedAt: '2026-10-06T00:00:00.000Z' }),
+      app({ id: 'o1', category: 'professional_services', status: 'rejected', rejectionReason: 'Older', submittedAt: '2026-09-01T00:00:00.000Z' }),
+    ]);
+    await bootListings();
+    await screen.findByTestId('pro-listings');
+    expect(screen.getAllByTestId(/^pro-row-/)).toHaveLength(1);
+    expect(screen.getByText('Business & Consulting')).toBeTruthy();
+    expect(screen.getByText('Filed on the web')).toBeTruthy();
+  });
+
+  it('D8: a turned-down row in a category no field files in keeps its decision and reason, offers no Apply again, and says Apply in another field', async () => {
+    answers[MINE] = ok([app({ id: 'r1', category: 'real_estate', status: 'rejected', rejectionReason: 'Not a licence we accept.' })]);
+    const { onApply } = await bootListings();
+    await screen.findByTestId('pro-listings');
+    expect(screen.getByText('Real estate')).toBeTruthy();
+    expect(screen.getByText('Turned down')).toBeTruthy();
+    expect(screen.getByText('Not a licence we accept.')).toBeTruthy();
+    expect(screen.queryByTestId('pro-again-r1')).toBeNull();
+    expect(screen.queryByText('Apply again')).toBeNull();
+    await tap('pro-other-r1');
+    expect(onApply).toHaveBeenLastCalledWith(undefined);
   });
 });
