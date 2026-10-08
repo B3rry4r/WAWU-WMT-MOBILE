@@ -1,7 +1,7 @@
 ---
 id: EVENTS-01
 title: Events: list, filters, detail, sold out
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 32
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [E1, E2, E8, E9]
 ---
 # EVENTS-01 · Events: list, filters, detail, sold out
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 
