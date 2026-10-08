@@ -1,7 +1,7 @@
 ---
 id: INBOX-03
 title: Phone push notifications
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 47
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V9, V10]
 artboards: []
 ---
 # INBOX-03 · Phone push notifications
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 2 had not pushed for 17 hours).
 
 ## Read first
 
