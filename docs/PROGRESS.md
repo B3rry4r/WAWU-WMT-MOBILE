@@ -7,14 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 114 | 0 | 20 | 21 |
+| todo | 113 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 59 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
@@ -127,12 +128,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
+- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
+- 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
+- 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
+- 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
+- 7 Oct 2026 · LEGAL-03 · Builder round 3: delivered files stored as keys and signed fresh for 15 minutes, file name and booking-zone rules, notification text without the matter, specs for M11 and M18, migration renamed `20261013100000`; status verifying.
+- 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
 - 8 Oct 2026 · SHARED-04 to SHARED-07, FIX-22 · Lead filed the shared-change pass the audit found missing: 35 rows had no owner. SHARED-04 installs the native modules in one batch and turns on the wallet selfie, photo pickers and copy on the phone (today nobody can open a wallet on a phone); SHARED-07 the phone player, reader and share picture; SHARED-05 the route graph and the theme at launch; SHARED-06 the shared components, tokens and API client; FIX-22 the AI response schema. CHECK-2 and later move down by 5.
 - 8 Oct 2026 · SHARED-CHANGES · Lead audit of rows still marked open for done tasks: 27 applied, 0 done elsewhere, 5 still owed (owned), 35 with no owner.
 - 8 Oct 2026 · FIX-11 · FIX-11 merged (backend PR #88, 8359057): the legal thread's opener is written once and a failing provider stops being called.
@@ -141,10 +149,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
 - 8 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
 - 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
-- 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
-- 8 Oct 2026 · FIX-11 · Verifier report, round 2 (independent session, backend `e31133b`, mobile `6f4b2fd`): READY, status review. D1 fixed: six paid matters first read within the hour each open with 1 AI call, as on main. D2 fixed: the barrier spec passed 20 of 20 runs in a row and is deterministic by design (still passes with 0 to 300 ms of random delay after the arrival stamp, fails 3 of 3 with the arrival check removed); live, 28 batches of 20 or 100 parallel reads against a failing provider made 1 call each. V11 killed by the 400 ms spec. 20, 50 and 100 parallel reads make 1 call on one and two Hubs (main: 20, 50, 58); protected 253/253; full suite 182 of 183 suites in namespaces plus the timing spec alone 120/120 and hub-rate-limits 22/22; 105 of 105 legal answers identical to main; 16 mutants of mine, 10 killed by the spec, 6 killed only live (spec gaps, noted). Backend main moved to `8d7a054`; trial merge clean. Five newer branches carry later migration stamps: FIX-11 must merge before them or be restamped.
-- 8 Oct 2026 · FIX-11 · Builder round 2 (backend `e31133b`, status verifying): D1 the opener cap counts only failed or lapsed tries, so six paid matters in an hour all open; D2 a read in flight while an opener call ended never claims again (arrival stamp), the failing-provider spec holds its failure behind a barrier, 20 of 20 runs passed; V11 the wait is a setting, tested at 400 ms; 12 of 12 mutants killed; protected 253/253; full suite 181 of 184 in namespaces, the 3 green on rerun.
-- 8 Oct 2026 · FIX-11 · Verifier report (independent session, backend `096e30c`, mobile `a8d1949`): NOT READY, status building. The fix holds over real HTTP with the real wawu-id: main made 20 AI calls for 20 parallel reads of an empty paid thread (50 for 50, 45 for 100), none counted; the branch makes 1 call for 20, 50 and 100 reads on one Hub and on two Hubs over one database, every read sees one opener, and the call counts (29 spent: next message 429, main 201). Losing reads wait as long as the claimer's call (20 s only when the claimer is gone), lines arriving mid-call keep their place, 105 of 105 other legal answers byte-identical to main, protected 253/253, 12 of 13 own mutants killed by the spec and the 13th live. D1: the 5-an-hour opener cap counts written openers across all matters, so a sixth paid matter read within the hour gets no opener (main opens it). D2: the spec's "a failing provider: 20 parallel reads make 1 call" is not guaranteed by the design and failed 4 of 12 runs under load, in the deploy gate.
-- 8 Oct 2026 · FIX-11 · Built (backend `096e30c`, status verifying): the legal thread's opener is claimed under the person's lock and counted in the hourly allowance before its AI call; 20 parallel reads of an empty paid thread now make 1 call and all see one opener (main: 20 calls, 20 openers), the opener never lands after another line, at most 5 opener tries an hour (PROVISIONAL); new table `LegalChatOpenerCall` (additive migration); protected 253/253; 7 of 7 mutants killed; full suite NOT RUN (namespace refused).
-- 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
-- 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
