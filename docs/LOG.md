@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · FIX-11 · Built (backend `096e30c`, status verifying): the legal thread's opener is claimed under the person's lock and counted in the hourly allowance before its AI call; 20 parallel reads of an empty paid thread now make 1 call and all see one opener (main: 20 calls, 20 openers), the opener never lands after another line, at most 5 opener tries an hour (PROVISIONAL); new table `LegalChatOpenerCall` (additive migration); protected 253/253; 7 of 7 mutants killed; full suite NOT RUN (namespace refused).
 - 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
