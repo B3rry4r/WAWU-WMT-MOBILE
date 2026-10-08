@@ -1,0 +1,67 @@
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { useFocusRing } from '@/components/focusRing';
+import { Icon, type IconName } from '@/components/icon';
+import { Text } from '@/components/Text';
+import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
+
+/** design/_gen/explore.js line 19, `door`: 13 by 14 inside, a 40 tile of 12 round, 12 to the words, a 15 title and a 12.5 line 2 under it, a 17 chevron. */
+export const doorMetrics = { padV: 13, padH: 14, iconToWords: 12, tile: 40, tileRadius: 12, glyph: 19, title: 15, sub: 12.5, subGap: 2, chevron: 17 } as const;
+
+export type Door = { id: string; icon: IconName; title: string; sub: string; onPress: () => void };
+
+/**
+ * X1 and X15's doors card: one row per door whose screen is built. PROS-03 adds "List your services"; PROS-01 (Find a
+ * professional) and SCHOOLS-03 (Find a school) add theirs to this card (R-41), so the card is drawn from a list.
+ */
+export function DoorsCard({ doors }: { doors: readonly Door[] }) {
+  const { colors } = useWawu();
+  return (
+    <View testID="explore-doors" style={[styles.card, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }] }]}>
+      {doors.map((door, i) => (
+        <DoorRow key={door.id} door={door} first={i === 0} />
+      ))}
+    </View>
+  );
+}
+
+function DoorRow({ door, first }: { door: Door; first: boolean }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={`explore-door-${door.id}`}
+      accessibilityRole="button"
+      accessibilityLabel={`${door.title}, ${door.sub}`}
+      onPress={door.onPress}
+      {...ring.handlers}
+      style={({ pressed }) => [
+        styles.row,
+        { backgroundColor: pressed ? colors.surfaceSunken : 'transparent', boxShadow: first ? [] : [{ offsetX: 0, offsetY: 1, blurRadius: 0, spreadDistance: 0, color: colors.borderHairline, inset: true }] },
+        ring.style,
+      ]}
+    >
+      <View style={[styles.tile, { backgroundColor: colors.accentTint }]}>
+        <Icon name={door.icon} size={doorMetrics.glyph} color={colors.accentFg} />
+      </View>
+      <View style={styles.words}>
+        <Text variant="body" style={styles.title}>
+          {door.title}
+        </Text>
+        <Text variant="meta" style={styles.sub}>
+          {door.sub}
+        </Text>
+      </View>
+      <Icon name="ChevronRight" size={doorMetrics.chevron} color={colors.textMuted} />
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: { borderRadius: radius.card, overflow: 'hidden', flexShrink: 0 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: doorMetrics.iconToWords, paddingVertical: doorMetrics.padV, paddingHorizontal: doorMetrics.padH },
+  tile: { width: doorMetrics.tile, height: doorMetrics.tile, borderRadius: doorMetrics.tileRadius, alignItems: 'center', justifyContent: 'center' },
+  words: { flex: 1 },
+  title: { ...font(600), fontSize: doorMetrics.title, lineHeight: canvasNormalLineHeight(doorMetrics.title) },
+  sub: { fontSize: doorMetrics.sub, marginTop: doorMetrics.subGap },
+});

@@ -386,3 +386,39 @@ describe('X2, X3, X13 · Categories', () => {
     expect(await rtl.screen.findByText('@tunde')).toBeTruthy();
   });
 });
+
+describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
+  const featured = 'GET /explore/featured-creators?limit=10';
+  const app = { id: 'a1', status: 'approved', listed: false, category: 'finance', headline: 'Chartered accountant', submittedAt: '2026-10-01T00:00:00.000Z' };
+  const open = async (opened: jest.Mock) => {
+    const { listServicesTarget } = require('@/features/pro-listing/door') as typeof import('@/features/pro-listing/door');
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onListServices={() => void listServicesTarget(queryClient).then(opened)} />));
+    await rtl.screen.findByText('Featured creators');
+  };
+
+  it('the card has only List your services, after Featured creators, as the canvas words it', async () => {
+    await open(jest.fn());
+    const doors = rtl.screen.getByTestId('explore-doors');
+    expect(rtl.within(doors).getByText('List your services')).toBeTruthy();
+    expect(rtl.within(doors).getByText('Get paid to answer questions')).toBeTruthy();
+    expect(rtl.screen.queryByText('Find a professional')).toBeNull();
+    expect(rtl.screen.queryByText('Find a school')).toBeNull();
+  });
+
+  it('a creator with no application lands on P5, one with any (here a hidden one) on P8, a user on P5', async () => {
+    const opened = jest.fn();
+    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
+    answers['GET /professionals/applications/mine'] = [ok([])];
+    await open(opened);
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services')));
+    await rtl.waitFor(() => expect(opened).toHaveBeenLastCalledWith('/professional-apply'));
+    answers['GET /professionals/applications/mine'] = [ok([app])];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services')));
+    await rtl.waitFor(() => expect(opened).toHaveBeenLastCalledWith('/professional-listings'));
+    queryClient.removeQueries({ queryKey: ['pro-listing'] });
+    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'user' })];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services')));
+    await rtl.waitFor(() => expect(opened).toHaveBeenLastCalledWith('/professional-apply'));
+  });
+});
