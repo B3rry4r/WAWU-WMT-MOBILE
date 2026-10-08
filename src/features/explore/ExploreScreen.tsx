@@ -98,7 +98,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents }: E
   const failure = categories.error ?? featured.error;
 
   let body;
-  if (categories.isPending || featured.isPending) {
+  if (categories.isPending || featured.isPending || !events.settled) {
     body = <ExploreSkeleton />;
   } else if (failed) {
     body = (

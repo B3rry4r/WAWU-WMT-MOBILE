@@ -421,3 +421,21 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
     expect(screen.getByTestId('today-service-events')).toBeTruthy();
   });
 });
+
+describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11)', () => {
+  it('a user sees the Events tile first in the row, with no empty slot before it', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    const column = screen.getByTestId('today-service-events').parent!;
+    const grid = column.parent!;
+    expect(grid.children).toHaveLength(1);
+    expect(grid.children[0]).toBe(column);
+  });
+
+  it('the loading view draws one tile shape for the one tile present (H11)', async () => {
+    const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
+    await rtl.render(<TodayLoading withTgif />);
+    const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
+    expect(shapes).toHaveLength(1);
+  });
+});

@@ -237,6 +237,7 @@ export function FeaturedCard({ event, fromNaira, onOpen }: { event: EventView; f
             font(700),
             {
               fontSize: heroMetrics.kicker,
+              lineHeight: canvasNormalLineHeight(heroMetrics.kicker),
               letterSpacing: heroMetrics.kickerTracking * heroMetrics.kicker,
               color: darkColors.accentFg,
             },

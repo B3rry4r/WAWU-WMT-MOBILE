@@ -15,7 +15,7 @@ import { darkColors } from '@/theme/tokens.generated';
 
 import { defaultFilters, featuredKey, fetchEventsPage, fetchFeatured, type EventView } from './api';
 import { SeeAll } from './EventsScreen';
-import { placeOf, shortDate } from './format';
+import { dateLine, placeOf } from './format';
 import { DateBadge } from './parts';
 
 /**
@@ -63,17 +63,20 @@ const m = exploreEventMetrics;
 
 export const exploreRailKey = ['events', 'explore-rail'] as const;
 
-/** The featured event and the upcoming events, read for Explore (only when it can open them). A failure draws neither: Explore's other parts carry on. */
+/** The featured event and the upcoming events, read for Explore (only when it can open them). A failure draws neither and is not retried: Explore's other parts carry on. */
 export function useExploreEvents(enabled = true) {
-  const featured = useQuery({ queryKey: featuredKey(defaultFilters), queryFn: () => fetchFeatured(defaultFilters), enabled }, queryClient);
-  const rail = useQuery({ queryKey: exploreRailKey, queryFn: () => fetchEventsPage(defaultFilters, 1), enabled }, queryClient);
+  const featured = useQuery({ queryKey: featuredKey(defaultFilters), queryFn: () => fetchFeatured(defaultFilters), enabled, retry: false }, queryClient);
+  const rail = useQuery({ queryKey: exploreRailKey, queryFn: () => fetchEventsPage(defaultFilters, 1), enabled, retry: false }, queryClient);
   const refetchFeatured = featured.refetch;
   const refetchRail = rail.refetch;
   const refetch = useCallback(
     () => (enabled ? Promise.all([refetchFeatured(), refetchRail()]) : Promise.resolve([])),
     [enabled, refetchFeatured, refetchRail],
   );
-  return { featured: featured.data ?? null, upcoming: (rail.data?.events ?? []).slice(0, m.railLimit), refetch };
+  // D12: Explore holds X14 until both reads have answered or failed (not retried here, so a failure settles at once),
+  // so nothing moves after its first paint.
+  const settled = !enabled || (!featured.isPending && !rail.isPending);
+  return { settled, featured: featured.data ?? null, upcoming: (rail.data?.events ?? []).slice(0, m.railLimit), refetch };
 }
 
 /** X1's FEATURED EVENT card: the picture under a dark fade, the kicker, the name, and its day and place. */
@@ -81,7 +84,7 @@ export function ExploreFeaturedEvent({ event, onOpen }: { event: EventView; onOp
   const { colors, gradients } = useWawu();
   const ring = useFocusRing();
   const ends = gradientEnds(gradients.scrimCard.angle);
-  const line = [shortDate(event.startsAt, event), placeOf(event)].filter(Boolean).join(' · ');
+  const line = [dateLine(event.startsAt, event), placeOf(event)].filter(Boolean).join(' · ');
   return (
     <Pressable
       testID="explore-featured-event"
@@ -105,7 +108,10 @@ export function ExploreFeaturedEvent({ event, onOpen }: { event: EventView; onOp
       <View style={styles.heroWords}>
         <Text
           variant="body"
-          style={[font(700), { fontSize: m.kicker, letterSpacing: m.kickerTracking * m.kicker, color: darkColors.accentFg }]}
+          style={[
+            font(700),
+            { fontSize: m.kicker, lineHeight: canvasNormalLineHeight(m.kicker), letterSpacing: m.kickerTracking * m.kicker, color: darkColors.accentFg },
+          ]}
         >
           FEATURED EVENT
         </Text>
@@ -155,10 +161,10 @@ function EventCard({ event, onOpen }: { event: EventView; onOpen: () => void }) 
     <Pressable
       testID={`explore-event-${event.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`${event.name}, ${shortDate(event.startsAt, event)}${place ? `, ${place}` : ''}`}
+      accessibilityLabel={`${event.name}, ${dateLine(event.startsAt, event)}${place ? `, ${place}` : ''}`}
       onPress={onOpen}
       {...ring.handlers}
-      style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }, ring.style]}
+      style={[styles.card, { backgroundColor: colors.surfaceCard }, ring.style]}
     >
       <View style={[styles.picture, { backgroundColor: colors.surfaceSunken }]}>
         {event.bannerUrl ? (
@@ -169,7 +175,7 @@ function EventCard({ event, onOpen }: { event: EventView; onOpen: () => void }) 
         </View>
       </View>
       <View style={styles.words}>
-        <Text variant="body" numberOfLines={1} style={[font(600), { fontSize: m.title }]}>
+        <Text variant="body" numberOfLines={1} style={[font(600), { fontSize: m.title, lineHeight: canvasNormalLineHeight(m.title) }]}>
           {event.name}
         </Text>
         {place ? (
@@ -181,6 +187,7 @@ function EventCard({ event, onOpen }: { event: EventView; onOpen: () => void }) 
           </View>
         ) : null}
       </View>
+      <View pointerEvents="none" style={[styles.edge, { borderColor: colors.borderHairline }]} />
     </Pressable>
   );
 }
@@ -194,12 +201,14 @@ const styles = StyleSheet.create({
   hero: { height: m.heroHeight, borderRadius: m.heroCorner, overflow: 'hidden' },
   heroWords: { position: 'absolute', left: m.heroInsetX, right: m.heroInsetX, bottom: m.heroInsetBottom, gap: m.heroStack },
   heroName: { fontSize: m.name, letterSpacing: m.nameTracking * m.name, lineHeight: m.name * m.nameLeading },
-  heroLine: { fontSize: m.line, opacity: m.lineOpacity },
+  heroLine: { fontSize: m.line, lineHeight: canvasNormalLineHeight(m.line), opacity: m.lineOpacity },
   section: { gap: m.railGap },
   headingLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bleed: { marginHorizontal: -layout.gutter, flexGrow: 0 },
   rail: { gap: m.cardsApart, paddingHorizontal: layout.gutter },
-  card: { width: m.cardWidth, borderRadius: m.cardCorner, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  card: { width: m.cardWidth, borderRadius: m.cardCorner, overflow: 'hidden' },
+  /** The canvas draws the card's hairline inset, so it adds nothing to the card's size (D13). */
+  edge: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: m.cardCorner, borderWidth: StyleSheet.hairlineWidth },
   picture: { height: m.picture },
   badge: { position: 'absolute', left: m.badgeInset, top: m.badgeInset },
   words: { paddingTop: m.wordsTop, paddingHorizontal: m.wordsX, paddingBottom: m.wordsBottom },

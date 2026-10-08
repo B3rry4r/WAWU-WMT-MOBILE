@@ -97,6 +97,13 @@ export function shortDate(iso: string, zone?: Zoned): string {
   return `${w.day} ${w.month}`;
 }
 
+/** "16 Mar", or "16 Mar 2027" when the event is not in the current year (Explore's hero line and cards, as E1 and E2 do). */
+export function dateLine(iso: string, zone?: Zoned, now: number = Date.now()): string {
+  const w = watOf(iso, zone);
+  const thisYear = watOf(new Date(now).toISOString(), zone).year;
+  return `${w.day} ${w.month}${w.year === thisYear ? '' : ` ${w.year}`}`;
+}
+
 /** Naira from the API as kobo for `Money`: the Hub sends whole naira, the app draws kobo. */
 export const toKobo = (naira: number) => Math.round(naira * KOBO_PER_NAIRA);
 

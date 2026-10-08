@@ -1,6 +1,7 @@
 import type { EventView, TicketType } from '../api';
 import {
   badgeOf,
+  dateLine,
   basketCount,
   basketTotal,
   heroPrice,
@@ -158,5 +159,13 @@ describe('the date is read in the event own zone (D6)', () => {
   });
   it('a missing timezone keeps Lagos time', () => {
     expect(whenLine('2026-10-14T09:00:00Z', { timezone: null }, now)).toBe('Wed 14 Oct · 10:00 WAT');
+  });
+});
+
+describe('dateLine (Explore’s hero line and cards)', () => {
+  const now = Date.parse('2026-10-08T12:00:00Z');
+  it('shows the year only for an event not in the current year', () => {
+    expect(dateLine('2027-03-16T09:00:00Z', undefined, now)).toBe('16 Mar 2027');
+    expect(dateLine('2026-11-02T09:00:00Z', undefined, now)).toBe('2 Nov');
   });
 });
