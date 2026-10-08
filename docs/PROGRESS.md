@@ -9,17 +9,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 3 | 0 | 0 | 0 |
 | done | 62 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 
 ## Done
@@ -141,6 +138,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · SHARED-04 · Verifier report, round 2 (independent, 652a301): status review, no defect open. D1, D2, F1 (the phone's JPEG walk equals the server's on 42,416 cases, 0 mismatches), T1 (the five boundary mutants die in the task's own specs), F3 and the two permission blocks hold on their real causes; web 16 of 16 pictures byte-identical to main; `npm run check` exit 0 (82 suites, 1,437 tests); 33 mutants of mine. Six low findings (a failed encode or an unreadable video leaves a cache file, a stale CL-03 sentence) and test gaps recorded; V10 and the merged APK manifest NOT RUN (preview build).
 - 8 Oct 2026 · SHARED-04 · Builder report, round 2 (lead rulings after the verifier): M8 and M36 say a failed pick plainly (a cancel stays silent), PNG and WebP keep their format and transparency, the selfie walks the JPEG as the server does (an appended JPEG is refused), the verifier's boundary specs are in the suite, copies are deleted once uploads settle, SYSTEM_ALERT_WINDOW and AD_ID removed from the release manifest. 21 mutants: 20 killed, 1 equivalent. Status verifying.
 - 8 Oct 2026 · SHARED-04 · Verifier report (independent, 0b4f3e6): status back to building, two defects on the pickers. D1: on M8 and M36 a picker error or a picked photo that cannot be read is silent (nothing on screen; M36 drops the file without a word). D2: a transparent PNG is written as a JPEG and loses its transparency. A6 holds every server limit at its boundary (100,000 characters, 2,048 px, 1 KB, end marker; real Skia and libjpeg bytes pass the backend walk), A8 copies, web build pixel- and byte-identical to main (16 pairs), prebuild resolves every plugin, expo-doctor 19 of 21 offline (schema and directory checks NOT RUN: network), fingerprint changes; 16 own mutants, 14 killed, 2 equivalent.
 - 8 Oct 2026 · SHARED-04 · Builder update (lead ruling): on the phone every picked photo for M8 and M36 goes up written again as a JPEG at 0.9 and its picked size, so no Exif block or GPS travels with it; videos go as chosen; the web build is the lead's separate task. Spec with a GPS-tagged fixture, 4 mutants killed. Status verifying.
@@ -155,4 +153,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
-- 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.

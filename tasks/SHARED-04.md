@@ -7,7 +7,7 @@ order: 226
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V4, V5, V6, V7, V10]
@@ -477,6 +477,129 @@ Same builder (the lead's agent), 8 Oct 2026, on `wmt/SHARED-04` from c26d229, wi
 - **F2:** no fallback below quality 0.4; only pure noise is still over 100,000 characters there. Check on the phone.
 - **F4:** the full-resolution decode has no out-of-memory retry. Check on a low-end phone.
 - **iOS:** RELEASE-03.
+
+## Verifier report, round 2
+
+Independent verifier, 8 Oct 2026, mobile `wmt/SHARED-04` at `652a301` (round 2: code `6c1e286`, main `d1549cb` merged), wawu-backend main `9d90d57` for the server's selfie rules (`selfie-image.ts` and `identity-request.dto.ts` byte-identical to the copies I diffed against). I wrote none of this code. Fresh detached worktree with its own `npm ci` (`$R2/npm-ci.log`); a second worktree at main `d1549cb` with hard-linked `node_modules` for the web comparison. Evidence `$R2` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vsh04r2/`. An earlier verifier on this round was stopped part-way; I reused its worktree after finding one mutant still applied in it (restored, `git diff` clean) and **re-ran everything I rely on**. Expo commands ran with the proxy variables unset and a preload that refuses every host but loopback (only `0.0.0.0` bind attempts were logged); no EAS command, no exp.host, no wawuafrica.com.
+
+**Verdict: `review`. No defect is open.** Every ruling holds on its real cause. Six low findings and a list of test gaps are recorded below for the lead; none blocks.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 | **passed.** Typecheck 0, lint 0, `npm run check` **exit 0 at load 1 to 5** (quiet, no timeout): 82 suites, 1,437 of 1,437 tests, 111 s. Gates: 9 run, 355 files, 0 fail, 0 warn, 0 accepted. Tasks: 262, 279 artboards. | `$R2/v1-check-final.log` |
+| V2, V4 | **passed**: D1, D2, F1, F3 and the odd input below; the selfie limits (T1) pinned. | `$R2/specs-hold/`, `$R2/mutants-r3/`, `$R2/f1-rerun/`, `$R2/d2-r3/` |
+| V5 | **passed.** Main `d1549cb` and the branch exported (`npx expo export -p web --clear`, private `TMPDIR`), served on :5841 and :5842 against my stand-in Hub on :5843 (made-up people). Chromium 390 px, light and dark: A6, A8, M8, M36 first states plus the M8 after-avatar, after-empty, M36 after-pick and A6 after-corrupt, one-pixel and empty files, and A8 after-copy in both themes: **16 of 16 byte-identical** (sha256). 0 requests left 127.0.0.1. | `$R2/web/shots/`, `drive-*.log` |
+| V6 | **passed on the web**: 26 recorded actions (presign bodies, upload bytes by hash, A6 selfie hash, A8 clipboard `8123450412`, "Copied") equal on both builds once the hub's own counter in `/put/N` is ignored. The web still sends the Exif (FIX-25, the lead's separate task). | `$R2/web/shots/*-results.json` |
+| V7, V10 | NOT RUN: need a device (below). | |
+| Mutants | **33 of mine on round 2 code, each applied alone and restored** (`git diff` clean after each): see the table. | `$R2/mutants-r3/`, `$R2/mutants-t1/` |
+
+### The rulings, confirmed by cause
+
+**D1 (picker failures).**
+- `pickImage` resolves `null` only for a cancel (`result.canceled`); a throwing library and `PickFailed` (encoder cannot load it, or 0 bytes) reject, and `EditProfileScreen.choose` puts `PICK_FAILED` in `edit-banner`. A pick that fails and then a good one clears the banner and uploads (R2-M5).
+- My specs, all passing: a 0-byte PNG (banner, nothing sent, library copy gone); a corrupt JPEG that the encoder cannot load (banner, nothing sent); the library throwing; cancel silent on both screens.
+- M36 counts and names by kind: "1 photo couldn't be added. Try it again or choose another.", "2 photos couldn't be added. Try them again or choose others.", "2 videos ...", "2 files ..." for a mix (R2-W1, R2-W2). Seven in the work, three chosen, one unreadable: the unreadable sentence first, then the limit sentence, one file uploaded (R2-W3). A pick where every file is unreadable still shows the notice (X3 kills the early return).
+- The builder's sentence for a failed library: M8 "We couldn't open that photo. Try another one." is the lead's wording. M36's "We couldn't open your photo library. Try again." is plain, is not an em-dash sentence, and matches the canvas's tone. Agree (builder decision 1).
+
+**D2 (formats).** Fixtures for each format, each carrying location in every place the format allows (PNG: eXIf, tEXt "GPS", zTXt, iTXt XMP; WebP: EXIF and XMP chunks; GIF: comment and XMP application extension; JPEG: Exif GPS and an XMP APP1), and transparency where the format has it. Written through Chromium's canvas, which is Skia (`SkPngEncoder`, `SkWebpEncoder`, `SkJpegEncoder`, the encoder family Android's `Bitmap.compress` uses), in the format `rewriteFor` picks:
+
+| Picked | Written as | Result |
+|---|---|---|
+| PNG, 64 x 64 RGBA | `image/png` | colour type 6, chunks IHDR, IDAT, IDAT, IEND only; pixel alpha 255, 0, 128, 255 at my four probes (opaque, transparent, half, black) as in the source |
+| WebP | `image/webp` 0.9 | VP8X, ICCP, ALPH, VP8; alpha 255, 0, 128, 255; no EXIF or XMP chunk |
+| GIF, 2 frames | `image/png` | first frame, colour type 6, IHDR/IDAT/IEND; the GIF's comment and XMP gone |
+| JPEG | `image/jpeg` 0.9 | JFIF/ICC/DQT/SOF/DHT only; no APP1 |
+
+- No output mentions "exif", "gps", "xmp", "adobe" or the made-up place or maker names (`$R2/d2-r3/d2-skia.json`, run twice: identical).
+- The code side: `rewriteFor` is case-insensitive (a mutant that is not kills `IMAGE/PNG`, X9), an unnamed type becomes a JPEG (R2-M4), and neither `expo-image-manipulator`'s Android nor iOS source copies Exif (grep of both). Android `saveAsync` writes with `Bitmap.compress` and base64 `NO_WRAP`.
+- My own odd input on M8, all passing: a 1 x 1 PNG goes up as a 1 x 1 PNG; a 10,000 px JPEG is written again at its size as a JPEG (no resize, as ruled).
+- **Not proved by me, and by nobody here:** that Android's real encoder keeps alpha through a Glide-loaded bitmap and writes no metadata. Skia is the stand-in; the phone is V10.
+
+**F1 (the walk is the server's).**
+- Logic diff of `isServerJpeg`, `sofIsSane`, `sosIsSane`, `JPEG_SOF`, `JPEG_BETWEEN_SCANS`, `SOS`, `EOI` against `git show origin/main:src/money/identity/selfie-image.ts`: identical after removing TypeScript annotations. The only text differences are a pair of parentheses around the `sofIsSane` return, a trailing comma in the set, and `Buffer.readUInt16BE` against the phone's `u16` (`$R2/f1/logic-diff.txt`).
+- Differential run (`$R2/scripts/f1run.js`, re-run by me): **70 named files and 42,416 cases, 0 mismatches.**
+  - The 70: valid baseline, progressive, restart-marker, grey, CMYK, 1 x 1, 2,048 x 8, 8 x 2,048, Exif, ICC; appended garbage, appended second JPEG, a byte after EOI, two EOI, truncated everywhere; bad SOF (precision 7, 0 px sides, 5 components with a consistent length, short length); bad SOS (0 and 5 components, wrong length); zero, one and two byte segments; odd markers (TEM, JPG, DNL, JPG0, a fill `FF`, a restart before the frame, DRI and DAC before the frame, APPn and COM after a scan); a stray marker in a scan; a second SOF; SOS before SOF; no SOF; no SOI; EOI then SOI.
+  - Fuzz around four valid files: every truncation, every single-byte deletion, an `FF` inserted at every position, 3,000 byte flips each, plus 2,000 random short buffers. about 19,000 of those cases are ones the server accepts, so both verdicts are exercised.
+  - Base64 level: 420 variants (a line break, a `data:` prefix, URL-safe letters, no padding, a trailing space). The phone sends 0 that the server's DTO refuses.
+  - The 24 real encoder outputs from round 1 (20 libjpeg, 2 Chromium canvas, 2 of the web hub's selfies), re-run: the phone's walk and `isWholeJpeg` equal the server's walk and DTO verdict for all 24 (the tiny 1 x 1 is a JPEG the server's walk takes and its DTO refuses for size; the phone refuses it for size too).
+- My walk mutants (X19 to X25): a 0 px side, a 5-component SOS, DQT not allowed between scans, a second frame, an APPn after a scan are each caught by the differential (1 to 19,027 mismatches) and X19, X21, X23, X25 also by the task's specs. X22 (a segment length of 0 or 1) is **equivalent**: the next byte read is then a length byte, never `FF`, so the walk refuses either way.
+
+**T1.** The five boundary mutants are re-applied by me and each is killed by the task's own specs alone (the 11 task spec files, none of mine): V1 `<` for `<=` 100,000 in the encode loop (1 failure) and in `isSendableSelfie` (1), V2 quality 0.4 dropped (1), V3 0.25 added (1), V7 2,048 exclusive on the rendered image (1) and in the SOF walk (1), V8 a 900-byte minimum (1) and a 1,100-byte minimum (1).
+
+**F3 (no copy left).**
+- Selfie: `forgetFile` on every saved file at every quality, and `forgetWrittenSince` in the `finally`, which also takes a file written before a failure. A mutant that never deletes (X17) fails 10 task tests; one that sweeps nothing new (X18) fails 1.
+- M8 and M36: the app's copy goes in `finally` of the upload, on success and on failure (X15 is killed by both suites; X16 by mine only); a copy that cannot be read back is deleted; the library's own copy (with Exif) is deleted when written again, even when the encoder fails (X13); files beyond the 8 a work carries are discarded at once.
+- M36 uploads each file as soon as it is added, so the copies are gone within the upload's time, not at Save.
+- M8's preview is the uploaded picture's address (`fileUrl`). It works after the upload, which is the only time it is drawn. It is a second network fetch of a picture that was just sent, so on a slow connection the avatar or cover area stays on the old picture (or empty) until it arrives, and a connection that drops right after the upload shows nothing new. The old local preview was instant. Acceptable, and V10's to judge.
+- **Residual leaks I found (low, F-R1 and F-R2 below).**
+
+**Ruling 6.** A scratch `npx expo prebuild -p android --no-install` (copy of the branch, offline, guard on) exits 0. The main manifest has `<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" tools:node="remove"/>` and `<uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>`, beside the five earlier removes (`RECORD_AUDIO`, `WRITE_SETTINGS`, `READ_CALENDAR`, `WRITE_CALENDAR`, `READ_MEDIA_VISUAL_USER_SELECTED`). The debug manifest still declares `SYSTEM_ALERT_WINDOW`, as ruled (`$R2/AndroidManifest-r3.xml`, identical to the earlier verifier's; `$R2/pb-r3.log`). The merged APK manifest is still the lead's build.
+
+**Ruling 7.** `DATA-SAFETY.md` CL-01 and section 5, and `PLAY-LISTING.md` B5, Advertising ID and Photo and video rows, list exactly the prebuild manifest's permissions plus the libraries' own (`$R2/library-perms.txt`: `CAMERA`, the two storage permissions capped at 32, `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `MODIFY_AUDIO_SETTINGS`, `USE_BIOMETRIC`, `USE_FINGERPRINT`, `VIBRATE`, Firebase's `WAKE_LOCK` and `c2dm.permission.RECEIVE`). The removed list in the docs equals the manifest's seven. The iOS camera string stays and SHARED-CHANGES notes it for EVENTS-09. One stale sentence: **F-R4** below.
+
+### Mutants: 33 of mine on round 2 code
+
+Each applied alone, the task's 11 spec files (and for X1 to X25 my two files) run, then the file written back byte for byte and `git diff` clean. "Task" is failures in the task's own specs.
+
+| Id | Mutant | Task | Mine |
+|---|---|---|---|
+| X1 | M8 silent again (pickImage swallows `PickFailed`) | 1 | 2 |
+| X2 | M8 says the upload sentence, not the pick sentence | 2 | 3 |
+| X3 | M36 silent when every file is unreadable | 1 | 2 |
+| X4 | M36 limit sentence before the unreadable one | **0** | 1 |
+| X5 | a mix named "photo", not "file" | 1 | 1 |
+| X6 | plural count uses the singular sentence | 1 | 2 |
+| X7 | every unreadable file reported as a photo | 2 | 2 |
+| X8 | one unreadable file rejects the whole pick | 3 | 3 |
+| X9 | format choice case-sensitive | **0** | 1 |
+| X10 | WebP written as PNG | 2 | 0 |
+| X11 | a GIF typed `image/gif` though written as PNG | 2 | 0 |
+| X12 | PNG skips the strip (library file goes up) | 3 | 2 |
+| X13 | library copy kept when the photo is unreadable | **0** | 1 |
+| X14 | app copy kept when it cannot be read back | **0** | **0** |
+| X15 | M8 discards only after a good upload | 1 | 1 |
+| X16 | M36 discards only after a good upload | **0** | 1 |
+| X17 | `forgetFile` never deletes | 10 | 4 |
+| X18 | selfie sweep deletes nothing new | 1 | 0 |
+| X19 | walk: a 0 px side accepted | 1 | 0 |
+| X20 | walk: SOS with 5 components accepted | **0** | 0 |
+| X21 | walk: DQT not allowed between scans | 14 | 0 |
+| X22 | walk: segment length 0 or 1 accepted | 0 | 0 (equivalent) |
+| X23 | walk: a second frame accepted | 1 | 0 |
+| X24 | walk: APPn after the first scan accepted | **0** | 0 |
+| X25 | base64 padding taken mid-string | 1 | 0 |
+| T1 to T8b | the eight boundary mutants above | 1 each | n/a |
+
+- Killed by the task's own specs: 17 of the 25 X mutants (the other 8: X4, X9, X13, X14, X16, X20, X22 equivalent, X24), and all 8 T mutants.
+- **Killed only by my specs:** X4, X9, X13, X16 (the task's suite does not pin the notice order, the upper-case type, the library copy when the photo is unreadable, or M36's discard on a failed upload).
+- **Survive every jest spec:** X14 (a re-encoded copy that cannot be read back stays in the cache). X20 and X24 survive jest and are killed by the F1 differential (`$R2/f1/walk-mutants-differential.json`). X22 is equivalent.
+- No behaviour is wrong in any of these: they are gaps in what the suite would catch.
+
+### Findings (all low, none blocks `review`)
+
+- **F-R1 · F3 residual, M8 and M36.** An encoder that writes its file and then fails leaves that partial file in `<cache>/ImageManipulator/`: its address never reaches JS. The selfie has the folder sweep for this; `readPicked` does not. Probe R2-M7 (`$R2/specs/zzR2VerifierM8.test.tsx`): the cache holds `converted-1.jpg` after the banner. The file is the encoder's own output (no Exif), so the harm is a leftover of the photo's pixels until the OS clears the cache. Fix direction: the same `manipulatorFiles` and `forgetWrittenSince` around `rewrite`.
+- **F-R2 · F3 residual, a video.** A video the phone cannot read (0 bytes, or `fetch` fails) throws before `discard` exists, so its library copy in `<cache>/ImagePicker/` stays. Probe R2-W5. Videos are not covered by the Exif ruling, and a 0-byte copy holds nothing, so low. Fix direction: `forgetLibraryCopy(asset.uri)` in the video branch's catch.
+- **F-R3 · concurrency, theoretical.** The selfie's sweep deletes any file in the manipulator folder written during its own encode, including one M8 or M36 wrote at the same moment. The screens cannot be open together, so I could not reach it; noted because the folder is shared.
+- **F-R4 · docs.** `docs/release/DATA-SAFETY.md` CL-03 still says "the phone build writes every picked photo again as a JPEG before upload". After D2 a PNG stays PNG, a WebP stays WebP and a GIF becomes a PNG. The conclusion (no location goes up) is unchanged; the sentence is not. SHARED-CHANGES ME-06 #1 and ME-11 #1 already say it right.
+- **F-R5 · V10, M36 thumbnails.** Each copy is deleted when its upload settles, and the thumbnail's address is that copy. One that has not loaded by then, or is dropped from the image cache under memory pressure, shows M36's placeholder. The builder lists this; I could not test it here.
+- **F-R6 · V10, a big picture.** `readPicked` decodes a photo at its picked size with no retry, and up to eight photos are decoded at once in a pick. A 10,000 px photo or a low-memory phone may fail to decode; that now says "We couldn't open that photo" (D1) rather than going silent, so the answer is right and the cause is F4's, still a note for V10.
+- **Test gaps:** X4, X9, X13, X14, X16, X20, X24 above.
+
+### Decisions judged
+
+1. M36's library-failure sentence and the "video" / "file" wording: agree.
+2. M8 previews the uploaded picture: agree, with the slow-connection note above.
+3. The library's own copy deleted once the photo is written again: agree, and it is what the ruling needs; F-R2 is its video edge.
+4. A 0-byte file is unreadable: agree (R2-M1).
+5. WebP at 0.9 lossy with alpha, PNG lossless: agree.
+6. V-S13 checked once against real encoder samples, not committed: agree. My differential re-ran the walk against 42,416 cases, and the 22 samples agree.
+
+### NOT RUN
+- **V7 and V10 on a phone.** The live camera in the oval, Android's real encoder through the server's walk (F1's Ultra HDR case), a transparent PNG staying transparent through Glide and `Bitmap.compress`, no metadata in a real WebP, M36's thumbnails after their copies go, M8's preview from the uploaded address, a HEIC the phone cannot decode, F2 and F4. Unblocked by the lead's preview build of merged main (`eas build -p android --profile preview`; no device or EAS command here).
+- **The merged APK manifest.** There is no Android SDK or Gradle here, so I read the prebuild manifest and the library manifests. Unblocked by `bundletool dump manifest` on that build, or Play Console's App bundle explorer.
+- **expo-doctor and the online `expo install --check`.** They need exp.host, reactnative.directory and api.expo.dev, which this task may not call. Not re-run this round: the dependency set is the one round 1 checked, and `npm ci` from the lock gave 1,140 packages with the same versions. Unblocked by running them where those hosts are allowed.
+- **iOS** (RELEASE-03).
+- Secret scan of my staged diff: no key-shaped string (the only additions are this report, a LOG line and regenerated files). No em-dash added.
 
 ## Owner sign-off
 
