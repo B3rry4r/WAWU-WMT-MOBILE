@@ -1,7 +1,7 @@
 ---
 id: HOME-07
 title: Feed: course, template, creator and professional cards, empty and error
-owner: DEV
+owner: YOU
 area: HOME
 order: 148
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H7, H8, H9, H10, H12, H13]
 ---
 # HOME-07 · Feed: course, template, creator and professional cards, empty and error
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 
@@ -105,6 +108,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The HOME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

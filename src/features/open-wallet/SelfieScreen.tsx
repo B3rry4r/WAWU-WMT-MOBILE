@@ -92,6 +92,8 @@ export type SelfieScreenProps = {
   onLeave: () => void;
   /** Back to A26 for a new BVN check, with the server's sentence for A26 to show. */
   onRestart: (notice?: string) => void;
+  /** The account is open: on to A8 (KYC-04), in place of every step before it. */
+  onOpened: () => void;
   /** How this build takes the selfie; the platform's own unless a test hands one in. */
   capture?: SelfieCapture;
 };
@@ -104,7 +106,7 @@ export type SelfieScreenProps = {
  * the camera and the request. A match opens the account (MONEY-12) with A5's
  * name, date of birth and address, all held in memory since A26 and A5.
  */
-export function SelfieScreen({ onBack, onLeave, onRestart, capture }: SelfieScreenProps) {
+export function SelfieScreen({ onBack, onLeave, onRestart, onOpened, capture }: SelfieScreenProps) {
   const platformCapture = useSelfieCapture();
   const camera = capture ?? platformCapture;
   const signedIn = useSessionAccount(undefined);
@@ -161,6 +163,7 @@ export function SelfieScreen({ onBack, onLeave, onRestart, capture }: SelfieScre
       onBack={onBack}
       onLeave={onLeave}
       onRestart={onRestart}
+      onOpened={onOpened}
     />
   );
 }
@@ -175,9 +178,10 @@ type SelfieProps = {
   onBack: () => void;
   onLeave: () => void;
   onRestart: (notice?: string) => void;
+  onOpened: () => void;
 };
 
-function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRestart }: SelfieProps) {
+function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRestart, onOpened }: SelfieProps) {
   const [phase, setPhase] = useState<Phase>(alreadyMatched ? { kind: 'opening' } : { kind: 'ready', note: null });
   /** Set before the first await, so a second tap in the same frame sends nothing (each match is charged). */
   const inFlight = useRef(false);
@@ -267,19 +271,7 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
   };
 
   if (shown.kind === 'ended') {
-    if (shown.end === 'open') {
-      return (
-        <OpenWalletEnd
-          testID="open-wallet-opened"
-          tone="in"
-          icon="Wallet"
-          title="Your wallet is open"
-          message="You can pay from it now."
-          actionLabel="Done"
-          onAction={onLeave}
-        />
-      );
-    }
+    if (shown.end === 'open') return <Opened onOpened={onOpened} />;
     return (
       <OpenWalletEnd
         testID="open-wallet-not-opened"
@@ -373,6 +365,28 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
         />
       );
   }
+}
+
+/**
+ * The account is open: A7 hands over to A8 (KYC-04) once, and shows its
+ * matched ring with the spinner for the moment that takes.
+ */
+function Opened({ onOpened }: { onOpened: () => void }) {
+  const handed = useRef(false);
+  useEffect(() => {
+    if (handed.current) return;
+    handed.current = true;
+    onOpened();
+  }, [onOpened]);
+  return (
+    <CameraPage
+      onClose={onOpened}
+      ring="matched"
+      testID="open-wallet-opened"
+      words={<Words title="Matched to your BVN" line="Your account is open" live />}
+      foot={<ActivityIndicator color={CAMERA.ink} accessibilityLabel="Your account is open" />}
+    />
+  );
 }
 
 /** Back to A26 for a new check, carrying the server's sentence for A26's banner. */

@@ -13,6 +13,8 @@ decisions: [R-20]
 passes: [V1, V4, V5, V6, V9]
 artboards: [S2, S3, S4, S10, S13]
 ---
+On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
+
 # BILLS-01 · Pay a bill: choose biller, meter and amount
 
 ## Read first
@@ -116,6 +118,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

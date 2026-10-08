@@ -1,7 +1,7 @@
 ---
 id: HOME-03
 title: Content detail: preview, unlocked, comments, share, rate
-owner: DEV
+owner: YOU
 area: HOME
 order: 141
 priority: launch
@@ -14,6 +14,9 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [H19, H20, H21, H22, H23]
 ---
 # HOME-03 · Content detail: preview, unlocked, comments, share, rate
+
+Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+
 
 ## Read first
 

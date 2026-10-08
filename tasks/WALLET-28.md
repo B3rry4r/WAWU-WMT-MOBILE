@@ -3,7 +3,7 @@ id: WALLET-28
 title: Scan to pay and my QR (backend)
 owner: YOU
 area: WALLET
-order: 196
+order: 238
 priority: after-launch
 repo: wawu-backend
 type: money-path

@@ -97,7 +97,7 @@ function cameraGiving(...results: CaptureResult[]): SelfieCapture & { taps: () =
 async function boot(capture: SelfieCapture = cameraGiving(), reuse?: QueryClient) {
   const { SelfieScreen } = require('../SelfieScreen') as typeof import('../SelfieScreen');
   const kept = require('../keptCheck') as typeof import('../keptCheck');
-  const props = { onBack: jest.fn(), onLeave: jest.fn(), onRestart: jest.fn() };
+  const props = { onBack: jest.fn(), onLeave: jest.fn(), onRestart: jest.fn(), onOpened: jest.fn() };
   const client = reuse ?? new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
   if (!reuse) clients.push(client);
   const wrap = (child: ReactElement) => (
@@ -198,9 +198,10 @@ describe('A6 · Selfie', () => {
 
     await app.act(async () => release());
     expect(await app.screen.findByTestId('open-wallet-opened')).toBeTruthy();
-    expect(app.screen.getByText('Your wallet is open')).toBeTruthy();
-    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
-    expect(app.onLeave).toHaveBeenCalledTimes(1);
+    // KYC-04: the open account hands over to A8, once; nothing here leaves the flow.
+    expect(app.onOpened).toHaveBeenCalledTimes(1);
+    expect(app.onLeave).not.toHaveBeenCalled();
+    expect(app.screen.queryByText('Your wallet is open')).toBeNull();
     // The selfie is never drawn back or stored.
     expect(allText(app)).not.toContain(IMAGE.slice(0, 40));
     expect(mockStored).toEqual([]);

@@ -42,6 +42,7 @@ MIN_PASSES = {
     "money-path": ["V1", "V2", "V3", "V4", "V6", "V7", "V8", "V9"],
     "removal": ["V1", "V3", "V4", "V7", "V9"], "admin-screen": ["V1", "V6", "V7", "V9"],
     "web-port": ["V1", "V3", "V4", "V5", "V6", "V7", "V9"],
+    "backend-refactor": ["V1", "V2", "V3", "V9"],
 }
 REQUIRED = ["id", "title", "owner", "area", "order", "priority", "repo", "type", "status",
             "depends_on", "decisions", "passes", "artboards"]

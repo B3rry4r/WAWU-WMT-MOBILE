@@ -327,6 +327,31 @@ These are identifiers, not names a user reads. Changing them would break the Exp
 - Each task that builds an affected screen: every task listed above carries R-37 in its `decisions`.
 - The web follows after launch.
 
+### R-38 · The bottom bar does not get a Studio tab
+*Owner, 6 Oct 2026 ("bugs like this would not be condoned", about the boss brief v2.0's centre "Create ✨" Studio tab).*
+The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · Inbox · Wallet · Me**, and Create stays the floating button for creator accounts. (Corrected 7 Oct 2026 after the CHECK-1 audit, F-2: this line first quoted the old web app's bar by mistake; the ruling itself, no Studio tab, is unchanged.) This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
+
+**Carried out by:** every navigation and AI-tools task; a verifier treats a bar with a sixth or swapped slot as a defect.
+
+### R-39 · The wallet provider moves from Fintava to Nuvion, reversibly
+*Owner, 6 Oct 2026.*
+- **Provider:** Nuvion replaces Fintava. Nuvion is licensed in Nigeria (owner, from Nuvion directly); do not re-raise it.
+- **Reversible:** Fintava is switched off, not deleted. One setting (`WALLET_PROVIDER`) picks the provider, and rollback is changing it and restarting (MONEY-20).
+- **No SMS:** codes go by email, as before. Sign-up verification moves to the email code (AUTH-07); forgot-PIN codes move to email in the wallet rebuild.
+- **Selfie:** use Nuvion's hosted selfie check if its API can start one for our users; if Nuvion's KYC has none, the selfie step is dropped.
+- **Facts from Nuvion's own dashboard code:** `POST /counterparty-lookups` returns the account holder's name for a NIP account; `/kyc/liveness/sessions` starts the hosted selfie check; `/fee-simulations` previews a fee.
+- **Bills:** Nuvion has no bill payments. Bills stay off until the owner drops them or picks a separate bills provider.
+- **Waiting on:** Nuvion's NGN fees and limits (the owner is asking).
+
+**Carried out by:** MONEY-20 (the provider seam), AUTH-07 (email sign-up codes), then a Nuvion adapter task once fees and limits are in. R-1's Loma Bank licence line is superseded by this ruling.
+
+### R-44 · Payments on the web are the same as the app
+*Owner, 8 Oct 2026 ("Same as the app"; payments are the priority now).*
+- On the website (wawuafrica.com) people can buy a tier, buy points, add money by bank transfer and pay from their wallet, through the same Hub routes as the app. The website is not a checkout that the app sends people to, and there is no card payment for now.
+- The money freeze is lifted for all payment work, not only the Nuvion adapter (R-42). Builders build against the provider seam (MONEY-20) with Nuvion stood in until its sandbox key works.
+
+**Carried out by:** the payment plan (`docs/PAYMENTS-PLAN.md` and its tasks: the Nuvion adapter, tiers and points, then the web payment screens).
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
@@ -348,3 +373,34 @@ both 2 Oct 2026.
 
 The full list of what the canvas contradicts, with both sides quoted, is in
 `docs/analysis/ANALYSIS-EVIDENCE.md` ("Conflicts with the current product").
+
+### R-40 · Changing ticket prices needs a current verification and goes back to review
+*Owner, 7 Oct 2026 ("yes then add it", on event price edits).*
+`PUT /events/:id/tickets`, the web's route for a host's ticket tiers and prices, follows the same rules as creating or editing an event: the host must hold a current verification (B3, hosting is verified-only), and a change to an approved event sends it back to review. Once a ticket is sold, tiers stay locked as they are today (409). This is a deliberate change to a protected route.
+
+**Carried out by:** EVENTS-11.
+
+### R-41 · Every tab is built now, with what exists
+*Owner, 7 Oct 2026 ("I want all tabs to be built").*
+The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect.
+
+**Carried out by:** HOME-01, ME-01, EXPLORE-01, WALLET-01 now; each later task named in their "Lead note (7 Oct 2026)" adds its own entry.
+
+### R-42 · The owner's answers of 7 Oct 2026 (decisions page)
+*Owner, 7 Oct 2026, on the "Fintava to Nuvion: approve and go" page.*
+- **Nuvion: start now.** The Nuvion build starts without waiting for Nuvion's NGN fees and limits; they are settings filled in when Nuvion answers, and nothing moves real money before they are set. The sandbox key is coming from the owner. This lifts the money freeze for the Nuvion work.
+- **Bills: off at launch,** switched off and not deleted ("Leave them switched off, don't delete for now").
+- **Opening a wallet** adds an ID document and a proof of address, as Nuvion requires.
+- **Adding money is by bank transfer only** at launch.
+- **Held money** (paid questions, tickets) moves through a WAWU operational account on Nuvion.
+- **Legal consultation prices confirmed:** chat ₦25,000 for 60 minutes, video ₦45,000 for 60 minutes, in person on request (LEGAL-03 F8 closed).
+- **Phone numbers:** yes to the fix for someone signing up with another person's phone (AUTH-07). The owner adds: "phone number should be verified with the BVN. Check if Nuvion's response makes this possible, else we have to figure out a fix." Carried out by AUTH-07 and the Nuvion identity work.
+- **Events:** reviewers see ticket types and prices in the dashboard; the ticket types of an event that is not approved are hidden from the public (EVENTS-02 F2 and F3).
+- **TGIF:** the second count beside Amen is readers that day (G-160).
+- **PR #26** (retire the Shop routes): the owner adds the relock-approved label.
+
+### R-43 · The 5 Oct plan is adopted (Verify, Create, Earn)
+*Owner, 7 Oct 2026 ("Adopt it: I'll send prices and rules").*
+The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Developer Brief v2.0 is adopted: free sign-up and drafts; publishing or uploading a file needs a paid tier (Verify, Verify Plus, Founding Maker, with 3, 6 or 10 products); points for AI tools with lots that expire and a cash-out rate; dollar prices outside Nigeria; Voice Intro in the person's own voice; referral points. This reverses the "no subscription, no tier" rule, the 5-item cap and naira-only for those features. **The owner sends the final prices and rules;** until then the plan's figures are config values, never facts. Still open and not to be assumed: whether points replace WAWU Credits, the commission ("WAWU keeps up to 10%" against the 85/15 split, R-5), the tier-expiry rule, and the Christmas event date. R-38 stands: no Studio tab; AI tools open from the Create button.
+
+**Carried out by:** the design round 2 brief (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`), then tasks cut from the new boards.
