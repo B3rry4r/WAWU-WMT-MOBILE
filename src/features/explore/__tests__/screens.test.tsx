@@ -386,3 +386,64 @@ describe('X2, X3, X13 · Categories', () => {
     expect(await rtl.screen.findByText('@tunde')).toBeTruthy();
   });
 });
+
+describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
+  const featured = 'GET /explore/featured-creators?limit=10';
+  const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+  const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
+  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
+    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
+    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
+    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
+    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
+    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
+    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
+  });
+  const pageOf = (items: unknown[]): Answer => ({
+    status: 200,
+    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
+  });
+  // 14 Oct 23:00 UTC is still 14 Oct in New York (15 Oct in Lagos).
+  const summit = ev('ev-1', 'Creators Summit', { featured: true });
+  const nyc = ev('ev-2', 'New York Night', { timezone: 'America/New_York', startsAt: '2026-10-14T23:00:00.000Z', venueName: null, location: 'New York' });
+
+  it('a user sees the featured event and Upcoming events, and opens E2 from either and E1 from See all', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [pageOf([summit])];
+    answers[upcoming] = [pageOf([summit, nyc])];
+    const onOpenEvent = jest.fn();
+    const onSeeAllEvents = jest.fn();
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={onOpenEvent} onSeeAllEvents={onSeeAllEvents} />));
+    expect(await rtl.screen.findByText('FEATURED EVENT')).toBeTruthy();
+    expect(rtl.screen.getByText('2 Nov · Eko Convention Centre')).toBeTruthy();
+    expect(await rtl.screen.findByText('Upcoming events')).toBeTruthy();
+    // The card's badge is read in the event's own zone, the day in two digits.
+    expect(rtl.screen.getByLabelText('OCT 14')).toBeTruthy();
+    expect(rtl.screen.getByLabelText('NOV 02')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event'));
+    expect(onOpenEvent).toHaveBeenLastCalledWith('ev-1');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-event-ev-2'));
+    expect(onOpenEvent).toHaveBeenLastCalledWith('ev-2');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-events-see-all'));
+    expect(onSeeAllEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it('a user still sees the tiles and creators when the events cannot be read, without any event entry', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [refused(500, 'Down')];
+    answers[upcoming] = [refused(500, 'Down')];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} />));
+    expect(await rtl.screen.findByText('Featured creators')).toBeTruthy();
+    await settle();
+    expect(rtl.screen.queryByText('FEATURED EVENT')).toBeNull();
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
+  });
+
+  it('a user sees the featured event block while Explore loads (X14)', async () => {
+    answers[featured] = ['hold'];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} />));
+    const loading = await rtl.screen.findByTestId('explore-loading');
+    expect(JSON.stringify(loading)).toMatch(/"height":196/);
+  });
+});

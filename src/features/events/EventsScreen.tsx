@@ -218,11 +218,12 @@ function TabStrip() {
   );
 }
 
-function SeeAll({ onPress }: { onPress: () => void }) {
+/** "See all" beside a heading: E1's list, and Explore's Upcoming events (X1, X15). */
+export function SeeAll({ onPress, testID = 'events-see-all' }: { onPress: () => void; testID?: string }) {
   const ring = useFocusRing();
   return (
     <Pressable
-      testID="events-see-all"
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel="See all events"
       hitSlop={space.md}

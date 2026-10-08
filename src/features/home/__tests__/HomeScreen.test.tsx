@@ -289,7 +289,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Events', 'Legal', 'Schools', 'Shop', 'See all']) {
+    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Legal', 'Schools', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -400,5 +400,24 @@ describe('Today empty and in error', () => {
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));
     await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+  });
+});
+
+describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
+  it('a user can tap Events under "What would you like to do today?" and land on Events (E1)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Events' }));
+    expect(mockPush).toHaveBeenCalledWith('/events');
+    // The other services lead to screens not built yet: their columns stay empty.
+    for (const label of ['Pay bills', 'Legal', 'Schools', 'Shop']) expect(screen.queryByText(label)).toBeNull();
+  });
+
+  it('a user with TGIF off still has the Events tile (H36)', async () => {
+    answers[T.tgif] = [ok({ show: false })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByTestId('today-service-events')).toBeTruthy();
   });
 });

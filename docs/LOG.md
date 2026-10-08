@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · EVENTS-01 · Builder round 6: D7, D8 every events date in the event's zone (hero badge, tier Ended/Opens); D9 prices kept when a later call fails; D10 two-digit badge day; T3, V10 and screen specs added, each fails on the old code; R-41 entries added on main's hubs (H1/H36 Events tile, X1 featured event, Upcoming events rail and See all, X14 block); npm run check passed (80 suites, 1450 tests, gates 0 findings, baseline 0, 212 tasks); status verifying.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 4: D6 fixed (live: NYC 7 PM EDT reads 14 Oct on E1, E2, hero; unresolvable zone date only; no crash); 4 of 6 new specs fail on old code; npm run check passed; no open defects, status review.
 - 7 Oct 2026 · EVENTS-01 · Builder round 5: D6 fixed, event date read in the event's own zone (unresolvable zone: Lagos date alone, no clock); 6 specs added, 4 fail on old code; npm run check passed (66 suites, 1204 tests, gates 0 findings); status verifying.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
