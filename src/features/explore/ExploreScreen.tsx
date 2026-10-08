@@ -22,6 +22,7 @@ import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators } fr
 import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
+import { DoorsCard, type Door } from './DoorsCard';
 import { ExploreSkeleton } from './ExploreSkeleton';
 import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 
@@ -49,16 +50,19 @@ export type ExploreScreenProps = {
   onOpenEvent?: (id: string) => void;
   /** Upcoming events' See all (E1). */
   onSeeAllEvents?: () => void;
+  /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. Absent, the door is not drawn. */
+  onListServices?: () => void;
 };
 
 /**
  * X1 and X14: Explore's browse, with a real error state (a request failed, with a retry). It reads the creator
  * categories and the featured creators. Entries whose screens are not built yet are not drawn (R-27, R-41): the
  * search bar and bell (EXPLORE-02, ME-14), Featured creators' See all (EXPLORE-02), opening a creator (ME-02), the
- * doors (PROS-01, SCHOOLS-03, PROS-03) and Create (ME-04). The featured event, Upcoming events and its See all are
- * EVENTS-01's (R-41): drawn when the Hub serves them, left out when it serves none or the read fails.
+ * other doors (PROS-01, SCHOOLS-03) and Create (ME-04). The featured event, Upcoming events and its See all are
+ * EVENTS-01's (R-41): drawn when the Hub serves them, left out when it serves none or the read fails. PROS-03's doors
+ * card ("List your services") follows Upcoming events.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -114,6 +118,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents }: E
     );
   } else {
     const creators = featured.data ?? [];
+    const doors: Door[] = onListServices ? [{ id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices }] : [];
     body = (
       <>
         {events.featured && onOpenEvent ? (
@@ -141,6 +146,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents }: E
         {events.upcoming.length > 0 && onOpenEvent && onSeeAllEvents ? (
           <ExploreEventsRail events={events.upcoming} onOpen={onOpenEvent} onSeeAll={onSeeAllEvents} />
         ) : null}
+        {doors.length > 0 ? <DoorsCard doors={doors} /> : null}
       </>
     );
   }

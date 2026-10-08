@@ -7,15 +7,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 110 | 0 | 20 | 21 |
+| todo | 109 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 3 | 0 | 0 | 0 |
+| review | 4 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
+- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
@@ -134,8 +135,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
-- **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
-- **Developer 3:** [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
+- **Developer 3:** [PROS-01](../tasks/PROS-01.md) Find a professional, [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
@@ -155,4 +156,4 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
 - 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
 - 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
-- 8 Oct 2026 · SHARED-04 · SHARED-04 merged: native modules installed in one batch; the phone takes the wallet selfie, picks photos without location data, and copies. New preview build needed.
+- 8 Oct 2026 · PROS-03 · Verified round 3 (completed): main merged, `npm run check` exit 0; D4 live with a 503 on refetch when the app returns to the front and with a connection drop after the first field (form, fields, text and send result kept, inline retry), D5, D8 and U3 passed live, P5 to P10 pictures within 1 px; no defect open; R3-1, the P7 Back deviation, U4 (row 8 now applied, phone upload not wired) and U5 for the lead; V10 NOT RUN; status review.
