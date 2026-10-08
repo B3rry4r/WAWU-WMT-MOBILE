@@ -441,6 +441,18 @@ NOT RUN: V10 (device): unblocked by OPS-10 and a signed Android tester build. Th
 
 **Status:** open D11, D12, D13, D14 and T4, so `status: building`. Every lead ruling of round 6 (D7, D8, D9, D10, T3, V10, V11) passed.
 
+## Lead rulings after the independent round 4 (8 Oct 2026)
+
+Every ruling from round 6 passed. Build round 7 on `972893e` for the items below, then status `verifying`. The lead's independent verifier re-checks only these.
+
+- **U-H1 (Home services row), lead ruling (b).** The row packs its tiles from the left in the canvas's order, as HOME-01 treated every other left-out entry: today `[Events][ ][ ][ ]`; each later task adds its tile in canvas order (Legal from LEGAL-02; the fourth is Schools, which BRIEF H1 puts where the canvas draws Shop, from SCHOOLS-03; Pay bills stays off at launch under R-42, so it takes no slot). Tile size and spacing stay as drawn. Record it in the builder report and on `src/features/home/Services.tsx`.
+- **D11 (Today's loading state).** H11 draws the services row's heading bar and one tile shape per tile present, as the canvas draws them; update `TodayLoading.tsx`'s comment.
+- **D12 (Explore jumps when the events read answers).** Nothing moves after Explore's first paint. Explore keeps X14 (its hero block included) until the events read has settled as well as its own reads. On Explore the events read is not retried, so a failure settles at once and Explore draws without the event entries. Spec: with the events read held, X14 stays; when it answers, the tiles draw once, at their final place.
+- **D13 (line heights).** The new entries' small text (Explore hero kicker and name, rail card text, Home's "Events" label) and E1's featured kicker sit on the canvas's normal line height (`canvasNormalLineHeight`), as other screens already do. Measure against X1, H1 and E1 at 2x.
+- **D14 (year on Explore).** The Explore hero line and rail cards show the year for an event not in the current year, as E1 and E2 do.
+- **T4.** Specs that kill N2 and N3 (a spec on `src/app/(tabs)/explore.tsx`'s routes), N5b (the failure spec waits until the read has settled; with D12 there are no retries on Explore), N6 (a non-Lagos featured event across a date boundary), N4 (the featured event is not the first rail event), N10 (the tile's position under U-H1). Re-apply each and show it failing.
+- **Merging with PROS-03.** PROS-03 will add Explore's doors card in `ExploreScreen.tsx` after Upcoming events. Whichever of the two merges second takes main in and resolves it; neither edits the other's branch.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
