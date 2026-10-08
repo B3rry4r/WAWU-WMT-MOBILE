@@ -173,7 +173,7 @@ Ruling: "a photo a person uploads must not carry where it was taken". Same build
   - E2, the original bytes go up behind the re-encoded preview: 3 failed, the GPS spec among them.
   - E3, videos written again too: 1 failed.
   - E4, a photo keeps the library's type: 2 failed.
-- **Checks:** RECHECK.
+- **Checks:** `npm run check` exit 0 on the branch with main 98f16c6 merged in (`$E/check-r2.log`): typecheck and lint clean, 81 suites and 1,403 tests passed, gates 9 run on 353 files with 0 fail, 0 warn, 0 accepted, 260 tasks. The web build is untouched by this change (no `.web.ts` file and nothing the browser bundle imports changed), so the pixel comparison above stands. Secret scan of the diff: no key-shaped string; no em-dash added.
 - **Also updated:** SHARED-CHANGES ME-06 #1 and ME-11 #1 (`applied (SHARED-04, 41e35ee, 6224f24)`), and `docs/release/DATA-SAFETY.md` CL-03 (the phone sends no photo location; the web build does until the lead's task).
 - **NOT RUN:** the real encoder on a phone (Android `Bitmap.compress`, iOS `UIImage.jpegData`) writing no Exif block, and the picture staying upright once the orientation tag is gone (on Android, Glide applies the orientation when the manipulator loads the file). jest models the encoder. Unblocked by V10 on the lead's preview build: pick a photo with location on the phone, then read the uploaded object's bytes for an APP1 segment.
 
