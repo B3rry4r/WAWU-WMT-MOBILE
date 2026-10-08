@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -454,6 +454,20 @@ Every ruling from round 6 passed. Build round 7 on `972893e` for the items below
 - **D14 (year on Explore).** The Explore hero line and rail cards show the year for an event not in the current year, as E1 and E2 do.
 - **T4.** Specs that kill N2 and N3 (a spec on `src/app/(tabs)/explore.tsx`'s routes), N5b (the failure spec waits until the read has settled; with D12 there are no retries on Explore), N6 (a non-Lagos featured event across a date boundary), N4 (the featured event is not the first rail event), N10 (the tile's position under U-H1). Re-apply each and show it failing.
 - **Merging with PROS-03.** PROS-03 will add Explore's doors card in `ExploreScreen.tsx` after Upcoming events. Whichever of the two merges second takes main in and resolves it; neither edits the other's branch.
+
+## Builder report, round 7 (8 Oct 2026)
+
+Built on `3093521` (the lead's rulings on `972893e`) with `origin/main` merged in (conflicts: `docs/PROGRESS.md`, regenerated with `npm run tasks -- --write`; `contract/SOURCE_COMMIT`, kept `bb10ef0` because the contract files carry this branch's events routes, which are not on backend main yet; the merged contract text was not regenerated against a single backend commit).
+
+- **U-H1.** `Services.tsx` packs the tiles present from the left in canvas order, each in a quarter of the row (size and spacing as drawn): today `[Events][ ][ ][ ]`. Legal (LEGAL-02) and Schools (SCHOOLS-03, where the canvas draws Shop) add theirs after it in canvas order; Pay bills stays off (R-42) and takes no slot. Recorded in the comment on `Services.tsx`.
+- **D11.** `TodayLoading` draws the services row's tiles (a 60 square at corner 19.2 over a 46 by 10 label bar, one per tile present, from `servicesPresent`) after the heading bar; its comment is corrected.
+- **D12.** `useExploreEvents` reads without retries and returns `settled`; `ExploreScreen` keeps X14 (hero block included) until the events read has settled as well as its own reads. A failed events read settles at once and Explore draws without event entries.
+- **D13.** `canvasNormalLineHeight` on Explore's hero kicker and line, the rail card title, Home's "Events" label and E1's featured kicker; the rail card's hairline is an inset overlay, so it adds nothing to the card's size. The hero name keeps its drawn 1.1 leading. Not measured at 2x against X1, H1, E1 with a ruler: NOT RUN (only the screenshots below were taken; the verifier measures).
+- **D14.** New `dateLine` in `format.ts` ("16 Mar 2031" when the event is not in the current year, in the event's zone): the Explore hero line and the rail cards' spoken labels use it.
+- **T4 specs** (cases added, no existing one changed): `exploreRoute.test.tsx` (N2, N3); in `screens.test.tsx` a held events read keeps X14 and the tiles draw once on the answer (D12), a failed read settles with creators drawn, no error and one call each (N5b), a New York featured event across a date boundary and a featured event that is not the first rail event (N6, N4), the year (D14); `HomeScreen.test.tsx` the tile is the only, first child of the row (N10) and one tile shape in H11; `format.test.ts` for `dateLine`.
+- **Mutants re-applied in the worktree and `git restore`d** (each failed): N2 (1 failed), N3 (1), N5b (`failed` OR-ed from the events hook: 2 failed), N6 (1), N4 (1), N10 (an empty column before the tile: 1), D12 (X14 not held: 1), D14 (year dropped: 2).
+- **Pictures** (390 px, 2x, light and dark, `npm run web` against Playwright's own routes; `scratchpad/events01k/shots/` beside `build/design_shots/`): H1, H11, X1, X15, X14 taken; I do not claim they match. H1 shows the Events tile in the first quarter under the heading.
+- `npm run check`: exit 0 (81 suites, 1459 tests, gates 0 findings, 249 tasks).
 
 ## Owner sign-off
 

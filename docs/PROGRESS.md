@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 105 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 58 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 
@@ -136,6 +136,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.
 - 8 Oct 2026 · EVENTS-01 · Verifier independent round 4 (lead): D7, D8, D9, D10, T3, V10, V11 all pass live (three browser zones identical) and by mutant; R-41 entries open the right screens and an events failure draws no error; new D11 (H11 has no services shapes), D12 (Explore jumps 216 pt when the event arrives), D13 (entry text line boxes, up to 9 pt), D14 (no year on Explore's date), T4 (6 of 20 own mutants survive: Explore route file, failure spec never reaches the failure); U-H1 Home services row for the lead; npm run check passed (80 suites, 1450 tests); status building.
 - 8 Oct 2026 · EVENTS-01 · Builder round 6: D7, D8 every events date in the event's zone (hero badge, tier Ended/Opens); D9 prices kept when a later call fails; D10 two-digit badge day; T3, V10 and screen specs added, each fails on the old code; R-41 entries added on main's hubs (H1/H36 Events tile, X1 featured event, Upcoming events rail and See all, X14 block); npm run check passed (80 suites, 1450 tests, gates 0 findings, baseline 0, 212 tasks); status verifying.
@@ -150,4 +151,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
 - 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
 - 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
-- 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
