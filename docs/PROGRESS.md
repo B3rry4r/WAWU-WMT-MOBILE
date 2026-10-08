@@ -9,17 +9,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 112 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 3 | 0 | 0 | 0 |
 | done | 61 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 
 ## Done
@@ -140,6 +137,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-21 · Verifier report (independent session, backend `301d56a`, mobile `5175272`): no open defect, status review. The coverage spec reads class and method guards as Nest runs them (its 458 routes are Nest's 458; 30 of 30 live answers on a built Hub signed in through wawu-id match the order it reads) and fails the verifier's two routes; the level check refuses REPEATABLE READ, SERIALIZABLE and READ UNCOMMITTED from the caller's own transaction, and 250 rounds of 2 and 10 movements at READ COMMITTED never pass a daily or monthly limit; live on the MONEY-17 trial a wrong level is a 500 naming nothing, nothing written. Protected 253/253, full suite 5,543 of 5,570 (only hub-rate-limits and fintava-stall, each green alone), 14 own mutants 10 killed. Findings: route shapes the spec cannot see (a dynamic module's controllers, a PIN guard subclass, class-level docs, global guards), 4 surviving mutants, and no lock without a transaction or with the service client passed as one (for the lead).
 - 8 Oct 2026 · FIX-21 · Builder report (backend 301d56a): the money-route coverage spec reads class and method guards as Nest runs them and counts any route with the PIN guard or a debit's own refusal as money-moving (the verifier's two routes fail it, pass once guarded); `assertMayMove` reads the transaction's isolation level and refuses anything but READ COMMITTED (50 rounds of 600 against a daily 1000 never both pass); protected 253/253; status verifying.
 - 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · LEGAL-03 · Verifier report, independent round 4 (lead), backend 1c48fb6 and merged main 6ce2ddf with real WAWU ID: N1 as ruled holds on both heads (88 foreign, look-alike and odd urls refused, foreign stored keys never signed, host read from the storage config, virtual-hosted too), T1 closed (S5 killed), `+01` names scheduledFor, web route byte-identical to main, 30 race rounds 0 double bookings, protected suite 253 of 253, 61 of 61 /legal answers identical, full suite in namespace chunks (4 suites fail only in the chunk, all pass alone), 26 mutants 21 killed (5 survivors judged); new defect N2: any client's own legal/document key can be delivered to and downloaded by another client; status left as on the branch for the lead to file the fix.
@@ -154,4 +152,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
 - 7 Oct 2026 · LEGAL-03 · Builder round 3: delivered files stored as keys and signed fresh for 15 minutes, file name and booking-zone rules, notification text without the matter, specs for M11 and M18, migration renamed `20261013100000`; status verifying.
 - 8 Oct 2026 · TIER-01 · Verified round 2 (backend 3e1dc15, mobile 2a5c93a): back to building for one low defect. D3: backend main moved to 6ce2ddf (LEGAL-03, `20261016160000_legal_consultations`), so the branch's `20261016120000_maker_plan` no longer sorts after main's newest migration; rename after a merge of main (a trial merge is clean, contract regenerates identically, prisma applies it either way). D1 and D2 fixed; N1, N2, N4, N5, N6 and item 9 hold (39 phone and country pairs live, 5 through the real WAWU ID); figures 81 of 81; 63 broken config files as expected; protected 253/253; full suite 4,738 passed with every failing file green on rerun (load and namespace only); 21 of 25 own mutants killed, the 4 survivors spec gaps.
-- 8 Oct 2026 · TIER-01 · Round 2 built (backend `wmt/TIER-01` with main 8d7a054 merged, mobile with main eb62049): D1 the three nullable fields of GET /me/tier are nullable in the contract and the app's types (src/plans in the enricher's allOf list, a spec on the generated contract); D2 a key written twice in plans.config.json stops boot naming it; N1 a phone with no country code is decided by the WAWU ID country claim; N2 every number in the plans answers is integer; N4 no-store on both routes; N5 numbers above INTEGER and a missing or extra action refused at boot; N6 a non-text phone is no phone; TIER-03 lead note; 26 of 26 mutants killed; status verifying.
