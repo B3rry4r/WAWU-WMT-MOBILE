@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 73 | 0 | 23 | 26 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 55 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 
@@ -133,6 +133,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
 - 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
@@ -147,4 +148,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01 · Verifier report round 3 (status review): D3 closed. Follow is MediaCard's shared `action`, and its 13 vs 13.5 label and Following ring are recorded under SHARED-03 item 6. T1 and T2 now killed. A Follow and an unfollow through the app read back from the Hub and the database. D1 and D2 still closed; the merge kept every row (HOME-09 F1 was a true duplicate). Mutants 23 of 25 killed; T3 and T4 are test gaps.
 - 7 Oct 2026 · HOME-01 · Builder round 3 (status verifying): Follow on creator cards is MediaCard's shared `action` (FollowButton deleted; the 13 label and ring left to SHARED-03); tests T1 (figure at 38) and T2 (own glow id) kill the verifier's two survivors.
 - 7 Oct 2026 · HOME-01 · Verifier report round 2 (status building): D1 and D2 closed; D3 partly closed. The creator card is now the shared MediaCard, but Follow is a redraw passed through `footer` where MediaCard's `action` slot was made for cCard's Follow. The Wallet tab is unchanged above the bar (W1, W4, W5, W6 pixel diff against main); FittedBalance fits ₦999,999,999.99 at 320; Home and Wallet share one cached answer. V9 re-run with the real WAWU ID. Mutants 20 of 22 killed (T1 and T2 are test gaps).
-- 7 Oct 2026 · HOME-01 · Builder round 2 (status verifying): D1 the eye at 70% (the Wallet tab's own eye), D2 a failed TGIF day read says so with Try again, D3 the creator card is the shared MediaCard (Follow through `footer`); the balance card reads and words its states as the Wallet tab does (shared reads, `homeView`, `stateWords`, `MoneyGround`, `FittedBalance`); TGIF and money-shadow tokens; SHARED-CHANGES HOME-01 #3.
