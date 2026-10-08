@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -524,6 +524,23 @@ Everything else asked of this round passed. Stack: mock-wawu-id (envelope added 
 - **Spec added:** "draws the gap before the featured card name as 4 and before the place line as 3, as the canvas does (D13-E1b)". With the margins removed in `parts.tsx` (scratch, restored) it fails; with them it passes. Events suites: 73 passed.
 - **NOT RUN:** the browser re-measure at 2x, light and dark, against `render_design.py E1`. The verifier measures it.
 - Merged origin/main (conflicts in `BACKEND_GAPS.md`, both sides kept; `docs/PROGRESS.md` regenerated).
+
+## Verifier report, round 9 (8 Oct 2026)
+
+**Verifier (fresh session; wrote none of it).** Mobile `wmt/EVENTS-01` at `314041a`, then origin/main `e1c975a` merged (`9719562`). Stack: `expo start --web` on 4390 from this worktree, Hub answered by Playwright routes (mock Hub, featured-event fixtures, no backend), Chromium 390 px at 2x, light and dark; E1 render from `render_design.py E1`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| (1) E1 featured card against the render, 2x, light and dark | passed | `design/_gen/events.js` `featured`: name `margin-top:4px`, place line `margin-top:3px`; `heroMetrics.nameGap` 4 and `lineGap` 3 equal them. DOM from the card top (css px): kicker 113 (14 high), name 131 (26), place line 160 (16), so 4 and 3 between them. Glyph rows from the card top (device px, app / render): kicker 233-247 / 233-247, name 273-301 / 273-301, place line 325-346 / 325-346. Identical in light and dark: 0 px off (D13-E1b closed). |
+| (2) New spec fails with the margins removed | passed | Both `marginTop`s removed from `heroName` and `heroLine` in `parts.tsx`: "draws the gap before the featured card name as 4 and before the place line as 3 (D13-E1b)" fails (expected 4, received undefined). `lineGap` set back to 4 (the old shared gap): fails (expected 3, received 4). `git restore` after each, tree clean |
+| (3) Round-9 diff | passed | `314041a` is a merge of `1abd4b1` and main's `c8928e3`; beyond main's content (LEGAL-03 task, `BACKEND_GAPS.md`, `SHARED-CHANGES.md`, LOG lines, PROGRESS) the builder changed only `parts.tsx` (`heroMetrics.nameGap`/`lineGap`, the two `marginTop`s, `gap` removed from the words block), the one spec in `eventsScreens.test.tsx`, its LOG line and `tasks/EVENTS-01.md` |
+| (4) Merge main, then `npm run check` | exit 0 | origin/main had moved (`e1c975a`: SHARED-04, FIX-24, POINTS-01, FIX-21). Merged, never rebased. Conflicts: `contract/SOURCE_COMMIT` and `docs/PROGRESS.md`. Contract kept as the branch's (`contract/`, `schema.generated.ts` from `bb10ef0`, as main's FIX-24 merge kept its own); PROGRESS and INDEX regenerated; `npm ci` for main's new packages. No conflict markers (`git grep` for `<<<<<<<`, `>>>>>>>`, `=======`). Check: typecheck, lint, 87 suites and 1521 tests, gates 9 run, 373 files, 0 findings, task check: exit 0 (main's FIX-22 failure is fixed on main) |
+| (5) Events, home and explore suites | passed | 9 suites, 153 tests |
+| Contract | passed | `contract/SOURCE_COMMIT` `bb10ef0` equals backend `wmt/EVENTS-01` head (`git ls-remote`: `bb10ef0a0c4f`). Note: backend main is now `9d90d57`, which the backend branch does not contain; the backend branch needs main merged before its PR 78 merges, and the mobile contract then follows it |
+
+**Defects:** none open.
+
+**Status:** no open defect, so `status: review`.
 
 ## Owner sign-off
 
