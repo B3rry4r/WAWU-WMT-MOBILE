@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 98 of 232.**
+**Launch tasks done: 104 of 236.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 112 | 0 | 20 | 21 |
+| todo | 110 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
-| done | 59 | 27 | 11 | 5 |
+| done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -121,7 +121,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
 - [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
+- [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
+- [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
+- [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
+- [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -151,5 +157,5 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
 - 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
 - 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
-- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
-- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
+- 8 Oct 2026 · SHARED-04 · SHARED-04 merged: native modules installed in one batch; the phone takes the wallet selfie, picks photos without location data, and copies. New preview build needed.
+- 8 Oct 2026 · FIX-24 · FIX-24 merged (backend PR #94, 9d90d57): delivered legal documents are the client's own or the legal team's only; LEGAL_DELIVERY_UPLOADER_IDS awaits the owner.

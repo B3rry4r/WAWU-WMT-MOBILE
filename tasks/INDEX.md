@@ -162,9 +162,13 @@ Builder and verifier are always different sessions.
 144. [SHARED-05](SHARED-05.md) The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch
 145. [SHARED-06](SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES
 146. [FIX-22](FIX-22.md) A profiling turn asks the model for one JSON object
-147. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-148. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-149. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+147. [FIX-23](FIX-23.md) The web sign-up keeps the phone's dial code, so the billing currency reads it right
+148. [FIX-24](FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded
+149. [FIX-25](FIX-25.md) A photo uploaded from the website or the app's web build carries no location
+150. [FIX-26](FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read
+151. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
+152. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+153. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
