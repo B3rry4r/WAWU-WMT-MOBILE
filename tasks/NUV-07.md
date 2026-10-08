@@ -297,7 +297,7 @@ actions are required (findings 1 and 2) and the coverage spec has two holes (fin
 - `WALLET_PROVIDER=nuvion` on this branch alone: it cannot boot (MONEY-20's reserved message, seen); run here only on a local trial merge with NUV-01. Unblocked on the branch itself when NUV-01 is on backend main.
 - The full suite as one in-band process: run as three serial shards (memory), as the builder did.
 
-## Lead merge note (7 Oct 2026)
+## Lead merge note (8 Oct 2026)
 
 Merged after the independent verifier (report 329014a) and backend PR #87 (merge 8d7a054): fees per provider and limits as settings; under nuvion nothing moves until all three fees are set; limits per transaction, Lagos day and Lagos month, before any provider call. Fintava byte-identical over 5,880 inputs. The lead merged main and applied SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) before the PR. Carried forward: G-411's one-line change in nuvionLimitError (below 500 only) when NUV-01 merges; G-410 must name READ COMMITTED; the coverage spec misses class-level guards (money-moving tasks add a check).
 
