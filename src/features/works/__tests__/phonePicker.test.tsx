@@ -269,6 +269,16 @@ describe('M36 on the phone: the photo library (expo-image-picker)', () => {
     expect(heard).toEqual([['image', 'video']]);
   });
 
+  it('D1: a 0-byte video is not added: it is counted, and nothing is sent', async () => {
+    mockFiles = { 'file:///picker/empty.mp4': new Uint8Array(0) };
+    mockLibrary = [{ uri: 'file:///picker/empty.mp4', type: 'video', mimeType: 'video/mp4', width: 1, height: 1 }];
+    await boot();
+    await fireEvent.press(screen.getByTestId('work-add-media'));
+    expect(await screen.findByText("1 video couldn't be added. Try it again or choose another.")).toBeTruthy();
+    expect(presignBodies()).toHaveLength(0);
+    expect(screen.queryByTestId('work-media-previews')).toBeNull();
+  });
+
   it('D1: a photo library that fails is said plainly in the box; a cancel stays silent', async () => {
     mockLibrary = 'throw';
     await expect(pickMedia()).rejects.toThrow('picker unavailable');

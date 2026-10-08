@@ -7,7 +7,7 @@ order: 226
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V2, V4, V5, V6, V7, V10]
@@ -343,6 +343,140 @@ The "every photo as a JPEG" part of the ruling's implementation: disagree for tr
 - **The APK's merged manifest** (no Android SDK or Gradle here). Unblocked by `bundletool dump manifest` on that build, or Play Console's App bundle explorer.
 - **expo-doctor's schema and React Native Directory checks**, and the online `expo install --check`. They need exp.host, reactnative.directory and api.expo.dev, which this task may not call. Unblocked by running them where those hosts are allowed.
 - **iOS** (RELEASE-03).
+
+## Lead rulings after the verifier (8 Oct 2026)
+
+On mobile `wmt/SHARED-04` c26d229 ("Verifier report"), as the lead sent them:
+
+1. D1: a cancel stays silent, but a picker that throws, or a photo the encoder cannot read (0-byte, corrupt), says so plainly: on M8 a short message ("We couldn't open that photo. Try another one."), on M36 the box says how many could not be added ("1 photo couldn't be added. Try it again or choose another."). Your decision 4 is withdrawn. Use the shared toast or the screen's existing error line; no new component. The verifier's V-M6, V-M7, V-M8 become passing specs.
+2. D2: keep transparency. PNG stays PNG and WebP stays WebP (re-encoded with expo-image-manipulator in the same format, which still drops Exif and GPS); JPEG, HEIC and HEIF become JPEG at 0.9; a GIF becomes PNG (first frame). Spec: an RGBA PNG goes up as PNG with no metadata chunk (eXIf, tEXt with GPS) and its alpha intact.
+3. T1: add the verifier's selfie boundary specs to the task's own specs (copy from the evidence folder /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vsh04/; never edit the originals) so the five boundary mutants die in our suite.
+4. F1: the phone's end-of-image check must match the server's rule exactly (read it in wawu-backend main); a JPEG with a second JPEG appended must be refused on the phone too.
+5. F3: delete the leftover cache path and M8/M36's re-encoded copies after upload (success or failure).
+6. Block SYSTEM_ALERT_WINDOW and AD_ID in release through android.blockedPermissions (debug may keep the first, as the verifier showed). Confirm with a scratch prebuild that both carry tools:node="remove".
+7. Docs: DATA-SAFETY.md CL-01 (calendar), section 5 (Firebase's permissions after the blocks), PLAY-LISTING B5 to match. The iOS camera string stays as is (EVENTS-09 updates it when it scans tickets; note it in SHARED-CHANGES).
+8. F2 and F4 stay as notes for V10.
+
+## Builder report, round 2
+
+Same builder (the lead's agent), 8 Oct 2026, on `wmt/SHARED-04` from c26d229 with `origin/main` d85492b merged in (only the generated `docs/PROGRESS.md` conflicted: taken from main and regenerated). Fresh worktree with its own `npm ci`. Code commit 6c1e286. Evidence `$E` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bsh04/`.
+
+**1. D1, a failure is said; a cancel is not.**
+- `pickImage.ts` (phone) resolves null for a cancel only. A library that throws, and a photo the encoder cannot read or that reads as 0 bytes (`PickFailed`, `readPicked.ts`), now reject.
+- M8 (`EditProfileScreen.choose`) catches that and puts "We couldn't open that photo. Try another one." (`PICK_FAILED`, `failure.ts`) in the screen's existing banner (`edit-banner`).
+- `pickMedia.ts` (phone) leaves an unreadable file out and tells `onUnreadable` the kind of each one; a library that fails rejects.
+- M36 (`AddWorkScreen.add`) puts the count in the box's existing pick notice: "1 photo couldn't be added. Try it again or choose another." (`mediaUnreadable`, `form.ts`; "2 photos ... Try them again or choose others.", "video" or "file" when that is what failed). It comes before the "A work can carry up to 8" sentence when both apply. A library that fails says "We couldn't open your photo library. Try again." (`MEDIA_LIBRARY_FAILED`; no ruling gave M36 a sentence for this case, written in the canvas's tone).
+- No new component. The web files (`.web.ts`) are unchanged: they never fail that way, and `pickMedia.web.ts` ignores the callback.
+- Decision 4 of round 1 is withdrawn.
+- Specs:
+  - V-M7: the library fails on M8, and the banner says so.
+  - V-M8: a 0-byte photo and a corrupt one on M8, and the banner says so.
+  - V-M6: three picked with the middle one corrupt; two go up and the notice says one could not be added.
+  - Also: a 0-byte video, the count's wording by kind, M36's library failure, and a cancel that stays silent on both screens.
+
+**2. D2, transparency kept** (`readPicked.ts` `rewriteFor`):
+
+| Picked type | Written as | Goes up as |
+|---|---|---|
+| PNG | PNG (lossless) | `image/png` |
+| WebP | WebP at 0.9 | `image/webp` |
+| GIF | PNG of its first frame | `image/png` |
+| JPEG, HEIC, HEIF, or an unnamed type | JPEG at 0.9 | `image/jpeg` |
+
+- Every photo is still written again by the encoder, so no Exif, eXIf or text chunk travels with it.
+- Spec (`profile-edit/__tests__/phonePicker.test.tsx`): a 2 x 2 RGBA logo with real CRCs carries an `eXIf` chunk with a GPS pointer and a `tEXt` "GPS" chunk.
+- The encoder is modelled as Android's PNG writer: the signature and the critical chunks only.
+- The upload is checked to be `image/png`, with chunks IHDR, IDAT and IEND only, and no "eXIf", "tEXt" or "GPS" anywhere. IHDR is colour type 6, and the inflated pixels equal the source's, with the transparent pixel still at alpha 0 and the half-transparent one at 0x80.
+
+**3. T1, the verifier's selfie specs in our suite.** `open-wallet/__tests__/selfieLimits.test.tsx` is a copy of `vsh04/specs/zzVerifierSelfie.test.tsx` (the original untouched) with three changes:
+- Its fixture JPEGs are ones the server's walk accepts, because the phone now walks them.
+- V-S7 now expects the appended JPEG to be refused (F1), and the same first JPEG alone to be sent.
+- V-S13 is not copied, because it read the verifier's encoder samples from outside the repo. Instead I ran those 22 real samples (20 libjpeg, 2 Chromium) once against the new walk: the phone's verdict equals the server's for every one (`$E/agree-pil-samples.json.txt`, `$E/agree-web-selfies.json.txt`).
+
+18 specs (V-S1 to V-S12, V-P1 to V-P6). The five boundary mutants now die in the task's own specs:
+
+| Verifier mutant | Killed by |
+|---|---|
+| V1, `<` for `<=` 100,000 | V-S1 |
+| V2, 0.4 dropped | V-S3 |
+| V3, 0.25 added | V-S3 |
+| V7, `>=` 2,048 | V-S4 |
+| V8, a 900-byte minimum | V-S5 |
+
+**4. F1, the server's rule exactly.**
+- `selfie/encoding.ts` now holds wawu-backend main 657a152's `isJpeg`, `sofIsSane` and `sosIsSane` (`src/money/identity/selfie-image.ts`), ported line for line, as `isServerJpeg`. `isWholeJpeg` is that walk over `base64Bytes`, a full decoder that takes padding only at the very end, as the server's regex and length check do.
+- A JPEG with a second JPEG appended is refused, as are bytes after EOI, a cut-off file, a stray marker in a scan, a frame over 2,048 px or of 0 px, a missing or second frame, and a bad scan header.
+- Stuffed `FF 00`, restart markers and a progressive file's between-scan tables are taken (`selfieEncoding.test.ts`, 9 specs).
+
+**5. F3, no copy left.**
+- **The selfie.** `encodeSelfie` lists the manipulator's cache folder (`<cache>/ImageManipulator/`, the same on Android and iOS) before it starts. When it ends, it deletes any file written meanwhile, which covers a file the encoder wrote before failing, whose address never reached the app. Spec: a save that writes and then throws leaves the cache empty. The helpers are in `src/features/media/manipulatorCache.ts`.
+- **M8 and M36.**
+  - `readPicked` gives each photo a `discard` that deletes the app's copy. `uploadPicture` and `uploadWorkFile` call it in `finally`, so once the upload settles, whether it worked or not. A retry sends the bytes already in memory.
+  - A file beyond the 8 a work can carry is discarded at once.
+  - The library's own copy of a photo, which still holds its Exif, is deleted as soon as it has been written again, but only when it sits in the app's cache (`Paths.cache`); a file of the phone's own is never touched. A video's library copy in the app cache goes after its upload.
+  - Because M8 shows its preview only after the upload, on the phone the preview is now the uploaded picture's own address (`fileUrl`). The web build, which has no `discard`, keeps its local preview.
+  - M36's thumbnails are drawn as each pick is added. expo-image reloads only when the address changes, so a drawn thumbnail stays after its file goes; one that had not loaded yet falls back to M36's existing placeholder. V10 checks this.
+
+**6. The two blocks.** `android.blockedPermissions` adds `android.permission.SYSTEM_ALERT_WINDOW` and `com.google.android.gms.permission.AD_ID`. A scratch `npx expo prebuild -p android --no-install` (deleted after) writes both into the main manifest with `tools:node="remove"`; the template's debug manifest still declares `SYSTEM_ALERT_WINDOW` for development builds (`$E/manifest-r2-perms.txt`, `$E/manifest-r2-debug-perms.txt`, `$E/AndroidManifest-r2.xml`).
+
+**7. Docs.**
+- `DATA-SAFETY.md` CL-01: the calendar is installed, permissions removed, add through the phone's own calendar screen, write-only on iOS.
+- Section 5: Firebase's `WAKE_LOCK` and `c2dm.permission.RECEIVE` (normal); `SYSTEM_ALERT_WINDOW` and `AD_ID` removed; the removed list confirmed in a scratch prebuild.
+- `PLAY-LISTING.md`: B5, Advertising ID and Photo and video permissions rows match.
+- SHARED-CHANGES:
+  - 8 and KYC-03 #1 carry round 2. The iOS camera string stays the selfie's wording; EVENTS-09 updates it when it scans tickets.
+  - ME-06 #1 and ME-11 #1 read `applied (SHARED-04, 41e35ee, 6224f24, 6c1e286)` with D1, D2 and F3.
+
+**8. F2 and F4** stay notes for V10, below.
+
+**Checks.**
+- **Specs this round:** `selfieEncoding` 9 (rewritten), `selfieLimits` 18 (new), `selfieCapture` 14 (+1, F3), M8 `phonePicker` 8 (rewritten), M36 `phonePicker` 8 (rewritten).
+- **`npm run check`:** CHECK_R2.
+- **Web unchanged:** the branch re-exported (`npx expo export -p web --clear`, private `TMPDIR`), served on :5802 against my stand-in Hub on :5803, Playwright Chromium at 390 px. A6 (through A26 and A5), A8, M8 and M36, light and dark: **all 8 pixel-identical** to main's (`$E/shots/round2-*.png` against `$E/shots/base-*.png`). 0 requests left 127.0.0.1, and no native module name is in the bundle.
+- **Typecheck and lint:** clean.
+- **Secret scan:** no key-shaped string. No em-dash added.
+
+**Mutants: 21 run** (`$E/mutants-r2.json`; each applied, 10 spec files run, `git restore`, the file checked clean).
+- **The verifier's five boundary mutants:** V1, V2, V3, V7 and V8 are all killed by `selfieLimits`.
+- **16 on round 2: 15 killed, 1 equivalent.**
+
+| Mutant | Tests failed |
+|---|---|
+| R1, M8 silent on a failed pick | 2 |
+| R2, M36 silent when the library fails | 1 |
+| R3, unreadable files not reported | 2 |
+| R4, a 0-byte file taken | 1, killed by the 0-byte video spec, added after it first survived |
+| R5, PNG as JPEG | 2 |
+| R6, WebP as JPEG | 2 |
+| R7, GIF as JPEG | 2 |
+| R8, bytes after EOI taken | 5 |
+| R9, the frame side unchecked | 1 |
+| R11, the selfie sweep removed | 1 |
+| R12, M36's copy kept | 2 |
+| R13, M8's copy kept | 2 |
+| R14, the library copy with Exif kept | 1 |
+| R15, M8 previewing the deleted copy | 1 |
+| R16, the copies beyond the limit kept | 1 |
+
+- **Equivalent:** R10, a stray marker in a scan making the inner loop `break` instead of `return false`. The outer loop then refuses every marker except the between-scan ones and SOS, which are exactly the ones the inner loop breaks on, so the server's own second check is redundant.
+
+**Decisions (Default (agent), owner may override).**
+1. M36's sentence when the library itself fails, and the count's "video" and "file" wording (only the photo sentence was given).
+2. On the phone, M8 previews the uploaded picture once its copy is deleted.
+3. The library's own copy of a photo, which holds its Exif, is deleted from the app's cache once the photo has been written again.
+4. A 0-byte file, photo or video, counts as unreadable.
+5. A WebP is written at 0.9 (lossy, alpha kept); a PNG is lossless.
+6. V-S13 checked once against the verifier's samples rather than committed, because the samples live outside the repo.
+
+**NOT RUN.**
+- **V10 and the merged APK manifest:** no device here, and no EAS command may run in this task. Unblocked by the lead's preview build of merged main (`eas build -p android --profile preview`; `bundletool dump manifest` for the merged manifest). On it:
+  - the banner and notice on real failures (a HEIC the phone cannot decode, a cloud photo not downloaded);
+  - a transparent PNG staying transparent through Android's encoder;
+  - M36's thumbnails after their copies go;
+  - M8's preview loading the uploaded picture.
+- **F2:** no fallback below quality 0.4; only pure noise is still over 100,000 characters there. Check on the phone.
+- **F4:** the full-resolution decode has no out-of-memory retry. Check on a low-end phone.
+- **iOS:** RELEASE-03.
 
 ## Owner sign-off
 

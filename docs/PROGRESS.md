@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 61 | 27 | 11 | 5 |
 
@@ -18,7 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 
@@ -140,6 +140,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · SHARED-04 · Builder report, round 2 (lead rulings after the verifier): M8 and M36 say a failed pick plainly (a cancel stays silent), PNG and WebP keep their format and transparency, the selfie walks the JPEG as the server does (an appended JPEG is refused), the verifier's boundary specs are in the suite, copies are deleted once uploads settle, SYSTEM_ALERT_WINDOW and AD_ID removed from the release manifest. 21 mutants: 20 killed, 1 equivalent. Status verifying.
 - 8 Oct 2026 · SHARED-04 · Verifier report (independent, 0b4f3e6): status back to building, two defects on the pickers. D1: on M8 and M36 a picker error or a picked photo that cannot be read is silent (nothing on screen; M36 drops the file without a word). D2: a transparent PNG is written as a JPEG and loses its transparency. A6 holds every server limit at its boundary (100,000 characters, 2,048 px, 1 KB, end marker; real Skia and libjpeg bytes pass the backend walk), A8 copies, web build pixel- and byte-identical to main (16 pairs), prebuild resolves every plugin, expo-doctor 19 of 21 offline (schema and directory checks NOT RUN: network), fingerprint changes; 16 own mutants, 14 killed, 2 equivalent.
 - 8 Oct 2026 · SHARED-04 · Builder update (lead ruling): on the phone every picked photo for M8 and M36 goes up written again as a JPEG at 0.9 and its picked size, so no Exif block or GPS travels with it; videos go as chosen; the web build is the lead's separate task. Spec with a GPS-tagged fixture, 4 mutants killed. Status verifying.
 - 8 Oct 2026 · SHARED-04 · Builder report: the native module batch installed in one go (13 modules, a QR renderer, expo-file-system, expo-asset, four expo patch bumps) with their plugins; A6 takes the selfie with the front camera (640 px JPEG under 100,000 characters, nothing after its end), M8 and M36 open the photo library, A8 copies with expo-clipboard; expo-doctor 21 of 21, web build pixel-identical to main, `npm run check` exit 0. Status verifying.
@@ -154,4 +155,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
 - 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
 - 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
-- 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
