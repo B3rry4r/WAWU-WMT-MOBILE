@@ -20,6 +20,12 @@ jest.mock('expo-secure-store', () => ({
   }),
 }));
 jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+// The phone's camera modules (SHARED-04). Every test here hands A6 its own capture, so these only keep jest away from the
+// native side: the camera, its permission and the encoder are driven in selfieCapture.test.tsx.
+const mockCameraPermission = [null, jest.fn(), jest.fn()];
+jest.mock('expo-camera', () => ({ CameraView: () => null, useCameraPermissions: () => mockCameraPermission }));
+jest.mock('expo-image-manipulator', () => ({ ImageManipulator: { manipulate: jest.fn() }, SaveFormat: { JPEG: 'jpeg' } }));
+jest.mock('expo-file-system', () => ({ File: jest.fn() }));
 
 type Reply = { status: number; body: unknown; headers?: Record<string, string> };
 type Answer = Reply | 'offline' | 'hold' | { gate: Promise<void>; then: Reply };

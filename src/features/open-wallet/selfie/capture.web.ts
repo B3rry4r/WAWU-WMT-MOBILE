@@ -2,6 +2,7 @@ import { SELFIE_MAX_BASE64_CHARS } from '@/api/walletIdentity';
 
 import { isSendableSelfie } from '../api/opening';
 
+import { SELFIE_LONGEST_SIDE as LONGEST_SIDE, SELFIE_QUALITIES as QUALITIES } from './encoding';
 import type { CaptureResult, SelfieCapture } from './types';
 
 /**
@@ -15,11 +16,6 @@ import type { CaptureResult, SelfieCapture } from './types';
  * (the server refuses such files). Only the re-encoded copy is sent; the
  * picked file is dropped as is. The base64 lives in the returned value only.
  */
-
-/** The longest side of the re-encoded selfie, in pixels: far inside the server's 2,048, and enough for a face. */
-const LONGEST_SIDE = 640;
-/** JPEG qualities tried in turn until the capture fits `SELFIE_MAX_BASE64_CHARS`. */
-const QUALITIES = [0.85, 0.7, 0.55, 0.4] as const;
 
 function pickPhoto(): Promise<File | null> {
   return new Promise((resolve) => {
