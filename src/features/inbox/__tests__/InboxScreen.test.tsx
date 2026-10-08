@@ -6,7 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { InboxItem } from '../api';
 import type { InboxRowRenderers } from '../rows';
 
-jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
   setItemAsync: jest.fn(async () => undefined),
@@ -93,6 +94,7 @@ afterEach(async () => {
 beforeEach(() => {
   answers = { 'GET /inbox/unread': unreadAnswer };
   sent = [];
+  mockPush.mockClear();
   queryClient.clear();
 });
 
@@ -107,11 +109,11 @@ describe('the inbox screen', () => {
     expect(rtl.screen.queryByText('No messages yet')).toBeNull();
   });
 
-  it('shows only the chips whose screens exist', async () => {
+  it('shows only the chips whose screens exist: All and Communities', async () => {
     answers[FIRST] = [pageOf([row('chat:1')])];
     await renderScreen(testRows);
     await rtl.screen.findByTestId('row-chat:1');
-    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All']);
+    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities']);
   });
 
   it('a user with no messages sees "No messages yet" and the guidance', async () => {
@@ -216,5 +218,101 @@ describe('the inbox screen', () => {
       await queryClient.invalidateQueries({ queryKey: inboxKey });
     });
     await rtl.screen.findByTestId('row-chat:new');
+  });
+
+  describe('communities in the inbox (INBOX-05)', () => {
+    const community = (id: string, over: Partial<InboxItem> = {}): InboxItem =>
+      row(`community:${id}`, {
+        kind: 'community',
+        chat: null,
+        unreadCount: 2,
+        preview: { text: 'who’s at the meetup Sat?', attachment: null, mine: false, senderName: 'Tolu Balogun', sentAt: '2026-10-07T10:00:00Z' },
+        community: { communityId: id, name: 'Lagos Freelancers', imageUrl: null, kind: 'open', role: 'member' },
+        ...over,
+      });
+    const noRooms: Answer = { status: 200, body: { statusCode: 200, message: 'OK', data: [], pagination: { currentPage: 1, nextPage: null, perPage: 20, total: 0 } } };
+
+    it('a user sees a community in the list: its name, who spoke last, and what is unread', async () => {
+      answers[FIRST] = [pageOf([community('r1')])];
+      await renderScreen();
+      const rowNode = await rtl.screen.findByTestId('row-community:r1');
+      expect(rtl.screen.getByText('Lagos Freelancers')).toBeTruthy();
+      expect(rtl.screen.getByText('Tolu: who’s at the meetup Sat?')).toBeTruthy();
+      expect(rtl.screen.getByText('2')).toBeTruthy();
+      expect(rowNode.props.accessibilityLabel).toMatch(/Lagos Freelancers.*2 unread/);
+    });
+
+    it('a user can tap a community row and open its room', async () => {
+      answers[FIRST] = [pageOf([community('r1')])];
+      await renderScreen();
+      await rtl.fireEvent.press(await rtl.screen.findByTestId('row-community:r1'));
+      expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/[id]', params: { id: 'r1' } });
+    });
+
+    it('a user with chats and no community sees the title and the chips and nothing else: chat rows are drawn by another task', async () => {
+      answers[FIRST] = [pageOf([row('chat:1'), row('chat:2')])];
+      await renderScreen();
+      await rtl.screen.findByRole('header', { name: 'Inbox' });
+      await settle();
+      expect(rtl.screen.queryAllByTestId(/^row-/)).toEqual([]);
+      expect(rtl.screen.queryByText('No messages yet')).toBeNull();
+      expect(rtl.screen.queryByTestId('inbox-error')).toBeNull();
+      expect(rtl.screen.getAllByRole('radio')).toHaveLength(2);
+    });
+
+    it('keeps reading pages until a row it can draw appears, when the first pages hold only rows nobody draws yet', async () => {
+      answers[FIRST] = [pageOf([row('chat:1')], 'cur2')];
+      answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([row('chat:2')], 'cur3')];
+      answers['GET /inbox?limit=20&cursor=cur3'] = [pageOf([community('r9')])];
+      await renderScreen();
+      expect(await rtl.screen.findByTestId('row-community:r9')).toBeTruthy();
+      expect(sent.filter((s) => s.startsWith('GET /inbox?'))).toEqual([FIRST, 'GET /inbox?limit=20&cursor=cur2', 'GET /inbox?limit=20&cursor=cur3']);
+    });
+
+    it('reads the next page at the end of the list now that rows are drawn, with the cursor exactly as given', async () => {
+      answers[FIRST] = [pageOf([community('r1')], 'next-cursor')];
+      answers['GET /inbox?limit=20&cursor=next-cursor'] = [pageOf([community('r2'), community('r1')])];
+      await renderScreen();
+      await rtl.screen.findByTestId('row-community:r1');
+      await rtl.fireEvent(rtl.screen.getByTestId('inbox-list'), 'endReached');
+      await rtl.screen.findByTestId('row-community:r2');
+      expect(ids()).toEqual(['row-community:r1', 'row-community:r2']);
+    });
+
+    it('the Communities chip opens the communities view, and All brings the inbox back', async () => {
+      answers[FIRST] = [pageOf([community('r1')])];
+      answers['GET /communities/mine?page=1&perPage=20'] = [noRooms];
+      answers['GET /communities?page=1&perPage=20'] = [noRooms];
+      answers['GET /credits'] = [ok({ userWawuId: 'me', creditBalance: 48, trialEndsAt: null })];
+      answers['GET /users/me'] = [ok({ wawuUserId: 'me', firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null })];
+      await renderScreen();
+      await rtl.screen.findByTestId('row-community:r1');
+      await rtl.fireEvent.press(rtl.screen.getByRole('radio', { name: 'Communities' }));
+      expect(await rtl.screen.findByTestId('communities-view')).toBeTruthy();
+      expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
+      expect(rtl.screen.getByRole('radio', { name: 'Communities' }).props.accessibilityState.checked).toBe(true);
+      expect(rtl.screen.queryByTestId('inbox-list')).toBeNull();
+      await rtl.fireEvent.press(rtl.screen.getByRole('radio', { name: 'All' }));
+      expect(await rtl.screen.findByTestId('row-community:r1')).toBeTruthy();
+    });
+
+    it('a user with an empty inbox can Browse communities, which opens the Communities chip', async () => {
+      answers[FIRST] = [pageOf([])];
+      answers['GET /communities/mine?page=1&perPage=20'] = [noRooms];
+      answers['GET /communities?page=1&perPage=20'] = [noRooms];
+      answers['GET /credits'] = [ok({ userWawuId: 'me', creditBalance: 0, trialEndsAt: null })];
+      answers['GET /users/me'] = [ok({ wawuUserId: 'me', firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null })];
+      await renderScreen();
+      await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Browse communities' }));
+      expect(await rtl.screen.findByTestId('communities-view')).toBeTruthy();
+      expect(rtl.screen.getByRole('radio', { name: 'Communities' }).props.accessibilityState.checked).toBe(true);
+    });
+
+    it('the Browse communities button is not drawn while the inbox is loading, failed, or has rows', async () => {
+      answers[FIRST] = ['hold'];
+      await renderScreen();
+      await rtl.screen.findByTestId('inbox-loading');
+      expect(rtl.screen.queryByRole('button', { name: 'Browse communities' })).toBeNull();
+    });
   });
 });

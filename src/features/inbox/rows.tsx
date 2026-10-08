@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 
+import { CommunityInboxRow } from '@/features/communities/CommunityInboxRow';
+
 import type { InboxItem, InboxKind } from './api';
 
 /**
@@ -12,7 +14,9 @@ import type { InboxItem, InboxKind } from './api';
 export type InboxRowRenderer = (item: InboxItem) => ReactElement;
 export type InboxRowRenderers = Partial<Record<InboxKind, InboxRowRenderer>>;
 
-export const inboxRowRenderers: InboxRowRenderers = {};
+export const inboxRowRenderers: InboxRowRenderers = {
+  community: (item) => <CommunityInboxRow item={item} />,
+};
 
 /** The rows of `items` that have a renderer, in the server's order. */
 export function drawableRows(items: readonly InboxItem[], renderers: InboxRowRenderers): InboxItem[] {
