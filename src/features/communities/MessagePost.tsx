@@ -74,10 +74,12 @@ export type OutgoingPostProps = {
   isHost: boolean;
   onRetry: () => void;
   onDiscard: () => void;
+  /** Puts the words back in the field to be changed. Offered when sending them again cannot work. */
+  onEdit: () => void;
 };
 
 /** What the person just sent, until the server answers: the same post, quieter while it is on its way, and with its reason and a way on when it was refused. */
-export function OutgoingPost({ entry, sender, isHost, onRetry, onDiscard }: OutgoingPostProps) {
+export function OutgoingPost({ entry, sender, isHost, onRetry, onDiscard, onEdit }: OutgoingPostProps) {
   const name = sender?.name || sender?.handle || 'You';
   const failed = entry.status === 'failed';
   return (
@@ -100,7 +102,11 @@ export function OutgoingPost({ entry, sender, isHost, onRetry, onDiscard }: Outg
               {entry.error}
             </Text>
             <View style={styles.actions}>
-              <Button label="Send again" variant="secondary" size="sm" onPress={onRetry} testID={`outgoing-${entry.localId}-retry`} />
+              {entry.needsEdit ? (
+                <Button label="Edit" variant="secondary" size="sm" onPress={onEdit} testID={`outgoing-${entry.localId}-edit`} />
+              ) : (
+                <Button label="Send again" variant="secondary" size="sm" onPress={onRetry} testID={`outgoing-${entry.localId}-retry`} />
+              )}
               <Button label="Remove" variant="outline" size="sm" onPress={onDiscard} testID={`outgoing-${entry.localId}-discard`} />
             </View>
           </View>

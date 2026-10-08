@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useIsFocused, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
@@ -46,6 +46,16 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
   const mineDone = mine.isSuccess && !mine.hasNextPage;
   const suggested = useSuggestedCommunities(mineDone, joinedIds);
   const join = useJoinCommunity();
+  const focused = useIsFocused();
+
+  // The balance is read again whenever the person comes back to this view, and whenever they retry the list: a balance that
+  // failed once must not stay failed while everything else recovers.
+  const readBalance = useCallback(() => queryClient.invalidateQueries({ queryKey: creditsKey }), []);
+  const wasFocused = useRef(focused);
+  useEffect(() => {
+    if (focused && !wasFocused.current) void readBalance();
+    wasFocused.current = focused;
+  }, [focused, readBalance]);
   const [pulled, setPulled] = useState(false);
 
   const joining = join.isPending ? join.variables : undefined;
@@ -190,7 +200,10 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
               title="Couldn’t load communities"
               message={isApiError(mine.error) ? mine.error.message : 'Something went wrong. Try again.'}
               icon={isApiError(mine.error) && mine.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
-              onRetry={() => void mine.refetch()}
+              onRetry={() => {
+                void readBalance();
+                void mine.refetch();
+              }}
             />
           ) : state === 'empty' ? (
             <EmptyState
@@ -210,7 +223,10 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
           ) : suggestionsFailed ? (
             <View style={styles.footer} testID="communities-suggested-error">
               <Text variant="secondary">Couldn’t load suggestions.</Text>
-              <Button label="Try again" variant="secondary" size="sm" onPress={() => void suggested.refetch()} />
+              <Button label="Try again" variant="secondary" size="sm" onPress={() => {
+                void readBalance();
+                void suggested.refetch();
+              }} />
             </View>
           ) : fetchingMore || (mineDone && suggested.isPending) ? (
             <CommunitiesSkeleton rows={2} testID="communities-loading-more" />

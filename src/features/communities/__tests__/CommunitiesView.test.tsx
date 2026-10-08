@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+import type React from 'react';
 import * as rtl from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
+let mockFocused = true;
+jest.mock('expo-router', () => ({ useIsFocused: () => mockFocused, useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
   setItemAsync: jest.fn(async () => undefined),
@@ -71,6 +73,7 @@ const MINE = 'GET /communities/mine?page=1&perPage=20';
 const ALL = 'GET /communities?page=1&perPage=20';
 
 beforeEach(() => {
+  mockFocused = true;
   sent = [];
   mockPush.mockClear();
   queryClient.clear();
@@ -309,4 +312,35 @@ describe('Communities (I24)', () => {
     const title = await rtl.screen.findByText(name);
     expect(title.props.numberOfLines).toBe(1);
   });
+});
+
+describe('the balance recovers (verifier defect)', () => {
+  const boom = refuse(500, 'Something went wrong.');
+  const wrap = (node: React.ReactElement) => (
+    <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}>{node}</SafeAreaProvider>
+  );
+
+  it('a balance that failed is read again when the person comes back to the view', async () => {
+    answers['GET /credits'] = [boom, boom, boom, ok({ userWawuId: ME, creditBalance: 48, trialEndsAt: null })];
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[ALL] = [paged([])];
+    const view = await renderView();
+    expect(await rtl.screen.findByText('Your balance could not be read', {}, { timeout: 8000 })).toBeTruthy();
+    mockFocused = false;
+    await view.rerender(wrap(<CommunitiesView />));
+    mockFocused = true;
+    await view.rerender(wrap(<CommunitiesView />));
+    expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
+  }, 20_000);
+
+  it('a balance that failed is read again when the list\'s Try again succeeds', async () => {
+    answers['GET /credits'] = [boom, boom, boom, ok({ userWawuId: ME, creditBalance: 48, trialEndsAt: null })];
+    answers[MINE] = [boom, boom, boom, paged([mine('r1', 'Lagos Freelancers')])];
+    answers[ALL] = [paged([])];
+    await renderView();
+    await rtl.screen.findByTestId('communities-error', {}, { timeout: 8000 });
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    expect(await rtl.screen.findByText('Lagos Freelancers')).toBeTruthy();
+    expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
+  }, 20_000);
 });

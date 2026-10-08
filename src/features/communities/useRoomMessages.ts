@@ -28,6 +28,8 @@ export type OutgoingMessage = {
   error?: string;
   /** The server said the person has no credits left (402). */
   outOfCredits?: boolean;
+  /** The server refused the words themselves (too long, or empty): sending them again cannot work, they need editing. */
+  needsEdit?: boolean;
   /** The request got no usable answer, so the message may have been stored anyway. */
   uncertain?: boolean;
   /** The ids of the room's messages the phone held when it tried, so a retry can tell whether this one landed. */
@@ -39,6 +41,8 @@ const READ_MARK_COALESCE_MS = 300;
 /** The server's refusal for a person who is not in the room (403) or a room hidden from them (404). */
 const NOT_A_MEMBER = 403;
 const OUT_OF_CREDITS = 402;
+/** The validator's own words for a message past the limit; the screen says it in plain language instead. */
+const TOO_LONG = /shorter than or equal to \d+ characters/i;
 
 /** The person's own profile: who "me" is, and how their own sent messages read until the server echoes them. */
 export function useMe() {
@@ -190,14 +194,17 @@ export function useRoomMessages(id: string, looking: boolean) {
         const refused = isApiError(error) ? error : null;
         const outOfCredits = refused?.status === OUT_OF_CREDITS;
         const uncertain = !refused || refused.kind === 'network' || refused.kind === 'server';
+        const needsEdit = refused?.kind === 'validation';
+        const reason = needsEdit && TOO_LONG.test(refused?.message ?? '') ? 'That message is too long. Shorten it and send it again.' : refused?.message;
         setOutgoing((held) =>
           held.map((candidate) =>
             candidate.localId === entry.localId
               ? {
                   ...candidate,
                   status: 'failed',
-                  error: refused?.message ?? 'Something went wrong. Try again.',
+                  error: reason ?? 'Something went wrong. Try again.',
                   outOfCredits,
+                  needsEdit,
                   uncertain,
                 }
               : candidate,

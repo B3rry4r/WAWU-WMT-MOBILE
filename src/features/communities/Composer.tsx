@@ -43,17 +43,25 @@ export type ComposerProps = {
   /** A message is on its way: Send waits, and a second press does nothing. */
   busy?: boolean;
   placeholder?: string;
+  /** Words to put in the field (a message the person wants to change). A new `id` puts them there again. */
+  draft?: { id: number; text: string };
   testID?: string;
 };
 
 /** I25's field and I26's Send: type, then press Send. The cost on the button is left out until the API serves it (BACKEND_GAPS.md). */
-export function Composer({ onSend, busy, placeholder = 'Message', testID = 'composer' }: ComposerProps) {
+export function Composer({ onSend, busy, placeholder = 'Message', draft, testID = 'composer' }: ComposerProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const insets = useSafeAreaInsets();
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
   const input = useRef<TextInput>(null);
+  const [takenDraft, setTakenDraft] = useState(draft?.id);
+  // A draft handed down is taken once, during render, so the field shows it at once.
+  if (draft && draft.id !== takenDraft) {
+    setTakenDraft(draft.id);
+    setValue(draft.text);
+  }
   const hasWords = value.trim().length > 0;
   const canSend = hasWords && !busy;
 

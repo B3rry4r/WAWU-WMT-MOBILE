@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useIsFocused } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
+import { useSession } from '@/api/session';
 import { Button, IconButton } from '@/components/Button';
 import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -73,12 +74,58 @@ export type RoomScreenProps = {
  * at a time. A person who is not in the room sees what it is and, for an open one, a Join button.
  */
 export function RoomScreen({ id, onBack }: RoomScreenProps) {
+  const { status } = useSession();
+  if (status === 'signedOut') return <SignInPrompt onBack={onBack} />;
+  if (status === 'restoring') {
+    return (
+      <View style={styles.root}>
+        <RoomSkeleton />
+      </View>
+    );
+  }
+  return <SignedInRoom id={id} onBack={onBack} />;
+}
+
+/** A room opened by someone who is signed out (a link, a saved screen): asked to sign in, never shown the server's refusal. */
+function SignInPrompt({ onBack }: { onBack: () => void }) {
+  const router = useRouter();
+  const { colors } = useWawu();
+  const insets = useSafeAreaInsets();
+  return (
+    <View testID="room-signed-out" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+      <View style={styles.plainBar}>
+        <IconButton icon="ChevronLeft" label="Back" onPress={onBack} size={roomBarBack} testID="room-back" />
+      </View>
+      <View style={styles.center}>
+        <EmptyState
+          icon="Lock"
+          title="Sign in to open this community"
+          message="Communities open once you are signed in."
+          action={{ label: 'Sign in', onPress: () => router.push('/sign-in') }}
+        />
+      </View>
+    </View>
+  );
+}
+
+function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
   const room = useQuery({ queryKey: roomKey(id), queryFn: () => fetchCommunity(id) }, queryClient);
   const credits = useCredits();
   const messages = useRoomMessages(id, focused);
+  const [draft, setDraft] = useState<{ id: number; text: string } | undefined>(undefined);
+  const edit = (localId: string) => {
+    const entry = messages.outgoing.find((candidate) => candidate.localId === localId);
+    if (!entry) return;
+    setDraft({ id: (draft?.id ?? 0) + 1, text: entry.text });
+    messages.discard(localId);
+  };
+  const retryAll = () => {
+    void room.refetch();
+    void messages.refetch();
+  };
 
   const notMember = isApiError(messages.error) && messages.error.status === 403;
   const hidden = (isApiError(room.error) && room.error.status === 404) || (isApiError(messages.error) && messages.error.status === 404);
@@ -119,7 +166,7 @@ export function RoomScreen({ id, onBack }: RoomScreenProps) {
           title="Couldn’t open this community"
           message={isApiError(room.error) ? room.error.message : 'Something went wrong. Try again.'}
           icon={isApiError(room.error) && room.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
-          onRetry={() => void room.refetch()}
+          onRetry={retryAll}
         />
       </View>
     );
@@ -133,12 +180,12 @@ export function RoomScreen({ id, onBack }: RoomScreenProps) {
           title="Couldn’t load the messages"
           message={isApiError(messages.error) ? messages.error.message : 'Something went wrong. Try again.'}
           icon={isApiError(messages.error) && messages.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
-          onRetry={() => void messages.refetch()}
+          onRetry={retryAll}
         />
       </View>
     );
   } else {
-    body = <Thread room={room.data} messages={messages} />;
+    body = <Thread room={room.data} messages={messages} onEdit={edit} />;
   }
 
   const showComposer = !hidden && !notMember && !room.isPending && !(room.isError && !room.data) && !messages.isPending && !(messages.isError && !messages.data);
@@ -151,14 +198,14 @@ export function RoomScreen({ id, onBack }: RoomScreenProps) {
     >
       {header}
       <View style={styles.body}>{body}</View>
-      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
     </KeyboardAvoidingView>
   );
 }
 
 const roomBarBack = 40;
 
-function Thread({ room, messages }: { room: Community | undefined; messages: ReturnType<typeof useRoomMessages> }) {
+function Thread({ room, messages, onEdit }: { room: Community | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void }) {
   const { colors } = useWawu();
   const list = useRef<FlatList<Item>>(null);
   const [atBottom, setAtBottom] = useState(true);
@@ -213,12 +260,13 @@ function Thread({ room, messages }: { room: Community | undefined; messages: Ret
             isHost={room !== undefined && messages.me?.wawuId === room.hostWawuId}
             onRetry={() => messages.retry(item.entry.localId)}
             onDiscard={() => messages.discard(item.entry.localId)}
+            onEdit={() => onEdit(item.entry.localId)}
           />
         );
       }
       return <MessagePost message={item.message} sender={null} isHost={room !== undefined && item.message.senderWawuId === room.hostWawuId} />;
     },
-    [room, messages],
+    [room, messages, onEdit],
   );
 
   if (messages.items.length === 0 && messages.outgoing.length === 0 && !hasNextPage) {

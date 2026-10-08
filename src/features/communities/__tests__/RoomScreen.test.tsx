@@ -10,7 +10,8 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async (key: string, value: string) => void mockVault.set(key, value)),
   deleteItemAsync: jest.fn(async (key: string) => void mockVault.delete(key)),
 }));
-jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush }) }));
 
 /* A test double of the transport only: the socket the phone would open. The client, the session and the requests are real. */
 class FakeSocket {
@@ -124,7 +125,8 @@ function serve(extra: Record<string, Answer[]> = {}) {
 }
 
 const back = jest.fn();
-async function renderRoom() {
+async function renderRoom(signedIn = true) {
+  if (signedIn) await adoptSession({ accessToken: token, refreshToken: 'r' });
   return rtl.render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}>
       <RoomScreen id={ROOM} onBack={back} />
@@ -159,6 +161,7 @@ beforeEach(() => {
   counter = 0;
   FakeSocket.all = [];
   back.mockClear();
+  mockPush.mockClear();
   queryClient.clear();
   resetSessionForTests();
   mockVault.clear();
@@ -426,11 +429,11 @@ describe('sending (I26)', () => {
     await renderRoom();
     await rtl.screen.findByText('hello');
     await type('please send me');
-    answers[`POST /communities/${ROOM}/messages`] = [refuse(400, 'A message needs something in it.'), created(message('please send me', ME))];
+    answers[`POST /communities/${ROOM}/messages`] = [refuse(429, 'Too many messages. Slow down.'), created(message('please send me', ME))];
     await pressSend();
     expect(await rtl.screen.findByText('Not sent')).toBeTruthy();
     expect(rtl.screen.getByText('please send me')).toBeTruthy();
-    expect(rtl.screen.getByText('A message needs something in it.')).toBeTruthy();
+    expect(rtl.screen.getByText('Too many messages. Slow down.')).toBeTruthy();
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send again' }));
     await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
     expect(rtl.screen.getByText('please send me')).toBeTruthy();
@@ -603,7 +606,6 @@ describe('when something goes wrong', () => {
 describe('live messages', () => {
   async function openLive(first: CommunityMessage[]) {
     answers[MESSAGES] = [paged(first)];
-    await adoptSession({ accessToken: token, refreshToken: 'r' });
     release = retainLive();
     await renderRoom();
     await rtl.screen.findByTestId('room-messages').catch(() => undefined);
@@ -679,5 +681,44 @@ describe('live messages', () => {
     await rtl.act(async () => socket.say(liveMessage(message('right here', 'u2'), 'c1')));
     expect(await rtl.screen.findByText('right here')).toBeTruthy();
     expect(rtl.screen.queryByTestId('room-new-messages')).toBeNull();
+  });
+});
+
+describe('defects found by the verifier', () => {
+  it('one tap on Try again recovers a room that failed to open together with its messages', async () => {
+    const boom = refuse(500, 'Something went wrong. Please try again.');
+    answers[`GET /communities/${ROOM}`] = [boom, boom, boom, ok(room())];
+    answers[MESSAGES] = [boom, boom, boom, paged([message('all back', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByTestId('room-error', {}, { timeout: 8000 });
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    expect(await rtl.screen.findByText('all back')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('room-messages-error')).toBeNull();
+  }, 20_000);
+
+  it('a signed-out visit asks the person to sign in, shows no server word, and asks the server nothing', async () => {
+    await renderRoom(false);
+    expect(await rtl.screen.findByTestId('room-signed-out')).toBeTruthy();
+    expect(rtl.screen.getByText('Sign in to open this community')).toBeTruthy();
+    expect(rtl.screen.queryByText(/unauthorized/i)).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Sign in' }));
+    expect(mockPush).toHaveBeenCalledWith('/sign-in');
+    expect(sent.filter((request) => request.includes('/communities'))).toEqual([]);
+  });
+
+  it('a message past the limit says so in plain words, offers Edit and not Send again, and Edit puts the words back in the field', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await type('a very long message');
+    answers[`POST /communities/${ROOM}/messages`] = [refuse(400, 'text must be shorter than or equal to 2000 characters')];
+    await pressSend();
+    expect(await rtl.screen.findByText('That message is too long. Shorten it and send it again.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/shorter than or equal/)).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'Send again' })).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Edit' }));
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('composer-input').props.value).toBe('a very long message'));
+    expect(rtl.screen.queryByText('Not sent')).toBeNull();
   });
 });
