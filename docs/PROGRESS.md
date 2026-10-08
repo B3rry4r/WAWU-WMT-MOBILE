@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 75 | 0 | 23 | 26 |
+| todo | 74 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 54 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 
 ## Done
 
@@ -128,6 +132,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
 - 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
@@ -142,4 +147,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SHARED-03 · New task (lead, order 184; tasks from 184 move down one): one shared toast, the All chip's padding, a MediaCard placeholder, two test gaps and the flaky Z3 settings test, from the hub checks.
 - 7 Oct 2026 · EXPLORE-01 · Merged: the Explore tab (categories, featured creators with Follow, category pages with paging); one shared-toast follow-up in SHARED-03.
 - 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.
-- 7 Oct 2026 · EXPLORE-01 · Round 2: shared FilterChips and MediaCard replace the local chips and card (D1, D2), Follow pending per creator (D3), refused Follow rolls back with a short line, blank categories tested; status verifying.
