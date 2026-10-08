@@ -7,7 +7,7 @@ order: 199
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [MONEY-04]
 decisions: [R-43, R-44, R-21]
 passes: [V1, V2, V3, V4, V9]
@@ -326,5 +326,103 @@ files 128/128 alone (`v1-mobile-check.log`, `v1-mobile-rerun2.log`). With this r
 - The purchase path itself (TIER-03 writes `MakerTier`, `EventPass` and calls `fixAtFirstPurchase`; nothing in
   `src/` calls them yet). Unblocked when `grep -rn fixAtFirstPurchase src --include=*.ts | grep -v tests` names a
   purchase service on backend main.
+
+## Lead rulings after the verifier (8 Oct 2026)
+
+Build round 2 on backend `wmt/TIER-01` `a0900cd` (the lead mounted `PlansModule`, SHARED-CHANGES TIER-01 #1) and
+mobile `6a26f95` (the lead synced the contract, `db4f999`), with backend origin/main `8d7a054` and mobile origin/main
+`eb62049` merged in first (merge, never rebase); then status `verifying`.
+
+Defects:
+1. **D1.** Add `src/plans` to `NULLABLE_REF_AS_ALLOF_DIRS` in `scripts/enrich-contract.js`, run `contract:build`, then
+   copy the branch's contract into mobile `contract/openapi.json` and run `python3 scripts/api/sync_contract.py`
+   without `--backend` (that flag copies backend main). The mobile types for `MyTierView.tier`, `MyTierView.eventPass`
+   and `MyTierSummaryView.badge` must be nullable; add a spec that fails if any is non-null in the generated contract.
+2. **D2.** Boot refuses `plans.config.json` with a repeated key anywhere, naming the key and its path (parse with a
+   duplicate-key check, not plain `JSON.parse`).
+
+Rulings on the findings:
+3. **N1.** When the phone has no country code, use the WAWU ID `country` claim to break the tie; only a +234 number or
+   a Nigerian `country` gives NGN without a naira wallet. Spec the United States sign-up case.
+4. **N2.** `priceMinor` and every count are `integer` in the contract.
+5. **N4.** Both routes send `Cache-Control: no-store`.
+6. **N5.** Boot refuses values the INTEGER columns cannot hold, and an `action_points` table missing any action.
+7. **N6.** A non-string phone claim is treated as no phone, never a 500.
+8. **N3 and N7** are for TIER-03: a short "Lead note (8 Oct 2026)" in `tasks/TIER-03.md` (stay at READ COMMITTED or
+   retry P2034; never write the two states N7 names).
+9. Kill the verifier's two surviving mutants with a spec that seeds a still-named tier whose figures differ from the
+   config.
+10. **Merge order:** TIER-01 merges first of the payment set (its migration stamp is the earliest of them).
+
+## Builder report, round 2
+
+Builder, 8 Oct 2026. Backend `wmt/TIER-01` `3e1dc15`: the lead's `a0900cd` with origin/main `8d7a054` merged in
+(`7ed239e`, no conflict), then `9c5e91f` (the fixes) and `3e1dc15` (`docs/contract/PLANS.md`). Mobile `wmt/TIER-01`:
+`6a26f95` with origin/main `eb62049` merged in (`2c902ef`; conflicts in `BACKEND_GAPS.md` and `SHARED-CHANGES.md` kept
+both sides, `contract/SOURCE_COMMIT` and the generated `docs/PROGRESS.md` regenerated), then this round.
+
+**Defects**
+- **D1, fixed.** `src/plans` is in `NULLABLE_REF_AS_ALLOF_DIRS` (`scripts/enrich-contract.js`); `npm run contract:build`
+  writes `MyTierView.tier`, `MyTierView.eventPass` and `MyTierSummaryView.badge` as `{ allOf: [{ $ref }], nullable:
+  true }`. Mobile: the branch's `contract/openapi.json` copied in, `SOURCE_COMMIT` `wmt/TIER-01@3e1dc15`,
+  `python3 scripts/api/sync_contract.py` without `--backend`: `src/api/schema.generated.ts` now reads
+  `tier: components["schemas"]["MyTierSummaryView"] | null`, `eventPass: ...PlanEventPassView | null` and
+  `badge: ...PlanBadgeView | null`. New `src/plans/tests/plans-contract-shape.spec.ts` (5) reads the generated
+  contract and fails if any of the three is not `allOf` + `nullable` (M25 below).
+- **D2, fixed.** `loadPlansConfig` runs `repeatedKey(text)` after `JSON.parse`: a key written twice in one object,
+  anywhere, stops boot naming it (`plans.config.json: tiers[0].price.kobo is written twice. Fix the file and
+  restart.`); keys are compared as JSON decodes them (`"hold_days"` is `hold_days`). Specs: five repeated-key
+  files (a price, a top-level key, a key in a list item, another spelling, a whole section) and the scanner on its
+  own. Live, the built server with the verifier's own edit (`"kobo": 100000, "kobo": 1`) exits 1 with that message.
+
+**Rulings**
+- **N1.** `BillingCurrencyService` takes the token's `phone` and `country` (`BillingClaims`). Order: the fixed
+  currency; a naira wallet; the phone's country code (`+234`, `00234`, or `234` and ten digits is NGN; any other
+  `+` or `00` code is USD); a phone with no country code, no phone, or a `phone` that is not text is decided by
+  `country` (`Nigeria`, `NG`, `NGA`, any case, trimmed, is NGN; anything else or nothing is USD). So only a naira
+  wallet, a +234 number or a Nigerian country gives NGN. Spec: 15 phone and country pairs, and the United States web
+  sign-up `(803) 555-0100` with `United States` billed in USD (cents prices). Live on :5652: the same sign-up `USD
+  [300, 900, 1500]`; `08031234567` with `Nigeria` NGN; `+2348031234567` with `United States` NGN; `+14155550100`
+  with `Nigeria` USD. `fixAtFirstPurchase` takes `{ wawuUserId, phone, country, purchaseRef }`.
+- **N2.** A new `WHOLE_NUMBER_DIRS` in the enricher (only `src/plans`): every number of the plans schemas is
+  `integer` (`priceMinor`, points, counts, days, the percent); the shape spec fails on any `number` left.
+- **N4.** `@Header('Cache-Control', 'no-store')` on both routes; spec and live (both answer `no-store`).
+- **N5.** Every whole number in the file is at most 2,147,483,647 (`INT4_MAX`, the most an INTEGER column holds):
+  `tiers[2].products must be at most 2147483647, the most a whole-number column holds (it is 2147483648)`;
+  `action_points` must price exactly the brief's twelve actions (`PLAN_ACTIONS`): one left out is `is missing`, one
+  added is `is not a known field`. A file whose top is not an object now names `(the file)`, not an empty field.
+- **N6.** A `phone` claim that is a number, a list, an object or null is no phone: the country decides, 200 every
+  time (spec, and live for a number and a list).
+- **N3 and N7.** "Lead note (8 Oct 2026)" added to `tasks/TIER-03.md`; `docs/contract/PLANS.md` says the same.
+- **Item 9.** New spec: a tier the config still names, bought with other figures (products + 2, points + 7, one
+  extra, the Voice Intro flag flipped), answers the bought figures on `GET /me/tier` and from `tierOf`; it kills the
+  verifier's two survivors (M23, M24 below).
+
+**Mutants** (each applied, specs run, `git restore`d, tree clean after each; 26 of 26 failed a spec, none by a
+compile error): the 12 of round 1 re-applied to the new code (M1 to M12), and 14 new: M13 the repeated-key check
+skipped; M14 keys compared as written; M15 a local number read as Nigerian (the old rule); M16 the country ignored;
+M17 the country outranking the phone's code; M18 a non-text phone reaching `.trim()`; M19 numbers above INTEGER
+accepted; M20 `action_points` free to drop or add actions; M21 and M22 each route without `no-store`; M23 and M24
+the verifier's V17 and V18 (products and points read from the config while it names the tier); M25 `src/plans` out
+of `NULLABLE_REF_AS_ALLOF_DIRS` and M26 the integer rule off (each regenerated with `contract:emit` and
+`contract:enrich`, which reproduce the committed contract byte for byte, then the shape spec).
+
+**Checks.** tsc 0; eslint on every changed `.ts` file 0. Plans specs 4 + 1 files, 96/96 (config 43, figures 5,
+writers 3, HTTP 40, contract shape 5). Gates: 16 fail, the same 16 lines as main `8d7a054`; warnings 58 to 62, the
+four new ones the same `PROVISIONAL(...)` markers at `src/plans/plans-config.ts:30-33`; 76 accepted; files 908 to
+921. Tripwire on added lines: empty (both repos). Secret scan of the staged diffs: nothing. `npm run contract:build`:
+only the plans' 8 schemas and the 2 operations' summaries change; no other schema or path (SHARED-CHANGES TIER-01 #4).
+Protected suite `run.sh --fresh HEAD` (code `3e1dc15`, lock origin/main `8d7a054`, no lock file changed): 253 passed, 244 of 244 required. Full suite in my own network namespace (copies of `ns2.sh`/`inner2.sh`, own :4001, fresh migrated and seeded `bt01_full_test`, code `3e1dc15`, one in-band run): 193 of 195 files, 4923 passed, 4 skipped, 12 failed: 11 in `hub-rate-limits.contract.spec.ts` (needs a non-loopback interface; 22/22 on the host network) and 1 in the timing test `receipt-units` (357 ms against 300 at a load average near 11; 43/43 alone). Neither touches a file this task changed. Live on the built server (:5652, the stand-in WAWU ID on :5651): the phone and country cases above, a number and a list as `phone` both 200, both routes `no-store`, and the repeated-key file exiting 1. Mobile `npm run check` exit 0 (typecheck with the regenerated types, lint 0, jest 1377/1377 in 76 files, gates 0 fail on 346 files, 249 tasks and 279 artboards).
+
+**Merge order (item 10).** Backend and mobile both carry their mains (`8d7a054`, `eb62049`); the migration stamp
+`20261016120000` still sorts after every folder on backend main (latest `20261015100000`), so TIER-01 can merge
+first of the payment set.
+
+**NOT RUN**
+- The plans routes under `WALLET_PROVIDER=nuvion`: main and this branch both stop at boot under nuvion until NUV-01
+  merges. Unblocked when `WALLET_PROVIDER=nuvion` boots the built server to `GET /api/hub/health` 200.
+- The purchase path (TIER-03 writes `MakerTier`, `EventPass` and calls `fixAtFirstPurchase`). Unblocked when
+  `grep -rn fixAtFirstPurchase src --include=*.ts | grep -v tests` names a purchase service on backend main.
+- No (key) checks: this task calls no provider.
 
 ## Owner sign-off

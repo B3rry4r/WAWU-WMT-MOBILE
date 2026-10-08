@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 105 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 58 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 
@@ -136,6 +136,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · TIER-01 · Round 2 built (backend `wmt/TIER-01` with main 8d7a054 merged, mobile with main eb62049): D1 the three nullable fields of GET /me/tier are nullable in the contract and the app's types (src/plans in the enricher's allOf list, a spec on the generated contract); D2 a key written twice in plans.config.json stops boot naming it; N1 a phone with no country code is decided by the WAWU ID country claim; N2 every number in the plans answers is integer; N4 no-store on both routes; N5 numbers above INTEGER and a missing or extra action refused at boot; N6 a non-text phone is no phone; TIER-03 lead note; 26 of 26 mutants killed; status verifying.
 - 8 Oct 2026 · TIER-01 · Verified (backend a0900cd, mobile db4f999): back to building with two defects. D1: GET /me/tier's contract types `tier`, `eventPass` and the tier's `badge` as never null (a `$ref` with a `nullable` sibling; `src/plans` is missing from the enricher's nullable-ref folders), so the app's generated MyTierView is wrong for a person with no tier. D2: a key written twice in plans.config.json boots and serves the last value (Verify at 1 kobo). Figures equal the brief (77 of 77); 58 of 64 broken files refused naming the field; currency rule, insert-only fix, states and isolation proved live through the real WAWU ID; protected 253/253; full suite 4,800 passed, the 14 failures timing or namespace-only; 22 of 24 mutants killed.
 - 8 Oct 2026 · TIER-01 · Lead applied SHARED-CHANGES TIER-01 #1 (PlansModule mounted, backend a0900cd) and #3 (contract and types from the branch), so the verifier checks the served routes.
 - 8 Oct 2026 · TIER-01 · Built (backend `wmt/TIER-01`): every price, product count, points amount, expiry, cost and cap of the 5 Oct plan in one file, `src/plans/plans.config.json` (the owner's example values in kobo and cents, four PROVISIONAL markers), checked whole at boot; a person's billing currency fixed at the first purchase and never changed by a route; `MakerTier` and `EventPass` with one reader; `GET /plans` in the caller's currency only and `GET /me/tier` (none, active, ending, ended). Mounting `PlansModule` is SHARED-CHANGES TIER-01 #1; gaps G-420, G-421; status verifying.
@@ -150,4 +151,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
-- 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
