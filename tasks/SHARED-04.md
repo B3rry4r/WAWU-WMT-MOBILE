@@ -359,7 +359,7 @@ On mobile `wmt/SHARED-04` c26d229 ("Verifier report"), as the lead sent them:
 
 ## Builder report, round 2
 
-Same builder (the lead's agent), 8 Oct 2026, on `wmt/SHARED-04` from c26d229 with `origin/main` d85492b merged in (only the generated `docs/PROGRESS.md` conflicted: taken from main and regenerated). Fresh worktree with its own `npm ci`. Code commit 6c1e286. Evidence `$E` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bsh04/`.
+Same builder (the lead's agent), 8 Oct 2026, on `wmt/SHARED-04` from c26d229, with `origin/main` d85492b and then d1549cb merged in (each time only the generated `docs/PROGRESS.md` conflicted: taken from main and regenerated). Fresh worktree with its own `npm ci`. Code commit 6c1e286. Evidence `$E` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/bsh04/`.
 
 **1. D1, a failure is said; a cancel is not.**
 - `pickImage.ts` (phone) resolves null for a cancel only. A library that throws, and a photo the encoder cannot read or that reads as 0 bytes (`PickFailed`, `readPicked.ts`), now reject.
@@ -431,7 +431,7 @@ Same builder (the lead's agent), 8 Oct 2026, on `wmt/SHARED-04` from c26d229 wit
 
 **Checks.**
 - **Specs this round:** `selfieEncoding` 9 (rewritten), `selfieLimits` 18 (new), `selfieCapture` 14 (+1, F3), M8 `phonePicker` 8 (rewritten), M36 `phonePicker` 8 (rewritten).
-- **`npm run check`:** CHECK_R2.
+- **`npm run check`:** exit 0 on the branch with main d1549cb merged in (`$E/check-r3.log`, load about 12 on 4 cores): typecheck and lint clean, 82 suites and 1,437 tests passed, gates 9 run on 355 files with 0 fail, 0 warn, 0 accepted, 262 tasks.
 - **Web unchanged:** the branch re-exported (`npx expo export -p web --clear`, private `TMPDIR`), served on :5802 against my stand-in Hub on :5803, Playwright Chromium at 390 px. A6 (through A26 and A5), A8, M8 and M36, light and dark: **all 8 pixel-identical** to main's (`$E/shots/round2-*.png` against `$E/shots/base-*.png`). 0 requests left 127.0.0.1, and no native module name is in the bundle.
 - **Typecheck and lint:** clean.
 - **Secret scan:** no key-shaped string. No em-dash added.
