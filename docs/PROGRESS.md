@@ -3,7 +3,7 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 100 of 235.**
+**Launch tasks done: 101 of 236.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | building | 0 | 0 | 0 | 0 |
 | verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
-| done | 61 | 27 | 11 | 5 |
+| done | 62 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -124,6 +124,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
+- [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -144,14 +145,14 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · SHARED-04 · Verifier report (independent, 0b4f3e6): status back to building, two defects on the pickers. D1: on M8 and M36 a picker error or a picked photo that cannot be read is silent (nothing on screen; M36 drops the file without a word). D2: a transparent PNG is written as a JPEG and loses its transparency. A6 holds every server limit at its boundary (100,000 characters, 2,048 px, 1 KB, end marker; real Skia and libjpeg bytes pass the backend walk), A8 copies, web build pixel- and byte-identical to main (16 pairs), prebuild resolves every plugin, expo-doctor 19 of 21 offline (schema and directory checks NOT RUN: network), fingerprint changes; 16 own mutants, 14 killed, 2 equivalent.
 - 8 Oct 2026 · SHARED-04 · Builder update (lead ruling): on the phone every picked photo for M8 and M36 goes up written again as a JPEG at 0.9 and its picked size, so no Exif block or GPS travels with it; videos go as chosen; the web build is the lead's separate task. Spec with a GPS-tagged fixture, 4 mutants killed. Status verifying.
 - 8 Oct 2026 · SHARED-04 · Builder report: the native module batch installed in one go (13 modules, a QR renderer, expo-file-system, expo-asset, four expo patch bumps) with their plugins; A6 takes the selfie with the front camera (640 px JPEG under 100,000 characters, nothing after its end), M8 and M36 open the photo library, A8 copies with expo-clipboard; expo-doctor 21 of 21, web build pixel-identical to main, `npm run check` exit 0. Status verifying.
+- 8 Oct 2026 · FIX-21 · FIX-21 merged (backend PR #92, 283aa8c): money-route checks read class-level guards; the limits lock refuses anything but READ COMMITTED.
+- 8 Oct 2026 · FIX-26 · Lead filed FIX-21 verifier findings F1 to F3: the limits lock must always run inside a real transaction, and the money-route coverage spec pins what it reads. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
+- 8 Oct 2026 · FIX-21 · Verifier report (independent session, backend `301d56a`, mobile `5175272`): no open defect, status review. The coverage spec reads class and method guards as Nest runs them (its 458 routes are Nest's 458; 30 of 30 live answers on a built Hub signed in through wawu-id match the order it reads) and fails the verifier's two routes; the level check refuses REPEATABLE READ, SERIALIZABLE and READ UNCOMMITTED from the caller's own transaction, and 250 rounds of 2 and 10 movements at READ COMMITTED never pass a daily or monthly limit; live on the MONEY-17 trial a wrong level is a 500 naming nothing, nothing written. Protected 253/253, full suite 5,543 of 5,570 (only hub-rate-limits and fintava-stall, each green alone), 14 own mutants 10 killed. Findings: route shapes the spec cannot see (a dynamic module's controllers, a PIN guard subclass, class-level docs, global guards), 4 surviving mutants, and no lock without a transaction or with the service client passed as one (for the lead).
+- 8 Oct 2026 · FIX-21 · Builder report (backend 301d56a): the money-route coverage spec reads class and method guards as Nest runs them and counts any route with the PIN guard or a debit's own refusal as money-moving (the verifier's two routes fail it, pass once guarded); `assertMayMove` reads the transaction's isolation level and refuses anything but READ COMMITTED (50 rounds of 600 against a daily 1000 never both pass); protected 253/253; status verifying.
 - 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · LEGAL-03 · Verifier report, independent round 4 (lead), backend 1c48fb6 and merged main 6ce2ddf with real WAWU ID: N1 as ruled holds on both heads (88 foreign, look-alike and odd urls refused, foreign stored keys never signed, host read from the storage config, virtual-hosted too), T1 closed (S5 killed), `+01` names scheduledFor, web route byte-identical to main, 30 race rounds 0 double bookings, protected suite 253 of 253, 61 of 61 /legal answers identical, full suite in namespace chunks (4 suites fail only in the chunk, all pass alone), 26 mutants 21 killed (5 survivors judged); new defect N2: any client's own legal/document key can be delivered to and downloaded by another client; status left as on the branch for the lead to file the fix.
 - 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
 - 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
-- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
-- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
-- 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
-- 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
