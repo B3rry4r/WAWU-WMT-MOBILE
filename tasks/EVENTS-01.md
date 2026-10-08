@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -492,6 +492,14 @@ Built on `3093521` (the lead's rulings on `972893e`) with `origin/main` merged i
 Everything else asked of this round passed. Stack: mock-wawu-id (envelope added by a test-only response wrapper in Playwright, since the mock answers without the real service's `data` envelope); the web build was `expo start --web`. Databases dropped, servers stopped.
 
 **Status:** one open defect (D13-E1), so `status: building`.
+
+## Builder report, round 8 (8 Oct 2026)
+
+**Builder.** Branch `wmt/EVENTS-01`, merged with `origin/main` first (generated `docs/PROGRESS.md` and `tasks/INDEX.md` regenerated, `SHARED-CHANGES.md` conflict kept both sides' rows).
+
+- **D13-E1 fixed.** `src/features/events/parts.tsx`: the featured card's name (`heroName`) and place line (`heroLine`) now use `canvasNormalLineHeight` (26 for the 20 name, 16 for the 12.5 line); the kicker was already on 14. Nothing else touched.
+- **Spec.** `eventsScreens.test.tsx`, "draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)": asserts the three line heights. Run against the old `parts.tsx` in place it fails (expected 26, received 21.75); with the fix it passes.
+- **NOT RUN:** the live 2x pixel re-measure against `render_design.py E1` (light and dark). The line boxes now equal the canvas values the verifier measured for the other screens (14, 26, 16); the verifier is to measure. I do not claim the screens match.
 
 ## Owner sign-off
 

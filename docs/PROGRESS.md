@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 59 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 
@@ -137,6 +137,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
 - 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.
@@ -151,4 +152,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · SHARED-04 to SHARED-07, FIX-22 · Lead filed the shared-change pass the audit found missing: 35 rows had no owner. SHARED-04 installs the native modules in one batch and turns on the wallet selfie, photo pickers and copy on the phone (today nobody can open a wallet on a phone); SHARED-07 the phone player, reader and share picture; SHARED-05 the route graph and the theme at launch; SHARED-06 the shared components, tokens and API client; FIX-22 the AI response schema. CHECK-2 and later move down by 5.
 - 8 Oct 2026 · SHARED-CHANGES · Lead audit of rows still marked open for done tasks: 27 applied, 0 done elsewhere, 5 still owed (owned), 35 with no owner.
 - 8 Oct 2026 · FIX-11 · FIX-11 merged (backend PR #88, 8359057): the legal thread's opener is written once and a failing provider stops being called.
-- 8 Oct 2026 · FIX-18 to FIX-21 · Lead filed the verifiers' findings outside their tasks: three small 500s (wallet history paging, a repeated export token, a gone socket in the trust-proxy check), control characters in school names, webhook deliveries kept forever, and the money-route checks missing class-level guards and the isolation level. FIX-16 also covers the web's apply form for a taken-down field. CHECK-2, CHECK-3 and later move down by 4.

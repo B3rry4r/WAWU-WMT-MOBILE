@@ -294,6 +294,6 @@ const styles = StyleSheet.create({
     bottom: heroMetrics.wordsBottom,
     gap: heroMetrics.stack,
   },
-  heroName: { fontSize: heroMetrics.name },
-  heroLine: { fontSize: heroMetrics.line, opacity: heroMetrics.lineOpacity },
+  heroName: { fontSize: heroMetrics.name, lineHeight: canvasNormalLineHeight(heroMetrics.name) },
+  heroLine: { fontSize: heroMetrics.line, lineHeight: canvasNormalLineHeight(heroMetrics.line), opacity: heroMetrics.lineOpacity },
 });
