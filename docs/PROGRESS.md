@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 93 of 187.**
+**Launch tasks done: 93 of 196.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 65 | 0 | 23 | 26 |
+| todo | 75 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -128,6 +128,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
 - 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
 - 7 Oct 2026 · SHARED-03 · Built: one shared `Toast` (ME-06's and Explore's copies deleted), chips beside icon chips at 11/14 (X3's All), `MediaCard` initials for a creator with no photo, THE creator-card Follow (`Button` `card` and `veil`, Explore on `action`), Z3 made deterministic (20 of 20), T3, T4 and R2-5 covered; 15 of 15 mutants killed; 148 picture pairs against main, 132 identical, 16 differ only by items 2, 3 and 6; `npm run check` 0 (76 suites, 1377 tests). Status verifying.
@@ -142,4 +143,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EXPLORE-01 · Merged: the Explore tab (categories, featured creators with Follow, category pages with paging); one shared-toast follow-up in SHARED-03.
 - 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.
 - 7 Oct 2026 · EXPLORE-01 · Round 2: shared FilterChips and MediaCard replace the local chips and card (D1, D2), Follow pending per creator (D3), refused Follow rolls back with a short line, blank categories tested; status verifying.
-- 7 Oct 2026 · EXPLORE-01 · Verified round 1 (independent verifier, real WAWU ID fb8717e, Hub 3041887): V4, V6, V9 and R-41 passed, X15 confirmed not built, 11 of 12 mutants killed; 3 low defects open (CategoryChips forks FilterChips and CreatorCard redraws MediaCard, VERIFIER check 2, neither caught by the forks gate; a pending Follow drops Follow taps on every other card); status building.

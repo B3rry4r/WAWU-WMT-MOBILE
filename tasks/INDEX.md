@@ -110,8 +110,17 @@ Builder and verifier are always different sessions.
 92. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
 93. [SHARED-03](SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder)
 94. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
-95. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-96. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+95. [FIX-06](FIX-06.md) An admin's unlist cannot be undone by the professional · needs PROS-02 from Developer 3 first
+96. [FIX-07](FIX-07.md) Search answers 400, not 500, for a NUL in the query
+97. [FIX-08](FIX-08.md) A request body over the size limit answers 413, not 500
+98. [FIX-09](FIX-09.md) No em-dashes in any message a person can read from the backend or the web
+99. [FIX-10](FIX-10.md) Calls to WAWU ID give up after a bounded time
+100. [FIX-11](FIX-11.md) The legal thread's opener is written once, metered and locked
+101. [FIX-12](FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11
+102. [FIX-13](FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in
+103. [FIX-14](FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
+104. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+105. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
@@ -139,6 +148,7 @@ Builder and verifier are always different sessions.
 22. [RELEASE-03](RELEASE-03.md) iOS release
 23. [TEST-01](TEST-01.md) Tests pass on a cold cache and a loaded machine
 24. [WEB-01](WEB-01.md) Port web-only features after launch
+25. [FIX-15](FIX-15.md) A refused upload does not count against storage quota
 
 ## Developer
 
