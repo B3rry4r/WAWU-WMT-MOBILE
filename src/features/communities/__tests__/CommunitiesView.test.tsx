@@ -235,7 +235,7 @@ describe('Communities (I24)', () => {
     await renderView();
     expect(await rtl.screen.findByTestId('communities-none')).toBeTruthy();
     expect(rtl.screen.getByText('You have not joined a community yet.')).toBeTruthy();
-    expect(rtl.screen.getByText('Afrobeats producers')).toBeTruthy();
+    expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
   });
 
   it('a user with no rooms and none to join sees an empty state', async () => {
