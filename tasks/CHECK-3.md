@@ -3,7 +3,7 @@ id: CHECK-3
 title: Checkpoint 3: full verification and QA (nothing new is built)
 owner: YOU
 area: CHECK
-order: 196
+order: 197
 priority: launch
 repo: all
 type: ops

@@ -3,7 +3,7 @@ id: WALLET-26
 title: Add money by USSD
 owner: YOU
 area: WALLET
-order: 210
+order: 211
 priority: after-launch
 repo: wawu-backend
 type: third-party

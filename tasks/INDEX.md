@@ -120,8 +120,9 @@ Builder and verifier are always different sessions.
 102. [FIX-12](FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11
 103. [FIX-13](FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in
 104. [FIX-14](FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
-105. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-106. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+105. [FIX-17](FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub
+106. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+107. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
