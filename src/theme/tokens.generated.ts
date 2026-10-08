@@ -3,13 +3,6 @@
 //
 // NOT GENERATED (no direct React Native value; components implement these):
 //   --accent-glow: 0 0 0 3px rgba(148, 17, 201, 0.28)
-//   --shadow-card: none
-//   --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45)
-//   --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.5)
-//   --shadow-fab: 0 10px 24px -6px rgba(148, 17, 201, 0.65)
-//   --shadow-money: inset 0 0 0 1px rgba(255, 255, 255, 0.08)
-//   --shadow-debit-card: 0 24px 40px -18px rgba(41, 13, 67, 0.7)
-//   --shadow-cover: 0 30px 50px -10px rgba(0, 0, 0, 0.7)
 //   --blur-veil: blur(22px)
 //   --blur-chrome: blur(20px)
 //   --font-sans: "Alan Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif
@@ -74,6 +67,19 @@ export const darkColors = {
   brandLime: "#B8E83E",
   brandAqua: "#20C9C3",
   brandCoral: "#FF5C5C",
+  tgifVerseGround: "#2A0C3E",
+  tgifVerseGlow: "rgba(148, 17, 201, 0.7)",
+  tgifRealityGround: "#101A3A",
+  tgifRealityGlow: "rgba(92, 100, 255, 0.55)",
+  tgifRememberGround: "#3A0C2A",
+  tgifRememberGlow: "rgba(214, 59, 140, 0.55)",
+  tgifPrayerGround: "#1A0E30",
+  tgifPrayerGlow: "rgba(148, 17, 201, 0.6)",
+  tgifTakeawayGround: "#2A0C3E",
+  tgifTakeawayGlow: "rgba(255, 160, 60, 0.5)",
+  tgifLabel: "#E2B4F5",
+  tgifWarmGlow: "rgba(255, 160, 60, 0.35)",
+  glowMoney: "rgba(148, 17, 201, 0.55)",
 } as const;
 
 export type ColorToken = keyof typeof darkColors;
@@ -135,6 +141,19 @@ export const lightColors: Record<ColorToken, string> = {
   brandLime: "#B8E83E",
   brandAqua: "#20C9C3",
   brandCoral: "#FF5C5C",
+  tgifVerseGround: "#2A0C3E",
+  tgifVerseGlow: "rgba(148, 17, 201, 0.7)",
+  tgifRealityGround: "#101A3A",
+  tgifRealityGlow: "rgba(92, 100, 255, 0.55)",
+  tgifRememberGround: "#3A0C2A",
+  tgifRememberGlow: "rgba(214, 59, 140, 0.55)",
+  tgifPrayerGround: "#1A0E30",
+  tgifPrayerGlow: "rgba(148, 17, 201, 0.6)",
+  tgifTakeawayGround: "#2A0C3E",
+  tgifTakeawayGlow: "rgba(255, 160, 60, 0.5)",
+  tgifLabel: "#E2B4F5",
+  tgifWarmGlow: "rgba(255, 160, 60, 0.35)",
+  glowMoney: "rgba(148, 17, 201, 0.55)",
 };
 
 export type GradientToken = { angle: number; colors: readonly string[]; locations: readonly number[] };
@@ -173,6 +192,29 @@ export const lightGradients: Record<keyof typeof darkGradients, GradientToken> =
     colors: ["rgba(0, 0, 0, 0)", "rgba(11, 10, 13, 0.88)"],
     locations: [0.4, 1.0],
   },
+};
+
+/** A box shadow as React Native's `boxShadow` takes it (lengths in logical px). */
+export type ShadowToken = { offsetX: number; offsetY: number; blurRadius: number; spreadDistance: number; color: string; inset?: boolean };
+
+export const darkShadows = {
+  card: [],
+  float: [{ offsetX: 0, offsetY: 12, blurRadius: 32, spreadDistance: 0, color: "rgba(0, 0, 0, 0.45)" }],
+  sheet: [{ offsetX: 0, offsetY: -12, blurRadius: 40, spreadDistance: 0, color: "rgba(0, 0, 0, 0.5)" }],
+  fab: [{ offsetX: 0, offsetY: 10, blurRadius: 24, spreadDistance: -6, color: "rgba(148, 17, 201, 0.65)" }],
+  money: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: "rgba(255, 255, 255, 0.08)", inset: true }],
+  debitCard: [{ offsetX: 0, offsetY: 24, blurRadius: 40, spreadDistance: -18, color: "rgba(41, 13, 67, 0.7)" }],
+  cover: [{ offsetX: 0, offsetY: 30, blurRadius: 50, spreadDistance: -10, color: "rgba(0, 0, 0, 0.7)" }],
+} as const;
+
+export const lightShadows: Record<keyof typeof darkShadows, readonly ShadowToken[]> = {
+  card: [],
+  float: [{ offsetX: 0, offsetY: 12, blurRadius: 32, spreadDistance: 0, color: "rgba(0, 0, 0, 0.45)" }],
+  sheet: [{ offsetX: 0, offsetY: -12, blurRadius: 40, spreadDistance: 0, color: "rgba(0, 0, 0, 0.5)" }],
+  fab: [{ offsetX: 0, offsetY: 10, blurRadius: 24, spreadDistance: -6, color: "rgba(148, 17, 201, 0.65)" }],
+  money: [{ offsetX: 0, offsetY: 24, blurRadius: 40, spreadDistance: -22, color: "rgba(22, 21, 27, 0.6)" }],
+  debitCard: [{ offsetX: 0, offsetY: 24, blurRadius: 40, spreadDistance: -18, color: "rgba(41, 13, 67, 0.7)" }],
+  cover: [{ offsetX: 0, offsetY: 30, blurRadius: 50, spreadDistance: -10, color: "rgba(0, 0, 0, 0.7)" }],
 };
 
 export const space = {

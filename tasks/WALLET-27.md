@@ -3,7 +3,7 @@ id: WALLET-27
 title: Statements
 owner: YOU
 area: WALLET
-order: 191
+order: 192
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
