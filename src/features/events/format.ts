@@ -70,10 +70,10 @@ export function watOf(iso: string, zone?: Zoned): Wat {
   };
 }
 
-/** The date badge's two lines: "OCT" over "12". */
+/** The date badge's two lines: "OCT" over "12", the day always two digits as the canvas draws it ("OCT 09"). */
 export function badgeOf(iso: string, zone?: Zoned): { month: string; day: string } {
   const w = watOf(iso, zone);
-  return { month: w.month.toUpperCase(), day: String(w.day) };
+  return { month: w.month.toUpperCase(), day: String(w.day).padStart(2, '0') };
 }
 
 /**
@@ -144,16 +144,21 @@ export type TierStatus = {
   line: string;
 };
 
-export function tierStatus(tier: TicketType, event: Pick<EventView, 'startsAt'>, now: number): TierStatus {
+/** The tier's "Ended" and "Opens" dates are read in the event's own zone, as every other date on E2 is. */
+export function tierStatus(
+  tier: TicketType,
+  event: Pick<EventView, 'startsAt'> & Zoned,
+  now: number,
+): TierStatus {
   const closesAt = tier.salesEndAt ?? event.startsAt;
   const ended = now >= new Date(closesAt).getTime();
   const notYet = tier.salesStartAt !== null && now < new Date(tier.salesStartAt).getTime();
   const soldOut = tier.soldOut || tier.remaining <= 0;
   const open = !ended && !notYet && !soldOut;
   const line = ended
-    ? `Ended ${shortDate(closesAt)}`
+    ? `Ended ${shortDate(closesAt, event)}`
     : notYet && tier.salesStartAt
-      ? `Opens ${shortDate(tier.salesStartAt)}`
+      ? `Opens ${shortDate(tier.salesStartAt, event)}`
       : soldOut
         ? ''
         : `${tier.remaining} left`;

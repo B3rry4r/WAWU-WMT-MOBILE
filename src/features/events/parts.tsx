@@ -25,9 +25,9 @@ export const badgeMetrics = {
 } as const;
 
 /** The month and day an event starts, in the event's own zone (Lagos by default). */
-export function DateBadge({ startsAt, zone, scale = 1 }: { startsAt: string; zone?: { timezone?: string | null }; scale?: number }) {
+export function DateBadge({ startsAt, zone, scale = 1 }: { startsAt: string; zone: { timezone?: string | null } | null; scale?: number }) {
   const { colors } = useWawu();
-  const { month, day } = badgeOf(startsAt, zone);
+  const { month, day } = badgeOf(startsAt, zone ?? undefined);
   return (
     <View
       accessible
@@ -228,7 +228,7 @@ export function FeaturedCard({ event, fromNaira, onOpen }: { event: EventView; f
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.heroBadge}>
-        <DateBadge startsAt={event.startsAt} />
+        <DateBadge startsAt={event.startsAt} zone={event} />
       </View>
       <View style={styles.heroWords}>
         <Text

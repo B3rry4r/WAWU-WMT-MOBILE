@@ -89,6 +89,11 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
     // Prices are a nicety: a failure leaves the rows without a price line and is never retried.
     retry: false,
   });
+  // Every price that has arrived is kept (D9): a later call that fails (after "Show more", a refetch) leaves the
+  // rows already priced as they were, and only rows that never got a price draw none. A newer answer wins.
+  const [held, setHeld] = useState<{ from?: Record<string, number | null>; prices: Record<string, number | null> }>({ prices: {} });
+  if (prices.data && prices.data !== held.from) setHeld({ from: prices.data, prices: { ...held.prices, ...prices.data } });
+  const priceOf = (id: string) => (prices.data && id in prices.data ? prices.data[id] : held.prices[id]);
   const weekMode = filtersAreDefault(filters) && !showAll && events.some((e) => startsThisWeek(e, now));
   const shown = weekMode ? events.filter((e) => startsThisWeek(e, now)) : events;
   const heading = weekMode ? 'This week' : filters.view === 'past' ? 'Past events' : 'Upcoming';
@@ -142,7 +147,7 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
                 {going.failure}
               </Text>
             ) : null}
-            {hero ? <FeaturedCard event={hero} fromNaira={prices.data?.[hero.id]} onOpen={() => onOpenEvent(hero.id)} /> : null}
+            {hero ? <FeaturedCard event={hero} fromNaira={priceOf(hero.id)} onOpen={() => onOpenEvent(hero.id)} /> : null}
             {shown.length === 0 ? (
               hero ? null : (
                 <EmptyState
@@ -165,7 +170,7 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
                   <EventRow
                     key={event.id}
                     event={event}
-                    fromNaira={prices.data?.[event.id]}
+                    fromNaira={priceOf(event.id)}
                     busy={going.busy.has(event.id)}
                     onOpen={() => onOpenEvent(event.id)}
                     onToggleGoing={() => void going.toggle(event.id)}
