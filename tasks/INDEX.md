@@ -100,32 +100,57 @@ Builder and verifier are always different sessions.
 82. [ME-01](ME-01.md) My profile: content, services, about · needs SHELL-01, ME-05, ME-16, UI-02, UI-03, ME-06 from Developer first
 83. [ME-02](ME-02.md) Someone else's profile and following · needs ME-16, SETTINGS-04, UI-02 from Developer first
 84. [ME-03](ME-03.md) The Me menu · needs UI-02, SCHOOLS-08 from Developer first
-85. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
-86. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs SHELL-01, UI-02, UI-03, HOME-10, HOME-11 from Developer first
-87. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
-88. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs AUTH-04, AUTH-05, UI-02, INBOX-12, ME-06, PROS-03 from Developer first
-89. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel
-90. [SETTINGS-08](SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in
-91. [SETTINGS-05](SETTINGS-05.md) Delete account · needs UI-02 from Developer first
-92. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
-93. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
-94. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
-95. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
-96. [SHARED-03](SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder)
-97. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
-98. [FIX-06](FIX-06.md) An admin's unlist cannot be undone by the professional · needs PROS-02 from Developer 3 first
-99. [FIX-16](FIX-16.md) The dashboard and the web catch up with admin takedowns
-100. [FIX-07](FIX-07.md) Search answers 400, not 500, for a NUL in the query
-101. [FIX-08](FIX-08.md) A request body over the size limit answers 413, not 500
-102. [FIX-09](FIX-09.md) No em-dashes in any message a person can read from the backend or the web
-103. [FIX-10](FIX-10.md) Calls to WAWU ID give up after a bounded time
-104. [FIX-11](FIX-11.md) The legal thread's opener is written once, metered and locked
-105. [FIX-12](FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11
-106. [FIX-13](FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in
-107. [FIX-14](FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
-108. [FIX-17](FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub
-109. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-110. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+85. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs SHELL-01, UI-02, UI-03, HOME-10, HOME-11 from Developer first
+86. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
+87. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs AUTH-04, AUTH-05, UI-02, INBOX-12, ME-06, PROS-03 from Developer first
+88. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel
+89. [SETTINGS-08](SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in
+90. [SETTINGS-05](SETTINGS-05.md) Delete account · needs UI-02 from Developer first
+91. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
+92. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
+93. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
+94. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
+95. [SHARED-03](SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder)
+96. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
+97. [FIX-06](FIX-06.md) An admin's unlist cannot be undone by the professional · needs PROS-02 from Developer 3 first
+98. [FIX-16](FIX-16.md) The dashboard and the web catch up with admin takedowns
+99. [FIX-07](FIX-07.md) Search answers 400, not 500, for a NUL in the query
+100. [FIX-08](FIX-08.md) A request body over the size limit answers 413, not 500
+101. [FIX-09](FIX-09.md) No em-dashes in any message a person can read from the backend or the web
+102. [FIX-10](FIX-10.md) Calls to WAWU ID give up after a bounded time
+103. [FIX-11](FIX-11.md) The legal thread's opener is written once, metered and locked
+104. [FIX-12](FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11
+105. [FIX-13](FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in
+106. [FIX-14](FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
+107. [FIX-17](FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub
+108. [NUV-01](NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion
+109. [NUV-07](NUV-07.md) Fees and limits as settings, and nothing moves before they are set
+110. [TIER-01](TIER-01.md) Prices, tiers and the billing currency: one config file
+111. [POINTS-01](POINTS-01.md) Points: lots that expire, and the points ledger
+112. [NUV-02](NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected
+113. [NUV-03](NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review
+114. [NUV-04](NUV-04.md) The account number, adding money by bank transfer, and the balance
+115. [NUV-05](NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account
+116. [NUV-06](NUV-06.md) Send to a bank and pay out, with the account name check
+117. [NUV-08](NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures
+118. [NUV-09](NUV-09.md) A dollar wallet for people billed in dollars
+119. [TIER-02](TIER-02.md) Publishing needs a tier: the gate and the product count · needs ME-17 from Developer first
+120. [TIER-03](TIER-03.md) Buy, renew or upgrade a tier from the wallet
+121. [TIER-04](TIER-04.md) Add 5 more products
+122. [TIER-05](TIER-05.md) Pay by bank transfer at checkout
+123. [POINTS-02](POINTS-02.md) Buy points
+124. [POINTS-03](POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet
+125. [POINTS-04](POINTS-04.md) Convert points to cash
+126. [REF-01](REF-01.md) Referral points
+127. [WEBPAY-01](WEBPAY-01.md) Open your wallet on the website
+128. [WEBPAY-02](WEBPAY-02.md) Add money by bank transfer on the website
+129. [WEBPAY-03](WEBPAY-03.md) Pay from the wallet on the website: the pay sheet and the PIN
+130. [WEBPAY-04](WEBPAY-04.md) Buy a tier on the website
+131. [WEBPAY-05](WEBPAY-05.md) Buy points on the website
+132. [NUV-10](NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits
+133. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
+134. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+135. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 

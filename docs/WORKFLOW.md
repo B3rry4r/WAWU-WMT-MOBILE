@@ -202,7 +202,9 @@ that as a balance.
 **Payments are tested one at a time, safest first:** credits, tips, unlocks,
 ticks, paid DMs, event tickets, bills, legal, school fees. Each one is tested
 locally against the sandbox, then with a small real payment, and all of them launch
-with the app (R-20). The web stays on Flutterwave until after launch.
+with the app (R-20). The web stays on Flutterwave until after launch, except buying a tier, buying points, adding
+money by bank transfer and paying from the wallet, which the web does through the same Hub routes as the app (R-44,
+`docs/PAYMENTS-PLAN.md`).
 
 **Nobody has a wallet until they open one** (R-6): identity checks happen
 then, not at sign-up. Every money screen handles "this user has no wallet yet"
