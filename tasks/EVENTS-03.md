@@ -7,7 +7,7 @@ order: 48
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [EVENTS-01, EVENTS-05, UI-02]
 decisions: [R-8, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -159,6 +159,31 @@ _Builder session, 8 Oct 2026, fix round 1 for D1 to D3. Merged `origin/wmt/EVENT
 - **D2 measured** at 390 px, 2x, light and dark, `npm run web` against a 60-line local stand-in for the Hub and WAWU ID (scratch `events03f/mock.js`, not the real services) beside `render_design.py E6 E7 E12`: E6 rows 72 high, pitch 84 (design 72, 84); E7 and E12 card 397 (design 397); nav title ink 43 to 74 on E6 and 43 to 67 on E7/E12 (design 43 to 74 and 43 to 67); E6 row title and line ink 267 to 287 and 310 to 332 (design the same, 2x); E7 code and holder line positions match in the side-by-side. Shared `FilterChips` text (153 to 176 against 154 to 178) was not touched. I do not claim the screens match the canvas; the verifier compares.
 - **D3.** Not edited here. `badgeOf` in `format.ts` comes from EVENTS-01 (`padStart(2, '0')`) via the merge; E6 draws `DateBadge` through it, so a single-digit day reads "05". The stand-in data used day 12, so a one-digit day was not drawn live: NOT RUN as a picture.
 - **NOT RUN:** V10 (phone); a picture of a one-digit day on E6; real Hub and WAWU ID (stand-in used).
+
+## Verifier report, round 4
+
+_Verifier session, 8 Oct 2026, narrow round on D1 to D3 (a round 4 attempt before this one died on a usage limit and wrote nothing). Mobile `wmt/EVENTS-03` at f1a8750, backend `wmt/EVENTS-03` at 97539f5. Live stack: backend branch merged locally with backend `origin/main` (9d90d57; only `contract/openapi.json` conflicted, regenerated with `npm run contract:build`; the merge was not pushed) on :4225 against a fresh database `wawu_hub_test_events_03_v4` (dropped when done); the backend repo's `mock-wawu-id` on :4226 (NOT the real WAWU ID) with a 20-line proxy on :4229 that wraps its login answer in `data` as WAWU ID does; the app on `expo start --web` :4227 at 390 px, 2x, signed in through the real sign-in screen. Free tickets only (R-8). Evidence in `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events03v4/`._
+
+| Check | Result | Evidence |
+|---|---|---|
+| D1 list, live | passed | List loaded (2 rows), a row opened its ticket, the Hub then answered 500 to every `/events/tickets/held` read (Playwright route) and Back refocused the list: 3 failed reads, 2 rows kept, `my-tickets-refresh-failed` reads "Couldn't refresh. These tickets may be out of date." with Try again, no error screen (`d1-list-failed.png`). Hub healthy again, Try again: note gone, 2 rows. |
+| D1 ticket, live | passed | Ticket of a 2-ticket order loaded, Next to the other ticket, 31 s (past the 30 s stale time), Hub failing, Previous: the cached ticket refetched 3 times, all 500; ticket, code `X400-4J3Y-2WHJ-FSYV` and QR kept, note "Couldn't refresh. This ticket may be out of date." with Try again, no error screen (`d1-ticket-failed.png`); Try again with the Hub healthy made one good read and cleared the note. The QR in that screenshot decodes to `X400-4J3Y-2WHJ-FSYV` with jsQR 1.4.0 installed fresh in the scratch `dec/` (outside the repo); E7 light and dark decode to the server's `F06Z-C47D-HQC1-W14W`. A focus refetch on the ticket screen itself could not be driven on web (Next and Previous replace the screen; browser visibility events did not refetch); the path exercised is the same `isError && data` branch. |
+| D1 first load, live | passed | Hub failing from the start: the list shows `my-tickets-error` (0 rows), the ticket shows `ticket-error` (no QR) (`d1-first-*.png`). |
+| D1 spec against the old code | passed | `ticketsRefetchFails.test.tsx` 3 of 3 pass on the branch (one earlier run timed out its first test at load 13; the rerun passed). With `list.isError && !list.data` and `ticket.isError && !ticket.data` put back to round 1's bare `isError`: the list and ticket specs fail, the first-load spec passes; files restored with `git restore`. |
+| D2 E6 | passed | Rows 72 high, tops 112 and 196 (pitch 84), light and dark. Against `render_design.py E6` (aligned on the back button's top): title ink 29 to 60 (2x) in both; row edges at x 50 identical to the pixel (223, 226/227, 337 to 341, 391 to 395, 505/506) in both themes. |
+| D2 E7, E12 | passed | Card 397 (DOM) in both themes; at x 200 the card spans 114 to 907 (2x) in design and build, E7 and E12, light and dark; E12 note 117 to 246 equal; inner edges within 1 px at 2x. At x 60 the card's top and bottom differ by 2 px at 2x: that is the corner (26 against 28), already differs-for-recorded-reason (SHARED-CHANGES #3). |
+| D2 TicketNav title | passed | Ink 29 to 60 on E6 and 29 to 53 on E7/E12 relative to the back button, equal to the design in light and dark. |
+| D2 FilterChips | differs-for-recorded-reason | "Past" text ink 139 to 157 against the design's 141 to 159 (2x): 1 px high at 1x, light and dark. The cause is the shared `FilterChips` (untouched by this task; E6 only passes `inset={0}`); it belongs to the shared component's owner, not EVENTS-03. |
+| D3 | passed | Seeded "Yaba Design Day" on 5 Nov 2026 (Lagos): the E6 badge reads "NOV 05" live, light and dark (and "OCT 13" for a two-digit day). |
+| Backend regression | passed | `origin/wmt/EVENTS-03` is still 97539f5: no backend change since round 3. |
+| Main merge | NOT DONE | Mobile `origin/main` moved to ccfc4bd (PROS-03 and others). `git merge origin/main` conflicts in EVENTS-01 code (`src/app/(tabs)/explore.tsx`, `src/features/explore/ExploreScreen.tsx`, `src/features/explore/__tests__/screens.test.tsx`; PROS-03 edited the same Explore lines) besides the generated files. Resolving it means writing code in EVENTS-01's files, which a verifier does not do; merge aborted (`git merge --abort`), nothing pushed from it. It belongs to EVENTS-01's merge into main (this branch carries EVENTS-01), then a main merge here. |
+| V1 `npm run check` | exit 1, sole reason main's FIX-22 | On f1a8750: typecheck 0, lint 0 errors (6 warnings), 86 suites / 1526 tests pass, gates 9 run / 379 files / 0 findings, baseline passes; the task check fails only on `FIX-22.md: type backend-endpoint requires passes V4, V9`. Clean `origin/main` (ccfc4bd, worktree in scratch) passes the task check (262 tasks): main fixed FIX-22 in e384d72 after this branch's last merge. |
+| V10 | NOT RUN | A phone and a development build are needed; the lead runs it. |
+
+- No defect open. D1, D2 and D3 are closed; the FilterChips 1 px is the shared component's.
+- Not done: V10; the real WAWU ID (mock used); a paid ticket (R-8); the main merge (conflicts in EVENTS-01 files, above).
+
+Status: `review`.
 
 ## Owner sign-off
 
