@@ -9,18 +9,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 110 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 3 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
-- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 
 ## Done
 
@@ -138,12 +135,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **Developer 3:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [SCHOOLS-03](../tasks/SCHOOLS-03.md) Schools: directory, school page, course page, no results, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · SCHOOLS-04 · Verifier round 5, status review (backend `e87626e`, mobile `58de4a5`): D4 closed (mobile contract byte-equal to the backend branch's, three schools paths and six schemas in the contract and types, `SOURCE_COMMIT` right, `sync_contract.py` no diff); F1 spec passes and kills M4 and the reversed tie; no production change since round 3 but main's; tsc 0, 150 of 150 specs, protected 253/253, gates equal to main's 16 fails, contract additive, mobile `npm run check` exit 0; no defect open.
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 5, status verifying: D4 fixed, the mobile contract and types are copied again from backend branch `e87626e` (main `9d90d57` merged there, contract regenerates with no diff, schools specs 36 of 36) with `sync_contract.py`; `cmp` identical, the three schools paths and six `PublicSchool*` schemas back in `schema.generated.ts`.
 - 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent round 2 (lead), back to building (backend `5a602f9`, then `3971fea` and `7291658`; mobile `4a28ede`, then `7972878`): D2 closed over real HTTP (17 worst-case names through the admin route walked past at limits 1 to 3, longest cursor 1498; 360 units and 1498 characters confirmed exact against validator 13.15.35 over 15.4 million strings and the real DTOs), D3 closed, D1 holds on an ICU database (hide, ties, rename, insert, `q` plus `category`), forged cursors reveal nothing and never 500, `/search` protected tabs byte-identical to main, 45 of 45 mutants killed, protected 253/253 three times, full suite green after environment reruns; round 4's F1 spec holds (M4 now killed); one new defect D4: round 4's mobile merge replaced the task's contract and types with backend main's (the three schools paths are gone from the app's contract).
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 4, status verifying: F1 fixed with a new paging spec (ids against name order, ties scrambled, walks at ten limits); the extra id-only branch (M4) and the reversed id comparison both fail it; no production code changed.
@@ -158,4 +156,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
 - 8 Oct 2026 · SHARED-04 · SHARED-04 merged: native modules installed in one batch; the phone takes the wallet selfie, picks photos without location data, and copies. New preview build needed.
 - 8 Oct 2026 · FIX-24 · FIX-24 merged (backend PR #94, 9d90d57): delivered legal documents are the client's own or the legal team's only; LEGAL_DELIVERY_UPLOADER_IDS awaits the owner.
-- 8 Oct 2026 · FIX-24 · Verifier report (independent session, backend `a1beb10`, mobile `2b1cbb9` merged with main `a82e816`): no defect, status review. N2 closed by its real cause: round 4's reproduction leaks on main 657a152 (101 of 103, 132 of 132 bytes of B's file, ghost key 200) and passes on the branch (103 of 103, ghost 400); 25 of 25 key variants refused on the new route and every link naming our storage refused on /deliver; reads withhold every failing row and legacy value (28 of 28, one warn line per file, no stored value logged); setting boots and refusals as the builder says (7 live boots); the count query equals a hand count on two databases; protected 253 of 253 with the lock unchanged, 65 of 65 /legal answers byte-identical to main; module specs 595 passed; full suite 5,551 passed, 52 environmental (pass alone); V9 with real WAWU ID; mutants 13 of 15 killed. Notes O1 to O6 (IP-literal hosts on /deliver judged harmless by a SigV4 check, a spec gap for a ghost key in the owner's folder, the ruling's edges).

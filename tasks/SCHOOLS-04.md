@@ -7,7 +7,7 @@ order: 20
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -312,6 +312,26 @@ Builder, 8 Oct 2026. One defect, D4. No production file changed in either repo.
 | Diff of `contract/` and `src/api/` against mobile `origin/main` | additive only: 4 lines removed, all the `tab` enum (and `SOURCE_COMMIT`), each gaining `schools` |
 | SHARED-CHANGES SCHOOLS-04 #2 | matches (contract copied from the branch, `SOURCE_COMMIT` names it); round 5 sentence added |
 | Mobile `npm run check` (after `npm ci`, main added packages) | exit 0: typecheck, lint, 82 suites 1,437 tests, gates 0 fail, task check; main's FIX-22 failure is gone |
+
+## Verifier report, round 5
+
+Independent verifier, 8 Oct 2026, narrow final round. Backend `wmt/SCHOOLS-04` `e87626e` (holds backend main `9d90d57`), mobile `wmt/SCHOOLS-04` `58de4a5`. Own databases `wawu_hub_test_specs_schools_04_v5` and `wawu_hub_test_prot_schools_04_v5` (migrated and seeded, dropped after), mock WAWU ID on 4216. Logs in the session scratchpad `schools04v5/`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| D4 contract | passed | `contract/openapi.json` on the mobile branch is byte-equal (`cmp`) to the backend branch `e87626e` file. `/api/hub/schools`, `/schools/{id}`, `/schools/courses/{id}` and the six new schemas (`PublicSchoolCard`, `PublicSchoolCourseCard`, `PublicSchoolDetail`, `PublicSchoolsPage`, `PublicCourseDetail`, `PublicIntakeView`) are present in `contract/openapi.json`, `contract/openapi.mobile.json` and `src/api/schema.generated.ts`; the `schools` tab value is present. `SOURCE_COMMIT` reads `wmt/SCHOOLS-04@e87626e`. `python3 scripts/api/sync_contract.py` (regenerate only) leaves `git status` clean. SHARED-CHANGES SCHOOLS-04 #1 and #2 match (#2's round 5 sentence names `e87626e` and main `9d90d57`, both true). |
+| F1 paging order | passed | `schools-paging-order.contract.spec.ts` passes (1 of 1, 3.4 s). M4 (extra `{ id: { gt: after.id } }` branch in the keyset OR of `schools-public.service.ts`) compiles and fails the spec (the walk never ends: rows behind the cursor come back, the 5 s test timeout fires; the unmutated spec takes 3.4 s). Reversed tie (`id: { lt: after.id }`) fails it with 20 rows missing from the walk. Each `git restore`d; tree clean after. |
+| No production change since round 3 | passed | `git diff origin/main HEAD -- src` equals `git diff merge-base(3971fea, main) 3971fea -- src` except one added file, the F1 spec (`src/schools/tests/schools-paging-order.contract.spec.ts`). Every other commit in `3971fea..HEAD` touching `src` is main's. |
+| Backend static | passed | `npx tsc --noEmit` exit 0. Gates: branch and `origin/main` (`git archive`) both 16 fail / 69 warn / 76 accepted, FAIL lines identical (no new fail line). `check_baseline.py` exit 0. |
+| Backend specs | passed | `npm run test:contract -- src/schools src/search-response src/admin/schools`: 9 suites, 150 of 150 (first run had the admin suite fail with `ECONNREFUSED` because the mock WAWU ID was not up; rerun with the mock running, all passed). |
+| Protected suite | passed | `scripts/protected-routes/run.sh --fresh`: 253/253, all 244 required passed. |
+| Contract build | passed | `npm run contract:build` exit 0, no diff. Against backend main: 3 paths and 6 schemas added, 0 removed, 0 schemas changed; `/api/hub/search` differs only by the `tab` enum gaining `schools`. Additive only. |
+| Mobile check | passed | `npm run check` exit 0; tree clean after. |
+| Conflict markers | passed | `git grep` for `<<<<<<<` / `>>>>>>>` (and, backend non-Markdown, `=======`) at both heads: none. |
+
+No defect open. D4 closed; F1 closed; D1, D2 and D3 stay closed (no production code changed since they were verified). Live probes were not re-run on this build: NOT RUN, because the production files are byte-identical to the round 3 verified head apart from main's merges, and the specs and protected suite above ran on this build.
+
+Status: `review`.
 
 ## Owner sign-off
 
