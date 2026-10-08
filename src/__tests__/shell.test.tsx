@@ -17,6 +17,9 @@ const routes = {
   '(tabs)/me': Me,
 };
 
+/** The tabs of the app's bottom bar. Home draws a tab row of its own (Today, Following, For you, HOME-01), whose tabs are `feed-tab-*`. */
+const barTabs = () => screen.getAllByRole('tab').filter((t) => !String(t.props.testID ?? '').startsWith('feed-tab-'));
+
 /*
  * Nothing here depends on how fast the machine is or how warm Jest's cache is.
  * The first router render loads and first-renders the tab navigator and its
@@ -42,7 +45,7 @@ describe('tab shell', () => {
 
   it('moves between the five tabs, in order', async () => {
     await renderRouter(routes);
-    const names = screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel);
+    const names = barTabs().map((t) => t.props.accessibilityLabel);
     expect(names).toEqual(['Home', 'Explore', 'Inbox', 'Wallet', 'Me']);
 
     for (const label of [
@@ -55,7 +58,7 @@ describe('tab shell', () => {
       await fireEvent.press(screen.getByRole('tab', { name: label }));
       expect(screen.getByRole('header', { name: label })).toBeTruthy();
       expect(screen.getByRole('tab', { name: label }).props.accessibilityState.selected).toBe(true);
-      expect(screen.getAllByRole('tab').filter((t) => t.props.accessibilityState.selected)).toHaveLength(1);
+      expect(barTabs().filter((t) => t.props.accessibilityState.selected)).toHaveLength(1);
     }
   });
 

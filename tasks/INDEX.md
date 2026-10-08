@@ -108,9 +108,10 @@ Builder and verifier are always different sessions.
 90. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
 91. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
 92. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
-93. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
-94. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
-95. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+93. [SHARED-03](SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder)
+94. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
+95. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
+96. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
