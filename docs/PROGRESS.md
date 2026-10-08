@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 116 | 0 | 20 | 21 |
+| todo | 115 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
@@ -19,6 +19,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
 
 ## Done
 
@@ -142,6 +146,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · BRAND-01 · Builder: the launcher icon rebuilt from the logo pack so the whole logo (drip included) sits inside the 66 dp safe circle (44% of the canvas; monochrome and store icon the same way; own notification icon); the splash logo 128 dp inside Android 12's circle; A1 shows the website's creators picture under the shade; M1's Menu button raises the Z1 sheet and its Settings row opens `/settings` (the other rows drawn and inert, R-46); 19 tests, 9 of 9 mutants killed; npm run check passed (95 suites, 1606 tests, gates 0 findings); V10 NOT RUN (needs the preview build); status verifying.
+- 8 Oct 2026 · Lead: R-46 the UI is always complete (owner). Unbuilt entries are drawn and inert with `unbuilt(<task>)`; filed COMPLETE-01 (helper and gate) to COMPLETE-06 (Explore, Home, Me, Wallet, the rest); later tasks moved down six places.
 - 8 Oct 2026 · R-45 · Owner: Nuvion is the wallet provider; Fintava stays only for bills payments, its wallet code kept unused. The website opens wallets first (WEBPAY-01 no longer waits on dollar wallets). BRAND-01 filed: the app icon, the welcome cover and the Settings entry. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
@@ -155,5 +161,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 4: D6 fixed (live: NYC 7 PM EDT reads 14 Oct on E1, E2, hero; unresolvable zone date only; no crash); 4 of 6 new specs fail on old code; npm run check passed; no open defects, status review.
 - 7 Oct 2026 · EVENTS-01 · Builder round 5: D6 fixed, event date read in the event's own zone (unresolvable zone: Lagos date alone, no clock); 6 specs added, 4 fail on old code; npm run check passed (66 suites, 1204 tests, gates 0 findings); status verifying.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
-- 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
-- 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
