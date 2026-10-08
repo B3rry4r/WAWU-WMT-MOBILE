@@ -246,7 +246,7 @@ Builder, 8 Oct 2026. One finding, F1 (spec gap). Tests only: no production file 
 | `src/schools`, `src/search-response`, `src/admin-schools` | 7 suites, 98 of 98 passed (own database, seeded) |
 | Gates | 16 fail / 59 warn / 76 accepted, the 16 are main's; `check_baseline.py` ok |
 | Protected routes `run.sh --fresh` | all 244 required tests passed |
-| Mobile `npm run check` | see the line below |
+| Mobile `npm run check` | exit 1, solely because main's `tasks/FIX-22.md` fails the task check ("type backend-endpoint requires passes V4, V9"); typecheck, lint, 76 suites 1,377 tests and gates (0 fail) all pass |
 
 M11 stays as the verifier ruled (equivalent mutant, the CHECK makes it unreachable).
 
