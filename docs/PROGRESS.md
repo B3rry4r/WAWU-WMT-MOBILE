@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 74 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 54 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 
 ## Done
@@ -132,6 +129,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-07 · Verified (status review; independent session, backend `4f4e4ee`, mobile `a333743`): no defect. Own sweep, main's and the branch's Hubs on one database, 2,156 paths x 4 callers: 7,692 byte-identical, 784 former 500s and the 148 recorded `tab=communities` 200s now the refusal, nothing else changed, branch 500s 0; every BMP code point and 4,084 astral ones on search and closest: only U+0000 answers other than 200 (500 on main, the refusal here); protected 253/253 and the full suite on a trial merge (only hub-rate-limits, 22/22 on the host, and fintava-stall timing, 120/120 alone); mutants 10 of 11 killed (spec gap: a NUL past character 50). Follow-ups recorded: SCHOOLS-04 drops its copy of the rule when it merges, 23 other GET routes on main still 500 for a NUL, closest has no length limit.
 - 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
@@ -146,4 +144,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01 · Builder report (branch `wmt/HOME-01`, status verifying): Home's Today with the Naira balance from Fintava or the way to Open your wallet, today's TGIF card (gone when TGIF is off), creators to discover with Follow in place, loading, empty and error states; the feed is shown in place under the same tab row (`/feed` removed); entries to screens not built yet left out (R-41); gaps G-280 to G-282, shared changes HOME-01 #1 and #2.
 - 7 Oct 2026 · SHARED-03 · New task (lead, order 184; tasks from 184 move down one): one shared toast, the All chip's padding, a MediaCard placeholder, two test gaps and the flaky Z3 settings test, from the hub checks.
 - 7 Oct 2026 · EXPLORE-01 · Merged: the Explore tab (categories, featured creators with Follow, category pages with paging); one shared-toast follow-up in SHARED-03.
-- 7 Oct 2026 · EXPLORE-01 · Verified round 2 (real WAWU ID fb8717e, Hub 3041887): D1 to D3 closed, refusal notice, Following at white 20% and revealSelected checked live, signed-out /categories goes to /welcome, round 1 survivor killed and 5 of 7 new mutants killed; 1 low defect open (FollowNotice copies profile-edit's SavedToast, no SHARED-CHANGES row); status building.
