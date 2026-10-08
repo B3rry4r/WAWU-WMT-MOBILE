@@ -1059,6 +1059,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/consultation/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The kinds of consultation WAWU has priced and switched on. */
+        get: operations["LegalConsultationController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/consultation/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The calendar for a video or phone call, at that call's length. */
+        get: operations["LegalConsultationController_slots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/booking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LegalConsultationController_booking"];
+        put?: never;
+        /** Holds the picked hour on the person's request (nothing is charged yet). */
+        post: operations["LegalConsultationController_book"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/deliverables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every file delivered on the person's request. */
+        get: operations["LegalConsultationController_delivered"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tips": {
         parameters: {
             query?: never;
@@ -3239,54 +3307,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/schools": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["SchoolsPublicController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/schools/courses/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["SchoolsPublicController_course"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/schools/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["SchoolsPublicController_school"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/communities/mine": {
         parameters: {
             query?: never;
@@ -5140,6 +5160,47 @@ export interface components {
         };
         CancelLegalRequestDto: {
             reason: string;
+        };
+        BookConsultationSlotDto: {
+            /** @enum {string} */
+            medium: "zoom" | "phone" | "physical";
+            /**
+             * @description The start of the hour the person picked, exactly as `GET
+             *     /legal/consultation/slots` gave it. Required for a video or phone call;
+             *     an in-person consultation is arranged directly and books no hour.
+             */
+            scheduledFor?: string;
+        };
+        SetConsultationPriceDto: {
+            /**
+             * @description The price in kobo, whole naira only (a multiple of 100), or null to leave
+             *     the kind unpriced so the app does not offer it. Always null for an
+             *     in-person consultation.
+             */
+            priceKobo: number | null;
+            /** @description How long it runs, in minutes, or null to leave the kind unset. Null for in person. */
+            minutes: number | null;
+            /** @description Switch the kind off without losing its price. Defaults to on. */
+            enabled?: boolean;
+        };
+        SetServicePriceDto: {
+            /** @description The price in kobo, whole naira only, or null to quote the service instead. */
+            priceKobo: number | null;
+        };
+        DeliveredFileDto: {
+            /** @description What the file is called in the chat and on the delivery screen. */
+            fileName: string;
+            /**
+             * @description The file's `fileUrl` or `key` from POST /uploads/presign: a link on WAWU
+             *     storage or a bare key, under `legal/document/`. Anything else is refused
+             *     with a 400 naming this field (N1).
+             */
+            url: string;
+            /** @description Page count, when it is known. */
+            pages?: number;
+        };
+        DeliverFilesDto: {
+            files: components["schemas"]["DeliveredFileDto"][];
         };
         RejectContentDto: {
             reason: string;
@@ -7673,6 +7734,156 @@ export interface components {
                 remaining: number;
             };
         };
+        QuestionOption: {
+            value: string;
+            label: string;
+        };
+        IntakeQuestion: {
+            id: string;
+            step: number;
+            stepTitle: string;
+            prompt: string;
+            /** @enum {string} */
+            kind: "text" | "documents" | "single" | "multi" | "date";
+            /** @enum {string} */
+            level: "required" | "optional";
+            options?: components["schemas"]["QuestionOption"][] | null;
+            placeholder?: string | null;
+            suggestions?: string[] | null;
+            helper?: string | null;
+            showIf?: {
+                questionId: string;
+            } | null;
+        };
+        GeminiBrief: {
+            summary: string;
+            keyIssues: string[];
+            questionsToClarify: string[];
+            risks: string[];
+        };
+        LegalBrief: {
+            matter: string;
+            matterLabel: string;
+            facts: {
+                question: string;
+                answer: string;
+            }[];
+            documentCount: number;
+            analysis: components["schemas"]["GeminiBrief"];
+            generatedBy: string;
+            generatedAt: string;
+        };
+        IntakeView: {
+            id: string;
+            matter: string;
+            matterLabel: string;
+            status: string;
+            answers: {
+                [key: string]: unknown;
+            };
+            documents: string[];
+            questions: components["schemas"]["IntakeQuestion"][];
+            outstandingRequired: string[];
+            brief: components["schemas"]["LegalBrief"];
+            legalRequestId: string | null;
+        };
+        ChatMessageView: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "ai" | "consultant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ChatThreadView: {
+            legalRequestId: string;
+            serviceName: string;
+            status: string;
+            consultantJoined: boolean;
+            messages: components["schemas"]["ChatMessageView"][];
+        };
+        IntakeQueueItem: {
+            id: string;
+            wawuUserId: string;
+            clientName: string;
+            matter: string;
+            matterLabel: string;
+            status: string;
+            summary: string;
+            documentCount: number;
+            /** Format: date-time */
+            completedAt: string | null;
+            waitingHours: number;
+            urgency: string | null;
+        };
+        IntakeDetailView: {
+            id: string;
+            wawuUserId: string;
+            clientName: string;
+            matter: string;
+            matterLabel: string;
+            status: string;
+            documents: string[];
+            brief: components["schemas"]["LegalBrief"];
+            /** Format: date-time */
+            completedAt: string | null;
+            legalRequestId: string | null;
+        };
+        LegalAssistantTopic: {
+            id: string;
+            label: string;
+            matter: string;
+            matterLabel: string;
+        };
+        LegalAssistantMessage: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "consultant" | "assistant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            consultantName: string | null;
+        };
+        LegalAssistantQuickReply: {
+            id: string;
+            label: string;
+        };
+        LegalAssistantBriefRow: {
+            label: string;
+            value: string;
+        };
+        LegalAssistantBrief: {
+            matter: string;
+            matterLabel: string;
+            rows: components["schemas"]["LegalAssistantBriefRow"][];
+            ready: boolean;
+        };
+        LegalAssistantConsultant: {
+            name: string | null;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        LegalAssistantThread: {
+            id: string;
+            /** @enum {string} */
+            stage: "profiling" | "brief_ready" | "sent";
+            matter: string;
+            matterLabel: string;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            awaitingReply: boolean;
+            legalRequestId: string | null;
+            requestStatus: string | null;
+            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
+            assistantStopped: boolean;
+        };
+        LegalAssistantTranscript: {
+            intakeId: string;
+            legalRequestId: string | null;
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+        };
         DayAvailability: {
             date: string;
             slots: {
@@ -7685,11 +7896,93 @@ export interface components {
             name: string;
             category: string;
             /** @enum {string} */
-            path: "simple" | "consultation";
+            path: "consultation" | "simple";
             blurb: string;
             priceNaira: number | null;
             requiresDocuments?: boolean | null;
             applyHref?: string | null;
+        };
+        ConsultationOptionView: {
+            /** @enum {string} */
+            medium: "zoom" | "physical" | "phone";
+            label: string;
+            minutes: number | null;
+            priceKobo: number | null;
+            onRequest: boolean;
+        };
+        ConsultationOptionsView: {
+            timeZone: string;
+            options: components["schemas"]["ConsultationOptionView"][];
+        };
+        ConsultationSlotView: {
+            startsAt: string;
+            available: boolean;
+        };
+        ConsultationDayView: {
+            date: string;
+            slots: components["schemas"]["ConsultationSlotView"][];
+        };
+        ConsultationSlotsView: {
+            /** @enum {string} */
+            medium: "zoom" | "physical" | "phone";
+            label: string;
+            minutes: number;
+            timeZone: string;
+            horizonDays: number;
+            days: components["schemas"]["ConsultationDayView"][];
+        };
+        ConsultationBookingView: {
+            requestId: string;
+            status: string;
+            /** @enum {string|null} */
+            medium: "chat" | "zoom" | "physical" | "phone" | null;
+            label: string | null;
+            minutes: number | null;
+            priceKobo: number | null;
+            scheduledFor: string | null;
+            holdExpiresAt: string | null;
+            paid: boolean;
+            paidAt: string | null;
+        };
+        LegalDeliverableView: {
+            id: string;
+            fileName: string;
+            url: string | null;
+            pages: number | null;
+            chatMessageId: string | null;
+            postedAt: string;
+        };
+        LegalDeliverablesView: {
+            requestId: string;
+            status: string;
+            items: components["schemas"]["LegalDeliverableView"][];
+        };
+        AdminConsultationPriceView: {
+            /** @enum {string} */
+            medium: "chat" | "zoom" | "physical" | "phone";
+            label: string;
+            priceKobo: number | null;
+            minutes: number | null;
+            enabled: boolean;
+            offered: boolean;
+            updatedAt: string | null;
+        };
+        AdminServicePriceView: {
+            serviceCode: string;
+            serviceName: string;
+            category: string;
+            priceKobo: number | null;
+            updatedAt: string | null;
+        };
+        AdminLegalPricesView: {
+            consultations: components["schemas"]["AdminConsultationPriceView"][];
+            services: components["schemas"]["AdminServicePriceView"][];
+        };
+        DeliverFilesResultView: {
+            requestId: string;
+            status: string;
+            deliveredAt: string | null;
+            items: components["schemas"]["LegalDeliverableView"][];
         };
         WebhookResult: {
             /** @enum {string} */
@@ -8140,7 +8433,7 @@ export interface components {
             /** @enum {string} */
             audience: "everyone" | "creators" | "buyers" | "unverified_creators" | "professionals" | "unverified_professionals";
             /** @enum {string} */
-            status: "failed" | "draft" | "sending" | "sent";
+            status: "failed" | "draft" | "sent" | "sending";
             recipientCount: number;
             deliveredCount: number;
             failureReason: string | null;
@@ -8729,77 +9022,6 @@ export interface components {
         ClosestSearchResult: {
             items: components["schemas"]["ContentPieceResponse"][];
         };
-        PublicSchoolCard: {
-            id: string;
-            name: string;
-            /** @enum {string} */
-            category: "business" | "tech" | "creative" | "languages" | "vocational";
-            location: string;
-            logo: string | null;
-            foundedYear: number | null;
-            expertise: string[];
-            courseCount: number;
-            fromPriceKobo: number | null;
-            matchedCourses: string[];
-        };
-        PublicSchoolsPage: {
-            items: components["schemas"]["PublicSchoolCard"][];
-            nextCursor: string | null;
-        };
-        PublicIntakeView: {
-            id: string;
-            startDate: string;
-            schedule: string;
-            location: string | null;
-            capacity: number;
-            seatsLeft: number;
-            full: boolean;
-        };
-        PublicCourseDetail: {
-            id: string;
-            title: string;
-            weeks: number;
-            /** @enum {string} */
-            mode: "in_person" | "online" | "hybrid";
-            syllabus: string[];
-            outcomes: string[];
-            priceKobo: number;
-            school: {
-                id: string;
-                name: string;
-                /** @enum {string} */
-                category: "business" | "tech" | "creative" | "languages" | "vocational";
-                location: string;
-                logo: string | null;
-                applyUrl: string | null;
-            };
-            intakes: components["schemas"]["PublicIntakeView"][];
-        };
-        PublicSchoolCourseCard: {
-            id: string;
-            title: string;
-            weeks: number;
-            /** @enum {string} */
-            mode: "in_person" | "online" | "hybrid";
-            priceKobo: number;
-            nextIntake: components["schemas"]["PublicIntakeView"];
-        };
-        PublicSchoolDetail: {
-            about: string;
-            applyUrl: string | null;
-            courses: components["schemas"]["PublicSchoolCourseCard"][];
-            id: string;
-            name: string;
-            /** @enum {string} */
-            category: "business" | "tech" | "creative" | "languages" | "vocational";
-            location: string;
-            logo: string | null;
-            foundedYear: number | null;
-            expertise: string[];
-            courseCount: number;
-            fromPriceKobo: number | null;
-            matchedCourses: string[];
-        };
         CommunityJoinRequest: {
             id: string;
             userWawuId: string;
@@ -8955,156 +9177,6 @@ export interface components {
         EventSaveView: {
             eventId: string;
             userSaved: boolean;
-        };
-        QuestionOption: {
-            value: string;
-            label: string;
-        };
-        IntakeQuestion: {
-            id: string;
-            step: number;
-            stepTitle: string;
-            prompt: string;
-            /** @enum {string} */
-            kind: "text" | "documents" | "single" | "multi" | "date";
-            /** @enum {string} */
-            level: "required" | "optional";
-            options?: components["schemas"]["QuestionOption"][] | null;
-            placeholder?: string | null;
-            suggestions?: string[] | null;
-            helper?: string | null;
-            showIf?: {
-                questionId: string;
-            } | null;
-        };
-        GeminiBrief: {
-            summary: string;
-            keyIssues: string[];
-            questionsToClarify: string[];
-            risks: string[];
-        };
-        LegalBrief: {
-            matter: string;
-            matterLabel: string;
-            facts: {
-                question: string;
-                answer: string;
-            }[];
-            documentCount: number;
-            analysis: components["schemas"]["GeminiBrief"];
-            generatedBy: string;
-            generatedAt: string;
-        };
-        IntakeView: {
-            id: string;
-            matter: string;
-            matterLabel: string;
-            status: string;
-            answers: {
-                [key: string]: unknown;
-            };
-            documents: string[];
-            questions: components["schemas"]["IntakeQuestion"][];
-            outstandingRequired: string[];
-            brief: components["schemas"]["LegalBrief"];
-            legalRequestId: string | null;
-        };
-        ChatMessageView: {
-            id: string;
-            /** @enum {string} */
-            authorRole: "client" | "ai" | "consultant";
-            body: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        ChatThreadView: {
-            legalRequestId: string;
-            serviceName: string;
-            status: string;
-            consultantJoined: boolean;
-            messages: components["schemas"]["ChatMessageView"][];
-        };
-        IntakeQueueItem: {
-            id: string;
-            wawuUserId: string;
-            clientName: string;
-            matter: string;
-            matterLabel: string;
-            status: string;
-            summary: string;
-            documentCount: number;
-            /** Format: date-time */
-            completedAt: string | null;
-            waitingHours: number;
-            urgency: string | null;
-        };
-        IntakeDetailView: {
-            id: string;
-            wawuUserId: string;
-            clientName: string;
-            matter: string;
-            matterLabel: string;
-            status: string;
-            documents: string[];
-            brief: components["schemas"]["LegalBrief"];
-            /** Format: date-time */
-            completedAt: string | null;
-            legalRequestId: string | null;
-        };
-        LegalAssistantTopic: {
-            id: string;
-            label: string;
-            matter: string;
-            matterLabel: string;
-        };
-        LegalAssistantMessage: {
-            id: string;
-            /** @enum {string} */
-            authorRole: "client" | "consultant" | "assistant";
-            body: string;
-            /** Format: date-time */
-            createdAt: string;
-            consultantName: string | null;
-        };
-        LegalAssistantQuickReply: {
-            id: string;
-            label: string;
-        };
-        LegalAssistantBriefRow: {
-            label: string;
-            value: string;
-        };
-        LegalAssistantBrief: {
-            matter: string;
-            matterLabel: string;
-            rows: components["schemas"]["LegalAssistantBriefRow"][];
-            ready: boolean;
-        };
-        LegalAssistantConsultant: {
-            name: string | null;
-            /** Format: date-time */
-            joinedAt: string;
-        };
-        LegalAssistantThread: {
-            id: string;
-            /** @enum {string} */
-            stage: "sent" | "profiling" | "brief_ready";
-            matter: string;
-            matterLabel: string;
-            messages: components["schemas"]["LegalAssistantMessage"][];
-            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
-            brief: components["schemas"]["LegalAssistantBrief"] | null;
-            awaitingReply: boolean;
-            legalRequestId: string | null;
-            requestStatus: string | null;
-            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
-            assistantStopped: boolean;
-        };
-        LegalAssistantTranscript: {
-            intakeId: string;
-            legalRequestId: string | null;
-            brief: components["schemas"]["LegalAssistantBrief"] | null;
-            messages: components["schemas"]["LegalAssistantMessage"][];
         };
         ChatPerson: {
             wawuId: string;
@@ -11131,22 +11203,10 @@ export interface operations {
                         categories: ("Business Services" | "Protection Services" | "Contracts" | "Disputes" | "Property" | "Entertainment & Creative Law")[];
                         consultationOptions: ({
                             /** @enum {string} */
-                            medium: "chat";
-                            /** @enum {string} */
-                            label: "Chat";
-                            /** @enum {number} */
-                            minutes: 60;
-                            /** @enum {number} */
-                            feeNaira: 25000;
-                        } | {
-                            /** @enum {string} */
-                            medium: "zoom";
-                            /** @enum {string} */
-                            label: "Zoom call";
-                            /** @enum {number} */
-                            minutes: 60;
-                            /** @enum {number} */
-                            feeNaira: 45000;
+                            medium: "chat" | "zoom";
+                            label: string;
+                            minutes: number | null;
+                            feeNaira: number | null;
                         } | {
                             /** @enum {string} */
                             medium: "physical";
@@ -11367,7 +11427,7 @@ export interface operations {
                         };
                         flutterwaveConfig: {
                             txRef: string;
-                            amount: 25000 | 45000;
+                            amount: number;
                             currency: string;
                             publicKey: string;
                         };
@@ -11594,6 +11654,114 @@ export interface operations {
                         cancelledAt: string | null;
                         createdAt: string;
                     };
+                };
+            };
+        };
+    };
+    LegalConsultationController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationOptionsView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_slots: {
+        parameters: {
+            query: {
+                /** @description A video or phone call. An in-person consultation has no calendar. */
+                medium: "zoom" | "phone";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationSlotsView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_booking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationBookingView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookConsultationSlotDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationBookingView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_delivered: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDeliverablesView"];
                 };
             };
         };
@@ -15775,7 +15943,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                tab?: "all" | "content" | "creators" | "communities" | "schools";
+                tab?: "all" | "content" | "creators" | "communities";
             };
             header?: never;
             path?: never;
@@ -15829,80 +15997,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClosestSearchResult"];
-                };
-            };
-        };
-    };
-    SchoolsPublicController_list: {
-        parameters: {
-            query?: {
-                category?: "tech" | "business" | "creative" | "languages" | "vocational";
-                /**
-                 * @description Matches a school's name or place, or the title of one of its shown
-                 *     courses, ignoring case. Wildcard characters mean themselves.
-                 */
-                q?: string;
-                limit?: number;
-                /**
-                 * @description The `nextCursor` of the previous page: opaque, not to be built by hand,
-                 *     and never longer than the longest one this server gives out.
-                 */
-                cursor?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicSchoolsPage"];
-                };
-            };
-        };
-    };
-    SchoolsPublicController_course: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicCourseDetail"];
-                };
-            };
-        };
-    };
-    SchoolsPublicController_school: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublicSchoolDetail"];
                 };
             };
         };

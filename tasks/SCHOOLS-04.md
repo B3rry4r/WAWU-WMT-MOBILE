@@ -7,7 +7,7 @@ order: 20
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -230,6 +230,25 @@ Verifier V3, 8 Oct 2026. Independent session. Backend `wmt/SCHOOLS-04` `3971fea`
 M11 (`Math.max(0, capacity - seatsTaken)` without the clamp) also survives, and is **not** a defect: the `CourseIntake_seatsTaken_check` constraint (`seatsTaken <= capacity`) makes a negative count unreachable (a direct update to 11 of 10 is refused), so the clamp is defence in depth and an equivalent mutant.
 
 **Result.** Every live and static pass is green; the one open item is F1, a missing spec, not a wrong answer. Status `building` for F1 only; when it is fixed, the re-check is that spec plus M4 failing.
+
+## Builder report, round 4
+
+Builder, 8 Oct 2026. One finding, F1 (spec gap). Tests only: no production file changed. Backend `wmt/SCHOOLS-04` `7291658` (`origin/main` merged first, merge not rebase; `contract:build` regenerates the committed file with no diff); mobile `origin/main` merged (conflicts in `SHARED-CHANGES.md`, taking main's rows and keeping the two SCHOOLS-04 rows, and in generated `docs/PROGRESS.md`, regenerated), contract and types re-copied with `npm run api` (backend main had moved).
+
+**F1 fixed.** New file `src/schools/tests/schools-paging-order.contract.spec.ts` (no existing assertion touched). It makes 50 schools: 20 distinct names whose ids FALL as the names rise (`uid(0x9000 - i)`), and 10 names tied three ways with scrambled ids (neither rising nor falling with the name, not in insertion order). It reads the promised order from the database (`ORDER BY name, id`), checks the setup really runs against name order, then walks at limits 1, 2, 3, 4, 7, 10, 19, 20, 49 and 50 and requires the walk to equal that order exactly, with no duplicate and no miss.
+
+| Run | Result |
+|---|---|
+| New spec on the branch | passed |
+| M4: `{ id: { gt: after.id } }` added as a third branch of the keyset `OR` (scratch edit of `schools-public.service.ts`, then `git restore`) | the new spec FAILS (the pre-existing 97 tests still pass it, as the verifier found) |
+| Opposite mutant: the tie branch `id: { gt }` changed to `id: { lt }` (then `git restore`) | the new spec FAILS (Expected -20, Received +0) |
+| `npx tsc --noEmit` | exit 0 |
+| `src/schools`, `src/search-response`, `src/admin-schools` | 7 suites, 98 of 98 passed (own database, seeded) |
+| Gates | 16 fail / 59 warn / 76 accepted, the 16 are main's; `check_baseline.py` ok |
+| Protected routes `run.sh --fresh` | all 244 required tests passed |
+| Mobile `npm run check` | see the line below |
+
+M11 stays as the verifier ruled (equivalent mutant, the CHECK makes it unreachable).
 
 ## Owner sign-off
 
