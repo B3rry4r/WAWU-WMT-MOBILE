@@ -3,18 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 97 of 223.**
+**Launch tasks done: 99 of 232.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 106 | 0 | 20 | 21 |
+| todo | 112 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
-| done | 58 | 27 | 11 | 5 |
+| review | 2 | 0 | 0 | 0 |
+| done | 60 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
@@ -115,7 +116,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
+- [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -126,24 +129,24 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
+- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
+- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
+- 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
+- 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
+- 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
+- 7 Oct 2026 · LEGAL-03 · Builder round 3: delivered files stored as keys and signed fresh for 15 minutes, file name and booking-zone rules, notification text without the matter, specs for M11 and M18, migration renamed `20261013100000`; status verifying.
+- 8 Oct 2026 · TIER-01 · Verified round 2 (backend 3e1dc15, mobile 2a5c93a): back to building for one low defect. D3: backend main moved to 6ce2ddf (LEGAL-03, `20261016160000_legal_consultations`), so the branch's `20261016120000_maker_plan` no longer sorts after main's newest migration; rename after a merge of main (a trial merge is clean, contract regenerates identically, prisma applies it either way). D1 and D2 fixed; N1, N2, N4, N5, N6 and item 9 hold (39 phone and country pairs live, 5 through the real WAWU ID); figures 81 of 81; 63 broken config files as expected; protected 253/253; full suite 4,738 passed with every failing file green on rerun (load and namespace only); 21 of 25 own mutants killed, the 4 survivors spec gaps.
+- 8 Oct 2026 · TIER-01 · Round 2 built (backend `wmt/TIER-01` with main 8d7a054 merged, mobile with main eb62049): D1 the three nullable fields of GET /me/tier are nullable in the contract and the app's types (src/plans in the enricher's allOf list, a spec on the generated contract); D2 a key written twice in plans.config.json stops boot naming it; N1 a phone with no country code is decided by the WAWU ID country claim; N2 every number in the plans answers is integer; N4 no-store on both routes; N5 numbers above INTEGER and a missing or extra action refused at boot; N6 a non-text phone is no phone; TIER-03 lead note; 26 of 26 mutants killed; status verifying.
+- 8 Oct 2026 · TIER-01 · Verified (backend a0900cd, mobile db4f999): back to building with two defects. D1: GET /me/tier's contract types `tier`, `eventPass` and the tier's `badge` as never null (a `$ref` with a `nullable` sibling; `src/plans` is missing from the enricher's nullable-ref folders), so the app's generated MyTierView is wrong for a person with no tier. D2: a key written twice in plans.config.json boots and serves the last value (Verify at 1 kobo). Figures equal the brief (77 of 77); 58 of 64 broken files refused naming the field; currency rule, insert-only fix, states and isolation proved live through the real WAWU ID; protected 253/253; full suite 4,800 passed, the 14 failures timing or namespace-only; 22 of 24 mutants killed.
+- 8 Oct 2026 · TIER-01 · Lead applied SHARED-CHANGES TIER-01 #1 (PlansModule mounted, backend a0900cd) and #3 (contract and types from the branch), so the verifier checks the served routes.
+- 8 Oct 2026 · TIER-01 · Built (backend `wmt/TIER-01`): every price, product count, points amount, expiry, cost and cap of the 5 Oct plan in one file, `src/plans/plans.config.json` (the owner's example values in kobo and cents, four PROVISIONAL markers), checked whole at boot; a person's billing currency fixed at the first purchase and never changed by a route; `MakerTier` and `EventPass` with one reader; `GET /plans` in the caller's currency only and `GET /me/tier` (none, active, ending, ended). Mounting `PlansModule` is SHARED-CHANGES TIER-01 #1; gaps G-420, G-421; status verifying.
 - 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
-- 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
-- 7 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
-- 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
-- 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
-- 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
-- 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
-- 8 Oct 2026 · FIX-06 · Verified round 2 (status review, no open defect): D1 closed, round 1's approve race 0 of 80 and reject race 0 of 20 on built Hubs with the real wawu-id; the admin read 35 of 35 (roles, every state, no protected answer widened); 162-step sweep identical to main except the new state's 5, decided and unknown approve and reject byte-identical; capability 42 of 42; every race 0 (main 34 of 60); protected 253/253; full suite 182 of 184 in its own namespace, the two misses passing alone on the host; backfill keeps main-made rows byte-equal; 19 of 19 mutants killed. The elevate outside the lock now leaves a raised tier on a lost approve, where main silently undid the rejection.
-- 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
-- 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
-- 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
-- 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
-- 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
-- 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
-- 8 Oct 2026 · FIX-16 · Lead filed the dashboard and web catch-up for FIX-06's takedowns (List again, the taken-down state, the unlist toast that would turn untrue, the web's 409 sentence); ordered right after FIX-06. Lead default recorded with it: a takedown hides the listing only; account sanctions (event hosting, verification, notifications) stay separate admin actions.
+- 8 Oct 2026 · SHARED-04 to SHARED-07, FIX-22 · Lead filed the shared-change pass the audit found missing: 35 rows had no owner. SHARED-04 installs the native modules in one batch and turns on the wallet selfie, photo pickers and copy on the phone (today nobody can open a wallet on a phone); SHARED-07 the phone player, reader and share picture; SHARED-05 the route graph and the theme at launch; SHARED-06 the shared components, tokens and API client; FIX-22 the AI response schema. CHECK-2 and later move down by 5.
+- 8 Oct 2026 · SHARED-CHANGES · Lead audit of rows still marked open for done tasks: 27 applied, 0 done elsewhere, 5 still owed (owned), 35 with no owner.
