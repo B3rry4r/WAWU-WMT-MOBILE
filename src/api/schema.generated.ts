@@ -4656,6 +4656,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plan as the caller pays for it. Every amount is whole minor units of
+         *     `currency` (kobo for NGN, cents for USD); one currency per answer.
+         */
+        get: operations["PlansController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/tier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `none`, `active`, `ending` or `ended`, with what the tier gives. */
+        get: operations["MeTierController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ads/{id}/events": {
         parameters: {
             query?: never;
@@ -9233,6 +9270,80 @@ export interface components {
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
         };
+        PlanBadgeView: {
+            id: string;
+            numbered: boolean;
+        };
+        MyTierSummaryView: {
+            id: string;
+            name: string | null;
+            badge: components["schemas"]["PlanBadgeView"];
+        };
+        PlanEventPassView: {
+            id: string;
+            name: string;
+        };
+        MyTierView: {
+            /** @enum {string} */
+            state: "active" | "none" | "ending" | "ended";
+            tier: components["schemas"]["MyTierSummaryView"];
+            activeFrom: string | null;
+            activeUntil: string | null;
+            productsAllowed: number;
+            extraProducts: number;
+            pointsIncluded: number;
+            firstVoiceIntroIncluded: boolean;
+            eventPass: components["schemas"]["PlanEventPassView"];
+        };
+        PlanTierView: {
+            id: string;
+            name: string;
+            days: number;
+            products: number;
+            bonusPoints: number;
+            bonusPointsExpireDays: number;
+            priceMinor: number;
+            eventPass: components["schemas"]["PlanEventPassView"];
+            badge: components["schemas"]["PlanBadgeView"];
+            packBonusPercent: number;
+            firstVoiceIntroIncluded: boolean;
+            preselected: boolean;
+        };
+        PlanExtraProductsView: {
+            count: number;
+            priceMinor: number;
+        };
+        PlanPackView: {
+            id: string;
+            points: number;
+            priceMinor: number;
+        };
+        PlanCheckoutBumpView: {
+            points: number;
+            priceMinor: number;
+        };
+        PlanActionView: {
+            id: string;
+            points: number;
+            /** @enum {string} */
+            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+        };
+        PlanCapsView: {
+            dailyPoints: number;
+            maxCharactersPerJob: number;
+            maxAudioMinutesPerJob: number;
+        };
+        PlansView: {
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            currencyFixed: boolean;
+            tiers: components["schemas"]["PlanTierView"][];
+            extraProducts: components["schemas"]["PlanExtraProductsView"];
+            packs: components["schemas"]["PlanPackView"][];
+            checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
+            actions: components["schemas"]["PlanActionView"][];
+            caps: components["schemas"]["PlanCapsView"];
+        };
         AdCreativeView: {
             headline: string;
             subline: string | null;
@@ -9265,7 +9376,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            status: "live" | "paused" | "draft" | "ended" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -9289,7 +9400,7 @@ export interface components {
                 /** @enum {string|null} */
                 placement: "tgif_card" | "today_slot" | null;
                 /** @enum {string|null} */
-                status: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+                status: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
                 /** @enum {string|null} */
                 phase: "upcoming" | "running" | "over" | null;
                 /** Format: date-time */
@@ -9303,8 +9414,8 @@ export interface components {
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                scheduled: unknown;
                 ended: unknown;
+                scheduled: unknown;
             };
             deliveryByPlacement: {
                 tgif_card: unknown;
@@ -9314,8 +9425,8 @@ export interface components {
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                scheduled: unknown;
                 ended: unknown;
+                scheduled: unknown;
             };
             byPlacement: {
                 tgif_card: unknown;
@@ -9335,7 +9446,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            status: "live" | "paused" | "draft" | "ended" | "scheduled";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -9345,11 +9456,11 @@ export interface components {
         AdAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "paused" | "updated" | "scheduled" | "ended" | "created" | "resumed" | "deleted";
+            action: "paused" | "updated" | "ended" | "scheduled" | "created" | "resumed" | "deleted";
             /** @enum {string|null} */
-            previousStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            previousStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
             /** @enum {string|null} */
-            newStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            newStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
             changes: {
                 [key: string]: {
                     from: unknown;
@@ -9371,7 +9482,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            status: "live" | "paused" | "draft" | "ended" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -18677,6 +18788,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EarningSalePage"];
+                };
+            };
+        };
+    };
+    PlansController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansView"];
+                };
+            };
+        };
+    };
+    MeTierController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTierView"];
                 };
             };
         };
