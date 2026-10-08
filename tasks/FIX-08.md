@@ -125,7 +125,7 @@ No defect is open.
 
 Cleanup: every server, relay and stand-in ran under the namespace scripts and ended with them (`ps` shows none left); `vf08_test_sweep`, `vf08_test_spec`, `vf08_test_protected` and `vf08_test_full` dropped; backend worktrees `vf08b`, `vf08main` and `vf08t` removed (so the trial merge 6f0a0e1 was never pushed); `vf08m` removed after this push. Staged-diff key scan: nothing key-shaped.
 
-## Lead merge note (7 Oct 2026)
+## Lead merge note (8 Oct 2026)
 
 Merged after the independent verifier (report 862e8e6) and backend PR #84 (merge f7e651a): 175 former 500s now answer 413, 415 or 400; 125 other answers byte-identical; protected suite 253/253; webhooks unchanged. The lead added one line to the backend's docs/contract/CONVENTIONS.md section 3 (a parser refusal carries no reason, money routes too), closing the verifier's U1. Follow-ups, not defects: T1 (a refusal logged at info level passes the specs) and O2 (pre-existing on main: hubTrustProxy throws isLoopbackAddress(undefined) when the socket is already gone, logged as a 500).
 
