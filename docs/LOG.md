@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · SHARED-04 · Builder update (lead ruling): on the phone every picked photo for M8 and M36 goes up written again as a JPEG at 0.9 and its picked size, so no Exif block or GPS travels with it; videos go as chosen; the web build is the lead's separate task. Spec with a GPS-tagged fixture, 4 mutants killed. Status verifying.
 - 8 Oct 2026 · SHARED-04 · Builder report: the native module batch installed in one go (13 modules, a QR renderer, expo-file-system, expo-asset, four expo patch bumps) with their plugins; A6 takes the selfie with the front camera (640 px JPEG under 100,000 characters, nothing after its end), M8 and M36 open the photo library, A8 copies with expo-clipboard; expo-doctor 21 of 21, web build pixel-identical to main, `npm run check` exit 0. Status verifying.
 - 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.

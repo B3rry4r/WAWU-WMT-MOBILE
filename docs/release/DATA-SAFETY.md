@@ -119,7 +119,7 @@ Purposes use Google's list: App functionality (AF), Account management (AM), Fra
 |---|---|---|
 | [CL-01] **Calendar events** | **No data leaves the phone.** | `expo-calendar` is planned (SHARED-CHANGES row 8; E7 "add to calendar"). Adding an event to the phone's calendar writes locally; the app sends no calendar data to a server. **LEAD CHECK** from the built manifest: the plugin's default permissions include read as well as write. If the app only writes, restrict the plugin to what it needs; a request to read the calendar needs a reason on the permission declaration. |
 | [CL-02] **Contacts** | No | No contacts package is in `package.json`, no task lists one, recipients are found by name, handle or phone through the server (WALLET-08). |
-| [CL-03] **Location** (approximate or precise) | No | No location package or permission. A profile "location" and an event city are typed text (declared as "Other info" above). |
+| [CL-03] **Location** (approximate or precise) | No | No location package or permission. A profile "location" and an event city are typed text (declared as "Other info" above). A photo's own location: the phone build writes every picked photo again as a JPEG before upload, so no Exif block or GPS goes with it (SHARED-04, lead ruling 8 Oct 2026); the web build still uploads the file as chosen until the lead's separate task changes it. |
 | [CL-04] **Health and fitness** | No | none |
 
 ### App activity, web, device

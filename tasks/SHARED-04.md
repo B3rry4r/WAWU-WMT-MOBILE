@@ -72,7 +72,7 @@ Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `ori
   - Before anything is sent (`selfie/encoding.ts`): whole padded base64 groups; the JPEG start marker first and the end marker as the last two bytes (KYC-02 refuses a byte after it); no side over 2,048 px; at least the server's smallest photo. Anything else is "That photo could not be used".
   - The manipulator can only answer through a file in the app's cache. That file is deleted as soon as its base64 is read, and every native image is released.
   - `SelfieScreen.tsx`: the page colour over the camera rectangle's corners (`ovalMask`), so the live picture shows only inside the oval; the camera-off state and its button. `selfie/types.ts`: `settings` on a ready capture. `capture.web.ts` takes the 640 and the qualities from `encoding.ts` (the same values; nothing else changed).
-- **M8 (ME-06 #1), `pickImage.ts`.** `launchImageLibraryAsync({ mediaTypes: 'images' })`, then `fetch(uri)` to a `Blob` (`readPicked.ts`). `canPickImage` is true, so both camera buttons draw. A HEIC, or any type no upload folder takes, is re-encoded as JPEG at 0.9 instead of being refused by the Hub. A library that fails or a file that cannot be read picks nothing.
+- **M8 (ME-06 #1), `pickImage.ts`.** `launchImageLibraryAsync({ mediaTypes: 'images' })`, then `fetch(uri)` to a `Blob` (`readPicked.ts`). `canPickImage` is true, so both camera buttons draw. Every picked photo goes up written again as a JPEG, without its Exif block (see "Builder update" below). A library that fails or a file that cannot be read picks nothing.
 - **M36 (ME-11 #1), `pickMedia.ts`.** Photos and videos, several at once (`selectionLimit` 8, `WORK_LIMITS.media`; `orderedSelection`), read as M8's are. `canPickMedia` is true. A file that cannot be read is left out.
 - **A8 (KYC-04 #1), `copy.ts`.** `Clipboard.setStringAsync(value)` from expo-clipboard, answering what it answered (false on a refusal or an error, so the button never says Copied for nothing).
 - The player, the reader and the share picture are not built (SHARED-07); `canPlay` stays false.
@@ -105,8 +105,7 @@ Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `ori
     - cache files deleted and native images released;
     - camera off, then Open settings, then back with the camera; a camera that will not start.
   - `selfieEncoding.test.ts` (3).
-  - `profile-edit/__tests__/phonePicker.test.tsx` (4): both buttons; the avatar and the cover through presign and PUT with the chosen bytes; HEIC to JPEG; closing or failing picks nothing.
-  - `works/__tests__/phonePicker.test.tsx` (3): the box; a photo and a video go up in order, with the picker's options; HEIC to JPEG; an unreadable file is left out; closing adds nothing.
+  - `profile-edit/__tests__/phonePicker.test.tsx` (4) and `works/__tests__/phonePicker.test.tsx` (3): see "Builder update" below.
   - `phoneCopy.test.tsx` (3): A8's Copy calls `setStringAsync('8123456789')` and says Copied; a refusal or an error never does.
   - Changed tests: `editProfile.test.tsx`'s "a phone build without a photo picker draws no camera buttons" now asserts the phone draws both (the change ME-06 #1 asks for; the old assertion described the build this task replaces). `SelfieScreen.test.tsx` and `editProfile.test.tsx` gained mocks of the new modules (they hand A6 their own capture, or never open the library).
   - No test reaches a native call. A probe (`$E/probe/`: every new module mapped to a file that throws on import) shows only `expo-clipboard` is imported by suites that do not mock it: 11, through Home and Wallet's `BalanceCard`, none of which presses Copy. expo-clipboard ships its own jest mock (`mocks/ExpoClipboard.ts`), which jest-expo uses.
@@ -135,14 +134,14 @@ Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `ori
    - expo-audio has no recording and no background playback: both would add permissions, and playback a foreground-service declaration. The microphone strings are removed on iOS too.
 2. The permission wording for photos, saving and the calendar (no row gave it). The notification icon is `android-icon-monochrome.png` (white on clear) in the accent.
 3. A6: the first tap asks and takes nothing; the camera-off and camera-failed copy above (not drawn); the oval mask; the selfie's cache file deleted (`expo-file-system`). A capture that fails any check is "That photo could not be used", as on web.
-4. Pickers: a type the Hub's folders refuse (HEIC, GIF) goes up as JPEG at 0.9; JPEG, PNG and WebP go as chosen. A failed library or an unreadable file counts as nothing chosen.
+4. Pickers: a failed library or an unreadable file counts as nothing chosen. (Every photo going up as a JPEG is now the lead's ruling, below.)
 5. `react-native-qrcode-svg` as the QR renderer; the four expo patch bumps and `expo-asset` (expo-doctor).
 6. The 11 suites that import expo-clipboard only through Home and Wallet are left as they are (jest-expo's own mock of it; none presses Copy).
 
 **Findings for the lead (not changed here).**
 - `SYSTEM_ALERT_WINDOW` is in the main app manifest the prebuild template writes (main has it too), so it ships in release builds; DATA-SAFETY said "debug only". LEAD CHECK on the built APK.
 - Firebase Messaging (expo-notifications) can add `com.google.android.gms.permission.AD_ID` at the Gradle merge. PLAY-LISTING's Advertising ID row now says to check the built APK.
-- A picture goes up as the person chose it, so a JPEG keeps its camera data, location included, on a public avatar, cover or work. The web build does the same, and the upload goes straight to storage, so the Hub never sees the bytes. Re-encoding every picture (one line in `readPicked.ts`, and a canvas on web) would strip it. Not done, because the rows ask for the file as chosen.
+- A picture went up as the person chose it, so a JPEG kept its camera data, location included. Ruled by the lead on 8 Oct 2026 and fixed on the phone (below); the web build's side is filed separately by the lead.
 - An iPhone's library video is QuickTime, and `profile/work` takes only `video/mp4`, so it fails at upload with the existing "That file did not upload" (Android gives MP4). iOS is after launch (R-24).
 
 **NOT RUN.**
@@ -151,6 +150,32 @@ Built by the lead's agent, 8 Oct 2026, mobile only, on `wmt/SHARED-04` from `ori
 - **The live camera in the oval, the real encoder's bytes passing the server's JPEG walk, and Open settings on a real phone:** jest replaces the camera and the encoder, and the web build has no live camera. Unblocked by V10 on the preview build, then a sandbox selfie match once the wallet provider's sandbox takes one (G-25).
 - **iOS:** only introspected (the Info.plist strings); no iOS build (RELEASE-03).
 - **Push:** Android push needs the owner's FCM credentials on Expo (INBOX-21).
+
+## Builder update: photos go up without their place (lead ruling, 8 Oct 2026)
+
+Ruling: "a photo a person uploads must not carry where it was taken". Same builder, same branch, from 5ded313; the worktree was re-created with its own `npm ci`.
+
+- **The change, `src/features/profile-edit/readPicked.ts`** (shared by M8's `pickImage.ts` and M36's `pickMedia.ts`).
+  - Every picked photo, whatever its format (JPEG, PNG, WebP, HEIC, GIF), is written again with `expo-image-manipulator` as a JPEG at 0.9, and that file is what goes up and what the screen previews. The encoder writes the pixels and no EXIF block, so no GPS, time or phone details.
+  - The photo keeps the size it was picked at (no resize). The only limit is the Hub's own per-upload limit, as before: `MAX_UPLOAD_BYTES` 512 MB, and 100 MB for `profile/work`. The app has no byte limit of its own to apply.
+  - A video goes up as it was chosen, with the type the library reports. Its own metadata is not touched: the ruling covers photos, and the phone has no video re-encoder installed.
+  - The web build is not changed (`pickImage.web.ts` and `pickMedia.web.ts` still upload the browser's `File`); the lead files that side separately.
+- **Specs** (jest; both modules replaced; the encoder modelled as Android's `Bitmap.compress` writes: a JFIF APP0 header, then the image's own segments).
+  - `profile-edit/__tests__/phonePicker.test.tsx` (4):
+    - The avatar's photo is written again once (`{ format: 'jpeg', compress: 0.9 }`, no resize), and the presign's `contentLength` and the PUT body are the encoder's bytes.
+    - **"a photo taken with its place in it goes up without it".** The fixture JPEG carries an APP1 Exif block whose IFD0 points (tag 0x8825) to a GPS block with a latitude, and the test first proves all three are in it. The cover's PUT body then starts with the JPEG start marker and has no APP1 segment, no "Exif" anywhere and no GPS pointer, while the image's own segments (DQT, SOF0) are still there.
+    - A PNG cover and a HEIC go up as JPEGs. Closing, a failing library, or a file the encoder cannot read picks nothing.
+  - `works/__tests__/phonePicker.test.tsx` (3):
+    - A photo taken with its place and a video, picked together, go up in order. The photo's body is the encoder's JPEG, with markers APP0, DQT and SOF0 only and no "Exif"; the video's body is byte-for-byte what was chosen, as `video/mp4`.
+    - A WebP, a HEIC and a GIF go up as JPEGs; an unreadable file is left out; closing adds nothing.
+- **Mutants: 4, all killed** (`$E/mutants-exif.json`; each applied, both spec files run, then `git restore`, and the file checked clean):
+  - E1, the old rule (JPEG, PNG and WebP go up as picked): 5 tests failed, the GPS spec among them.
+  - E2, the original bytes go up behind the re-encoded preview: 3 failed, the GPS spec among them.
+  - E3, videos written again too: 1 failed.
+  - E4, a photo keeps the library's type: 2 failed.
+- **Checks:** RECHECK.
+- **Also updated:** SHARED-CHANGES ME-06 #1 and ME-11 #1 (`applied (SHARED-04, 41e35ee, 6224f24)`), and `docs/release/DATA-SAFETY.md` CL-03 (the phone sends no photo location; the web build does until the lead's task).
+- **NOT RUN:** the real encoder on a phone (Android `Bitmap.compress`, iOS `UIImage.jpegData`) writing no Exif block, and the picture staying upright once the orientation tag is gone (on Android, Glide applies the orientation when the manipulator loads the file). jest models the encoder. Unblocked by V10 on the lead's preview build: pick a photo with location on the phone, then read the uploaded object's bytes for an APP1 segment.
 
 ## Verifier report
 
