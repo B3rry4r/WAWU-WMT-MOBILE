@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 112 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 61 | 27 | 11 | 5 |
 
@@ -18,7 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
 
@@ -140,6 +140,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · POINTS-01 · Round 3 built, now verifying: a commit or release whose hold the purge deleted answers points_hold_not_found (D6); the migration renamed `20261016200000_points` after main's newest (D7); the purge flag is bound to its transaction (U4); the end CHECK gains a lower bound (N3); a purge that leaves points says so (N4); 29 of 29 mutants killed (backend `wmt/POINTS-01` 370c5d2, main 657a152 merged).
 - 8 Oct 2026 · POINTS-01 · Verifier report, round 2 (independent session, backend `5bc239d`, mobile `01a5739`, wawu-id `fb8717e`): D1 to D5, U1 and U2 closed by their real cause (the next end over every live lot; ledger deletes only from the purge step, refused bare, unflagged, across two people, partial or in a later transaction; two or three people racing one hold reference get one hold and 409s; ends bounded before 2100 in the service and the CHECK; a cancelled conversion reads as cancelled; every illegal hold move refused); V1, protected 253/253, full suite (four namespaced shards, only known timing and namespace failures, each green alone), V9 on the built server with a real wawu-id sign-in, 18 of 18 mutants killed. Back to building for D6 (a commit or release racing the purge answers a raw P2025, not points_hold_not_found) and D7 (backend main 6ce2ddf now has migration 20261016160000, after this task's stamp); U4 (a session-level purge flag is accepted) and the missing SETTINGS-06 note for the lead.
 - 8 Oct 2026 · POINTS-01 · Round 2 built, now verifying: the verifier's D1 to D5 and the lead's U1 and U2 rulings (the next end summed over every live lot; ledger deletes only through the account purge's points step under the person's lock; two people racing one hold reference get a 409; lot ends bounded before 2100; a cancelled conversion reads as cancelled; a hold moves only once); 22 of 22 mutants killed; lead notes added to POINTS-02, POINTS-03, POINTS-04, TIER-03 and REF-01; CONVENTIONS points section renumbered 16 (backend `wmt/POINTS-01` 5bc239d).
 - 8 Oct 2026 · POINTS-01 · Verifier report (independent session, backend `e524ac8`, mobile `62d0cd6`, wawu-id `fb8717e`): the ledger holds by its real cause (CHECKs and the deferred lot checks refuse at COMMIT; UPDATE, partial DELETE and TRUNCATE refused), 8 races at 50 rounds each never overdraw or double-write (holds, grants, hold or release against the expiry pass, two passes, commit against release), time boundaries consistent and all on the app's UTC clock, a caller's rollback leaves nothing, protected 253/253, full suite in 4 namespace shards 4,778 of 4,794 (hub-rate-limits and one timing assert, both pass alone on the host), V9 live through the real wawu-id with the app's own expiry pass, 15 of 17 mutants killed; not ready: D1 `nextExpiry` counts only the 50 listed lots, D2 a bare `DELETE FROM "PointLedger"` is accepted, D3 two people racing one hold reference get a raw P2002 not 409, D4 an end after year 9999 makes `GET /me/points` 500, D5 a cancelled conversion still reads "Converting to cash"; U1 the purge is not under the points lock (5 of 200 races leave lots that disagree with their ledger; the purge has no caller); status back to building.
@@ -154,4 +155,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
 - 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
 - 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
-- 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.

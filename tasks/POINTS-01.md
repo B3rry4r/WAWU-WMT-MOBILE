@@ -7,7 +7,7 @@ order: 200
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-43, R-5]
 passes: [V1, V2, V3, V4, V9]
@@ -51,6 +51,58 @@ Needs no money and no provider; starts now.
 - [ ] No ledger row is ever updated or deleted (the spec fails on an UPDATE or DELETE of the table).
 
 ## Builder report
+
+### Lead rulings after the round 2 verifier (8 Oct 2026)
+
+Copied from the lead's round 3 brief.
+
+1. D6: in settle(), after taking the person's points lock, read the hold with findUnique (not findUniqueOrThrow); if it is gone, answer points_hold_not_found (the typed error, same as any missing hold). Spec: the verifier's deterministic reproduction (lock held in a raw transaction, release and commit started, the person's points purged with the flag, then commit): both answer points_hold_not_found, nothing written.
+2. D7: backend main moved to 38a0dca (FIX-11, LEGAL-03 20261016160000, TIER-01 20261016170000); NUV-01 (20261016180000) is in PR #91 and MONEY-17 takes 20261016190000. Merge backend origin/main first, rename your folder to 20261016200000_points (content unchanged), and check right before pushing that it sorts after every folder on origin/main and every origin/wmt/* backend branch.
+3. U4: harden it. The purge flag's value is the person's id joined to the transaction id (`<personId>:<txid_current()>`); the trigger accepts the delete only when the flag equals that for the current transaction. A session-level SET then never matches a later transaction. Spec: a session-level flag set in one transaction is refused in the next.
+4. N2: fix CONVENTIONS section 16 (expireLapsed takes no tx: say so, or give it one; pick the smaller) and the CHECK's comment (POINTS_LATEST_END).
+5. N3: add a lower bound to the end CHECK (after 2000-01-01 UTC), so -infinity is refused.
+6. N4: when the points step fails, the purge's return value and its summary log say the points were left (not "Purged 0 rows" alone).
+7. U3: the lead adds the purge note to SETTINGS-06 on mobile main; nothing for you.
+8. N1 and N5 stay as they are (N5: PT5 is POINTS-02's screen; it groups by the soonest moment).
+
+Then the usual checks (specs, protected suite 253/253, gates, contract unchanged and +additive, mobile npm run check exit 0, at least 6 new mutants on round 3's code), push both branches.
+
+### Builder report, round 3
+
+Builder, 8 Oct 2026 (the builder of rounds 1 and 2). wawu-backend `wmt/POINTS-01` **370c5d2**: acfc930 merges backend main 38a0dca (conflicts: `scripts/enrich-contract.js`, kept main's `src/plans` line and this branch's `src/points` line; `contract/openapi.json`, regenerated), 081d091 is round 3, and 370c5d2 merges main 657a152 (NUV-01, merged while this round ran; `schema.prisma` is main's file with the points block after it, the contract auto-merged and equal to `npm run contract:build`). Mobile `wmt/POINTS-01`: 02983a7 merges mobile main babc075 into the verifier's a3aa349, e3fb963 is the contract and shared-change rows, 914a94b merges main 5597ba7, then this report. Fresh worktrees, `bp01r3_` databases, ports 5821 to 5824 (my WAWU ID stand-in on 5822).
+
+**Each ruling, and how it was proved** (`points.service.spec.ts` 53 tests, `points.contract.spec.ts` 6; 59/59).
+- **D6:** `settle()` reads the hold again after taking the person's points lock with `findUnique`; when the purge deleted it meanwhile, the answer is `404 points_hold_not_found`, the same typed error as a hold that never existed. The hold race's read of the winner is typed the same way (gone is `points_hold_conflict`). Specs: the verifier's deterministic reproduction on a raw `pg` connection (the person's points lock taken in a transaction; `release` and `commit` of one running hold started and seen waiting on that lock in `pg_locks`; the flag set and the person's ledger, holds and lots deleted; COMMIT): both answer `points_hold_not_found` (404), and the person has 0 ledger rows, 0 holds and 0 lots. And the real `purgePersonPoints` racing a commit (even rounds) or a release (odd rounds), 50 rounds: only typed answers (the settle won or `points_hold_not_found`), nothing left any round.
+- **D7:** the folder is now `prisma/migrations/20261016200000_points` (`git mv`; no file names the stamp). Checked right before pushing: it sorts after every folder on origin/main and on every `origin/wmt/*` backend branch (79 refs: origin/main and 78 `origin/wmt/*` branches; the newest other folder anywhere is main's own `20261016180000_nuvion_adapter`; none at or after `20261016200000`).
+- **U4:** the purge sets `wawu.points_purge` to `<person id>:<txid_current()>`; the trigger reads the flag, requires it to end with `:` and the current transaction's id, and takes the person as what comes before. A value left at session level names an earlier transaction and never matches a later one. Specs on one raw connection: `set_config(..., false)` inside a transaction with that transaction's id, COMMIT, then a delete of that person's ledger in the next transaction is refused; a plain `SET wawu.points_purge = '<id>:1'` is refused too; round 2's form (the person's id alone, in its own transaction) is refused; the purge's own step still works.
+- **N2:** CONVENTIONS section 16 says `grant`, `hold`, `commit` and `release` take the caller's `tx` and `expireLapsed` takes none (it is the job's pass, one transaction per lapsed lot); the purge step is named as the only delete. The CHECK's comment names `POINTS_LATEST_END` in `points-config.ts`.
+- **N3:** `PointLot_expiresAt_bounded` is now `"expiresAt" > '2000-01-01' AND "expiresAt" < '2100-01-01'` (UTC). Specs: raw inserts ending at `-infinity`, 1999-12-31 23:59:59 and 2000-01-01 itself are refused by it, and nothing is written. The service already refuses any end at or before now.
+- **N4:** `AccountPurgeService.purge()` now returns `{ deleted, total, pointsLeft }`; `pointsLeft` is true when the points step failed, and the summary log then adds "points were left (the points step failed; purge again)". Spec: the points step's transaction made to fail: `pointsLeft` true, nothing deleted, the log line says so, the person's lot and ledger row are still there; a second purge that works answers `pointsLeft` false and removes them. Only the method's signature and that log line of main's code change.
+- **U3, N1, N5:** not changed, as ruled.
+
+**Mutants** (each applied alone, the points specs run, then `git restore` or the original SQL put back; **29 of 29 killed**; logs in the lead's scratchpad `bp01/r3/mut/`):
+- The 22 of round 2, re-anchored (the purge's flag line, the trigger's first check and the CHECK's restore changed): all killed.
+- 7 new on round 3's code: `settle()` reading the hold after the lock with `findUniqueOrThrow` again (2 tests failed: the deterministic reproduction and the 50-round race); a deleted hold answered `points_hold_settled` (2); the purge flag without the transaction id (5); the trigger ignoring which transaction the flag names (1: the session-level spec); the CHECK without its lower bound (3: the three raw inserts); a failed points step not reported in the result (1); the summary log not saying the points were left (1).
+
+**Checks** (on 370c5d2 unless said).
+- `npx tsc --noEmit` 0. eslint 0 on `src/points` and `account-data-map.ts`. `account-purge.service.ts`: 5 prettier findings, all on lines main already has (main's own copy gives 7; round 3 rewrote two of them, the method's signature and the summary log, which are now clean).
+- Specs of every module touched (points, account purge, data export, me): 9 suites, **138/138** at default timeouts on a fresh migrated and seeded `bp01r3_test` (load average about 12). A fresh `migrate deploy` gives 7 triggers and 9 CHECKs on the points tables; `prisma migrate diff` from it to the schema shows only main's own `ContentPiece_specializations_idx` drift.
+- Protected suite `run.sh --fresh HEAD` (code 370c5d2, lock origin/main 657a152): **253/253**, all 244 required.
+- Gates: branch 986 files, 16 fail / 68 warn / 76 accepted; main 657a152 974 files, 16 / 66 / 76; the 16 FAIL lines identical; the only new warnings are `PROVISIONAL(POINTS-LOTS-SHOWN)` and `PROVISIONAL(POINTS-EXPIRY-BATCH)`. `check_baseline.py` ok. CI tripwire on added lines: 0. Secret-shaped strings in the diff: 0.
+- `npm run contract:build` leaves `contract/openapi.json` as merged; against main 657a152 it adds 151 lines and removes none (round 3 changes no route or type). Mobile `contract/` copied from 370c5d2 and the types regenerated with `python3 scripts/api/sync_contract.py` (no `--backend`); `SOURCE_COMMIT` names 370c5d2.
+- Full suite at default timeouts, as four jest shards, each in its own private network namespace (copies of `ns2.sh` and `inner2.sh` with my paths, my stand-in alone on :4001 inside, a fresh migrated and seeded `bp01r3_full_test` per shard), on 370c5d2: **210 suites, 5,604 tests: 207 suites and 5,511 tests passed, 4 skipped, 89 failed in 3 suites, none in a file this task touches**: `hub-rate-limits` (11; it needs a non-loopback interface, so it always fails in a namespace), `admin-payments` and `protected-registry.regression` (78 together, each `fetch failed` to the stand-in mid-run, as in rounds 1 and 2). Each passed alone on the host network against a fresh seeded database at default timeouts: 22/22, 26/26 and 52/52.
+- Mobile `npm run check`: **exit 0** (typecheck 0, lint 0, 76 suites / 1,377 tests, gates 9 / 346 files / 0 fail / 0 warn, 260 tasks). A first run at load average 14 had the same two 20 s timeouts as every round (`OpenWalletScreen`, `settingsScreens`); those two alone passed 128/128, and the second full run passed. The mobile branch adds the regenerated contract and types, the updated `SHARED-CHANGES.md` rows (#2 and #5), this report, a LOG line and the regenerated `docs/PROGRESS.md`.
+
+**Decisions** (each Default (agent), owner may override).
+- D6's sibling in `hold()`: if the race's winner is gone by the time the loser reads it (its person purged in between), the loser answers `409 points_hold_conflict`: the reference was taken when its insert met it.
+- N4 adds one field, `pointsLeft`, rather than listing every table a purge left; other tables' failures are logged as before.
+- U4: the trigger takes the person as everything before the last `:<txid>`, so a person id that itself holds a colon still works.
+
+**NOT RUN.**
+- The full suite as `deploy.yml` runs it (one jest process): run as four shards instead (above). Unblocked by CI's test job on this branch, or a machine with load under about 8.
+- `prisma migrate reset`: Prisma 7 refuses it for an AI agent; not attempted. Unblocked when a person runs `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/<name>_test?schema=public npx prisma migrate reset --force` on wmt/POINTS-01 and `SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgrelid::regclass::text LIKE '"Point%'` answers 7.
+- PT5 on a phone (V5 to V7, V10): no screen in this task.
+- No (key) checks: points use no provider.
 
 ### Lead rulings after the verifier (8 Oct 2026)
 
