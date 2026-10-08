@@ -9233,6 +9233,11 @@ export interface components {
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
         };
+        NuvionWebhookAck: {
+            /** @enum {string} */
+            outcome: "recorded" | "duplicate";
+            event: string | null;
+        };
         AdCreativeView: {
             headline: string;
             subline: string | null;
