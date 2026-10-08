@@ -2,7 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
-- 8 Oct 2026 · FIX-17 · Built (verifying): a NUL in any query or path value is a 400 naming the field on every route, after every check that already answered (one pipe, last on every argument); the shop subcategory and admin order 500s are 400s naming the field; `/search/closest` takes 100 characters; the one NUL policy written in the backend's contract conventions.
+- 8 Oct 2026 · FIX-17 · Built (verifying): a NUL in any query or path value is a 400 naming the field on every route, after every check that already answered (one pipe, last on every argument); the shop subcategory and admin order 500s are 400s naming the field; `/search/closest` takes 100 characters; the one NUL policy written in the backend's contract conventions (section 15).
 - 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
