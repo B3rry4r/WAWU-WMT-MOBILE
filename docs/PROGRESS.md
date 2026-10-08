@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 94 of 196.**
+**Launch tasks done: 94 of 197.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 74 | 0 | 23 | 26 |
+| todo | 75 | 0 | 23 | 26 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -129,6 +129,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-16 · Lead filed the dashboard and web catch-up for FIX-06's takedowns (List again, the taken-down state, the unlist toast that would turn untrue, the web's 409 sentence); ordered right after FIX-06. Lead default recorded with it: a takedown hides the listing only; account sanctions (event hosting, verification, notifications) stay separate admin actions.
 - 7 Oct 2026 · FIX-08 · FIX-08 merged (backend PR #84, f7e651a): body-parser refusals answer 413, 415 or 400 instead of 500.
 - 8 Oct 2026 · FIX-08 · Verified (status review): no defect open. Built main and branch Hubs on one seeded database, 301 calls each in a private network namespace: 175 former 500s are now 413 (87), 415 (55) or 400 (33), 125 answers byte-identical, 1 client-framing artifact explained; the raw-body Fintava webhook is unchanged (signed, replay, forged, raw bytes equal); refusals no longer logged, real 500s still are; nothing but the body parser matches the refusal test today; 10 of 12 own mutants killed (1 equivalent, 1 test gap T1: an info-level log passes); protected 253/253 and the full suite on a trial merge (only the namespace rate-limit file and a load-timed stall file fail, both pass alone); U1 (money routes' `reason` doc line) and O2 (pre-existing trust-proxy TypeError) recorded.
 - 8 Oct 2026 · FIX-08 · Built (status verifying): a body the parser refuses answers its 4xx in the usual envelope, not 500, on every route (413 too large or too many form fields, 415 charset or encoding, 400 unreadable); malformed JSON keeps its 400 and the 100 kB limit is unchanged; recorded before and after on the built Hub (50 former 500s, 30 answers byte-identical, the raw-body webhook unchanged); 71 new tests, 8 of 8 mutants killed; full suite 0 failures, protected 253/253, gates as main. SHARED-CHANGES KYC-02 #3 and ME-16 #3 made.
@@ -143,4 +144,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01 · Builder round 2 (status verifying): D1 the eye at 70% (the Wallet tab's own eye), D2 a failed TGIF day read says so with Try again, D3 the creator card is the shared MediaCard (Follow through `footer`); the balance card reads and words its states as the Wallet tab does (shared reads, `homeView`, `stateWords`, `MoneyGround`, `FittedBalance`); TGIF and money-shadow tokens; SHARED-CHANGES HOME-01 #3.
 - 7 Oct 2026 · HOME-01 · Verifier report (status building): V1, V4 and V9 passed; real WAWU ID sign-in, a Follow, an unfollow and the TGIF switch written by the app and read back from the Hub and the database; 14 of 14 mutants killed. Three defects: D1 the balance eye is full white where H1 paints it at 70%, D2 a failed TGIF day read hides the card with no message or Try again, D3 the creator card redraws MediaCard's stacked picture, scrim and caption (SHARED-CHANGES HOME-01 #2 defers the swap). A live Fintava figure is NOT RUN (Fintava unset).
 - 7 Oct 2026 · HOME-01 · Builder report (branch `wmt/HOME-01`, status verifying): Home's Today with the Naira balance from Fintava or the way to Open your wallet, today's TGIF card (gone when TGIF is off), creators to discover with Follow in place, loading, empty and error states; the feed is shown in place under the same tab row (`/feed` removed); entries to screens not built yet left out (R-41); gaps G-280 to G-282, shared changes HOME-01 #1 and #2.
-- 7 Oct 2026 · SHARED-03 · New task (lead, order 184; tasks from 184 move down one): one shared toast, the All chip's padding, a MediaCard placeholder, two test gaps and the flaky Z3 settings test, from the hub checks.

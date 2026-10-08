@@ -3,7 +3,7 @@ id: FIX-10
 title: Calls to WAWU ID give up after a bounded time
 owner: YOU
 area: FIX
-order: 190
+order: 191
 priority: launch
 repo: wawu-backend
 type: setup

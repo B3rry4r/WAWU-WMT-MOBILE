@@ -3,7 +3,7 @@ id: FIX-12
 title: Ticket price edits: the follow-ups from EVENTS-11
 owner: YOU
 area: FIX
-order: 192
+order: 193
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

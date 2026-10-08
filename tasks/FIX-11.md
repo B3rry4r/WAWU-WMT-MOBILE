@@ -3,7 +3,7 @@ id: FIX-11
 title: The legal thread's opener is written once, metered and locked
 owner: YOU
 area: FIX
-order: 191
+order: 192
 priority: launch
 repo: wawu-backend
 type: backend-endpoint

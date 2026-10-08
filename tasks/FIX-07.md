@@ -3,7 +3,7 @@ id: FIX-07
 title: Search answers 400, not 500, for a NUL in the query
 owner: YOU
 area: FIX
-order: 187
+order: 188
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
