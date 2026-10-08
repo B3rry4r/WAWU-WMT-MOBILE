@@ -35,6 +35,12 @@ pack bonus from config ("Founding shows +10%").
 - `POST /plans/purchases` kind `points_pack` (`packId`), purpose `points_pack`; the lot's expiry is config's bought-points expiry (TIER-01).
 - The Founding Maker bonus: the pack's points plus the config percent, rounded down to a whole point.
 
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
+
 ## Capability checks
 
 - [ ] A naira-billed person buys a pack from the wallet: one debit at the config price, one lot of the config points with its expiry.
