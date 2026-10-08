@@ -82,6 +82,24 @@
   --brand-lime: #B8E83E;
   --brand-aqua: #20C9C3;
   --brand-coral: #FF5C5C;
+
+  /* TGIF cards (HOME-09's reader H29 to H34, and Today's TGIF card on H1). The cards are
+     dark in both themes, so these are set once here and the light theme never overrides
+     them. Grounds and corner glows per card (design/_gen/home.js `TGC`); the takeaway
+     card shares the verse card's ground. Today's card (home.js `tgifRow`) is the verse
+     ground with the accent glow, its small capitals in pale lilac and a warm lower glow. */
+  --tgif-verse-ground: #2A0C3E;
+  --tgif-verse-glow: rgba(148, 17, 201, 0.7);
+  --tgif-reality-ground: #101A3A;
+  --tgif-reality-glow: rgba(92, 100, 255, 0.55);
+  --tgif-remember-ground: #3A0C2A;
+  --tgif-remember-glow: rgba(214, 59, 140, 0.55);
+  --tgif-prayer-ground: #1A0E30;
+  --tgif-prayer-glow: rgba(148, 17, 201, 0.6);
+  --tgif-takeaway-ground: var(--tgif-verse-ground);
+  --tgif-takeaway-glow: rgba(255, 160, 60, 0.5);
+  --tgif-label: #E2B4F5;
+  --tgif-warm-glow: rgba(255, 160, 60, 0.35);
 }
 
 [data-theme="light"] {

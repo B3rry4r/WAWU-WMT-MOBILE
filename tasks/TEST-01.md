@@ -3,7 +3,7 @@ id: TEST-01
 title: Tests pass on a cold cache and a loaded machine
 owner: YOU
 area: TEST
-order: 208
+order: 222
 priority: after-launch
 repo: wawu-wmt-mobile
 type: ops

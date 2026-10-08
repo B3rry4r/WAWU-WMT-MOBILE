@@ -2526,6 +2526,73 @@ export interface paths {
         patch: operations["ProfessionalController_setListed"];
         trace?: never;
     };
+    "/api/hub/professionals/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_location"];
+        /** The city on your card and in the directory. A creator account only. */
+        put: operations["ProfessionalController_setLocation"];
+        post?: never;
+        delete: operations["ProfessionalController_clearLocation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_fields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The directory filtered by field, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One professional's profile, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directoryProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals": {
         parameters: {
             query?: never;
@@ -4286,6 +4353,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/tgif/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The five cards of the day, addressed to the caller by first name. */
+        get: operations["TgifController_day"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/share-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The verse of the day on the shared card, as a PNG (H35). */
+        get: operations["TgifController_shareImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tgif/{date}/stats": {
         parameters: {
             query?: never;
@@ -5355,7 +5456,7 @@ export interface components {
         };
         ApplyProfessionalDto: {
             /** @enum {string} */
-            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
             headline: string;
             about: string;
             services?: string[];
@@ -5367,6 +5468,10 @@ export interface components {
         };
         UpdateListingDto: {
             listed: boolean;
+        };
+        UpdateProfessionalLocationDto: {
+            /** @description Where you work, as people will read it: "Ikeja", "Port Harcourt". */
+            city: string;
         };
         CreateProfessionalReviewDto: {
             stars: number;
@@ -5959,6 +6064,68 @@ export interface components {
             /** @description The date the owner gives the text, YYYY-MM-DD. */
             effectiveDate: string;
             sections: components["schemas"]["PolicySectionDto"][];
+        };
+        CreateSchoolDto: {
+            name: string;
+            /** @enum {string} */
+            category: "tech" | "business" | "creative" | "languages" | "vocational";
+            location: string;
+            foundedYear?: number | null;
+            expertise?: string[];
+            about: string;
+            /** @description A storage URL. Empty or null clears it. */
+            logo?: string | null;
+            applyUrl?: string | null;
+            reportEmail: string;
+        };
+        UpdateSchoolDto: {
+            name?: string;
+            /** @enum {string} */
+            category?: "tech" | "business" | "creative" | "languages" | "vocational";
+            location?: string;
+            foundedYear?: number | null;
+            expertise?: string[];
+            about?: string;
+            logo?: string | null;
+            applyUrl?: string | null;
+            reportEmail?: string;
+            hidden?: boolean;
+        };
+        CreateCourseDto: {
+            /** @description Whole kobo (CONVENTIONS section 1). */
+            priceKobo: number;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "online" | "in_person" | "hybrid";
+            syllabus?: string[];
+            outcomes?: string[];
+        };
+        UpdateCourseDto: {
+            priceKobo?: number;
+            title?: string;
+            weeks?: number;
+            /** @enum {string} */
+            mode?: "online" | "in_person" | "hybrid";
+            syllabus?: string[];
+            outcomes?: string[];
+            hidden?: boolean;
+        };
+        CreateIntakeDto: {
+            /** @description The day classes start, YYYY-MM-DD. */
+            startDate: string;
+            schedule: string;
+            /** @description Null or empty for an online intake. */
+            location?: string | null;
+            capacity: number;
+        };
+        UpdateIntakeDto: {
+            startDate?: string;
+            schedule?: string;
+            location?: string | null;
+            /** @description Never below the seats already taken. */
+            capacity?: number;
+            hidden?: boolean;
         };
         PutFeaturedCreatorDto: {
             /** @description Rail order, lowest first. Default 0. */
@@ -7916,6 +8083,66 @@ export interface components {
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
         };
+        AdminSchoolSummary: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            hidden: boolean;
+            courseCount: number;
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminSchoolsPage: {
+            items: components["schemas"]["AdminSchoolSummary"][];
+            nextCursor: string | null;
+        };
+        AdminIntakeView: {
+            id: string;
+            courseId: string;
+            startDate: string;
+            schedule: string;
+            location: string | null;
+            capacity: number;
+            seatsTaken: number;
+            hidden: boolean;
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminCourseView: {
+            id: string;
+            schoolId: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            syllabus: string[];
+            outcomes: string[];
+            priceKobo: number;
+            hidden: boolean;
+            intakes: components["schemas"]["AdminIntakeView"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminSchoolDetail: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            foundedYear: number | null;
+            expertise: string[];
+            about: string;
+            logo: string | null;
+            applyUrl: string | null;
+            reportEmail: string;
+            hidden: boolean;
+            courses: components["schemas"]["AdminCourseView"][];
+            createdAt: string;
+            updatedAt: string;
+        };
         AdCardView: {
             id: string;
             advertiser: string;
@@ -8085,6 +8312,71 @@ export interface components {
             verification: components["schemas"]["VerificationState"];
             following: boolean;
         };
+        ProfessionalLocationView: {
+            city: string | null;
+        };
+        ProfessionalFieldView: {
+            id: string;
+            label: string;
+            categories: string[];
+            applyCategory: string;
+            regulated: boolean;
+        };
+        ProfessionalFieldRef: {
+            id: string;
+            label: string;
+        };
+        ProfessionalDirectoryEntry: {
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
+        ProfessionalDirectoryPage: {
+            items: components["schemas"]["ProfessionalDirectoryEntry"][];
+            currentPage: number;
+            perPage: number;
+            total: number;
+        };
+        ProfessionalDirectoryProfile: {
+            about: string;
+            issuingBody: string | null;
+            credentialKind: string;
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
         ProfessionalListItem: {
             id: string;
             wawuId: string;
@@ -8238,6 +8530,12 @@ export interface components {
             followingCount: number;
             communityCount: number;
         };
+        ProfileWorkOwnerView: {
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+        };
         ProfileWorkCategoryView: {
             name: string;
             count: number;
@@ -8261,6 +8559,7 @@ export interface components {
             createdAt: string;
         };
         ProfileWorksView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
             count: number;
             categories: components["schemas"]["ProfileWorkCategoryView"][];
             works: components["schemas"]["ProfileWorkView"][];
@@ -8272,6 +8571,20 @@ export interface components {
             startYear: number;
             endYear: number | null;
             current: boolean;
+        };
+        ProfileWorkDetailView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
+            id: string;
+            title: string;
+            role: string;
+            client: string | null;
+            year: number;
+            link: string | null;
+            category: string | null;
+            description: string | null;
+            media: components["schemas"]["ProfileWorkMediaView"][];
+            position: number;
+            createdAt: string;
         };
         EnrolResponse: {
             externalHostUrl: string;
@@ -8664,6 +8977,18 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
+        };
+        TgifDayView: {
+            date: string;
+            series: string;
+            seriesTheme: string;
+            verse: string;
+            verseReference: string;
+            reality: string;
+            remember: string;
+            prayer: string;
+            takeaway: string;
+            shareLink: string | null;
         };
         TgifCardStats: {
             /** @enum {string} */
@@ -13245,6 +13570,7 @@ export interface operations {
                         category: string;
                         handle: string;
                         bio: string;
+                        languages: string[];
                         tagline: string;
                         field: string;
                         topics: string[];
@@ -13252,7 +13578,6 @@ export interface operations {
                         fullUntil: string | null;
                         yearsExperience: number;
                         sessions: number;
-                        languages: string[];
                     }[] | {
                         items: {
                             verification: string;
@@ -13261,6 +13586,7 @@ export interface operations {
                             category: string;
                             handle: string;
                             bio: string;
+                            languages: string[];
                             tagline: string;
                             field: string;
                             topics: string[];
@@ -13268,7 +13594,6 @@ export interface operations {
                             fullUntil: string | null;
                             yearsExperience: number;
                             sessions: number;
-                            languages: string[];
                         }[];
                         currentPage: number;
                         perPage: number;
@@ -13301,6 +13626,7 @@ export interface operations {
                         category: string;
                         handle: string;
                         bio: string;
+                        languages: string[];
                         tagline: string;
                         field: string;
                         topics: string[];
@@ -13308,7 +13634,6 @@ export interface operations {
                         fullUntil: string | null;
                         yearsExperience: number;
                         sessions: number;
-                        languages: string[];
                     };
                 };
             };
@@ -13864,10 +14189,10 @@ export interface operations {
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
@@ -13903,10 +14228,10 @@ export interface operations {
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
@@ -13948,10 +14273,10 @@ export interface operations {
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
@@ -13963,10 +14288,135 @@ export interface operations {
             };
         };
     };
+    ProfessionalController_location: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_setLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfessionalLocationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_clearLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_fields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalFieldView"][];
+                };
+            };
+        };
+    };
+    ProfessionalController_directory: {
+        parameters: {
+            query?: {
+                /** @description A field id from GET /professionals/fields, for example `accounting_tax`. */
+                field?: "accounting_tax" | "legal_compliance" | "design_creative" | "technology_it" | "engineering" | "healthcare" | "business_consulting";
+                page?: number;
+                perPage?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryPage"];
+                };
+            };
+        };
+    };
+    ProfessionalController_directoryProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryProfile"];
+                };
+            };
+        };
+    };
     ProfessionalController_list: {
         parameters: {
             query?: {
-                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
                 page?: number;
                 perPage?: number;
             };
@@ -15043,7 +15493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileWorkView"];
+                    "application/json": components["schemas"]["ProfileWorkDetailView"];
                 };
             };
         };
@@ -17769,6 +18219,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatUpload"];
+                };
+            };
+        };
+    };
+    TgifController_day: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifDayView"];
+                };
+            };
+        };
+    };
+    TgifController_shareImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The day's verse on the TGIF card, as a PNG image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
                 };
             };
         };
