@@ -545,3 +545,7 @@ Everything else asked of this round passed. Stack: mock-wawu-id (envelope added 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+## Merge note (lead)
+
+- 8 Oct 2026, merged `origin/main` (PROS-03 #15) into this branch: in `ExploreScreen.tsx`, `(tabs)/explore.tsx` and `screens.test.tsx` both sides kept, PROS-03's doors card ("List your services") now drawn after Upcoming events (PROS-03 D3, "Merging with PROS-03" above) and held with the event entries under X14 (D12), one spec added for that order and hold; `PROGRESS.md` and `INDEX.md` regenerated; contract regenerated from backend main `d92e998` (`GET /events/from-prices` present); `npm run check` exit 0 (93 suites / 1587 tests, gates 393 files / 0 findings, 262 tasks); X1, X15, X14 at 390 px light and dark drawn beside `render_design.py` in the ruled order.
