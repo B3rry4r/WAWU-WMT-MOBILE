@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
 - 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
 - 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
