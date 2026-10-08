@@ -3,7 +3,7 @@ id: WALLET-30
 title: Remove the Flutterwave payment paths
 owner: YOU
 area: WALLET
-order: 252
+order: 253
 priority: after-launch
 repo: wawu-backend
 type: removal
