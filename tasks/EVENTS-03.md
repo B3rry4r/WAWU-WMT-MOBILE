@@ -1,7 +1,7 @@
 ---
 id: EVENTS-03
 title: My tickets, ticket QR, checked in
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 48
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [E6, E7, E12]
 ---
 # EVENTS-03 · My tickets, ticket QR, checked in
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 
