@@ -395,6 +395,24 @@ Verifier, 8 Oct 2026, an independent session that wrote none of this task's code
 
 **NOT RUN:** (key) a book transfer at the Nuvion sandbox: unblocked when `GET https://api.nuvion.dev/bank-codes/NG` answers 200 with the key in the local `.env` and a lead brief allows that host. The real Nuvion adapter under these routes: unblocked when NUV-05's `book.ts` is on main and `WALLET_PROVIDER=nuvion` boots. One full suite with 0 failures in a single run: unblocked by a load average under about 8 (every failing suite passes alone). The ₦23.25 in Fintava's own record (G-71): unblocked by a sandbox wallet-to-wallet answering a non-zero `transaction_fee`, or OPS-10's first live purchase. A real kind end to end (G-70): unblocked by HOME-15 registering `content_unlock`. Biometric approval over HTTP (G-43): unblocked by WALLET-06's phone key. V10: no screen calls these routes. The full and protected suites on a tree merged with main `8d7a054`: unblocked by the builder's merge with G-410 done.
 
+### Lead rulings after the round 5 verifier (8 Oct 2026)
+
+Copied from the lead's brief for round 6 (each "Default (lead), owner may override").
+
+Defects:
+1. R5-1: the self-payment guard compares provider identities, not formats: refuse when the payer's provider account (whatever id the running provider uses, `nuvion_ban` on Nuvion) is WAWU's operational account. Spec it with the stand-in answering WAWU's account as the payer's own `nuvion_ban` (case L2).
+2. R5-2: a NUL (or anything Postgres cannot store) in any text field of `POST /money/payments` answers 400 naming the field, before anything is claimed. Use main's `isCleanText`.
+3. R5-3 and G-410: merge backend origin/main (8d7a054, has NUV-07 and FIX-06, FIX-07, FIX-08) into the branch, then: `@RequireFeesSet()` on both payment routes (method level, last decorator), `MoneyLimits.assertMayMove()` inside the claim transaction (READ COMMITTED), the quote's daily standing, and provider failures through `toHttpException()`. `money-moving-coverage.spec.ts` and every main spec pass on the merged tree; the Nuvion payment spec sets the three NUVION fee settings.
+
+Rulings:
+4. The Nuvion stand-in follows Nuvion's docs, not the dashboard code: first answer always `pending`; a repeated reference answers 409 with the original; no lookup by our reference (the adapter keeps Nuvion's transfer id and looks up by it); `cancelled`, `already_processing`, system 500/503/504 and the limit errors modelled; insufficient funds mapped by error type, not status. Make the default mode `pending` and keep a spec per status.
+5. A provider debit above the quoted total: record the real debit, answer the real total (never the quoted one), and flag the payment for review with both figures (NUV-08 reconciles). Spec it.
+6. Ledger rows this task writes carry the running provider (NUV-01 round 2 adds the column default and LedgerService stamping; if NUV-01 is not on main yet, set the provider explicitly where you create rows so either merge order is right).
+7. A `reversed` result from the sweep gets its own branch (refund path or review, as round 4's design for a failed debit), not left to MONEY-08.
+8. Specs that kill the verifier's survivors MU9 (unknown status read as failed), MU11 (balance check ignoring the fee), MU16 (sweep completing for more than the price).
+9. CONVENTIONS: MONEY-17 keeps section 14 (its other files cite it); FIX-17 will take 15 and POINTS-01 16.
+10. Merge order: TIER-01, then MONEY-17, then NUV-01 (migration stamps).
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
