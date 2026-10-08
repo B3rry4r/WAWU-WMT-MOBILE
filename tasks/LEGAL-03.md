@@ -7,7 +7,7 @@ order: 70
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -298,6 +298,25 @@ The independent round 3 (lead) is on 9895dd3; Dev 3's round 4 (backend c2a3652) 
 - **`+01` offset.** A `scheduledFor` with a short offset gets a 400 that names `scheduledFor`, like the other refused forms.
 - **E3 (the legacy `deliverableUrl` column stores the 7-day link).** The web reads that column through a protected route, so it is not changed here; recorded as a follow-up for the web cut-over.
 - **Migration.** Keep it after every folder on backend main and every open branch (EVENTS-11 now holds `20261014100000`; round 4's `20261014200000` sorts after it); check again right before pushing.
+
+## Builder report, round 5 (8 Oct 2026)
+
+Backend `wmt/LEGAL-03` 1c48fb6 (round 4 c2a3652 plus round 5, with origin/main merged); mobile branch has origin/main merged. Status `verifying`.
+
+| Item | Built | Spec that fails without it |
+|------|-------|----------------------------|
+| N1 | A delivered `url` is a bare key or a link on our bucket's host (host read from the storage config), and the key must sit under a named list of folders (`legal/document/` only, room left for LEGAL-07). Anything else is 400 `files.N.url`, nothing stored. Signing applies the same rule at read time, so a stored foreign key shows without a link. | `legal-consultations-round5.contract.spec.ts`, `deliverable-key.spec.ts`: the `kyc/id-document/` probe on any host, other folders, look-alike hosts (userinfo, subdomain suffix, port, scheme tricks, encoded slashes, backslashes, `..` after decoding), a stored foreign key never signed |
+| Odd paths | NUL, lone surrogate, invalid UTF-8, control characters in the decoded path: 400, nothing stored | same specs |
+| T1 | Legacy `deliverableUrl` is always signed on read | spec fails when handed back unsigned |
+| `+01` | App booking route only: 400 naming `scheduledFor`; the web route is untouched | round 2/5 specs |
+| E3 | Recorded, not changed: follow-up for the web cut-over (the web reads `LegalRequest.deliverableUrl` through a protected route) | |
+| Migration | Renamed to `20261016160000_legal_consultations`: after main's newest (`20261015100000_professional_takedown`) and every open origin `wmt/*` folder (newest `20261016150000_nuvion_adapter`), checked right before pushing. SHARED-CHANGES row updated. | |
+
+Mutants (source reverted in a scratch copy, specs run, then restored): T1 unsigned 5 fail; no host check 37 fail; no folder check 21 fail; odd-path decode 19 fail; short offset in both layers 3 fail. Two single-layer mutants survive by design because a second layer refuses the same input (userinfo is refused by the host check and by the key shape check; the short offset by the DTO and the service).
+
+Ran: `tsc --noEmit` clean; `npm run test:contract -- src/legal src/storage account-data-map data-export-map` 18 suites, 503 passed, 3 skipped; protected routes `--fresh` 244 of 244; gates 16 fail (main's, unchanged), baseline check passes; `npm run contract:build` (regenerated). Live probe on a built Hub (real admin login, mock-wawu-id): 500 odd urls, statuses 400 x494, 200 x2, 429 x4 (retried), **5xx 0**. The two accepted urls are valid `legal/document/<user>/a` keys whose `?x=%00` or `#%00` is a query or fragment, which is dropped, so the stored key is clean. The probe ran before the final merge of main, which touches nothing under legal.
+
+NOT RUN: a real bucket (unblocked by a non-production bucket key).
 
 ## Owner sign-off
 
