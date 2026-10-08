@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 102 | 0 | 20 | 26 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 56 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
 
@@ -134,6 +134,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · POINTS-01 · Verifier report (independent session, backend `e524ac8`, mobile `62d0cd6`, wawu-id `fb8717e`): the ledger holds by its real cause (CHECKs and the deferred lot checks refuse at COMMIT; UPDATE, partial DELETE and TRUNCATE refused), 8 races at 50 rounds each never overdraw or double-write (holds, grants, hold or release against the expiry pass, two passes, commit against release), time boundaries consistent and all on the app's UTC clock, a caller's rollback leaves nothing, protected 253/253, full suite in 4 namespace shards 4,778 of 4,794 (hub-rate-limits and one timing assert, both pass alone on the host), V9 live through the real wawu-id with the app's own expiry pass, 15 of 17 mutants killed; not ready: D1 `nextExpiry` counts only the 50 listed lots, D2 a bare `DELETE FROM "PointLedger"` is accepted, D3 two people racing one hold reference get a raw P2002 not 409, D4 an end after year 9999 makes `GET /me/points` 500, D5 a cancelled conversion still reads "Converting to cash"; U1 the purge is not under the points lock (5 of 200 races leave lots that disagree with their ledger; the purge has no caller); status back to building.
 - 8 Oct 2026 · POINTS-01 · Built, now verifying: points in lots that expire, holds that are committed or released back to the same lots, an expiry job, and an append-only points ledger the database itself guards (no update, no partial delete, a lot always equal to its ledger); `GET /me/points` (PT5) answers the balance, live lots with their end dates, the next end and the last 20 movements; separate from WAWU Credits; mounted through MeModule, so `app.module.ts` is unedited (backend `wmt/POINTS-01`).
 - 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
 - 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
@@ -148,4 +149,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
-- 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
