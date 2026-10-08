@@ -119,6 +119,15 @@ Diff against the report: `git diff --stat 3041887...aecae49` is the builder's 11
 
 **Status:** back to `building` for D1.
 
+## Lead rulings after the verifier (8 Oct 2026)
+
+Build round 2 on `cc46b96` (backend on `aecae49`), then status `verifying`.
+
+- **D1 (approve and reject race a takedown).** Approve and reject take the same row lock as Show, Hide, unlist and relist, re-read the application inside the transaction and act only if it is still `pending`; a decision that finds it no longer pending answers what main answers today for a decided application (check main's answer for an approve of an approved application and keep it byte-identical, since approve and reject are protected). An approve never sets `listed` true while a takedown stands. A takedown also survives a reject and a re-application: a new approval of the same person in the same field stays taken down until an admin relists. Specs for both paths the verifier found (`race_approve_free.py`, `race_reject.py` in `scratchpad/vf06/bin/`), deterministic with a held lock as your Show race spec does.
+- **Admin read (the verifier's "would change").** Add an admin read of the takedown state as a new route (for example `GET /admin/professionals/:id/visibility`: `listed`, `hidden` or `taken_down`, `takenDownAt`, who took it down), roles as unlist. Do not add fields to the protected admin queue or detail answers.
+- **G-331.** Name what the app shows today for the new 409 ("You already have an application in this field.", from `sentenceOf` on `wmt/PROS-03`), so PROS-03 maps `listing_taken_down` to its own sentence.
+- **Outside this task (the lead files them):** the dashboard's "List again" button, the takedown state and new unlist toast copy (its toast says the person can flip it back, which stops being true when this merges), and the web listings page's sentence for the new 409, go in one task, FIX-16, ordered right after this one. Event hosting, verification eligibility and notification audiences treating a taken-down professional as approved are recorded for the lead as a product question.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
