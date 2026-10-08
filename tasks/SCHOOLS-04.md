@@ -161,7 +161,7 @@ Build round 3 on `cb4cbba` (backend on `807a6b8`), then status `verifying`. The 
 - **Spec gaps (the six surviving mutants).** Add a spec for each: a re-encoded cursor that is not byte-equal is a 400; an upper-case id in a cursor is a 400; the name-in-cursor bound (as D2 sets it) at its edge; the school-name match is case-insensitive; `matchedCourses` lists only matching courses; `seatsTaken` appears in no public answer. Re-apply each mutant and show its spec failing.
 - **`matchedCourses` order (verifier's note).** Give the relation an explicit order (course creation order, then id), so which three courses show is decided here, not by the database.
 - **For SCHOOLS-05 (not this task):** keyset paging can show a renamed school twice in one walk; the app drops ids it already holds when it appends a page. The lead added that line to SCHOOLS-05's task file.
-- **Not this task:** `GET /search?q=%00` answering 500 on the other tabs is the same on main; the lead files it separately.
+- **`GET /search?q=%00` on the other tabs (update, 8 Oct 2026):** FIX-07 is now on backend main (PR #85, `965280e`). Its controller refuses an unsearchable `q` on every tab with `refuseUnsearchableQuery` (`src/search-response/searchable-query.ts`), before `searchTab` runs, in the same sentence as yours. When you merge backend main into `wmt/SCHOOLS-04`, keep that one helper and remove this branch's own check and sentence from `searchTab`, so there is one rule and one sentence (FIX-07's verifier: merged, yours becomes unreachable). Your schools route's own refusals stay.
 
 ## Owner sign-off
 
