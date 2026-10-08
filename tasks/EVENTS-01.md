@@ -1,7 +1,7 @@
 ---
 id: EVENTS-01
 title: Events: list, filters, detail, sold out
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 32
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [E1, E2, E8, E9]
 ---
 # EVENTS-01 · Events: list, filters, detail, sold out
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 
@@ -96,6 +98,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

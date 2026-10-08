@@ -1059,6 +1059,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/consultation/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The kinds of consultation WAWU has priced and switched on. */
+        get: operations["LegalConsultationController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/consultation/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The calendar for a video or phone call, at that call's length. */
+        get: operations["LegalConsultationController_slots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/booking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LegalConsultationController_booking"];
+        put?: never;
+        /** Holds the picked hour on the person's request (nothing is charged yet). */
+        post: operations["LegalConsultationController_book"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/deliverables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every file delivered on the person's request. */
+        get: operations["LegalConsultationController_delivered"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tips": {
         parameters: {
             query?: never;
@@ -2510,6 +2578,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/professionals/applications/mine/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each approved listing of yours and where it stands: listed, hidden by
+         *     you, or taken down by an admin (FIX-06). P8 reads it beside .../mine.
+         */
+        get: operations["ProfessionalController_myVisibility"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals/applications/{id}/listing": {
         parameters: {
             query?: never;
@@ -2524,6 +2612,73 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["ProfessionalController_setListed"];
+        trace?: never;
+    };
+    "/api/hub/professionals/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_location"];
+        /** The city on your card and in the directory. A creator account only. */
+        put: operations["ProfessionalController_setLocation"];
+        post?: never;
+        delete: operations["ProfessionalController_clearLocation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProfessionalController_fields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The directory filtered by field, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/professionals/directory/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One professional's profile, with city, usual reply time and price. */
+        get: operations["ProfessionalController_directoryProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/hub/professionals": {
@@ -4056,6 +4211,11 @@ export interface paths {
          *     quote the paying request can send back. Nothing is reserved and
          *     Fintava is not asked. A purchase or bill whose total is above
          *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
+         *
+         *     NUV-07: the provider's charge comes from the running provider's
+         *     settings. While any of them is unset (Nuvion's, until the owner fills
+         *     them in) every quote is fees_not_set, before the wallet gate; under
+         *     Nuvion, which has no bill payments, a bill is target_not_payable.
          */
         get: operations["MoneyFeesController_feeQuote"];
         put?: never;
@@ -4280,6 +4440,40 @@ export interface paths {
         put?: never;
         /** Where to upload one photo, video or PDF for this chat. */
         post: operations["ChatController_presignAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The five cards of the day, addressed to the caller by first name. */
+        get: operations["TgifController_day"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tgif/{date}/share-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The verse of the day on the shared card, as a PNG (H35). */
+        get: operations["TgifController_shareImage"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4547,6 +4741,47 @@ export interface paths {
         };
         /** The completed sales behind a month's earnings, newest first. */
         get: operations["MeController_earningSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plan as the caller pays for it. Every amount is whole minor units of
+         *     `currency` (kobo for NGN, cents for USD); one currency per answer.
+         *     `no-store`: the answer is the caller's own (their currency).
+         */
+        get: operations["PlansController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/tier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `none`, `active`, `ending` or `ended`, with what the tier gives.
+         *     `no-store`: the answer is the caller's own.
+         */
+        get: operations["MeTierController_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4967,6 +5202,47 @@ export interface components {
         CancelLegalRequestDto: {
             reason: string;
         };
+        BookConsultationSlotDto: {
+            /** @enum {string} */
+            medium: "zoom" | "phone" | "physical";
+            /**
+             * @description The start of the hour the person picked, exactly as `GET
+             *     /legal/consultation/slots` gave it. Required for a video or phone call;
+             *     an in-person consultation is arranged directly and books no hour.
+             */
+            scheduledFor?: string;
+        };
+        SetConsultationPriceDto: {
+            /**
+             * @description The price in kobo, whole naira only (a multiple of 100), or null to leave
+             *     the kind unpriced so the app does not offer it. Always null for an
+             *     in-person consultation.
+             */
+            priceKobo: number | null;
+            /** @description How long it runs, in minutes, or null to leave the kind unset. Null for in person. */
+            minutes: number | null;
+            /** @description Switch the kind off without losing its price. Defaults to on. */
+            enabled?: boolean;
+        };
+        SetServicePriceDto: {
+            /** @description The price in kobo, whole naira only, or null to quote the service instead. */
+            priceKobo: number | null;
+        };
+        DeliveredFileDto: {
+            /** @description What the file is called in the chat and on the delivery screen. */
+            fileName: string;
+            /**
+             * @description The file's `fileUrl` or `key` from POST /uploads/presign: a link on WAWU
+             *     storage or a bare key, under `legal/document/`. Anything else is refused
+             *     with a 400 naming this field (N1).
+             */
+            url: string;
+            /** @description Page count, when it is known. */
+            pages?: number;
+        };
+        DeliverFilesDto: {
+            files: components["schemas"]["DeliveredFileDto"][];
+        };
         RejectContentDto: {
             reason: string;
         };
@@ -5355,7 +5631,7 @@ export interface components {
         };
         ApplyProfessionalDto: {
             /** @enum {string} */
-            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            category: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
             headline: string;
             about: string;
             services?: string[];
@@ -5367,6 +5643,10 @@ export interface components {
         };
         UpdateListingDto: {
             listed: boolean;
+        };
+        UpdateProfessionalLocationDto: {
+            /** @description Where you work, as people will read it: "Ikeja", "Port Harcourt". */
+            city: string;
         };
         CreateProfessionalReviewDto: {
             stars: number;
@@ -5790,7 +6070,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -5812,6 +6092,11 @@ export interface components {
              * @enum {string}
              */
             blockedBy?: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted";
+            /**
+             * @description limit_reached: which limit the movement passes (NUV-07), WAWU's own or the provider's.
+             * @enum {string}
+             */
+            limit?: "per_transaction" | "daily" | "monthly";
             /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
             message: string;
             /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
@@ -5959,6 +6244,68 @@ export interface components {
             /** @description The date the owner gives the text, YYYY-MM-DD. */
             effectiveDate: string;
             sections: components["schemas"]["PolicySectionDto"][];
+        };
+        CreateSchoolDto: {
+            name: string;
+            /** @enum {string} */
+            category: "tech" | "business" | "creative" | "languages" | "vocational";
+            location: string;
+            foundedYear?: number | null;
+            expertise?: string[];
+            about: string;
+            /** @description A storage URL. Empty or null clears it. */
+            logo?: string | null;
+            applyUrl?: string | null;
+            reportEmail: string;
+        };
+        UpdateSchoolDto: {
+            name?: string;
+            /** @enum {string} */
+            category?: "tech" | "business" | "creative" | "languages" | "vocational";
+            location?: string;
+            foundedYear?: number | null;
+            expertise?: string[];
+            about?: string;
+            logo?: string | null;
+            applyUrl?: string | null;
+            reportEmail?: string;
+            hidden?: boolean;
+        };
+        CreateCourseDto: {
+            /** @description Whole kobo (CONVENTIONS section 1). */
+            priceKobo: number;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "online" | "in_person" | "hybrid";
+            syllabus?: string[];
+            outcomes?: string[];
+        };
+        UpdateCourseDto: {
+            priceKobo?: number;
+            title?: string;
+            weeks?: number;
+            /** @enum {string} */
+            mode?: "online" | "in_person" | "hybrid";
+            syllabus?: string[];
+            outcomes?: string[];
+            hidden?: boolean;
+        };
+        CreateIntakeDto: {
+            /** @description The day classes start, YYYY-MM-DD. */
+            startDate: string;
+            schedule: string;
+            /** @description Null or empty for an online intake. */
+            location?: string | null;
+            capacity: number;
+        };
+        UpdateIntakeDto: {
+            startDate?: string;
+            schedule?: string;
+            location?: string | null;
+            /** @description Never below the seats already taken. */
+            capacity?: number;
+            hidden?: boolean;
         };
         PutFeaturedCreatorDto: {
             /** @description Rail order, lowest first. Default 0. */
@@ -6772,6 +7119,33 @@ export interface components {
             reviewedAt: string | null;
             otherCategories: components["schemas"]["AdminProfessionalOtherCategoryView"][];
         };
+        AdminProfessionalTakedownRecordView: {
+            standing: boolean;
+            /** Format: date-time */
+            takenDownAt: string;
+            takenDownByAdminId: string;
+            takenDownByAdminEmail: string;
+            /** @enum {string} */
+            takenDownByAdminRole: "superadmin" | "reviewer" | "support" | "finance";
+            /** @enum {string} */
+            relistsAs: "listed" | "hidden";
+            /** Format: date-time */
+            liftedAt: string | null;
+            liftedByAdminId: string | null;
+            liftedByAdminEmail: string | null;
+            /** @enum {string|null} */
+            liftedByAdminRole: "superadmin" | "reviewer" | "support" | "finance" | null;
+        };
+        AdminProfessionalVisibilityView: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "approved";
+            /** @enum {string|null} */
+            visibility: "listed" | "hidden" | "taken_down" | null;
+            /** Format: date-time */
+            takenDownAt: string | null;
+            latestTakedown: components["schemas"]["AdminProfessionalTakedownRecordView"];
+        };
         AdminProfessionalDocumentUrlView: {
             url: string;
         };
@@ -7298,7 +7672,7 @@ export interface components {
         AdminProductView: {
             stock: number;
             /** @enum {string} */
-            status: "live" | "draft" | "hidden";
+            status: "live" | "hidden" | "draft";
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -7401,6 +7775,156 @@ export interface components {
                 remaining: number;
             };
         };
+        QuestionOption: {
+            value: string;
+            label: string;
+        };
+        IntakeQuestion: {
+            id: string;
+            step: number;
+            stepTitle: string;
+            prompt: string;
+            /** @enum {string} */
+            kind: "text" | "documents" | "single" | "multi" | "date";
+            /** @enum {string} */
+            level: "required" | "optional";
+            options?: components["schemas"]["QuestionOption"][] | null;
+            placeholder?: string | null;
+            suggestions?: string[] | null;
+            helper?: string | null;
+            showIf?: {
+                questionId: string;
+            } | null;
+        };
+        GeminiBrief: {
+            summary: string;
+            keyIssues: string[];
+            questionsToClarify: string[];
+            risks: string[];
+        };
+        LegalBrief: {
+            matter: string;
+            matterLabel: string;
+            facts: {
+                question: string;
+                answer: string;
+            }[];
+            documentCount: number;
+            analysis: components["schemas"]["GeminiBrief"];
+            generatedBy: string;
+            generatedAt: string;
+        };
+        IntakeView: {
+            id: string;
+            matter: string;
+            matterLabel: string;
+            status: string;
+            answers: {
+                [key: string]: unknown;
+            };
+            documents: string[];
+            questions: components["schemas"]["IntakeQuestion"][];
+            outstandingRequired: string[];
+            brief: components["schemas"]["LegalBrief"];
+            legalRequestId: string | null;
+        };
+        ChatMessageView: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "ai" | "consultant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ChatThreadView: {
+            legalRequestId: string;
+            serviceName: string;
+            status: string;
+            consultantJoined: boolean;
+            messages: components["schemas"]["ChatMessageView"][];
+        };
+        IntakeQueueItem: {
+            id: string;
+            wawuUserId: string;
+            clientName: string;
+            matter: string;
+            matterLabel: string;
+            status: string;
+            summary: string;
+            documentCount: number;
+            /** Format: date-time */
+            completedAt: string | null;
+            waitingHours: number;
+            urgency: string | null;
+        };
+        IntakeDetailView: {
+            id: string;
+            wawuUserId: string;
+            clientName: string;
+            matter: string;
+            matterLabel: string;
+            status: string;
+            documents: string[];
+            brief: components["schemas"]["LegalBrief"];
+            /** Format: date-time */
+            completedAt: string | null;
+            legalRequestId: string | null;
+        };
+        LegalAssistantTopic: {
+            id: string;
+            label: string;
+            matter: string;
+            matterLabel: string;
+        };
+        LegalAssistantMessage: {
+            id: string;
+            /** @enum {string} */
+            authorRole: "client" | "consultant" | "assistant";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            consultantName: string | null;
+        };
+        LegalAssistantQuickReply: {
+            id: string;
+            label: string;
+        };
+        LegalAssistantBriefRow: {
+            label: string;
+            value: string;
+        };
+        LegalAssistantBrief: {
+            matter: string;
+            matterLabel: string;
+            rows: components["schemas"]["LegalAssistantBriefRow"][];
+            ready: boolean;
+        };
+        LegalAssistantConsultant: {
+            name: string | null;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        LegalAssistantThread: {
+            id: string;
+            /** @enum {string} */
+            stage: "profiling" | "brief_ready" | "sent";
+            matter: string;
+            matterLabel: string;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            awaitingReply: boolean;
+            legalRequestId: string | null;
+            requestStatus: string | null;
+            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
+            assistantStopped: boolean;
+        };
+        LegalAssistantTranscript: {
+            intakeId: string;
+            legalRequestId: string | null;
+            brief: components["schemas"]["LegalAssistantBrief"] | null;
+            messages: components["schemas"]["LegalAssistantMessage"][];
+        };
         DayAvailability: {
             date: string;
             slots: {
@@ -7413,11 +7937,93 @@ export interface components {
             name: string;
             category: string;
             /** @enum {string} */
-            path: "simple" | "consultation";
+            path: "consultation" | "simple";
             blurb: string;
             priceNaira: number | null;
             requiresDocuments?: boolean | null;
             applyHref?: string | null;
+        };
+        ConsultationOptionView: {
+            /** @enum {string} */
+            medium: "zoom" | "physical" | "phone";
+            label: string;
+            minutes: number | null;
+            priceKobo: number | null;
+            onRequest: boolean;
+        };
+        ConsultationOptionsView: {
+            timeZone: string;
+            options: components["schemas"]["ConsultationOptionView"][];
+        };
+        ConsultationSlotView: {
+            startsAt: string;
+            available: boolean;
+        };
+        ConsultationDayView: {
+            date: string;
+            slots: components["schemas"]["ConsultationSlotView"][];
+        };
+        ConsultationSlotsView: {
+            /** @enum {string} */
+            medium: "zoom" | "physical" | "phone";
+            label: string;
+            minutes: number;
+            timeZone: string;
+            horizonDays: number;
+            days: components["schemas"]["ConsultationDayView"][];
+        };
+        ConsultationBookingView: {
+            requestId: string;
+            status: string;
+            /** @enum {string|null} */
+            medium: "chat" | "zoom" | "physical" | "phone" | null;
+            label: string | null;
+            minutes: number | null;
+            priceKobo: number | null;
+            scheduledFor: string | null;
+            holdExpiresAt: string | null;
+            paid: boolean;
+            paidAt: string | null;
+        };
+        LegalDeliverableView: {
+            id: string;
+            fileName: string;
+            url: string | null;
+            pages: number | null;
+            chatMessageId: string | null;
+            postedAt: string;
+        };
+        LegalDeliverablesView: {
+            requestId: string;
+            status: string;
+            items: components["schemas"]["LegalDeliverableView"][];
+        };
+        AdminConsultationPriceView: {
+            /** @enum {string} */
+            medium: "chat" | "zoom" | "physical" | "phone";
+            label: string;
+            priceKobo: number | null;
+            minutes: number | null;
+            enabled: boolean;
+            offered: boolean;
+            updatedAt: string | null;
+        };
+        AdminServicePriceView: {
+            serviceCode: string;
+            serviceName: string;
+            category: string;
+            priceKobo: number | null;
+            updatedAt: string | null;
+        };
+        AdminLegalPricesView: {
+            consultations: components["schemas"]["AdminConsultationPriceView"][];
+            services: components["schemas"]["AdminServicePriceView"][];
+        };
+        DeliverFilesResultView: {
+            requestId: string;
+            status: string;
+            deliveredAt: string | null;
+            items: components["schemas"]["LegalDeliverableView"][];
         };
         WebhookResult: {
             /** @enum {string} */
@@ -7868,7 +8474,7 @@ export interface components {
             /** @enum {string} */
             audience: "everyone" | "creators" | "buyers" | "unverified_creators" | "professionals" | "unverified_professionals";
             /** @enum {string} */
-            status: "failed" | "draft" | "sending" | "sent";
+            status: "failed" | "draft" | "sent" | "sending";
             recipientCount: number;
             deliveredCount: number;
             failureReason: string | null;
@@ -7915,6 +8521,66 @@ export interface components {
             title: string | null;
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
+        };
+        AdminSchoolSummary: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            hidden: boolean;
+            courseCount: number;
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminSchoolsPage: {
+            items: components["schemas"]["AdminSchoolSummary"][];
+            nextCursor: string | null;
+        };
+        AdminIntakeView: {
+            id: string;
+            courseId: string;
+            startDate: string;
+            schedule: string;
+            location: string | null;
+            capacity: number;
+            seatsTaken: number;
+            hidden: boolean;
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminCourseView: {
+            id: string;
+            schoolId: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            syllabus: string[];
+            outcomes: string[];
+            priceKobo: number;
+            hidden: boolean;
+            intakes: components["schemas"]["AdminIntakeView"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        AdminSchoolDetail: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            foundedYear: number | null;
+            expertise: string[];
+            about: string;
+            logo: string | null;
+            applyUrl: string | null;
+            reportEmail: string;
+            hidden: boolean;
+            courses: components["schemas"]["AdminCourseView"][];
+            createdAt: string;
+            updatedAt: string;
         };
         AdCardView: {
             id: string;
@@ -8085,6 +8751,79 @@ export interface components {
             verification: components["schemas"]["VerificationState"];
             following: boolean;
         };
+        ProfessionalListingVisibilityView: {
+            id: string;
+            category: string;
+            /** @enum {string} */
+            visibility: "listed" | "hidden" | "taken_down";
+            /** Format: date-time */
+            takenDownAt: string | null;
+        };
+        ProfessionalLocationView: {
+            city: string | null;
+        };
+        ProfessionalFieldView: {
+            id: string;
+            label: string;
+            categories: string[];
+            applyCategory: string;
+            regulated: boolean;
+        };
+        ProfessionalFieldRef: {
+            id: string;
+            label: string;
+        };
+        ProfessionalDirectoryEntry: {
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
+        ProfessionalDirectoryPage: {
+            items: components["schemas"]["ProfessionalDirectoryEntry"][];
+            currentPage: number;
+            perPage: number;
+            total: number;
+        };
+        ProfessionalDirectoryProfile: {
+            about: string;
+            issuingBody: string | null;
+            credentialKind: string;
+            verification: components["schemas"]["VerificationState"];
+            name: string;
+            id: string;
+            category: string;
+            dmEnabled: boolean;
+            dmResponseHours: number;
+            avatarUrl: string | null;
+            handle: string | null;
+            headline: string;
+            services: string[];
+            wawuId: string;
+            pieceCount: number;
+            ratingAvg: number | null;
+            reviewCount: number;
+            field: components["schemas"]["ProfessionalFieldRef"];
+            city: string | null;
+            usualReplyMinutes: number | null;
+            answeredMessageCount: number;
+            messagePriceKobo: number | null;
+        };
         ProfessionalListItem: {
             id: string;
             wawuId: string;
@@ -8238,6 +8977,12 @@ export interface components {
             followingCount: number;
             communityCount: number;
         };
+        ProfileWorkOwnerView: {
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+        };
         ProfileWorkCategoryView: {
             name: string;
             count: number;
@@ -8261,6 +9006,7 @@ export interface components {
             createdAt: string;
         };
         ProfileWorksView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
             count: number;
             categories: components["schemas"]["ProfileWorkCategoryView"][];
             works: components["schemas"]["ProfileWorkView"][];
@@ -8272,6 +9018,20 @@ export interface components {
             startYear: number;
             endYear: number | null;
             current: boolean;
+        };
+        ProfileWorkDetailView: {
+            owner: components["schemas"]["ProfileWorkOwnerView"];
+            id: string;
+            title: string;
+            role: string;
+            client: string | null;
+            year: number;
+            link: string | null;
+            category: string | null;
+            description: string | null;
+            media: components["schemas"]["ProfileWorkMediaView"][];
+            position: number;
+            createdAt: string;
         };
         EnrolResponse: {
             externalHostUrl: string;
@@ -8459,156 +9219,6 @@ export interface components {
             eventId: string;
             userSaved: boolean;
         };
-        QuestionOption: {
-            value: string;
-            label: string;
-        };
-        IntakeQuestion: {
-            id: string;
-            step: number;
-            stepTitle: string;
-            prompt: string;
-            /** @enum {string} */
-            kind: "text" | "documents" | "single" | "multi" | "date";
-            /** @enum {string} */
-            level: "required" | "optional";
-            options?: components["schemas"]["QuestionOption"][] | null;
-            placeholder?: string | null;
-            suggestions?: string[] | null;
-            helper?: string | null;
-            showIf?: {
-                questionId: string;
-            } | null;
-        };
-        GeminiBrief: {
-            summary: string;
-            keyIssues: string[];
-            questionsToClarify: string[];
-            risks: string[];
-        };
-        LegalBrief: {
-            matter: string;
-            matterLabel: string;
-            facts: {
-                question: string;
-                answer: string;
-            }[];
-            documentCount: number;
-            analysis: components["schemas"]["GeminiBrief"];
-            generatedBy: string;
-            generatedAt: string;
-        };
-        IntakeView: {
-            id: string;
-            matter: string;
-            matterLabel: string;
-            status: string;
-            answers: {
-                [key: string]: unknown;
-            };
-            documents: string[];
-            questions: components["schemas"]["IntakeQuestion"][];
-            outstandingRequired: string[];
-            brief: components["schemas"]["LegalBrief"];
-            legalRequestId: string | null;
-        };
-        ChatMessageView: {
-            id: string;
-            /** @enum {string} */
-            authorRole: "client" | "ai" | "consultant";
-            body: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        ChatThreadView: {
-            legalRequestId: string;
-            serviceName: string;
-            status: string;
-            consultantJoined: boolean;
-            messages: components["schemas"]["ChatMessageView"][];
-        };
-        IntakeQueueItem: {
-            id: string;
-            wawuUserId: string;
-            clientName: string;
-            matter: string;
-            matterLabel: string;
-            status: string;
-            summary: string;
-            documentCount: number;
-            /** Format: date-time */
-            completedAt: string | null;
-            waitingHours: number;
-            urgency: string | null;
-        };
-        IntakeDetailView: {
-            id: string;
-            wawuUserId: string;
-            clientName: string;
-            matter: string;
-            matterLabel: string;
-            status: string;
-            documents: string[];
-            brief: components["schemas"]["LegalBrief"];
-            /** Format: date-time */
-            completedAt: string | null;
-            legalRequestId: string | null;
-        };
-        LegalAssistantTopic: {
-            id: string;
-            label: string;
-            matter: string;
-            matterLabel: string;
-        };
-        LegalAssistantMessage: {
-            id: string;
-            /** @enum {string} */
-            authorRole: "client" | "consultant" | "assistant";
-            body: string;
-            /** Format: date-time */
-            createdAt: string;
-            consultantName: string | null;
-        };
-        LegalAssistantQuickReply: {
-            id: string;
-            label: string;
-        };
-        LegalAssistantBriefRow: {
-            label: string;
-            value: string;
-        };
-        LegalAssistantBrief: {
-            matter: string;
-            matterLabel: string;
-            rows: components["schemas"]["LegalAssistantBriefRow"][];
-            ready: boolean;
-        };
-        LegalAssistantConsultant: {
-            name: string | null;
-            /** Format: date-time */
-            joinedAt: string;
-        };
-        LegalAssistantThread: {
-            id: string;
-            /** @enum {string} */
-            stage: "sent" | "profiling" | "brief_ready";
-            matter: string;
-            matterLabel: string;
-            messages: components["schemas"]["LegalAssistantMessage"][];
-            quickReplies: components["schemas"]["LegalAssistantQuickReply"][];
-            brief: components["schemas"]["LegalAssistantBrief"] | null;
-            awaitingReply: boolean;
-            legalRequestId: string | null;
-            requestStatus: string | null;
-            consultant: components["schemas"]["LegalAssistantConsultant"] | null;
-            assistantStopped: boolean;
-        };
-        LegalAssistantTranscript: {
-            intakeId: string;
-            legalRequestId: string | null;
-            brief: components["schemas"]["LegalAssistantBrief"] | null;
-            messages: components["schemas"]["LegalAssistantMessage"][];
-        };
         ChatPerson: {
             wawuId: string;
             name: string;
@@ -8664,6 +9274,18 @@ export interface components {
         ChatUpload: {
             uploadUrl: string;
             key: string;
+        };
+        TgifDayView: {
+            date: string;
+            series: string;
+            seriesTheme: string;
+            verse: string;
+            verseReference: string;
+            reality: string;
+            remember: string;
+            prayer: string;
+            takeaway: string;
+            shareLink: string | null;
         };
         TgifCardStats: {
             /** @enum {string} */
@@ -8908,6 +9530,85 @@ export interface components {
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
         };
+        PlanBadgeView: {
+            id: string;
+            numbered: boolean;
+        };
+        MyTierSummaryView: {
+            id: string;
+            name: string | null;
+            badge: components["schemas"]["PlanBadgeView"] | null;
+        };
+        PlanEventPassView: {
+            id: string;
+            name: string;
+        };
+        MyTierView: {
+            /** @enum {string} */
+            state: "active" | "none" | "ending" | "ended";
+            tier: components["schemas"]["MyTierSummaryView"] | null;
+            activeFrom: string | null;
+            activeUntil: string | null;
+            productsAllowed: number;
+            extraProducts: number;
+            pointsIncluded: number;
+            firstVoiceIntroIncluded: boolean;
+            eventPass: components["schemas"]["PlanEventPassView"] | null;
+        };
+        PlanTierView: {
+            id: string;
+            name: string;
+            days: number;
+            products: number;
+            bonusPoints: number;
+            bonusPointsExpireDays: number;
+            priceMinor: number;
+            eventPass: components["schemas"]["PlanEventPassView"];
+            badge: components["schemas"]["PlanBadgeView"];
+            packBonusPercent: number;
+            firstVoiceIntroIncluded: boolean;
+            preselected: boolean;
+        };
+        PlanExtraProductsView: {
+            count: number;
+            priceMinor: number;
+        };
+        PlanPackView: {
+            id: string;
+            points: number;
+            priceMinor: number;
+        };
+        PlanCheckoutBumpView: {
+            points: number;
+            priceMinor: number;
+        };
+        PlanActionView: {
+            id: string;
+            points: number;
+            /** @enum {string} */
+            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+        };
+        PlanCapsView: {
+            dailyPoints: number;
+            maxCharactersPerJob: number;
+            maxAudioMinutesPerJob: number;
+        };
+        PlansView: {
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            currencyFixed: boolean;
+            tiers: components["schemas"]["PlanTierView"][];
+            extraProducts: components["schemas"]["PlanExtraProductsView"];
+            packs: components["schemas"]["PlanPackView"][];
+            checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
+            actions: components["schemas"]["PlanActionView"][];
+            caps: components["schemas"]["PlanCapsView"];
+        };
+        NuvionWebhookAck: {
+            /** @enum {string} */
+            outcome: "recorded" | "duplicate";
+            event: string | null;
+        };
         AdCreativeView: {
             headline: string;
             subline: string | null;
@@ -8940,7 +9641,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            status: "live" | "paused" | "draft" | "ended" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -8964,7 +9665,7 @@ export interface components {
                 /** @enum {string|null} */
                 placement: "tgif_card" | "today_slot" | null;
                 /** @enum {string|null} */
-                status: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+                status: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
                 /** @enum {string|null} */
                 phase: "upcoming" | "running" | "over" | null;
                 /** Format: date-time */
@@ -8978,8 +9679,8 @@ export interface components {
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                scheduled: unknown;
                 ended: unknown;
+                scheduled: unknown;
             };
             deliveryByPlacement: {
                 tgif_card: unknown;
@@ -8989,8 +9690,8 @@ export interface components {
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                scheduled: unknown;
                 ended: unknown;
+                scheduled: unknown;
             };
             byPlacement: {
                 tgif_card: unknown;
@@ -9010,7 +9711,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            status: "live" | "paused" | "draft" | "ended" | "scheduled";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -9020,11 +9721,11 @@ export interface components {
         AdAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "paused" | "updated" | "scheduled" | "ended" | "created" | "resumed" | "deleted";
+            action: "paused" | "updated" | "ended" | "scheduled" | "created" | "resumed" | "deleted";
             /** @enum {string|null} */
-            previousStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            previousStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
             /** @enum {string|null} */
-            newStatus: "live" | "paused" | "draft" | "scheduled" | "ended" | null;
+            newStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
             changes: {
                 [key: string]: {
                     from: unknown;
@@ -9046,7 +9747,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "scheduled" | "ended";
+            status: "live" | "paused" | "draft" | "ended" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -10622,22 +11323,10 @@ export interface operations {
                         categories: ("Business Services" | "Protection Services" | "Contracts" | "Disputes" | "Property" | "Entertainment & Creative Law")[];
                         consultationOptions: ({
                             /** @enum {string} */
-                            medium: "chat";
-                            /** @enum {string} */
-                            label: "Chat";
-                            /** @enum {number} */
-                            minutes: 60;
-                            /** @enum {number} */
-                            feeNaira: 25000;
-                        } | {
-                            /** @enum {string} */
-                            medium: "zoom";
-                            /** @enum {string} */
-                            label: "Zoom call";
-                            /** @enum {number} */
-                            minutes: 60;
-                            /** @enum {number} */
-                            feeNaira: 45000;
+                            medium: "chat" | "zoom";
+                            label: string;
+                            minutes: number | null;
+                            feeNaira: number | null;
                         } | {
                             /** @enum {string} */
                             medium: "physical";
@@ -10858,7 +11547,7 @@ export interface operations {
                         };
                         flutterwaveConfig: {
                             txRef: string;
-                            amount: 25000 | 45000;
+                            amount: number;
                             currency: string;
                             publicKey: string;
                         };
@@ -11085,6 +11774,114 @@ export interface operations {
                         cancelledAt: string | null;
                         createdAt: string;
                     };
+                };
+            };
+        };
+    };
+    LegalConsultationController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationOptionsView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_slots: {
+        parameters: {
+            query: {
+                /** @description A video or phone call. An in-person consultation has no calendar. */
+                medium: "zoom" | "phone";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationSlotsView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_booking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationBookingView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookConsultationSlotDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultationBookingView"];
+                };
+            };
+        };
+    };
+    LegalConsultationController_delivered: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDeliverablesView"];
                 };
             };
         };
@@ -13245,6 +14042,7 @@ export interface operations {
                         category: string;
                         handle: string;
                         bio: string;
+                        languages: string[];
                         tagline: string;
                         field: string;
                         topics: string[];
@@ -13252,7 +14050,6 @@ export interface operations {
                         fullUntil: string | null;
                         yearsExperience: number;
                         sessions: number;
-                        languages: string[];
                     }[] | {
                         items: {
                             verification: string;
@@ -13261,6 +14058,7 @@ export interface operations {
                             category: string;
                             handle: string;
                             bio: string;
+                            languages: string[];
                             tagline: string;
                             field: string;
                             topics: string[];
@@ -13268,7 +14066,6 @@ export interface operations {
                             fullUntil: string | null;
                             yearsExperience: number;
                             sessions: number;
-                            languages: string[];
                         }[];
                         currentPage: number;
                         perPage: number;
@@ -13301,6 +14098,7 @@ export interface operations {
                         category: string;
                         handle: string;
                         bio: string;
+                        languages: string[];
                         tagline: string;
                         field: string;
                         topics: string[];
@@ -13308,7 +14106,6 @@ export interface operations {
                         fullUntil: string | null;
                         yearsExperience: number;
                         sessions: number;
-                        languages: string[];
                     };
                 };
             };
@@ -13860,20 +14657,20 @@ export interface operations {
                         status: "pending" | "rejected" | "approved";
                         /** Format: date-time */
                         reviewedAt: string | null;
+                        listed: boolean;
                         category: string;
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
                         licenceNumber: string | null;
                         issuingBody: string | null;
-                        listed: boolean;
                     };
                 };
             };
@@ -13899,21 +14696,40 @@ export interface operations {
                         status: "pending" | "rejected" | "approved";
                         /** Format: date-time */
                         reviewedAt: string | null;
+                        listed: boolean;
                         category: string;
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
                         licenceNumber: string | null;
                         issuingBody: string | null;
-                        listed: boolean;
                     }[];
+                };
+            };
+        };
+    };
+    ProfessionalController_myVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalListingVisibilityView"][];
                 };
             };
         };
@@ -13944,21 +14760,153 @@ export interface operations {
                         status: "pending" | "rejected" | "approved";
                         /** Format: date-time */
                         reviewedAt: string | null;
+                        listed: boolean;
                         category: string;
                         documents: string[];
                         wawuUserId: string;
                         headline: string;
+                        about: string;
                         /** Format: date-time */
                         submittedAt: string;
                         rejectionReason: string | null;
-                        about: string;
                         services: string[];
                         /** @enum {string} */
                         credentialKind: "licence" | "qualification" | "portfolio";
                         licenceNumber: string | null;
                         issuingBody: string | null;
-                        listed: boolean;
                     };
+                };
+            };
+            /** @description Refused: the listing is not approved, or (reason.code listing_taken_down, with reason.takenDownAt) an admin took it down and only an admin lists it again (FIX-06). A Hide on a taken-down listing is accepted. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProfessionalController_location: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_setLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfessionalLocationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_clearLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalLocationView"];
+                };
+            };
+        };
+    };
+    ProfessionalController_fields: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalFieldView"][];
+                };
+            };
+        };
+    };
+    ProfessionalController_directory: {
+        parameters: {
+            query?: {
+                /** @description A field id from GET /professionals/fields, for example `accounting_tax`. */
+                field?: "accounting_tax" | "legal_compliance" | "design_creative" | "technology_it" | "engineering" | "healthcare" | "business_consulting";
+                page?: number;
+                perPage?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryPage"];
+                };
+            };
+        };
+    };
+    ProfessionalController_directoryProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalDirectoryProfile"];
                 };
             };
         };
@@ -13966,7 +14914,7 @@ export interface operations {
     ProfessionalController_list: {
         parameters: {
             query?: {
-                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+                category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact" | "engineering";
                 page?: number;
                 perPage?: number;
             };
@@ -15043,7 +15991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileWorkView"];
+                    "application/json": components["schemas"]["ProfileWorkDetailView"];
                 };
             };
         };
@@ -17259,7 +18207,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening */
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -17270,6 +18218,15 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17773,6 +18730,49 @@ export interface operations {
             };
         };
     };
+    TgifController_day: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TgifDayView"];
+                };
+            };
+        };
+    };
+    TgifController_shareImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The day's verse on the TGIF card, as a PNG image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+        };
+    };
     TgifController_stats: {
         parameters: {
             query?: never;
@@ -18188,6 +19188,44 @@ export interface operations {
             };
         };
     };
+    PlansController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansView"];
+                };
+            };
+        };
+    };
+    MeTierController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTierView"];
+                };
+            };
+        };
+    };
     AdsEventsController_record: {
         parameters: {
             query?: never;
@@ -18328,7 +19366,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: pin_required, pin_incorrect, daily_limit_exceeded, recipient_blocked */
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, recipient_blocked */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -18364,7 +19402,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -18419,7 +19457,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: pin_required, pin_incorrect, daily_limit_exceeded, bank_transfers_blocked */
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, bank_transfers_blocked */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -18455,7 +19493,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -18619,7 +19657,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: pin_required, pin_incorrect, daily_limit_exceeded */
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -18655,7 +19693,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;

@@ -3,7 +3,7 @@ id: WALLET-31
 title: WAWU card (first slice)
 owner: YOU
 area: WALLET
-order: 202
+order: 252
 priority: after-launch
 repo: wawu-backend
 type: money-path
