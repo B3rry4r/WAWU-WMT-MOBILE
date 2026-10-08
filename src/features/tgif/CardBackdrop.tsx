@@ -18,22 +18,17 @@ export function CardBackdrop({ look, width, height }: CardBackdropProps) {
   return (
     <Svg testID="tgif-backdrop" pointerEvents="none" style={StyleSheet.absoluteFill} width={width} height={height}>
       <Defs>
-        {look.glows.map((g, i) => (
-          <RadialGradient key={i} id={`tgifGlow${i}`} gradientUnits="userSpaceOnUse" cx={width - glow.x} cy={glow.y} r={glow.r}>
-            <Stop offset="0" stopColor={g.color} stopOpacity={g.opacity} />
-            <Stop offset="1" stopColor={g.color} stopOpacity={0} />
-          </RadialGradient>
-        ))}
+        <RadialGradient id="tgifGlow" gradientUnits="userSpaceOnUse" cx={width - glow.x} cy={glow.y} r={glow.r}>
+          <Stop offset="0" stopColor={look.glow.color} stopOpacity={look.glow.opacity} />
+          <Stop offset="1" stopColor={look.glow.color} stopOpacity={0} />
+        </RadialGradient>
         <RadialGradient id="tgifDust" gradientUnits="userSpaceOnUse" cx={dust.x} cy={height - dust.up} r={dust.r}>
           <Stop offset="0" stopColor={ink} stopOpacity={dust.opacity} />
           <Stop offset="1" stopColor={ink} stopOpacity={0} />
         </RadialGradient>
       </Defs>
       <Rect width={width} height={height} fill={look.ground} />
-      {look.wash ? <Rect width={width} height={height} fill={look.wash.color} fillOpacity={look.wash.opacity} /> : null}
-      {look.glows.map((_, i) => (
-        <Rect key={i} width={width} height={height} fill={`url(#tgifGlow${i})`} />
-      ))}
+      <Rect width={width} height={height} fill="url(#tgifGlow)" />
       <Rect width={width} height={height} fill="url(#tgifDust)" />
     </Svg>
   );
