@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · PROS-03 · Verified independently (lead): V1, V9 passed against the real WAWU ID and a Hub from backend main; D1 and D2 closed (M2's row opens P8; P8, P5 and P7 measure equal at 2x); V4, V6, V7 failed with eight defects (D3 no Explore door, so no way into P5 or back to a hidden listing; D4 a failed refresh wipes the flow and its partial result; D5 Hide does not reach M2; D6 system Back on P6; D7 to D10 low); 17 mutants, 14 killed; U3 left as a product question; V10 NOT RUN; status building.
 - 8 Oct 2026 · PROS-03 · Fix round 1: the Me tab's listing row opens P8 (R-41); P8, P5, P6 and P7 vertical metrics brought to the artboards in the feature's own styles (TextField's label drift filed as SHARED-CHANGES PROS-03 #3); a null account type meets the gate (spec kills the surviving mutant); main merged; status verifying.
 - 7 Oct 2026 · PROS-03 · Verified (round 1): V1, V4, V6, V7, V9 passed against the real WAWU ID and a Hub from backend main, V5 passed with a finding, V10 NOT RUN; two defects (the Me tab's listing row does not open P8, R-41; P8 and P5 vertical metrics drift from the artboards); status building.
 - 7 Oct 2026 · PROS-03 · Built: Offer your services (P5 to P7), Your listings (P8, P9), the creator gate (P10); one application per chosen field, licence file through `professional/document`; tests, gaps G-320 to G-325 and shared-change rows filed; status verifying.
