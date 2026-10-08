@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -500,6 +500,23 @@ Everything else asked of this round passed. Stack: mock-wawu-id (envelope added 
 - **D13-E1 fixed.** `src/features/events/parts.tsx`: the featured card's name (`heroName`) and place line (`heroLine`) now use `canvasNormalLineHeight` (26 for the 20 name, 16 for the 12.5 line); the kicker was already on 14. Nothing else touched.
 - **Spec.** `eventsScreens.test.tsx`, "draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)": asserts the three line heights. Run against the old `parts.tsx` in place it fails (expected 26, received 21.75); with the fix it passes.
 - **NOT RUN:** the live 2x pixel re-measure against `render_design.py E1` (light and dark). The line boxes now equal the canvas values the verifier measured for the other screens (14, 26, 16); the verifier is to measure. I do not claim the screens match.
+
+## Verifier report, round 8 (8 Oct 2026)
+
+**Verifier (fresh session; wrote none of it).** Mobile `wmt/EVENTS-01` at `ae63251`. Stack: `expo start --web` on 4390 from this worktree, Hub answered by Playwright routes (mock Hub, the builder's featured-event fixtures, no backend), Chromium 390 px at 2x, light and dark; E1 render from `render_design.py E1`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| (1) E1 featured card against the render, 2x | **one residual defect** | DOM boxes: kicker 14 high, name 26, place line 16 (drawn 14, 26, 17 device-rounded: 28, 56 and 34 px tall rows match the render's glyph rows exactly). Glyph rows from the card top (device px, app / render): kicker 231-245 / 233-247, name 271-299 / 273-301, place line 326-343 / 326-343. Identical in light and dark. Heights and the place line are exact; the kicker and the name sit 2 px at 2x (1 css px) above the render. Cause: `design/_gen/events.js` draws the gap before the place line as `margin-top:3px` (kicker to name `4px`); `heroMetrics.stack` is one 4 for both, so the name-to-place gap is 4 and the name and kicker rise by 1. |
+| (2) New spec fails with the old heights | passed | `heroName` and `heroLine` reverted in `parts.tsx` in place: "draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)" fails (expected 26, received 21.75); `git restore` after, tree clean |
+| (3) Round-8 diff | passed | `git diff 55c3eb7 ae63251`: `parts.tsx` (2 lines), `eventsScreens.test.tsx` (the one spec), `SHARED-CHANGES.md`, `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/EVENTS-01.md`; nothing else. `e423b76..HEAD` otherwise is main's merge only |
+| (4) `npm run check` | exit 1, main's fault | typecheck, lint, tests (81 suites, 1460 tests) and gates (9 run, 364 files, 0 findings, baseline 0) pass; the only failure is the task check: "FIX-22.md: type backend-endpoint requires passes V4, V9". The same command on `origin/main` (`c8928e3`, tasks and scripts extracted from it) fails with the identical line (258 tasks). FIX-22 is not this task's file; it is main's to fix |
+| (5) Conflict markers | passed | `git grep -nE '^(<<<<<<<|>>>>>>>|=======)( \|$)'` on the final tree: no match in any file |
+
+**Defect (open).**
+- **D13-E1b (defect, minor).** E1's featured card kicker and name sit 1 css px (2 px at 2x) above the render because the gap between the name and the place line is the shared `heroMetrics.stack` 4 where the canvas draws 3 (`margin-top:3px` on the place line, `4px` on the name). Fix: a 3 gap before the place line (a `marginTop` of 3 on `heroLine` with `gap` 0 and the name's 4, or two metrics), then re-measure: place line stays at 326, name at 273, kicker at 233.
+
+**Status:** one open defect (D13-E1b), so `status: building`.
 
 ## Owner sign-off
 

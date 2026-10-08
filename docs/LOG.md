@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
 - 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
 - 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
