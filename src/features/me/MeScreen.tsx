@@ -6,10 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
+import { Toast } from '@/components/Toast';
 import { Banner } from '@/features/auth/Banner';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { readFailure } from '@/features/profile-edit/failure';
-import { SavedToast } from '@/features/profile-edit/SavedToast';
 import { layout, radius, space, useWawu } from '@/theme';
 
 import { aboutWorksKey, fetchAboutWorks, fetchGridPage, fetchListings, fetchProfileStats, fetchServiceState, gridKey, listingsKey, servicesKey, statsKey, type MyProfile } from './api';
@@ -175,7 +175,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork }: MeScreenProps
           )}
         </View>
       </ScrollView>
-      {toast ? <SavedToast message="Profile saved" /> : null}
+      <Toast message={toast ? 'Profile saved' : null} testID="profile-saved" />
     </View>
   );
 }

@@ -61,7 +61,7 @@ const profile = {
 const details = { wawuUserId: 'u1', location: 'Lagos, Nigeria', skills: [], openTo: [], threadsHandle: null, socialOrder: [], memberSince: '2026-10-04T00:00:00.000Z' };
 
 installFetch();
-const { EditProfileScreen } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
+const { EditProfileScreen, TOAST_MS } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
 const { SocialLinksScreen } = require('../SocialLinksScreen') as typeof import('../SocialLinksScreen');
 const draft = require('../draft') as typeof import('../draft');
 
@@ -78,11 +78,20 @@ function frame(children: React.ReactNode) {
   );
 }
 
-async function boot() {
+/**
+ * The last screen's `onSaved`: a save has landed once it is called. Most cases open M8 as the Me tab does
+ * (`ownNotice={false}`: it hands back at once, M10 shows "Profile saved"); `boot(true)` is M8 opened from
+ * anywhere else, which shows its own notice first.
+ */
+let lastSaved: jest.Mock = jest.fn();
+const saveLands = () => waitFor(() => expect(lastSaved).toHaveBeenCalledTimes(1));
+
+async function boot(ownNotice = false) {
   const onBack = jest.fn();
   const onOpenSocial = jest.fn();
   const onSaved = jest.fn();
-  const view = await render(frame(<EditProfileScreen onBack={onBack} onOpenSocial={onOpenSocial} onSaved={onSaved} />));
+  lastSaved = onSaved;
+  const view = await render(frame(<EditProfileScreen onBack={onBack} onOpenSocial={onOpenSocial} onSaved={onSaved} ownNotice={ownNotice} />));
   return { onBack, onOpenSocial, onSaved, view };
 }
 
@@ -95,8 +104,33 @@ beforeEach(() => {
 const patches = () => sent.filter((s) => s.method === 'PATCH');
 
 describe('M8 · Edit profile', () => {
-  it('a user can change their name, bio and location, press Save, and see Profile saved', async () => {
+  it('opened from anywhere but the Me tab, a user who saves sees M8\'s own "Profile saved", once, then is handed back', async () => {
     jest.useFakeTimers();
+    serve();
+    const { onSaved } = await boot(true);
+    await fireEvent.changeText(await screen.findByTestId('edit-bio'), 'Teaching African creators to get paid.');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
+    expect(screen.getAllByText('Profile saved')).toHaveLength(1);
+    expect(onSaved).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(TOAST_MS + 100);
+    });
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
+  it('M8 keeps its own notice by default, so a new caller never loses "Profile saved"', async () => {
+    serve();
+    const onSaved = jest.fn();
+    await render(frame(<EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={onSaved} />));
+    await fireEvent.changeText(await screen.findByTestId('edit-bio'), 'Changed');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it('opened from the Me tab, a user who saves is handed back at once and M8 draws no notice (M10 shows it, once, on the Me tab)', async () => {
     serve();
     const { onSaved } = await boot();
     await screen.findByDisplayValue('Lennox Emmanuel');
@@ -108,19 +142,15 @@ describe('M8 · Edit profile', () => {
     expect(screen.getByTestId('edit-save')).toBeEnabled();
     await fireEvent.press(screen.getByTestId('edit-save'));
 
-    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
-    expect(screen.getByText('Profile saved')).toBeTruthy();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    // M8 draws no toast of its own: "Profile saved" is M10's (SHARED-CHANGES ME-01 F1).
+    expect(screen.queryByTestId('profile-saved')).toBeNull();
+    expect(screen.queryByText('Profile saved')).toBeNull();
     // Only what changed goes up, to the route that holds it.
     expect(patches()).toEqual([
       { method: 'PATCH', path: ME, body: { firstName: 'Lennox', middleName: 'Chuka', lastName: 'Emmanuel', bio: 'Teaching African creators to get paid.' } },
       { method: 'PATCH', path: FIELDS, body: { location: 'Abuja, Nigeria' } },
     ]);
-    expect(onSaved).not.toHaveBeenCalled();
-    await act(async () => {
-      jest.advanceTimersByTime(1500);
-    });
-    expect(onSaved).toHaveBeenCalledTimes(1);
-    jest.useRealTimers();
   });
 
   it('a user can edit their handle, and sees the link it makes under it', async () => {
@@ -132,7 +162,7 @@ describe('M8 · Edit profile', () => {
     await fireEvent.changeText(field, '@lennox_films');
     expect(screen.getByText('wawu/lennox_films')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(patches()[0].body).toEqual({ handle: 'lennox_films' });
   });
 
@@ -142,12 +172,12 @@ describe('M8 · Edit profile', () => {
     await fireEvent.changeText(await screen.findByTestId('edit-handle'), '@adaeze');
     await fireEvent.press(screen.getByTestId('edit-save'));
     expect(await screen.findByText('That handle is taken. Try another.')).toBeTruthy();
-    expect(screen.queryByTestId('profile-saved')).toBeNull();
+    expect(lastSaved).not.toHaveBeenCalled();
     answers[`PATCH ${ME}`] = ok(profile);
     await fireEvent.changeText(screen.getByTestId('edit-handle'), '@adaeze_films');
     expect(screen.queryByText('That handle is taken. Try another.')).toBeNull();
     await fireEvent.press(screen.getByTestId('edit-save'));
-    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
+    await saveLands();
   });
 
   it('a user cannot save a handle with a space, a name with one word, or a bio over the Hub’s limit', async () => {
@@ -223,7 +253,7 @@ describe('M8 · Edit profile', () => {
     expect(screen.getByDisplayValue('Changed offline')).toBeTruthy();
     answers[`PATCH ${ME}`] = ok(profile);
     await fireEvent.press(screen.getByTestId('edit-save'));
-    expect(await screen.findByTestId('profile-saved')).toBeTruthy();
+    await saveLands();
     expect(screen.queryByTestId('edit-banner')).toBeNull();
   });
 
@@ -237,7 +267,7 @@ describe('M8 · Edit profile', () => {
     answers[`PATCH ${FIELDS}`] = ok(details);
     sent = [];
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(patches()).toEqual([{ method: 'PATCH', path: FIELDS, body: { location: 'Kano' } }]);
   });
 
@@ -273,7 +303,7 @@ describe('M8 · Edit profile', () => {
     expect(screen.getByTestId('edit-save')).toBeDisabled();
     await fireEvent.changeText(screen.getByTestId('edit-bio'), 'Hello');
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(patches().map((p) => p.body)).toEqual([{ bio: 'Hello' }]);
   });
 
@@ -292,7 +322,7 @@ describe('M9 · Social links, opened over M8', () => {
     const [open, setOpen] = useState(false);
     return (
       <>
-        <EditProfileScreen onBack={jest.fn()} onOpenSocial={() => setOpen(true)} onSaved={jest.fn()} />
+        <EditProfileScreen onBack={jest.fn()} onOpenSocial={() => setOpen(true)} onSaved={lastSaved} ownNotice={false} />
         {open ? (
           <SocialLinksScreen
             onClose={() => {
@@ -307,6 +337,7 @@ describe('M9 · Social links, opened over M8', () => {
 
   async function overM8() {
     serve();
+    lastSaved = jest.fn();
     const onClose = jest.fn();
     await render(frame(<Stack onClose={onClose} />));
     await screen.findByTestId('edit-profile');
@@ -340,7 +371,7 @@ describe('M9 · Social links, opened over M8', () => {
     expect(draft.readDraft()?.form.order).toEqual(['instagram', 'tiktok', 'youtube', 'threads', 'linkedin', 'facebook']);
 
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(patches()).toEqual([
       { method: 'PATCH', path: ME, body: { linkedinUrl: 'lennox-e', facebookUrl: 'lennox.films' } },
       { method: 'PATCH', path: FIELDS, body: { threadsHandle: 'lennox.t', socialOrder: ['instagram', 'tiktok', 'youtube', 'threads', 'linkedin', 'facebook'] } },
@@ -375,7 +406,7 @@ describe('M9 · Social links, opened over M8', () => {
     expect(draft.readDraft()?.form.order).toEqual(['youtube', 'instagram', 'tiktok']);
     await fireEvent.press(screen.getByTestId('social-done'));
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(patches()).toEqual([{ method: 'PATCH', path: FIELDS, body: { socialOrder: ['youtube', 'instagram', 'tiktok'] } }]);
   });
 
@@ -389,7 +420,7 @@ describe('M9 · Social links, opened over M8', () => {
     expect(draft.readDraft()?.form.order).toEqual(['youtube', 'instagram', 'tiktok']);
     await fireEvent.press(screen.getByTestId('social-done'));
     await fireEvent.press(screen.getByTestId('edit-save'));
-    await screen.findByTestId('profile-saved');
+    await saveLands();
     expect(patches()).toEqual([{ method: 'PATCH', path: FIELDS, body: { socialOrder: ['youtube', 'instagram', 'tiktok'] } }]);
   });
 

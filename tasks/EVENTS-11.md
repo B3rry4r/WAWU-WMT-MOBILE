@@ -3,7 +3,7 @@ id: EVENTS-11
 title: Changing ticket prices on a live event needs a current verification and goes back to review
 owner: YOU
 area: EVENTS
-order: 184
+order: 185
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
