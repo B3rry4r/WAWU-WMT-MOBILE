@@ -3,7 +3,7 @@ id: WALLET-20
 title: Scan to pay and my QR code
 owner: YOU
 area: WALLET
-order: 251
+order: 252
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
