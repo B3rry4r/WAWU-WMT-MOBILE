@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 102 | 0 | 20 | 26 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 56 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 
 ## Done
@@ -134,6 +131,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
 - 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
 - 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
 - 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
@@ -148,4 +146,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
-- 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
