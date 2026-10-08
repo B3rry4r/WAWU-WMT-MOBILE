@@ -250,6 +250,22 @@ Build round 3 on `5859875`, then status `verifying`. The lead's independent veri
 - **U3 (owner's question, lead default until the owner answers).** Send waits while any chosen file shows "Did not upload": the person retries it or removes it, and Send says why it is waiting. An application never goes without a file the person still sees on screen. The owner may reverse this.
 - **Outside this task (the lead files them):** the admin unlist and the person's Hide share `listed`, so a person can show again a listing an admin pulled (PROS-02's backend); presign reserves storage quota before an upload that may be refused.
 
+## Verifier report, round 3
+
+Verifier (independent of the builder), 8 Oct 2026, branch `wmt/PROS-03` from `47f0fac`, `origin/main` merged in (merge commit `24c8185`; the one conflict, generated `docs/PROGRESS.md`, regenerated with `npm run tasks -- --write`). Live stack: Hub from `origin/main` (`8359057`) on 4205, **`mock-wawu-id` from the backend repo** on 4206 (not the real WAWU ID), web build on 4207, database `wawu_hub_test_pros_03_v3` (dropped when done). PARTIAL REPORT, written pass by pass; later rows are added below as each pass finishes.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 `npm run check` as it will land | passed, exit 0: jest 82 suites / 1442 tests, gates 9 run / 366 files / 0 findings, tasks 253 / 279 artboards | scratchpad `pros03v3b/check.log` |
+| D9 diff vs main (static) | see finding R3-1 | `git diff origin/main...HEAD -- src/features/me` |
+| Existing tests the builder changed | both legitimate (see below) | `git diff 5859875 HEAD -- src/features/**/__tests__` |
+
+**Changed tests.** (1) Three-field spec, 409 to 503: legitimate. D7 reverses what a 409 does, so the old 409 case now belongs to the new D7 spec (three fields, middle 409, other two sent in one tap, asserted by posted bodies and by the sent list); the old spec's behaviour (stop at a failure, third not tried, retry files the rest) is still pinned, now with a 503, and the assertions are as strict as before. Not weakened. (2) "Paid row is a disabled button": legitimate, it pinned the very thing D9 removed; it now asserts there is no `me-service-paid-open` and that the row is a plain labelled group; the listing-row press assertion is unchanged.
+
+**D10.** `LongField` is named in SHARED-CHANGES ME-11 #2 (line 120). Done.
+
+**R3-1 (minor, not blocking) D9.** The diff of ME-01's `ServicesTab.tsx` is not only the entry's lines: `ServiceRow`'s inner words block was lifted into a new `RowWords` helper shared with the new `ListingRow`. Rendered output of the paid row is unchanged (same nodes, same styles), the paid row is a plain `accessible` group inside `Card` again, and `ListingRow` uses `useFocusRing` and a `surfaceSunken` pressed look. Judged `differs-for-recorded-reason`: sharing the words block keeps the two rows from drifting; but a strict reading of D9 ("keep only the entry's lines") would inline it. Lead to decide; I do not hold the task for it.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
