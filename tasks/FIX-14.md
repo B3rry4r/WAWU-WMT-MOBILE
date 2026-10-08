@@ -3,7 +3,7 @@ id: FIX-14
 title: Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
 owner: YOU
 area: FIX
-order: 194
+order: 195
 priority: launch
 repo: wawu-wmt-mobile
 type: component

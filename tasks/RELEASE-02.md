@@ -3,7 +3,7 @@ id: RELEASE-02
 title: Fix QA defects, re-verify, submit to the stores
 owner: YOU
 area: RELEASE
-order: 196
+order: 198
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
