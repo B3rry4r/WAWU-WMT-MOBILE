@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 112 | 0 | 20 | 21 |
+| todo | 111 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 64 | 27 | 11 | 5 |
 
@@ -17,6 +17,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
 
 ## Done
 
