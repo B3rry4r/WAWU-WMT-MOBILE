@@ -152,6 +152,17 @@ Setup: own detached worktrees. Built Hubs (`node dist/src/main.js`) of the branc
 
 Status: back to `building` (D2, D3 open).
 
+## Lead rulings after the independent verifier (8 Oct 2026)
+
+Build round 3 on `cb4cbba` (backend on `807a6b8`), then status `verifying`. The lead's independent verifier re-checks it.
+
+- **D2 (cursor refused after a long name).** Fix it at the cause, in the list's cursor decoder: every name the admin route accepts must give a cursor the list accepts. Derive both bounds (the cursor's length and the name's length inside it) from the admin's name rule (`SCHOOL_LIMITS.name`, counted as class-validator counts it), taking the worst case per counted character in UTF-16 units and in UTF-8 bytes, plus anything JSON escapes (a quote, a backslash, a control character, if the admin route allows them). Say the worst case in a comment next to the constant. Do not change the admin route's rule (SCHOOLS-02, merged). Spec: create through the real admin route a school whose name is the admin maximum of the worst character you found, with a second school after it in the same list, and walk past it at limit 1; the walk reaches the second school. A cursor longer than any the server can give out stays a 400.
+- **D3 (school page `nextIntake` order).** Add the id tiebreak to the school page's intake order so it always agrees with the course page. Spec: two shown intakes on one course with the same start date; the school page's `nextIntake` equals the course page's first intake, before and after editing either intake.
+- **Spec gaps (the six surviving mutants).** Add a spec for each: a re-encoded cursor that is not byte-equal is a 400; an upper-case id in a cursor is a 400; the name-in-cursor bound (as D2 sets it) at its edge; the school-name match is case-insensitive; `matchedCourses` lists only matching courses; `seatsTaken` appears in no public answer. Re-apply each mutant and show its spec failing.
+- **`matchedCourses` order (verifier's note).** Give the relation an explicit order (course creation order, then id), so which three courses show is decided here, not by the database.
+- **For SCHOOLS-05 (not this task):** keyset paging can show a renamed school twice in one walk; the app drops ids it already holds when it appends a page. The lead added that line to SCHOOLS-05's task file.
+- **Not this task:** `GET /search?q=%00` answering 500 on the other tabs is the same on main; the lead files it separately.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
