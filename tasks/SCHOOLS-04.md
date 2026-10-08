@@ -197,6 +197,23 @@ Builder (lead's agent), 8 Oct 2026. Backend `wmt/SCHOOLS-04` `5a602f9` (PR #81):
 - V9 from an app screen: no screen reads these routes yet. Unblocked when SCHOOLS-05 and SCHOOLS-06 build them.
 - The live probe on an ICU-collation database: it ran on this machine's `C.UTF-8` (the four `src/schools` specs did run on ICU `en-US`, see the table). Unblocked by: a built Hub started on a database created with `LOCALE_PROVIDER icu` and `live.py` run against it (no code or fact is missing).
 
+## Verifier report, round 3
+
+Verifier V3, 8 Oct 2026. Independent session. Backend `wmt/SCHOOLS-04` `3971fea` (head `5a602f9` plus `origin/main` merged, merge not rebase; the merge brought migration `20261015200000_legal_chat_opener`, applied on a fresh `wawu_hub_test_schools_04_v3`), mobile `origin/main` merged (conflicts: `contract/SOURCE_COMMIT` now `wmt/SCHOOLS-04@3971fea`, `docs/PROGRESS.md` regenerated with `check_tasks.py --write`), `contract/openapi.json` byte-equal to the backend file (`cmp`). Evidence in the verifier's scratchpad (`schools04v3/`: `walk3.py`, `cur3.py`, `d2d3.py`, `odd.py`, `cap.py`).
+
+**Partial report 1 (live passes on a built Hub, `node dist/src/main.js`, mock-wawu-id, seeded superadmin, every row through the admin routes).**
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Keyset walks | passed | 85 visible schools: ties (3 x `Alpha Academy`, groups of 4 `School NN`), accents (`ÉCOLE Café`, `élan`, `Élan`, `Zoë`), case pairs, an emoji name, a CJK name, a tab and a U+0001 name, full-width letters, `%`, `_`, `\`, quotes. Walks at limits 1, 2, 3, 5, 7, 11, 20, 50 equal the database's `ORDER BY name, id` exactly. |
+| Hide and show mid-walk | passed | 40 random trials (limit 1 to 7): after each page, hide or show the cursor school (35 percent) or a random school. No duplicate, order strictly increasing, no untouched visible school missed. Hiding the cursor school: the next page equals the one before. Hiding the next school: dropped, the rest unchanged. Cursor school filtered out by `category=vocational`, `q=design`, `q=zzzzz`, `category=tech&q=ac`: the page is exactly the filtered rows after the cursor's position (200 each). |
+| Cursor tampering | passed | 26 variants, every one 400 and none 5xx: bare id, upper-case id, other JSON (object, string, number, null, 1 and 3 element arrays, numbers, bad uuid), spaced JSON, padding, extra char, altered tail, `!!!`, 1499 and 10,000 characters, NUL (encoded and raw), lone high and low surrogate escapes, invalid UTF-8, 361-unit name, `\u0061` escape, BOM, `NaN`, 5,000 nested brackets; `cursor[]`, `cursor[a]`, two `cursor` params: 400. A valid forged cursor: 200. 100,000-character URLs: 431 from Node (same on a non-existent route). |
+| D2 | passed | Through the admin route: 120 x (U+0001 U+FE0F), 120 flags, 119 flags + U+20000, 120 quotes, 120 backslashes, 120 U+001F: all 201; 121 flags and 121 x (U+0001 U+FE0F): 400 `name must be shorter than or equal to 120 characters`. Walks at limits 1, 2, 3, 5 over all 92 schools reach each once in database order; the longest cursor given is 1498 characters, equal to the bound. |
+| D3 | passed | Three intakes on one course with one start date: school page `nextIntake.id` equals the course page's first intake id initially, after six alternating `PATCH` edits, and after hiding the first (then the second). |
+| Odd inputs | passed | 1,500 requests across `/schools`, `/schools/{id}`, `/schools/courses/{id}` and `/search?tab=schools|all`: NUL, lone surrogates, 200,000-character `q`, `%`, `_`, `\`, regex and SQL text, arrays and objects as params, bad uuids (upper case, no dashes, braces, NUL, trailing slash), limits 0, -1, -0, 1e999, NaN, Infinity, hex, 9223372036854775807, `[]`. 761 x 200, 727 x 400, 8 x 404, **no 5xx**; the only transport failures are the four 200,000-character URLs, which Node refuses before Nest (431 by curl). No ERROR line in the Hub log. LIKE wildcards are literal: counts for `%`, `_`, `\` (31, 17, 2) equal the database's escaped `ILIKE` counts. |
+| Seats and hidden rows | passed | `seatsTaken` set directly to 0, 4, 10, 11, 2147483647, 9 on a capacity-10 intake: `seatsLeft` 10, 6, 0, 0, 0, 1, never negative. A hidden course: 404 direct, absent from the school page; a hidden intake is dropped; a hidden school: its course 404 and the school 404. |
+| `/search` other tabs vs main | passed | 180 requests (18 terms x 5 tab values x with and without a login), built `origin/main` and the branch on the same database: 0 differences. |
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
