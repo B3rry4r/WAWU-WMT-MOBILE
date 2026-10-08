@@ -7,7 +7,7 @@ order: 48
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [EVENTS-01, EVENTS-05, UI-02]
 decisions: [R-8, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -149,6 +149,16 @@ _Verifier session, 8 Oct 2026 (round 3: two earlier verifier attempts died on us
 - Not done: V10; the real WAWU ID (mock used); a paid ticket (R-8, no Fintava keys).
 
 Status: back to `building` for D1 to D3.
+
+## Builder report, round 2
+
+_Builder session, 8 Oct 2026, fix round 1 for D1 to D3. Merged `origin/wmt/EVENTS-03`, `origin/wmt/EVENTS-01` (head e423b76 or later) and `origin/main` (merges, no rebase); `contract/` stays as made from backend `wmt/EVENTS-03` (97539f5), not regenerated against main (`SOURCE_COMMIT` unchanged, no diff in `contract/` or `src/api/`)._
+
+- **D1 fixed.** `MyTicketsScreen.tsx` shows the error screen only when the list has no data yet; `TicketScreen.tsx` the same. Once data exists a failed refetch (focus, or "Show more") keeps the rows or the ticket and its QR and draws a quiet inline `RefreshFailed` line (new in `ticketParts.tsx`, with Try again; "You're offline" wording for a network failure). New spec `ticketsRefetchFails.test.tsx` on the real screens: list loaded then refetch 500 => rows stay, note shows, Try again clears it; ticket loaded then refetch 500 => ticket and QR stay; first load 500 => error screen on both. Against the old code (scratch copy, restored by copying back, no git reset) the first two specs fail and the third passes.
+- **D2 fixed.** The hairline border of the E6 row and the E7/E12 card is now an absolutely placed overlay (`edge`, the pattern `ExploreEvents.tsx` uses), so it no longer adds to the box. The `TicketNav` title gets a 2 px (2x) top nudge (`navMetrics.titleNudge`).
+- **D2 measured** at 390 px, 2x, light and dark, `npm run web` against a 60-line local stand-in for the Hub and WAWU ID (scratch `events03f/mock.js`, not the real services) beside `render_design.py E6 E7 E12`: E6 rows 72 high, pitch 84 (design 72, 84); E7 and E12 card 397 (design 397); nav title ink 43 to 74 on E6 and 43 to 67 on E7/E12 (design 43 to 74 and 43 to 67); E6 row title and line ink 267 to 287 and 310 to 332 (design the same, 2x); E7 code and holder line positions match in the side-by-side. Shared `FilterChips` text (153 to 176 against 154 to 178) was not touched. I do not claim the screens match the canvas; the verifier compares.
+- **D3.** Not edited here. `badgeOf` in `format.ts` comes from EVENTS-01 (`padStart(2, '0')`) via the merge; E6 draws `DateBadge` through it, so a single-digit day reads "05". The stand-in data used day 12, so a one-digit day was not drawn live: NOT RUN as a picture.
+- **NOT RUN:** V10 (phone); a picture of a one-digit day on E6; real Hub and WAWU ID (stand-in used).
 
 ## Owner sign-off
 
