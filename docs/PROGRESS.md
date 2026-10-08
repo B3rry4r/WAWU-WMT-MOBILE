@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 102 of 236.**
+**Launch tasks done: 103 of 236.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 113 | 0 | 20 | 21 |
+| todo | 112 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
-| done | 63 | 27 | 11 | 5 |
+| done | 64 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -122,6 +122,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
+- [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -138,6 +139,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-24 · FIX-24 merged (backend PR #94, 9d90d57): delivered legal documents are the client's own or the legal team's only; LEGAL_DELIVERY_UPLOADER_IDS awaits the owner.
+- 8 Oct 2026 · FIX-24 · Verifier report (independent session, backend `a1beb10`, mobile `2b1cbb9` merged with main `a82e816`): no defect, status review. N2 closed by its real cause: round 4's reproduction leaks on main 657a152 (101 of 103, 132 of 132 bytes of B's file, ghost key 200) and passes on the branch (103 of 103, ghost 400); 25 of 25 key variants refused on the new route and every link naming our storage refused on /deliver; reads withhold every failing row and legacy value (28 of 28, one warn line per file, no stored value logged); setting boots and refusals as the builder says (7 live boots); the count query equals a hand count on two databases; protected 253 of 253 with the lock unchanged, 65 of 65 /legal answers byte-identical to main; module specs 595 passed; full suite 5,551 passed, 52 environmental (pass alone); V9 with real WAWU ID; mutants 13 of 15 killed. Notes O1 to O6 (IP-literal hosts on /deliver judged harmless by a SigV4 check, a spec gap for a ghost key in the owner's folder, the ruling's edges).
+- 8 Oct 2026 · FIX-24 · Builder: a delivered legal document must have an upload record by the request's owner or a LEGAL_DELIVERY_UPLOADER_IDS account (new setting, empty, PROVISIONAL, boot refuses a malformed value); new route 400 files.N.url and reads never sign a failing key (logged once); the protected /deliver applies the rule to links naming our storage, lock unchanged (253/253), foreign links wait for a relock. Backend wmt/FIX-24 a1beb10; live N2 reproduced on main, refused on the branch; 10 of 10 mutants killed; status verifying.
 - 8 Oct 2026 · POINTS-01 · POINTS-01 merged (backend PR #93, dd3a183): points lots, the ledger, GET /me/points.
 - 8 Oct 2026 · FIX-21 · FIX-21 merged (backend PR #92, 283aa8c): money-route checks read class-level guards; the limits lock refuses anything but READ COMMITTED.
 - 8 Oct 2026 · FIX-26 · Lead filed FIX-21 verifier findings F1 to F3: the limits lock must always run inside a real transaction, and the money-route coverage spec pins what it reads. CHECK-2 and later move down by 1.
@@ -150,6 +154,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · POINTS-01 · Round 2 built, now verifying: the verifier's D1 to D5 and the lead's U1 and U2 rulings (the next end summed over every live lot; ledger deletes only through the account purge's points step under the person's lock; two people racing one hold reference get a 409; lot ends bounded before 2100; a cancelled conversion reads as cancelled; a hold moves only once); 22 of 22 mutants killed; lead notes added to POINTS-02, POINTS-03, POINTS-04, TIER-03 and REF-01; CONVENTIONS points section renumbered 16 (backend `wmt/POINTS-01` 5bc239d).
 - 8 Oct 2026 · POINTS-01 · Verifier report (independent session, backend `e524ac8`, mobile `62d0cd6`, wawu-id `fb8717e`): the ledger holds by its real cause (CHECKs and the deferred lot checks refuse at COMMIT; UPDATE, partial DELETE and TRUNCATE refused), 8 races at 50 rounds each never overdraw or double-write (holds, grants, hold or release against the expiry pass, two passes, commit against release), time boundaries consistent and all on the app's UTC clock, a caller's rollback leaves nothing, protected 253/253, full suite in 4 namespace shards 4,778 of 4,794 (hub-rate-limits and one timing assert, both pass alone on the host), V9 live through the real wawu-id with the app's own expiry pass, 15 of 17 mutants killed; not ready: D1 `nextExpiry` counts only the 50 listed lots, D2 a bare `DELETE FROM "PointLedger"` is accepted, D3 two people racing one hold reference get a raw P2002 not 409, D4 an end after year 9999 makes `GET /me/points` 500, D5 a cancelled conversion still reads "Converting to cash"; U1 the purge is not under the points lock (5 of 200 races leave lots that disagree with their ledger; the purge has no caller); status back to building.
 - 8 Oct 2026 · POINTS-01 · Built, now verifying: points in lots that expire, holds that are committed or released back to the same lots, an expiry job, and an append-only points ledger the database itself guards (no update, no partial delete, a lot always equal to its ledger); `GET /me/points` (PT5) answers the balance, live lots with their end dates, the next end and the last 20 movements; separate from WAWU Credits; mounted through MeModule, so `app.module.ts` is unedited (backend `wmt/POINTS-01`).
-- 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
-- 8 Oct 2026 · LEGAL-03 · Verifier report, independent round 4 (lead), backend 1c48fb6 and merged main 6ce2ddf with real WAWU ID: N1 as ruled holds on both heads (88 foreign, look-alike and odd urls refused, foreign stored keys never signed, host read from the storage config, virtual-hosted too), T1 closed (S5 killed), `+01` names scheduledFor, web route byte-identical to main, 30 race rounds 0 double bookings, protected suite 253 of 253, 61 of 61 /legal answers identical, full suite in namespace chunks (4 suites fail only in the chunk, all pass alone), 26 mutants 21 killed (5 survivors judged); new defect N2: any client's own legal/document key can be delivered to and downloaded by another client; status left as on the branch for the lead to file the fix.
-- 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
