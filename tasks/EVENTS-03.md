@@ -7,7 +7,7 @@ order: 48
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [EVENTS-01, EVENTS-05, UI-02]
 decisions: [R-8, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -89,7 +89,66 @@ _Builder session, 7 Oct 2026. Mobile `wmt/EVENTS-03` (main 5fec168 plus `origin/
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+_Verifier session, 8 Oct 2026 (round 3: two earlier verifier attempts died on usage limits and left no report). Mobile `wmt/EVENTS-03` and backend `wmt/EVENTS-03`, each with `wmt/EVENTS-01` already in and `origin/main` merged in again (mobile main `8cabe72`, backend main `8359057`); generated files regenerated (`contract:build` leaves no diff; `sync_contract.py`). Live stack: backend branch on :4225 against a fresh database, the backend repo's `mock-wawu-id` (:4226, NOT the real WAWU ID) behind a 20-line proxy (:4227) that wraps its login answer in `data` with a refresh token as WAWU ID does, the app on `expo start --web` (:4228) at 390 px, 2x, signed in through the real sign-in screen. Free tickets only (R-8). Evidence in `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events03v3/` (shots, side-by-sides `sbs-*.png`, decoder scripts)._
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Diff against the report | passed | Files match the builder's list (new routes in `src/event-ticketing/event-held-tickets.*`, one module edit, specs, contract +334 lines, 0 removed; no migration, no `prisma/` change). |
+| V1 `npm run check` | passed after regenerating `docs/PROGRESS.md` | typecheck 0, lint 0 errors (2 `no-require-imports` warnings in `eventsFocus.test.tsx`, an EVENTS-01 file), 83 suites / 1502 tests pass, gates 9 run / 374 files scanned / 0 findings, baseline 0 entries. The only failure was the generated `docs/PROGRESS.md` being stale after the merge. |
+| Backend checks | passed | `tsc` 0; `event-held-tickets.contract.spec.ts` plus `event.contract.spec.ts` on the branch: 65 of 65 pass. `event.contract.spec.ts` on main: 52 of 52 pass. The builder's failures were the mock on the wrong port (:4221), not code. Protected route suite `run.sh --fresh HEAD`: 244 of 244 pass (run before the last main merge, which adds one unrelated migration). `GET /events/tickets/mine` answers byte for byte the same on the branch and on main for the same data (buyer with 5 orders, and two other users). Contract diff against main: 334 added, 0 removed; `contract:build` leaves no diff. |
+| QR decoder (the biggest risk) | passed | Encoder `qr.ts` driven for 344 texts (300 random codes of the server's real shape `XXXX-XXXX-XXXX-XXXX` over the server's alphabet, plus lengths 1 to 106 at every version boundary 1..6, printable ASCII, UTF-8), drawn with the 4 module quiet zone at 3 scales: opencv `QRCodeDetector` 1022 of 1032 (the 10 misses are opencv's own: the `qrcode` npm package's output for the same texts misses 15 of 1032 the same way) and jsQR 688 of 688. All 8 masks forced (copy of `qr.ts` in scratch, 16 texts per mask, plus lengths 10/30/60/100): opencv 384 of 384, jsQR 256 of 256; all 8 masks also occur naturally (324 texts). The drawn screens (with the logo overlay), light and dark, for 5 real tickets: opencv and jsQR both read exactly the server's code (10 of 10). The mask choice differs from the `qrcode` package's (penalty scoring differs), which is allowed by the standard; every mask decodes. |
+| V9 live seam | passed | Free ticket ordered through `POST /events/{id}/orders` by a signed-in buyer; E6 lists it; E7 opens it; the code decoded from the E7 screenshot (`W1J3-6M58-ATVD-TVTQ`) was sent to `POST /events/{id}/door/check-in` as the host: `valid`, then `already_used`; E12 then showed "Already checked in / Thu 8 Oct at 12:26." for a 11:26:58Z scan (Lagos, the event's own zone). 2 x group, other zone (America/New_York, "Sun 14 Feb 2027 · 6:00 PM EST", year shown because not current), past, called off all read from the live Hub. |
+| New routes, odd input | passed | Other user's ticket 404, unknown uuid 404, non-uuid / NUL / lone surrogate / 5000 chars id 400, no token and bad token 401. Query: `view=bogus`, empty, NUL, lone surrogate, repeated, array form; `page` 0, -1, 1e8, 99999999999, abc, lone surrogate; `perPage` 0, 101, abc, 1.5, NUL; unknown key (`limit`, `cursor`, `x`): all 400. `page=999` 200 and empty; `POST` 404. No 500 anywhere (hub log has none). |
+| Mutants (backend) | passed | 6 of my own on `event-held-tickets.service.ts` (owner check dropped in `one`, owner check dropped in `list`, unpaid orders counted, past rule flipped, paging offset, called-off not past): the 11-test spec failed 3 to 6 tests for each; file restored. |
+| Mutants (mobile) | passed | 4 (void still draws a code, year rule off, first-scannable rule off, QR text lower-cased): the ticket specs failed for each; files restored. |
+| V4 field trace | failed (D3) | Every value traced to a server field: event name, `startsAt`/`endsAt`/`timezone`/`timeLabel`/`venueName` through `format.ts` (date in the event's own zone, year only when not the current year), `tierName` and `quantity`, `code`, `checkedInAt`, holder name from WAWU ID, "Ticket 2 of 2" from `siblings`. No literal fact on screen. The date badge draws "5" for 5 Oct where the canvas draws two digits ("02", "09"). |
+| V5 picture | failed (D2) | Light and dark, 390 px, 2x, against `render_design.py E6 E7 E12`: layout, order, copy, colours, icons match in both themes; table below. |
+| V6 states | failed (D1) | Table below. |
+| V7 | not in `passes` | |
+| V10 | NOT RUN | A phone and a development build are needed; the lead runs it. |
+
+### V5 differences
+
+| Artboard / element | Design | Built | Class |
+|---|---|---|---|
+| E6 row height and pitch | row 72, pitch 84 (1x) | row 74, pitch 86 (the 1 px border is added outside the 12 px padding; the canvas's border sits inside) | defect (D2) |
+| E7, E12 card | 397 tall | 399 tall (same cause: border outside the banner and padding) | defect (D2) |
+| Nav title "My tickets", "Ticket" | ink top 43 (2x) | 41 (2x), 1 px higher at 1x (the local `TicketNav`) | defect (D2), minor |
+| Filter chips text | ink 154 to 178 (2x) | 153 to 176 (shared `FilterChips`, not this task's file) | unclear, shared component |
+| E12 note title and body | 163 to 189, 207 to 223 | identical | matches |
+| E7/E12 code, tier line, banner text | line heights from `canvasNormalLineHeight` | ink positions match once the 2 px border shift is removed; no line-height drift found | matches |
+| QR picture | stylised stand-in with the WAWU logo | a real, scannable QR with the "Who Made This" mark at 12 percent | differs-for-recorded-reason: a drawn stand-in cannot be scanned (E7 "a user can show QR at door"); R-37 for the mark |
+| E7 "Brightness goes up when this opens." | drawn | not drawn | differs-for-recorded-reason: `expo-brightness` is not installed (row 8 not applied); SHARED-CHANGES EVENTS-03 #1; a note the phone cannot keep would be a false promise (task file: build everything else) |
+| Banner picture | night sky photo | the card's dark ground (the event has no `bannerUrl` in my data; with a URL the `Image` is drawn) | unclear, only the empty case was exercised |
+| Card corner | 28 | 26 (`radius.money`) | differs-for-recorded-reason: SHARED-CHANGES EVENTS-03 #3 (no 28 token) |
+| Event data (names, sample ticket, "Lennox Emmanuel") | literals | server facts | expected |
+
+### V6 states
+
+| State | Result |
+|---|---|
+| Loading | skeleton rows (shared `Skeleton`), seen while a retry was in flight; 72 high against 74 for the real row |
+| Empty, Upcoming and Past | passed (real empty account, `my-tickets-empty`, one text per tab) |
+| Error (500, server words "Boom from server") | passed; shows the shared `ErrorState` with Try again (its icon is the shared Wi-Fi-off icon for a 500, a shared-component matter) |
+| Offline (Hub unreachable) | passed, "You're offline" with Try again (seen with the Hub down); cutting the network mid-session only reached the skeleton within my 5 s window (query retries), not captured |
+| Not available | passed: `/events/tickets/abc` shows it with 0 Hub requests; an unknown uuid and another user's ticket show it after one 404 |
+| Void (called-off event, voided by the cancel) | passed: "This ticket is not valid / The event was called off, so this ticket cannot be used.", no QR, no code |
+| Past tab | passed: ended and called-off events, nearest first |
+| Paging | passed: 23 groups, page 1 once, page 2 once, "Show more" gone, 23 unique rows, never page 1 twice |
+| Checked in while open | passed as built: no polling (0 requests in 15 s idle after the door scan), the note appears on refocus/reopen, the row then opens the next scannable ticket |
+| A failed refetch keeps the shown data | FAILED (D1): list open with 20 rows, open a ticket, make the Hub answer 500, press back: the list is replaced by "Couldn't load your tickets" (0 rows); the same code path (`list.isError` / `ticket.isError` checked before the data) replaces a shown ticket |
+
+### Findings
+
+- **D1, defect (V6):** `MyTicketsScreen.tsx` and `TicketScreen.tsx` test `isError` before `data`. In TanStack Query a failed refetch (the focus refetch, or "Show more" failing) sets `isError` while keeping `data`, so a person looking at their tickets (or at the QR at the door) loses the screen on a bad refetch. Show the data and, at most, a quiet note; the error screen only when there is no data. A failed "Show more" also takes the whole list away.
+- **D2, defect (V5, minor):** the 1 px border is added outside the padding: E6 rows are 74 high with pitch 86 (design 72 and 84); the E7/E12 card is 399 (design 397); `TicketNav` title sits 1 px high. Everything inside is otherwise equal.
+- **D3, defect (V4):** the date badge shows "5" for 5 Oct; the canvas draws two digits ("02", "09" in `design/_gen/events.js`). `badgeOf` in `format.ts` (an EVENTS-01 file) does `String(w.day)`; the fix is `padStart(2, '0')` there, and it also touches E1/E2/E3 (route it through that task).
+- **differs-for-recorded-reason:** QR picture; brightness note and SHARED-CHANGES #1; radius row #3. SHARED-CHANGES #2 (contract sync) is correct: after my regeneration against backend `wmt/EVENTS-03` merged with main the generated files had no further diff beyond `SOURCE_COMMIT`. The E5 entry belongs to EVENTS-06 (recorded blocker, accepted).
+- **unclear:** none needing the owner. Banner picture with a real `bannerUrl` was not exercised (no host banner in my data).
+- No em-dash, no "Flutterwave", no literal colour in the new files; shared `FilterChips`, `Button`, `EmptyState`, `ErrorState`, `Skeleton`, `Icon` used; tokens only. The local `TicketNav` follows the other Events screens (no shared page header exists).
+- Not done: V10; the real WAWU ID (mock used); a paid ticket (R-8, no Fintava keys).
+
+Status: back to `building` for D1 to D3.
 
 ## Owner sign-off
 

@@ -7,15 +7,20 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 110 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
+| todo | 108 | 0 | 20 | 21 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 58 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being built (or fixing verifier findings)
+
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 
 ## Done
 
@@ -123,15 +128,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
+- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
-- **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
+- **Developer 3:** [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · EVENTS-03 · Verified (round 3, independent decoders read the drawn QR for 344 texts and all 8 masks; live door check-in accepted the decoded code; new routes and 244 protected routes hold): three defects, a failed refetch drops the shown data, row and card 2 px tall, badge day not two digits; status building.
+- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
 - 8 Oct 2026 · FIX-18 to FIX-21 · Lead filed the verifiers' findings outside their tasks: three small 500s (wallet history paging, a repeated export token, a gone socket in the trust-proxy check), control characters in school names, webhook deliveries kept forever, and the money-route checks missing class-level guards and the isolation level. FIX-16 also covers the web's apply form for a taken-down field. CHECK-2, CHECK-3 and later move down by 4.
 - 8 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
 - 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
@@ -145,5 +152,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
 - 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
-- 8 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
-- 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
