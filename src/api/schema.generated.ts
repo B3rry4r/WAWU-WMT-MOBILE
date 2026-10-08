@@ -5233,8 +5233,11 @@ export interface components {
             fileName: string;
             /**
              * @description The file's `fileUrl` or `key` from POST /uploads/presign: a link on WAWU
-             *     storage or a bare key, under `legal/document/`. Anything else is refused
-             *     with a 400 naming this field (N1).
+             *     storage or a bare key, under `legal/document/`, uploaded by the client
+             *     this request belongs to or by one of the legal team's accounts
+             *     (`LEGAL_DELIVERY_UPLOADER_IDS`). Anything else, including another
+             *     client's document and a key nobody uploaded, is refused with a 400 naming
+             *     this field (N1, FIX-24).
              */
             url: string;
             /** @description Page count, when it is known. */
