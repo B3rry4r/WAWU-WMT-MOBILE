@@ -10,7 +10,7 @@ import { gutter, todayMetrics as m } from './look';
 const RAIL_CARDS = 3;
 
 /** design/_gen/home.js `todayLoading`: a tile is a 60 square over a 46 by 10 label bar at corner 5, 10 apart. */
-const tileShape = { gap: 10, labelWidth: 46, labelHeight: 10, labelCorner: 5 } as const;
+const tileShape = { labelAbove: 10, labelWidth: 46, labelHeight: 10, labelCorner: 5 } as const;
 
 /**
  * H11, Today while it loads: quiet shapes where the parts will be, each the size of the part it
@@ -46,6 +46,6 @@ export function TodayLoading({ withTgif }: { withTgif: boolean }) {
 const styles = StyleSheet.create({
   stack: { gap: m.between },
   tiles: { flexDirection: 'row' },
-  tile: { width: '25%', alignItems: 'center', gap: tileShape.gap },
+  tile: { width: '25%', alignItems: 'center', gap: tileShape.labelAbove },
   rail: { flexDirection: 'row', gap: m.cardsApart, marginRight: -gutter, overflow: 'hidden' },
 });
