@@ -15752,7 +15752,7 @@ export interface operations {
                  */
                 q?: string;
                 limit?: number;
-                /** @description The `nextCursor` of the previous page: a school id. */
+                /** @description The `nextCursor` of the previous page: opaque, not to be built by hand. */
                 cursor?: string;
             };
             header?: never;

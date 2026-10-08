@@ -7,7 +7,7 @@ order: 20
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -61,6 +61,30 @@ Builder, 7 Oct 2026. wawu-backend `wmt/SCHOOLS-04` `6f10845` (from `origin/main`
 **Shared changes filed:** SCHOOLS-04 #1 (backend `contract/openapi.json`), #2 (mobile contract and generated types). **Gap filed:** G-330.
 
 **NOT RUN:** a probe against a built `node dist/src/main.js` (the spec runs the same global pipe, filter and interceptor through supertest, not `main.ts`); V9 from the app (no screen reads these yet; SCHOOLS-05 and SCHOOLS-06 build them); the seat race (SCHOOLS-07 writes `seatsTaken`).
+
+## Builder report, round 2
+
+Builder, 8 Oct 2026. Backend `wmt/SCHOOLS-04` `807a6b8` (fix `9385515`, contract `807a6b8`; `origin/main` had not moved, nothing to merge). Mobile merged `origin/main` (conflicts in `BACKEND_GAPS.md`, both rows kept, and generated `docs/PROGRESS.md`, regenerated), then contract copied from the branch and `sync_contract.py` run (`SOURCE_COMMIT` `wmt/SCHOOLS-04@807a6b8`).
+
+**D1 fixed: keyset paging.** `GET /schools` no longer uses Prisma `cursor` plus `skip: 1`. The cursor is an opaque position, base64url of `[name, id]` of the last row, and the next page is `name > n OR (name = n AND id > i)` with `ORDER BY name, id`. Both the comparison and the ORDER BY are on the same columns with their own collation, so they agree; ties on name are ordered and resumed by id. The cursor school no longer needs to be shown or to match `category` or `q`, so hiding it or filtering it out skips nobody. Decoding is strict: base64url characters only, at most 1000, a JSON array of exactly a clean string of at most 300 characters and a uuid, and it must re-encode to exactly the text given; anything else (the old bare-id form, padding, case changes, NUL, broken UTF-8, extra fields) is a 400 `cursor is not one this server gave out`, as before. A well-formed position of a hidden school only positions the page; the hidden row is never returned. Contract: the `cursor` query parameter loses `format: uuid` and gains `maxLength: 1000` (a new route, so no caller changes).
+
+**New spec `src/schools/tests/schools-paging.contract.spec.ts` (10 tests),** 62 schools in 31 name ties, the higher id inserted first: ties by id in limits 1, 3, 7 and 50; hiding the cursor school between two requests (next page exactly the three that follow); cursor school not matching `category` and not matching a narrower `q` (exact rows expected); a full walk at limit 6 hiding each page's last school after reading it and showing a hidden one before the walk reaches it (every row once, same order); 19 forged, stale and broken cursors (200 or 400, never 500; four exact 400s); `q` at 100 and 101; `nextCursor` null when the rest equals the limit and set when one more remains; default page 20 (list and search tab); at most 3 matched courses and `fromPriceKobo` the lowest shown fee (a cheaper hidden course ignored); 1 seat left not full, 0 full.
+
+**Mutants, each applied to the worktree, spec run, `git restore`:** all 9 killed. `q` max 100 to 101 (1 failed); `more` `>` to `>=` (1); default page 20 to 21 (1); matched courses 3 to 4 (1); `full` as `seatsLeft <= 1` (1); `fromPriceKobo` `Math.min` to `Math.max` (1); id tiebreak removed from ORDER BY (4); the tie branch of the keyset removed (2); keyset that includes the cursor row (3).
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit`, eslint on `src/schools` | 0 |
+| specs `src/schools`, `src/search-response`, `src/admin/schools` (mock WAWU ID on 4210) | 6 suites, 98/98 (88 before, +10) |
+| gates | 16 fail / 58 warn / 76 accepted, 892 files: the same 16 as main; `check_baseline.py` ok |
+| `scripts/protected-routes/run.sh --fresh` | 253 passed, all 244 required passed |
+| `npm run contract:build` | only the `cursor` parameter changes |
+| live, built Hub (`node dist/src/main.js` on 4211, repo `mock-wawu-id` on 4210), 64 schools in 32 name ties with `%`, `_`, `\`, regex, SQL and accented names | walks at limits 1, 2, 3, 7, 20, 50, with and without `category=tech`: every visible row once, in database `ORDER BY name, id` order; walks at limits 1, 3, 6 hiding each page's last school and re-showing others mid-walk: 64 of 64 once each |
+| live odd input, 967 requests (cursor tampering: truncated, padded, case-flipped, byte-flipped, foreign ids, NUL, lone surrogate, invalid UTF-8, 300/301-character names, wrong shapes, 1000/1001/5000 characters, 420 random; plus limit, category, `q` and repeated-key oddities, `/search?tab=schools`, school and course ids) | 47 x 200, 917 x 400, 3 x 404, zero 500; a hidden school's position never returns it |
+| mobile `npm run check` | exit 0 (76 suites, 1377 tests, gates 0 fail, 346 files) |
+| full backend contract suite | NOT RUN (not asked this round; the schools, search and admin schools specs above ran) |
+
+`GET /search?q=%00` on the other tabs is left as it is (verifier's unclear item, not this task).
 
 ## Verifier report
 
