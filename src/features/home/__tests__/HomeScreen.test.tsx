@@ -289,7 +289,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Events', 'Legal', 'Schools', 'Shop', 'See all']) {
+    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Events', 'Schools', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -400,5 +400,39 @@ describe('Today empty and in error', () => {
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));
     await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+  });
+});
+
+describe('H1 and H36 · the Legal tile (LEGAL-02, R-41)', () => {
+  it('a user can tap Legal under "What would you like to do today?" and land on the legal chat (S14)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Legal' }));
+    expect(mockPush).toHaveBeenCalledWith('/legal');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    // The other services lead to screens not built yet: their tiles are not drawn.
+    for (const label of ['Pay bills', 'Schools', 'Shop']) expect(screen.queryByText(label)).toBeNull();
+  });
+
+  it('a user with TGIF off still has the Legal tile (H36)', async () => {
+    answers[T.tgif] = [ok({ show: false })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByTestId('today-service-legal')).toBeTruthy();
+  });
+
+  it('the Legal tile is the first in the row, with no empty slot before it, and the loading view draws one shape for it (H11)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    const column = screen.getByTestId('today-service-legal').parent!;
+    const grid = column.parent!;
+    expect(grid.children).toHaveLength(1);
+    expect(grid.children[0]).toBe(column);
+    const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
+    await screen.unmount();
+    await rtl.render(<TodayLoading withTgif />);
+    const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
+    expect(shapes).toHaveLength(1);
   });
 });
