@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · SHARED-04 · Builder report: the native module batch installed in one go (13 modules, a QR renderer, expo-file-system, expo-asset, four expo patch bumps) with their plugins; A6 takes the selfie with the front camera (640 px JPEG under 100,000 characters, nothing after its end), M8 and M36 open the photo library, A8 copies with expo-clipboard; expo-doctor 21 of 21, web build pixel-identical to main, `npm run check` exit 0. Status verifying.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
 - 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
