@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 61 | 27 | 11 | 5 |
 
@@ -18,7 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [FIX-17](../tasks/FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub (You)
 
@@ -140,6 +140,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · FIX-17 · Verifier report (backend 6726b3c, main now 9d90d57): back to building for three defects. D1: nothing pins `main.ts`'s wiring (commenting the call out, or `app.init()` before it, passes every spec, the full suite and 253/253 and ships NUL to 500 on every route). D2: two specs (money recipients, explore feature) assert the old answers and pass only because 140 of 142 spec apps lack the check. D3: SHARED-CHANGES FIX-17 #3 leaves one hub spec red after OPS-08 (410 not allowed). Everything else holds: 29,775 swept requests, every difference a former 5xx (505) or a NUL (333) or closest's cap (9); main 9d90d57 merges with a docs-only conflict and the rule covers /me/points; protected 253/253; V9 live through the real wawu-id; 28 of 32 mutants killed.
 - 8 Oct 2026 · FIX-17 · Built (verifying): a NUL in any query or path value is a 400 naming the field on every route, after every check that already answered (one pipe, last on every argument); the shop subcategory and admin order 500s are 400s naming the field; `/search/closest` takes 100 characters; the one NUL policy written in the backend's contract conventions (section 15).
 - 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
@@ -154,4 +155,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
 - 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
 - 7 Oct 2026 · LEGAL-03 · Builder round 3: delivered files stored as keys and signed fresh for 15 minutes, file name and booking-zone rules, notification text without the matter, specs for M11 and M18, migration renamed `20261013100000`; status verifying.
-- 8 Oct 2026 · TIER-01 · Verified round 2 (backend 3e1dc15, mobile 2a5c93a): back to building for one low defect. D3: backend main moved to 6ce2ddf (LEGAL-03, `20261016160000_legal_consultations`), so the branch's `20261016120000_maker_plan` no longer sorts after main's newest migration; rename after a merge of main (a trial merge is clean, contract regenerates identically, prisma applies it either way). D1 and D2 fixed; N1, N2, N4, N5, N6 and item 9 hold (39 phone and country pairs live, 5 through the real WAWU ID); figures 81 of 81; 63 broken config files as expected; protected 253/253; full suite 4,738 passed with every failing file green on rerun (load and namespace only); 21 of 25 own mutants killed, the 4 survivors spec gaps.
