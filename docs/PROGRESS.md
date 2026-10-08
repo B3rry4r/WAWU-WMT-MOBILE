@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 112 | 0 | 20 | 21 |
+| todo | 111 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 61 | 27 | 11 | 5 |
 
@@ -17,6 +17,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending (You)
 
 ## Done
 
@@ -136,6 +140,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · INBOX-05 · Builder: Communities chip (I24), room (I25) and sending (I26) built on INBOX-04's inbox and live client; community rows, the chip and Browse communities wired; 9 gaps filed (G-450 to G-458); verifying.
 - 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
 - 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
@@ -150,4 +155,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · TIER-01 · Round 2 built (backend `wmt/TIER-01` with main 8d7a054 merged, mobile with main eb62049): D1 the three nullable fields of GET /me/tier are nullable in the contract and the app's types (src/plans in the enricher's allOf list, a spec on the generated contract); D2 a key written twice in plans.config.json stops boot naming it; N1 a phone with no country code is decided by the WAWU ID country claim; N2 every number in the plans answers is integer; N4 no-store on both routes; N5 numbers above INTEGER and a missing or extra action refused at boot; N6 a non-text phone is no phone; TIER-03 lead note; 26 of 26 mutants killed; status verifying.
 - 8 Oct 2026 · TIER-01 · Verified (backend a0900cd, mobile db4f999): back to building with two defects. D1: GET /me/tier's contract types `tier`, `eventPass` and the tier's `badge` as never null (a `$ref` with a `nullable` sibling; `src/plans` is missing from the enricher's nullable-ref folders), so the app's generated MyTierView is wrong for a person with no tier. D2: a key written twice in plans.config.json boots and serves the last value (Verify at 1 kobo). Figures equal the brief (77 of 77); 58 of 64 broken files refused naming the field; currency rule, insert-only fix, states and isolation proved live through the real WAWU ID; protected 253/253; full suite 4,800 passed, the 14 failures timing or namespace-only; 22 of 24 mutants killed.
 - 8 Oct 2026 · TIER-01 · Lead applied SHARED-CHANGES TIER-01 #1 (PlansModule mounted, backend a0900cd) and #3 (contract and types from the branch), so the verifier checks the served routes.
-- 8 Oct 2026 · TIER-01 · Built (backend `wmt/TIER-01`): every price, product count, points amount, expiry, cost and cap of the 5 Oct plan in one file, `src/plans/plans.config.json` (the owner's example values in kobo and cents, four PROVISIONAL markers), checked whole at boot; a person's billing currency fixed at the first purchase and never changed by a route; `MakerTier` and `EventPass` with one reader; `GET /plans` in the caller's currency only and `GET /me/tier` (none, active, ending, ended). Mounting `PlansModule` is SHARED-CHANGES TIER-01 #1; gaps G-420, G-421; status verifying.
