@@ -9650,6 +9650,11 @@ export interface components {
             actions: components["schemas"]["PlanActionView"][];
             caps: components["schemas"]["PlanCapsView"];
         };
+        NuvionWebhookAck: {
+            /** @enum {string} */
+            outcome: "recorded" | "duplicate";
+            event: string | null;
+        };
         AdCreativeView: {
             headline: string;
             subline: string | null;

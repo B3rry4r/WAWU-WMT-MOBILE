@@ -38204,6 +38204,26 @@
      "caps"
     ]
    },
+   "NuvionWebhookAck": {
+    "type": "object",
+    "properties": {
+     "outcome": {
+      "type": "string",
+      "enum": [
+       "recorded",
+       "duplicate"
+      ]
+     },
+     "event": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "outcome",
+     "event"
+    ]
+   },
    "AdCreativeView": {
     "type": "object",
     "properties": {
