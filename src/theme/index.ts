@@ -4,9 +4,11 @@ import type { TextStyle } from 'react-native';
 import {
   darkColors,
   darkGradients,
+  darkShadows,
   layout,
   lightColors,
   lightGradients,
+  lightShadows,
   motion,
   radius,
   space,
@@ -14,7 +16,7 @@ import {
 } from './tokens.generated';
 
 export { layout, motion, radius, space, type };
-export type { ColorToken, GradientToken } from './tokens.generated';
+export type { ColorToken, GradientToken, ShadowToken } from './tokens.generated';
 
 /**
  * Alan Sans, cut into static weights (assets/fonts, OFL). React Native picks a
@@ -140,5 +142,17 @@ export function useWawu() {
     dark,
     colors: dark ? darkColors : lightColors,
     gradients: dark ? darkGradients : lightGradients,
+    shadows: dark ? darkShadows : lightShadows,
   };
+}
+
+/**
+ * A colour token as an SVG gradient stop takes it: the opaque colour and its strength apart. react-native-svg
+ * replaces a stop colour's own alpha with `stopOpacity`, so a token written `rgba(r, g, b, a)` is split here;
+ * a token with no alpha is at full strength.
+ */
+export function stopOf(token: string): { color: string; opacity: number } {
+  const m = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(token);
+  if (!m) return { color: token, opacity: 1 };
+  return { color: `rgb(${m[1]}, ${m[2]}, ${m[3]})`, opacity: Number(m[4]) };
 }

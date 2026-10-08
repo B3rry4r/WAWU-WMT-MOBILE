@@ -4,10 +4,10 @@ import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { adoptSession } from '@/api/session';
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
+import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
-import { SavedToast } from '@/features/profile-edit/SavedToast';
 import { space } from '@/theme';
 
 import { changePassword } from './api/identity';
@@ -147,7 +147,7 @@ export function ChangePasswordScreen({ onBack, onDone }: ChangePasswordScreenPro
           />
         </View>
       </AuthFrame>
-      {saved ? <SavedToast message="Password changed" /> : null}
+      <Toast message={saved ? 'Password changed' : null} testID="password-changed" />
     </View>
   );
 }

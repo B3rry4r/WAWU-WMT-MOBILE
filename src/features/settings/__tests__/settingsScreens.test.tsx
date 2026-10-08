@@ -219,10 +219,26 @@ describe('Z3 · Notifications', () => {
   });
 
   it('shows the loading view while the settings are on the way, then a retry when they never come', async () => {
-    answers[NOTIFY] = [refusal(500, 'The server is having trouble.'), ok(notifications)];
+    // The first read is held until the loading view has been seen. Answered at once, the refusal could land inside
+    // `render`'s own act (how far it gets depends on the machine's timing), so the loading view was sometimes gone
+    // before it was looked for.
+    let answerNow: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      answerNow = resolve;
+    });
+    answers[NOTIFY] = [
+      async () => {
+        await held;
+        return refusal(500, 'The server is having trouble.') as Plain;
+      },
+      ok(notifications),
+    ];
     await boot();
     expect(screen.getByTestId('notify-loading')).toBeTruthy();
+    expect(screen.queryByTestId('notify-error')).toBeNull();
+    await act(async () => answerNow());
     expect(await screen.findByTestId('notify-error')).toBeTruthy();
+    expect(screen.queryByTestId('notify-loading')).toBeNull();
     await act(async () => fireEvent.press(screen.getByLabelText('Try again')));
     expect(await screen.findByTestId('notify-moneyIn')).toBeTruthy();
   });

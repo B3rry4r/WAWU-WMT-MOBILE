@@ -14,10 +14,12 @@ import { useOpenWalletWay } from '../leave';
 
 /*
  * Where Open your wallet ends (KYC-04): after A10 the person is back where
- * they tapped. The ways in (the Wallet tab, WALLET-01; the pay sheet's "Open
- * your wallet", SHARED-CHANGES KYC-05 #1) are not on main yet, so each is a
- * stand-in screen that calls the real `useOpenWalletEntry().open`, as theirs
- * will. The flow's screens are stand-ins too, each a button that moves the
+ * they tapped. Each way in is a stand-in screen that calls the real
+ * `useOpenWalletEntry().open`, as the real ones do: a tab (the Wallet tab's
+ * own walk from the real `(tabs)/wallet` route, with W5 on return, is
+ * WALLET-01's `src/features/wallet/__tests__/walletTabFlow.test.tsx`;
+ * SHARED-CHANGES WALLET-01 #2) and the pay sheet's "Open your wallet"
+ * (SHARED-CHANGES KYC-05 #1). The flow's screens are stand-ins too, each a button that moves the
  * way the real route does (`router.push` to the next step, and the real
  * `useOpenWalletWay().opened` and `.leave`), on the real Expo Router stack
  * and tabs.
@@ -30,7 +32,8 @@ function Button({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-function WalletTabWayIn() {
+/** A tab with a way in: what the flow needs from it is only that it calls `open` and is a tab. */
+function TabWayIn() {
   const entry = useOpenWalletEntry();
   return (
     <View>
@@ -90,7 +93,7 @@ const routes = {
   '(tabs)/index': Home,
   '(tabs)/explore': Explore,
   '(tabs)/inbox': Inbox,
-  '(tabs)/wallet': WalletTabWayIn,
+  '(tabs)/wallet': TabWayIn,
   '(tabs)/me': Me,
   payer: Payer,
   'open-wallet': A26,
@@ -124,7 +127,7 @@ async function walkTheFlow() {
 }
 
 describe('after A10, a user goes back to where Open your wallet started', () => {
-  it('from the Wallet tab: back on the Wallet tab (W5 once WALLET-01 draws it), and Back from A8 never lands on an earlier step', async () => {
+  it('from a tab: back on that tab, and Back from A8 never lands on an earlier step', async () => {
     await start(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
     await fireEvent.press(await screen.findByRole('button', { name: 'Open your wallet from the Wallet tab' }));

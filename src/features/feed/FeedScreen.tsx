@@ -4,9 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
-  Pressable,
   StyleSheet,
-  Text,
   View,
   type LayoutChangeEvent,
   type NativeScrollEvent,
@@ -14,9 +12,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useFocusRing } from '@/components/focusRing';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
+import { HomeTabs } from '@/features/home/HomeTabs';
+import { homeViews, type HomeView } from '@/features/home/model';
 import { radius, space, useWawu } from '@/theme';
 
 import {
@@ -29,7 +28,7 @@ import {
   type FeedItem,
   type FeedScope,
 } from './api';
-import { media, metrics, words } from './look';
+import { media, metrics } from './look';
 import { drawablePosts, postKind } from './model';
 import { fromPostBottom } from './parts';
 import { AudioPost } from './AudioPost';
@@ -38,53 +37,8 @@ import { PhotoSetPost } from './PhotoSetPost';
 import type { PostProps } from './PostFrame';
 import { VideoPost } from './VideoPost';
 
-/**
- * The tabs over the feed. Today (H1) is HOME-01's and is added there, as drawn, with the
- * search button (X5, Explore's).
- */
-const scopes: { scope: FeedScope; label: string }[] = [
-  { scope: 'following', label: 'Following' },
-  { scope: 'for_you', label: 'For you' },
-];
-
-type Tone = 'media' | 'page';
-
-function Tab({ label, selected, tone, onPress, testID }: { label: string; selected: boolean; tone: Tone; onPress: () => void; testID: string }) {
-  const { colors } = useWawu();
-  const ring = useFocusRing();
-  const onMedia = tone === 'media';
-  const color = onMedia ? (selected ? media.ink : media.tabIdle) : colors[selected ? 'textPrimary' : 'textMuted'];
-  const line = selected ? (onMedia ? media.ink : colors.accent) : 'transparent';
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="tab"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      {...ring.handlers}
-      style={[styles.tab, { borderBottomColor: line }, ring.style]}
-    >
-      <Text style={[words.tab, { color }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Tabs({ scope, tone, top, onChange }: { scope: FeedScope; tone: Tone; top: number; onChange: (s: FeedScope) => void }) {
-  return (
-    <View accessibilityRole="tablist" pointerEvents="box-none" style={[styles.tabs, { top: top + metrics.tabsGap }]}>
-      {scopes.map((s) => (
-        <Tab
-          key={s.scope}
-          label={s.label}
-          selected={scope === s.scope}
-          tone={tone}
-          onPress={() => onChange(s.scope)}
-          testID={`feed-tab-${s.scope}`}
-        />
-      ))}
-    </View>
-  );
-}
+/** The feed's own two tabs; Home adds Today before them (H1, HOME-01). */
+const scopes: readonly { view: HomeView; label: string }[] = homeViews.filter((v) => v.view !== 'today');
 
 function Post(props: PostProps) {
   switch (postKind(props.item)) {
@@ -128,13 +82,18 @@ function FeedLoading({ height }: { height: number }) {
  * brings the next. Posts come from `GET /feed/entries`; this task draws videos, photo sets,
  * PDFs and audio. Courses, templates and the creator and professional cards are HOME-07's
  * and are not drawn until it adds them.
+ *
+ * On Home (HOME-01) the tab row also holds Today: `onToday` is called when it is pressed, and
+ * the feed opens on `initialScope`, the tab pressed on Today.
  */
-export function FeedScreen() {
+export type FeedScreenProps = { initialScope?: FeedScope; onToday?: () => void };
+
+export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
   const focused = useIsFocused();
   const chromeTop = Math.max(insets.top, metrics.statusBar);
-  const [scope, setScope] = useState<FeedScope>('for_you');
+  const [scope, setScope] = useState<FeedScope>(initialScope);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [current, setCurrent] = useState(0);
 
@@ -169,7 +128,11 @@ export function FeedScreen() {
     enabled: empty && scope === 'following',
   });
 
-  const changeScope = (next: FeedScope) => {
+  const changeView = (next: HomeView) => {
+    if (next === 'today') {
+      onToday?.();
+      return;
+    }
     if (next === scope) return;
     setCurrent(0);
     setScope(next);
@@ -264,23 +227,20 @@ export function FeedScreen() {
     <View testID="feed" style={[styles.root, { backgroundColor: showsMedia ? media.black : colors.surfacePage }]} onLayout={onLayout}>
       {focused ? <StatusBar style={showsMedia || dark ? 'light' : 'dark'} /> : null}
       {size.height > 0 ? body : null}
-      <Tabs scope={scope} tone={showsMedia ? 'media' : 'page'} top={chromeTop} onChange={changeScope} />
+      <HomeTabs
+        views={onToday ? homeViews : scopes}
+        selected={scope}
+        tone={showsMedia ? 'media' : 'page'}
+        onChange={changeView}
+        style={[styles.tabs, { top: chromeTop + metrics.tabsGap }]}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  tabs: {
-    position: 'absolute',
-    left: metrics.tabsSide,
-    right: metrics.tabsSide,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: metrics.tabsSpacing,
-    zIndex: 7,
-  },
-  tab: { paddingBottom: metrics.tabUnderlinePad, borderBottomWidth: metrics.tabUnderline },
+  tabs: { position: 'absolute', left: metrics.tabsSide, right: metrics.tabsSide, zIndex: 7 },
   centre: { flex: 1, justifyContent: 'center', paddingHorizontal: space.xl },
   loadingRail: { position: 'absolute', right: metrics.railRight, alignItems: 'center', gap: metrics.railGap },
   loadingWords: { position: 'absolute', left: metrics.side, right: metrics.captionRight, gap: metrics.stack },
