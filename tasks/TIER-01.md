@@ -7,7 +7,7 @@ order: 199
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [MONEY-04]
 decisions: [R-43, R-44, R-21]
 passes: [V1, V2, V3, V4, V9]
@@ -424,5 +424,130 @@ first of the payment set.
 - The purchase path (TIER-03 writes `MakerTier`, `EventPass` and calls `fixAtFirstPurchase`). Unblocked when
   `grep -rn fixAtFirstPurchase src --include=*.ts | grep -v tests` names a purchase service on backend main.
 - No (key) checks: this task calls no provider.
+
+## Verifier report, round 2
+
+Verifier, 8 Oct 2026 (independent; wrote none of this). Backend `wmt/TIER-01` `3e1dc15` in detached worktree
+`/home/user/wt/vt01r2b`; backend main in `/home/user/wt/vt01r2main` (`8d7a054` for every comparison, then the two
+trial merges below); wawu-id main `fb8717e` in `/home/user/wt/vt01r2id` (its own `npm ci`, own keys); mobile `2a5c93a`
+in `/home/user/wt/vt01r2m`. Evidence: lead's scratchpad `vt01r2/`. No Fintava, Nuvion, wawuafrica.com or AI host was
+called: every booted server ran with a clean environment and no provider key, wawu-id with `WAWUAFRICA_API_URL` on a
+closed local port, and the full suite in a private network namespace.
+
+**Backend main moved twice while this ran.** `8359057` (FIX-11, PR #88, 11:10 UTC; migration
+`20261015200000_legal_chat_opener`) and then `6ce2ddf` (LEGAL-03, PR #77, 11:39 UTC; migration
+`20261016160000_legal_consultations`). The protected lock is the same at `8d7a054`, `8359057` and `6ce2ddf`. Mobile main
+moved too (`c8928e3`); this report is on the branch as it was (`2a5c93a`), with no merge.
+
+**Verdict: back to `building` for one low defect, D3: the migration stamp no longer sorts after main's newest
+folder.** Everything else holds: D1 and D2 are fixed, every lead ruling (N1, N2, N4, N5, N6, item 9) is built and
+holds live and in specs, V17 and V18 are killed, the figures equal the brief, and nothing outside the config holds a
+price. D3 is not in the code: LEGAL-03 merged to main after round 2 with a later stamp. It is a rename and a merge,
+proved below on a local trial merge.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (`v1-tsc.log`). eslint (no `--fix`) on the 16 changed `.ts` files: exit 0. `scripts/enrich-contract.js` is not in the tsconfig, so eslint cannot parse it, on main too; `node --check` passes. Gates: main `8d7a054` 16 fail / 58 warn / 76 accepted on 908 files; branch 16 / 62 / 76 on 921 files; the 16 FAIL lines identical; the 4 new warnings are the `PROVISIONAL(PLAN-PRICES / PLAN-CASHOUT-MINIMUM / PLAN-BOUGHT-POINTS-DAYS / PLAN-ENDING-DAYS, owner=YOU, why=...)` markers at `src/plans/plans-config.ts:30-33` (`v1-gates-*.txt`). Tripwire on added lines: 0 in both repos; no em-dash added. `npm run contract:build`: `contract/openapi.json` unchanged (sha256 `5a9a32fa45ccc133...`). Mobile: `contract/openapi.json` byte-identical to the backend branch's; `python3 scripts/api/sync_contract.py` regenerates the committed types with no change; `npm run check` on `2a5c93a`: see the Mobile paragraph. |
+| V2 Contract and config | passed | Contract against main `8d7a054` (`v2-contract-diff.txt`): +2 paths (`/api/hub/plans`, `/api/hub/me/tier`), +11 schemas, 0 removed, 0 served path changed; the other change is value order inside nine enum or `required` lists of five `Ad*` schemas (`AdAuditEntryView`, `AdCampaignDetailView`, `AdCampaignView`, `AdOverlapView`, `AdSummaryReportView`), equal as sets, so no meaning changed (G-54). D1: `MyTierView.tier`, `.eventPass` and `MyTierSummaryView.badge` are `allOf` + `nullable` in the contract and in `openapi.mobile.json`, and `X \| null` in the mobile `src/api/schema.generated.ts`; every number of the 11 schemas is `integer` (N2). Figures: 81 figures of the brief's section 2 against the file by my own script (naira and dollars x 100, points, days, counts, caps, the 12 action ids in order, referral levels and milestones): 81 equal, 0 differ; a planted change is caught (`v2-figures.txt`). No plan id or figure in `src/` outside `src/plans/`, and none in `docs/contract/PLANS.md`. Bad config through the built loader (`v2-badconfig.txt`): 63 files, each as expected: 52 refused naming the field or the file (repeated keys in 8 places including a `k` spelling, a list item and the provisional and base-points maps; fraction, text, null, zero, negative, `1e21`, INT4_MAX + 1 in products, bonus points, extra count and a price; percent 101; zero days and window; multiplier 0.5; missing, misspelt, unknown and `__proto__` keys; naira keys; unknown pass; repeated or upper-case id; empty list; unknown preselected tier; em-dash; spaces; boolean as text; an action missing, added, a bare number or with an unknown unit; referral base, levels and milestones out of order; negative hold; bad provisional key; empty name; a list, number or null at the top; empty file; BOM; trailing comma; comment; truncated file), and 11 accepted by design (the shipped file, INT4_MAX itself, `1e5` and `100000.0`, a `\"kobo\"` inside a string, the same key in different objects, multiplier `1e300`, an emptied `provisional`). The built server with seven bad files (D2's own edit, the escaped repeat, INT4 + 1, an action missing, an action added, a list at the top, a fraction): each exits 1 naming it (`boot-*.log`). A changed file and a restart, no build: Founding 550000/1700 and Verify 1 product and 50 points served; a bought Verify still answers 3 products and 100 points (`v2-config-change.txt`). |
+| V2 Currency (N1, N6) | passed | 39 phone and country pairs live on the built server (`v2-currency-live.txt`, `no-store` on every answer): `+234` E.164 and spaced, `00234`, `234` with ten digits (spaced too), `+2340...` with a stray zero and `+234` alone are NGN whatever the country; `234` with nine or eleven digits, or ten starting with 1, has no code and the country decides; a local `0803...` is NGN with `Nigeria`, USD with `United States` or no country; `(***) ***-0100` with `United States` is USD, with `Nigeria` NGN; a UK local number with `United Kingdom` is USD; `+44`, `+1`, `+1 234 ...` (a US area code 234) and `0044 ...` are USD even with `Nigeria`; an empty, missing, null, number, list, object or boolean phone is decided by the country, 200 every time; `ng`, ` NGA `, `NIGERIA`, `nigeria ` count, `Niger`, `Federal Republic of Nigeria` and `234` do not. Every price, pack and bump figure equals the config for that currency, the other currency's code and the words kobo and cents absent. 0 wrong. |
+| V3 Regression | passed | Protected suite `run.sh --fresh HEAD` on `vt01r2_protected_test`, code `3e1dc15`, lock origin/main `8359057` (same lock files as `8d7a054` and `6ce2ddf`): 253/253, all 244 required (`v3-protected.log`); the branch changes no lock file. Full suite, one in-band run in my own network namespace (copies of `t3ns/ns2.sh`/`inner2.sh`, own :4001, fresh migrated and seeded `vt01r2_full_test`): 195 files, 4,939 tests, 4,738 passed, 4 skipped, 197 failed in 12 files at a load average of 15 to 17 (other sessions, and my mutant runs for part of it) (`ns/full-run1.json`): 11 in `hub-rate-limits` (needs a non-loopback interface) and the rest 5-second timeouts or timing limits in 11 money, fintava, tgif, learn-guide and credit files (120 of them in `fintava-stall`). Those 11 files rerun in the namespace: 467 of 468 (`ns/full.json`), the one left the 300 ms limit of `receipt-units`, which then passed 43/43 alone (`v3-rerun-receipt-units.txt`); `hub-rate-limits` 22/22 on the host network (`v3-rerun-hub-rate-limits.txt`). No failing file touches a file this task changed. |
+| V4 States | passed | `GET /me/tier` live (`v4-tier-live.txt`, 18 checks, 0 wrong): `none` with every field empty; `active` at 8 days and 7 days + 60 s; `ending` at 7 days - 60 s and 60 s; `ended` 2 s past and a year past; the highest of three passes shown and a retired type ignored; only a retired pass and no tier: `none` with `eventPass` null; a tier the config no longer names: its id, `name` and `badge` null, the bought figures; a still-named tier bought with other figures (9 + 2 products, 333 points, no Voice Intro) answers those. One person never sees another's: B with `?wawuUserId=A`, `?sub=A` gets `none`, `/me/tier/A` 404; no token 401 on both routes. Exact edges of the built `tierStateAt` (`v4-boundaries.txt`): 7 days + 1 ms active, 7 days exactly and 1 ms ending, 0 and -1 ms ended. |
+| V8 Money | passed | The built `fixAtFirstPurchase` in real transactions (`v8-fix.txt`, 10 checks, 0 wrong): fixed USD then a naira wallet, a Nigerian phone and a second purchase: still USD, row unchanged (first reference and time); fixed NGN then a phone abroad: NGN; a rolled-back purchase fixes nothing; 8 at once: one row, all told the winner; a first purchase that rolls back while a second waits: the second fixes its own; no phone and no country: USD; a phone abroad with a naira wallet: NGN; a local number with `Nigeria` NGN and the US web sign-up USD; a repeated confirmation: one row. 20 rounds of 6 concurrent first purchases, mixed phones: one row and one answer every round, both currencies won (`v8-fix2.txt`). At SERIALIZABLE the losers get `P2034` (N3, the TIER-03 lead note covers it). The only writer of `PersonBilling` in `src/` is that insert; nothing in `scripts/`, the seed or `test/` writes the three tables; no route writes them. |
+| Migration | failed (D3) | Fresh migrate and seed on the branch, on main and on both trial merges. Additive (one enum, three tables, no existing object touched). CHECKs hold (`v2-checks.txt`): empty tier id, `activeUntil` not after `activeFrom` (equal and earlier), negative products, extras or points, an out-of-range integer, a second row per person, an empty pass type, a repeated pass `purchaseRef`, `fixedBy` other than the two values and a currency other than the two are refused; `support` is accepted; `first_purchase` with no reference is accepted (N7, TIER-03's). `prisma migrate diff` (database to schema): the same single `DROP INDEX "ContentPiece_specializations_idx"` on main and branch. Purge and export on the built code (`v2-purge-export.txt`): the purge deletes the person's three rows and leaves another person's; the export carries currency, tier and passes without the payment reference. Stamp: no other folder shares it, but see D3. |
+| V9 Live seam | passed (fintava); NOT RUN (nuvion) | Built branch server (:5752) against the real wawu-id (:5753): five people registered through `POST /auth/register` and signed in through `POST /auth/login`; wawu-id mails no code here, so each address was marked proven in wawu-id's own table before the real sign-in (`v9/drive-fintava.txt`). A `+234` sign-up with `Nigeria` and a local `0803...` with `Nigeria` got NGN `[100000, 300000, 500000]`; a UK `+44` with `United Kingdom`, the web US sign-up `(***) ***-0187` with dial code `+1` and `United States`, and a `+1` phone with `Nigeria` got USD `[300, 900, 1500]` and packs `2500/7000/14000` points; `?currency=` of the other side is ignored; `no-store`; each `GET /me/tier` `none`; the UK person's seeded Founding tier answers `ending` with 10 + 5 products and the priority pass, and nobody else sees it. Main `8d7a054` (:5754) answers both routes 404. Fee quotes under `WALLET_PROVIDER=fintava` (bank send ₦10,000, purchases ₦4,999 and ₦5,000, a WAWU send ₦1,000) identical on main and the branch. Under `WALLET_PROVIDER=nuvion` both main and the branch exit at boot with MONEY-20's reserved-provider message (`v9/hub-*-nuvion.log`). |
+
+**Rulings, checked one by one**
+- D1: fixed (V1, V2 rows); the shape spec fails if any of the three loses `allOf` + `nullable` (builder's M25).
+- D2: fixed; my reproduction (`"kobo": 100000, "kobo": 1` on Verify) stops the built server with `plans.config.json:
+  tiers[0].price.kobo is written twice. Fix the file and restart.`
+- N1: built as ruled: only a naira wallet, a `+234` number in any spelling or a Nigerian `country` gives NGN (39 pairs
+  live, 5 through the real wawu-id, 15 in the spec). N2: every number `integer`. N4: `no-store` on both. N5: INT4_MAX
+  accepted, INT4_MAX + 1 refused in every whole field; `action_points` must be exactly the brief's 12 ids, in the
+  file's order (one missing or one added stops boot). N6: a non-text phone is no phone, never a 500. N3 and N7: the
+  lead note is in `tasks/TIER-03.md`. Item 9: my mutants M-q and M-r (V17, V18) are killed.
+
+**Defects**
+- **D3 (defect, low; merge rule): the migration no longer sorts after every folder on backend main.** Main
+  `6ce2ddf` (LEGAL-03, merged 11:39 UTC, after round 2) holds `20261016160000_legal_consultations`; the branch's
+  `20261016120000_maker_plan` sorts before it, so the rule "a new migration folder's timestamp must sort AFTER every
+  folder on backend origin/main" fails, and the round 2 report's "still sorts after every folder on backend main" is
+  no longer true. Reproduce: `git -C <backend> ls-tree --name-only origin/main prisma/migrations/ | sort | tail -1`
+  prints `prisma/migrations/20261016160000_legal_consultations`. No data risk is shown: on a database already
+  migrated to `6ce2ddf`, `prisma migrate deploy` of the merged tree applies `20261016120000_maker_plan` and `migrate
+  status` is up to date (`trial2-*.txt`). Fix: merge origin/main into the branch and rename the folder to a stamp after
+  `20261016160000` and after every open `origin/wmt/*` folder (newest today `20261016160000`, on LEGAL-03 and
+  SCHOOLS-04), checked right before pushing; update SHARED-CHANGES TIER-01 #2 and the merge-order line; copy the
+  regenerated contract into mobile again (TIER-01 #3). A local trial merge with `6ce2ddf` (not pushed, aborted) is
+  clean: `tsc` 0, `npm run contract:build` byte-identical to the auto-merged `contract/openapi.json`, which adds only
+  the 2 paths and 11 schemas (and the `Ad*` order flip) to main's; the plans, export-map and purge-map specs 105/105.
+  The same with `8359057`: clean, `tsc` 0, migrations in order, 127/127 with FIX-11's own spec.
+
+**Findings (not defects)**
+- F1 (N1, what the rule cannot see): WAWU ID's web register discards `dialCode` and stores the phone as typed, and the
+  web form's country defaults to `Nigeria`; a US person who picks `+1`, types a local number and leaves the country
+  alone is billed NGN (live: `(***) ***-0100` with `Nigeria`). The country match is exact (`Nigeria`, `NG`, `NGA`):
+  `Nigerian` or `Federal Republic of Nigeria` with a local number is USD (the old apps send `Nigeria` or `NG`). A
+  `+` followed by a local number (`+0803...`) is read as a foreign code (USD); `234` + `0` + ten digits has no code
+  (country decides) while `+2340...` is NGN. Each is a typing slip that only matters before the first purchase, and
+  `GET /plans` shows the currency before paying. For the owner's support process and a wawu-id task (keep the dial
+  code), not this branch.
+- F2 (N5, values boot accepts that later tasks cannot use): `tiers[].days` above about 99,970,000 makes the end date
+  an invalid JavaScript date when TIER-03 adds it (INT4_MAX is allowed); `referral.levels[].x` has no upper bound
+  (`1e300` boots) and REF-01 multiplies points by it. For TIER-03 and REF-01.
+- F3: `WHOLE_NUMBER_DIRS` types every number declared under `src/plans` as `integer`; a later view there with a
+  fraction (REF-01's level multiplier `1.25`) would be published as `integer`. REF-01 should keep such a field out of
+  `src/plans` view types or narrow the rule.
+- F4 (spec gaps, behaviour right): my survivors M-a, M-e, M-m, M-t (below).
+- F5 (merge order, other branches): INBOX-03 `20261016100000`, POINTS-01 `...130000`, MONEY-17 `...140000` and NUV-01
+  `...150000` also sort before main's newest now.
+
+**Decisions** (each judged)
+- Billing currency in its own table, "nullable" as no row: agree. The `country` claim, unused in round 1, is now the
+  tie-break (lead ruling N1): agree. "A wallet still being opened does not count": agree.
+- `priceMinor` with one top-level `currency`, never `*Kobo`: agree; with N2 the contract says `integer`.
+- The brief's key names, `{ kobo, cents }`, `{ points, per }`, and the additions (names, pass order as rank, `badge`,
+  `preselected_tier`, `tier_ending_days`): agree. Verify Plus's `verified` badge is still an assumption the round 2
+  table does not state; it is visible in the file.
+- Provisional cash-out minimum 1,000 points, bought points 365 days, ending window 7 days: agree; each is its own
+  marker in the gates.
+- `MakerTier` copies products and points when bought: agree; proved live and now pinned (M-q, M-r killed).
+- Event passes do not end with the tier, the highest shown: agree.
+- `GET /plans` without referral and cash-out figures: agree.
+- The file read from the source tree at boot: agree (`deploy.yml` rsyncs `src/`, excludes only `dist`, `node_modules`,
+  generated and secrets).
+- `hasNairaWallet` reading `FintavaWallet` until NUV-09: agree.
+- Round 2: `00234` and `234` with ten digits count as `+234`: agree (wawu-id's own `normalisePhone` reads them so).
+  `action_points` refuses an added action as well as a missing one: agree (nothing could charge it). The INT4 bound
+  on every whole number, prices included (largest price ₦21,474,836.47): agree. `WHOLE_NUMBER_DIRS` for the whole
+  folder: agree, with F3.
+
+**Mutants** (25 of mine, in a scratch copy of `3e1dc15` (`git archive`), the five plans specs run after each, the
+file restored byte for byte, the copy identical to the branch after all; `mutants.txt`): 21 killed, 4 survived.
+Killed: `00234` no longer Nigerian (M-b); a `00` prefix no longer foreign (M-c); a non-text phone turned into text
+(M-d); the country not trimmed (M-f); the phone code before the naira wallet (M-g); the wallet before the fixed
+currency (M-h); the phone rule before the fixed currency (M-y); the winner re-read outside the purchase transaction
+(M-i); the fix recorded as `support` (M-j); a 23-hour day (M-k); a tier ending a second early (M-l); dollar people
+given the naira bump points (M-n); bonus expiry served as the tier's days (M-o); Voice Intro read from the config, not
+the purchase (M-p); products and points read from the config while it names the tier (M-q, M-r: V17 and V18); the
+repeated-key scanner ignoring escapes (M-s); an unnamed tier shown as the first tier (M-u) or named by its id (M-v);
+either route without the sign-in guard (M-w, M-x).
+Survived (spec gaps; the behaviour is right live): M-a `234` with nine or ten digits of any kind read as Nigerian
+(live: `234` + nine digits with no country is USD); M-e `Niger` read as Nigeria (live: USD); M-m `hasActiveTier`
+ignoring the instant it is asked about (the spec only asks at the real now); M-t INT4_MAX itself refused (accepted
+in `v2-badconfig.txt`).
+
+**Mobile** (`2a5c93a`): `npm run check` at a load average of 12 to 15: typecheck and lint 0, jest 1375/1377, the 2
+failures 20 s render timeouts in files this task does not touch (`OpenWalletScreen.test.tsx`,
+`settingsScreens.test.tsx`), both files 128/128 alone (`v1-mobile-check.log`, `v1-mobile-rerun.log`). With this
+report: `npm run check` exit 0 (typecheck, lint 0, jest 1377/1377 in 76 suites, gates 0 fail / 0 warn on 346 files,
+249 tasks and 279 artboards; `v1-mobile-check-final.log`).
+
+**NOT RUN**
+- The plans routes under `WALLET_PROVIDER=nuvion`: main and the branch stop at boot under nuvion. Unblocked when NUV-01
+  is merged to backend main and `WALLET_PROVIDER=nuvion` boots the built server to `GET /api/hub/health` 200.
+- The purchase path (TIER-03 writes the tables and calls `fixAtFirstPurchase`). Unblocked when
+  `grep -rn fixAtFirstPurchase src --include=*.ts | grep -v tests` names a purchase service on backend main.
+- An emailed sign-up code in V9 (wawu-id has no mail provider here; the address was marked proven in its table, then
+  the real sign-in issued the token). Unblocked when a wawu-id with `RESEND_API_KEY` set may be run by a brief.
 
 ## Owner sign-off
