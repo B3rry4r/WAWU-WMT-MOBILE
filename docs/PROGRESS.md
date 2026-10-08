@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 105 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 58 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 
@@ -136,6 +136,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · NUV-01 · Built round 2 (status verifying; backend 4613be8): the 3 defects and the lead's rulings: eslint 0 on all 61 changed files; the same-day cutoff an unknown outcome; "already exists" and review types keep recordMayExist; compliance review a new seam kind `under_review`; a 5xx never a refusal; Nuvion's limit types below 500 answer 403 limit_reached through NUV-07 with the request id (G-411 closed on the branch); a 20-minute webhook window; undocumented events stored pending; encoded traversal refused; LedgerService stamps and reads only the running provider (SHARED-CHANGES NUV-01 #2 made); 38 of 38 mutants killed, the verifier's 7 survivors among them; protected 253/253.
 - 8 Oct 2026 · NUV-01 · Verified (status building): 3 defects open: eslint 20 errors in 4 changed files, the same-day-cutoff refusal read as nothing moved (Nuvion says it will still process), and the "already exists" refusals saying no record exists. The receiver (a replay under 40 forged event ids is one row), the switch (33 boots), the rollback filters both ways, the PIN reset's clean 503 with the real wawu-id, the migration, Fintava's answers unchanged and the protected suite 253/253 passed; 32 mutants, 25 killed.
 - 8 Oct 2026 · NUV-01 · Lead applied SHARED-CHANGES NUV-01 #1 (NuvionWebhookModule mounted, backend 757780b), so the verifier checks the served receiver.
 - 8 Oct 2026 · NUV-01 · Built (status verifying): WALLET_PROVIDER=nuvion boots a Nuvion adapter (client with all 153 documented error types mapped, one area file per task NUV-02 to NUV-08, each `not_supported` until filled), PIN reset codes by email through WAWU ID, the signed webhook receiver (stored once, 5-minute window) and a handler registry; a `provider` column keeps a rollback off the other provider's rows (sweeps, balance, ledger consumer); migration 20261016150000; 16 of 16 mutants killed; limit refusals have one mapping point for NUV-07 (G-411); protected 253/253; gates as main plus 3 PROVISIONAL; stand-in only, the (key) check NOT RUN. SHARED-CHANGES NUV-01 #1 to #4, BACKEND_GAPS G-400 to G-402.
@@ -150,4 +151,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
-- 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).

@@ -7,7 +7,7 @@ order: 197
 priority: launch
 repo: wawu-backend
 type: third-party
-status: building
+status: verifying
 depends_on: [MONEY-20]
 decisions: [R-39, R-42, R-44]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -446,5 +446,170 @@ anything on main. `npm run check` with this report and the regenerated index: ex
   the webhook spec's registry tests cover it (done, wait, failed, two workers, no handler).
 - The full suite as one in-band process (three serial shards instead: memory, and load 15 to 32 from other sessions);
   `receipt-units` green (its 300 ms bound needs a load average near 4).
+
+## Lead rulings after the verifier (8 Oct 2026)
+
+Copied from the lead's round 2 brief.
+
+Defects:
+1. eslint: 20 errors in `src/nuvion/webhook/nuvion-webhook.service.ts`, `src/wallet-provider/provider-rows.ts`,
+   `test/nuvion/nuvion-standin.ts`, `test/nuvion/outbound-guard.ts` (16 prettier, 4 type rules). Fix all; run eslint
+   with `--no-fix` on every changed file and report the real count.
+2. `error_transfer_same_day_cutoff_passed` is an unknown outcome (`outcome_unknown`, `recordMayExist: true`, never
+   resent): Nuvion says the transfer processes next business day.
+3. The four "already exists" 409s (`error_account_already_exists`, `_account_already_verified`,
+   `_counterparty_already_exists`, `_wallet_already_exists`) carry `recordMayExist: true`, as the seam defines it.
+
+Rulings on the findings:
+4. Compliance review (`kyc_under_compliance_review`, `kyc_enhanced_due_diligence_required`,
+   `entity_status_due_diligence_required`): a distinct kind meaning "under review, wait", not identity refused, so
+   NUV-02 can show "under review".
+5. The webhook window: Nuvion's documented retry span (15 minutes) plus 5 minutes, i.e. 20 minutes, in one constant.
+   Dedup already makes this safe.
+6. Undocumented events: stored so that the dispatcher picks them up once a handler for their type exists (pending, not
+   a dead `unrecognised`).
+7. The client's path guard also refuses encoded traversal (`%2e%2e`, `%2E%2E`, mixed, double-encoded).
+8. SHARED-CHANGES NUV-01 #2: apply it now on this branch. LedgerService stamps the running provider on every row it
+   creates and the status sweep and consumers filter by it. MONEY-17 also edits that file; whichever merges second
+   resolves it (the lead merges).
+9. G-411: backend main now has NUV-07 (8d7a054). Merge origin/main into the branch and make `nuvionLimitError` call
+   `providerLimitError('nuvion', type, args)` only for responses below 500 (a 5xx with a limit type stays an unknown
+   outcome), keeping Nuvion's request id on the error.
+10. Specs that kill the verifier's 7 surviving mutants: the window edge, the window size pinned to the constant's
+    value, the ISO timestamp format, 5xx never a refusal, the seen-cursor check, `limit` 100, a null provider.
+11. Filed by the lead, not the builder's: webhook event retention (Nuvion and Fintava) as a follow-up; a lost `check`
+    call being safe to repeat is for NUV-02 and NUV-03.
+
+## Builder report, round 2
+
+Builder, 8 Oct 2026. wawu-backend `wmt/NUV-01` `4613be8`: the lead's `757780b` (the receiver mounted), then
+`fbbfb53` merging origin/main `8d7a054` (NUV-07; no textual conflict), `7bd0c5a` (this round's fixes, 19 files)
+and `4613be8` (one fixture in NUV-07's spec, SHARED-CHANGES NUV-01 #6, below).
+Mobile `wmt/NUV-01`: `24f092f` (the verifier's report), `d778e45` merging origin/main `eb62049` (NUV-07's rows; the
+four conflicts were the shared lists, kept both sides; `docs/PROGRESS.md` rebuilt), then this report. Stand-in only:
+no Nuvion, Fintava or wawuafrica.com host was called; every NUV spec ran under the outbound guard and none was tried.
+
+**Defects**
+1. eslint (V1): the four files are clean (`npx prettier --write` on them; `outbound-guard.ts` rewritten on a typed
+   view of `Socket.prototype` so `connect` is swapped and put back without an unbound method or a cast, and the port
+   read only from a number or a string). Then `npx eslint --no-fix` on **every** `.ts` file the branch changes against
+   origin/main, 61 files, 4 a run (`bn01/r2-lint.out`): **1 error** in 1 file (`nuvion-client.spec.ts`, an
+   unnecessary assertion this round added); fixed, that file and `ledger.service.ts` (edited during the run) linted
+   again: **0 errors, 0 warnings on all 61**, and on NUV-07's spec once its fixture changed (62 files in all). `npx prettier --check`: clean.
+2. `error_transfer_same_day_cutoff_passed` is `outcome_unknown` (`recordMayExist` true): reconciled by its
+   `unique_reference`, never resent; its app answer is "We are still confirming this payment. Check your history
+   before you try again." `error_transfer_outside_business_hours` stays `payouts_blocked` (nothing was taken).
+3. The four "already exists" 409s keep kind `refused` and now carry `recordMayExist: true`
+   (`NUVION_RECORD_EXISTS_TYPES` and `nuvionRecordMayExist` in `nuvion-error.ts`; `classifyNuvionFailure` returns it
+   and the client passes it to the error), on a write and on a read.
+
+**Rulings**
+4. A new seam kind, `under_review` (`src/wallet-provider/wallet-provider-error.ts`, SHARED-CHANGES NUV-01 #5):
+   `error_kyc_under_compliance_review`, `error_kyc_enhanced_due_diligence_required` and
+   `error_entity_status_due_diligence_required` map to it, with `recordMayExist` true (the application is with
+   Nuvion; never sent again meanwhile). Its app answer is a plain `409` "Your details are being reviewed. We will let
+   you know when the review is done." Fintava never produces it.
+5. `NUVION_WEBHOOK_WINDOW_MS = 20 * 60_000`, one constant, its comment and `PROVISIONAL(NUVION-WEBHOOK-WINDOW)` why
+   saying 15 minutes of retries plus 5 and why dedup keeps it safe.
+6. A live delivery whose `event` is a well-formed name (`<group>.<name>`, lower case, at most 100 characters) and
+   that carries `data` is stored `pending`, documented or not; `unrecognised` is left for a body with no name, a
+   malformed one, or no `data`. The handler interface lists events by name (`readonly string[]`), the registry and
+   the dispatcher read them as stored, so a later task that lists an undocumented name is handed the rows already
+   stored on the next sweep (proved in the webhook spec). The log names an undocumented event as such.
+7. `unsafeSegment` in `nuvion-client.ts`: each path segment is percent-decoded up to 5 times; refused when any form
+   is `.` or `..`, holds `/` or `\`, does not decode, or still decodes after 5 rounds. Refused before sending:
+   `%2e%2e`, `%2E%2E`, `%2e%2E`, `.%2e`, `%2e.`, `%2e`, `%252e%252e`, `%25252E%25252e`, `%2f..%2f`, `x%2Fy`,
+   `%5c..`, `%`, `%zz`, six-deep encoding.
+8. SHARED-CHANGES NUV-01 #2 made on the branch: `LedgerService` injects `WALLET_PROVIDER`; `recordIn` stamps
+   `provider` with the running provider; `entriesFor` and `debitsFor` read only its rows (null is Fintava's);
+   `markAbsentFailed` adds `COALESCE("provider",'fintava') = <running>`; a new sighting whose reference another
+   provider's row holds on that side is a stop (`LedgerProviderConflictError`, logged, the transaction rolls back,
+   nothing written, never retried by `record`), never a fold. `foreignDebitsFor` gives the consumer its review stop
+   (it replaces the consumer's own lookup). The status sweep and the consumer's filters are round 1's. MONEY-17
+   also edits this file (constructor and `record`); whichever merges second resolves it.
+9. Merged origin/main. `nuvionLimitError` returns NUV-07's `providerLimitError('nuvion', type, ...)` for an answer
+   below 500 only, with Nuvion's `requestId` and `nuvionType` kept on it (and ` request <id>` on its message, as on
+   every `NuvionError`): a `WalletProviderLimitError`, kind `refused`, nothing moved, `toHttpException()` the
+   `403 limit_reached` naming `per_transaction`, `daily` or `monthly`. `NUVION_LIMIT_ERROR_TYPES` is read from
+   NUV-07's table (one list). G-411 closed on the branch.
+10. The verifier's 7 survivors each have a spec now and are killed (below).
+11. Not mine; nothing done.
+
+Also: one 5xx rule for every call. A 5xx carrying any type is never a refusal: on a write, `outcome_unknown` (or
+the unknown-outcome kind its type names, `duplicate_reference`); on a read or a check, `unavailable`. Round 1 let a
+read's 5xx carry a refusal type's kind. And `.env.example` now says a wrong Fintava *client* setting no longer stops
+a Nuvion server, while the `FINTAVA_FEE_*` schedule is still checked at boot (verifier finding 5).
+
+**Specs** (fresh migrated `bn01_spec_test`; mock WAWU ID on :5631; one jest at a time): client 215/215, webhook
+30/30, rollback 16/16, adapter 30/30, PIN reset 5/5, seam 18/18 (with the rest of `src/nuvion`,
+`src/wallet-provider` and `src/fintava`: 16 suites, 1,032/1,032); `src/money/ledger`, `balance`, `opening` (8 suites,
+177/182, then `production-boot` alone 5/5: its 5-second `beforeAll` at load 13, as the verifier saw);
+`src/money/history`, `receipts`, `statements` (6 suites, 148/148); `src/money/pin`, `identity` (13 suites,
+431/431); and every other spec that mounts MoneyModule, LedgerModule or AppModule, plus `src/money/fees`,
+`limits`, `gate`, `recipients`, `saved-accounts`, `src/money/tests`, `src/about`, `src/data-export-request`,
+`src/account-purge` (28 suites, 729/753 on the unseeded database: 23 of the 24 need seeded rows and pass on a fresh
+seeded `bn01_seed_test`, 4 suites 320/320; the 24th is below).
+
+**The merge with NUV-07** (SHARED-CHANGES NUV-01 #6): NUV-07's `nuvion-fees.contract.spec.ts` stands Nuvion in at
+`WALLET_PROVIDER` and creates its wallet row without a provider, which since NUV-01 reads as Fintava's, so its
+"the balance (from Nuvion) answers 200" case got NUV-01's rollback 503. The fixture now creates the row with
+`provider: 'nuvion'`; nothing it asserts changed (the balance still comes from the stand-in, 4,321,000 kobo):
+6/6.
+
+New specs: the window to the millisecond on a fixed clock (exactly 20 minutes taken, 1 ms more refused, both
+sides; 19 taken, 21 refused, written out; the constant pinned to 20 minutes); ISO 8601 whole or refused (`Z`,
+fractions, an offset taken; a space for `T`, no zone, no seconds, trailing text, a bare date refused even with the
+clock at its midnight); undocumented events pending and handed over once listed; only nameless, malformed or
+data-less bodies `unrecognised`; the A, B, A cursor loop stopped before the third request; `limit` 100 sent, 0, 101
+and 2.5 refused; a 5xx carrying a refusal or limit type never a refusal; the limit types as `403 limit_reached` with
+request id; the same-day cutoff, the four "already exists" and the three reviews; encoded traversal; the ledger
+stamp, lookups, absent check, fold stop and reversal under both providers; a null-provider wallet and ledger row
+treated as Fintava's (balance asked, sweep claims it), never as Nuvion's; `provider-rows` values.
+
+**Mutants** (38, each applied alone, its spec run, the file written back from its copy and checked clean against
+HEAD; `bn01/mutants/results2.txt`): **38 killed**. Round 1's 16 again (M10 and M16 re-aimed at this round's code);
+14 on this round's code (N1 to N14: the cutoff read as nothing moved; `account_already_exists` saying no record;
+review read as identity refused; encoded traversal unchecked; decoded only once; the ledger not stamping; `entriesFor`
+or `debitsFor` reading any provider; a fold into another provider's row; the absent check on another provider's
+row; a 5xx limit read as a limit refusal; the request id dropped; an undocumented event stored `unrecognised`; the
+window back to 5 minutes); and the verifier's 7 survivors (V1 the edge `<=` to `<`, V2 the size changed, V3 the ISO
+check cut to a date prefix, V4 the 5xx override removed, V5 the seen-cursor set removed, V6 `limit` 100 refused,
+V7a a null provider read as another, V7b Fintava's rows without the null ones).
+
+**Gates and checks**: `tsc --noEmit` 0. Gates: main `8d7a054` 16 fail / 58 warn / 76 accepted on 908 files; branch
+16 / 61 / 76 on 944; the 16 FAIL lines byte-identical; the 3 new warnings are `PROVISIONAL(NUVION-TIMEOUTS)`,
+`(NUVION-RESEND-SAFETY)`, `(NUVION-WEBHOOK-WINDOW)`, each with `why=` (one draft comment said "is never read" and
+the deferrals gate caught it; reworded). Tripwire: 0 added lines match. Key-shaped scan of the staged diff (long hex
+or base64 runs, `sk_`, `FLWSECK`, bearer tokens, private-key headers): nothing. Protected suite `scripts/protected-routes/run.sh --fresh HEAD` on `7bd0c5a` (`4613be8` changes one spec fixture only), lock origin/main `8d7a054`, fresh `bn01_protected_test`: 253/253, "all 244 required tests passed".
+`npm run contract:build`: `contract/openapi.json` unchanged (sha256 `d859a1a2...20e0b` before and after); against backend main `8d7a054` it adds one path (`POST /api/hub/webhooks/nuvion`) and one schema (`NuvionWebhookAck`), nothing else. Copied into mobile (`contract/SOURCE_COMMIT` `wmt/NUV-01@4613be8`, the same file) and `python3 scripts/api/sync_contract.py` run (exit 0). Against mobile main, whose copy is still from backend `965280e`, the sync also brings backend main's FIX-06 and NUV-07 contract changes; the Nuvion route stays out of the app's types (the `PaymentWebhook` exclusion).
+Mobile `npm run check`: exit 0 (typecheck, lint, jest 76 suites / 1,377 tests, gates 0 fail / 0 warn on 346 files, 249 tasks, 279 artboards); its gates and tasks steps run again after the last edit to this report (two lines of text): pass.
+
+**Decisions** (each Default (agent), owner may override)
+- `under_review` answers a plain `409` with its own sentence, not a money reason code, so the contract and the app's
+  types are unchanged; NUV-02 decides what its own route answers.
+- The four "already exists" types keep kind `refused` (with `recordMayExist` true), not `duplicate_reference`: the
+  record is there, nothing about money is unknown; NUV-04 and NUV-06 adopt it.
+- `error_kyb_under_compliance_review` (WAWU's own business, not a person) stays `refused`; the ruling names the
+  person's three.
+- The window keeps its `PROVISIONAL` marker at 20 minutes until the sandbox's webhook log shows whether a retry is
+  signed anew.
+- A well-formed event name is required for `pending` (above); 5 decoding rounds for a path segment.
+- A ledger sighting that meets another provider's row is a stop that throws, not a silent skip: the caller (a
+  delivery, a send) is left to try again and the error log names the rows.
+
+**NOT RUN**
+- (key) `GET /bank-codes/NG` against the sandbox: unblocked when a lead brief allows `api.nuvion.dev` and
+  `GET https://api.nuvion.dev/bank-codes/NG` answers 200 with the key in the local `.env`; then
+  `scripts/nuvion/bank-codes-check.ts`.
+- A real Nuvion delivery (header names, timestamp format, whether a retry carries a new timestamp): unblocked when
+  NUV-10 registers the webhook and `POST /webhook-tests` reaches it.
+- The PIN reset email actually sent: unblocked when wawu-id serves `POST /internal/users/:userId/pin-reset-code`
+  (G-400).
+- The whole suite in a private network namespace: not repeated this round (the round 2 brief names the specs,
+  mutants, protected suite, gates, contract and mobile check); every suite in the modules this round touches, and
+  every one that mounts MoneyModule, LedgerModule or AppModule, ran instead (above). Unblocked by a lead brief that
+  asks for it, or the verifier's own run.
+- Built-server runs (boots, live receiver): not repeated this round; the verifier's round 1 runs stand for what did
+  not change, and this round's changes are proved in the specs above. Unblocked by the verifier's own pass.
 
 ## Owner sign-off
