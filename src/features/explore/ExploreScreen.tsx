@@ -10,6 +10,11 @@ import { BrandMark } from '@/components/BrandMark';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
+import {
+  ExploreEventsRail,
+  ExploreFeaturedEvent,
+  useExploreEvents,
+} from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { layout, space, useWawu } from '@/theme';
 
@@ -41,6 +46,10 @@ export const exploreMetrics = {
 export type ExploreScreenProps = {
   /** A category tile was tapped: `all` for All and More, else the category's id (X2, X3). */
   onOpenCategory: (category: CategoryChoice) => void;
+  /** The featured event or an event card was tapped (E2). Without it the event entries are not drawn. */
+  onOpenEvent?: (id: string) => void;
+  /** Upcoming events' See all (E1). */
+  onSeeAllEvents?: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. Absent, the door is not drawn. */
   onListServices?: () => void;
 };
@@ -48,10 +57,12 @@ export type ExploreScreenProps = {
 /**
  * X1 and X14: Explore's browse, with a real error state (a request failed, with a retry). It reads the creator
  * categories and the featured creators. Entries whose screens are not built yet are not drawn (R-27, R-41): the
- * search bar and bell (EXPLORE-02, ME-14), the featured event, Upcoming events and its See all (EVENTS-01), Featured
- * creators' See all (EXPLORE-02), opening a creator (ME-02), the other doors (PROS-01, SCHOOLS-03; PROS-03's "List your services" is in) and Create (ME-04).
+ * search bar and bell (EXPLORE-02, ME-14), Featured creators' See all (EXPLORE-02), opening a creator (ME-02), the
+ * other doors (PROS-01, SCHOOLS-03) and Create (ME-04). The featured event, Upcoming events and its See all are
+ * EVENTS-01's (R-41): drawn when the Hub serves them, left out when it serves none or the read fails. PROS-03's doors
+ * card ("List your services") follows Upcoming events.
  */
-export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -59,13 +70,15 @@ export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenP
   const featured = useQuery({ queryKey: featuredKey, queryFn: fetchFeaturedCreators }, queryClient);
   const me = useQuery({ queryKey: meKey, queryFn: fetchMyId }, queryClient);
   const follow = useFollow();
+  const events = useExploreEvents(Boolean(onOpenEvent));
+  const refetchEvents = events.refetch;
   const [pulled, setPulled] = useState(false);
 
   const refetchCategories = categories.refetch;
   const refetchFeatured = featured.refetch;
   const refetchAll = useCallback(
-    () => Promise.all([refetchCategories(), refetchFeatured()]),
-    [refetchCategories, refetchFeatured],
+    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents()]),
+    [refetchCategories, refetchFeatured, refetchEvents],
   );
 
   // Coming back to the tab reads again when what is held has gone stale.
@@ -89,7 +102,7 @@ export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenP
   const failure = categories.error ?? featured.error;
 
   let body;
-  if (categories.isPending || featured.isPending) {
+  if (categories.isPending || featured.isPending || !events.settled) {
     body = <ExploreSkeleton />;
   } else if (failed) {
     body = (
@@ -108,6 +121,9 @@ export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenP
     const doors: Door[] = onListServices ? [{ id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices }] : [];
     body = (
       <>
+        {events.featured && onOpenEvent ? (
+          <ExploreFeaturedEvent event={events.featured} onOpen={() => onOpenEvent(events.featured!.id)} />
+        ) : null}
         <CategoryTiles
           items={categoryTiles(categories.data ?? [])}
           onOpen={(tile) => onOpenCategory(tile.kind === 'category' ? (tile.id as CategoryChoice) : 'all')}
@@ -126,6 +142,9 @@ export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenP
               ))}
             </ScrollView>
           </View>
+        ) : null}
+        {events.upcoming.length > 0 && onOpenEvent && onSeeAllEvents ? (
+          <ExploreEventsRail events={events.upcoming} onOpen={onOpenEvent} onSeeAll={onSeeAllEvents} />
         ) : null}
         {doors.length > 0 ? <DoorsCard doors={doors} /> : null}
       </>

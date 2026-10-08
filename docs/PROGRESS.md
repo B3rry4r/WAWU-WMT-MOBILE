@@ -7,14 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 110 | 0 | 20 | 21 |
+| todo | 109 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 3 | 0 | 0 | 0 |
+| review | 4 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
@@ -132,27 +133,27 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
+- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
-- **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [PROS-01](../tasks/PROS-01.md) Find a professional, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
+- **Developer 3:** [PROS-01](../tasks/PROS-01.md) Find a professional, [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
+- 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
+- 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
+- 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
+- 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
+- 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
+- 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.
+- 8 Oct 2026 · EVENTS-01 · Verifier independent round 4 (lead): D7, D8, D9, D10, T3, V10, V11 all pass live (three browser zones identical) and by mutant; R-41 entries open the right screens and an events failure draws no error; new D11 (H11 has no services shapes), D12 (Explore jumps 216 pt when the event arrives), D13 (entry text line boxes, up to 9 pt), D14 (no year on Explore's date), T4 (6 of 20 own mutants survive: Explore route file, failure spec never reaches the failure); U-H1 Home services row for the lead; npm run check passed (80 suites, 1450 tests); status building.
+- 8 Oct 2026 · EVENTS-01 · Builder round 6: D7, D8 every events date in the event's zone (hero badge, tier Ended/Opens); D9 prices kept when a later call fails; D10 two-digit badge day; T3, V10 and screen specs added, each fails on the old code; R-41 entries added on main's hubs (H1/H36 Events tile, X1 featured event, Upcoming events rail and See all, X14 block); npm run check passed (80 suites, 1450 tests, gates 0 findings, baseline 0, 212 tasks); status verifying.
+- 7 Oct 2026 · EVENTS-01 · Verifier round 4: D6 fixed (live: NYC 7 PM EDT reads 14 Oct on E1, E2, hero; unresolvable zone date only; no crash); 4 of 6 new specs fail on old code; npm run check passed; no open defects, status review.
+- 7 Oct 2026 · EVENTS-01 · Builder round 5: D6 fixed, event date read in the event's own zone (unresolvable zone: Lagos date alone, no clock); 6 specs added, 4 fail on old code; npm run check passed (66 suites, 1204 tests, gates 0 findings); status verifying.
+- 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
+- 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
+- 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
 - 8 Oct 2026 · PROS-03 · Verified round 3 (completed): main merged, `npm run check` exit 0; D4 live with a 503 on refetch when the app returns to the front and with a connection drop after the first field (form, fields, text and send result kept, inline retry), D5, D8 and U3 passed live, P5 to P10 pictures within 1 px; no defect open; R3-1, the P7 Back deviation, U4 (row 8 now applied, phone upload not wired) and U5 for the lead; V10 NOT RUN; status review.
-- 8 Oct 2026 · PROS-03 · Round 3 built on the lead rulings: Explore doors card with List your services (D3), a failed refetch keeps the flow (D4), Hide and Show refresh M2 (D5), system Back (D6), a 409 field is left out and the rest go (D7), one P8 card per field and no Apply again for a category no field files in (D8), ME-01's paid row back to a plain group (D9), LongField in ME-11 #2 (D10), T1 to T3 specs, Send waits for a file that did not upload (U3); status verifying.
-- 8 Oct 2026 · PROS-03 · Lead rulings after the independent verifier: D3 (PROS-03 draws Explore's doors card with its one door, opening P5 or P8), D4 to D10, T1 to T3, and a lead default for U3 (Send waits for a file that did not upload); the admin unlist sharing `listed` with Hide, and presign quota, are filed outside the task.
-- 8 Oct 2026 · PROS-03 · Verified independently (lead): V1, V9 passed against the real WAWU ID and a Hub from backend main; D1 and D2 closed (M2's row opens P8; P8, P5 and P7 measure equal at 2x); V4, V6, V7 failed with eight defects (D3 no Explore door, so no way into P5 or back to a hidden listing; D4 a failed refresh wipes the flow and its partial result; D5 Hide does not reach M2; D6 system Back on P6; D7 to D10 low); 17 mutants, 14 killed; U3 left as a product question; V10 NOT RUN; status building.
-- 8 Oct 2026 · PROS-03 · Fix round 1: the Me tab's listing row opens P8 (R-41); P8, P5, P6 and P7 vertical metrics brought to the artboards in the feature's own styles (TextField's label drift filed as SHARED-CHANGES PROS-03 #3); a null account type meets the gate (spec kills the surviving mutant); main merged; status verifying.
-- 7 Oct 2026 · PROS-03 · Verified (round 1): V1, V4, V6, V7, V9 passed against the real WAWU ID and a Hub from backend main, V5 passed with a finding, V10 NOT RUN; two defects (the Me tab's listing row does not open P8, R-41; P8 and P5 vertical metrics drift from the artboards); status building.
-- 7 Oct 2026 · PROS-03 · Built: Offer your services (P5 to P7), Your listings (P8, P9), the creator gate (P10); one application per chosen field, licence file through `professional/document`; tests, gaps G-320 to G-325 and shared-change rows filed; status verifying.
-- 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
-- 8 Oct 2026 · SHARED-04 · SHARED-04 merged: native modules installed in one batch; the phone takes the wallet selfie, picks photos without location data, and copies. New preview build needed.
-- 8 Oct 2026 · FIX-24 · FIX-24 merged (backend PR #94, 9d90d57): delivered legal documents are the client's own or the legal team's only; LEGAL_DELIVERY_UPLOADER_IDS awaits the owner.
-- 8 Oct 2026 · FIX-24 · Verifier report (independent session, backend `a1beb10`, mobile `2b1cbb9` merged with main `a82e816`): no defect, status review. N2 closed by its real cause: round 4's reproduction leaks on main 657a152 (101 of 103, 132 of 132 bytes of B's file, ghost key 200) and passes on the branch (103 of 103, ghost 400); 25 of 25 key variants refused on the new route and every link naming our storage refused on /deliver; reads withhold every failing row and legacy value (28 of 28, one warn line per file, no stored value logged); setting boots and refusals as the builder says (7 live boots); the count query equals a hand count on two databases; protected 253 of 253 with the lock unchanged, 65 of 65 /legal answers byte-identical to main; module specs 595 passed; full suite 5,551 passed, 52 environmental (pass alone); V9 with real WAWU ID; mutants 13 of 15 killed. Notes O1 to O6 (IP-literal hosts on /deliver judged harmless by a SigV4 check, a spec gap for a ghost key in the owner's folder, the ruling's edges).
-- 8 Oct 2026 · FIX-24 · Builder: a delivered legal document must have an upload record by the request's owner or a LEGAL_DELIVERY_UPLOADER_IDS account (new setting, empty, PROVISIONAL, boot refuses a malformed value); new route 400 files.N.url and reads never sign a failing key (logged once); the protected /deliver applies the rule to links naming our storage, lock unchanged (253/253), foreign links wait for a relock. Backend wmt/FIX-24 a1beb10; live N2 reproduced on main, refused on the branch; 10 of 10 mutants killed; status verifying.
-- 8 Oct 2026 · POINTS-01 · POINTS-01 merged (backend PR #93, dd3a183): points lots, the ledger, GET /me/points.
-- 8 Oct 2026 · SHARED-04 · Verifier report, round 2 (independent, 652a301): status review, no defect open. D1, D2, F1 (the phone's JPEG walk equals the server's on 42,416 cases, 0 mismatches), T1 (the five boundary mutants die in the task's own specs), F3 and the two permission blocks hold on their real causes; web 16 of 16 pictures byte-identical to main; `npm run check` exit 0 (82 suites, 1,437 tests); 33 mutants of mine. Six low findings (a failed encode or an unreadable video leaves a cache file, a stale CL-03 sentence) and test gaps recorded; V10 and the merged APK manifest NOT RUN (preview build).
-- 8 Oct 2026 · SHARED-04 · Builder report, round 2 (lead rulings after the verifier): M8 and M36 say a failed pick plainly (a cancel stays silent), PNG and WebP keep their format and transparency, the selfie walks the JPEG as the server does (an appended JPEG is refused), the verifier's boundary specs are in the suite, copies are deleted once uploads settle, SYSTEM_ALERT_WINDOW and AD_ID removed from the release manifest. 21 mutants: 20 killed, 1 equivalent. Status verifying.
