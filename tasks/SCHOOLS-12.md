@@ -3,7 +3,7 @@ id: SCHOOLS-12
 title: School sign-ups from the WAWU link, and the school's commission
 owner: DEV3
 area: SCHOOLS
-order: 236
+order: 237
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
