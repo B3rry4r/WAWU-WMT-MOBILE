@@ -117,7 +117,7 @@ Purposes use Google's list: App functionality (AF), Account management (AM), Fra
 
 | Type | Collected | Notes and evidence |
 |---|---|---|
-| [CL-01] **Calendar events** | **No data leaves the phone.** | `expo-calendar` is planned (SHARED-CHANGES row 8; E7 "add to calendar"). Adding an event to the phone's calendar writes locally; the app sends no calendar data to a server. **LEAD CHECK** from the built manifest: the plugin's default permissions include read as well as write. If the app only writes, restrict the plugin to what it needs; a request to read the calendar needs a reason on the permission declaration. |
+| [CL-01] **Calendar events** | **No data leaves the phone.** | `expo-calendar` is installed (SHARED-04, 8 Oct 2026) for E5's "Add to calendar" (EVENTS-06). Adding an event goes through the phone's own calendar screen (`createEventInCalendarAsync`), which writes locally and needs no permission; the app sends no calendar data to a server. The read and write calendar permissions are removed from the Android manifest (`android.blockedPermissions`), and iOS asks only for write-only access. A direct write would need a SHARED-CHANGES row that unblocks them, and a reason on the permission declaration. |
 | [CL-02] **Contacts** | No | No contacts package is in `package.json`, no task lists one, recipients are found by name, handle or phone through the server (WALLET-08). |
 | [CL-03] **Location** (approximate or precise) | No | No location package or permission. A profile "location" and an event city are typed text (declared as "Other info" above). A photo's own location: the phone build writes every picked photo again as a JPEG before upload, so no Exif block or GPS goes with it (SHARED-04, lead ruling 8 Oct 2026); the web build still uploads the file as chosen until the lead's separate task changes it. |
 | [CL-04] **Health and fitness** | No | none |
@@ -225,13 +225,14 @@ in at build time.
 | `expo-image-picker` (library) | `CAMERA`; `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` (`maxSdkVersion="32"`) | No new one. M8 and M36 use the phone's own photo picker, which needs no permission |
 | `expo-media-library` (plugin and library) | `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` (`maxSdkVersion="32"`), `android:requestLegacyExternalStorage="true"`; `READ_MEDIA_VISUAL_USER_SELECTED` from the library, **removed** by `app.json` | No `READ_MEDIA_*` permission: the plugin's `granularPermissions` is empty, because the only caller (H35's Save, SHARED-07) only writes |
 | `expo-notifications` (library) | `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` | Notifications: a runtime prompt on Android 13 and later |
+| Firebase Messaging (`com.google.firebase:firebase-messaging` 25.0.1, brought by `expo-notifications`; read by the SHARED-04 verifier in its AAR manifests from Google Maven) | `WAKE_LOCK`, `com.google.android.c2dm.permission.RECEIVE` | No (normal permissions). No `AD_ID` in any of the 19 AARs read; `com.google.android.gms.permission.AD_ID` is **removed** by `app.json` all the same, so a later library cannot add it |
 | `expo-audio` (plugin and library) | `MODIFY_AUDIO_SETTINGS` (normal) | No. Recording and background playback are off, so no `RECORD_AUDIO`, `FOREGROUND_SERVICE` or `FOREGROUND_SERVICE_MEDIA_PLAYBACK` |
 | `expo-video` (library) | `INTERNET` | No |
 | `expo-local-authentication` | `USE_BIOMETRIC`, `USE_FINGERPRINT` | No (normal permissions) |
 | `expo-updates` | `ACCESS_NETWORK_STATE` | No (normal) |
 | `expo-image` | `INTERNET`, `ACCESS_NETWORK_STATE` | No (normal) |
 | `expo-file-system` (now also a direct dependency, SHARED-04) | `INTERNET`, `WRITE_EXTERNAL_STORAGE` (`maxSdkVersion="32"`), `READ_EXTERNAL_STORAGE` (`maxSdkVersion="32"`) | No. The two storage permissions are normal, apply only up to Android 12L (API 32) and are not requested on Android 13 and later, so they do not become the `READ_MEDIA_*` permissions Console's media declaration asks about |
-| The prebuild template's own app manifest | `INTERNET`, `SYSTEM_ALERT_WINDOW`, `VIBRATE`, and the two storage permissions above | `SYSTEM_ALERT_WINDOW` sits in the main app manifest the template writes, so it is in a release build too, not only in debug builds: **LEAD CHECK** on the built APK whether Console asks about it |
+| The prebuild template's own app manifest | `INTERNET`, `VIBRATE`, and the two storage permissions above; `SYSTEM_ALERT_WINDOW` **removed** by `app.json` | No. The template writes `SYSTEM_ALERT_WINDOW` into the main manifest (so a release build had it); SHARED-04 removes it there with `tools:node="remove"`. The template's debug manifest keeps it for development builds, which the store build does not include |
 | `expo-brightness`, `expo-calendar`, `expo-clipboard`, `expo-document-picker`, `expo-sharing`, `expo-image-manipulator`, `react-native-webview`, `react-native-qrcode-svg`, `expo-asset`, `expo-secure-store`, `expo-system-ui`, `expo-linking`, `expo-constants` | none once `app.json` applies (below) | |
 | `expo-dev-client` (`expo-dev-launcher/android/src/debug`) | `CHANGE_WIFI_MULTICAST_STATE`, development builds only | not in the store build |
 
@@ -239,10 +240,12 @@ in at build time.
 `RECORD_AUDIO` (no screen records sound), `WRITE_SETTINGS` (the `expo-brightness` plugin adds it for the system
 brightness; EVENTS-03 raises only the app's own, which needs none), `READ_CALENDAR` and `WRITE_CALENDAR` (EVENTS-06 adds
 to the calendar through the phone's own calendar screen, which needs none; a direct write would need a new
-SHARED-CHANGES row) and `READ_MEDIA_VISUAL_USER_SELECTED`.
+SHARED-CHANGES row), `READ_MEDIA_VISUAL_USER_SELECTED`, `SYSTEM_ALERT_WINDOW` (the template's; no screen draws over
+other apps) and `com.google.android.gms.permission.AD_ID` (no ads or analytics; the Advertising ID is not used).
+Confirmed in a scratch prebuild: each is written with `tools:node="remove"` in the main manifest.
 
-`INTERNET`, `ACCESS_NETWORK_STATE`, `MODIFY_AUDIO_SETTINGS`, `RECEIVE_BOOT_COMPLETED` and `VIBRATE` are normal
-permissions: they need no Play declaration and change no answer in this form.
+`INTERNET`, `ACCESS_NETWORK_STATE`, `MODIFY_AUDIO_SETTINGS`, `RECEIVE_BOOT_COMPLETED`, `VIBRATE`, `WAKE_LOCK` and
+`com.google.android.c2dm.permission.RECEIVE` are normal permissions: they need no Play declaration and change no answer in this form.
 
 **NOT VERIFIED:** I have not built a bundle, so I have not read a real manifest. After the production build, list its
 permissions (Play Console, Test and release, App bundle explorer; or `bundletool dump manifest`) and make each one match

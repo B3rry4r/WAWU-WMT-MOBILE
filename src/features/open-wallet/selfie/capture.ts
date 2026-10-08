@@ -1,10 +1,10 @@
 import { CameraView, useCameraPermissions, type PictureRef } from 'expo-camera';
-import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { createElement, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { AppState, Linking, StyleSheet } from 'react-native';
 
 import { SELFIE_MAX_BASE64_CHARS } from '@/api/walletIdentity';
+import { forgetFile, forgetWrittenSince, manipulatorFiles } from '@/features/media/manipulatorCache';
 
 import { isSendableSelfie } from '../api/opening';
 import { isWholeJpeg, SELFIE_MAX_SIDE, SELFIE_QUALITIES, selfieResize } from './encoding';
@@ -29,22 +29,15 @@ import type { CaptureResult, SelfieCapture } from './types';
  *   refuses such files); that, the size, the server's 2,048 pixels a side and
  *   the smallest photo it takes are checked here before anything is sent.
  * - **Nothing is kept.** The manipulator can only answer through a file in
- *   the app's cache, which is deleted as soon as its base64 is read; the
- *   native images are released. The base64 lives in the returned value only.
+ *   the app's cache, which is deleted as soon as its base64 is read. When the
+ *   encode ends, any other file it wrote meanwhile (one written before a failure,
+ *   whose address never reached the app) is deleted too, and the native images
+ *   are released. The base64 lives in the returned value only.
  */
-
-/** Deletes a file the manipulator wrote; one that is already gone is fine. */
-function forget(uri: string) {
-  try {
-    const file = new File(uri);
-    if (file.exists) file.delete();
-  } catch {
-    // Nothing to remove, or the cache was cleared under us: either way the file is not kept.
-  }
-}
 
 /** Brings one capture down to the server's limits: plain base64 JPEG, or null when it cannot fit them. */
 export async function encodeSelfie(picture: PictureRef): Promise<string | null> {
+  const before = manipulatorFiles();
   const context = ImageManipulator.manipulate(picture);
   try {
     const size = selfieResize(picture.width, picture.height);
@@ -54,7 +47,7 @@ export async function encodeSelfie(picture: PictureRef): Promise<string | null> 
       if (Math.max(image.width, image.height) > SELFIE_MAX_SIDE) return null;
       for (const quality of SELFIE_QUALITIES) {
         const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: quality, base64: true });
-        forget(saved.uri);
+        forgetFile(saved.uri);
         const base64 = saved.base64 ?? '';
         if (base64.length <= SELFIE_MAX_BASE64_CHARS) return isWholeJpeg(base64) && isSendableSelfie(base64) ? base64 : null;
       }
@@ -64,6 +57,7 @@ export async function encodeSelfie(picture: PictureRef): Promise<string | null> 
     }
   } finally {
     context.release();
+    forgetWrittenSince(before);
   }
 }
 

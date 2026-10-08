@@ -19,10 +19,10 @@ import { fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './
 import { BioField } from './BioField';
 import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
 import { EditFrame } from './EditFrame';
-import { readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
+import { PICK_FAILED, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
 import { HANDLE_PATTERN, PROFILE_LINK_PREFIX, limits } from './limits';
-import { canPickImage, pickImage } from './pickImage';
+import { canPickImage, pickImage, type PickedImage } from './pickImage';
 import { PictureHeader } from './PictureHeader';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
@@ -163,14 +163,23 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
   };
 
   const choose = async (kind: 'avatar' | 'cover') => {
-    const picked = await pickImage();
+    let picked: PickedImage | null;
+    try {
+      picked = await pickImage();
+    } catch {
+      // The photo library failed, or the chosen photo could not be read: said plainly. A cancel stays silent.
+      setUploadError(PICK_FAILED);
+      return;
+    }
     if (!picked) return;
     const folder: PictureFolder = kind === 'avatar' ? 'avatars' : 'profile/cover';
     setUploadError(null);
     setUploading(kind);
     try {
       const url = await uploadPicture(folder, picked);
-      setPreviews((current) => ({ ...current, [kind]: picked.previewUri }));
+      // On a phone the app's own copy is deleted once it is up (SHARED-04, F3), so the preview is the uploaded picture.
+      const preview = picked.discard ? url : picked.previewUri;
+      setPreviews((current) => ({ ...current, [kind]: preview }));
       edit((current) => ({ ...current, [kind === 'avatar' ? 'avatarUrl' : 'coverUrl']: url }));
     } catch (error) {
       setUploadError(uploadFailure(error));

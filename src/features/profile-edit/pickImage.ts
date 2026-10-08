@@ -12,6 +12,12 @@ export type PickedImage = {
   extension: string;
   /** Where the screen can show it before it is uploaded. */
   previewUri: string;
+  /**
+   * Phone builds: deletes the app's own copy of the file once its upload has settled,
+   * whether it went up or not (SHARED-04, F3). The upload already holds the bytes in
+   * `blob`. Not set on the web build, which has no copy of its own.
+   */
+  discard?: () => void;
 };
 
 /**
@@ -22,13 +28,13 @@ export type PickedImage = {
  */
 export const canPickImage = true;
 
-/** Resolves with the chosen picture, or null when the person closes the library without choosing (or it cannot be read). */
+/**
+ * Resolves with the chosen picture, or null when the person closes the library without
+ * choosing. Rejects when the library itself fails or the photo cannot be read
+ * (`PickFailed`): M8 says so, where a cancel stays silent.
+ */
 export async function pickImage(): Promise<PickedImage | null> {
-  try {
-    const result = await launchImageLibraryAsync({ mediaTypes: 'images' });
-    const asset = result.canceled ? undefined : result.assets[0];
-    return asset ? await readPicked(asset) : null;
-  } catch {
-    return null;
-  }
+  const result = await launchImageLibraryAsync({ mediaTypes: 'images' });
+  const asset = result.canceled ? undefined : result.assets?.[0];
+  return asset ? readPicked(asset) : null;
 }

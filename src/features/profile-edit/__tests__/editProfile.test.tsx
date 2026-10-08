@@ -15,7 +15,8 @@ jest.mock('expo-secure-store', () => ({
 }));
 // The phone's photo library (SHARED-04): nothing here opens it, so it only keeps jest away from the native side.
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
-jest.mock('expo-image-manipulator', () => ({ ImageManipulator: { manipulate: jest.fn() }, SaveFormat: { JPEG: 'jpeg' } }));
+jest.mock('expo-image-manipulator', () => ({ ImageManipulator: { manipulate: jest.fn() }, SaveFormat: { JPEG: 'jpeg', PNG: 'png', WEBP: 'webp' } }));
+jest.mock('expo-file-system', () => ({ File: jest.fn(), Directory: jest.fn(), Paths: { cache: { uri: 'file:///cache/' } } }));
 
 type Answer = { status: number; body: unknown } | 'offline' | 'hang';
 type Sent = { method: string; path: string; body: unknown };

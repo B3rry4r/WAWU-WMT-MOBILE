@@ -25,7 +25,7 @@ jest.mock('expo-router', () => ({ useIsFocused: () => true }));
 const mockCameraPermission = [null, jest.fn(), jest.fn()];
 jest.mock('expo-camera', () => ({ CameraView: () => null, useCameraPermissions: () => mockCameraPermission }));
 jest.mock('expo-image-manipulator', () => ({ ImageManipulator: { manipulate: jest.fn() }, SaveFormat: { JPEG: 'jpeg' } }));
-jest.mock('expo-file-system', () => ({ File: jest.fn() }));
+jest.mock('expo-file-system', () => ({ File: jest.fn(), Directory: jest.fn(), Paths: { cache: { uri: 'file:///cache/' } } }));
 
 type Reply = { status: number; body: unknown; headers?: Record<string, string> };
 type Answer = Reply | 'offline' | 'hold' | { gate: Promise<void>; then: Reply };

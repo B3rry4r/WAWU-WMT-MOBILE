@@ -91,6 +91,7 @@ const mockEncoder = {
   sources: [] as unknown[],
   resizes: [] as unknown[],
   saves: [] as { format?: string; compress?: number; base64?: boolean }[],
+  /** A string is the base64 a save answers; `'write-then-fail'` writes its file and then throws (F3). */
   outputs: [] as string[],
   rendered: null as null | { width: number; height: number },
   released: 0,
@@ -114,7 +115,11 @@ jest.mock('expo-image-manipulator', () => ({
             ...shown,
             saveAsync: async (options: { format?: string; compress?: number; base64?: boolean }) => {
               mockEncoder.saves.push(options);
-              return { uri: `file:///cache/ImageManipulator/${mockEncoder.saves.length}.jpg`, ...shown, base64: mockEncoder.outputs.shift() };
+              const uri = `file:///cache/ImageManipulator/${mockEncoder.saves.length}.jpg`;
+              mockCache.add(uri);
+              const output = mockEncoder.outputs.shift();
+              if (output === 'write-then-fail') throw new Error('encoder failed after writing');
+              return { uri, ...shown, base64: output };
             },
             release: () => {
               mockEncoder.released += 1;
@@ -130,28 +135,56 @@ jest.mock('expo-image-manipulator', () => ({
   },
 }));
 
-/** Files the capture deleted from the app's cache. */
+/** The files in the manipulator's cache folder, and the ones the capture deleted. */
+const mockCache = new Set<string>();
 const mockDeleted: string[] = [];
-jest.mock('expo-file-system', () => ({
-  File: class {
+jest.mock('expo-file-system', () => {
+  class File {
     uri: string;
-    exists = true;
     constructor(uri: string) {
       this.uri = uri;
     }
+    get exists() {
+      return mockCache.has(this.uri);
+    }
     delete() {
+      mockCache.delete(this.uri);
       mockDeleted.push(this.uri);
     }
-  },
-}));
+  }
+  class Directory {
+    uri: string;
+    constructor(parent: { uri: string }, name: string) {
+      this.uri = `${parent.uri}${name}/`;
+    }
+    get exists() {
+      return true;
+    }
+    list() {
+      return [...mockCache].filter((uri) => uri.startsWith(this.uri)).map((uri) => new File(uri));
+    }
+  }
+  return { File, Directory, Paths: { cache: { uri: 'file:///cache/' } } };
+});
 
 const OWNER = '00000000-0000-4000-8000-0000000000d4';
 const HANDLE = 'v1.sh04-test-handle';
 
-/** A made-up JPEG of `size` bytes (never a face): the start marker, filler, the end marker, then `after`. */
+const u16 = (n: number) => [(n >> 8) & 0xff, n & 0xff];
+/**
+ * A made-up baseline JPEG of `size` bytes the server's walk accepts (never a face): SOI, APP0, DQT, SOF0
+ * 480 x 640, SOS, scan bytes with no `FF`, the end marker, then `after`.
+ */
 function jpeg(size: number, after: number[] = []): string {
-  const body = Array.from({ length: Math.max(0, size - 4) }, (_, i) => (i * 13) % 251);
-  return Buffer.from([0xff, 0xd8, ...body, 0xff, 0xd9, ...after]).toString('base64');
+  const head = [
+    0xff, 0xd8,
+    0xff, 0xe0, ...u16(16), 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+    0xff, 0xdb, ...u16(67), 0x00, ...Array.from({ length: 64 }, (_, i) => i + 1),
+    0xff, 0xc0, ...u16(11), 0x08, ...u16(640), ...u16(480), 0x01, 0x01, 0x11, 0x00,
+    0xff, 0xda, ...u16(8), 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00,
+  ];
+  const scan = Array.from({ length: Math.max(1, size - head.length - 2) }, (_, i) => (i * 13) % 251);
+  return Buffer.from([...head, ...scan, 0xff, 0xd9, ...after]).toString('base64');
 }
 
 type Sent = { method: string; path: string; body: string };
@@ -220,6 +253,7 @@ async function bootAllowed() {
 beforeEach(() => {
   sent = [];
   mockDeleted.length = 0;
+  mockCache.clear();
   Object.assign(mockCamera, { now: permission(false, true), answer: permission(true, true), asks: 0, pictures: [], picture: { width: 3000, height: 4000 }, takeFails: false, mountFails: false, released: 0 });
   Object.assign(mockEncoder, { sources: [], resizes: [], saves: [], outputs: [], rendered: null, released: 0 });
   mockVault.clear();
@@ -321,6 +355,16 @@ describe('A6 on the phone: the camera in the oval', () => {
     await press('open-wallet-selfie-take');
     await rtl.waitFor(() => expect(matches()).toHaveLength(1));
     expect(mockEncoder.resizes).toEqual([]);
+  });
+
+  it('F3: an encoder that writes its file and then fails leaves nothing in the cache: the file it never named is deleted too', async () => {
+    await bootAllowed();
+    mockEncoder.outputs = [jpeg(80_000), 'write-then-fail'];
+    await press('open-wallet-selfie-take');
+    expect(await rtl.screen.findByText('That photo could not be used')).toBeTruthy();
+    expect(matches()).toHaveLength(0);
+    expect(mockDeleted).toEqual(['file:///cache/ImageManipulator/1.jpg', 'file:///cache/ImageManipulator/2.jpg']);
+    expect(mockCache.size).toBe(0);
   });
 
   it('a picture the camera fails to take is not sent', async () => {

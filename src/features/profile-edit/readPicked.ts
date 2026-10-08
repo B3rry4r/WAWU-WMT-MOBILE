@@ -1,5 +1,8 @@
+import { Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { ImagePickerAsset } from 'expo-image-picker';
+
+import { forgetFile } from '@/features/media/manipulatorCache';
 
 import type { PickedImage } from './pickImage';
 
@@ -9,29 +12,64 @@ import type { PickedImage } from './pickImage';
  * and M36's `pickMedia.ts` (`@/features/works`) both use it on the phone; the web
  * build reads the browser's `File` instead.
  *
- * **A photo never carries where it was taken** (lead ruling, 8 Oct 2026). Every
- * photo is written again as a JPEG before it goes up: the encoder writes the
- * pixels and nothing else, so the camera's EXIF block (the place, the time, the
- * phone) is not in what is uploaded. The photo keeps the size it was picked at;
- * only the Hub's own upload limit applies, as for any file. A video goes as it
- * was chosen.
+ * - **A photo never carries where it was taken** (lead ruling, 8 Oct 2026). Every
+ *   photo is written again with `expo-image-manipulator` before it goes up: the
+ *   encoder writes the pixels and no metadata, so no Exif block, GPS, time or phone
+ *   details. It keeps the size it was picked at; only the Hub's own upload limit
+ *   applies. A video goes as it was chosen.
+ * - **Transparency is kept** (lead ruling after the verifier, D2): a PNG stays a PNG
+ *   and a WebP a WebP; a GIF becomes a PNG of its first frame; a JPEG, a HEIC, a HEIF
+ *   or anything else becomes a JPEG at 0.9.
+ * - **A photo the phone cannot read is not a cancel** (D1): it throws `PickFailed`,
+ *   and the screen says so.
+ * - **No copy is left behind** (F3): the library's own copy of a photo (with its
+ *   Exif) is deleted once it has been written again, and `discard` deletes the
+ *   app's copy (and a video's library copy) once its upload has settled.
  */
 
-/** The JPEG quality every picked photo is written again at. */
+/** A chosen file the phone could not read: a 0-byte or corrupt photo, one the encoder cannot decode. */
+export class PickFailed extends Error {
+  constructor() {
+    super('The chosen file could not be read.');
+    this.name = 'PickFailed';
+  }
+}
+
+/** The quality a photo is written again at, in JPEG and WebP. */
 const PHOTO_QUALITY = 0.9;
+/** PNG is lossless: the quality is not read. */
+const LOSSLESS = 1;
+
+/** How a photo is written again: the encoder's format and quality, and the type it then goes up as. */
+type Rewrite = { format: SaveFormat; compress: number; contentType: string };
+
+export function rewriteFor(mimeType: string | undefined): Rewrite {
+  switch ((mimeType ?? '').toLowerCase()) {
+    case 'image/png':
+      return { format: SaveFormat.PNG, compress: LOSSLESS, contentType: 'image/png' };
+    case 'image/webp':
+      return { format: SaveFormat.WEBP, compress: PHOTO_QUALITY, contentType: 'image/webp' };
+    case 'image/gif':
+      // The first frame, keeping its transparency.
+      return { format: SaveFormat.PNG, compress: LOSSLESS, contentType: 'image/png' };
+    default:
+      // A JPEG, a HEIC, a HEIF, or a type the library did not name.
+      return { format: SaveFormat.JPEG, compress: PHOTO_QUALITY, contentType: 'image/jpeg' };
+  }
+}
 
 const extensionOf = (type: string): string => {
   const subtype = type.split('/')[1]?.split('+')[0] ?? '';
   return subtype === 'jpeg' ? 'jpg' : subtype;
 };
 
-/** The photo written again as a JPEG, at the size it was picked: where the new file is. */
-async function asJpeg(uri: string): Promise<string> {
+/** The photo written again in `how.format`, at the size it was picked: where the new file is. Throws when it cannot be read. */
+async function rewrite(uri: string, how: Rewrite): Promise<string> {
   const context = ImageManipulator.manipulate(uri);
   try {
     const image = await context.renderAsync();
     try {
-      return (await image.saveAsync({ format: SaveFormat.JPEG, compress: PHOTO_QUALITY })).uri;
+      return (await image.saveAsync({ format: how.format, compress: how.compress })).uri;
     } finally {
       image.release();
     }
@@ -40,17 +78,53 @@ async function asJpeg(uri: string): Promise<string> {
   }
 }
 
+/** Deletes the library's own copy of a picked file, when it is one in the app's cache (never a file of the phone's own). */
+function forgetLibraryCopy(uri: string) {
+  const cache = Paths.cache.uri;
+  if (cache && uri.startsWith(cache)) forgetFile(uri);
+}
+
+/** The bytes at `uri`, or `PickFailed` when they cannot be read or there are none. */
+async function bytesAt(uri: string): Promise<Blob> {
+  let blob: Blob;
+  try {
+    blob = await (await fetch(uri)).blob();
+  } catch {
+    throw new PickFailed();
+  }
+  if (blob.size === 0) throw new PickFailed();
+  return blob;
+}
+
+/** True when the library handed back a video. */
+export const isVideoAsset = (asset: ImagePickerAsset) => asset.type === 'video' || (asset.mimeType ?? '').startsWith('video/');
+
 /**
- * The asset's bytes, its type and the extension from that type. A photo, whatever
- * its format (JPEG, PNG, WebP, an iPhone's HEIC, a GIF), goes up as the JPEG written
- * from it, so no EXIF block travels with it and no upload folder refuses its type.
- * A video goes as it is, with the type the library reports, and the Hub says if it
- * cannot take it.
+ * The asset's bytes, the type they go up as, the extension from that type, where the
+ * screen can show it, and `discard` for after its upload. Throws `PickFailed` when the
+ * file cannot be read.
  */
 export async function readPicked(asset: ImagePickerAsset): Promise<PickedImage> {
-  const video = asset.type === 'video' || (asset.mimeType ?? '').startsWith('video/');
-  const uri = video ? asset.uri : await asJpeg(asset.uri);
-  const contentType = video ? (asset.mimeType ?? 'video/mp4') : 'image/jpeg';
-  const blob = await (await fetch(uri)).blob();
-  return { blob, contentType, extension: extensionOf(contentType), previewUri: uri };
+  if (isVideoAsset(asset)) {
+    const blob = await bytesAt(asset.uri);
+    const contentType = asset.mimeType ?? 'video/mp4';
+    return { blob, contentType, extension: extensionOf(contentType), previewUri: asset.uri, discard: () => forgetLibraryCopy(asset.uri) };
+  }
+  const how = rewriteFor(asset.mimeType);
+  let copy: string;
+  try {
+    copy = await rewrite(asset.uri, how);
+  } catch {
+    throw new PickFailed();
+  } finally {
+    // The library's copy still holds the photo's Exif: once written again (or found unreadable), it is not needed.
+    forgetLibraryCopy(asset.uri);
+  }
+  try {
+    const blob = await bytesAt(copy);
+    return { blob, contentType: how.contentType, extension: extensionOf(how.contentType), previewUri: copy, discard: () => forgetFile(copy) };
+  } catch (error) {
+    forgetFile(copy);
+    throw error;
+  }
 }

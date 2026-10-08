@@ -1,8 +1,8 @@
 import { launchImageLibraryAsync } from 'expo-image-picker';
 
-import { readPicked } from '@/features/profile-edit/readPicked';
+import { isVideoAsset, readPicked } from '@/features/profile-edit/readPicked';
 
-import type { PickedFile } from './form';
+import type { MediaKind, PickedFile } from './form';
 import { WORK_LIMITS } from './limits';
 
 export type { PickedFile } from './form';
@@ -16,16 +16,19 @@ export const canPickMedia = true;
 
 /**
  * Resolves with the chosen photos and videos in the order chosen, at most what one work can carry (none when the
- * person closes the library without choosing). A file that cannot be read is left out.
+ * person closes the library without choosing). A file that cannot be read is left out, and `onUnreadable` hears
+ * the kind of each one left out, so M36 can say how many (D1). Rejects when the library itself fails.
  */
-export async function pickMedia(): Promise<PickedFile[]> {
+export async function pickMedia(onUnreadable?: (kinds: MediaKind[]) => void): Promise<PickedFile[]> {
   const result = await launchImageLibraryAsync({
     mediaTypes: ['images', 'videos'],
     allowsMultipleSelection: true,
     selectionLimit: WORK_LIMITS.media,
     orderedSelection: true,
-  }).catch(() => null);
-  if (!result || result.canceled) return [];
+  });
+  if (result.canceled || !result.assets) return [];
   const read = await Promise.all(result.assets.map((asset) => readPicked(asset).catch(() => null)));
+  const unreadable = result.assets.flatMap((asset, i): MediaKind[] => (read[i] === null ? [isVideoAsset(asset) ? 'video' : 'image'] : []));
+  if (unreadable.length > 0) onUnreadable?.(unreadable);
   return read.filter((file): file is PickedFile => file !== null);
 }
