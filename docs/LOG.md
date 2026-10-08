@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
 - 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.
 - 8 Oct 2026 · EVENTS-01 · Verifier independent round 4 (lead): D7, D8, D9, D10, T3, V10, V11 all pass live (three browser zones identical) and by mutant; R-41 entries open the right screens and an events failure draws no error; new D11 (H11 has no services shapes), D12 (Explore jumps 216 pt when the event arrives), D13 (entry text line boxes, up to 9 pt), D14 (no year on Explore's date), T4 (6 of 20 own mutants survive: Explore route file, failure spec never reaches the failure); U-H1 Home services row for the lead; npm run check passed (80 suites, 1450 tests); status building.

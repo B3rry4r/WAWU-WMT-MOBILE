@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -478,6 +478,20 @@ Built on `3093521` (the lead's rulings on `972893e`) with `origin/main` merged i
 | V1 `npm run check` on the merged branch | passed, exit 0 | 81 suites, 1459 tests, lint 0 errors 2 warnings (the known `require()`), gates 9 run, 364 files scanned, 0 findings, baseline 0, 253 tasks |
 | Contract drift | passed | `contract/SOURCE_COMMIT` `bb10ef0` equals `git ls-remote` of backend `wmt/EVENTS-01` (`bb10ef0`). Backend main is now `8359057`, without PR 78's `from-prices`; contract and generated types differ from main only by those additions (178 lines), as the lead ruled |
 | T4 mutants | passed | Each applied in the worktree, the spec set (events, explore, home, `src/app`: 9 suites, 151 tests) run, `git restore src` after each: N2 killed (`the Explore tab route`, opens the featured event and a card), N3 killed (See all), N4 killed (featured event need not be first on the rail), N5b killed (2 failed: the new failure spec and the older one), N6 killed (hero day in the event's zone), N10 killed (Events tile first in the row, no empty slot), D12 (settled forced true) killed (X14 held, tiles draw once), D14 (year dropped) killed (2 failed, incl. `dateLine`). Working tree clean after each |
+| U-H1 Home row packs from the left | passed | Live: Today shows one tile, `today-service-events`, at x 25.75 (the first of four 87.5 quarters, centred), `count_tiles` 1, heading above it; picture compared with `render_design.py H1` at 390 px light and dark: heading 18.5 bold, 60 square at corner 19.2, glyph and label match in size, colour and place (design Pay bills column 1 and the app's Events tile share the same centre, 127 px at 2x; heading to tile 52 against 53 px); the comment on `Services.tsx` records the ruling (`scratchpad/events01v7b/pairs/H1-*.png`, `ui.json`) |
+| D11 H11 loading | passed | Services (Today's own reads) held: heading bar plus one tile shape (60 square over a label bar) at the tile's place, between TGIF and the rail; `pairs/H11-light.png` beside `render_design.py H11` (design draws four shapes for four tiles, the app one for one tile present, as ruled) |
+| D12 nothing moves on Explore | passed | With the events reads held at a proxy (2 requests held, no retry): `explore-loading` stays (X14 with the 196 hero block, tiles, heading bar, three cards, `pairs/X14-*.png`), no tile drawn; released: the first tile is drawn once at y 288 and never at another y (sequence of y per animation frame: `[288]`, 98 frames), light and dark. A normal load: `[288]` as well. Events reads answering 500: each called once (2 calls in 9 s, no retry), tiles after 0.77 s, no featured card, no rail, no error words, light and dark (`ui.json`). No creators were seeded, so the creators row was not part of this check |
+| D13 line heights (measured at 2x, DOM boxes and pixel rows) | X1, rail card, H1 passed; E1 hero defect | X1 hero: kicker box 14 high (canvas 14), place line 17 (canvas 17); kicker to name 51 px, name to place 56 px, place 48 px above the hero edge, in the app and in the render alike. Rail card 230 by 184 (canvas 184), title top 131, 20 high, place at 155, 16 high, as `evCard` in `design/_gen/explore.js`. H1: label 16 high (canvas 16), 8 under the tile; heading to tile 52 against 53 px. E1 hero: the kicker is on 14 now but the name and the place line still sit on the body line box (21.75, canvas place line 16), so against `render_design.py E1` the text sits above its drawn place: the place line about 3.5 pt (name 6 pt, kicker 3 pt) (pixel rows: place glyph bottom 44 px above the hero edge, drawn 37; name cap top 119 px, drawn 107) |
+| D14 year | passed | Hero: "16 Mar 2027 · Fair Grounds" for a featured event in 2027, its E2 reads "Tue 16 Mar 2027 · 10:00 WAT"; rail cards' spoken labels without the year for this-year events ("9 Oct", "12 Oct"); the year on a rail card for a later year is pinned by the spec only (D14 mutant killed), no later-year event was in the first ten |
+| Round 6 regression, live | passed | Zones: New York Late Show badge OCT 09 on E1 and E2 reads "Fri 9 Oct · 9:30 PM EDT"; Kiritimati event OCT 12; Explore hero for the New York event read "14 Oct". R-41 entries: featured opens `/events/<id>`, a card opens its own E2, See all opens `/events`, Home tile opens `/events`, light and dark. Two-digit badge "09". Prices kept after a failed later call: NOT RUN live (the "Show more" control did not appear with 34 seeded events); held by the specs (N13 killed in round 4) |
+| V10 Device | NOT RUN | needs OPS-10 and a signed Android tester build |
+
+**Defect (open).**
+- **D13-E1 (defect, minor).** E1's FeaturedCard name and place line are still on the body line box (21.75), so the kicker sits 3 pt, the name 6 pt and the place line 3.5 pt above where `render_design.py E1` draws them (the ruling named the kicker only; the measurement against E1 asked for within 1 px fails). Fix: `canvasNormalLineHeight` on the name (its drawn leading) and the place line (16), so the stack matches the drawn 4 and 3 gaps.
+
+Everything else asked of this round passed. Stack: mock-wawu-id (envelope added by a test-only response wrapper in Playwright, since the mock answers without the real service's `data` envelope); the web build was `expo start --web`. Databases dropped, servers stopped.
+
+**Status:** one open defect (D13-E1), so `status: building`.
 
 ## Owner sign-off
 
