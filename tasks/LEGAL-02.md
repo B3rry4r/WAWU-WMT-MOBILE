@@ -98,6 +98,15 @@ Builder, 8 Oct 2026 (resumed after a crash; the earlier session's work reviewed 
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+Verifier session, 8 Oct 2026, fresh (did not build this task). PARTIAL REPORT, in progress: passes not listed below are still running.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed: mobile `59d7523` already contains origin/main `e1c975a` (nothing to merge, no conflict markers); `npm run check` exit 0: 85 suites, 1,509 tests, gates 9 run, 366 files scanned, 0 fail / 0 warn / 0 accepted, task check pass. Backend `e5c41f0` already contains origin/main `9d90d57`: `tsc --noEmit` 0, eslint on the changed files 0, gates 994 files 16 fail / 69 warn / 76 accepted with no finding in any changed file, `src/live` + `src/legal-intake` 8 suites 165 passed, 4 skipped | scratchpad `legal02v/check.log`, `be-*.log` |
+| V9 | in progress; first finding below (D1) | `legal02v/walk-light.log` |
+
+**D1 (defect).** The consultant's message does not arrive without a refresh. Live run: the Hub sends `{"type":"legal.thread",...}` on the client's socket the moment the admin ops route writes the consultant's message (frame captured), but the screen makes no request and shows nothing for 15 s; only a reload shows "Adaora joined..." and the message. Cause: the shared live client `src/features/inbox/live.ts` `onMessage` hands listeners only `chat.message`, `chat.read` and `community.message`; any other frame type is dropped, so `onLiveEvent` never calls the screen's `isLegalLiveEvent` check. The screen test passes because it mocks `onLiveEvent`. The S17 capability check ("the consultant's messages arrive without a refresh") fails.
+
 ## Hub entries this task adds (R-41)
 
 The HOME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
