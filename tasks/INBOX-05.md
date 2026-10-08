@@ -1,7 +1,7 @@
 ---
 id: INBOX-05
 title: Communities: list, room, sending
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 61
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I24, I25, I26]
 ---
 # INBOX-05 · Communities: list, room, sending
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 2 had not pushed for 17 hours).
 
 ## Read first
 

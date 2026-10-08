@@ -3,7 +3,7 @@ id: WALLET-21
 title: Dollar and crypto accounts, swap
 owner: YOU
 area: WALLET
-order: 209
+order: 246
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
