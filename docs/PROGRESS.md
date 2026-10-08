@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 93 of 196.**
+**Launch tasks done: 94 of 196.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 74 | 0 | 23 | 26 |
+| todo | 73 | 0 | 23 | 26 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 54 | 27 | 11 | 5 |
+| done | 55 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -116,6 +116,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
 - [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
 - [SHARED-03](../tasks/SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder) (You)
+- [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -135,6 +136,9 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
 - 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
+- 7 Oct 2026 · FIX-08 · FIX-08 merged (backend PR #84, f7e651a): body-parser refusals answer 413, 415 or 400 instead of 500.
+- 8 Oct 2026 · FIX-08 · Verified (status review): no defect open. Built main and branch Hubs on one seeded database, 301 calls each in a private network namespace: 175 former 500s are now 413 (87), 415 (55) or 400 (33), 125 answers byte-identical, 1 client-framing artifact explained; the raw-body Fintava webhook is unchanged (signed, replay, forged, raw bytes equal); refusals no longer logged, real 500s still are; nothing but the body parser matches the refusal test today; 10 of 12 own mutants killed (1 equivalent, 1 test gap T1: an info-level log passes); protected 253/253 and the full suite on a trial merge (only the namespace rate-limit file and a load-timed stall file fail, both pass alone); U1 (money routes' `reason` doc line) and O2 (pre-existing trust-proxy TypeError) recorded.
+- 8 Oct 2026 · FIX-08 · Built (status verifying): a body the parser refuses answers its 4xx in the usual envelope, not 500, on every route (413 too large or too many form fields, 415 charset or encoding, 400 unreadable); malformed JSON keeps its 400 and the 100 kB limit is unchanged; recorded before and after on the built Hub (50 former 500s, 30 answers byte-identical, the raw-body webhook unchanged); 71 new tests, 8 of 8 mutants killed; full suite 0 failures, protected 253/253, gates as main. SHARED-CHANGES KYC-02 #3 and ME-16 #3 made.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
 - 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
@@ -144,6 +148,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · HOME-01 · Builder round 3 (status verifying): Follow on creator cards is MediaCard's shared `action` (FollowButton deleted; the 13 label and ring left to SHARED-03); tests T1 (figure at 38) and T2 (own glow id) kill the verifier's two survivors.
 - 7 Oct 2026 · HOME-01 · Verifier report round 2 (status building): D1 and D2 closed; D3 partly closed. The creator card is now the shared MediaCard, but Follow is a redraw passed through `footer` where MediaCard's `action` slot was made for cCard's Follow. The Wallet tab is unchanged above the bar (W1, W4, W5, W6 pixel diff against main); FittedBalance fits ₦999,999,999.99 at 320; Home and Wallet share one cached answer. V9 re-run with the real WAWU ID. Mutants 20 of 22 killed (T1 and T2 are test gaps).
 - 7 Oct 2026 · HOME-01 · Builder round 2 (status verifying): D1 the eye at 70% (the Wallet tab's own eye), D2 a failed TGIF day read says so with Try again, D3 the creator card is the shared MediaCard (Follow through `footer`); the balance card reads and words its states as the Wallet tab does (shared reads, `homeView`, `stateWords`, `MoneyGround`, `FittedBalance`); TGIF and money-shadow tokens; SHARED-CHANGES HOME-01 #3.
-- 7 Oct 2026 · HOME-01 · Verifier report (status building): V1, V4 and V9 passed; real WAWU ID sign-in, a Follow, an unfollow and the TGIF switch written by the app and read back from the Hub and the database; 14 of 14 mutants killed. Three defects: D1 the balance eye is full white where H1 paints it at 70%, D2 a failed TGIF day read hides the card with no message or Try again, D3 the creator card redraws MediaCard's stacked picture, scrim and caption (SHARED-CHANGES HOME-01 #2 defers the swap). A live Fintava figure is NOT RUN (Fintava unset).
-- 7 Oct 2026 · HOME-01 · Builder report (branch `wmt/HOME-01`, status verifying): Home's Today with the Naira balance from Fintava or the way to Open your wallet, today's TGIF card (gone when TGIF is off), creators to discover with Follow in place, loading, empty and error states; the feed is shown in place under the same tab row (`/feed` removed); entries to screens not built yet left out (R-41); gaps G-280 to G-282, shared changes HOME-01 #1 and #2.
-- 7 Oct 2026 · SHARED-03 · New task (lead, order 184; tasks from 184 move down one): one shared toast, the All chip's padding, a MediaCard placeholder, two test gaps and the flaky Z3 settings test, from the hub checks.
