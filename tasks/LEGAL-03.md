@@ -318,6 +318,17 @@ Ran: `tsc --noEmit` clean; `npm run test:contract -- src/legal src/storage accou
 
 NOT RUN: a real bucket (unblocked by a non-production bucket key).
 
+## Verifier report, round 5 (8 Oct 2026, independent; partial, pass 1)
+
+**Verifier: independent session; it wrote none of this code. Backend `wmt/LEGAL-03` 1c48fb6, mobile 83ce3cb. Report in progress: later passes append below. Status unchanged until the final entry.** Method: `npm run build` of 1c48fb6, `node dist/src/main.js` on :4279 (the brief's :4179 was held by an orphaned process of an earlier stopped verifier; not touched), mock-wawu-id on :4274, fresh migrated and seeded database `wawu_hub_test_legal_03_v5b`, real `POST /admin/auth/login` for support and finance, user tokens from the mock's login, storage configured to a fake endpoint (`https://wawu-test.storage.test.invalid`, no bucket, links signed locally).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| N1 write | passed | 93 `url` forms posted to `POST /legal/ops/requests/:id/deliverables`: 90 refused 400 naming `files.0.url`, no row stored, status unchanged; the 3 other forms are correct accepts (the bare `legal/document/<user>/<uuid>.pdf` key, and the same key on our host with a query or a fragment, dropped, so the stored value is the clean key). Refused: `kyc/id-document/...` bare, on our host, on any host, http/https; profile, chat, media, content, kyc/selfie, cac, nepc, `legal`, `legal/documents`, `legal/document`; userinfo both ways, host suffix and prefix tricks, port 8443 and 443, http against https, uppercase host and scheme, trailing dot, punycode and a Cyrillic look-alike; `javascript:`, `data:`, `file:`, `ftp:`, `//host`; `%2f`, `%2F`, backslashes; `..`, `%2e%2e`, `%252e%252e`, `legal/document/../kyc/...`; `Legal/Document/`, `LEGAL/DOCUMENT/`, leading or trailing space, `xlegal/`; NUL (`%00`), `%ED%A0%80`, `%FF`, `%0a`, raw LF and CRLF; empty, `x`, the bare host. |
+| N1 read | passed | A request with eight rows inserted by SQL: a bare `kyc/` key, a `kyc/` link on our host, a foreign-host `legal/document` link, `profile/`, `legal/document/../kyc/x/y.jpg`, a `%00` key: all listed with `url` null. A legacy signed link (`X-Amz-Expires=604800`, `legal/document/<A>/...`) and a bare key under `legal/document/`: each listed with a fresh `X-Amz-Expires=900` link. The old signature never appears. Another user 404, no token 401. `deliverableUrl` only (no rows): `kyc/` bare, `kyc/` on our host, a foreign host: listed once, url null; our-host legacy link and a bare key: fresh 900-second link. |
+| Booking zone | passed | App route `scheduledFor`: `+01`, `+01.000+01`, `-05` all 400 with a message naming scheduledFor ("scheduledFor must be a date and time."); `Z`, `+00:00`, `+01:00`, `+0100`, `+05:30` booked the right instant (08:00Z). Web route code and DTO are untouched by the branch (no diff against main). |
+| Booking race | passed | Zoom set to 90 minutes through the real finance route; 10 bookings of one hour sent together: 1 x 200, 9 x 409. |
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
