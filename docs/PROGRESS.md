@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 111 | 0 | 20 | 21 |
+| todo | 111 | 0 | 20 | 20 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 2 | 0 | 0 | 0 |
 | done | 65 | 27 | 11 | 5 |
 
@@ -17,6 +17,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (Developer 3)
 
 ## Done
 
@@ -134,12 +138,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **Developer 3:** [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · LEGAL-02 · Builder: legal assistant chat (S14 to S17) with brief, Send to a consultant and consultant handover, live `legal.thread` frame on backend wmt/LEGAL-02 (PR #95), Legal tile on Home; gaps G-470 to G-472; status verifying.
 - 8 Oct 2026 · SHARED-04 · SHARED-04 merged: native modules installed in one batch; the phone takes the wallet selfie, picks photos without location data, and copies. New preview build needed.
 - 8 Oct 2026 · FIX-24 · FIX-24 merged (backend PR #94, 9d90d57): delivered legal documents are the client's own or the legal team's only; LEGAL_DELIVERY_UPLOADER_IDS awaits the owner.
 - 8 Oct 2026 · FIX-24 · Verifier report (independent session, backend `a1beb10`, mobile `2b1cbb9` merged with main `a82e816`): no defect, status review. N2 closed by its real cause: round 4's reproduction leaks on main 657a152 (101 of 103, 132 of 132 bytes of B's file, ghost key 200) and passes on the branch (103 of 103, ghost 400); 25 of 25 key variants refused on the new route and every link naming our storage refused on /deliver; reads withhold every failing row and legacy value (28 of 28, one warn line per file, no stored value logged); setting boots and refusals as the builder says (7 live boots); the count query equals a hand count on two databases; protected 253 of 253 with the lock unchanged, 65 of 65 /legal answers byte-identical to main; module specs 595 passed; full suite 5,551 passed, 52 environmental (pass alone); V9 with real WAWU ID; mutants 13 of 15 killed. Notes O1 to O6 (IP-literal hosts on /deliver judged harmless by a SigV4 check, a spec gap for a ghost key in the owner's folder, the ruling's edges).
@@ -154,4 +159,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-26 · Lead filed FIX-21 verifier findings F1 to F3: the limits lock must always run inside a real transaction, and the money-route coverage spec pins what it reads. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · FIX-21 · Verifier report (independent session, backend `301d56a`, mobile `5175272`): no open defect, status review. The coverage spec reads class and method guards as Nest runs them (its 458 routes are Nest's 458; 30 of 30 live answers on a built Hub signed in through wawu-id match the order it reads) and fails the verifier's two routes; the level check refuses REPEATABLE READ, SERIALIZABLE and READ UNCOMMITTED from the caller's own transaction, and 250 rounds of 2 and 10 movements at READ COMMITTED never pass a daily or monthly limit; live on the MONEY-17 trial a wrong level is a 500 naming nothing, nothing written. Protected 253/253, full suite 5,543 of 5,570 (only hub-rate-limits and fintava-stall, each green alone), 14 own mutants 10 killed. Findings: route shapes the spec cannot see (a dynamic module's controllers, a PIN guard subclass, class-level docs, global guards), 4 surviving mutants, and no lock without a transaction or with the service client passed as one (for the lead).
-- 8 Oct 2026 · FIX-21 · Builder report (backend 301d56a): the money-route coverage spec reads class and method guards as Nest runs them and counts any route with the PIN guard or a debit's own refusal as money-moving (the verifier's two routes fail it, pass once guarded); `assertMayMove` reads the transaction's isolation level and refuses anything but READ COMMITTED (50 rounds of 600 against a daily 1000 never both pass); protected 253/253; status verifying.

@@ -7,7 +7,7 @@ order: 66
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [LEGAL-01, INBOX-02, UI-02]
 decisions: [R-14, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -82,7 +82,17 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Builder, 8 Oct 2026 (resumed after a crash; the earlier session's work reviewed and kept). Mobile `wmt/LEGAL-02` merged with main `8cabe72`+; backend `wmt/LEGAL-02` (PR #95) merged with backend main `9d90d57`.
+
+- **Files.** New: `src/app/legal.tsx`, `src/features/legal/` (`api.ts`, `model.ts`, `draft.ts`, `look.ts`, `parts.tsx`, `LegalChatScreen.tsx`, tests), `src/features/home/Services.tsx`. Changed: `TodayScreen.tsx` (adds `Services`), `TodayLoading.tsx` (one tile shape per tile present), `HomeScreen.test.tsx` (Legal no longer in the "not built" list; new Legal tile tests). Backend: `legal.thread` live frame (SHARED-CHANGES LEGAL-02 #4).
+- **S14 to S16.** One conversation (`/legal/assistant`, LEGAL-01): the opener and taps the Hub writes, typed words and taps sent by id, the brief rows as served, Send to a consultant, Add anything else as a message. Tests in `LegalChatScreen.test.tsx` (S14, S15, S16 blocks).
+- **S17.** Header, "joined" notice and name label come from `consultant`/`consultantName`; the notice stands before the consultant's first message wherever it falls (mid-chat). Message Adaora writes to the messages route. New messages arrive without a refresh on the `legal.thread` frame, on live reconnect, on focus and on foreground (tests, and backend spec `live-legal.contract.spec.ts`). Book and its card are LEGAL-04's.
+- **States, by real cause.** Loading skeleton; open fails offline / Hub error with Try again; 503 `assistant_unavailable` keeps the message and offers Ask again; 409 busy re-reads; a failed send puts the words back in the box in front of anything typed since, with inline Try again (none where retrying cannot work); double tap and double Send send once (ref guard); a failed refresh keeps the conversation and typed text; drafts kept across leave and return. "Empty": a person with no conversation gets a new one. Model tests kill the state branches (`model.test.ts`).
+- **Hub entry (R-41).** The Legal tile in "What would you like to do today?" opens `/legal`, packed from the left (U-H1). EVENTS-01 (PR #14) builds the same row: merge note SHARED-CHANGES LEGAL-02 #5.
+- **Pictures.** Web screenshots at 2x, light and dark, against the Hub's legal module on a test DB with a scripted AI stand-in (no GEMINI_API_KEY locally), beside `render_design.py S14 S15 S16 S17`. Not claimed to match; the verifier decides. Known difference: S16's "Nothing is charged yet." is left out (G-470).
+- **Gaps filed.** G-470 (S16 line not served), G-471 (no route for the current conversation once sent), G-472 (LEGAL-03 deliverable lines send no live frame). Shared changes LEGAL-02 #1 (`_layout.tsx` guard), #3 (`toApiError` reads `reason.retryAfterSeconds`), #4 (backend live), #5 (services row merge); #2 not needed (contract already current on main).
+- **Ran.** Mobile: tsc 0; legal + home jest 107 passed; `npm run check`: typecheck and lint pass, jest 1509 of 1509, gates 0 fail / 0 warn / 0 accepted (366 files), task check failed only because PROGRESS.md was stale from this report's own edit, then `npm run tasks -- --write` and `npm run tasks` pass. Backend: tsc 0; `src/live` + `src/legal-intake` 165 passed, 4 skipped; `src/legal/` + new spec 306 passed; gates 16 fail / 69 warn / 76 accepted on the branch and on main alike (no new finding).
+- **NOT RUN.** Native iOS/Android build (web only); a real Gemini assistant (no key locally; profiling pictures used the stand-in).
 
 ## Verifier report
 
