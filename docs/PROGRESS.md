@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 95 of 198.**
+**Launch tasks done: 95 of 223.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 77 | 0 | 20 | 26 |
+| todo | 102 | 0 | 20 | 26 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -136,6 +136,7 @@ From `docs/LOG.md`, newest first.
 
 - 8 Oct 2026 · FIX-11 · Verifier report (independent session, backend `096e30c`, mobile `a8d1949`): NOT READY, status building. The fix holds over real HTTP with the real wawu-id: main made 20 AI calls for 20 parallel reads of an empty paid thread (50 for 50, 45 for 100), none counted; the branch makes 1 call for 20, 50 and 100 reads on one Hub and on two Hubs over one database, every read sees one opener, and the call counts (29 spent: next message 429, main 201). Losing reads wait as long as the claimer's call (20 s only when the claimer is gone), lines arriving mid-call keep their place, 105 of 105 other legal answers byte-identical to main, protected 253/253, 12 of 13 own mutants killed by the spec and the 13th live. D1: the 5-an-hour opener cap counts written openers across all matters, so a sixth paid matter read within the hour gets no opener (main opens it). D2: the spec's "a failing provider: 20 parallel reads make 1 call" is not guaranteed by the design and failed 4 of 12 runs under load, in the deploy gate.
 - 8 Oct 2026 · FIX-11 · Built (backend `096e30c`, status verifying): the legal thread's opener is claimed under the person's lock and counted in the hourly allowance before its AI call; 20 parallel reads of an empty paid thread now make 1 call and all see one opener (main: 20 calls, 20 openers), the opener never lands after another line, at most 5 opener tries an hour (PROVISIONAL); new table `LegalChatOpenerCall` (additive migration); protected 253/253; 7 of 7 mutants killed; full suite NOT RUN (namespace refused).
+- 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
 - 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
@@ -148,4 +149,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
 - 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
 - 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
-- 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
