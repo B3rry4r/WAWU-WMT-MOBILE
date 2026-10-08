@@ -345,6 +345,13 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 
 **Carried out by:** MONEY-20 (the provider seam), AUTH-07 (email sign-up codes), then a Nuvion adapter task once fees and limits are in. R-1's Loma Bank licence line is superseded by this ruling.
 
+### R-44 · Payments on the web are the same as the app
+*Owner, 8 Oct 2026 ("Same as the app"; payments are the priority now).*
+- On the website (wawuafrica.com) people can buy a tier, buy points, add money by bank transfer and pay from their wallet, through the same Hub routes as the app. The website is not a checkout that the app sends people to, and there is no card payment for now.
+- The money freeze is lifted for all payment work, not only the Nuvion adapter (R-42). Builders build against the provider seam (MONEY-20) with Nuvion stood in until its sandbox key works.
+
+**Carried out by:** the payment plan (`docs/PAYMENTS-PLAN.md` and its tasks: the Nuvion adapter, tiers and points, then the web payment screens).
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in

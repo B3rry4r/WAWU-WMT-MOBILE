@@ -104,7 +104,7 @@ Verifier, 8 Oct 2026. An independent session that wrote none of FIX-07's code. C
 
 Status: `review` (no open defect).
 
-## Lead merge note (7 Oct 2026)
+## Lead merge note (8 Oct 2026)
 
 Merged after the independent verifier (report 090275f) and backend PR #85 (merge 965280e): /search on every tab and /search/closest refuse a NUL with 400 instead of 500; the sweep (2,156 paths x 4 callers, and all 278,480 code points) changed only former 500s plus tab=communities with a NUL; protected suite 253/253. Follow-ups filed as FIX-17: 23 other GET routes that still answer 500 for a NUL, two enum and paging 500s, and no length cap on closest. Spec gap noted: a NUL past the 50th character (right live).
 

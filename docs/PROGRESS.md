@@ -3,18 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 95 of 198.**
+**Launch tasks done: 100 of 235.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 77 | 0 | 20 | 26 |
+| todo | 113 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
-| done | 56 | 27 | 11 | 5 |
+| review | 2 | 0 | 0 | 0 |
+| done | 61 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Being verified
@@ -116,8 +117,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
 - [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
 - [SHARED-03](../tasks/SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder) (You)
+- [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
+- [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
+- [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -125,27 +131,27 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
+- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 - **Developer:** nothing unblocked
 - **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [PROS-03](../tasks/PROS-03.md) Get listed as a professional
+- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · INBOX-03 · Merged main 657a152 into the branch: `legal_delivered` ruled (held), push migration restamped `20261017090000_push_tokens`, contract regenerated; real Expo and a phone still NOT RUN.
 - 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
-- 8 Oct 2026 · FIX-17 · Lead filed FIX-07's verifier findings outside FIX-07: 23 GET routes that answer 500 for a NUL, two enum and paging 500s, and no length cap on `/search/closest`; one rule, applied once, before CHECK-3.
-- 8 Oct 2026 · FIX-16 · Lead filed the dashboard and web catch-up for FIX-06's takedowns (List again, the taken-down state, the unlist toast that would turn untrue, the web's 409 sentence); ordered right after FIX-06. Lead default recorded with it: a takedown hides the listing only; account sanctions (event hosting, verification, notifications) stay separate admin actions.
-- 7 Oct 2026 · FIX-08 · FIX-08 merged (backend PR #84, f7e651a): body-parser refusals answer 413, 415 or 400 instead of 500.
-- 8 Oct 2026 · FIX-08 · Verified (status review): no defect open. Built main and branch Hubs on one seeded database, 301 calls each in a private network namespace: 175 former 500s are now 413 (87), 415 (55) or 400 (33), 125 answers byte-identical, 1 client-framing artifact explained; the raw-body Fintava webhook is unchanged (signed, replay, forged, raw bytes equal); refusals no longer logged, real 500s still are; nothing but the body parser matches the refusal test today; 10 of 12 own mutants killed (1 equivalent, 1 test gap T1: an info-level log passes); protected 253/253 and the full suite on a trial merge (only the namespace rate-limit file and a load-timed stall file fail, both pass alone); U1 (money routes' `reason` doc line) and O2 (pre-existing trust-proxy TypeError) recorded.
-- 8 Oct 2026 · FIX-08 · Built (status verifying): a body the parser refuses answers its 4xx in the usual envelope, not 500, on every route (413 too large or too many form fields, 415 charset or encoding, 400 unreadable); malformed JSON keeps its 400 and the 100 kB limit is unchanged; recorded before and after on the built Hub (50 former 500s, 30 answers byte-identical, the raw-body webhook unchanged); 71 new tests, 8 of 8 mutants killed; full suite 0 failures, protected 253/253, gates as main. SHARED-CHANGES KYC-02 #3 and ME-16 #3 made.
-- 8 Oct 2026 · FIX-07 · Verified (status review; independent session, backend `4f4e4ee`, mobile `a333743`): no defect. Own sweep, main's and the branch's Hubs on one database, 2,156 paths x 4 callers: 7,692 byte-identical, 784 former 500s and the 148 recorded `tab=communities` 200s now the refusal, nothing else changed, branch 500s 0; every BMP code point and 4,084 astral ones on search and closest: only U+0000 answers other than 200 (500 on main, the refusal here); protected 253/253 and the full suite on a trial merge (only hub-rate-limits, 22/22 on the host, and fintava-stall timing, 120/120 alone); mutants 10 of 11 killed (spec gap: a NUL past character 50). Follow-ups recorded: SCHOOLS-04 drops its copy of the rule when it merges, 23 other GET routes on main still 500 for a NUL, closest has no length limit.
-- 8 Oct 2026 · FIX-07 · Verified (status review; independent session, backend `4f4e4ee`, mobile `a333743`): no defect. Own sweep, main's and the branch's Hubs on one database, 2,156 paths x 4 callers: 7,692 byte-identical, 784 former 500s and the 148 recorded `tab=communities` 200s now the refusal, nothing else changed, branch 500s 0; every BMP code point and 4,084 astral ones on search and closest: only U+0000 answers other than 200 (500 on main, the refusal here); protected 253/253 and the full suite on trial merges with main `3041887` and, after FIX-08 merged mid-check, `f7e651a` (only hub-rate-limits fails there, 22/22 on the host); mutants 10 of 11 killed (spec gap: a NUL past character 50). Follow-ups recorded: SCHOOLS-04 drops its copy of the rule when it merges, 23 other GET routes on main still 500 for a NUL, closest has no length limit.
-- 8 Oct 2026 · FIX-07 · Built (backend `4f4e4ee`, status verifying): `GET /search` on every tab and `/search/closest` answer 400 naming `q` for a NUL or a lone surrogate (was 500), before any query runs, in SCHOOLS-04's words; lock unchanged, protected 253/253; sweep of 2,520 requests per build against main on one database: 2,365 byte-identical, the 155 that differ are all NUL terms now refused (130 were 500, 25 the `tab=communities` 200); 10 of 10 mutants killed; contract unchanged.
-- 8 Oct 2026 · FIX-06 to FIX-15 · Lead filed the follow-ups the verifiers found as tasks: admin unlist kept apart from Hide (FIX-06), `/search` NUL 400 (FIX-07), oversized body 413 (FIX-08), no em-dashes in served text (FIX-09), WAWU ID call timeout (FIX-10), legal opener once and metered (FIX-11), EVENTS-11 follow-ups (FIX-12), WAWU ID rotation sweep (FIX-13), shared UI follow-ups (FIX-14), upload quota after launch (FIX-15). Launch fixes sit before CHECK-3 (now order 195).
-- 7 Oct 2026 · SHARED-03 · SHARED-03 merged (one toast, All chip spacing, MediaCard placeholder, one creator-card Follow, Z3 deterministic; R1, N1 and the settings test hang noted as follow-ups).
-- 7 Oct 2026 · SHARED-03 · Verified (status review): items 1 to 7 hold; 150 picture pairs against main, 130 identical, 18 differ only by items 2, 3 and 6 and 2 by image-decode timing; toasts identical and timed as before; Z3 failed 9 of 12 alone on main, 20 of 20 pass on the branch; T3, T4 and 18 own mutants killed (20 of 20); All chip 2 wider than X2 from the 1 px chip border every row chip has had since SHARED-02 (recorded, R1); `npm run check` 0 (76 suites, 1377 tests).
-- 7 Oct 2026 · SHARED-03 · Built: one shared `Toast` (ME-06's and Explore's copies deleted), chips beside icon chips at 11/14 (X3's All), `MediaCard` initials for a creator with no photo, THE creator-card Follow (`Button` `card` and `veil`, Explore on `action`), Z3 made deterministic (20 of 20), T3, T4 and R2-5 covered; 15 of 15 mutants killed; 148 picture pairs against main, 132 identical, 16 differ only by items 2, 3 and 6; `npm run check` 0 (76 suites, 1377 tests). Status verifying.
-- 7 Oct 2026 · HOME-01 · HOME-01 merged (round 3 passed; all four tab hubs on main; T3 and T4 test gaps moved to SHARED-03).
+- 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
+- 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
+- 8 Oct 2026 · LEGAL-03 · Verifier report, independent round 4 (lead), backend 1c48fb6 and merged main 6ce2ddf with real WAWU ID: N1 as ruled holds on both heads (88 foreign, look-alike and odd urls refused, foreign stored keys never signed, host read from the storage config, virtual-hosted too), T1 closed (S5 killed), `+01` names scheduledFor, web route byte-identical to main, 30 race rounds 0 double bookings, protected suite 253 of 253, 61 of 61 /legal answers identical, full suite in namespace chunks (4 suites fail only in the chunk, all pass alone), 26 mutants 21 killed (5 survivors judged); new defect N2: any client's own legal/document key can be delivered to and downloaded by another client; status left as on the branch for the lead to file the fix.
+- 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
+- 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
+- 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
+- 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
+- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
+- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
+- 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
+- 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
+- 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.

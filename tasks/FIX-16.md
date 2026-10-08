@@ -28,7 +28,7 @@ FIX-06 makes an admin's unlist hold. Two surfaces still say otherwise: the dashb
 
 ## Scope
 
-Dashboard: the professional's panel reads the admin visibility route and shows Listed, Hidden by them, or Taken down (with the date); a "List again" action calls relist (same roles as unlist), with a confirm; the unlist toast says the listing stays hidden until an admin lists it again. Web: the listings page shows a plain sentence for `listing_taken_down` and the pill reads the real state. No em-dashes. Ship together with or right after FIX-06's backend deploy.
+Dashboard: the professional's panel reads the admin visibility route and shows Listed, Hidden by them, or Taken down (with the date); a "List again" action calls relist (same roles as unlist), with a confirm; the unlist toast says the listing stays hidden until an admin lists it again. Web: the listings page shows a plain sentence for `listing_taken_down` and the pill reads the real state. On the web's apply form, a field whose listing an admin took down says so (from the owner's visibility read), instead of main's 409 sentence "You are already listed as a professional in this category." No em-dashes. Ship together with or right after FIX-06's backend deploy.
 
 ## Capability checks
 
