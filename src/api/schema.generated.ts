@@ -6090,7 +6090,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -6215,6 +6215,33 @@ export interface components {
              *     `nin` (KYC-03): the server takes both from it. Never with them.
              */
             checkHandle?: string;
+            middleName?: string;
+            /** @enum {string} */
+            gender?: "male" | "female";
+            /** @description A second address line (flat, estate), when there is one. */
+            addressLine2?: string;
+            /** @description The town or city. */
+            city?: string;
+            /** @description The state (Lagos, FCT ...). */
+            state?: string;
+            /** @description The postal code, 1 to 20 letters, digits, spaces or dashes. */
+            postalCode?: string;
+            /**
+             * @description The ID document the person will upload (NUV-03).
+             * @enum {string}
+             */
+            idType?: "international_passport" | "drivers_license" | "national_id";
+            /** @description Its number, as printed: 5 to 30 letters, digits or dashes. Never stored. */
+            idNumber?: string;
+            /** @description When it was issued, `YYYY-MM-DD`, when it says. */
+            idIssueDate?: string;
+            /** @description When it expires, `YYYY-MM-DD`, when it says; not already passed. */
+            idExpiryDate?: string;
+            /**
+             * @description The proof of address the person will upload (NUV-03).
+             * @enum {string}
+             */
+            proofOfAddressType?: "utility_bill" | "bank_statement";
             /** @description A5's first name, as the BVN check prefilled it. */
             firstName: string;
             /** @description A5's last name, as the BVN check prefilled it. */
@@ -6616,6 +6643,19 @@ export interface components {
             /** @enum {string|null} */
             blockedBy: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted" | null;
         };
+        WalletReviewReasonView: {
+            /** @enum {string} */
+            code: "bvn_not_verified" | "nin_not_verified" | "id_document_not_verified" | "proof_of_address_not_verified" | "bvn_phone_mismatch" | "details_not_verified" | "review_stopped";
+            message: string;
+            fix: string;
+        };
+        WalletReviewView: {
+            /** @enum {string} */
+            stage: "needs_documents" | "checking" | "approved" | "rejected" | "stopped";
+            reasons: components["schemas"]["WalletReviewReasonView"][];
+            canResubmit: boolean;
+            decidedAt: string | null;
+        };
         WalletView: {
             /** @enum {string} */
             state: "not_open" | "opening" | "open" | "frozen";
@@ -6624,6 +6664,9 @@ export interface components {
             pin: components["schemas"]["PinStateView"];
             bankTransfers: components["schemas"]["BankTransferAccessView"];
             beneficiaryCount: number;
+            /** @enum {string|null} */
+            openingFlow?: "check" | "review" | null;
+            review?: components["schemas"]["WalletReviewView"] | null;
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -6830,7 +6873,7 @@ export interface components {
             durationLabel: string | null;
             pageCount: number | null;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             creatorFirstUploadFree: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -6847,11 +6890,11 @@ export interface components {
         AdminContentReviewEntryView: {
             id: string;
             /** @enum {string} */
-            decision: "rejected" | "removed" | "approved";
+            decision: "approved" | "rejected" | "removed";
             /** @enum {string} */
-            previousStatus: "pending" | "live" | "rejected" | "removed";
+            previousStatus: "pending" | "rejected" | "live" | "removed";
             /** @enum {string} */
-            newStatus: "pending" | "live" | "rejected" | "removed";
+            newStatus: "pending" | "rejected" | "live" | "removed";
             reason: string | null;
             slotReturned: boolean;
             reviewedByAdminId: string;
@@ -6883,7 +6926,7 @@ export interface components {
             durationLabel: string | null;
             pageCount: number | null;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             creatorFirstUploadFree: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -6912,7 +6955,7 @@ export interface components {
             payoutBankName: string;
             identifiers: components["schemas"]["AdminKycMaskedIdentifiersView"];
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -6934,7 +6977,7 @@ export interface components {
         AdminKycHistoryEntryView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             idDocumentType: string;
             /** Format: date-time */
             submittedAt: string;
@@ -6945,11 +6988,11 @@ export interface components {
         AdminKycAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "rejected" | "approved" | "document_viewed" | "identifiers_revealed";
+            action: "approved" | "rejected" | "document_viewed" | "identifiers_revealed";
             /** @enum {string|null} */
-            previousStatus: "pending" | "rejected" | "approved" | null;
+            previousStatus: "pending" | "approved" | "rejected" | null;
             /** @enum {string|null} */
-            newStatus: "pending" | "rejected" | "approved" | null;
+            newStatus: "pending" | "approved" | "rejected" | null;
             reason: string | null;
             actedByAdminId: string;
             actedByAdminEmail: string;
@@ -6972,7 +7015,7 @@ export interface components {
             payoutBankName: string;
             identifiers: components["schemas"]["AdminKycMaskedIdentifiersView"];
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7013,7 +7056,7 @@ export interface components {
             /** @enum {string} */
             tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7032,7 +7075,7 @@ export interface components {
             /** @enum {string} */
             tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7042,11 +7085,11 @@ export interface components {
         AdminVerificationAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "rejected" | "approved" | "document_viewed";
+            action: "approved" | "rejected" | "document_viewed";
             /** @enum {string|null} */
-            previousStatus: "pending" | "rejected" | "approved" | null;
+            previousStatus: "pending" | "approved" | "rejected" | null;
             /** @enum {string|null} */
-            newStatus: "pending" | "rejected" | "approved" | null;
+            newStatus: "pending" | "approved" | "rejected" | null;
             reason: string | null;
             documentIndex: number | null;
             tierElevatedAtWawuId: boolean;
@@ -7065,7 +7108,7 @@ export interface components {
             /** @enum {string} */
             tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7101,7 +7144,7 @@ export interface components {
             issuingBody: string | null;
             documentCount: number;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             waitingHours: number;
@@ -7109,7 +7152,7 @@ export interface components {
         AdminProfessionalOtherCategoryView: {
             category: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
         };
         AdminProfessionalDetailView: {
             id: string;
@@ -7131,7 +7174,7 @@ export interface components {
             issuingBody: string | null;
             documents: string[];
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             rejectionReason: string | null;
             /** Format: date-time */
             submittedAt: string;
@@ -7159,7 +7202,7 @@ export interface components {
         AdminProfessionalVisibilityView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** @enum {string|null} */
             visibility: "listed" | "hidden" | "taken_down" | null;
             /** Format: date-time */
@@ -7172,7 +7215,7 @@ export interface components {
         AdminProfessionalDecisionView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             rejectionReason: string | null;
             /** Format: date-time */
             reviewedAt: string | null;
@@ -7190,7 +7233,7 @@ export interface components {
         ContentPieceResponse: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             /** Format: date-time */
             createdAt: string;
             title: string;
@@ -7219,7 +7262,7 @@ export interface components {
         MyContentItem: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             /** Format: date-time */
             createdAt: string;
             title: string;
@@ -7303,7 +7346,7 @@ export interface components {
         FeedItem: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             /** Format: date-time */
             createdAt: string;
             title: string;
@@ -8149,7 +8192,7 @@ export interface components {
         };
         AdminCreatorGatesView: {
             /** @enum {string|null} */
-            kycStatus: "pending" | "rejected" | "approved" | "not_started" | null;
+            kycStatus: "pending" | "approved" | "rejected" | "not_started" | null;
             /** Format: date-time */
             kycSubmittedAt: string | null;
             /** Format: date-time */
@@ -8420,7 +8463,7 @@ export interface components {
         AdminEventReviewEntryView: {
             id: string;
             /** @enum {string} */
-            action: "rejected" | "removed" | "approved" | "featured" | "unfeatured" | "restored";
+            action: "approved" | "rejected" | "removed" | "featured" | "unfeatured" | "restored";
             /** @enum {string} */
             previousStatus: "pending" | "rejected" | "removed" | "cancelled" | "published";
             /** @enum {string} */
@@ -8646,7 +8689,7 @@ export interface components {
         CreatorStateResponse: {
             wawuUserId: string;
             /** @enum {string} */
-            kycStatus: "pending" | "rejected" | "approved";
+            kycStatus: "pending" | "approved" | "rejected";
             slotsUsed: number;
             dmPrice: number | null;
             dmEnabled: boolean;
@@ -8749,7 +8792,7 @@ export interface components {
             submission: {
                 id: string;
                 /** @enum {string} */
-                status: "pending" | "rejected" | "approved";
+                status: "pending" | "approved" | "rejected";
                 /** Format: date-time */
                 reviewedAt: string | null;
                 /** @enum {string} */
@@ -14423,7 +14466,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -14437,7 +14480,7 @@ export interface operations {
                         items: {
                             id: string;
                             /** @enum {string} */
-                            status: "pending" | "rejected" | "approved";
+                            status: "pending" | "approved" | "rejected";
                             /** Format: date-time */
                             reviewedAt: string | null;
                             /** @enum {string} */
@@ -14477,7 +14520,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -14515,7 +14558,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -14553,7 +14596,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -14703,7 +14746,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         listed: boolean;
@@ -14742,7 +14785,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         listed: boolean;
@@ -14806,7 +14849,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         listed: boolean;
@@ -15224,7 +15267,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         wawuUserId: string;
@@ -15265,7 +15308,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         wawuUserId: string;
@@ -15308,7 +15351,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         wawuUserId: string;
@@ -17721,7 +17764,7 @@ export interface operations {
                     "application/json": components["schemas"]["WalletView"];
                 };
             };
-            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity */
+            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity, identity_under_review */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -17730,7 +17773,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: account_not_opened */
+            /** @description reason.code: account_not_opened, phone_not_nigerian */
             422: {
                 headers: {
                     [name: string]: unknown;
