@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 105 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 58 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
 
@@ -136,6 +136,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · POINTS-01 · Round 2 built, now verifying: the verifier's D1 to D5 and the lead's U1 and U2 rulings (the next end summed over every live lot; ledger deletes only through the account purge's points step under the person's lock; two people racing one hold reference get a 409; lot ends bounded before 2100; a cancelled conversion reads as cancelled; a hold moves only once); 22 of 22 mutants killed; lead notes added to POINTS-02, POINTS-03, POINTS-04, TIER-03 and REF-01; CONVENTIONS points section renumbered 16 (backend `wmt/POINTS-01` 5bc239d).
 - 8 Oct 2026 · POINTS-01 · Verifier report (independent session, backend `e524ac8`, mobile `62d0cd6`, wawu-id `fb8717e`): the ledger holds by its real cause (CHECKs and the deferred lot checks refuse at COMMIT; UPDATE, partial DELETE and TRUNCATE refused), 8 races at 50 rounds each never overdraw or double-write (holds, grants, hold or release against the expiry pass, two passes, commit against release), time boundaries consistent and all on the app's UTC clock, a caller's rollback leaves nothing, protected 253/253, full suite in 4 namespace shards 4,778 of 4,794 (hub-rate-limits and one timing assert, both pass alone on the host), V9 live through the real wawu-id with the app's own expiry pass, 15 of 17 mutants killed; not ready: D1 `nextExpiry` counts only the 50 listed lots, D2 a bare `DELETE FROM "PointLedger"` is accepted, D3 two people racing one hold reference get a raw P2002 not 409, D4 an end after year 9999 makes `GET /me/points` 500, D5 a cancelled conversion still reads "Converting to cash"; U1 the purge is not under the points lock (5 of 200 races leave lots that disagree with their ledger; the purge has no caller); status back to building.
 - 8 Oct 2026 · POINTS-01 · Built, now verifying: points in lots that expire, holds that are committed or released back to the same lots, an expiry job, and an append-only points ledger the database itself guards (no update, no partial delete, a lot always equal to its ledger); `GET /me/points` (PT5) answers the balance, live lots with their end dates, the next end and the last 20 movements; separate from WAWU Credits; mounted through MeModule, so `app.module.ts` is unedited (backend `wmt/POINTS-01`).
 - 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
@@ -150,4 +151,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
 - 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
 - 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
-- 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.

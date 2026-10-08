@@ -46,6 +46,12 @@ Voice Intro, exactly once even when the payment's confirmation repeats (R-43, br
 - Paying needs an open wallet (question 1 in `docs/PAYMENTS-PLAN.md`): a person with none gets the existing `no_wallet` answer (MONEY-13).
 - Not in scope: paying by transfer (TIER-05), extra products (TIER-04), the Voice Intro itself.
 
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
+
 ## Capability checks
 
 - [ ] A person with enough money buys Founding Maker: one debit at the config price; the tier and dates, the bonus lot with its expiry, the event pass and the Voice Intro all show in `GET /me/tier` and `GET /me/points`.

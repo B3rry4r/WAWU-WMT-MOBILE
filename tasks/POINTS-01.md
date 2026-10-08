@@ -7,7 +7,7 @@ order: 200
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-43, R-5]
 passes: [V1, V2, V3, V4, V9]
@@ -51,6 +51,69 @@ Needs no money and no provider; starts now.
 - [ ] No ledger row is ever updated or deleted (the spec fails on an UPDATE or DELETE of the table).
 
 ## Builder report
+
+### Lead rulings after the verifier (8 Oct 2026)
+
+Copied from the lead's round 2 brief.
+
+Defects:
+1. D1: `nextExpiry` sums the soonest end date over ALL the person's live lots in the database, not the 50 listed.
+2. D2 and U1: a ledger delete is refused unless it comes from the account purge. Make the purge set a transaction-local flag (for example `SET LOCAL wawu.points_purge = '<userId>'`) that the delete trigger requires, and refuse any delete whose rows span more than that one person. The purge takes the person's points lock first.
+3. D3: two people holding with the same reference at the same moment get a 409, as grants already do (catch the unique conflict and answer like the sequential case). Spec with 50 rounds.
+4. D4: `grant` refuses an end date beyond a fixed bound (a constant, for example 2100-01-01 UTC) and in the past beyond a small skew; the view can never 500 on a stored date.
+5. D5: a cancelled conversion's hold row reads as cancelled, never "Converting to cash".
+6. U2: a database guard on hold state: held may become committed or released, never back to held, and committed or released never change again.
+
+Not this task: U3 (account deletion does not call the purge) belongs to SETTINGS-06; leave it.
+
+Notes for later tasks (a short "Lead note (8 Oct 2026)" in each task file this round): POINTS-03: a sweep that releases stale `ai_job` holds by id, an index on `PointHold (state, createdAt)`, and a fresh hold reference per attempt. POINTS-04: never time out a `cash_out` hold while the payout's outcome is unknown. Every caller: grant or hold last in a transaction, never wait on a provider while holding the person's points lock (Prisma's 5 s transaction timeout).
+
+CONVENTIONS: FIX-17 keeps section 14, MONEY-17 takes 15, POINTS-01 takes 16.
+
+### Builder report, round 2
+
+Builder, 8 Oct 2026 (the round 1 builder). wawu-backend `wmt/POINTS-01` **5bc239d**: 5c059c3 merges backend main 8d7a054 (NUV-07) into e524ac8 (no conflict), then 5bc239d is round 2. Mobile `wmt/POINTS-01`: 374cf3c merges mobile main eb62049 into the verifier's 8880035 (conflicts only in `SHARED-CHANGES.md`, kept both sides' rows, and the generated `contract/SOURCE_COMMIT` and `docs/PROGRESS.md`, taken from main and regenerated), then this report. Fresh worktrees, `bp01_` databases, ports 5661 to 5664 (my WAWU ID stand-in on 5662).
+
+**Each ruling, and how it was proved** (`src/points/tests/points.service.spec.ts` now 46 tests, `points.contract.spec.ts` 6; 52/52 on a fresh migrated and seeded database).
+- **D1:** `nextExpiry` is now one `groupBy` over all of the person's live lots, by end, soonest first, inside the same repeatable-read snapshot as the balance. Spec (service and HTTP): 60 lots of 1 point ending together and 5 of 100 ending later answer balance 560, `lotCount` 65, 50 listed, `nextExpiry` `{ points: 60 }`.
+- **D2 and U1:** the ledger's delete trigger (`points_ledger_purge_only`, renamed from `..._whole_person_only`) now accepts a delete only when the transaction has set `wawu.points_purge` (with `set_config(..., true)`, so it ends with the transaction), every deleted row is that one person's, and none of that person's rows is left. A statement that deletes nothing passes. New `src/points/points-purge.ts` `purgePersonPoints`: one transaction that takes the person's points lock first, sets the flag, then deletes the person's ledger, holds and lots. `AccountPurgeService.purge` calls it first and its table loop skips the three points tables (20 added lines; its other lines untouched). Specs: a bare `DELETE FROM "PointLedger"`, one person's whole ledger without the flag, the flag for one person with another's rows in the statement, the flag with only some rows, and a delete in a later transaction (the flag gone) are all refused, and the table count is unchanged; the purge step takes exactly one person's rows; the purge racing a hold for the same person, 50 rounds, leaves 0 ledger rows, 0 holds and 0 lots every round (both orders happened), and the hold that lost is `insufficient_points`.
+- **D3:** a hold is now created with `INSERT ... ON CONFLICT DO NOTHING` (`createMany` with `skipDuplicates`), as a grant is; the loser reads the winner and answers `409 points_hold_conflict`, exactly as one after the other. Spec: two people holding one reference at the same moment, 50 rounds: 1 held and 1 `points_hold_conflict` (a `PointsError`) in each, 1 hold row, both people's lots equal to their ledgers.
+- **D4:** `grant` refuses an end at or after 2100-01-01 UTC (`POINTS_LATEST_END` in `points-config.ts`) as `points_invalid` ("That end date is too far away."), and the migration's new CHECK `PointLot_expiresAt_bounded` holds the same bound for any writer. Past ends stay refused as before (any end at or before now: a lot that ends before it is granted could never be spent, so no skew is allowed; the message is now "Points must end in the future."). Specs: the year 10000, JavaScript's last date and 2100-01-01 itself are refused and the person's view still reads; one second before 2100 is taken and read back; a raw INSERT with year 10000 is refused by the CHECK.
+- **D5:** a released `cash_out` hold's own row reads "Conversion cancelled", its release row "Returned from a cancelled conversion"; "Converting to cash" only while it is held, "Converted to cash" once committed. Specs in both files (the round 1 contract spec had asserted the defect; corrected).
+- **U2:** new trigger `PointHold_transitions`: a hold's person, purpose, reference, title, quantity and creation time never change, and a committed or released hold never changes again (state or settle time). Spec: committed back to held, released to committed, a new settle time and a new quantity on a settled hold, and a new person on a running hold are all refused; the service's own commit still works.
+- **The verifier's two mutants that only its harness killed** are now specs: equal ends spend the oldest grant first (M02); a lot ending exactly now is not spendable, not in the balance, not listed, and the pass at that instant writes it off, while one millisecond before it was live (M03, M04).
+- **Notes taken from the verifier:** the schema comment on `PointLedger.at` now says it is the app's clock per INSERT; a release into a lapsed lot keeps the lot's first `lapsedAt`; `grant`'s past-end message says "in the future".
+- **Lead notes** added to POINTS-02, POINTS-03, POINTS-04, TIER-03 and REF-01 ("Lead note (8 Oct 2026)", before their capability checks). CONVENTIONS: my section is now **16**, and says what the database refuses, the purge step, the end bound, the race answer and the rule for every caller.
+- **The migration is edited in place** (`20261016130000_points`): it has never been on main, so no deployed database holds the earlier version. A fresh `migrate deploy` gives 7 triggers on the points tables (6 before, plus `PointHold_transitions`) and 9 CHECKs (8 before, plus the end bound); `prisma migrate diff` from it to the schema shows only main's own `ContentPiece_specializations_idx` drift.
+
+**Mutants** (each applied alone, the points specs run, then `git restore` or the original SQL put back; **22 of 22 killed**; logs in the lead's scratchpad `bp01/r2/mut/`):
+- My round 1 nine, re-anchored on the new code: hold of exactly the balance refused (1 test failed), a fraction let through (1), a repeated grant not skipped (4), the hold without the person lock (2), the balance shown as its naira cash-out value (13), a hold taking from every person's lots (16), the route listing everyone's movements (2), a hold spending an ended lot (2), a release into the soonest lot instead of its own (3).
+- The verifier's: equal ends spend the newest grant first (1), a lot ending exactly now is spendable (1), the pass skips a lot ending exactly now (1).
+- New code: the next end taken as the latest (4), the purge without `wawu.points_purge` (3), the purge without the person's points lock (1: the 50-round race), a hold reference race not skipped (1: the 50-round race), the service letting an end after 2100 through (2), a cancelled conversion read as converting (2), the delete trigger letting the purge take another person's rows (2), the delete trigger accepting any delete (1), a settled hold allowed to change (1), the end-date CHECK dropped (1).
+
+**Checks** (on 5bc239d).
+- `npx tsc --noEmit` 0. eslint 0 on `src/points` and `account-data-map.ts`. `account-purge.service.ts` has 7 prettier findings, all on lines main already has (main's own copy of the file gives the same 7); the 20 added lines have none.
+- Specs of every module touched (points, account purge, data export, me): 9 suites, **131/131** at default timeouts on a fresh migrated and seeded database (load average about 10).
+- Protected suite `run.sh --fresh HEAD` (code 5bc239d, lock origin/main 8d7a054): **253/253**, all 244 required.
+- Gates: branch 920 files, 16 fail / 60 warn / 76 accepted; main 8d7a054 908 files, 16 / 58 / 76; the 16 FAIL lines identical; the only new warnings are `PROVISIONAL(POINTS-LOTS-SHOWN)` and `PROVISIONAL(POINTS-EXPIRY-BATCH)`. `check_baseline.py` ok. CI tripwire on added lines: 0. Secret-shaped strings in the diff: 0.
+- `npm run contract:build` leaves `contract/openapi.json` unchanged; against main it adds 151 lines and removes none (round 2 changes no route or type). Mobile `contract/` copied from 5bc239d and the types regenerated with `python3 scripts/api/sync_contract.py` (no `--backend`); `SOURCE_COMMIT` names 5bc239d.
+- Full suite at default timeouts, as four jest shards, each in its own private network namespace (copies of `ns2.sh` and `inner2.sh` with my paths, my stand-in on :4001 inside, a fresh migrated and seeded `bp01_full_test` per shard), on 5bc239d: **192 suites, 4,895 tests: 189 suites and 4,826 tests passed, 4 skipped, 65 failed in 3 suites, none in a file this task touches**: `hub-rate-limits` (12; it needs a non-loopback interface, so it always fails in a namespace), `protected-registry.regression` (52, `fetch failed` to the stand-in mid-run, as in round 1) and `fintava-stall` (1 timing assert). Each then passed alone on the host network against a fresh seeded database at default timeouts: 22/22, 52/52 and 120/120.
+- Mobile `npm run check`: **exit 0** (typecheck 0, lint 0, 76 suites / 1,377 tests, gates 9 / 346 files / 0 fail / 0 warn, 249 tasks). A first run at load average 24 had the same two 20 s timeouts the verifier and round 1 saw (`OpenWalletScreen`, `settingsScreens`); those two alone passed 128/128, and the second full run passed. The mobile branch adds the regenerated contract and types, `SHARED-CHANGES.md` rows (#2 updated, #5 new), the lead notes in five task files, this report, a LOG line and the regenerated `docs/PROGRESS.md`.
+
+**Decisions** (each Default (agent), owner may override).
+- D4's "in the past beyond a small skew": any end at or before now stays refused, with no skew, because such a lot could never be spent; the bound is 2100-01-01 UTC, as the ruling's example.
+- The purge's points step runs before the account purge's table loop, in its own transaction; if it fails, the loop still runs for every other table and the failure is logged, as for any table.
+- The migration is edited in place rather than followed by a second one, since it has never left this branch.
+- New copy for the owner to read: "Conversion cancelled" (a cancelled conversion's own row), "Returned from a cancelled conversion" (its release row), "That end date is too far away.", "Points must end in the future."; and the refusals' wording is unchanged otherwise.
+
+**NOT RUN.**
+- The full suite as `deploy.yml` runs it (one jest process): run as four shards instead (above). Unblocked by CI's test job on this branch, or a machine with load under about 8 and memory to spare.
+- `prisma migrate reset`: Prisma 7 refuses it for an AI agent (the verifier's finding); not worked around. Unblocked when a person runs `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/<name>_test?schema=public npx prisma migrate reset --force` on wmt/POINTS-01 and `SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgrelid::regclass::text LIKE '"Point%'` answers 7.
+- U3 (account deletion does not call the purge): SETTINGS-06's, by the lead's ruling; not changed.
+- PT5 on a phone (V5 to V7, V10): no screen in this task, as in round 1.
+- No (key) checks: points use no provider.
+
+### Builder report, round 1
 
 Builder, 8 Oct 2026. wawu-backend `wmt/POINTS-01` **e524ac8** (0d3d5d6 the work, 85f5d75 longer spec hooks, e524ac8 CONVENTIONS section 14), on backend main 965280e. Mobile `wmt/POINTS-01` on mobile main 50a7a89. Neither main moved during the build.
 
