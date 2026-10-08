@@ -676,3 +676,154 @@ describe('Sold out needs every tier sold (T2)', () => {
     expect(rtl.screen.queryByTestId('event-sold-bar')).toBeNull();
   });
 });
+
+describe('Every date is read in the event own zone, on every screen (D7, D8, V11, D10)', () => {
+  // 14 Oct 23:00 UTC is 7:00 PM on 14 Oct in New York and already 15 Oct in Lagos.
+  const nycHero = event({
+    id: 'z-hero',
+    name: 'New York Hero',
+    featured: true,
+    timezone: 'America/New_York',
+    timeLabel: '7:00 PM EDT',
+    startsAt: '2026-10-14T23:00:00.000Z',
+  });
+  // 8 Jan 03:30 UTC is 10:30 PM on 7 Jan in New York and 8 Jan in Lagos.
+  const nycRow = event({
+    id: 'z-row',
+    name: 'New York Row',
+    timezone: 'America/New_York',
+    timeLabel: '10:30 PM EST',
+    startsAt: '2027-01-08T03:30:00.000Z',
+  });
+  const lagosRow = event({ id: 'z-lagos', name: 'Lagos Row', timezone: 'Africa/Lagos', startsAt: '2026-11-09T09:00:00.000Z' });
+
+  async function listShown() {
+    const rows = [nycHero, nycRow, lagosRow];
+    handler = (c) => {
+      if (c.path === '/events/options') return ok(options);
+      if (c.path === '/events/from-prices') return fromPrices(rows.map((r) => [r.id, r.priceFromNaira]));
+      if (featuredOnly(c)) return page([nycHero]);
+      if (c.path === '/events' && c.method === 'GET') return page(rows);
+      return undefined;
+    };
+    await bootList();
+    await rtl.screen.findByText('New York Hero');
+    const seeAll = rtl.screen.queryByTestId('events-see-all');
+    if (seeAll) await rtl.fireEvent.press(seeAll);
+    await rtl.screen.findByText('New York Row');
+  }
+
+  it("a user sees the featured card's date in the event's zone, not Lagos's (D7)", async () => {
+    await listShown();
+    expect(rtl.screen.getByLabelText('OCT 14')).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('OCT 15')).toBeNull();
+  });
+
+  it("a user sees a row's date in the event's zone, not Lagos's (V11)", async () => {
+    await listShown();
+    expect(rtl.screen.getByLabelText('JAN 07')).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('JAN 08')).toBeNull();
+  });
+
+  it('a user sees the badge day in two digits, as the design draws it ("NOV 09") (D10)', async () => {
+    await listShown();
+    expect(rtl.screen.getByLabelText('NOV 09')).toBeTruthy();
+    expect(rtl.screen.getAllByText('09').length).toBeGreaterThan(0);
+    expect(rtl.screen.queryByText('9', { exact: true })).toBeNull();
+  });
+
+  it('a user sees when a tier ended and when one opens in the event\'s zone, beside its own clock (D8)', async () => {
+    handler = (c) => {
+      if (c.path === '/events/e-1' && c.method === 'GET')
+        return ok(event({ timezone: 'America/New_York', timeLabel: '7:00 PM EDT', startsAt: '2030-10-14T23:00:00.000Z' }));
+      if (c.path === '/events/e-1/tickets')
+        return ok([
+          tier({ id: 't-early', name: 'Early bird', salesEndAt: '2026-10-06T23:30:00.000Z' }),
+          tier({ id: 't-late', name: 'Late release', salesStartAt: '2030-10-10T23:30:00.000Z' }),
+        ]);
+      return undefined;
+    };
+    await bootDetail();
+    expect(await rtl.screen.findByText('Mon 14 Oct 2030 · 7:00 PM EDT')).toBeTruthy();
+    expect(rtl.screen.getByLabelText('OCT 14')).toBeTruthy();
+    expect(rtl.screen.getByText('Ended 6 Oct')).toBeTruthy();
+    expect(rtl.screen.getByText('Opens 10 Oct')).toBeTruthy();
+    expect(rtl.screen.queryByText('Ended 7 Oct')).toBeNull();
+    expect(rtl.screen.queryByText('Opens 11 Oct')).toBeNull();
+  });
+});
+
+describe('Prices already drawn stay when a later prices call fails (D9)', () => {
+  const hero = event({ id: 'm-hero', name: 'Hero Night', featured: true, startsAt: later });
+  const far = (n: number) => event({ id: `m-${n}`, name: `Paid Event ${n}`, startsAt: later });
+
+  it('page 1 prices arrive, page 2 prices call fails: page 1 rows and the featured card keep their prices', async () => {
+    let priceCalls = 0;
+    handler = (c) => {
+      if (c.path === '/events/options') return ok(options);
+      if (c.path === '/events/from-prices') {
+        priceCalls += 1;
+        if (priceCalls > 1) return { status: 500, body: { statusCode: 500, message: 'Prices are down' } };
+        return fromPrices([
+          ['m-hero', 7500],
+          ['m-1', 1000],
+          ['m-2', 2000],
+        ]);
+      }
+      if (featuredOnly(c)) return page([hero]);
+      if (c.path === '/events' && c.method === 'GET') {
+        const n = Number(c.query.get('page'));
+        const rows = n === 2 ? [far(3), far(4)] : [far(1), far(2)];
+        return {
+          status: 200,
+          body: { statusCode: 200, message: 'OK', data: rows, pagination: { currentPage: n, nextPage: n === 1 ? 2 : null, perPage: 20, total: 4 } },
+        };
+      }
+      return undefined;
+    };
+    await bootList();
+    expect(await rtl.screen.findByText('From ₦2,000')).toBeTruthy();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('events-more'));
+    expect(await rtl.screen.findByText('Paid Event 4')).toBeTruthy();
+    await rtl.waitFor(() => expect(priceCalls).toBe(2));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(rtl.screen.getByText('From ₦1,000')).toBeTruthy();
+    expect(rtl.screen.getByText('From ₦2,000')).toBeTruthy();
+    expect(rtl.screen.getByText('from ₦7,500', { exact: false })).toBeTruthy();
+    // Only the rows that never got a price draw none.
+    expect(rtl.screen.getAllByText(/From ₦/)).toHaveLength(2);
+  });
+});
+
+describe('The prices call is never retried, whatever the client allows (T3)', () => {
+  it('asks once when the prices call fails, under a client that retries every other query', async () => {
+    const gospel = event({ id: 'e-2', name: 'Gospel Night', location: 'Abuja', venueName: null });
+    handler = (c) => {
+      if (c.path === '/events/options') return ok(options);
+      if (c.path === '/events/from-prices') return { status: 500, body: { statusCode: 500, message: 'Prices are down' } };
+      if (featuredOnly(c)) return page([]);
+      if (c.path === '/events' && c.method === 'GET') return page([gospel]);
+      return undefined;
+    };
+    const client = new QueryClient({ defaultOptions: { queries: { retry: 3, retryDelay: 1, gcTime: Infinity } } });
+    clients.push(client);
+    const { EventsScreen } = require('../EventsScreen') as typeof import('../EventsScreen');
+    await rtl.render(
+      <QueryClientProvider client={client}>
+        <SafeAreaProvider
+          initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}
+        >
+          <EventsScreen onBack={jest.fn()} onOpenEvent={jest.fn()} />
+        </SafeAreaProvider>
+      </QueryClientProvider>,
+    );
+    expect(await rtl.screen.findByText('Gospel Night')).toBeTruthy();
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+    expect(calls.filter((c) => c.path === '/events/from-prices')).toHaveLength(1);
+    expect(rtl.screen.queryByText(/From ₦/i)).toBeNull();
+  });
+});
