@@ -11,7 +11,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { layout, radius } from '@/theme';
 
 import { fetchHeldPage, heldKey, type HeldView } from './ticketsApi';
-import { GroupRow, listMetrics, Page, TicketNav } from './ticketParts';
+import { GroupRow, listMetrics, Page, RefreshFailed, TicketNav } from './ticketParts';
 
 const views = [
   { value: 'upcoming', label: 'Upcoming' },
@@ -55,7 +55,7 @@ export function MyTicketsScreen({ onBack, onOpenTicket }: MyTicketsScreenProps) 
               ))}
             </View>
           </LoadingView>
-        ) : list.isError ? (
+        ) : list.isError && !list.data ? (
           <ErrorState
             testID="my-tickets-error"
             title={offline ? "You're offline" : "Couldn't load your tickets"}
@@ -71,6 +71,13 @@ export function MyTicketsScreen({ onBack, onOpenTicket }: MyTicketsScreenProps) 
           />
         ) : (
           <View style={styles.list}>
+            {list.isError ? (
+              <RefreshFailed
+                testID="my-tickets-refresh-failed"
+                message={offline ? "You're offline. These tickets may be out of date." : "Couldn't refresh. These tickets may be out of date."}
+                onRetry={() => void (list.hasNextPage && list.isFetchNextPageError ? list.fetchNextPage() : list.refetch())}
+              />
+            ) : null}
             {groups.map((group) => (
               <GroupRow key={`${group.orderId}:${group.ticketTypeId}`} group={group} onOpen={onOpenTicket} />
             ))}

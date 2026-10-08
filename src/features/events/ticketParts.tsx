@@ -4,7 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { IconButton } from '@/components/Button';
+import { Button, IconButton } from '@/components/Button';
 import { BrandMark } from '@/components/BrandMark';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
@@ -19,7 +19,7 @@ import { groupLine, holderLine, ticketHeadline, ticketToOpen } from './ticketFor
 import type { HeldGroup, HeldTicket } from './ticketsApi';
 
 /** design/_gen/kit.js `nav`: a 56 bar, 20 sides, a 42 round button, a 17 bold title between, a 42 spacer after. */
-export const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } as const;
+export const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02, titleNudge: 2 } as const;
 
 /** design/_gen/events.js `myTickets`: 8 above the body, 12 between the chips and each row; a row is 12 in, 12 between, 20 round. */
 export const listMetrics = { top: 8, stack: 12, bottom: 40, rowPad: 12, between: 12, title: 15, line: 12.5, lineGap: 3, qrIcon: 22 } as const;
@@ -116,7 +116,7 @@ export function TicketCard({ ticket, showCode, now }: { ticket: HeldTicket; show
   const { event } = ticket;
   const logo = cardMetrics.plate * cardMetrics.logoShare;
   return (
-    <View testID="ticket-card" style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
+    <View testID="ticket-card" style={[styles.card, { backgroundColor: colors.surfaceCard }]}>
       <View style={[styles.banner, { backgroundColor: colors.surfaceCardInk }]}>
         {event.bannerUrl ? <Image source={event.bannerUrl} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityElementsHidden /> : null}
         <LinearGradient
@@ -154,6 +154,19 @@ export function TicketCard({ ticket, showCode, now }: { ticket: HeldTicket; show
           {holderLine(ticket)}
         </Text>
       </View>
+      <View pointerEvents="none" style={[styles.edge, { borderRadius: radius.money, borderColor: colors.borderHairline }]} />
+    </View>
+  );
+}
+
+/** Shown above data that is already on screen when a refetch fails: the data stays, and this says so with a retry. */
+export function RefreshFailed({ message, onRetry, testID }: { message: string; onRetry: () => void; testID: string }) {
+  return (
+    <View testID={testID} accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.refresh}>
+      <Text variant="secondary" tone="textSecondary" style={styles.refreshText}>
+        {message}
+      </Text>
+      <Button label="Try again" variant="secondary" size="md" onPress={onRetry} />
     </View>
   );
 }
@@ -172,7 +185,7 @@ export function GroupRow({ group, onOpen }: { group: HeldGroup; onOpen: (ticketI
       disabled={!target}
       onPress={() => target && onOpen(target.id)}
       {...ring.handlers}
-      style={[styles.row, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }, ring.style]}
+      style={[styles.row, { backgroundColor: colors.surfaceCard }, ring.style]}
     >
       <DateBadge startsAt={group.event.startsAt} zone={group.event} />
       <View style={styles.rowWords}>
@@ -184,6 +197,7 @@ export function GroupRow({ group, onOpen }: { group: HeldGroup; onOpen: (ticketI
         </Text>
       </View>
       <Icon name="QrCode" size={listMetrics.qrIcon} color={colors.textSecondary} />
+      <View pointerEvents="none" style={[styles.edge, { borderRadius: radius.media, borderColor: colors.borderHairline }]} />
     </Pressable>
   );
 }
@@ -201,12 +215,15 @@ export function Page({ children, testID, insetTop }: { children: ReactNode; test
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
   nav: { height: navMetrics.height, paddingHorizontal: layout.gutter, flexDirection: 'row', alignItems: 'center', gap: space.md },
-  navTitle: { flex: 1, textAlign: 'center', fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title },
+  navTitle: { flex: 1, textAlign: 'center', fontSize: navMetrics.title, paddingTop: navMetrics.titleNudge, letterSpacing: navMetrics.titleTracking * navMetrics.title },
   navSpacer: { width: navMetrics.button },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, borderRadius: radius.tile, paddingVertical: noteMetrics.padV, paddingHorizontal: space.lg },
   noteIcon: { paddingTop: noteMetrics.iconNudge },
   noteText: { flex: 1, gap: noteMetrics.inner },
-  card: { borderRadius: radius.money, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  card: { borderRadius: radius.money, overflow: 'hidden' },
+  edge: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderWidth: StyleSheet.hairlineWidth },
+  refresh: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  refreshText: { flex: 1 },
   banner: { height: cardMetrics.banner, justifyContent: 'flex-end' },
   bannerWords: { paddingHorizontal: cardMetrics.wordsInset, paddingBottom: cardMetrics.wordsBottom, gap: cardMetrics.lineGap },
   bannerName: { fontSize: cardMetrics.name, lineHeight: canvasNormalLineHeight(cardMetrics.name) },
@@ -235,7 +252,6 @@ const styles = StyleSheet.create({
     gap: listMetrics.between,
     padding: listMetrics.rowPad,
     borderRadius: radius.media,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   rowWords: { flex: 1, minWidth: 0 },
   rowTitle: { fontSize: listMetrics.title, lineHeight: canvasNormalLineHeight(listMetrics.title) },

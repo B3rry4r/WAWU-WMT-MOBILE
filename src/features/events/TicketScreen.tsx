@@ -12,7 +12,7 @@ import { layout, radius, space } from '@/theme';
 
 import { boostBrightness, canBoostBrightness } from './brightness';
 import { checkedInLine, position } from './ticketFormat';
-import { cardMetrics, Note, Page, TicketCard, TicketNav } from './ticketParts';
+import { cardMetrics, Note, Page, RefreshFailed, TicketCard, TicketNav } from './ticketParts';
 import { fetchHeldTicket, heldTicketKey, isTicketId } from './ticketsApi';
 
 /** design/_gen/events.js `ticketView`: 14 between the note, the card and the line under it. */
@@ -63,7 +63,7 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
       </LoadingView>,
     );
   }
-  if (ticket.isError) {
+  if (ticket.isError && !ticket.data) {
     const offline = isApiError(ticket.error) && ticket.error.kind === 'network';
     return frame(
       <ErrorState
@@ -76,12 +76,20 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
   }
 
   const data = ticket.data;
+  const offlineNow = ticket.isError && isApiError(ticket.error) && ticket.error.kind === 'network';
   const void_ = data.status === 'void';
   const checkedIn = data.status === 'checked_in' && data.checkedInAt !== null;
   const where = position(data);
 
   return frame(
     <ScrollView contentContainerStyle={[styles.body, { paddingBottom: space.s3xl + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      {ticket.isError ? (
+        <RefreshFailed
+          testID="ticket-refresh-failed"
+          message={offlineNow ? "You're offline. This ticket may be out of date." : "Couldn't refresh. This ticket may be out of date."}
+          onRetry={() => void ticket.refetch()}
+        />
+      ) : null}
       {checkedIn ? (
         <Note
           testID="ticket-checked-in"
