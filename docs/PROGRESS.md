@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 97 of 223.**
+**Launch tasks done: 98 of 227.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 105 | 0 | 20 | 21 |
+| todo | 108 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 58 | 27 | 11 | 5 |
+| done | 59 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -119,6 +119,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
@@ -144,10 +145,10 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · SCHOOLS-04 · Verified (V1), back to building: one defect, hiding the school a page ends on makes the next page skip a school (cursor plus skip); 1,500 odd inputs no 500, protected 253/253 twice, `/search` other tabs byte-identical to main, contract additive; full contract suite NOT RUN (port 4001 held by another session).
 - 7 Oct 2026 · SCHOOLS-04 · Built, status verifying: public schools list and search, school page, course page with intakes and seats left, and a `schools` tab in search (backend `wmt/SCHOOLS-04`); hidden rows hidden at every level, no migration; 11 specs, 10 mutants killed, protected 253/253, gates equal to main.
 - 7 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
+- 8 Oct 2026 · FIX-11 · FIX-11 merged (backend PR #88, 8359057): the legal thread's opener is written once and a failing provider stops being called.
+- 8 Oct 2026 · FIX-18 to FIX-21 · Lead filed the verifiers' findings outside their tasks: three small 500s (wallet history paging, a repeated export token, a gone socket in the trust-proxy check), control characters in school names, webhook deliveries kept forever, and the money-route checks missing class-level guards and the isolation level. FIX-16 also covers the web's apply form for a taken-down field. CHECK-2, CHECK-3 and later move down by 4.
+- 8 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
 - 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
-- 7 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
+- 8 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
 - 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
 - 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
-- 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
-- 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
-- 8 Oct 2026 · FIX-06 · Verified round 2 (status review, no open defect): D1 closed, round 1's approve race 0 of 80 and reject race 0 of 20 on built Hubs with the real wawu-id; the admin read 35 of 35 (roles, every state, no protected answer widened); 162-step sweep identical to main except the new state's 5, decided and unknown approve and reject byte-identical; capability 42 of 42; every race 0 (main 34 of 60); protected 253/253; full suite 182 of 184 in its own namespace, the two misses passing alone on the host; backfill keeps main-made rows byte-equal; 19 of 19 mutants killed. The elevate outside the lock now leaves a raised tier on a lost approve, where main silently undid the rejection.

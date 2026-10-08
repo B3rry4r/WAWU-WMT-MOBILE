@@ -209,7 +209,7 @@ None. D1 is closed (above).
 
 **Status:** `review` (no open defect).
 
-## Lead merge note (7 Oct 2026)
+## Lead merge note (8 Oct 2026)
 
 Merged after two independent verifier rounds (round 2 report 7986b30) and backend PR #86 (merge ea79fca): an admin's unlist now holds against the professional's Show (409 listing_taken_down); approve, reject, Show, Hide, unlist and relist take the listing's row lock; new admin relist and visibility reads. Races 0 violations (main: 34 of 60); protected suite 253/253; every existing answer byte-identical outside the new state. FIX-16 (dashboard List again, the unlist toast, the web's 409 sentence) is next; add to it the web sentence for applying in a taken-down field ('You are already listed as a professional in this category.').
 
