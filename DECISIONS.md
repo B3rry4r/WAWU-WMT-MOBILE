@@ -352,6 +352,15 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 
 **Carried out by:** the payment plan (`docs/PAYMENTS-PLAN.md` and its tasks: the Nuvion adapter, tiers and points, then the web payment screens).
 
+### R-45 · Nuvion is the wallet provider; Fintava stays only for bills
+*Owner, 8 Oct 2026 ("Nuvion is the go-to"; "the only thing we are keeping from them" is bills payments).*
+- Every wallet is opened and run on Nuvion. Production moves to `WALLET_PROVIDER=nuvion` once wallet opening on Nuvion is built, checked and set up live (NUV-02, NUV-03, NUV-04, the opening part of NUV-10).
+- Fintava stays for bills payments only (BILLS tasks). Its wallet code stays in the repo behind the provider seam, unused, in case it is needed; nothing is deleted.
+- The website opens wallets first (WEBPAY-01). Naira first: dollar wallets (NUV-09) are not needed for the website's opening. Until the app's open-wallet screens ask for what Nuvion needs (G-460), the app sends a person with no wallet to the website to open it (lead default).
+- Every agent runs on Sonnet, and every screen shows its full designed UI with unbuilt parts present but inert (owner, 8 Oct 2026).
+
+**Carried out by:** NUV-02, NUV-03, NUV-04, WEBPAY-01, NUV-10 (opening part), then the app fixes in BRAND-01.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in

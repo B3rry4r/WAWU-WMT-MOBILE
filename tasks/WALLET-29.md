@@ -3,7 +3,7 @@ id: WALLET-29
 title: Move existing creators off Flutterwave
 owner: YOU
 area: WALLET
-order: 253
+order: 254
 priority: after-launch
 repo: wawu-backend
 type: money-path

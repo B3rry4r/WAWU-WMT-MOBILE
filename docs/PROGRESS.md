@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 104 of 236.**
+**Launch tasks done: 104 of 237.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 109 | 0 | 20 | 21 |
+| todo | 110 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
@@ -142,6 +142,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · R-45 · Owner: Nuvion is the wallet provider; Fintava stays only for bills payments, its wallet code kept unused. The website opens wallets first (WEBPAY-01 no longer waits on dollar wallets). BRAND-01 filed: the app icon, the welcome cover and the Settings entry. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
@@ -156,4 +157,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-01 · Verifier round 3: P1, T1, T2, focus refetch, year, bad link all pass live; R-41 a recorded blocker; 1198 tests; one small defect (date taken in Lagos time for other zones); status building.
 - 7 Oct 2026 · EVENTS-01 · Round 4: wording "This event is not available"; M08 and M22 killed by the paging spec; hub entries blocked until HOME-01 and EXPLORE-01 reach main; status verifying.
 - 7 Oct 2026 · EVENTS-01 · Round 3 built (list draws before prices, paging and mixed-tier specs, tiers refetch on focus, year and zone on dates, bad deep link state); status verifying.
-- 8 Oct 2026 · PROS-03 · Verified round 3 (completed): main merged, `npm run check` exit 0; D4 live with a 503 on refetch when the app returns to the front and with a connection drop after the first field (form, fields, text and send result kept, inline retry), D5, D8 and U3 passed live, P5 to P10 pictures within 1 px; no defect open; R3-1, the P7 Back deviation, U4 (row 8 now applied, phone upload not wired) and U5 for the lead; V10 NOT RUN; status review.
