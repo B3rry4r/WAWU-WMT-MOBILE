@@ -1,7 +1,7 @@
 ---
 id: LEGAL-03
 title: Legal consultations and deliverables
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 70
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # LEGAL-03 · Legal consultations and deliverables
+
+Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 3 had not pushed since about 02:00 UTC). The branch's rounds and rulings carry on as they stand.
 
 ## Read first
 
