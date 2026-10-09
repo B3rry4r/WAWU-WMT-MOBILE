@@ -7,7 +7,7 @@ order: 66
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [LEGAL-01, INBOX-02, UI-02]
 decisions: [R-14, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -119,7 +119,7 @@ Builder session, 9 Oct 2026, fix round 1 for D1.
 
 ## Verifier report, round 2
 
-Verifier session, 9 Oct 2026, fresh (did not build this task). Mobile verify branch `verify-legal-02b` from `b74b7be`; backend `7d69556`. PARTIAL REPORT, in progress: backend specs, gates, protected suite and contract:build are still running; status stays `verifying` until they land.
+Verifier session, 9 Oct 2026, fresh (did not build this task). Mobile verify branch `verify-legal-02b` from `b74b7be`; backend `7d69556`. Complete. Two defects open (D2, D3), so the status is `building`. Not run: V10 (no GEMINI_API_KEY anywhere; the builder's pictures and my runs used a verifier stand-in for the model, so real Gemini answers were not exercised); native iOS/Android (web only).
 
 | Pass | Result | Evidence |
 |------|--------|----------|
@@ -133,6 +133,7 @@ Verifier session, 9 Oct 2026, fresh (did not build this task). Mobile verify bra
 | V5 | passed with two findings below: `render_design.py S14 S15 S16 S17 H1` at 780 px wide beside the app at 390 px, 2x, light and dark. S14 ink bands match the design exactly after the 100 px status bar (header 80 high, divider, bubble lines 27/28 high at a 41 pitch, chips 72 high at a 88 pitch, composer 88, all equal). S16 brief card: title to first row 61, row pitch 84, card to button 16, in both. S17 name label, joined notice and bubbles line up; the Book card is LEGAL-04's. Home: services row Events then Legal packed left, tile 60 square, tile pitch 131 and 132, label gap and glyph to label 104 px in both. Dark is the same tokens (S14 dark bands equal) | `legal02v2/cmp-*.png`, `bands.py` |
 | Mutants (V6 logic) | 5 on the screen's state logic, `src/features/legal` jest: no double-send ref guard SURVIVED (71 pass; also in the browser with the guard removed a double click still made 1 POST, the disabled Send covers it, so the guard is defence in depth and not a defect); failed send loses the words killed (3 fail); 503 not kept killed (1); live-frame check inverted killed (4); server errors not retryable killed (1). A sixth, in `live.ts`, moving the cursor on `legal.thread`, SURVIVED the whole inbox and legal suites (see D3) | scratch copies restored with `git restore` |
 | Odd inputs | client `POST /legal/assistant/:id/messages`: NUL 400, lone surrogates 201, 200,000 chars 413, empty 400, wrong types 400, bad JSON 400; bad ids 400/404. No 5xx on the client route or on the frame. One 5xx outside this branch: see F1 | `frames.js` output |
+| Backend (as it will land) | passed: `7d69556` contains origin/main; `tsc --noEmit` 0; `src/legal`, `src/legal-intake`, `src/live` 18 suites, 466 passed, 4 skipped, 0 failed (with the mock WAWU ID running, which those specs need; a first run without it failed 6 suites on `fetch failed`, an environment fault); gates 1,012 files 16 fail, 70 warn, 76 accepted, the same counts as `origin/main` (1,011 files; the 16 are main's, none in a changed file); protected suite on a seeded DB: all 244 required tests pass (on an unseeded DB 5 learn/evg tests failed, unrelated to this branch); `npm run contract:build` leaves `contract/openapi.json` unchanged | `legal02v2/be-*.log` |
 
 **D2 (defect).** Gap ids G-470, G-471 and G-472 are already taken on `origin/wmt/NUV-03` (BACKEND_GAPS.md: Nuvion identity rows). Both branches landing gives duplicate ids with different meanings. Main's highest is G-493, so these three are free on main only; the builder must take unused ids (and the references in the code, tests and this file move with them).
 
