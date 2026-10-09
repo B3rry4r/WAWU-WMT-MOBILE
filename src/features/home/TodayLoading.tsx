@@ -3,15 +3,20 @@ import { StyleSheet, View } from 'react-native';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { radius } from '@/theme';
 
+import { servicesMetrics, servicesPresent } from './Services';
 import { gutter, todayMetrics as m } from './look';
 
 /** How many card shapes the rail shows while loading: three, the last running off the edge (H11). */
 const RAIL_CARDS = 3;
 
+/** design/_gen/home.js `todayLoading`: a tile is a 60 square over a 46 by 10 label bar at corner 5, 10 apart. */
+const tileShape = { labelAbove: 10, labelWidth: 46, labelHeight: 10, labelCorner: 5 } as const;
+
 /**
  * H11, Today while it loads: quiet shapes where the parts will be, each the size of the part it
- * stands in for. The four service tiles are not drawn on Today until their screens are built (R-41), so
- * their shapes are left out with them.
+ * stands in for. The services row (D11, H11) is its heading bar and one tile shape (60 square at corner 19.2 over a
+ * 46 by 10 label bar) per tile present, packed from the left as the row packs them (U-H1); a tile added later
+ * adds its shape through `servicesPresent`.
  */
 export function TodayLoading({ withTgif }: { withTgif: boolean }) {
   return (
@@ -20,6 +25,14 @@ export function TodayLoading({ withTgif }: { withTgif: boolean }) {
         <Skeleton height={m.skeletonMoney} radius={radius.money} />
         {withTgif ? <Skeleton height={m.tgifHeight} radius={radius.card} /> : null}
         <Skeleton width="70%" height={m.skeletonHeading} radius={m.skeletonHeadingCorner} />
+        <View style={styles.tiles}>
+          {Array.from({ length: servicesPresent }, (_, i) => (
+            <View key={i} style={styles.tile}>
+              <Skeleton width={servicesMetrics.tile} height={servicesMetrics.tile} radius={servicesMetrics.corner} />
+              <Skeleton width={tileShape.labelWidth} height={tileShape.labelHeight} radius={tileShape.labelCorner} />
+            </View>
+          ))}
+        </View>
         <View style={styles.rail}>
           {Array.from({ length: RAIL_CARDS }, (_, i) => (
             <Skeleton key={i} width={m.cardWidth} height={m.cardHeight} radius={radius.media} />
@@ -32,5 +45,7 @@ export function TodayLoading({ withTgif }: { withTgif: boolean }) {
 
 const styles = StyleSheet.create({
   stack: { gap: m.between },
+  tiles: { flexDirection: 'row' },
+  tile: { width: '25%', alignItems: 'center', gap: tileShape.labelAbove },
   rail: { flexDirection: 'row', gap: m.cardsApart, marginRight: -gutter, overflow: 'hidden' },
 });

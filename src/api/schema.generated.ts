@@ -3716,6 +3716,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/from-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The "from" price a person can actually pay, for a page of events at once
+         *     (EVENTS-01, G-271): the cheapest tier on sale now and not sold out, null
+         *     when none can be bought. `priceFromNaira` on the event keeps counting
+         *     every tier, because the web reads it that way. Declared before `:id`.
+         */
+        get: operations["EventController_fromPrices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/events/{id}": {
         parameters: {
             query?: never;
@@ -6672,6 +6694,8 @@ export interface components {
             pin: components["schemas"]["PinStateView"];
             bankTransfers: components["schemas"]["BankTransferAccessView"];
             beneficiaryCount: number;
+            /** @enum {string} */
+            accountNumberStatus: "none" | "on_its_way" | "active";
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -9349,6 +9373,12 @@ export interface components {
                 label: string;
             }[];
         };
+        EventFromPricesView: {
+            prices: {
+                eventId: string;
+                priceFromNaira: number | null;
+            }[];
+        };
         EventGoingView: {
             eventId: string;
             userGoing: boolean;
@@ -9713,7 +9743,7 @@ export interface components {
         };
         MyTierView: {
             /** @enum {string} */
-            state: "active" | "none" | "ending" | "ended";
+            state: "none" | "active" | "ending" | "ended";
             tier: components["schemas"]["MyTierSummaryView"] | null;
             activeFrom: string | null;
             activeUntil: string | null;
@@ -16957,6 +16987,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOptionsView"];
+                };
+            };
+        };
+    };
+    EventController_fromPrices: {
+        parameters: {
+            query: {
+                ids: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFromPricesView"];
                 };
             };
         };

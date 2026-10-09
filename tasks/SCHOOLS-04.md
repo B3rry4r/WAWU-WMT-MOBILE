@@ -336,3 +336,5 @@ Status: `review`.
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+Merge note (lead): merged origin/main (ddaf53f) into this branch and regenerated the contract from backend main a83496d (both /schools paths and /events/from-prices present); npm run check exit 0 (93 suites, 1587 tests, gates 0 findings).

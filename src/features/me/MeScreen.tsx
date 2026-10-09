@@ -56,6 +56,8 @@ export type MeScreenProps = {
   onEditProfile: () => void;
   onAddWork: () => void;
   onOpenWork: (wawuId: string, workId: string) => void;
+  /** A listing row on Services opens P8, Your listings (PROS-03, R-41). */
+  onOpenListings?: () => void;
 };
 
 /**
@@ -65,9 +67,9 @@ export type MeScreenProps = {
  *
  * Left out until the task that builds where they lead adds them, as drawn (R-27, R-41): QR (WALLET-20, after
  * launch), Menu (ME-03), the tick and the "Get your professional tick" prompt (ME-12), the Create button
- * (ME-04), and the way into paid message settings (INBOX-12) and the listings (PROS-03) from Services.
+ * (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings (PROS-03) are in.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -159,7 +161,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork }: MeScreenProps
               <Counts counts={countsOf(ready.counts)} />
               <ProfileTabs value={tab} onChange={setTab} />
               {tab === 'content' ? <ContentBody query={grid} /> : null}
-              {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} /> : null}
+              {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} /> : null}
               {tab === 'about' ? (
                 <AboutBody
                   me={ready.profile}
@@ -208,7 +210,7 @@ function ContentBody({ query }: { query: GridQuery }) {
   );
 }
 
-function ServicesBody({ creator }: { creator: boolean }) {
+function ServicesBody({ creator, onOpenListings }: { creator: boolean; onOpenListings?: () => void }) {
   const cache = useCache();
   const services = useQuery({ queryKey: servicesKey, queryFn: fetchServiceState, enabled: creator }, cache);
   const listings = useQuery({ queryKey: listingsKey, queryFn: fetchListings }, cache);
@@ -240,7 +242,7 @@ function ServicesBody({ creator }: { creator: boolean }) {
   if (!paid && live.length === 0) {
     return <EmptyState testID="me-services-empty" icon="BriefcaseBusiness" title="No services yet" message="Paid messages and professional listings show here once they are on." />;
   }
-  return <ServicesTab paid={paid} listings={live} />;
+  return <ServicesTab paid={paid} listings={live} onOpenListings={onOpenListings} />;
 }
 
 type AboutBodyProps = {
