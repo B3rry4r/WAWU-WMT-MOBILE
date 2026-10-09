@@ -41,6 +41,8 @@ export const exploreMetrics = {
 export type ExploreScreenProps = {
   /** A category tile was tapped: `all` for All and More, else the category's id (X2, X3). */
   onOpenCategory: (category: CategoryChoice) => void;
+  /** The "Find a professional" door (PROS-01): the directory, P1. Absent, the door is not drawn. */
+  onFindProfessional?: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. Absent, the door is not drawn. */
   onListServices?: () => void;
 };
@@ -49,9 +51,9 @@ export type ExploreScreenProps = {
  * X1 and X14: Explore's browse, with a real error state (a request failed, with a retry). It reads the creator
  * categories and the featured creators. Entries whose screens are not built yet are not drawn (R-27, R-41): the
  * search bar and bell (EXPLORE-02, ME-14), the featured event, Upcoming events and its See all (EVENTS-01), Featured
- * creators' See all (EXPLORE-02), opening a creator (ME-02), the other doors (PROS-01, SCHOOLS-03; PROS-03's "List your services" is in) and Create (ME-04).
+ * creators' See all (EXPLORE-02), opening a creator (ME-02), Find a school (SCHOOLS-03; PROS-01's "Find a professional" and PROS-03's "List your services" are in) and Create (ME-04).
  */
-export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onFindProfessional, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -105,7 +107,11 @@ export function ExploreScreen({ onOpenCategory, onListServices }: ExploreScreenP
     );
   } else {
     const creators = featured.data ?? [];
-    const doors: Door[] = onListServices ? [{ id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices }] : [];
+    // X15's order: Find a professional, Find a school, List your services; each only once its screen is built.
+    const doors: Door[] = [
+      ...(onFindProfessional ? [{ id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional } as const] : []),
+      ...(onListServices ? [{ id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices } as const] : []),
+    ];
     body = (
       <>
         <CategoryTiles
