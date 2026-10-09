@@ -215,7 +215,7 @@ Killed: V1 Find a school left out (3 tests); V2 Find a professional opens E1 (th
 
 ## Builder report, round 2
 
-Fresh Sonnet builder, 9 Oct 2026, on `wmt/COMPLETE-02` from ce326bd (origin/main merged first as e4ce9d7; the only conflict was the generated `docs/PROGRESS.md`, rebuilt by `check_tasks.py --write`). Mobile only, no package change. Round 1's work stands; this round closes the verifier's Defect 1 (eight surviving mutants) and Findings 1 to 4.
+Fresh Sonnet builder, 9 Oct 2026, on `wmt/COMPLETE-02` from ce326bd (origin/main merged first as e4ce9d7 and again, after it moved to fffc816, as 7d78178; the only conflict both times was the generated `docs/PROGRESS.md`, rebuilt by `check_tasks.py --write`). Mobile only, no package change. Round 1's work stands; this round closes the verifier's Defect 1 (eight surviving mutants) and Findings 1 to 4.
 
 **Lead rulings for this round (Default (lead), owner may override)**
 1. The eight test gaps are closed so each of V3, V6, V12, V16, V23, V24, V29 and V31 fails a test; V16 (the owner's own complaint) has a plain test named for it.
@@ -262,7 +262,7 @@ Fresh Sonnet builder, 9 Oct 2026, on `wmt/COMPLETE-02` from ce326bd (origin/main
 - Create returning: `retry-before-X1-*` (categories, the account read and the count failing: banner, no Create, no dot) and `retry-after-X1-*` (after Try again: banner gone, Create, the dot and the tiles back). `data-X1-*` is the unchanged data state.
 - Scripts: `shots.py`, `standin.js`.
 
-**Checks.** `npm run check` exit 0, as one command, on the final tree (origin/main e4ce9d7's merge in it): typecheck 0, lint 0 errors (2 warnings, both in `src/features/events/__tests__/eventsFocus.test.tsx`, not this branch), 97 suites / 1642 tests (round 1: 97 / 1626; the 16 added are Explore's, none in a new suite), gates 10 run, 403 files scanned, 0 fail, 0 baseline entries, 6 warnings (the same `unbuilt_entries` list as round 1), task check 271 tasks. `npx jest src/features/explore`: 3 suites, 78 tests. The known `eventsScreens.test.tsx` load flake did not occur (the file passed inside the full run, on a machine with 12 GB free); no events test file is on this branch. Log: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/complete-02r2/check1.log` (the first full run, which finished the whole chain) and `check2.log` (the final run with its exit code).
+**Checks.** `npm run check` exit 0, as one command, on the final tree (origin/main fffc816 merged, as 7d78178): typecheck 0, lint 0 errors (2 warnings, both in `src/features/events/__tests__/eventsFocus.test.tsx`, not this branch), 97 suites / 1642 tests (round 1: 97 / 1626; the 16 added are Explore's, none in a new suite), gates 10 run, 403 files scanned, 0 fail, 0 baseline entries, 6 warnings (the same `unbuilt_entries` list as round 1), task check 271 tasks. `npx jest src/features/explore`: 3 suites, 78 tests. The known `eventsScreens.test.tsx` load flake did not occur (the file passed inside the full run, on a machine with 12 GB free); no events test file is on this branch. Log: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/complete-02r2/check1.log` (the first full run, which finished the whole chain) and `check2.log` (the final run with its exit code).
 
 **Secret scan** of the staged diff: no key-shaped string (no long hex or base64 run, `sk_`, `FLWSECK`, bearer token or private-key header).
 
