@@ -20,7 +20,7 @@ import { layout, space, useWawu } from '@/theme';
 import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators, fetchUnreadNotifications, unreadKey } from './api';
 import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
-import { CreateButton, createButtonMetrics } from './CreateButton';
+import { CreateButton, createButtonMetrics } from '@/components/CreateButton';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
 import { DoorsCard, type Door } from './DoorsCard';
 import { ExploreBar } from './ExploreBar';

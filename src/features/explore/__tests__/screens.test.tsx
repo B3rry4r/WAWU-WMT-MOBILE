@@ -555,7 +555,7 @@ describe('X1 · Explore', () => {
     };
 
     it('a creator has 90 below the last row: the button’s 16 offset, its 58 and 16 more, so the last row’s chevron is clear', async () => {
-      const { createButtonMetrics } = require('../CreateButton') as typeof import('../CreateButton');
+      const { createButtonMetrics } = require('@/components/CreateButton') as typeof import('@/components/CreateButton');
       answers[featured] = [ok({ items: [] })];
       answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
       await rtl.render(wrap(<ExploreScreen {...entries()} />));
