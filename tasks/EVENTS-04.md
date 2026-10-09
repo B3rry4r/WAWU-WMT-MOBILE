@@ -128,6 +128,14 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+**Verifier (9 Oct 2026, partial report, in progress).** Verified as it lands: `origin/main` merged into both branches (backend clean, no migration in this branch; mobile conflicts in EventsScreen.tsx, BACKEND_GAPS.md, SHARED-CHANGES.md, PROGRESS.md resolved by keeping both sides), contract regenerated from the backend branch merged with main (`npm run api` reads backend main only, so the branch contract was copied in; builder's `SOURCE_COMMIT` practice kept). G-442 and G-443 are unique across main and every origin wmt/* branch.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | `npm run check` EXIT 0: 105 suites, 1797 tests passed; gates 437 files scanned, 0 fail, 15 warn; check_baseline ok. Backend: `tsc --noEmit` clean, `npx jest --runInBand src/event src/storage` 11 suites, 282 tests passed (own DB `wawu_hub_test_events_04_v`). |
+| V9 (backend half) | passed, see findings | Live Hub (branch merged with main) + mock-wawu-id on :4262 (not the real WAWU ID): `POST /events` 400 on non-integer price or quantity, string price, `ticketTypes` string or `[null]` or nested array, nothing saved; one event with Regular N5,000 x 100 and a N0 ticket saved `pending` and listed in the real admin queue; admin reject, then `PATCH /events/{id}` put it back to `pending`. |
+| V4, V5, V6, V7, V9 (app half), V10 | in progress / V10 NOT RUN (no phone, R-24) | |
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
