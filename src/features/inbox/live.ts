@@ -323,7 +323,7 @@ export class LiveClient {
       else this.cursor = event.cursor;
       this.deliver(event);
     } else if (type === 'legal.thread') {
-      // A legal conversation changed (LEGAL-02, G-472). Socket only and not in the catch-up, so it never moves the
+      // A legal conversation changed (LEGAL-02, G-502). Socket only and not in the catch-up, so it never moves the
       // cursor; it carries no words, and the screen reads the conversation itself (the Hub checks who is asking).
       this.deliver(frame as LiveEvent);
     }

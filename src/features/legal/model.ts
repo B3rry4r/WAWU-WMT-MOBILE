@@ -110,7 +110,7 @@ export function failureKind(error: unknown): FailureKind {
   return 'other';
 }
 
-/** The words of a live frame that says a conversation changed (LEGAL-02, BACKEND_GAPS G-472). */
+/** The words of a live frame that says a conversation changed (LEGAL-02, BACKEND_GAPS G-502). */
 export function isLegalLiveEvent(event: unknown): boolean {
   return typeof event === 'object' && event !== null && (event as { type?: unknown }).type === 'legal.thread';
 }

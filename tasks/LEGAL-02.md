@@ -7,7 +7,7 @@ order: 66
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [LEGAL-01, INBOX-02, UI-02]
 decisions: [R-14, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -89,8 +89,8 @@ Builder, 8 Oct 2026 (resumed after a crash; the earlier session's work reviewed 
 - **S17.** Header, "joined" notice and name label come from `consultant`/`consultantName`; the notice stands before the consultant's first message wherever it falls (mid-chat). Message Adaora writes to the messages route. New messages arrive without a refresh on the `legal.thread` frame, on live reconnect, on focus and on foreground (tests, and backend spec `live-legal.contract.spec.ts`). Book and its card are LEGAL-04's.
 - **States, by real cause.** Loading skeleton; open fails offline / Hub error with Try again; 503 `assistant_unavailable` keeps the message and offers Ask again; 409 busy re-reads; a failed send puts the words back in the box in front of anything typed since, with inline Try again (none where retrying cannot work); double tap and double Send send once (ref guard); a failed refresh keeps the conversation and typed text; drafts kept across leave and return. "Empty": a person with no conversation gets a new one. Model tests kill the state branches (`model.test.ts`).
 - **Hub entry (R-41).** The Legal tile in "What would you like to do today?" opens `/legal`, packed from the left (U-H1). EVENTS-01 (PR #14) builds the same row: merge note SHARED-CHANGES LEGAL-02 #5.
-- **Pictures.** Web screenshots at 2x, light and dark, against the Hub's legal module on a test DB with a scripted AI stand-in (no GEMINI_API_KEY locally), beside `render_design.py S14 S15 S16 S17`. Not claimed to match; the verifier decides. Known difference: S16's "Nothing is charged yet." is left out (G-470).
-- **Gaps filed.** G-470 (S16 line not served), G-471 (no route for the current conversation once sent), G-472 (LEGAL-03 deliverable lines send no live frame). Shared changes LEGAL-02 #1 (`_layout.tsx` guard), #3 (`toApiError` reads `reason.retryAfterSeconds`), #4 (backend live), #5 (services row merge); #2 not needed (contract already current on main).
+- **Pictures.** Web screenshots at 2x, light and dark, against the Hub's legal module on a test DB with a scripted AI stand-in (no GEMINI_API_KEY locally), beside `render_design.py S14 S15 S16 S17`. Not claimed to match; the verifier decides. Known difference: S16's "Nothing is charged yet." is left out (G-500).
+- **Gaps filed.** G-500 (S16 line not served), G-501 (no route for the current conversation once sent), G-502 (LEGAL-03 deliverable lines send no live frame). Shared changes LEGAL-02 #1 (`_layout.tsx` guard), #3 (`toApiError` reads `reason.retryAfterSeconds`), #4 (backend live), #5 (services row merge); #2 not needed (contract already current on main).
 - **Ran.** Mobile: tsc 0; legal + home jest 107 passed; `npm run check`: typecheck and lint pass, jest 1509 of 1509, gates 0 fail / 0 warn / 0 accepted (366 files), task check failed only because PROGRESS.md was stale from this report's own edit, then `npm run tasks -- --write` and `npm run tasks` pass. Backend: tsc 0; `src/live` + `src/legal-intake` 165 passed, 4 skipped; `src/legal/` + new spec 306 passed; gates 16 fail / 69 warn / 76 accepted on the branch and on main alike (no new finding).
 - **NOT RUN.** Native iOS/Android build (web only); a real Gemini assistant (no key locally; profiling pictures used the stand-in).
 
@@ -142,6 +142,15 @@ Verifier session, 9 Oct 2026, fresh (did not build this task). Mobile verify bra
 **F1 (finding, not this task's).** `POST /legal/ops/intakes/chat/:id` with a NUL in `body` (`"a\u0000b"`) answers 500 (Postgres refuses the character). The client route rejects it with 400. This task only adds the publish after the write, so the 500 is on main's ops route (admin only); worth a one-line guard by the LEGAL-01 owner.
 
 **F2 (finding, pre-existing on main).** Home "What would you like to do today?" heading: the app sets `fontSize` 18.5 but keeps the body variant's line height (about 21.75), where the canvas's `line-height: normal` at 18.5 is `canvasNormalLineHeight(18.5)` = 24; measured at 2x the gap above the heading is 4 px short and the gap below it 2 px short against H1. The same line is in `origin/main` `src/features/home/Services.tsx` (not introduced here); the tile label next to it does use `canvasNormalLineHeight`.
+
+## Builder report, round 3
+
+Builder session, 9 Oct 2026, fix round 2 for D2 and D3.
+
+- **D2 fixed.** Highest gap id on mobile main and every origin wmt/* branch is G-493. This task's gaps are now G-500 (S16 line not served), G-501 (no route for the current conversation once sent) and G-502 (LEGAL-03 deliverable lines / `legal.thread` socket row), renumbered in BACKEND_GAPS.md, the Builder reports above and the code comments in `api.ts`, `model.ts`, `LegalChatScreen.tsx` and `live.ts`. Verifier reports are untouched.
+- **D3 fixed.** New case in `src/features/inbox/__tests__/live.test.ts` (catching up): a real `legal.thread` frame through the real `LiveClient` with the fake socket reaches listeners but the next reconnect still catches up from the earlier `chat.message` cursor; a later `chat.message` moves it. Added only; no assertion edited. Mutant (`this.cursor = frame.cursor` in the `legal.thread` branch of `live.ts`, scratch edit restored by copying the original back) makes exactly that test fail (1 failed, 29 passed); passes on the real code (30 passed).
+- **Merge.** origin/main already contained in the branch; no conflict markers.
+- `npm run check`: exit 0.
 
 ## Hub entries this task adds (R-41)
 

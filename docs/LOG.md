@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 9 Oct 2026 · LEGAL-02 · Builder, round 3: D2 fixed (gaps renumbered G-500 to G-502, clear of every branch) and D3 fixed (a test pins that `legal.thread` never moves the catch-up cursor; fails with the mutant).
 - 9 Oct 2026 · LEGAL-02 · Verifier, round 2: D1 verified live (consultant message on screen in about 60 ms, light and dark, also after a foreground; frame reaches only the matter's client); V4, V5, V6, V9 and the backend checks pass; two defects open, so `building`: D2 gap ids G-470 to G-472 are also used on `wmt/NUV-03`, D3 no test pins that `legal.thread` leaves the catch-up cursor alone.
 - 9 Oct 2026 · LEGAL-02 · Builder, round 2: D1 fixed (the shared live client now passes `legal.thread` frames on; a test over the real client with a fake socket fails on the old code; live run: the consultant's message shows 72 ms after the admin write, no refresh); origin/main merged into both branches.
 - 8 Oct 2026 · LEGAL-02 · Builder: legal assistant chat (S14 to S17) with brief, Send to a consultant and consultant handover, live `legal.thread` frame on backend wmt/LEGAL-02 (PR #95), Legal tile on Home; gaps G-470 to G-472; status verifying.
