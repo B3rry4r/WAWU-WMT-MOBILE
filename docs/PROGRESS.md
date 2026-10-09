@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 111 | 0 | 20 | 21 |
+| todo | 110 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 5 | 0 | 0 | 0 |
+| review | 6 | 0 | 0 | 0 |
 | done | 71 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -18,6 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
@@ -149,6 +150,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 8 Oct 2026 · EVENTS-03 · Verified (round 4, live against the branch Hub and mock WAWU ID): a failed refetch keeps the list and the ticket with its QR and Try again, first-load failure shows the error screen (D1); rows 72 pitch 84, card 397, nav title equal to the canvas in both themes (D2); "NOV 05" badge (D3); FilterChips 1 px is the shared component's; main merge conflicts in EVENTS-01 Explore files, left to EVENTS-01; status review.
+- 8 Oct 2026 · EVENTS-03 · Fix round 1 built: a failed refetch keeps the shown tickets and QR with an inline retry (D1), borders inside so rows are 72, pitch 84, card 397 and the nav title sits right (D2), EVENTS-01's two-digit badge merged in (D3); back to verifying.
+- 8 Oct 2026 · EVENTS-03 · Verified (round 3, independent decoders read the drawn QR for 344 texts and all 8 masks; live door check-in accepted the decoded code; new routes and 244 protected routes hold): three defects, a failed refetch drops the shown data, row and card 2 px tall, badge day not two digits; status building.
+- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
 - 8 Oct 2026 · SCHOOLS-04 · Verifier round 5, status review (backend `e87626e`, mobile `58de4a5`): D4 closed (mobile contract byte-equal to the backend branch's, three schools paths and six schemas in the contract and types, `SOURCE_COMMIT` right, `sync_contract.py` no diff); F1 spec passes and kills M4 and the reversed tie; no production change since round 3 but main's; tsc 0, 150 of 150 specs, protected 253/253, gates equal to main's 16 fails, contract additive, mobile `npm run check` exit 0; no defect open.
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 5, status verifying: D4 fixed, the mobile contract and types are copied again from backend branch `e87626e` (main `9d90d57` merged there, contract regenerates with no diff, schools specs 36 of 36) with `sync_contract.py`; `cmp` identical, the three schools paths and six `PublicSchool*` schemas back in `schema.generated.ts`.
 - 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent round 2 (lead), back to building (backend `5a602f9`, then `3971fea` and `7291658`; mobile `4a28ede`, then `7972878`): D2 closed over real HTTP (17 worst-case names through the admin route walked past at limits 1 to 3, longest cursor 1498; 360 units and 1498 characters confirmed exact against validator 13.15.35 over 15.4 million strings and the real DTOs), D3 closed, D1 holds on an ICU database (hide, ties, rename, insert, `q` plus `category`), forged cursors reveal nothing and never 500, `/search` protected tabs byte-identical to main, 45 of 45 mutants killed, protected 253/253 three times, full suite green after environment reruns; round 4's F1 spec holds (M4 now killed); one new defect D4: round 4's mobile merge replaced the task's contract and types with backend main's (the three schools paths are gone from the app's contract).
@@ -160,7 +165,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent (lead), back to building (backend `807a6b8`, mobile `a944179`): D1 closed over real HTTP on an ICU en-US database (hiding the cursor school skips nothing, 53 of 53 once at 9 limits, ties, `q` plus `category`), the 7 old mutants now killed, own 18 of 25 killed, forged cursors reveal nothing and never 500, fields public only, `/search` protected tabs byte-identical to main, protected 253/253, full suite green after the two environment reruns; two defects open: D2 a long emoji name the admin accepts gives a cursor the list then refuses (400), D3 the school page's next intake has no id tiebreak; enrol route NOT RUN (SCHOOLS-07 todo).
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 2, status verifying: D1 fixed by keyset paging on (name, id) with an opaque, strictly checked cursor; new paging spec (10 tests) kills the 7 surviving mutants and 2 more; live walks with hide and show mid-walk see every row once; 967 odd inputs incl. cursor tampering, zero 500; protected 253/253.
 - 7 Oct 2026 · SCHOOLS-04 · Verified (V1), back to building: one defect, hiding the school a page ends on makes the next page skip a school (cursor plus skip); 1,500 odd inputs no 500, protected 253/253 twice, `/search` other tabs byte-identical to main, contract additive; full contract suite NOT RUN (port 4001 held by another session).
-- 7 Oct 2026 · SCHOOLS-04 · Built, status verifying: public schools list and search, school page, course page with intakes and seats left, and a `schools` tab in search (backend `wmt/SCHOOLS-04`); hidden rows hidden at every level, no migration; 11 specs, 10 mutants killed, protected 253/253, gates equal to main.
-- 9 Oct 2026 · COMPLETE-05 · Merged: the Wallet tab shows its whole design at every phone width, with inert entries for unbuilt screens and no money path touched.
-- 9 Oct 2026 · COMPLETE-02 · Merged: Explore shows its whole design (X1, X14, X15), with inert entries for unbuilt screens and every section kept on a failed read.
-- 9 Oct 2026 · COMPLETE-02 · Verifier, round 2: V1 passed (npm run check exit 0 on 797740d: 97 suites, 1642 tests, 10 gates, 403 files, 0 findings; origin/main fffc816 is already merged); V5 and V6 passed in the web export against a stand-in Hub (the data, empty, nothing-served, buyer and loading pictures are pixel-identical to round 1's; a failed read keeps the bar, hero, tiles, both rails, doors and Create under one banner at 390, 360 and 320 px in both themes; Try again re-reads everything and recovers; a failed refetch keeps held data; Create clears the last row by 15.9 px at the end of the scroll and a buyer keeps 30; Create returns on refocus, pull and Try again); the 8 round 1 test gaps are closed (V3, V16, V23, V24, V31 directly, V6, V12, V29 re-aimed and split, all killed); V9 NOT RUN. Status back to building: of 14 new mutants 6 are killed and 8 survive (a refetch failing with data held, the Hub unreachable, the events re-read on Try again, the banner's icon, spinner, alert role and button variant), all test gaps with the product right; one question for the lead (Try again swaps the screen for X14 while it reads, so the banner's spinner never shows).
