@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 68 | 27 | 11 | 5 |
 
@@ -20,7 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
 
@@ -149,6 +149,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · COMPLETE-02 · Verifier: V1 passed (npm run check exit 0 on 5f3e7f9: 97 suites, 1626 tests, 10 gates, 402 files, 0 findings; origin/main a2f9143 is already merged); V5 and V6 passed in the web export against a stand-in Hub (data, only categories served, nothing served, loading, failed reads, buyer and creator: every X1, X14 and X15 element is on screen, 28 taps on the seven inert entries opened nothing and sent nothing, every wired entry landed on its screen, every `unbuilt` id is the task whose artboard it leads to); V9 NOT RUN (no local Hub). Status back to building: 32 own mutants, 24 killed and 8 survive (the doors card dropped on an empty Hub, three neutral frames showing made-up words, Create during X14 and while the account is unknown, the bar after a failed read, pull-to-refresh and the bell), all test gaps with the product right; two questions for the lead (a failed read hides every section; Create covers the last door's chevron at the end of the scroll).
 - 9 Oct 2026 · COMPLETE-02 · Builder: Explore draws the whole of X1 and X14 (R-46): the bar's search pill and bell (with its unread dot from `GET /me/counts`), the hero with its pager dots, the tiles with More always, Featured creators with See all, Upcoming events with See all, the three doors and Create for creator accounts; a section with nothing to show keeps its heading and draws neutral frames; the built entries are wired (tile, event, events See all, List your services), the rest are `unbuilt` (EXPLORE-02 x2, ME-02 x2, ME-14, ME-04, PROS-01, SCHOOLS-03); 15 own mutants, 15 killed; pictures against a stand-in Hub; status verifying
 - 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
@@ -163,4 +164,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
-- 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.

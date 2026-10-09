@@ -7,7 +7,7 @@ order: 238
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: [COMPLETE-01]
 decisions: [R-46, R-27, R-29]
 passes: [V1, V5, V6, V9]
@@ -126,7 +126,92 @@ Drawn: 25 rows. Wired: rows 5, 8, 9, 15, 17, 18, 22. Inert, by task: EXPLORE-02 
 
 ## Verifier report
 
-_Not started._
+Fresh Sonnet verifier, 9 Oct 2026, branch `wmt/COMPLETE-02` at 5f3e7f9 (detached worktree `vcomplete-02m`). I wrote none of this code and changed none on the branch: every mutant ran in that worktree, one edit at a time, and each file was restored and its sha256 compared (all restored). Pictures are of the web export of 5f3e7f9 against a STAND-IN Hub and ID on my ports (5985 web, 5986 Hub, 5987 ID), signed in with an injected token, so they prove screens and states, not the live seam. Nothing off loopback was called (0 external requests aborted over every run). Evidence folder: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vcomplete-02/` (`ref/` the three renders, `shots/` every picture and `results.json`, `taps-results.json`, `check_branch.txt`, `mutants*.out`, `rig/` the stand-in and the scripts).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `npm run check` exit 0 on 5f3e7f9: typecheck 0 errors, lint 0 errors (2 warnings, both in `src/features/events/__tests__/eventsFocus.test.tsx`, not this branch), 97 suites / 1626 tests, gates 10 run, 402 files scanned, 0 fail, 0 baseline entries, 6 `unbuilt_entries` warnings (EXPLORE-02 x2, ME-02 x2, ME-04, ME-14, PROS-01, SCHOOLS-03), task check 270 tasks (`check_branch.txt`). origin/main is still a2f9143 and is an ancestor of the branch head (the builder merged it as 63fcf0f), so a trial merge of origin/main is a no-op and the run above is the post-merge run. The run after setting the status is recorded at the end of this report. |
+| V5 Picture | passed, with one question (finding 2) | Render beside built, 390 px at 2x, light and dark: `shots/cmp-X1-data-*`, `cmp-X1-empty-*` (only categories served, the owner's phone), `cmp-X1-blank-*` (nothing served), `cmp-X1-user-*` (a buyer: no Create), `cmp-X1-error-*`, `cmp-X14-*`, `cmp-X15-data-*`, `cmp-X15-empty-*`. Geometry read from the DOM against the canvas's own hotspot map (`design/_gen/explore.js`): search pill 252 by 44 at x 64, bell 44 at x 326, bell dot 8 at (351, bar top + 10), hero 350 by 196 at x 20, hero dots 22/6/6 at right 16 bottom 18, Create 58 at x 314 and 106 above the phone's bottom: all equal to the canvas (the built page has no status bar, so every y is 50 less, the same for each element). At 360 and 320 px wide nothing overflows (`narrow*`). |
+| V6 States | passed for every state but the failed read, which is finding 1 | With data, only categories, nothing served, loading (featured creators held, categories held, events held: X14 with the bar and Create over it), events failing, unread count failing, unread count held, account read failing, account read held, a buyer, a professional, no account type, categories 500, featured creators 500, the Hub unreachable. Table below; `shots/results.json` has every inventory. |
+| V9 Live seam | NOT RUN | The brief gave this verifier no backend, database prefix or ports, only the stand-in. Unblocked by a local Hub from backend main with a mock WAWU ID on assigned ports: sign in through the real login (no injected token) as an account with an unread notification and see the bell's dot, then `GET /api/hub/me/counts` answers 401 without a token and `data.unreadNotifications` above 0 with one. Read instead, not run: backend main 492c21e `src/me/me.controller.ts` serves `GET /me/counts` as `{ purchases, saved, unreadNotifications }` from `MeNotificationsService.unreadCount`, which is what `fetchUnreadNotifications` reads. |
+
+**Element table checked** (X1, X14, X15; light and dark; 390 px). D data, C only categories served, N nothing served, L loading, F failed categories or featured read.
+
+| Element | D | C | N | L | F |
+|---|---|---|---|---|---|
+| Mark (the app's own, R-37) | yes | yes | yes | yes | yes |
+| Search pill "Search Who Made This" | yes | yes | yes | yes | yes |
+| Bell | yes | yes | yes | yes | yes |
+| Bell dot | yes (2 unread) | no (0) | no (0) | yes | yes |
+| Hero: picture, scrim, FEATURED EVENT, name, day and place | yes | neutral frame with kicker | neutral frame | X14 block | missing |
+| Hero's three dots (22, 6, 6) | yes | yes | yes | no | missing |
+| Tiles: All on, six categories, More | yes, More at the end | yes | All, six neutral frames, More | four shapes | missing |
+| Featured creators heading and See all | yes | yes | yes | heading bar | missing |
+| Creator cards: portrait, @handle, tick, field, Follow | 4 | three neutral cards | three neutral cards | three shapes | missing |
+| Upcoming events heading and See all | yes | yes | yes | no | missing |
+| Event cards: picture, date badge, name, pin, place | 3 | three neutral cards | three neutral cards | no | missing |
+| Doors: Find a professional, Find a school, List your services | 3 | 3 | 3 | no | missing |
+| Create (+), creator account | yes | yes | yes | yes | yes |
+| X14 shapes: hero block, four tiles, heading bar, three cards | | | | yes | |
+
+The F column is finding 1. No em-dash and no "WAWU" on any built screen's text in any state. The neutral frames carry no visible word except the kicker FEATURED EVENT.
+
+**Accounts.** Create is drawn for `creator` and for nobody else: a user, a professional, an account with no type, a failed account read and a held account read (while the read is out) all show none (`shots/user-X1-*`, `professional-*`, `notype-*`, `mefail-*`, `results.json` keys `held-users-me-*`). The bell's dot follows `GET /me/counts` alone: 2 shows it, 0 and a failed read and a held read do not, and a held read does not hold Explore up.
+
+**Wired or inert.** Each destination task read in `tasks/` and checked against the canvas's own hotspot map (`design/_gen/explore.js` `entryMap`) and `design/canvas-inventory.json`:
+
+| Entry | Destination on the canvas | Task that builds it, status on main a2f9143 | Built as | Result in the web export |
+|---|---|---|---|---|
+| Category tile, All, More | X3, X2 | EXPLORE-01, done | wired | `/categories?category=photography` and `=all` |
+| Hero | E2 | EVENTS-01, review | wired | `/events/e1` |
+| Event card | E2 | EVENTS-01, review | wired | `/events/e2` |
+| Upcoming events See all (populated and empty) | E1 | EVENTS-01, review | wired | `/events` both times |
+| List your services | P5, or P8 | PROS-03, review | wired | `/professional-apply` for a creator with none and for a buyer, `/professional-listings` with an application |
+| Search pill | X5 Search | EXPLORE-02 (artboards X4 to X7), todo | `unbuilt('EXPLORE-02')` | tapped: URL, words and requests unchanged, nothing thrown |
+| Featured creators See all | X4 All creators | EXPLORE-02, todo | `unbuilt('EXPLORE-02')` | same |
+| Bell | M31 Notifications | ME-14 (M29 to M32), todo | `unbuilt('ME-14')` | same |
+| Creator card (Explore and Categories) | M5 Public profile | ME-02 (M5, M6, M33), todo | `unbuilt('ME-02')` | same |
+| Find a professional | P1 Professionals | PROS-01 (P1 to P4), todo | `unbuilt('PROS-01')` | same |
+| Find a school | SC1 Schools | SCHOOLS-03 (SC1, SC2, SC3, SC10), todo | `unbuilt('SCHOOLS-03')` | same |
+| Create | M19 Create | ME-04 (M19 to M22), todo | `unbuilt('ME-04')` | same |
+
+Every named id exists, is not built, and is the task whose `artboards` list the destination artboard; no wrong id. Every entry whose task is `review` or `done` is wired and lands on its screen. The seven inert entries were tapped twice each in light and twice in dark (28 taps, `taps-results.json`): the URL, the page words and the request log are the same after each tap, and no page error or console error appeared (the stand-in's missing live socket is filtered; it errors on its own, not on a tap). The jest test does the same on the screen with every callback a spy.
+
+**No regressions.** Events (E1 and E2 from the hero, the card and See all, the settle-before-draw rule), follow and unfollow, the refusal toast, Categories (X2, X3, X13 and its card), the doors card and the pull-to-refresh wiring behave as on main: the Explore test folder (62 tests) and the events folder pass inside `npm run check`; `git diff origin/main HEAD` touches 19 files, exactly the builder's list, and nothing under `src/features/events`, `src/components`, `src/app/_layout.tsx`, `src/features/pro-listing`, `src/theme`, `src/api`, `contract/` or `package.json`. `ExploreScreen` has one caller, `src/app/(tabs)/explore.tsx`, which passes all four props (typecheck clean). Pull-to-refresh and Try again now also re-read the unread count and nothing else changed there. No stand-in for anything main has: there is no other Create button, tab bar or See all in `src/components` that this branch copies (`SeeAll` and `pressScale` are imported).
+
+**Decisions, judged.**
+1. Search pill "Search Who Made This": agree. R-37 lists "Search Who Made This" verbatim as the app's wording.
+2. The hero's three dots with one featured event: agree. R-46 and the owner's rule outweigh EVENTS-01's earlier choice; they are decorative and hidden from a screen reader. Side effect: `src/features/events/ExploreEvents.tsx` still says "The hero's three pager dots are not drawn" (finding 3).
+3. Create for creator accounts only: agree (R-38 says Create is the floating button for creator accounts; this brief says the same). Caveats: finding 4 (a failed account read is never retried) and the mutants V6 and V29 (no test pins "not while unknown" or "drawn during X14").
+4. The Categories card made inert too: agree. It is the same component to the same screen, ME-02 wires both at once, and the gate lists both call sites.
+5. The shared `CreateButton` row (SHARED-CHANGES COMPLETE-02 F1): agree. `src/components/` is fenced, so it lives in `src/features/explore/` until the lead moves it; Home and Me may import it from there meanwhile.
+Also agreed from the builder's list: More always drawn (6), neutral frames with spoken labels (7 and 8), a failed events read draws frames and no error (verified in the browser: `shots/eventsfail-X1-*`), sizes (the 2 px heading difference between Featured creators and the events rail is visible, recorded, EVENTS-01's file).
+
+**Mutants of my own** (`rig/mutants.py`, `mutants2.py`, `mutants3.py`, `mutants4.py`; one edit each; `npx jest src/features/explore` = 3 suites, 62 tests; restored by checksum each time). 32 applied, 24 killed, 8 survived. V13 was skipped (its text occurs twice) and redone as V13b.
+Killed: V1 Find a school left out (3 tests); V2 Find a professional opens E1 (the inert-taps test); V4 dot with the count unknown or unreadable (2); V5 Create for buyers (3); V7 Featured creators' See all left out when nobody is featured; V8 a creator card press follows; V9 Explore draws before the events read settles (2); V10 the bell's label loses the count; V11 More opens a category called undefined (2); V13b the pill says WAWU on screen (2); V14 doors swapped; V15 pager dots left off a real hero; V17 the dot reads the purchases count (2); V18 More only above six categories (4); V19 the empty events See all opens nothing; V20 a made-up handle on a neutral creator card; V21 List your services made inert although PROS-03 is built; V22 Upcoming events' See all made inert although EVENTS-01 is built; V25 a tile opens All; V26 the empty Upcoming events heading dropped (2); V27 a tap on the bell throws; V28 a tap on the search pill throws; V30 the bar not drawn while loading (first form, which hid the bar only while categories were pending, survived because the test holds the creators read; the corrected form was killed); V32 the unread count never zero (2).
+**Survived (no test fails), each a gap in the tests, not a wrong screen** (all eight screens behave correctly in the browser; the gap is that the next edit could break them unseen):
+- V16, the owner's own complaint: `{creators.length > 0 ? <DoorsCard doors={doors} /> : null}` in `ExploreScreen.tsx` (the doors card gone whenever nobody is featured): 62 of 62 pass. No test asserts the three doors with an empty Hub.
+- V3: the blank event card carries "OCT 12" (`parts.tsx`, `EventCardBlank`): passes. V23: the empty hero frame carries "Lagos Creators Summit": passes. V24: a neutral category tile carries "Music": passes. Only the creator frames are pinned as wordless (V20 killed). "No name, date, price or figure in a neutral frame" is the builder's own rule and is untested for three of four frames.
+- V29: Create not drawn while X14 loads: passes. V31: the bar not drawn after a failed read: passes (the error test never looks at the bar). V6: Create drawn while the account type is unknown or failed (`creator.data !== false`): passes.
+- V12: pull-to-refresh and Try again forget the unread count: passes (no test pulls or retries and then looks at the bell).
+
+**Findings**
+- **Defect 1 (test coverage, the app itself is right): eight mutants survive.** Reproduction: apply any of V3, V6, V12, V16, V23, V24, V29, V31 from `rig/mutants*.py` and run `npx jest src/features/explore`: 62 of 62 pass. To close: one test with an empty Hub (categories served, nothing else) that asserts the three doors and their words (V16); assert the empty events frame, the empty hero frame and a blank tile hold no text beyond the kicker (V3, V23, V24); assert Create is absent while `GET /users/me` is held and when it fails, and present for a creator while X14 shows (V6, V29); assert the search pill and bell are present on the error state (V31); assert Try again calls `GET /me/counts` again (V12). No product change is needed. The lead may carry these with COMPLETE-06's follow-ups as COMPLETE-01's were; this verifier set `building` because the brief says each mutant must fail a test.
+- **Finding 1 (`unclear`, needs a ruling): a failed categories or featured-creators read replaces the whole body with "Couldn't load Explore".** Reproduction: stand-in `categories=fail` or `featured=fail` (`shots/error-categories-X1-*`, `error-featured-*`). Only the bar, Create and the error remain: no hero, tiles, Featured creators, Upcoming events or doors, so List your services, Find a professional and Find a school have no way in while it shows. The screen already draws around a failed events read, a failed unread read and a failed account read. This is how main behaved too (not a regression), and R-46 says nothing about error states, so I did not call it a defect. If the owner's rule "a feature with no way in is a defect" covers it, the fix is to draw the sections with neutral frames and an inline retry.
+- **Finding 2 (`unclear`, design geometry): at the end of the scroll the Create button covers the right end of the List your services row, its chevron.** `shots/data-X15-light.png`. The canvas has the same constants (body bottom 120, button 106 above the bottom) but its X15 is never scrolled to the end. A creator can still tap the row left of the button. A larger bottom padding for creators would clear it.
+- **Finding 3 (nit):** `src/features/events/ExploreEvents.tsx` line 28 says the hero's pager dots are not drawn; Explore now draws them. EVENTS-01's file, untouched as the builder said; its next edit should correct the comment.
+- **Finding 4 (`unclear`, low): a creator whose account read fails once never gets Create until the app restarts.** The account query is `retry: false` and is not part of pull-to-refresh, Try again or the refocus read. Reproduction: stand-in `me=fail`, open Explore (no Create), set the stand-in healthy, wait 32 s, leave the tab and come back: the bell's dot appears (the unread count is re-read) and Create does not (`results.json` `recovery`, `shots/recovery-after-reenter.png`).
+- **For the record, the builder's `pkill -f`:** it broke the common rule (never `pkill -f` with a pattern). No harm found: FIX-27's mobile branch on origin is 972a40e (equal to its verifier worktree `vfix-27m`), its backend branch on origin is bc533f9 (equal to `vfix-27b`), its worktrees `vfix-27b`, `vfix-27id`, `vfix-27m`, `vfix-27main` exist and its namespace and jest processes were running throughout my work.
+
+**`npm run check` after setting the status (building) and regenerating the task files.** Four runs, the last exit 0: run 4 exit 0 (97 suites, 1626 tests, 10 gates, 402 files scanned, 0 fail, 6 warn, 0 baseline entries, 270 tasks; `check_after_flip4.txt`). Runs 1 to 3 exited 1 on `src/features/events/__tests__/eventsScreens.test.tsx` only, each time on different tests ("a tier ended ... Ended 6 Oct"; "draws the gap before the featured card name ... from ₦7,500 not found"; both together), while other agents' jobs held the machine's load average between 7 and 13. That file is not on this branch (`git diff origin/main HEAD --stat -- src/features/events` is empty) and passed alone twice, 47 of 47 (`events_flake_alone.txt`); the builder and COMPLETE-01's verifier recorded the same file failing under load. The pre-flip run on 5f3e7f9 exited 0 on the first attempt. The flip to `building` triggers no gate failure (the tasks the entries name are all `todo`).
+
+**NOT RUN**
+- V9 (live seam): see the table; unblocked by a local Hub on assigned ports with a mock WAWU ID.
+- V10, a phone: no device. The web export has no status bar, no safe areas, and React Native's `boxShadow` on a device is unchecked. Unblocked by the next preview build.
+- The pull-to-refresh gesture itself: the web export has no pull. Read from code and covered by Try again in jest only.
+- Categories' own artboards (X2, X3, X13) beyond the card's press: not this task.
+- The builder's own mutants M1 to M15 were not re-run; I ran 32 of mine instead.
+
 
 ## Owner sign-off
 
