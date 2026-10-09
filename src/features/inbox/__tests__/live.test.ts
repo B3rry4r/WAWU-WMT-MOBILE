@@ -407,6 +407,31 @@ describe('catching up', () => {
     expect(catchUp.mock.calls[3]?.[0]).toBe('page3');
   });
 
+  it('a legal.thread frame reaches listeners but never moves the catch-up cursor, while a chat.message does', async () => {
+    random = 1;
+    const { client, events } = make();
+    client.retain();
+    await connectAndReady('ready0');
+    last().say(message('m1', 'live1'));
+    last().say({ type: 'legal.thread', cursor: 'legal9', requestId: 'q1' });
+    expect(events.map((e) => e.type)).toEqual(['chat.message', 'legal.thread']);
+    last().drop(1006);
+    await advance(LIVE_TIMING.capMs);
+    last().open();
+    last().say({ type: 'ready', wawuId: 'me', cursor: 'ready1' });
+    await flush();
+    expect(catchUp.mock.calls[0]?.[0]).toBe('live1');
+
+    // A chat.message after it still moves the cursor.
+    last().say(message('m2', 'live2'));
+    last().drop(1006);
+    await advance(LIVE_TIMING.capMs);
+    last().open();
+    last().say({ type: 'ready', wawuId: 'me', cursor: 'ready2' });
+    await flush();
+    expect(catchUp.mock.calls[1]?.[0]).toBe('live2');
+  });
+
   it('keeps a socket event that arrived during the catch-up as the newest cursor', async () => {
     random = 1;
     const { client } = make();
