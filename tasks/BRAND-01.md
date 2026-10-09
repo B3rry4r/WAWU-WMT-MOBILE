@@ -7,9 +7,9 @@ order: 235
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: review
+status: done
 depends_on: [SHARED-04]
-decisions: [R-37, R-45]
+decisions: [R-37, R-45, R-46]
 passes: [V1, V2, V5, V6, V10]
 artboards: [A1]
 ---
@@ -139,6 +139,10 @@ Verified 8 Oct 2026 by a fresh Sonnet verifier session (wrote none of this). Bra
 4. Notification: let any notification arrive with the app closed: the small icon in the status bar and the shade must be a white P shape (not a square or a blob), tinted purple in the shade.
 5. Sign out (Settings, Sign out): the welcome page shows the five people under the dark shade, the title and both buttons easy to read, and no writing in the picture, in the phone's light and dark theme.
 6. Sign in, Me tab: tap the Menu button (top right of the cover): the sheet with 8 rows opens; tap Settings: Settings opens; Back returns to Me with the sheet closed. Tap each of the other seven rows: nothing opens, nothing breaks. Repeat with airplane mode on (Me shows its error page; Menu and Settings still work).
+
+## Lead merge note (8 Oct 2026)
+
+Merged at verifier report 50d94f2 (PASS, no defect open). Native assets changed (icon, splash, notification icon), so the lead makes a preview build from this main; V10 is the owner's phone check on it (the verifier's six-step checklist in the report). Bookkeeping from the verifier's N3: R-46 added to this task's decisions; the `app.json` notification-icon change is recorded in SHARED-CHANGES row BRAND-01 #1. Follow-ups: U1 (the icon is centred by visual weight, so by its box it leans right and down) waits on the owner's eye on the phone; N2 (no test asserts the inert rows' chevrons or the row icons) goes to COMPLETE-04, which redraws these rows with `unbuilt`; N4 (Z1 has no scroll and its top row clips at 320x568) goes to ME-03; N5 (EVENTS-01's 'tier ended' test raced once under load) is noted for EVENTS-01's owner.
 
 ## Owner sign-off
 
