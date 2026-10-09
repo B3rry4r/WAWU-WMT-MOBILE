@@ -1,15 +1,14 @@
-import { Clipboard } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 /**
- * Puts A8's account number on the phone's clipboard. React Native's own
- * clipboard (still shipped, though deprecated) until `expo-clipboard` is
- * installed with the native batch (SHARED-CHANGES row 8, KYC-04 #1), when
- * this file calls `Clipboard.setStringAsync` instead. True once it is there.
+ * Puts A8's account number on the phone's clipboard with `expo-clipboard`
+ * (SHARED-CHANGES KYC-04 #1, applied by SHARED-04). True once it is there;
+ * false when the phone refuses, so the button never says "Copied" for
+ * nothing. The web build uses the browser's Clipboard API (`copy.web.ts`).
  */
 export async function copyText(value: string): Promise<boolean> {
   try {
-    Clipboard.setString(value);
-    return true;
+    return await Clipboard.setStringAsync(value);
   } catch {
     return false;
   }

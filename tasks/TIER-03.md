@@ -15,6 +15,17 @@ artboards: []
 ---
 # TIER-03 · Buy, renew or upgrade a tier from the wallet
 
+## Lead note (8 Oct 2026): from TIER-01's verification
+
+- **Fixing the billing currency (N3).** `BillingCurrencyService.fixAtFirstPurchase` inserts with `ON CONFLICT DO
+  NOTHING` and reads the row back. At READ COMMITTED (what every transaction in `src/` uses) concurrent first
+  purchases all get the winner's currency. At REPEATABLE READ or SERIALIZABLE the losers get Prisma `P2034` instead:
+  keep the purchase transaction at READ COMMITTED, or retry the whole purchase on `P2034`. It now takes the token's
+  `phone` and `country` (`{ wawuUserId, phone, country, purchaseRef }`).
+- **Two states nothing may write (N7).** Never write a `PersonBilling` row with `fixedBy = 'first_purchase'` and no
+  `purchaseRef`, and never write a `MakerTier` row whose `activeFrom` is in the future (a renewal moves
+  `activeUntil`; an upgrade starts today).
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
@@ -45,6 +56,12 @@ Voice Intro, exactly once even when the payment's confirmation repeats (R-43, br
 - Rules, Default (agent), owner may override: renewing the same tier extends from its current end date; an upgrade pays the difference between the two config prices, starts the new tier's period on the day of the upgrade, keeps unused points and grants the difference in bonus points; no downgrade while a tier is active.
 - Paying needs an open wallet (question 1 in `docs/PAYMENTS-PLAN.md`): a person with none gets the existing `no_wallet` answer (MONEY-13).
 - Not in scope: paying by transfer (TIER-05), extra products (TIER-04), the Voice Intro itself.
+
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
 
 ## Capability checks
 

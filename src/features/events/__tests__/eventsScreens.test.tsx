@@ -186,6 +186,32 @@ describe('E1 · Events', () => {
     expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/—|Flutterwave/);
   });
 
+  it('draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)', async () => {
+    serve();
+    await bootList();
+    await rtl.screen.findByText('Featured Summit');
+    const lineHeightOf = (node: ReturnType<typeof rtl.screen.getByText>) => {
+      const style: unknown = node.props.style;
+      const flat = ([] as unknown[]).concat(style).flat(3).reduce<Record<string, unknown>>((a, x) => ({ ...a, ...((x as object) || {}) }), {});
+      return flat.lineHeight;
+    };
+    const { canvasNormalLineHeight } = require('@/theme') as typeof import('@/theme');
+    expect(lineHeightOf(rtl.screen.getByText('FEATURED'))).toBe(canvasNormalLineHeight(11));
+    expect(lineHeightOf(rtl.screen.getByText('Featured Summit', { exact: true }))).toBe(canvasNormalLineHeight(20));
+    const place = rtl.screen.getByText('from ₦7,500', { exact: false });
+    expect(lineHeightOf(place)).toBe(canvasNormalLineHeight(12.5));
+  });
+
+  it('draws the gap before the featured card name as 4 and before the place line as 3, as the canvas does (D13-E1b)', async () => {
+    serve();
+    await bootList();
+    await rtl.screen.findByText('Featured Summit');
+    const flatOf = (node: ReturnType<typeof rtl.screen.getByText>) =>
+      ([] as unknown[]).concat(node.props.style).flat(3).reduce<Record<string, unknown>>((a, x) => ({ ...a, ...((x as object) || {}) }), {});
+    expect(flatOf(rtl.screen.getByText('Featured Summit', { exact: true })).marginTop).toBe(4);
+    expect(flatOf(rtl.screen.getByText('from ₦7,500', { exact: false })).marginTop).toBe(3);
+  });
+
   it('a user can see the rest with See all: every event, free ones marked Free, an online one marked Online', async () => {
     serve();
     await bootList();

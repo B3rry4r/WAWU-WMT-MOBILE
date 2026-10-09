@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -478,7 +478,74 @@ Built on `3093521` (the lead's rulings on `972893e`) with `origin/main` merged i
 | V1 `npm run check` on the merged branch | passed, exit 0 | 81 suites, 1459 tests, lint 0 errors 2 warnings (the known `require()`), gates 9 run, 364 files scanned, 0 findings, baseline 0, 253 tasks |
 | Contract drift | passed | `contract/SOURCE_COMMIT` `bb10ef0` equals `git ls-remote` of backend `wmt/EVENTS-01` (`bb10ef0`). Backend main is now `8359057`, without PR 78's `from-prices`; contract and generated types differ from main only by those additions (178 lines), as the lead ruled |
 | T4 mutants | passed | Each applied in the worktree, the spec set (events, explore, home, `src/app`: 9 suites, 151 tests) run, `git restore src` after each: N2 killed (`the Explore tab route`, opens the featured event and a card), N3 killed (See all), N4 killed (featured event need not be first on the rail), N5b killed (2 failed: the new failure spec and the older one), N6 killed (hero day in the event's zone), N10 killed (Events tile first in the row, no empty slot), D12 (settled forced true) killed (X14 held, tiles draw once), D14 (year dropped) killed (2 failed, incl. `dateLine`). Working tree clean after each |
+| U-H1 Home row packs from the left | passed | Live: Today shows one tile, `today-service-events`, at x 25.75 (the first of four 87.5 quarters, centred), `count_tiles` 1, heading above it; picture compared with `render_design.py H1` at 390 px light and dark: heading 18.5 bold, 60 square at corner 19.2, glyph and label match in size, colour and place (design Pay bills column 1 and the app's Events tile share the same centre, 127 px at 2x; heading to tile 52 against 53 px); the comment on `Services.tsx` records the ruling (`scratchpad/events01v7b/pairs/H1-*.png`, `ui.json`) |
+| D11 H11 loading | passed | Services (Today's own reads) held: heading bar plus one tile shape (60 square over a label bar) at the tile's place, between TGIF and the rail; `pairs/H11-light.png` beside `render_design.py H11` (design draws four shapes for four tiles, the app one for one tile present, as ruled) |
+| D12 nothing moves on Explore | passed | With the events reads held at a proxy (2 requests held, no retry): `explore-loading` stays (X14 with the 196 hero block, tiles, heading bar, three cards, `pairs/X14-*.png`), no tile drawn; released: the first tile is drawn once at y 288 and never at another y (sequence of y per animation frame: `[288]`, 98 frames), light and dark. A normal load: `[288]` as well. Events reads answering 500: each called once (2 calls in 9 s, no retry), tiles after 0.77 s, no featured card, no rail, no error words, light and dark (`ui.json`). No creators were seeded, so the creators row was not part of this check |
+| D13 line heights (measured at 2x, DOM boxes and pixel rows) | X1, rail card, H1 passed; E1 hero defect | X1 hero: kicker box 14 high (canvas 14), place line 17 (canvas 17); kicker to name 51 px, name to place 56 px, place 48 px above the hero edge, in the app and in the render alike. Rail card 230 by 184 (canvas 184), title top 131, 20 high, place at 155, 16 high, as `evCard` in `design/_gen/explore.js`. H1: label 16 high (canvas 16), 8 under the tile; heading to tile 52 against 53 px. E1 hero: the kicker is on 14 now but the name and the place line still sit on the body line box (21.75, canvas place line 16), so against `render_design.py E1` the text sits above its drawn place: the place line about 3.5 pt (name 6 pt, kicker 3 pt) (pixel rows: place glyph bottom 44 px above the hero edge, drawn 37; name cap top 119 px, drawn 107) |
+| D14 year | passed | Hero: "16 Mar 2027 · Fair Grounds" for a featured event in 2027, its E2 reads "Tue 16 Mar 2027 · 10:00 WAT"; rail cards' spoken labels without the year for this-year events ("9 Oct", "12 Oct"); the year on a rail card for a later year is pinned by the spec only (D14 mutant killed), no later-year event was in the first ten |
+| Round 6 regression, live | passed | Zones: New York Late Show badge OCT 09 on E1 and E2 reads "Fri 9 Oct · 9:30 PM EDT"; Kiritimati event OCT 12; Explore hero for the New York event read "14 Oct". R-41 entries: featured opens `/events/<id>`, a card opens its own E2, See all opens `/events`, Home tile opens `/events`, light and dark. Two-digit badge "09". Prices kept after a failed later call: NOT RUN live (the "Show more" control did not appear with 34 seeded events); held by the specs (N13 killed in round 4) |
+| V10 Device | NOT RUN | needs OPS-10 and a signed Android tester build |
+
+**Defect (open).**
+- **D13-E1 (defect, minor).** E1's FeaturedCard name and place line are still on the body line box (21.75), so the kicker sits 3 pt, the name 6 pt and the place line 3.5 pt above where `render_design.py E1` draws them (the ruling named the kicker only; the measurement against E1 asked for within 1 px fails). Fix: `canvasNormalLineHeight` on the name (its drawn leading) and the place line (16), so the stack matches the drawn 4 and 3 gaps.
+
+Everything else asked of this round passed. Stack: mock-wawu-id (envelope added by a test-only response wrapper in Playwright, since the mock answers without the real service's `data` envelope); the web build was `expo start --web`. Databases dropped, servers stopped.
+
+**Status:** one open defect (D13-E1), so `status: building`.
+
+## Builder report, round 8 (8 Oct 2026)
+
+**Builder.** Branch `wmt/EVENTS-01`, merged with `origin/main` first (generated `docs/PROGRESS.md` and `tasks/INDEX.md` regenerated, `SHARED-CHANGES.md` conflict kept both sides' rows).
+
+- **D13-E1 fixed.** `src/features/events/parts.tsx`: the featured card's name (`heroName`) and place line (`heroLine`) now use `canvasNormalLineHeight` (26 for the 20 name, 16 for the 12.5 line); the kicker was already on 14. Nothing else touched.
+- **Spec.** `eventsScreens.test.tsx`, "draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)": asserts the three line heights. Run against the old `parts.tsx` in place it fails (expected 26, received 21.75); with the fix it passes.
+- **NOT RUN:** the live 2x pixel re-measure against `render_design.py E1` (light and dark). The line boxes now equal the canvas values the verifier measured for the other screens (14, 26, 16); the verifier is to measure. I do not claim the screens match.
+
+## Verifier report, round 8 (8 Oct 2026)
+
+**Verifier (fresh session; wrote none of it).** Mobile `wmt/EVENTS-01` at `ae63251`. Stack: `expo start --web` on 4390 from this worktree, Hub answered by Playwright routes (mock Hub, the builder's featured-event fixtures, no backend), Chromium 390 px at 2x, light and dark; E1 render from `render_design.py E1`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| (1) E1 featured card against the render, 2x | **one residual defect** | DOM boxes: kicker 14 high, name 26, place line 16 (drawn 14, 26, 17 device-rounded: 28, 56 and 34 px tall rows match the render's glyph rows exactly). Glyph rows from the card top (device px, app / render): kicker 231-245 / 233-247, name 271-299 / 273-301, place line 326-343 / 326-343. Identical in light and dark. Heights and the place line are exact; the kicker and the name sit 2 px at 2x (1 css px) above the render. Cause: `design/_gen/events.js` draws the gap before the place line as `margin-top:3px` (kicker to name `4px`); `heroMetrics.stack` is one 4 for both, so the name-to-place gap is 4 and the name and kicker rise by 1. |
+| (2) New spec fails with the old heights | passed | `heroName` and `heroLine` reverted in `parts.tsx` in place: "draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)" fails (expected 26, received 21.75); `git restore` after, tree clean |
+| (3) Round-8 diff | passed | `git diff 55c3eb7 ae63251`: `parts.tsx` (2 lines), `eventsScreens.test.tsx` (the one spec), `SHARED-CHANGES.md`, `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/EVENTS-01.md`; nothing else. `e423b76..HEAD` otherwise is main's merge only |
+| (4) `npm run check` | exit 1, main's fault | typecheck, lint, tests (81 suites, 1460 tests) and gates (9 run, 364 files, 0 findings, baseline 0) pass; the only failure is the task check: "FIX-22.md: type backend-endpoint requires passes V4, V9". The same command on `origin/main` (`c8928e3`, tasks and scripts extracted from it) fails with the identical line (258 tasks). FIX-22 is not this task's file; it is main's to fix |
+| (5) Conflict markers | passed | `git grep -nE '^(<<<<<<<|>>>>>>>|=======)( \|$)'` on the final tree: no match in any file |
+
+**Defect (open).**
+- **D13-E1b (defect, minor).** E1's featured card kicker and name sit 1 css px (2 px at 2x) above the render because the gap between the name and the place line is the shared `heroMetrics.stack` 4 where the canvas draws 3 (`margin-top:3px` on the place line, `4px` on the name). Fix: a 3 gap before the place line (a `marginTop` of 3 on `heroLine` with `gap` 0 and the name's 4, or two metrics), then re-measure: place line stays at 326, name at 273, kicker at 233.
+
+**Status:** one open defect (D13-E1b), so `status: building`.
+
+## Builder report, round 9 (8 Oct 2026)
+
+- **D13-E1b fixed.** `design/_gen/events.js` `featured` draws `margin-top:4px` on the name and `margin-top:3px` on the place line. `heroMetrics.stack` (one 4 as the `gap` of both) is replaced by `nameGap` 4 and `lineGap` 3, applied as `marginTop` on `heroName` and `heroLine`; the words block has no `gap`. The stack is 1 css px shorter, and it is bottom-anchored, so the kicker and the name move down 1 css px (2 px at 2x) and the place line stays at 326.
+- **Spec added:** "draws the gap before the featured card name as 4 and before the place line as 3, as the canvas does (D13-E1b)". With the margins removed in `parts.tsx` (scratch, restored) it fails; with them it passes. Events suites: 73 passed.
+- **NOT RUN:** the browser re-measure at 2x, light and dark, against `render_design.py E1`. The verifier measures it.
+- Merged origin/main (conflicts in `BACKEND_GAPS.md`, both sides kept; `docs/PROGRESS.md` regenerated).
+
+## Verifier report, round 9 (8 Oct 2026)
+
+**Verifier (fresh session; wrote none of it).** Mobile `wmt/EVENTS-01` at `314041a`, then origin/main `e1c975a` merged (`9719562`). Stack: `expo start --web` on 4390 from this worktree, Hub answered by Playwright routes (mock Hub, featured-event fixtures, no backend), Chromium 390 px at 2x, light and dark; E1 render from `render_design.py E1`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| (1) E1 featured card against the render, 2x, light and dark | passed | `design/_gen/events.js` `featured`: name `margin-top:4px`, place line `margin-top:3px`; `heroMetrics.nameGap` 4 and `lineGap` 3 equal them. DOM from the card top (css px): kicker 113 (14 high), name 131 (26), place line 160 (16), so 4 and 3 between them. Glyph rows from the card top (device px, app / render): kicker 233-247 / 233-247, name 273-301 / 273-301, place line 325-346 / 325-346. Identical in light and dark: 0 px off (D13-E1b closed). |
+| (2) New spec fails with the margins removed | passed | Both `marginTop`s removed from `heroName` and `heroLine` in `parts.tsx`: "draws the gap before the featured card name as 4 and before the place line as 3 (D13-E1b)" fails (expected 4, received undefined). `lineGap` set back to 4 (the old shared gap): fails (expected 3, received 4). `git restore` after each, tree clean |
+| (3) Round-9 diff | passed | `314041a` is a merge of `1abd4b1` and main's `c8928e3`; beyond main's content (LEGAL-03 task, `BACKEND_GAPS.md`, `SHARED-CHANGES.md`, LOG lines, PROGRESS) the builder changed only `parts.tsx` (`heroMetrics.nameGap`/`lineGap`, the two `marginTop`s, `gap` removed from the words block), the one spec in `eventsScreens.test.tsx`, its LOG line and `tasks/EVENTS-01.md` |
+| (4) Merge main, then `npm run check` | exit 0 | origin/main had moved (`e1c975a`: SHARED-04, FIX-24, POINTS-01, FIX-21). Merged, never rebased. Conflicts: `contract/SOURCE_COMMIT` and `docs/PROGRESS.md`. Contract kept as the branch's (`contract/`, `schema.generated.ts` from `bb10ef0`, as main's FIX-24 merge kept its own); PROGRESS and INDEX regenerated; `npm ci` for main's new packages. No conflict markers (`git grep` for `<<<<<<<`, `>>>>>>>`, `=======`). Check: typecheck, lint, 87 suites and 1521 tests, gates 9 run, 373 files, 0 findings, task check: exit 0 (main's FIX-22 failure is fixed on main) |
+| (5) Events, home and explore suites | passed | 9 suites, 153 tests |
+| Contract | passed | `contract/SOURCE_COMMIT` `bb10ef0` equals backend `wmt/EVENTS-01` head (`git ls-remote`: `bb10ef0a0c4f`). Note: backend main is now `9d90d57`, which the backend branch does not contain; the backend branch needs main merged before its PR 78 merges, and the mobile contract then follows it |
+
+**Defects:** none open.
+
+**Status:** no open defect, so `status: review`.
 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+## Merge note (lead)
+
+- 8 Oct 2026, merged `origin/main` (PROS-03 #15) into this branch: in `ExploreScreen.tsx`, `(tabs)/explore.tsx` and `screens.test.tsx` both sides kept, PROS-03's doors card ("List your services") now drawn after Upcoming events (PROS-03 D3, "Merging with PROS-03" above) and held with the event entries under X14 (D12), one spec added for that order and hold; `PROGRESS.md` and `INDEX.md` regenerated; contract regenerated from backend main `d92e998` (`GET /events/from-prices` present); `npm run check` exit 0 (93 suites / 1587 tests, gates 393 files / 0 findings, 262 tasks); X1, X15, X14 at 390 px light and dark drawn beside `render_design.py` in the ruled order.

@@ -198,7 +198,9 @@ export const heroMetrics = {
   name: 20,
   line: 12.5,
   lineOpacity: 0.8,
-  stack: 4,
+  /** The canvas gaps: `margin-top:4px` on the name, `margin-top:3px` on the place line. */
+  nameGap: 4,
+  lineGap: 3,
 } as const;
 
 /** The featured event: the picture under a dark fade, its date, FEATURED, name, place and "from" price. */
@@ -292,8 +294,7 @@ const styles = StyleSheet.create({
     left: heroMetrics.wordsInset,
     right: heroMetrics.wordsInset,
     bottom: heroMetrics.wordsBottom,
-    gap: heroMetrics.stack,
   },
-  heroName: { fontSize: heroMetrics.name },
-  heroLine: { fontSize: heroMetrics.line, opacity: heroMetrics.lineOpacity },
+  heroName: { marginTop: heroMetrics.nameGap, fontSize: heroMetrics.name, lineHeight: canvasNormalLineHeight(heroMetrics.name) },
+  heroLine: { marginTop: heroMetrics.lineGap, fontSize: heroMetrics.line, lineHeight: canvasNormalLineHeight(heroMetrics.line), opacity: heroMetrics.lineOpacity },
 });

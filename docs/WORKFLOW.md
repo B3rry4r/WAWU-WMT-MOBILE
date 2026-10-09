@@ -135,7 +135,7 @@ reports each as passed, failed, or NOT RUN with the reason.
 
 | Pass | Proves | How |
 |------|--------|-----|
-| **V1 Gates** | No placeholders, fake data, copied components, raw colours (any hex, rgb/hsl, named colour), literal spacing and radii, dead buttons, unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
+| **V1 Gates** | No placeholders, fake data, copied components, raw colours (any hex, rgb/hsl, named colour), literal spacing and radii, dead buttons (an `unbuilt` entry is not one, R-46), unbacked promises, banned copy | `npm run check` in this repo (typecheck, lint, tests, `scripts/gates/run.py`, task check). Check "files scanned"; exit 2 means nothing was scanned, which is a fail. Backend: `tsc`, lint, its own gates and tests |
 | **V2 Contract** | The endpoint does what its contract says, including refusing the wrong user | Contract tests from the registry entry, including one input in an unexpected format (a phone written `080...` instead of `+234...`) |
 | **V3 Regression** | Everything live still behaves the same | The protected route suite (task MONEY-01), before and after |
 | **V4 Field trace** | Data one person writes reaches every screen that reads it | For each field: writer, storage, every reader. Data that crosses between users (a creator's price shown to a buyer) is checked on both sides |
@@ -247,17 +247,21 @@ anything else.
 
 ### Links between screens
 
-No placeholders, no dead buttons, no feature flags (DECISIONS R-27).
+The UI is always complete (DECISIONS R-46, replacing the hiding half of R-27). No "coming soon", no feature flags.
 
-- A hub or menu task (a home screen, a menu, a list whose rows open other screens) builds only the rows,
-  tiles, tabs and buttons whose destination screen already exists.
-- The task that builds a destination screen also adds its entry row or button to the hub, exactly as the
-  artboard draws it, and owns the check "a user can reach X from Y". Its task file says so ("this task adds
-  it, as drawn") and depends on the hub's task.
+- A screen task draws its whole artboard: every row, tile, tab, button, icon and section. An entry whose
+  destination is not built yet is drawn exactly as designed with `onPress={unbuilt('<TASK-ID>')}` naming the
+  task that builds the destination; tapping it does nothing. Import it with `import { unbuilt } from '@/lib/unbuilt'`;
+  the argument is one string literal. `scripts/gates/checks/unbuilt_entries.py` fails when the named task does not
+  exist, is already built (`review` or `done`) or the argument is not a literal, and lists the entries still inert,
+  one line per task (`python3 scripts/gates/run.py --gate unbuilt_entries`; add `--json` for every call site).
+- A section with nothing to show draws its designed empty state; where the canvas has none, its heading and
+  frame with a neutral placeholder picture. Never invented names, figures or prices.
+- The task that builds a destination screen replaces `unbuilt('<its ID>')` with the real navigation, and owns
+  the check "a user can reach X from Y". The gate makes this impossible to forget.
 - Lead default for ordering (not part of the rule): where the hub and the destination have the same owner and
   money doesn't block, the destination is listed first, so the hub wires it.
-- An entry whose destination is an after-launch task is not built at launch; that task adds it, and
-  `docs/designer/BRIEF.md` lists it under "Not built at launch".
+- After-launch entries (`docs/designer/BRIEF.md`, "Not built at launch") are drawn and inert until their task.
 - CHECK-3 confirms every hub matches its artboard in full.
 
 ### The designer brief is part of the design

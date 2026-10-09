@@ -3,7 +3,7 @@ id: WALLET-22
 title: WAWU card
 owner: YOU
 area: WALLET
-order: 252
+order: 263
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen

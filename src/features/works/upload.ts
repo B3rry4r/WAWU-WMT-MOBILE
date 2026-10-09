@@ -8,13 +8,18 @@ export const UPLOAD_FAILED = 'upload_failed';
 
 /** Uploads one photo or video to the Hub's storage and answers the key `POST /users/me/featured-works` takes in `media`. */
 export async function uploadWorkFile(file: PickedFile): Promise<string> {
-  const { uploadUrl, key } = await presignWorkMedia(file.contentType, file.extension, file.blob.size);
-  let response: Response;
   try {
-    response = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': file.contentType }, body: file.blob });
-  } catch {
-    throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+    const { uploadUrl, key } = await presignWorkMedia(file.contentType, file.extension, file.blob.size);
+    let response: Response;
+    try {
+      response = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': file.contentType }, body: file.blob });
+    } catch {
+      throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+    }
+    if (!response.ok) throw new ApiError('server', response.status, 'That file did not upload. Try again.', UPLOAD_FAILED);
+    return key;
+  } finally {
+    // The phone's own copy has done its job once the upload settles, either way; a retry sends `blob` again (SHARED-04, F3).
+    file.discard?.();
   }
-  if (!response.ok) throw new ApiError('server', response.status, 'That file did not upload. Try again.', UPLOAD_FAILED);
-  return key;
 }
