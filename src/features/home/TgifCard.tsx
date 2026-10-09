@@ -45,7 +45,7 @@ export function TgifCard({ day, readers, onOpen }: TgifCardProps) {
       onPress={onOpen}
       onLayout={onLayout}
       {...ring.handlers}
-      style={({ pressed }) => [styles.card, { backgroundColor: cardInk.tgifGround, transform: [{ scale: pressed ? pressScale : 1 }] }, ring.style]}
+      style={({ pressed }) => [styles.card, styles.fixed, { backgroundColor: cardInk.tgifGround, transform: [{ scale: pressed ? pressScale : 1 }] }, ring.style]}
     >
       <CardGlows
         id="tgifGlow"
@@ -76,27 +76,28 @@ export function TgifCard({ day, readers, onOpen }: TgifCardProps) {
 
 /**
  * Today's TGIF when its day could not be read (TGIF is on, the read failed): the card's own ground and label,
- * one line saying so and Try again, so it never looks like TGIF switched off.
+ * one line saying so and Try again, so it never looks like TGIF switched off. On a phone too narrow for the label and the
+ * button side by side the button goes under the words, and the card grows to hold it. With no `onRetry` the page's own
+ * banner carries the one Try again, and the card says only what failed.
  */
-export function TgifProblem({ date, onRetry, retrying }: { date: string; onRetry: () => void; retrying: boolean }) {
+export function TgifProblem({ date, onRetry, retrying }: { date: string; onRetry?: () => void; retrying?: boolean }) {
   return (
-    <View testID="today-tgif-error" style={[styles.card, { backgroundColor: cardInk.tgifGround }]}>
-      <View style={styles.words}>
+    <View testID="today-tgif-error" style={[styles.card, styles.problem, { backgroundColor: cardInk.tgifGround }]}>
+      <View style={styles.problemWords}>
         <Text numberOfLines={1} style={[todayWords.tgifLabel, { color: cardInk.tgifLabel }]}>
           {tgifDayLabel(date)}
         </Text>
-        <Text accessibilityRole="alert" numberOfLines={2} style={[todayWords.tgifProblem, { color: cardInk.ink }]}>
+        <Text accessibilityRole="alert" style={[todayWords.tgifProblem, { color: cardInk.ink }]}>
           {"Today's TGIF didn't load."}
         </Text>
       </View>
-      <Button label="Try again" variant="glass" size="sm" icon="RotateCw" loading={retrying} onPress={onRetry} testID="today-tgif-retry" />
+      {onRetry ? <Button label="Try again" variant="glass" size="sm" icon="RotateCw" loading={retrying} onPress={onRetry} testID="today-tgif-retry" /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    height: m.tgifHeight,
     borderRadius: radius.card,
     overflow: 'hidden',
     paddingVertical: m.tgifPadY,
@@ -105,6 +106,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: m.tgifGap,
   },
+  fixed: { height: m.tgifHeight },
   words: { flex: 1, minWidth: 0, gap: m.tgifWordsGap },
+  /** The failed card keeps the card's height as its least, and wraps its button under the words when they do not fit side by side. */
+  problem: { minHeight: m.tgifHeight, flexWrap: 'wrap', alignContent: 'center', rowGap: m.tgifGap },
+  problemWords: { flexGrow: 1, flexShrink: 0, gap: m.tgifWordsGap },
   play: { width: m.play, height: m.play, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
 });

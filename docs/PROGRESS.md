@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 113 | 0 | 20 | 21 |
+| todo | 112 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 70 | 27 | 11 | 5 |
 
@@ -19,6 +19,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [COMPLETE-03](../tasks/COMPLETE-03.md) Home shows its whole design (You)
 
 ## Done
 
@@ -147,6 +151,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · COMPLETE-03 · Builder: Home shows its whole design (H1, H11, H36): the bar's search and bell, the Naira chip's chevron, Send, Add, Bills and Scan, the four service tiles, See all and a creator card press, the sponsored card in TGIF's place and Create are all drawn, and where their screens are not built they open nothing (13 inert entries in `src/features/home`, each naming its task); a failed read keeps every section under one banner and Try again never shows the loading shapes; the tab row fits 320 to 430 wide phones; status verifying.
 - 9 Oct 2026 · COMPLETE-02 · Merged: Explore shows its whole design (X1, X14, X15), with inert entries for unbuilt screens and every section kept on a failed read.
 - 9 Oct 2026 · COMPLETE-02 · Verifier, round 2: V1 passed (npm run check exit 0 on 797740d: 97 suites, 1642 tests, 10 gates, 403 files, 0 findings; origin/main fffc816 is already merged); V5 and V6 passed in the web export against a stand-in Hub (the data, empty, nothing-served, buyer and loading pictures are pixel-identical to round 1's; a failed read keeps the bar, hero, tiles, both rails, doors and Create under one banner at 390, 360 and 320 px in both themes; Try again re-reads everything and recovers; a failed refetch keeps held data; Create clears the last row by 15.9 px at the end of the scroll and a buyer keeps 30; Create returns on refocus, pull and Try again); the 8 round 1 test gaps are closed (V3, V16, V23, V24, V31 directly, V6, V12, V29 re-aimed and split, all killed); V9 NOT RUN. Status back to building: of 14 new mutants 6 are killed and 8 survive (a refetch failing with data held, the Hub unreachable, the events re-read on Try again, the banner's icon, spinner, alert role and button variant), all test gaps with the product right; one question for the lead (Try again swaps the screen for X14 while it reads, so the banner's spinner never shows).
 - 9 Oct 2026 · COMPLETE-02 · Builder, round 2: a failed categories or featured-creators read no longer collapses Explore to one message: every section stays drawn (bar, neutral frames, doors, Create) under one compact banner with Try again; Create clears the last row at the end of the scroll (creator padding 90 = 16 + 58 + 16); the account read is retried on refocus, pull and Try again; the stale comment in ExploreEvents.tsx is fixed; 16 tests added so the verifier's 8 surviving mutants are killed (V6, V12, V29 re-aimed, their lines changed) and 17 mutants of my own on the new behaviour are killed; status verifying
@@ -161,4 +166,3 @@ From `docs/LOG.md`, newest first.
 - 9 Oct 2026 · COMPLETE-01 · Verifier: V1 passed (npm run check exit 0 on 620b70f and after a trial merge of origin/main 7e74460: 96 suites, 1608 tests, 10 gates, 398 files, 0 findings; a planted review-task entry made it exit 1); 99 planted sources through the real gate behave as designed for literals, ids, statuses, comments, strings and JSX; 31 own mutants, 23 killed, 8 survived (test gaps: nested `${}` braces, string escapes, the built-task message's action, the TaskId type, a non-console tap side effect); not seen by the gate: aliased or indirect use of `unbuilt` and a few same-line scanner cases (recommend failing an alias outright); V5 NOT RUN (no screen yet); no open defect, status review.
 - 9 Oct 2026 · COMPLETE-01 · Builder: `unbuilt('<TASK-ID>')` in src/lib/unbuilt.ts (one stable no-op per task id) and the `unbuilt_entries` gate (fails an id with no task file, a task in review or done, or an argument that is not one string literal; lists inert entries one line per task); 44 gate tests, 14 gate mutants and 4 helper mutants killed; status verifying
 - 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
-- 8 Oct 2026 · BRAND-01 · Verifier: V1 passed (npm run check exit 0, 95 suites, 1606 tests, gates 0 findings); icon measured by pixels (farthest opaque pixel 87% of the 66 dp safe radius, uncut under circle, squircle and rounded square, calibrated against the owner's own screenshot, artwork identical to the logo pack); splash 128 dp whole inside Android 12's circle; A1 cover has no words, WAWU or dashboard; Menu to Z1 to Settings works signed in, with the Hub failing and while Me loads, the other rows inert; 16 own mutants, 14 killed, 2 survived (test gaps, not product); no open defect, one unclear (icon leans right and down by box); V10 NOT RUN (needs the preview build); status review.

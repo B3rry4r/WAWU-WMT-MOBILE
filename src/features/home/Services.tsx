@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
+import { unbuilt } from '@/lib/unbuilt';
 import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
 /**
@@ -10,12 +11,9 @@ import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
  * accent): the heading 18.5 bold, 14 above four equal columns; each tile a 60 square at corner 19.2 (32% of 60) on the
  * card colour with a hairline, its glyph 25 in the accent, the word 12.5 semi-bold under it, 8 apart.
  *
- * U-H1 (lead ruling b, 8 Oct 2026): the tiles present pack from the left in the canvas's order, as HOME-01 treated
- * every other left-out entry; there is no empty slot. Today that is `[Events][ ][ ][ ]`. Tile size and spacing stay
- * as drawn (each tile in a quarter of the row). Each later task adds its tile in canvas order: Legal (LEGAL-02), then
- * the fourth, Schools (SCHOOLS-03; BRIEF H1 puts it where the canvas draws Shop). Pay bills stays off at launch
- * (R-42), so it takes no slot. The canvas order is Pay bills, Events, Legal, then the fourth; Events was drawn second
- * but, with Pay bills absent, is first.
+ * All four tiles are drawn, in the canvas's order, with BRIEF H1's Schools where the canvas draws Shop (R-2, R-46):
+ * Pay bills (S2, BILLS-01), Events (E1, wired: EVENTS-01), Legal (S14, LEGAL-02) and Schools (SC1, SCHOOLS-03). A tile
+ * whose screen is not built opens nothing; the task that builds the screen wires it here.
  */
 export const servicesMetrics = {
   heading: 18.5,
@@ -33,9 +31,14 @@ const m = servicesMetrics;
 
 type Service = { key: string; icon: IconName; label: string; onPress: () => void };
 
-/** The tiles present, in the canvas's order (U-H1). `TodayLoading` draws one shape for each. */
+/** The four tiles in the canvas's order (BRIEF H1: Schools in Shop's place). `TodayLoading` draws one shape for each. */
 function presentServices(onOpenEvents: () => void): Service[] {
-  return [{ key: 'events', icon: 'CalendarDays', label: 'Events', onPress: onOpenEvents }];
+  return [
+    { key: 'pay-bills', icon: 'Receipt', label: 'Pay bills', onPress: unbuilt('BILLS-01') },
+    { key: 'events', icon: 'CalendarDays', label: 'Events', onPress: onOpenEvents },
+    { key: 'legal', icon: 'Scale', label: 'Legal', onPress: unbuilt('LEGAL-02') },
+    { key: 'schools', icon: 'GraduationCap', label: 'Schools', onPress: unbuilt('SCHOOLS-03') },
+  ];
 }
 export const servicesPresent = presentServices(() => undefined).length;
 
@@ -81,10 +84,12 @@ function Tile({ service }: { service: Service }) {
 
 const styles = StyleSheet.create({
   root: { gap: m.headingBelow },
-  heading: { fontSize: m.heading, letterSpacing: m.headingTracking * m.heading },
+  /** `line-height: normal` (24 at 18.5), as the canvas's heading has it. */
+  heading: { fontSize: m.heading, lineHeight: canvasNormalLineHeight(m.heading), letterSpacing: m.headingTracking * m.heading },
   grid: { flexDirection: 'row' },
   column: { width: '25%', alignItems: 'center' },
-  tile: { alignItems: 'center', gap: m.labelGap, width: m.width },
+  /** The column is a quarter of the row: on a narrow phone the tile gives way to it, the square and the word still fit. */
+  tile: { alignItems: 'center', gap: m.labelGap, width: m.width, maxWidth: '100%' },
   square: {
     width: m.tile,
     height: m.tile,

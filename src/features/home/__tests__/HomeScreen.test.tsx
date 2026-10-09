@@ -13,6 +13,23 @@ jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
   useSession: () => ({ status: 'signedIn' }),
 }));
+/** Which task's inert handler was pressed: the real `unbuilt` hands out one no-op per task id, this one also writes the id down. */
+const mockTaps: string[] = [];
+jest.mock('@/lib/unbuilt', () => {
+  const handlers = new Map<string, () => void>();
+  return {
+    unbuilt: (task: string) => {
+      let handler = handlers.get(task);
+      if (!handler) {
+        handler = () => {
+          mockTaps.push(task);
+        };
+        handlers.set(task, handler);
+      }
+      return handler;
+    },
+  };
+});
 // The feed is HOME-02's and has its own tests; here it only has to show which tab it opened on and lead back to Today.
 jest.mock('@/features/feed/FeedScreen', () => {
   const { Pressable: P, Text: T } = require('react-native');
@@ -99,6 +116,7 @@ const T = {
   stats: `GET /tgif/${DATE}/stats`,
   creators: 'GET /creators',
   me: 'GET /users/me',
+  counts: 'GET /me/counts',
 };
 
 function everyAnswer(): Record<string, Answer[]> {
@@ -109,7 +127,9 @@ function everyAnswer(): Record<string, Answer[]> {
     [T.day]: [ok(day)],
     [T.stats]: [ok(stats(12400))],
     [T.creators]: [creatorsPage([creator(ME, 'Me Myself'), creator(ADA, 'Adaeze O.'), creator(FUNMI, 'Funmi A.', { field: 'Accountant', verification: { creator: tick(false), professional: tick(true) } })])],
-    [T.me]: [ok({ wawuUserId: ME })],
+    // `GET /users/me` answers two reads: who the viewer is (never offered to themselves) and the account type (Create).
+    [T.me]: [ok({ wawuUserId: ME, accountType: 'user' })],
+    [T.counts]: [ok({ purchases: 0, saved: 0, unreadNotifications: 2 })],
   };
 }
 
@@ -138,6 +158,7 @@ beforeEach(() => {
   answers = everyAnswer();
   sent = [];
   mockPush.mockClear();
+  mockTaps.length = 0;
 });
 
 afterEach(async () => {
@@ -164,7 +185,9 @@ describe('H1 · Today', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75');
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Hide balance' }));
-    expect(screen.getByTestId('today-balance')).not.toHaveTextContent('485,250');
+    // A string matcher is a whole-text match, so a regex is what says "none of the figure is on screen".
+    expect(screen.getByTestId('today-balance')).not.toHaveTextContent(/485,250/);
+    expect(screen.getByTestId('today-balance')).not.toHaveTextContent(/\d/);
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Show balance' }));
     expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75');
   });
@@ -285,24 +308,15 @@ describe('H1 · Today', () => {
     await rtl.fireEvent.press(screen.getByTestId('feed-tab-for_you'));
     expect(screen.getByText('feed for_you')).toBeTruthy();
   });
-
-  it('draws no entry that leads to a screen not built yet', async () => {
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Legal', 'Schools', 'Shop', 'See all']) {
-      expect(screen.queryByText(label)).toBeNull();
-    }
-    expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
-  });
 });
 
 describe('H36 · Today with TGIF off', () => {
-  it('a user with TGIF off sees Today without the TGIF card, and the day is never asked for', async () => {
+  it("a user with TGIF off sees the sponsored card in TGIF's place, and the day is never asked for", async () => {
     answers[T.tgif] = [ok({ show: false })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.queryByTestId('today-tgif')).toBeNull();
-    expect(screen.queryByText(/SPONSORED/i)).toBeNull();
+    expect(screen.getByTestId('today-sponsored')).toBeTruthy();
     expect(sent).not.toContain(T.day);
     expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy();
   });
@@ -321,7 +335,7 @@ describe('the balance card without a balance', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance-no_wallet')).toBeTruthy());
     expect(screen.getByText("You don't have a wallet yet")).toBeTruthy();
     expect(screen.getByText('Open your wallet to continue.')).toBeTruthy();
-    expect(screen.queryByTestId('today-balance-eye')).toBeNull();
+    expect(screen.getByTestId('today-balance-eye')).toBeTruthy();
     expect(sent).not.toContain(T.balance);
     await rtl.fireEvent.press(screen.getByTestId('today-open-wallet'));
     expect(mockPush).toHaveBeenCalledWith('/open-wallet');
@@ -397,9 +411,10 @@ describe('Today empty and in error', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
     expect(sent).not.toContain(T.balance);
     expect(screen.getByText("Today didn't load")).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    await rtl.fireEvent.press(rtl.within(screen.getByTestId('today-error')).getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));
     await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+    expect(screen.queryByTestId('today-error')).toBeNull();
   });
 });
 
@@ -410,8 +425,7 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
     expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Events' }));
     expect(mockPush).toHaveBeenCalledWith('/events');
-    // The other services lead to screens not built yet: their columns stay empty.
-    for (const label of ['Pay bills', 'Legal', 'Schools', 'Shop']) expect(screen.queryByText(label)).toBeNull();
+    expect(mockTaps).toEqual([]);
   });
 
   it('a user with TGIF off still has the Events tile (H36)', async () => {
@@ -422,20 +436,530 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
   });
 });
 
-describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11)', () => {
-  it('a user sees the Events tile first in the row, with no empty slot before it', async () => {
+// ---- COMPLETE-03: Today draws its whole artboard (R-46) ----
+
+type Json = { props?: { testID?: string }; children?: (Json | string)[] | null };
+/** Every testID on the page, in the order the tree draws them. */
+function drawn(screen: { toJSON: () => unknown }): string[] {
+  const out: string[] = [];
+  const walk = (node: Json | string | null) => {
+    if (!node || typeof node === 'string') return;
+    if (node.props?.testID) out.push(node.props.testID);
+    node.children?.forEach(walk);
+  };
+  const root = screen.toJSON() as Json | Json[] | null;
+  (Array.isArray(root) ? root : [root]).forEach(walk);
+  return out;
+}
+/** Every string drawn inside the element with this testID. */
+function textIn(screen: { toJSON: () => unknown }, testID: string): string[] {
+  const out: string[] = [];
+  const collect = (node: Json | string | null) => {
+    if (node === null) return;
+    if (typeof node === 'string') {
+      out.push(node);
+      return;
+    }
+    node.children?.forEach(collect);
+  };
+  const find = (node: Json | string | null): Json | null => {
+    if (!node || typeof node === 'string') return null;
+    if (node.props?.testID === testID) return node;
+    for (const child of node.children ?? []) {
+      const hit = find(child);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const root = screen.toJSON() as Json | Json[] | null;
+  const hit = (Array.isArray(root) ? root : [root]).map(find).find(Boolean) ?? null;
+  collect(hit);
+  return out;
+}
+const accountAs = (accountType: string | null) => [ok({ wawuUserId: ME, accountType })];
+const settled = async (screen: Awaited<ReturnType<typeof rtl.render>>) => {
+  await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+  await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
+};
+const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as object) as Record<string, unknown>;
+
+describe('H1 · every element the artboard draws is on Today', () => {
+  it('a user sees the tabs, search, the bell, the money card, TGIF, the services and the creators, each in the artboard order', async () => {
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    const column = screen.getByTestId('today-service-events').parent!;
-    const grid = column.parent!;
-    expect(grid.children).toHaveLength(1);
-    expect(grid.children[0]).toBe(column);
+    await settled(screen);
+    const ids = drawn(screen);
+    const inOrder = [
+      'feed-tab-today',
+      'feed-tab-following',
+      'feed-tab-for_you',
+      'today-search',
+      'today-bell',
+      'today-balance-card',
+      'today-currency',
+      'today-balance-eye',
+      'today-balance',
+      'today-action-send',
+      'today-action-add',
+      'today-action-bills',
+      'today-action-scan',
+      'today-tgif',
+      'today-services',
+      'today-service-pay-bills',
+      'today-service-events',
+      'today-service-legal',
+      'today-service-schools',
+      'today-creators-see-all',
+      `today-creator-${ADA}`,
+      `today-creator-${FUNMI}`,
+    ];
+    const at = inOrder.map((id) => ids.indexOf(id));
+    expect(at.filter((i) => i < 0)).toEqual([]);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+    expect(JSON.stringify(screen.toJSON())).not.toContain(String.fromCharCode(0x2014));
   });
 
-  it('the loading view draws one tile shape for the one tile present (H11)', async () => {
+  it("the money card's four actions read Send, Add, Bills and Scan, left to right", async () => {
+    const screen = await boot();
+    await settled(screen);
+    const row = screen.getByTestId('today-actions');
+    const labels = ['send', 'add', 'bills', 'scan'].map((k) => rtl.within(screen.getByTestId(`today-action-${k}`)).getByText(/\w/).props.children);
+    expect(labels).toEqual(['Send', 'Add', 'Bills', 'Scan']);
+    expect(row.children).toHaveLength(4);
+    expect(row.children.map((c) => (c as unknown as { props: { testID: string } }).props.testID)).toEqual(['today-action-send', 'today-action-add', 'today-action-bills', 'today-action-scan']);
+  });
+
+  it('the services row reads Pay bills, Events, Legal and Schools, with no Shop', async () => {
+    const screen = await boot();
+    await settled(screen);
+    const grid = screen.getByTestId('today-service-events').parent!.parent!;
+    expect(grid.children).toHaveLength(4);
+    const keys = grid.children.map((column) => (column as unknown as { children: { props: { testID: string } }[] }).children[0].props.testID);
+    expect(keys).toEqual(['today-service-pay-bills', 'today-service-events', 'today-service-legal', 'today-service-schools']);
+    expect(screen.queryByText('Shop')).toBeNull();
+    for (const label of ['Pay bills', 'Events', 'Legal', 'Schools']) expect(screen.getByRole('button', { name: label })).toBeTruthy();
+  });
+
+  it('the tab row reads Today, Following and For you, with Today selected', async () => {
+    const screen = await boot();
+    await settled(screen);
+    const tabs = ['today', 'following', 'for_you'].map((v) => screen.getByTestId(`feed-tab-${v}`));
+    expect(tabs.map((t) => t.props.accessibilityState)).toEqual([{ selected: true }, { selected: false }, { selected: false }]);
+  });
+});
+
+describe('H1 · an entry whose screen is not built opens nothing (R-46)', () => {
+  const inert: [string, string, string][] = [
+    ['search', 'today-search', 'EXPLORE-02'],
+    ['the bell', 'today-bell', 'ME-14'],
+    ['the currency chip', 'today-currency', 'WALLET-21'],
+    ['Send', 'today-action-send', 'WALLET-02'],
+    ['Add', 'today-action-add', 'WALLET-05'],
+    ['Bills', 'today-action-bills', 'BILLS-01'],
+    ['Scan', 'today-action-scan', 'WALLET-20'],
+    ['the Pay bills tile', 'today-service-pay-bills', 'BILLS-01'],
+    ['the Legal tile', 'today-service-legal', 'LEGAL-02'],
+    ['the Schools tile', 'today-service-schools', 'SCHOOLS-03'],
+    ["Creators to discover's See all", 'today-creators-see-all', 'EXPLORE-02'],
+    ['a creator card', `today-creator-${ADA}`, 'ME-02'],
+  ];
+
+  it.each(inert)('a user who taps %s opens nothing, changes nothing and sends nothing, and the entry names %s', async (_name, testID, task) => {
+    const screen = await boot();
+    await settled(screen);
+    const before = JSON.stringify(screen.toJSON());
+    const asked = sent.length;
+    await rtl.fireEvent.press(screen.getByTestId(testID));
+    expect(mockTaps).toEqual([task]);
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(sent).toHaveLength(asked);
+    expect(JSON.stringify(screen.toJSON())).toBe(before);
+  });
+
+  it('a creator card opens nothing, and Follow on the same card still works', async () => {
+    answers[`POST /creators/${ADA}/follow`] = [ok({ following: true })];
+    const screen = await boot();
+    await settled(screen);
+    await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Following'));
+    expect(mockTaps).not.toContain('ME-02');
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('the built entries open their screens: the TGIF card and the Events tile', async () => {
+    const screen = await boot();
+    await settled(screen);
+    await rtl.fireEvent.press(screen.getByTestId('today-tgif'));
+    await rtl.fireEvent.press(screen.getByTestId('today-service-events'));
+    expect(mockPush.mock.calls.map((c) => c[0])).toEqual(['/tgif', '/events']);
+    expect(mockTaps).toEqual([]);
+  });
+});
+
+describe('H1 · the bar and the bell', () => {
+  it("a user sees the bell's dot when something is unread, and the bell says how many", async () => {
+    const screen = await boot();
+    await settled(screen);
+    expect(screen.getByTestId('today-bell-dot')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Notifications, 2 unread' })).toBeTruthy();
+  });
+
+  it('with nothing unread the bell has no dot', async () => {
+    answers[T.counts] = [ok({ purchases: 0, saved: 0, unreadNotifications: 0 })];
+    const screen = await boot();
+    await settled(screen);
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeTruthy();
+  });
+
+  it('when the count cannot be read the bell stays, with no dot, and Today is not held up', async () => {
+    answers[T.counts] = ['offline'];
+    const screen = await boot();
+    await settled(screen);
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    expect(screen.getByTestId('today-bell')).toBeTruthy();
+    expect(screen.getByTestId('today-search')).toBeTruthy();
+  });
+
+  it('search and the bell are drawn while Today loads (H11), the bell with the count the Hub gave', async () => {
+    answers[T.balance] = ['hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    expect(screen.getByTestId('today-search')).toBeTruthy();
+    expect(screen.getByTestId('feed-tab-today')).toBeTruthy();
+  });
+});
+
+describe('H1 · the money card in every state keeps its chip, its eye and its four actions', () => {
+  const actions = ['send', 'add', 'bills', 'scan'];
+  const keepsEverything = (screen: Awaited<ReturnType<typeof rtl.render>>) => {
+    expect(screen.getByTestId('today-currency')).toBeTruthy();
+    expect(screen.getByTestId('today-balance-eye')).toBeTruthy();
+    for (const k of actions) expect(screen.getByTestId(`today-action-${k}`)).toBeTruthy();
+  };
+
+  it('with no wallet', async () => {
+    answers[T.wallet] = [ok({ state: 'not_open', account: null })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-no_wallet')).toBeTruthy());
+    keepsEverything(screen);
+    expect(screen.getByTestId('today-open-wallet')).toBeTruthy();
+  });
+
+  it('with the bank unreachable', async () => {
+    answers[T.balance] = [refuse(503, 'provider_unreachable', 'We could not reach your account. Try again in a moment.')];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-unreachable')).toBeTruthy());
+    keepsEverything(screen);
+  });
+
+  it('while the balance is on its way', async () => {
+    answers[T.balance] = ['hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
+    // The page is the loading shapes (H11) until every read answers: the card's own loading state is the shape's.
+    expect(screen.queryByTestId('today-balance')).toBeNull();
+  });
+
+  it('the eye still hides the figure once there is one, set while there was none', async () => {
+    answers[T.wallet] = [ok({ state: 'opening', account: null }), walletOpen];
+    answers[T.balance] = [ok({ availableKobo: 4250, asOf: '2026-10-07T10:00:00Z' })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-opening')).toBeTruthy());
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Hide balance' }));
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Check again' }));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByTestId('today-balance')).not.toHaveTextContent(/\d/);
+  });
+});
+
+describe('H1 · Creators to discover is always drawn', () => {
+  it('the heading and See all are drawn with the cards, and See all is a button of its own', async () => {
+    const screen = await boot();
+    await settled(screen);
+    expect(screen.getByRole('header', { name: 'Creators to discover' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'See all creators' })).toBeTruthy();
+  });
+
+  it('with nobody to suggest, a user sees the heading, See all and three neutral cards with no name', async () => {
+    answers[T.creators] = [creatorsPage([creator(ME, 'Me Myself')])];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-creators-empty')).toBeTruthy());
+    expect(screen.getByRole('header', { name: 'Creators to discover' })).toBeTruthy();
+    expect(screen.getByTestId('today-creators-see-all')).toBeTruthy();
+    const frames = rtl.within(screen.getByTestId('today-creators-empty')).getAllByTestId('icon-UserRound', { hidden: true });
+    expect(frames).toHaveLength(3);
+    expect(screen.queryByText('Me Myself')).toBeNull();
+    expect(screen.queryByText(/no creators/i)).toBeNull();
+    // A neutral card is not an entry: the empty section has no button of its own but See all.
+    expect(rtl.within(screen.getByTestId('today-creators-empty')).queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('with no creators at all the neutral cards are the size of the real ones, so the section keeps its height', async () => {
+    answers[T.creators] = [creatorsPage([])];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-creators-empty')).toBeTruthy());
+    const frame = rtl.within(screen.getByTestId('today-creators-empty')).getAllByTestId('icon-UserRound', { hidden: true })[0].parent!.parent!;
+    expect(flat(frame as never)).toMatchObject({ width: 146, height: 196 });
+  });
+
+  it('when the creators cannot be read the heading and See all stay, with Try again in place', async () => {
+    answers[T.creators] = ['offline'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-creators-error')).toBeTruthy());
+    expect(screen.getByRole('header', { name: 'Creators to discover' })).toBeTruthy();
+    expect(screen.getByTestId('today-creators-see-all')).toBeTruthy();
+  });
+});
+
+describe('H36 · Today with TGIF off draws the sponsored card in its place', () => {
+  const off = () => {
+    answers[T.tgif] = [ok({ show: false })];
+  };
+
+  it('a user sees the card between the money card and the services, and no TGIF card', async () => {
+    off();
+    const screen = await boot();
+    await settled(screen);
+    const ids = drawn(screen);
+    expect(ids.indexOf('today-balance-card')).toBeLessThan(ids.indexOf('today-sponsored'));
+    expect(ids.indexOf('today-sponsored')).toBeLessThan(ids.indexOf('today-services'));
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
+  });
+
+  it('with no campaign served the card is a neutral picture and SPONSORED, with no advertiser, headline, line or button', async () => {
+    off();
+    const screen = await boot();
+    await settled(screen);
+    const card = screen.getByTestId('today-sponsored');
+    expect(rtl.within(card).getByTestId('icon-Image', { hidden: true })).toBeTruthy();
+    expect(textIn(screen, 'today-sponsored')).toEqual(['SPONSORED']);
+    expect(screen.queryByText('Tickets')).toBeNull();
+    expect(screen.queryByText(/Gospel/)).toBeNull();
+  });
+
+  it('tapping the card opens nothing: serving a campaign into it is ADS-01', async () => {
+    off();
+    const screen = await boot();
+    await settled(screen);
+    const before = JSON.stringify(screen.toJSON());
+    await rtl.fireEvent.press(screen.getByTestId('today-sponsored'));
+    expect(mockTaps).toEqual(['ADS-01']);
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(JSON.stringify(screen.toJSON())).toBe(before);
+  });
+
+  it('a user with TGIF on never sees the sponsored card', async () => {
+    const screen = await boot();
+    await settled(screen);
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+  });
+
+  it('draws the whole of Today around it: the bar, the money card with its actions, the services and the creators', async () => {
+    off();
+    const screen = await boot();
+    await settled(screen);
+    for (const id of ['today-search', 'today-bell', 'today-currency', 'today-action-send', 'today-action-scan', 'today-service-schools', 'today-creators-see-all']) {
+      expect(screen.getByTestId(id)).toBeTruthy();
+    }
+  });
+
+  it('the card never flashes in before the switch is read, and never when the switch cannot be read (TGIF stays on)', async () => {
+    answers[T.tgif] = ['hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
+  });
+});
+
+describe('H1 and H36 · Create (ME-04), for creator accounts only', () => {
+  it('a creator sees Create over Today, and tapping it opens nothing (the screen is ME-04)', async () => {
+    answers[T.me] = accountAs('creator');
+    const screen = await boot();
+    await settled(screen);
+    await rtl.waitFor(() => expect(screen.getByRole('button', { name: 'Create' })).toBeTruthy());
+    const before = JSON.stringify(screen.toJSON());
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Create' }));
+    expect(mockTaps).toEqual(['ME-04']);
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(JSON.stringify(screen.toJSON())).toBe(before);
+  });
+
+  it.each([['a user', 'user'], ['a professional', 'professional'], ['someone with no account type', null]])('%s sees no Create button', async (_who, type) => {
+    answers[T.me] = accountAs(type);
+    const screen = await boot();
+    await settled(screen);
+    expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
+  });
+
+  it('while the account type is held, and when it cannot be read, no Create button is drawn', async () => {
+    answers[T.me] = ['hold'];
+    const held = await boot();
+    // The viewer's own id is the same read: held, the page waits for the creators it filters, so nothing else is asked.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(held.queryByRole('button', { name: 'Create' })).toBeNull();
+    await held.unmount();
+    answers = everyAnswer();
+    answers[T.me] = ['offline'];
+    const failed = await boot();
+    await rtl.waitFor(() => expect(failed.getByTestId('today-balance')).toBeTruthy());
+    expect(failed.queryByRole('button', { name: 'Create' })).toBeNull();
+  });
+
+  it('a creator sees Create while Today loads (H11) too', async () => {
+    answers[T.me] = accountAs('creator');
+    answers[T.balance] = ['hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByRole('button', { name: 'Create' })).toBeTruthy());
+  });
+
+  it('a creator whose account read failed once gets Create back when Try again reads it again', async () => {
+    const fresh = everyAnswer();
+    answers = Object.fromEntries(Object.entries(fresh).map(([k, v]) => [k, k === T.balance ? v : ['offline' as const, ...v]]));
+    // Two reads ask `GET /users/me` (who the viewer is, and the account type): both fail, then both are answered.
+    answers[T.me] = ['offline', 'offline', ...accountAs('creator')];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
+    expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
+    await rtl.fireEvent.press(rtl.within(screen.getByTestId('today-error')).getByRole('button', { name: 'Try again' }));
+    await rtl.waitFor(() => expect(screen.getByRole('button', { name: 'Create' })).toBeTruthy());
+  });
+
+  it("the last row ends above Create for a creator, and keeps Today's own padding for everyone else", async () => {
+    const { todayMetrics } = require('../look') as typeof import('../look');
+    const { todayBodyBottomCreate } = require('../TodayScreen') as typeof import('../TodayScreen');
+    answers[T.me] = accountAs('creator');
+    const creatorScreen = await boot();
+    await settled(creatorScreen);
+    await rtl.waitFor(() => expect(creatorScreen.getByRole('button', { name: 'Create' })).toBeTruthy());
+    expect(flat({ props: { style: creatorScreen.getByTestId('today-scroll').props.contentContainerStyle } }).paddingBottom).toBe(todayBodyBottomCreate);
+    expect(todayBodyBottomCreate).toBe(90);
+    await creatorScreen.unmount();
+    answers = everyAnswer();
+    const userScreen = await boot();
+    await settled(userScreen);
+    expect(flat({ props: { style: userScreen.getByTestId('today-scroll').props.contentContainerStyle } }).paddingBottom).toBe(todayMetrics.bodyBottom);
+  });
+});
+
+describe('H1 · a failed read never collapses Today', () => {
+  const allOffline = () => {
+    const fresh = everyAnswer();
+    // The balance is asked for only once the wallet is known to be open, so it is never asked while offline.
+    answers = Object.fromEntries(Object.entries(fresh).map(([k, v]) => [k, k === T.balance ? v : ['offline' as const, ...v]]));
+  };
+  const sections = (screen: Awaited<ReturnType<typeof rtl.render>>) => {
+    for (const id of ['today-search', 'today-bell', 'today-balance-card', 'today-currency', 'today-action-send', 'today-action-scan', 'today-services', 'today-service-events', 'today-service-schools', 'today-creators-see-all']) {
+      expect(screen.getByTestId(id)).toBeTruthy();
+    }
+    expect(screen.getByRole('header', { name: 'Creators to discover' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
+  };
+
+  it('with no connection a user still sees every section, under one banner with Try again on top', async () => {
+    allOffline();
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
+    sections(screen);
+    expect(screen.getByText("Today didn't load")).toBeTruthy();
+    expect(screen.getByText('Check your connection, then try again.')).toBeTruthy();
+    // The banner is the first thing under the bar.
+    const ids = drawn(screen);
+    expect(ids.indexOf('today-error')).toBeLessThan(ids.indexOf('today-balance-card'));
+    expect(screen.queryByTestId('today-loading')).toBeNull();
+    // TGIF stays as itself (on, its day unread): never the sponsored card, which is TGIF off.
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(screen.getByTestId('today-tgif-error')).toBeTruthy();
+  });
+
+  it('with every read failed the page has one Try again, the banner\'s; each section says what failed and has no button of its own', async () => {
+    allOffline();
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
+    expect(screen.getAllByRole('button', { name: 'Try again' })).toHaveLength(1);
+    expect(screen.getByText("We couldn't load your wallet")).toBeTruthy();
+    expect(screen.getByText("Today's TGIF didn't load.")).toBeTruthy();
+    expect(screen.getByText(/The creators didn't load/)).toBeTruthy();
+    expect(screen.queryByTestId('today-balance-retry')).toBeNull();
+    expect(screen.queryByTestId('today-tgif-retry')).toBeNull();
+  });
+
+  it('when one section fails alone its own Try again is there, and no banner', async () => {
+    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif-error')).toBeTruthy());
+    expect(screen.queryByTestId('today-error')).toBeNull();
+    expect(screen.getByTestId('today-tgif-retry')).toBeTruthy();
+  });
+
+  it('Try again keeps every section drawn while it reads, never the loading shapes, and never the sponsored card', async () => {
+    answers = Object.fromEntries(Object.keys(everyAnswer()).map((k) => [k, ['offline' as const, 'hold' as const]]));
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
+    await rtl.fireEvent.press(rtl.within(screen.getByTestId('today-error')).getByRole('button', { name: 'Try again' }));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.queryByTestId('today-loading')).toBeNull();
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    sections(screen);
+    // The banner is still there and its button is on its spinner, so it cannot be sent twice.
+    expect(rtl.within(screen.getByTestId('today-error')).getByRole('button', { name: 'Try again' }).props.accessibilityState).toMatchObject({ busy: true });
+  });
+
+  it('after Try again the banner goes and the sections fill in', async () => {
+    allOffline();
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-error')).toBeTruthy());
+    await rtl.fireEvent.press(rtl.within(screen.getByTestId('today-error')).getByRole('button', { name: 'Try again' }));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
+    expect(screen.queryByTestId('today-error')).toBeNull();
+    sections(screen);
+  });
+
+  it('when only the creators fail there is no banner: the section says so in place, and Try again keeps it drawn while it reads', async () => {
+    answers[T.creators] = ['offline', 'hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-creators-error')).toBeTruthy());
+    expect(screen.queryByTestId('today-error')).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.queryByTestId('today-loading')).toBeNull();
+    expect(screen.getByTestId('today-creators-error')).toBeTruthy();
+    expect(screen.getByTestId('today-balance-card')).toBeTruthy();
+  });
+
+  it('no section flashes in before its read settles: with the creators held, Today stays the loading shapes', async () => {
+    answers[T.creators] = ['hold'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    for (const id of ['today-balance-card', 'today-tgif', 'today-sponsored', 'today-services', 'today-creators-empty', 'today-creators-error']) {
+      expect(screen.queryByTestId(id)).toBeNull();
+    }
+    // The bar is not a section of the body: it is drawn at once.
+    expect(screen.getByTestId('today-search')).toBeTruthy();
+  });
+});
+
+describe('H11 · Today while it loads draws the shape of the whole page', () => {
+  it('draws the money card with its actions, the slot under it, the heading, four tile shapes and three cards', async () => {
     const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
-    await rtl.render(<TodayLoading withTgif />);
-    const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
-    expect(shapes).toHaveLength(1);
+    const { todayMetrics } = require('../look') as typeof import('../look');
+    await rtl.render(<TodayLoading />);
+    const json = JSON.stringify(rtl.screen.toJSON());
+    expect(json.match(/"height":60/g) ?? []).toHaveLength(4);
+    expect(json.match(/"height":196/g) ?? []).toHaveLength(3);
+    expect(json).toContain(`"height":${todayMetrics.skeletonMoney}`);
+    expect(json).toContain(`"height":${todayMetrics.tgifHeight}`);
   });
 });

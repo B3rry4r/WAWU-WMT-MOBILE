@@ -1,6 +1,6 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { font, space } from '@/theme';
+import { canvasNormalLineHeight, font, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
 /**
@@ -14,6 +14,17 @@ const metricsBase = {
   headTop: 6,
   headBottom: 14,
   headRow: 40,
+  /**
+   * `todayHead`'s two round buttons (`IB('Search', { size: 40 })`, the bell the same) sit 8 apart, 8 clear of the tabs at
+   * the least. The bell's dot is 8 across, 9 down and 10 in from the button's corner, ringed 2 wide in the card colour.
+   */
+  barButton: 40,
+  barButtonsApart: 8,
+  barClear: 8,
+  dot: 8,
+  dotTop: 9,
+  dotRight: 10,
+  dotRing: 2,
   /** `body(...)` on Today: 8 above the first card, 20 between parts, 20 at the sides. */
   bodyTop: 8,
   between: 20,
@@ -21,7 +32,7 @@ const metricsBase = {
   /** `balanceCard`: `padding:18px 18px 16px`, the figure 14 under the chip row (the shared fitted figure keeps 10 of it itself). */
   moneyPadTop: 18,
   moneyPadX: 18,
-  moneyPadBottom: 18,
+  moneyPadBottom: 16,
   figureTop: 14,
   figure: 38,
   /** The Naira chip: 30 high, `padding:0 10px 0 4px`, `gap:6px`, the flag 22, the words 13 at 600. */
@@ -31,6 +42,20 @@ const metricsBase = {
   chipGap: 6,
   flag: 22,
   chipWords: 13,
+  /** The chip's chevron, 14, after the word. */
+  chevron: 14,
+  /**
+   * `balanceCard`'s actions: 18 under the figure, four columns up to 64 wide spread across the card, each a 48 round
+   * button (the first on the accent, the rest white at 12%) with a 20 glyph at stroke 2.2, and its word, 12 at 600 and
+   * 85%, 6 below. The columns give way before the card does, so four fit a 320 wide phone.
+   */
+  actionsTop: 18,
+  actionWidth: 64,
+  actionButton: 48,
+  actionGlyph: 20,
+  actionGap: 6,
+  actionWords: 12,
+  actionWordsOpacity: 0.85,
   /** A wallet answer in place of the figure: words 15, then the button 14 under them. */
   noticeTop: 12,
   noticeGap: 14,
@@ -69,12 +94,35 @@ const metricsBase = {
    */
   skeletonHeading: 20,
   skeletonHeadingCorner: 8,
+  /**
+   * `adSlot`, H36's sponsored card in TGIF's place: 104 high at the card corner on the card colour with a hairline; the
+   * picture 104 wide; the words pad 12 by 14, 4 apart, the kicker 11 at 700 tracked 0.08em; the CTA 14 from the right.
+   */
+  adHeight: 104,
+  adPicture: 104,
+  adPadY: 12,
+  adPadX: 14,
+  adGap: 4,
+  adKicker: 11,
+  adKickerTracking: 0.08,
+  /** A neutral picture's glyph, and "See all" on `SH` (13.5 semi-bold, as Explore's). */
+  frameGlyph: 36,
+  seeAll: 13.5,
 } as const;
 
 export const todayMetrics = {
   ...metricsBase,
-  /** The built money card's height with a figure: its padding, the chip row and the figure. */
-  skeletonMoney: metricsBase.moneyPadTop + metricsBase.chipHeight + metricsBase.figureTop + metricsBase.figure + metricsBase.moneyPadBottom,
+  /** The built money card's height with a figure: its padding, the chip row, the figure and the four actions (203, as H11 draws it). */
+  skeletonMoney:
+    metricsBase.moneyPadTop +
+    metricsBase.chipHeight +
+    metricsBase.figureTop +
+    metricsBase.figure +
+    metricsBase.actionsTop +
+    metricsBase.actionButton +
+    metricsBase.actionGap +
+    canvasNormalLineHeight(metricsBase.actionWords) +
+    metricsBase.moneyPadBottom,
 } as const;
 
 /** White at a strength: the canvas's Naira chip (12%) over the money card. */
@@ -104,6 +152,8 @@ export const todayWords = StyleSheet.create({
   tgifTitle: type(todayMetrics.tgifTitle, 700, { letterSpacing: todayMetrics.tgifTitle * todayMetrics.tgifTitleTracking }),
   tgifMeta: type(todayMetrics.tgifMeta, 400, { opacity: todayMetrics.tgifMetaFaint }),
   tgifProblem: type(todayMetrics.tgifMeta, 600),
+  action: type(todayMetrics.actionWords, 600, { opacity: todayMetrics.actionWordsOpacity, lineHeight: canvasNormalLineHeight(todayMetrics.actionWords) }),
+  adKicker: type(todayMetrics.adKicker, 700, { letterSpacing: todayMetrics.adKicker * todayMetrics.adKickerTracking }),
 });
 
 /** The page's side gutter, as every body on the canvas has it. */
