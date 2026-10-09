@@ -288,6 +288,10 @@ These equal the builder's own table. **The system's larger-text setting** (the b
 
 Merged at verifier report 2a8058c (round 2, no defect open). The Wallet tab draws W1, W4, W5 and W6 in full at every width from 320 to 430 px; 16 entries are inert, each named for the task that builds its screen, and none sends anything. At merge the lead fixed the stale BRIEF line on the Dollar tab (R-46) and added a 'From W1' capability check to WALLET-02, WALLET-04, WALLET-05, WALLET-06 and BILLS-01. Larger text, the surviving test gaps and the rows' Try again blink go to COMPLETE-06. Expect a text conflict at the end of BACKEND_GAPS.md (G-493 here, G-490 to G-492 on NUV-02).
 
+## Lead note (9 Oct 2026, R-47)
+
+The owner withdrew R-46. The inert entries this task drew are removed by FIX-29; the sections whose tasks are complete stay.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._

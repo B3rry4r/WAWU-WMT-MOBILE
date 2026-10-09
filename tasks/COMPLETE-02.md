@@ -352,6 +352,10 @@ Fresh Sonnet verifier, 9 Oct 2026, branch `wmt/COMPLETE-02` at 797740d (detached
 
 Merged by lead ruling at verifier report e47b90b (round 2). Both verifiers found the screen matching X1, X14 and X15 in every state, and round 1's eight test gaps and four findings are closed. Round 2's verifier left seven new surviving mutants, all test gaps on a product that is right (W1 events forgotten by a refetch, W2 a failing refetch with data held, W4 the retry spinner, W5 the network icon, W6 the Hub unreachable in jest, W16 the alert role, W17 the button variant), and finding 5: Try again shows the X14 loading view for about 3 s instead of keeping the sections (react-query puts a failed query with no data back to pending). These, the 320 px banner layout and the neutral frames' spoken label on a failed read, go to COMPLETE-06's scope. From now on a surviving mutant on styling or an accessibility detail is a note for a follow-up, not a reason to send a task back (docs/roles/VERIFIER.md).
 
+## Lead note (9 Oct 2026, R-47)
+
+The owner withdrew R-46. The inert entries this task drew are removed by FIX-29; the sections whose tasks are complete stay.
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
