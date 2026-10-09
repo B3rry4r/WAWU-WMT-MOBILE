@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
-import { ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import {
   ExploreEventsRail,
@@ -21,12 +20,13 @@ import { layout, space, useWawu } from '@/theme';
 import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators, fetchUnreadNotifications, unreadKey } from './api';
 import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
-import { CreateButton } from './CreateButton';
+import { CreateButton, createButtonMetrics } from './CreateButton';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
 import { DoorsCard, type Door } from './DoorsCard';
 import { ExploreBar } from './ExploreBar';
 import { ExploreSkeleton } from './ExploreSkeleton';
 import { FOLLOW_NOTICE_MS, useFollow } from './follow';
+import { LoadFailedBanner } from './LoadFailedBanner';
 import {
   CreatorsRailEmpty,
   ExploreEventsEmpty,
@@ -39,10 +39,16 @@ import {
 /**
  * design/_gen/explore.js `body`: the body pads 8 above and 120 below (over a tab bar that here is its own box), 20
  * between sections; a section heading sits 12 above its rail (`col(..., 12)`). The bar above it is `ExploreBar`'s.
+ *
+ * `bodyBottomCreate` is the bottom padding while the Create button is drawn (creator accounts). The canvas's 120 leaves
+ * 30 under the last row here, but the button stands 16 above the tab bar and is 58 high, so it covers the bottom 74 and
+ * the last row's chevron sat under it at the end of the scroll. The padding is the button's own offset, its height and
+ * the same 16 again (`space.lg`) between the button and the row: 16 + 58 + 16 = 90. Everyone else keeps the canvas's 30.
  */
 export const exploreMetrics = {
   bodyTop: space.sm,
   bodyBottom: 120 - layout.tabbarH,
+  bodyBottomCreate: createButtonMetrics.bottom + createButtonMetrics.size + space.lg,
   sectionGap: space.xl,
   headingGap: space.md,
 } as const;
@@ -59,9 +65,10 @@ export type ExploreScreenProps = {
 };
 
 /**
- * X1 and X14: Explore, drawn whole (R-46), with a real error state (a request failed, with a retry). It reads the
- * creator categories, the featured creators, the featured event and the upcoming events, and, for the bar and the
- * Create button, the unread notifications and the account type.
+ * X1 and X14: Explore, drawn whole (R-46). It reads the creator categories, the featured creators, the featured event
+ * and the upcoming events, and, for the bar and the Create button, the unread notifications and the account type.
+ * When the categories or the featured creators cannot be read, every section stays drawn as it is when nothing is served
+ * (the bar, the neutral frames, the doors, Create) under one banner with a Try again that reads everything again.
  *
  * Every entry X1 draws is here. Built destinations are wired: a category tile (X2, X3), the featured event and an event
  * card (E2), Upcoming events' See all (E1) and "List your services" (PROS-03). The rest are `unbuilt(...)`: the search
@@ -87,13 +94,16 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onL
   const refetchCategories = categories.refetch;
   const refetchFeatured = featured.refetch;
   const refetchUnread = unread.refetch;
+  const refetchCreator = creator.refetch;
+  // One list of reads for coming back to the tab, a pull and Try again. The account type is in it so that Create comes back
+  // for a creator after a read that failed once (it is not retried on its own, so a failure settles at once).
   const refetchAll = useCallback(
-    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents(), refetchUnread()]),
-    [refetchCategories, refetchFeatured, refetchEvents, refetchUnread],
+    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents(), refetchUnread(), refetchCreator()]),
+    [refetchCategories, refetchFeatured, refetchEvents, refetchUnread, refetchCreator],
   );
 
-  // Coming back to the tab reads again when what is held has gone stale.
-  const stale = categories.isStale || featured.isStale || unread.isStale;
+  // Coming back to the tab reads again when what is held has gone stale (a read that failed holds nothing, so it is stale).
+  const stale = categories.isStale || featured.isStale || unread.isStale || creator.isStale;
   const wasFocused = useRef(focused);
   useEffect(() => {
     if (focused && !wasFocused.current && stale) void refetchAll();
@@ -112,32 +122,31 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onL
   const failed = (categories.isError && !categories.data) || (featured.isError && !featured.data);
   const failure = categories.error ?? featured.error;
 
+  // The doors, in X1's order: Find a professional, Find a school, List your services.
+  const doors: Door[] = [
+    { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: unbuilt('PROS-01') },
+    { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: unbuilt('SCHOOLS-03') },
+    { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
+  ];
+
   let body;
   if (categories.isPending || featured.isPending || !events.settled) {
     body = <ExploreSkeleton />;
-  } else if (failed) {
-    body = (
-      <View style={styles.centered}>
-        <ErrorState
-          testID="explore-error"
-          title="Couldn’t load Explore"
-          message={isApiError(failure) ? failure.message : 'Something went wrong. Try again.'}
-          icon={isApiError(failure) && failure.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
-          onRetry={() => void refetchAll()}
-        />
-      </View>
-    );
   } else {
     const creators = featured.data ?? [];
     const featuredEvent = events.featured;
-    // The order is X1's: Find a professional, Find a school, List your services.
-    const doors: Door[] = [
-      { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: unbuilt('PROS-01') },
-      { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: unbuilt('SCHOOLS-03') },
-      { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
-    ];
+    // A failed read draws every section as a read that served nothing does (neutral frames), under one banner (R-46).
     body = (
       <>
+        {failed ? (
+          <LoadFailedBanner
+            title="Couldn’t load Explore"
+            message={isApiError(failure) ? failure.message : 'Something went wrong. Try again.'}
+            icon={isApiError(failure) && failure.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
+            retrying={categories.isFetching || featured.isFetching}
+            onRetry={() => void refetchAll()}
+          />
+        ) : null}
         {featuredEvent ? (
           <View testID="explore-hero">
             <ExploreFeaturedEvent event={featuredEvent} onOpen={() => onOpenEvent(featuredEvent.id)} />
@@ -178,18 +187,20 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onL
     );
   }
 
+  const showCreate = creator.data === true;
+
   return (
     <View testID="explore-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <ExploreBar unread={unread.data ?? 0} />
       <ScrollView
         testID="explore-scroll"
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, showCreate ? styles.contentCreate : null]}
         refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
       >
         {body}
       </ScrollView>
-      {creator.data === true ? <CreateButton /> : null}
+      {showCreate ? <CreateButton /> : null}
       <Toast message={follow.notice} tone="alert" placement="bottom" lines={2} duration={FOLLOW_NOTICE_MS} onHide={follow.dismiss} testID="follow-notice" />
     </View>
   );
@@ -205,7 +216,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.gutter,
     gap: exploreMetrics.sectionGap,
   },
-  centered: { flex: 1, justifyContent: 'center' },
+  /** While Create is drawn the last row ends above it (`exploreMetrics.bodyBottomCreate`). */
+  contentCreate: { paddingBottom: exploreMetrics.bodyBottomCreate },
   section: { gap: exploreMetrics.headingGap },
   bleed: { marginHorizontal: -layout.gutter, flexGrow: 0 },
   rail: { gap: creatorCardMetrics.between, paddingHorizontal: layout.gutter },
