@@ -17622,8 +17622,8 @@
                             "type": "string",
                             "enum": [
                               "pending",
-                              "rejected",
-                              "approved"
+                              "approved",
+                              "rejected"
                             ]
                           },
                           "reviewedAt": {
@@ -17686,8 +17686,8 @@
                                 "type": "string",
                                 "enum": [
                                   "pending",
-                                  "rejected",
-                                  "approved"
+                                  "approved",
+                                  "rejected"
                                 ]
                               },
                               "reviewedAt": {
@@ -17791,8 +17791,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -17886,8 +17886,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -17981,8 +17981,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -18316,8 +18316,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -18425,8 +18425,8 @@
                         "type": "string",
                         "enum": [
                           "pending",
-                          "rejected",
-                          "approved"
+                          "approved",
+                          "rejected"
                         ]
                       },
                       "reviewedAt": {
@@ -18577,8 +18577,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -19432,8 +19432,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -19534,8 +19534,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -19646,8 +19646,8 @@
                       "type": "string",
                       "enum": [
                         "pending",
-                        "rejected",
-                        "approved"
+                        "approved",
+                        "rejected"
                       ]
                     },
                     "reviewedAt": {
@@ -23386,7 +23386,7 @@
             }
           },
           "409": {
-            "description": "reason.code: wallet_already_open",
+            "description": "reason.code: wallet_already_open, step_not_used",
             "content": {
               "application/json": {
                 "schema": {
@@ -23644,7 +23644,7 @@
             }
           },
           "409": {
-            "description": "reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity",
+            "description": "reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity, identity_under_review",
             "content": {
               "application/json": {
                 "schema": {
@@ -23654,7 +23654,17 @@
             }
           },
           "422": {
-            "description": "reason.code: account_not_opened",
+            "description": "reason.code: account_not_opened, phone_not_nigerian",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "reason.code: identity_checks_exhausted",
             "content": {
               "application/json": {
                 "schema": {
@@ -24864,6 +24874,265 @@
         ],
         "x-wawu-built-by": "WALLET-08",
         "x-wawu-max-items": 10
+      }
+    },
+    "/api/hub/money/identity/documents": {
+      "get": {
+        "operationId": "NuvionDocumentsController_getDocuments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityDocumentsView"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "reason.code: provider_unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Where the opening's documents stand: both kinds, whether uploads are\nopen, what is still needed before the opening is sent for review. When\nthe documents are in and the opening is due to be sent (or its sending\nwas lost), this sends it, once.",
+        "tags": [
+          "NuvionDocuments"
+        ],
+        "x-wawu-built-by": "NUV-03"
+      },
+      "post": {
+        "operationId": "NuvionDocumentsController_uploadDocument",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "file"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "identity",
+                      "proof_of_address"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "file_back": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityDocumentsView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "reason.code: document_request_invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "reason.code: documents_closed, document_in_progress, identity_under_review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "reason.code: document_file_invalid, document_not_accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "reason.code: document_rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "reason.code: document_busy, provider_unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Sends one document to Nuvion, once: multipart with `kind` (`identity`\nor `proof_of_address`) and `file` (a PDF, JPG or PNG up to 10 MB). An\nID with a back side sends it as `file_back` in the same request, of\nthe same type. The same file sent twice is forwarded once; a different\nfile replaces the first while the opening is still taking documents.\nWhen both documents are in (and the selfie has passed, when in use) the\nopening is sent for review, once. WAWU keeps no copy of any file.\nAnswers the documents view.",
+        "tags": [
+          "NuvionDocuments"
+        ],
+        "x-wawu-built-by": "NUV-03"
+      }
+    },
+    "/api/hub/money/identity/liveness": {
+      "get": {
+        "operationId": "NuvionDocumentsController_getLiveness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityLivenessView"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "reason.code: provider_unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The hosted selfie: whether it is in use, where it stands, and the\nsecure page to open or resume while it is pending. Reads the result\nfrom Nuvion; a pass is saved on the opening, which is then sent for\nreview when everything else is in.",
+        "tags": [
+          "NuvionDocuments"
+        ],
+        "x-wawu-built-by": "NUV-03"
+      },
+      "post": {
+        "operationId": "NuvionDocumentsController_startLiveness",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartLivenessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityLivenessView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "reason.code: document_request_invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "reason.code: documents_closed, document_in_progress, selfie_not_available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "reason.code: document_rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "reason.code: provider_unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts the hosted selfie (or answers the one already running) and\nreturns the secure page to open. `redirectUrl` is where that page sends\nthe person back: the app's link or the website, https only. When\nNuvion will not start a selfie for this person, the opening goes on\nwithout one and this answers `selfie_not_available`.",
+        "tags": [
+          "NuvionDocuments"
+        ],
+        "x-wawu-built-by": "NUV-03"
       }
     },
     "/api/hub/about": {
@@ -31121,7 +31390,9 @@
               "statement_busy",
               "recipient_search_rate_limited",
               "fees_not_set",
-              "limit_reached"
+              "limit_reached",
+              "identity_under_review",
+              "step_not_used"
             ],
             "type": "string"
           },
@@ -31398,6 +31669,69 @@
             "description": "The `checkHandle` the passed BVN check answered, in place of `bvn` and\n`nin` (KYC-03): the server takes both from it. Never with them.",
             "maxLength": 1024
           },
+          "middleName": {
+            "type": "string"
+          },
+          "gender": {
+            "enum": [
+              "male",
+              "female"
+            ],
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string",
+            "description": "A second address line (flat, estate), when there is one.",
+            "maxLength": 100
+          },
+          "city": {
+            "type": "string",
+            "description": "The town or city.",
+            "maxLength": 100
+          },
+          "state": {
+            "type": "string",
+            "description": "The state (Lagos, FCT ...).",
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "The postal code, 1 to 20 letters, digits, spaces or dashes.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9 -]{0,19}$",
+            "maxLength": 20
+          },
+          "idType": {
+            "description": "The ID document the person will upload (NUV-03).",
+            "enum": [
+              "international_passport",
+              "drivers_license",
+              "national_id"
+            ],
+            "type": "string"
+          },
+          "idNumber": {
+            "type": "string",
+            "description": "Its number, as printed: 5 to 30 letters, digits or dashes. Never stored.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{4,29}$",
+            "minLength": 5,
+            "maxLength": 30
+          },
+          "idIssueDate": {
+            "type": "string",
+            "description": "When it was issued, `YYYY-MM-DD`, when it says."
+          },
+          "idExpiryDate": {
+            "type": "string",
+            "description": "When it expires, `YYYY-MM-DD`, when it says; not already passed."
+          },
+          "proofOfAddressType": {
+            "description": "The proof of address the person will upload (NUV-03).",
+            "enum": [
+              "utility_bill",
+              "bank_statement"
+            ],
+            "type": "string"
+          },
           "firstName": {
             "type": "string",
             "description": "A5's first name, as the BVN check prefilled it."
@@ -31494,6 +31828,29 @@
           "statusCode",
           "message"
         ]
+      },
+      "DocumentErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "StartLivenessDto": {
+        "type": "object",
+        "properties": {
+          "redirectUrl": {
+            "type": "string",
+            "description": "Where the secure selfie page sends the person when it is done: a secure\n(https) web address, the app's link or the website. Optional.",
+            "maxLength": 2000
+          }
+        }
       },
       "PolicySectionDto": {
         "type": "object",
@@ -32856,6 +33213,68 @@
           "blockedBy"
         ]
       },
+      "WalletReviewReasonView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "bvn_not_verified",
+              "nin_not_verified",
+              "id_document_not_verified",
+              "proof_of_address_not_verified",
+              "bvn_phone_mismatch",
+              "details_not_verified",
+              "review_stopped"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "fix"
+        ]
+      },
+      "WalletReviewView": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "needs_documents",
+              "checking",
+              "approved",
+              "rejected",
+              "stopped"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletReviewReasonView"
+            }
+          },
+          "canResubmit": {
+            "type": "boolean"
+          },
+          "decidedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "stage",
+          "reasons",
+          "canResubmit",
+          "decidedAt"
+        ]
+      },
       "WalletView": {
         "type": "object",
         "properties": {
@@ -32900,6 +33319,22 @@
               "on_its_way",
               "active"
             ]
+          },
+          "openingFlow": {
+            "type": "string",
+            "enum": [
+              "check",
+              "review"
+            ],
+            "nullable": true
+          },
+          "review": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletReviewView"
+              }
+            ],
+            "nullable": true
           }
         },
         "required": [
@@ -33356,6 +33791,149 @@
           "issuedAt"
         ]
       },
+      "IdentityDocumentView": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "identity",
+              "proof_of_address"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "confirming",
+              "send_again",
+              "uploaded",
+              "not_accepted",
+              "needs_new"
+            ]
+          },
+          "sides": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "front",
+                "back"
+              ]
+            }
+          },
+          "uploadedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "state",
+          "sides",
+          "uploadedAt"
+        ]
+      },
+      "IdentityDocumentsView": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean"
+          },
+          "open": {
+            "type": "boolean"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IdentityDocumentView"
+            }
+          },
+          "selfie": {
+            "type": "string",
+            "enum": [
+              "not_used",
+              "needed",
+              "done"
+            ]
+          },
+          "submitted": {
+            "type": "boolean"
+          },
+          "submittedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "waitingFor": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "identity",
+                "proof_of_address",
+                "selfie"
+              ]
+            }
+          },
+          "maxBytes": {
+            "type": "number"
+          },
+          "acceptedTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "required",
+          "open",
+          "documents",
+          "selfie",
+          "submitted",
+          "submittedAt",
+          "waitingFor",
+          "maxBytes",
+          "acceptedTypes"
+        ]
+      },
+      "IdentityLivenessView": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "not_in_use",
+              "not_started",
+              "passed",
+              "not_passed",
+              "expired"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "canStart": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "state",
+          "url",
+          "startedAt",
+          "canStart"
+        ]
+      },
       "AdminUserView": {
         "type": "object",
         "properties": {
@@ -33754,8 +34332,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -33829,17 +34407,17 @@
           "decision": {
             "type": "string",
             "enum": [
+              "approved",
               "rejected",
-              "removed",
-              "approved"
+              "removed"
             ]
           },
           "previousStatus": {
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -33847,8 +34425,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -33977,8 +34555,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -34104,8 +34682,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "submittedAt": {
@@ -34200,8 +34778,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "idDocumentType": {
@@ -34239,8 +34817,8 @@
           "action": {
             "type": "string",
             "enum": [
-              "rejected",
               "approved",
+              "rejected",
               "document_viewed",
               "identifiers_revealed"
             ]
@@ -34249,8 +34827,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ],
             "nullable": true
           },
@@ -34258,8 +34836,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ],
             "nullable": true
           },
@@ -34350,8 +34928,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "submittedAt": {
@@ -34523,8 +35101,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "submittedAt": {
@@ -34598,8 +35176,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "submittedAt": {
@@ -34634,8 +35212,8 @@
           "action": {
             "type": "string",
             "enum": [
-              "rejected",
               "approved",
+              "rejected",
               "document_viewed"
             ]
           },
@@ -34643,8 +35221,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ],
             "nullable": true
           },
@@ -34652,8 +35230,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ],
             "nullable": true
           },
@@ -34740,8 +35318,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "submittedAt": {
@@ -34875,8 +35453,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "submittedAt": {
@@ -34913,8 +35491,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           }
         },
@@ -34998,8 +35576,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "rejectionReason": {
@@ -35125,8 +35703,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "visibility": {
@@ -35177,8 +35755,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "rejectionReason": {
@@ -35246,8 +35824,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -35374,8 +35952,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -35722,8 +36300,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "live",
               "rejected",
+              "live",
               "removed"
             ]
           },
@@ -39519,8 +40097,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
               "approved",
+              "rejected",
               "not_started"
             ],
             "nullable": true
@@ -40646,9 +41224,9 @@
           "action": {
             "type": "string",
             "enum": [
+              "approved",
               "rejected",
               "removed",
-              "approved",
               "featured",
               "unfeatured",
               "restored"
@@ -41604,8 +42182,8 @@
             "type": "string",
             "enum": [
               "pending",
-              "rejected",
-              "approved"
+              "approved",
+              "rejected"
             ]
           },
           "slotsUsed": {
@@ -42015,8 +42593,8 @@
                 "type": "string",
                 "enum": [
                   "pending",
-                  "rejected",
-                  "approved"
+                  "approved",
+                  "rejected"
                 ]
               },
               "reviewedAt": {
