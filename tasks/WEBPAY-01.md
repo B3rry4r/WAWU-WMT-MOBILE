@@ -8,7 +8,7 @@ priority: launch
 repo: wawuafrica
 type: web-port
 status: todo
-depends_on: [NUV-02, NUV-03, NUV-04, NUV-09, MONEY-09]
+depends_on: [NUV-02, NUV-03, NUV-04, MONEY-09]
 decisions: [R-44, R-42, R-39, R-6]
 passes: [V1, V3, V4, V5, V6, V7, V8, V9]
 artboards: []
@@ -41,6 +41,8 @@ here (the `no_wallet` answer, MONEY-13). Boards to compare with once exported: t
 - The web's CLAUDE.md wallet note follows R-39 and R-42 (Nuvion; WAWU's operational account holds held money).
 
 **V5 (picture):** the round 2 boards this screen follows are not in `design/` yet (R-43: tasks are cut from the new boards once exported). Build from the round 2 brief's text in the web's design system; V5 compares with the boards once the export lands, and is NOT RUN until `design/canvas-inventory.json` lists the ids named in the Goal. The backend runs locally with Nuvion stood in (no wawuafrica.com host, no Nuvion host).
+
+**R-45 (8 Oct 2026):** naira first; NUV-09 (dollar wallets) is no longer needed before this task. The wallet page sends a person with no wallet into these steps.
 
 ## Capability checks
 

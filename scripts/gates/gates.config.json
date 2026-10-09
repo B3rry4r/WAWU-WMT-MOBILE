@@ -63,6 +63,9 @@
     "dead_controls": {
       "enabled": true
     },
+    "unbuilt_entries": {
+      "enabled": true
+    },
     "product_invariants": {
       "enabled": true,
       "banned": [
