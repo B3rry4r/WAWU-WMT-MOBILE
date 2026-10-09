@@ -18,6 +18,7 @@ export default function ExploreTab() {
       onOpenCategory={(category) => router.push({ pathname: '/categories', params: { category } })}
       onOpenEvent={(id) => router.push({ pathname: '/events/[id]', params: { id } })}
       onSeeAllEvents={() => router.push('/events')}
+      onFindProfessional={() => router.push('/professionals')}
       onListServices={() => void listServicesTarget(queryClient).then((href) => router.push(href))}
     />
   );
