@@ -13,6 +13,8 @@ jest.mock('expo-secure-store', () => ({
 type Answer = { status: number; body: unknown } | 'offline' | 'hold';
 let answers: Record<string, Answer[]> = {};
 let sent: string[] = [];
+/** Reads that never answer until the test ends, so "on its way" is a real state. */
+let held: Array<() => void> = [];
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const failed = (status: number, message: string): Answer => ({ status, body: { statusCode: status, message } });
@@ -31,7 +33,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const answer = queue?.[0];
   if (queue && queue.length > 1) queue.shift();
   if (!answer) throw new Error(`no answer for ${key}${url.search}`);
-  if (answer === 'hold') return new Promise<Response>(() => undefined);
+  if (answer === 'hold') return new Promise<Response>((resolve) => held.push(() => resolve(new Response(JSON.stringify({ statusCode: 500, message: 'Released.' }), { status: 500, headers: { 'content-type': 'application/json' } }))));
   if (answer === 'offline') throw new TypeError('Network request failed');
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
@@ -108,6 +110,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  held.splice(0).forEach((release) => release());
   await queryClient.cancelQueries();
   await settle(10);
   rtl.cleanup();
@@ -263,7 +266,7 @@ describe('P1 · Professionals', () => {
     expect(sent.some((s) => s.includes('page=3'))).toBe(false);
   });
 
-  it('reaching the end again while page 2 is on its way, or after it failed, does not ask again', async () => {
+  it('reaching the end again while page 2 is on its way does not ask again', async () => {
     const first = Array.from({ length: 20 }, (_, i) => entry(`a${i}`, `Person ${i}`, 'accounting_tax', 'Accounting & Tax'));
     answers[ALL_1] = [page(first, 1, 21)];
     answers[ALL_2] = ['hold'];
@@ -273,9 +276,10 @@ describe('P1 · Professionals', () => {
     await scrollToEnd();
     await settle();
     expect(sent.filter((s) => s === ALL_2)).toHaveLength(1);
-    rtl.cleanup();
-    queryClient.clear();
-    sent = [];
+  });
+
+  it('reaching the end again after page 2 failed does not ask again by itself', async () => {
+    const first = Array.from({ length: 20 }, (_, i) => entry(`a${i}`, `Person ${i}`, 'accounting_tax', 'Accounting & Tax'));
     answers[ALL_1] = [page(first, 1, 21)];
     answers[ALL_2] = [failed(400, 'Bad page.')];
     await directory();

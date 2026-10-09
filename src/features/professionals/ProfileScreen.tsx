@@ -28,7 +28,7 @@ import { ProsNav, RefreshFailed } from './parts';
  */
 export const profileMetrics = {
   bodyTop: space.sm,
-  gap: 18,
+  partGap: 18,
   bottom: 40,
   avatar: 64,
   headGap: 14,
@@ -245,7 +245,7 @@ function ProfileSkeleton() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, paddingTop: profileMetrics.bodyTop, paddingHorizontal: layout.gutter, gap: profileMetrics.gap },
+  content: { flexGrow: 1, paddingTop: profileMetrics.bodyTop, paddingHorizontal: layout.gutter, gap: profileMetrics.partGap },
   centred: { justifyContent: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: profileMetrics.headGap },
   words: { flex: 1, minWidth: 0 },
@@ -274,6 +274,6 @@ const styles = StyleSheet.create({
   credRow: { flexDirection: 'row', alignItems: 'center', gap: profileMetrics.stack },
   credTitle: { ...font(600), fontSize: profileMetrics.credTitle, lineHeight: canvasNormalLineHeight(profileMetrics.credTitle) },
   credLine: { fontSize: profileMetrics.credLine, lineHeight: canvasNormalLineHeight(profileMetrics.credLine) },
-  skeleton: { gap: profileMetrics.gap },
+  skeleton: { gap: profileMetrics.partGap },
   skeletonLines: { gap: space.sm },
 });

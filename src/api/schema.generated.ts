@@ -1991,6 +1991,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/tickets/held": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My tickets, upcoming or past, one row per order and tier. */
+        get: operations["EventHeldTicketsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/tickets/held/{ticketId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of my tickets, with the code the door scans. */
+        get: operations["EventHeldTicketsController_one"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content/mine/earnings": {
         parameters: {
             query?: never;
@@ -3307,6 +3341,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchoolsPublicController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/schools/courses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchoolsPublicController_course"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/schools/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchoolsPublicController_school"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/mine": {
         parameters: {
             query?: never;
@@ -3660,6 +3742,28 @@ export interface paths {
          *     `:id` for the same reason `mine` is.
          */
         get: operations["EventController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/from-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The "from" price a person can actually pay, for a page of events at once
+         *     (EVENTS-01, G-271): the cheapest tier on sale now and not sold out, null
+         *     when none can be bought. `priceFromNaira` on the event keeps counting
+         *     every tier, because the web reads it that way. Declared before `:id`.
+         */
+        get: operations["EventController_fromPrices"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6624,6 +6728,8 @@ export interface components {
             pin: components["schemas"]["PinStateView"];
             bankTransfers: components["schemas"]["BankTransferAccessView"];
             beneficiaryCount: number;
+            /** @enum {string} */
+            accountNumberStatus: "none" | "on_its_way" | "active";
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -7794,6 +7900,51 @@ export interface components {
                 stillToArrive: number;
                 remaining: number;
             };
+        };
+        HeldTicketEventView: {
+            id: string;
+            name: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            timezone: string | null;
+            timeLabel: string | null;
+            format: string;
+            location: string;
+            venueName: string | null;
+            bannerUrl: string | null;
+            status: string;
+            /** Format: date-time */
+            cancelledAt: string | null;
+        };
+        HeldTicketStub: {
+            id: string;
+            /** @enum {string} */
+            status: "valid" | "checked_in" | "void";
+            /** Format: date-time */
+            checkedInAt: string | null;
+        };
+        HeldTicketGroup: {
+            orderId: string;
+            ticketTypeId: string;
+            tierName: string;
+            quantity: number;
+            event: components["schemas"]["HeldTicketEventView"];
+            tickets: components["schemas"]["HeldTicketStub"][];
+        };
+        HeldTicketView: {
+            id: string;
+            orderId: string;
+            code: string;
+            /** @enum {string} */
+            status: "valid" | "checked_in" | "void";
+            /** Format: date-time */
+            checkedInAt: string | null;
+            tierName: string;
+            holderName: string | null;
+            event: components["schemas"]["HeldTicketEventView"];
+            siblings: components["schemas"]["HeldTicketStub"][];
         };
         QuestionOption: {
             value: string;
@@ -9083,6 +9234,77 @@ export interface components {
         ClosestSearchResult: {
             items: components["schemas"]["ContentPieceResponse"][];
         };
+        PublicSchoolCard: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            foundedYear: number | null;
+            expertise: string[];
+            courseCount: number;
+            fromPriceKobo: number | null;
+            matchedCourses: string[];
+        };
+        PublicSchoolsPage: {
+            items: components["schemas"]["PublicSchoolCard"][];
+            nextCursor: string | null;
+        };
+        PublicIntakeView: {
+            id: string;
+            startDate: string;
+            schedule: string;
+            location: string | null;
+            capacity: number;
+            seatsLeft: number;
+            full: boolean;
+        };
+        PublicCourseDetail: {
+            id: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            syllabus: string[];
+            outcomes: string[];
+            priceKobo: number;
+            school: {
+                id: string;
+                name: string;
+                /** @enum {string} */
+                category: "business" | "tech" | "creative" | "languages" | "vocational";
+                location: string;
+                logo: string | null;
+                applyUrl: string | null;
+            };
+            intakes: components["schemas"]["PublicIntakeView"][];
+        };
+        PublicSchoolCourseCard: {
+            id: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            priceKobo: number;
+            nextIntake: components["schemas"]["PublicIntakeView"];
+        };
+        PublicSchoolDetail: {
+            about: string;
+            applyUrl: string | null;
+            courses: components["schemas"]["PublicSchoolCourseCard"][];
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            foundedYear: number | null;
+            expertise: string[];
+            courseCount: number;
+            fromPriceKobo: number | null;
+            matchedCourses: string[];
+        };
         CommunityJoinRequest: {
             id: string;
             userWawuId: string;
@@ -9228,6 +9450,12 @@ export interface components {
                 /** @enum {string} */
                 value: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
                 label: string;
+            }[];
+        };
+        EventFromPricesView: {
+            prices: {
+                eventId: string;
+                priceFromNaira: number | null;
             }[];
         };
         EventGoingView: {
@@ -9594,7 +9822,7 @@ export interface components {
         };
         MyTierView: {
             /** @enum {string} */
-            state: "active" | "none" | "ending" | "ended";
+            state: "none" | "active" | "ending" | "ended";
             tier: components["schemas"]["MyTierSummaryView"] | null;
             activeFrom: string | null;
             activeUntil: string | null;
@@ -13478,6 +13706,50 @@ export interface operations {
             };
         };
     };
+    EventHeldTicketsController_list: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+                view: "upcoming" | "past";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeldTicketGroup"][];
+                };
+            };
+        };
+    };
+    EventHeldTicketsController_one: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeldTicketView"];
+                };
+            };
+        };
+    };
     CreatorEarningsController_get: {
         parameters: {
             query?: never;
@@ -16112,7 +16384,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                tab?: "all" | "content" | "creators" | "communities";
+                tab?: "all" | "content" | "creators" | "communities" | "schools";
             };
             header?: never;
             path?: never;
@@ -16166,6 +16438,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClosestSearchResult"];
+                };
+            };
+        };
+    };
+    SchoolsPublicController_list: {
+        parameters: {
+            query?: {
+                category?: "tech" | "business" | "creative" | "languages" | "vocational";
+                /**
+                 * @description Matches a school's name or place, or the title of one of its shown
+                 *     courses, ignoring case. Wildcard characters mean themselves.
+                 */
+                q?: string;
+                limit?: number;
+                /**
+                 * @description The `nextCursor` of the previous page: opaque, not to be built by hand,
+                 *     and never longer than the longest one this server gives out.
+                 */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSchoolsPage"];
+                };
+            };
+        };
+    };
+    SchoolsPublicController_course: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCourseDetail"];
+                };
+            };
+        };
+    };
+    SchoolsPublicController_school: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSchoolDetail"];
                 };
             };
         };
@@ -16764,6 +17110,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOptionsView"];
+                };
+            };
+        };
+    };
+    EventController_fromPrices: {
+        parameters: {
+            query: {
+                ids: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFromPricesView"];
                 };
             };
         };

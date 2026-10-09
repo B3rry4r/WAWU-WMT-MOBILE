@@ -31,7 +31,7 @@ import { ProsNav, RefreshFailed } from './parts';
  */
 export const directoryMetrics = {
   bodyTop: space.sm,
-  gap: 14,
+  partGap: 14,
   bottom: 40,
   rowPadV: 14,
   avatar: 56,
@@ -232,11 +232,11 @@ export function ProRow({ entry, onPress }: { entry: DirectoryEntry; onPress: () 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  head: { paddingTop: directoryMetrics.bodyTop, gap: directoryMetrics.gap },
+  head: { paddingTop: directoryMetrics.bodyTop, gap: directoryMetrics.partGap },
   intro: { paddingHorizontal: layout.gutter },
   gutter: { paddingHorizontal: layout.gutter },
   list: { flex: 1 },
-  content: { flexGrow: 1, paddingTop: directoryMetrics.gap, paddingHorizontal: layout.gutter },
+  content: { flexGrow: 1, paddingTop: directoryMetrics.partGap, paddingHorizontal: layout.gutter },
   centred: { justifyContent: 'center' },
   footer: { alignItems: 'center', gap: space.sm, paddingVertical: space.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: directoryMetrics.between, paddingVertical: directoryMetrics.rowPadV },

@@ -7,7 +7,7 @@ order: 44
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [PROS-02, PROS-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -84,7 +84,17 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Builder (resumed after a usage-limit crash; I reviewed the crashed builder's uncommitted work against this task, kept it and own it), 9 Oct 2026. Branch `wmt/PROS-01` from main (PROS-02 and PROS-03 merged), `origin/main` merged in; conflicts in the two Explore files taken from main (EVENTS-01's whole screen) with this task's door re-added; contract and types regenerated from the backend (`046444b`). No backend change.
+
+- **Files:** `src/features/professionals/` (`api.ts`, `model.ts`, `parts.tsx`, `DirectoryScreen.tsx` P1 P4, `ProfileScreen.tsx` P2 P3, tests), routes `src/app/professionals/index.tsx` and `[id].tsx` (signed in only; system Back equals on-screen back). Explore: `ExploreScreen` takes `onFindProfessional` (optional, so existing specs still type; absent it stays `unbuilt('PROS-01')`) and `(tabs)/explore.tsx` passes `router.push('/professionals')`. The door was already drawn first by main, so only its target changed. No `_layout.tsx` edit, no fenced file.
+- **Checks, how tested (jest, 39 specs in `professionals/__tests__`):** P1 filter by field (the Hub is asked for that field), `?field=` opens on it, tap opens P2, price from `messagePriceKobo` through the shared Money (none when not taking messages or no price), tick from the Hub, loading, offline, error with Try again, fields failing, failed refetch keeping the rows with an inline Try again, paging (page 2 once, never page 1 again, stops on the last page, no second ask while page 2 is on its way or after it failed, a failed page 2 keeps page 1 with Try again), rows once each when the offset page repeats a row; P4 empty field names the field and Offer your services opens P5 in that field (none on All); P2 about, what they take on, credentials (title from the kind, issuer, "checked by WAWU"); P3 closed state with nothing to press; gone/blocked listing; loading; error; failed refetch keeps the profile. Blocked people are left out by the Hub; nothing here re-filters. The test for the second ask while page 2 is on its way used a read that never answered and hung the runner; it now uses a read released at test end, and was split in two.
+- **Mutants (scratch copy, restored):** dropping the repeated-row skip, and accepting a zero price, each fail the specs (2 failed).
+- **Layout:** metrics are the values in `design/_gen/pros.js` (row 14 padding, 56 avatar, gap 13, 15.5/13/12 text, 14.5 price and 11.5 "a message", profile gap 18, 64 avatar, chips 30 high, credentials card 14 by 16); small text on `canvasNormalLineHeight`, the row rule is an inset shadow so the row adds no height. I did NOT take new pictures: V5 pair measurements (row pitch, gaps, line heights at 2x, light and dark) are NOT RUN this round, so I do not say the screens match.
+- **Left to INBOX-10 (as the task says):** P2's "Ask a question · price" button and the reply promise under it. P1's second sentence "Pay to send the first message" is not drawn (it is listed as not a fact until the Hub says messages are paid; G-620).
+- **`npm run check`:** exit 0 (jest 1778 of 1778, gates 0 fail, 14 warn). One first-run gate finding (literal `gap` keys) renamed to `partGap`.
+- **Gaps:** G-620. **Shared changes:** none.
+- **NOT RUN:** V5 pictures and measurements (above); V9 live seam against a running Hub and WAWU ID; V10 (a phone).
+
 
 ## Verifier report
 
