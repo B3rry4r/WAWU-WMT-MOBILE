@@ -15,7 +15,7 @@ import type { MyVerification } from './hostApi';
 export const footMetrics = { top: 12, bottom: 24 } as const;
 /** kit.js `result`: an 88 circle, a 42 glyph at 2.2, 10 between the parts, the title 8 further down, the line 14.5; events_b.js `submitted`: 120 down, 20 between the result and its line. */
 /** kit.js `empty` with an action: a 56 circle, 10 between, the title 4 lower, words held to 280, the button 6 further, 26 above and below. */
-const GATE = { icon: 56, stack: 10, titleNudge: 4, maxWidth: 280, action: 6, padV: 26 } as const;
+const GATE = { icon: 56, stack: 10, titleNudge: 4, maxWidth: 280, action: 6, padV: 26, bodyTop: 8, bodyBottom: 120 } as const;
 const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, top: 120, between: 20, pairBetween: 10 } as const;
 
 /** What a tick costs a year, from the system: one figure when both ticks cost the same, else "from" the lower. */
@@ -86,7 +86,7 @@ export function Submitted({ name, onDone }: { name: string; onDone: () => void }
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  center: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.gutter },
+  center: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.gutter, paddingTop: GATE.bodyTop, paddingBottom: GATE.bodyBottom },
   result: { flex: 1, paddingTop: RESULT.top, paddingHorizontal: layout.gutter, gap: RESULT.between },
   gate: { alignItems: 'center', gap: GATE.stack, paddingVertical: GATE.padV, paddingHorizontal: space.lg },
   gateTitle: { marginTop: GATE.titleNudge, textAlign: 'center' },

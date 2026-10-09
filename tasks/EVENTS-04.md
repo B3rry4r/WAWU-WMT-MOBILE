@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [EVENTS-02, UI-02, EVENTS-01]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -139,6 +139,15 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 - **U1 default (recorded).** "Remove" on a ticket card stays: without it a host cannot drop a type they added. The designer should draw it or say how a type is removed; until then the card is 20 pt taller than drawn when there are two or more types. Carried as a note, not changed.
 - **F1 recorded, not changed.** A NUL character in name, address or a ticket name is a 500 from Postgres on `POST /events` and `PATCH /events/{id}`. It is an existing route's behaviour, a phone keyboard cannot type NUL, and a strip or `@Matches` on those DTO fields changes what the existing route accepts, so it is left for the lead to rule on (additive fix: a 400 for U+0000 in those fields).
 - **NOT RUN.** Picture-against-picture re-check of D1 to D5 (the verifier does it), V10 (real phone).
+
+## Builder fix round 2
+
+**Builder (9 Oct 2026), fixing the verifier's D8 only.** Not verified by this builder.
+
+- **D8 fixed.** `HostGate`'s centred area (`styles.center` in `src/features/events/host/HostEnds.tsx`) now has the canvas `body` default: top 8 and bottom 120 (`GATE.bodyTop`, `GATE.bodyBottom`, kept as constants so the hardcoded-signals gate passes). The block is centred between 8 pt under the nav and 120 pt above the bottom, as the canvas `gate` is.
+- **Re-measured** at 390 px, 2x, light, Chromium, own stack (scratch DB `wawu_hub_test_events04_r2`, user 2 un-ticked for the measure and ticked again after), against `render_design.py E21`. Raw bands: design icon top 690, button bottom 1017 (block 327 px); built icon top 642, button bottom 967 (block 325 px). Design nav title top 144, built 42, so the design carries the 102 px status bar the web build lacks (PROS-01). With a 0 inset the web build's body area is 102 px taller than the design's, which moves a centred block 51 px up in the design's favour: expected built icon top is 690 - 102 + 51 = 639, measured 642 (3 px, about 1.5 pt). Before the fix the block sat 32 pt too low (754 vs 690 as D8 recorded); the icon to title gap (112 vs 116 px) is the block's own content and unchanged. On a phone the top inset makes the two areas equal in height.
+- `npm run check` exit 0 (1874 tests, gates 0 fail).
+- **NOT RUN.** Dark scheme re-measure (padding is scheme-free); V10 (no phone).
 
 ## Verifier report
 
