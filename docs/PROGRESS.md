@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 107 of 244.**
+**Launch tasks done: 108 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 115 | 0 | 20 | 21 |
+| todo | 114 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
-| done | 68 | 27 | 11 | 5 |
+| done | 69 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -108,6 +108,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
+- [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
@@ -145,8 +146,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · FIX-27 · Merged (backend #98): the schools list orders the same way on every database; unblocks the production deploy.
 - 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
+- 9 Oct 2026 · FIX-27 · Verifier report (independent session, backend `bc533f9`, mobile `972a40e`; backend main had moved to `473b575`, trial merge clean): cause confirmed on my own glibc `en_US` Postgres (unchanged `dc3baa2` fails exactly CI's two tests, `bc533f9` 43 of 43 there and on `C.UTF-8` and ICU; unchanged main's list and cursor agree at every page size, only the tests' order assumption broke); walks at page sizes 1 to 50 over 170 nasty names (longest admin names, case twins, accents, emoji, zero-width, hidden schools) equal an independent oracle on all three databases, 1188 dynamic requests per database with schools hidden, added, renamed and removed between pages, 0 failures; filter output equals main's item for item over 1092 category and search combinations per database, cursor text and bounds unchanged, 252 injection requests per database clean; protected suite 253 of 253 and full suite 5728 passed 4 skipped on `bc533f9` (12 reran clean alone: `fintava-stall` under load, `hub-rate-limits` needs a non-loopback interface); real wawu-id sign-in and signed-out give the same 170 schools. 20 own mutants: 18 killed, 1 equivalent, 1 survived (D1: the new spec cannot tell `lower()` from `upper()` as the first key; test-only). Open: D1; N1 short page when a school is hidden between the two reads (for SCHOOLS-03); N2 owner note, names starting with an accented letter now list after Z. Status back to `building` for D1.
+- 9 Oct 2026 · FIX-27 · Builder (backend `bc533f9`, no migration): reproduced CI's two failures on unchanged dc3baa2 with a glibc `en_US.UTF-8` Postgres built here (2 failed, 34 passed; `C.UTF-8` and ICU databases 36 of 36). Cause: the list and its cursor agreed on every database (walks at 11 page sizes pass on dc3baa2 too, no school skipped), but the order was whatever the database's collation made it, and the two specs assume where a flag emoji and U+20000 sort (glibc puts the Han character first). Fix: `GET /schools` orders and compares its cursor on `lower(name COLLATE "C"), name COLLATE "C", id COLLATE "C"`, written once in `schools-order.ts`; the two SCHOOLS-04 specs are untouched and pass on glibc, `C.UTF-8` and ICU (43 of 43 in `src/schools`); protected 253/253 with the lock unchanged; full suite 5717 passed on both databases with only `hub-rate-limits` (needs a non-loopback interface) not counted; 17 mutants, 17 killed on the glibc database. No other cursor list has a text key (the inbox already pins `"C"`). Production's collation is not written down; production is on d92e998 without `GET /schools`. Status verifying.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
 - 9 Oct 2026 · COMPLETE-01 · Verifier: V1 passed (npm run check exit 0 on 620b70f and after a trial merge of origin/main 7e74460: 96 suites, 1608 tests, 10 gates, 398 files, 0 findings; a planted review-task entry made it exit 1); 99 planted sources through the real gate behave as designed for literals, ids, statuses, comments, strings and JSX; 31 own mutants, 23 killed, 8 survived (test gaps: nested `${}` braces, string escapes, the built-task message's action, the TaskId type, a non-console tap side effect); not seen by the gate: aliased or indirect use of `unbuilt` and a few same-line scanner cases (recommend failing an alias outright); V5 NOT RUN (no screen yet); no open defect, status review.
 - 9 Oct 2026 · COMPLETE-01 · Builder: `unbuilt('<TASK-ID>')` in src/lib/unbuilt.ts (one stable no-op per task id) and the `unbuilt_entries` gate (fails an id with no task file, a task in review or done, or an argument that is not one string literal; lists inert entries one line per task); 44 gate tests, 14 gate mutants and 4 helper mutants killed; status verifying
@@ -157,6 +161,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · R-45 · Owner: Nuvion is the wallet provider; Fintava stays only for bills payments, its wallet code kept unused. The website opens wallets first (WEBPAY-01 no longer waits on dollar wallets). BRAND-01 filed: the app icon, the welcome cover and the Settings entry. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
-- 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
-- 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
-- 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
