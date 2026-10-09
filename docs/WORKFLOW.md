@@ -251,8 +251,10 @@ The UI is always complete (DECISIONS R-46, replacing the hiding half of R-27). N
 
 - A screen task draws its whole artboard: every row, tile, tab, button, icon and section. An entry whose
   destination is not built yet is drawn exactly as designed with `onPress={unbuilt('<TASK-ID>')}` naming the
-  task that builds the destination; tapping it does nothing. `scripts/gates/checks/unbuilt_entries.py`
-  fails when the named task does not exist or is already built.
+  task that builds the destination; tapping it does nothing. Import it with `import { unbuilt } from '@/lib/unbuilt'`;
+  the argument is one string literal. `scripts/gates/checks/unbuilt_entries.py` fails when the named task does not
+  exist, is already built (`review` or `done`) or the argument is not a literal, and lists the entries still inert,
+  one line per task (`python3 scripts/gates/run.py --gate unbuilt_entries`; add `--json` for every call site).
 - A section with nothing to show draws its designed empty state; where the canvas has none, its heading and
   frame with a neutral placeholder picture. Never invented names, figures or prices.
 - The task that builds a destination screen replaces `unbuilt('<its ID>')` with the real navigation, and owns

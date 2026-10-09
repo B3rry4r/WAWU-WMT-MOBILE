@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 105 of 244.**
+**Launch tasks done: 107 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 115 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
-| done | 66 | 27 | 11 | 5 |
+| done | 68 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -19,10 +19,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
-- [NUV-02](../tasks/NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected (You)
 
 ## Done
 
@@ -127,10 +123,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 - [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
 - [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
+- [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -147,9 +145,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 9 Oct 2026 · NUV-02 · Builder report round 2 (status verifying; backend `wmt/NUV-02` `259e20a`, merged with main `dc3baa2`): the verifier's D1 to D7 fixed and each reproduction run before and after on built servers (live `p-null` 7 FAIL to 0, `p-odd` E1 and E8 and `p-review` R7b, C3, C4 FAIL to PASS; C2 passes as to the typed number and differs only in the stored form); a BVN is held only while the opening is with Nuvion or approved and a rejected, failed or stopped opening lets go of it at once, one plain `409 identity_has_wallet` that does not say wallet or check, the claim moves only in the step that sends the number (D1, D4); 3 opening tries a day (`BVN_CHECKS_PER_DAY`, `429 identity_checks_exhausted`, held answers counted; U2); a null is a missing field (D2); a second rejection after a correction is seen, told from the correction's own echo by Nuvion's `updated` time (D3, one nullable column in this task's migration); grouped digits masked (D5); one `identity_review` notification per decision (D6); `POST /money/identity/bvn` is a permanent `409 step_not_used` (U3); CONVENTIONS section 9a and the reason table, G-460 corrected (D7); G-490 to G-492 filed. 22 mutants of my own all killed (V4, V14, V19 included); protected suite 253/253, lock unchanged; gates the same 16 FAIL lines; fintava and unset sweep 211 of 219 byte-identical, the 8 the new optional fields. NOT RUN: the (key) sandbox items, the phone-to-BVN match (G-492 says what the sandbox must show).
-- 8 Oct 2026 · NUV-02 · Verifier report (independent session, backend `9184ee0`, mobile `9bfd5ed`, wawu-id `fb8717e`; backend main had moved to `dc3baa2`, trial merge clean): status back to building, 7 defects. Held on the built servers: one entity per person under ten taps and ten corrections, a lost create settled from Nuvion's list before any resend, one NGN account behind a claim for seven deliveries on two servers, a lying delivery opening nothing, Fintava answers byte-identical (211 of 219, the other 8 carry the new fields), protected suite 253/253, touched modules 62 suites and full suite 216 suites with only the two known environment failures passing alone, 17 of 20 own mutants killed. Open: D1 anyone can hold another person's BVN and the owner is told they already have a wallet, D2 an explicit null passes the required fields (gender null is sent as female), D3 a second rejection after a correction is not shown, D4 a correction moves the BVN hash to a BVN Nuvion never got, D5 grouped digits in Nuvion text reach the log and a column, D6 the promise "we will let you know" has no sender, D7 backend docs and G-460 do not match the code. Evidence in the lead's scratchpad `vnuv-02/`.
+- 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
+- 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
+- 9 Oct 2026 · COMPLETE-01 · Verifier: V1 passed (npm run check exit 0 on 620b70f and after a trial merge of origin/main 7e74460: 96 suites, 1608 tests, 10 gates, 398 files, 0 findings; a planted review-task entry made it exit 1); 99 planted sources through the real gate behave as designed for literals, ids, statuses, comments, strings and JSX; 31 own mutants, 23 killed, 8 survived (test gaps: nested `${}` braces, string escapes, the built-task message's action, the TaskId type, a non-console tap side effect); not seen by the gate: aliased or indirect use of `unbuilt` and a few same-line scanner cases (recommend failing an alias outright); V5 NOT RUN (no screen yet); no open defect, status review.
+- 9 Oct 2026 · COMPLETE-01 · Builder: `unbuilt('<TASK-ID>')` in src/lib/unbuilt.ts (one stable no-op per task id) and the `unbuilt_entries` gate (fails an id with no task file, a task in review or done, or an argument that is not one string literal; lists inert entries one line per task); 44 gate tests, 14 gate mutants and 4 helper mutants killed; status verifying
 - 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
 - 8 Oct 2026 · BRAND-01 · Verifier: V1 passed (npm run check exit 0, 95 suites, 1606 tests, gates 0 findings); icon measured by pixels (farthest opaque pixel 87% of the 66 dp safe radius, uncut under circle, squircle and rounded square, calibrated against the owner's own screenshot, artwork identical to the logo pack); splash 128 dp whole inside Android 12's circle; A1 cover has no words, WAWU or dashboard; Menu to Z1 to Settings works signed in, with the Hub failing and while Me loads, the other rows inert; 16 own mutants, 14 killed, 2 survived (test gaps, not product); no open defect, one unclear (icon leans right and down by box); V10 NOT RUN (needs the preview build); status review.
 - 8 Oct 2026 · BRAND-01 · Builder: the launcher icon rebuilt from the logo pack so the whole logo (drip included) sits inside the 66 dp safe circle (44% of the canvas; monochrome and store icon the same way; own notification icon); the splash logo 128 dp inside Android 12's circle; A1 shows the website's creators picture under the shade; M1's Menu button raises the Z1 sheet and its Settings row opens `/settings` (the other rows drawn and inert, R-46); 19 tests, 9 of 9 mutants killed; npm run check passed (95 suites, 1606 tests, gates 0 findings); V10 NOT RUN (needs the preview build); status verifying.
@@ -160,5 +160,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
 - 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
-- 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
-- 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.

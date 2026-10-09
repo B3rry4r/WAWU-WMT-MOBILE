@@ -34,6 +34,7 @@ The rest of the places that leave parts out: Inbox rows of kinds with no screen 
 - The pay sheet's "Open your wallet" entry, A2's button, M8's camera buttons, the share sheet's media options: drawn as designed.
 - Find any other "not drawn" or "left out" comment in `src/` about an entry or section (`grep -rn "not drawn\|left out" src`) and fix it the same way; list each in the report.
 - Starts after COMPLETE-04 (Settings and Me share the menu).
+- The `unbuilt_entries` gate (COMPLETE-01's verifier findings 1 and 2): fail any `unbuilt` identifier in non-test source that is not directly called, apart from its declaration and the plain import line (closes the alias, `const f = unbuilt`, re-export and `require` holes), and add the tests the verifier listed (nested braces inside `${}`, string escapes, the built-task message's action text "remove unbuilt()", the `TaskId` type, a tap side effect other than a console call).
 - Every entry whose task is built (`review` or `done`) is wired for real, not made inert. Check each named task's status on main before choosing.
 - A section with nothing to show draws its designed empty state; where the canvas has none, its heading and frame with a neutral placeholder picture. Never an invented name, figure or price.
 - Tests that asserted an entry is absent now assert it is drawn, and that tapping an inert one opens nothing.

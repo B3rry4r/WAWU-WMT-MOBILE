@@ -62,5 +62,5 @@ Then each finding, labelled:
 
 Set `status: review` if there are no open defects, otherwise back to
 `building`. Then run `npm run tasks -- --write` and commit the regenerated
-`tasks/INDEX.md` and `docs/PROGRESS.md` together with the task file. A pass you could not run is **NOT RUN** with the reason. It is
+`tasks/INDEX.md` and `docs/PROGRESS.md` together with the task file. Then run `npm run check` once more: setting `review` is what makes the `unbuilt_entries` gate fail any entry still inert for this task (R-46), so a green run before the flip proves nothing about it. A pass you could not run is **NOT RUN** with the reason. It is
 never left out and never counted as passed.
