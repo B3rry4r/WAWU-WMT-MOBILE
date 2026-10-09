@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
-import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { LegalThread } from '../api';
@@ -59,12 +58,10 @@ class FakeWebSocket {
 (globalThis as unknown as { WebSocket: unknown }).WebSocket = FakeWebSocket;
 
 type Answer = { status: number; body: unknown } | 'offline' | 'hold';
-const appHandlers = new Set<(state: string) => void>();
 let answers: Record<string, Answer[]> = {};
 let sent: { key: string; body: unknown }[] = [];
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
-const refuse = (status: number, code: string, message: string): Answer => ({ status, body: { statusCode: status, message, reason: { code, message } } });
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
@@ -156,9 +153,6 @@ const withConsultant = (over: Partial<LegalThread> = {}) =>
 const MINE = 'GET /legal/intake/mine';
 const OPEN = 'POST /legal/assistant';
 const GET = 'GET /legal/assistant/i1';
-const MESSAGES = 'POST /legal/assistant/i1/messages';
-const REPLY = 'POST /legal/assistant/i1/reply';
-const SEND = 'POST /legal/assistant/i1/send';
 const calls = (key: string) => sent.filter((s) => s.key === key);
 
 async function renderScreen() {
