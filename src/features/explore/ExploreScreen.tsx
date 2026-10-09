@@ -60,6 +60,8 @@ export type ExploreScreenProps = {
   onOpenEvent: (id: string) => void;
   /** Upcoming events' See all (E1, EVENTS-01). */
   onSeeAllEvents: () => void;
+  /** The "Find a professional" door (PROS-01): the directory, P1. */
+  onFindProfessional?: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
 };
@@ -73,10 +75,10 @@ export type ExploreScreenProps = {
  * Every entry X1 draws is here. Built destinations are wired: a category tile (X2, X3), the featured event and an event
  * card (E2), Upcoming events' See all (E1) and "List your services" (PROS-03). The rest are `unbuilt(...)`: the search
  * pill and Featured creators' See all (EXPLORE-02), the bell (ME-14), a creator card (ME-02), Find a professional
- * (PROS-01), Find a school (SCHOOLS-03) and Create (ME-04); the task that builds each one wires it. A section with
+ * (wired by PROS-01's route), Find a school (SCHOOLS-03) and Create (ME-04); the task that builds each one wires it. A section with
  * nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -124,7 +126,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onL
 
   // The doors, in X1's order: Find a professional, Find a school, List your services.
   const doors: Door[] = [
-    { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: unbuilt('PROS-01') },
+    { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional ?? unbuilt('PROS-01') },
     { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: unbuilt('SCHOOLS-03') },
     { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
   ];
