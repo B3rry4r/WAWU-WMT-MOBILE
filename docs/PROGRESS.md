@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 110 | 0 | 20 | 19 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 6 | 0 | 0 | 1 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 6 | 0 | 0 | 2 |
 | done | 71 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -18,14 +18,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
+- [PROS-01](../tasks/PROS-01.md) Find a professional (Developer 3)
 - [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 - [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (Developer 3)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
-- [PROS-01](../tasks/PROS-01.md) Find a professional (Developer 3)
 
 ## Done
 

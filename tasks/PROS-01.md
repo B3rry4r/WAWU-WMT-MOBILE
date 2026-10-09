@@ -7,7 +7,7 @@ order: 44
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [PROS-02, PROS-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -126,6 +126,18 @@ Findings
 - **D2, defect (V5, minor):** P4's empty block sits lower than the design. The design's body keeps 120 of bottom padding (canvas default for its tab bar) and centres the block in what is left; the screen keeps 40 plus the safe area. Measured at 390 wide with no inset: icon top 130 px (2x, 65 points) lower than the design's relative to the header; on a phone with a 34 inset about 23 points. Make the empty state centre in the same area as the design (or record that the canvas padding is not the intent, in DECISIONS, so it is not a defect).
 - Note, not a defect: P2 and P3 show "Issued by X · checked by WAWU" for a qualification as well as a licence; the Hub backs it (every listed profile was approved by a person).
 - Note: `queryClient` has no `onlineManager` set; on web a browser that is offline leaves a first load on the skeleton (paused query) instead of the offline message. Not this task's (shared `src/api/query.ts`, every screen), so no row; a real network failure shows the offline state as above.
+
+## Verifier report, round 2
+
+Verifier round 2, 9 Oct 2026, narrow re-verify of D1 and D2 on `wmt/PROS-01` at 606fabf (already contains `origin/main` 99074e1, no merge needed; no change to the tree by this round).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| D1 ref guard | passed | `onEndReached` decides from the `asking` ref set when `fetchNextPage()` goes out and cleared in `.finally`. `npx jest src/features/professionals`: 40 of 40, five runs in a row. Mutant (the `asking.current ||` check removed): 1 failed of 40 in 3 of 3 runs (the same-tick end-reached spec), restored. The dead `rows.length > 0` guard: accepted as removed; the empty-list spec (counts claim 40, no `page=2` ask) holds with it gone. |
+| D2 P4 padding | passed | Stub Hub (fields, empty directory) and the app on `expo start --web`, Chromium 390 px, 2x, light and dark, beside `render_design.py P4`. Icon top relative to the header title: built 636 and 604 (light, dark), design 584 and 552, so the built block sits 52 px (2x, 26 points) lower, in both themes. That is half of the design's 102 px (2x) status bar, which the web build does not have (the centred block has a taller area above it); a phone has the top inset in both, so there it is equal. Round 1 measured 130 px. Chip row, title, text, button spacing inside the block equal the design. |
+| V1 `npm run check` | passed | exit 0 twice: 109 of 109 suites, 1852 of 1852 specs, gates 10 run, 445 files scanned, 0 fail, 14 warn, 0 accepted; baseline and task check pass. |
+
+No defect is open. D1 and D2 are closed. V10 (a phone) remains NOT RUN. Ports 4250 to 4252 are free; servers stopped.
 
 ## Hub entries this task adds (R-41)
 
