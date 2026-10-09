@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 115 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 66 | 27 | 11 | 5 |
 
@@ -20,7 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [NUV-03](../tasks/NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review (You)
 
@@ -147,6 +147,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · NUV-03 · Verifier (independent; backend `wmt/NUV-03` `5a23763`, main `dc3baa2` unmoved, real wawu-id, Nuvion stood in, namespaces only): status building, 4 defects. D0 the lead's mount turns 3 existing money tests red (money-contract, wallet-gate-coverage; main 18/18); D1 a document Nuvion refused is sent again unchanged after the correction when Nuvion answers the correction at pending; D2 one refused selfie start switches the selfie off for everyone for an hour and lets that person skip it; D3 a lost upload reads confirming for ever. Held: protected 253/253, uploads and forward-once and submit-once across two servers and lost answers, nothing kept (0 hits in tables, logs, temp, open files), Fintava and unset byte-identical (195 of 270, the rest the four new routes and NUV-02's recorded fields), mutants 18 of 26 killed, full suite 14 failed of 5,935 (3 D0, 11 hub-rate-limits environment, 22 of 22 alone).
 - 9 Oct 2026 · NUV-03 · Builder report (backend `wmt/NUV-03` `cc373cd`, carrying NUV-02 until it merges; mobile `wmt/NUV-03`): the ID document and proof of address are uploaded once each to Nuvion (`file`/`file_back` in one request, 10 MB, type read from the bytes), the opening is sent for review exactly once behind a claim (also when the last upload is sent twice or its answer is lost), WAWU keeps no file (kind, sides, state, Nuvion id, a SHA-256), and the hosted selfie is built and proved on the stand-in but OFF by default (`NUVION_HOSTED_LIVENESS`) and drops itself when Nuvion will not start one for a child entity (R-39). Routes `GET`/`POST /money/identity/documents` and `/liveness` are not served until SHARED-CHANGES NUV-03 #1 (one import in `money.module.ts`) is applied. 158 new tests; 27 of 28 own mutants killed (1 equivalent); protected suite 253/253 (also with the row applied); gates 16 fail identical to main, 3 new `PROVISIONAL` warnings; full suite in a private namespace 222 suites, 12 failures all load or environment (re-run alone: pass). G-470 to G-473. The (key) checks are NOT RUN.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
 - 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
@@ -161,4 +162,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
 - 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.
-- 8 Oct 2026 · EVENTS-01 · Verifier independent round 4 (lead): D7, D8, D9, D10, T3, V10, V11 all pass live (three browser zones identical) and by mutant; R-41 entries open the right screens and an events failure draws no error; new D11 (H11 has no services shapes), D12 (Explore jumps 216 pt when the event arrives), D13 (entry text line boxes, up to 9 pt), D14 (no year on Explore's date), T4 (6 of 20 own mutants survive: Explore route file, failure spec never reaches the failure); U-H1 Home services row for the lead; npm run check passed (80 suites, 1450 tests); status building.
