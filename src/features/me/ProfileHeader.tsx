@@ -68,10 +68,12 @@ export type ProfileTopProps = {
   /** Off until the profile has loaded: there is nothing to share before then. */
   canShare: boolean;
   onShare: () => void;
+  /** Menu: raises Z1, the sheet with Settings in it. It needs no profile, so it works while the profile is loading or failed. */
+  onOpenMenu: () => void;
 };
 
-/** The cover picture, and the glass buttons over it. QR (WALLET-20) and Menu (ME-03) are added by those tasks. */
-export function ProfileTop({ coverUrl, top, canShare, onShare }: ProfileTopProps) {
+/** The cover picture, and the glass buttons over it. QR (WALLET-20) is added by COMPLETE-04. */
+export function ProfileTop({ coverUrl, top, canShare, onShare, onOpenMenu }: ProfileTopProps) {
   const { colors } = useWawu();
   const ends = gradientEnds(180);
   return (
@@ -90,6 +92,7 @@ export function ProfileTop({ coverUrl, top, canShare, onShare }: ProfileTopProps
       </View>
       <View style={[styles.buttons, { top: top + headerMetrics.buttonsTop }]}>
         <IconButton icon="Share" label="Share your profile" tone="glass" size={headerMetrics.buttons} disabled={!canShare} onPress={onShare} testID="me-share" />
+        <IconButton icon="Menu" label="Menu" tone="glass" size={headerMetrics.buttons} onPress={onOpenMenu} testID="me-menu-button" />
       </View>
     </>
   );
