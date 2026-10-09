@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 111 | 0 | 20 | 20 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 1 |
-| review | 5 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 5 | 0 | 0 | 1 |
 | done | 71 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -18,12 +18,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
+- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (Developer 3)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
-- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (Developer 3)
 
 ## Done
 
@@ -153,6 +150,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · LEGAL-02 · Verifier, round 3: gap ids unique on every branch, the legal.thread cursor mutant is now caught, `npm run check` exit 0; no defect open, status review.
 - 9 Oct 2026 · LEGAL-02 · Builder, round 3: D2 fixed (gaps renumbered G-500 to G-502, clear of every branch) and D3 fixed (a test pins that `legal.thread` never moves the catch-up cursor; fails with the mutant).
 - 9 Oct 2026 · LEGAL-02 · Verifier, round 2: D1 verified live (consultant message on screen in about 60 ms, light and dark, also after a foreground; frame reaches only the matter's client); V4, V5, V6, V9 and the backend checks pass; two defects open, so `building`: D2 gap ids G-470 to G-472 are also used on `wmt/NUV-03`, D3 no test pins that `legal.thread` leaves the catch-up cursor alone.
 - 9 Oct 2026 · LEGAL-02 · Builder, round 2: D1 fixed (the shared live client now passes `legal.thread` frames on; a test over the real client with a fake socket fails on the old code; live run: the consultant's message shows 72 ms after the admin write, no refresh); origin/main merged into both branches.
@@ -167,4 +165,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · SCHOOLS-04 · Lead rulings after the independent verifier: D2 (cursor bounds derived from the admin name rule, with a worst-case spec through the admin route), D3 (id tiebreak on the school page's intakes), specs for the six surviving mutants, an explicit matchedCourses order; SCHOOLS-05 gets a note to drop ids it already holds when appending a page.
 - 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent (lead), back to building (backend `807a6b8`, mobile `a944179`): D1 closed over real HTTP on an ICU en-US database (hiding the cursor school skips nothing, 53 of 53 once at 9 limits, ties, `q` plus `category`), the 7 old mutants now killed, own 18 of 25 killed, forged cursors reveal nothing and never 500, fields public only, `/search` protected tabs byte-identical to main, protected 253/253, full suite green after the two environment reruns; two defects open: D2 a long emoji name the admin accepts gives a cursor the list then refuses (400), D3 the school page's next intake has no id tiebreak; enrol route NOT RUN (SCHOOLS-07 todo).
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 2, status verifying: D1 fixed by keyset paging on (name, id) with an opaque, strictly checked cursor; new paging spec (10 tests) kills the 7 surviving mutants and 2 more; live walks with hide and show mid-walk see every row once; 967 odd inputs incl. cursor tampering, zero 500; protected 253/253.
-- 7 Oct 2026 · SCHOOLS-04 · Verified (V1), back to building: one defect, hiding the school a page ends on makes the next page skip a school (cursor plus skip); 1,500 odd inputs no 500, protected 253/253 twice, `/search` other tabs byte-identical to main, contract additive; full contract suite NOT RUN (port 4001 held by another session).

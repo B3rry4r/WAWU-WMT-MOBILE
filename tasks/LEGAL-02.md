@@ -7,7 +7,7 @@ order: 66
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [LEGAL-01, INBOX-02, UI-02]
 decisions: [R-14, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -155,6 +155,17 @@ Builder session, 9 Oct 2026, fix round 2 for D2 and D3.
 ## Hub entries this task adds (R-41)
 
 The HOME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+
+### Verifier report, round 3
+
+Verifier session, 9 Oct 2026, fresh. Mobile verify branch `verify-legal-02c` from `e3d9d3b`; backend unchanged since round 2 (`wmt/LEGAL-02` still `7d69556`). No defect open, so the status is `review`. Not run: V10 and native iOS/Android, as in round 2.
+
+| Check | Result |
+|---|---|
+| D2 | passed: G-500, G-501 and G-502 each appear as exactly one gap row across `origin/main` and every `origin/wmt/*` branch (only on this branch, row 230 to 232); G-470 to G-472 no longer appear in `BACKEND_GAPS.md`, the Builder reports or `src` (they remain only in the round 2 verifier text above, which is history) |
+| D3 | passed: with `this.cursor` set on `legal.thread` in `live.ts`, the new case fails and the other 29 pass (1 failed, 29 passed, 30 total); `git restore` after; unmutated, `src/features/inbox` and `src/features/legal` 8 suites, 122 tests pass, `live.test.ts` 30 tests |
+| Diff | passed: `git diff e3c23f1..HEAD` in `src` is the new test and the G-470/1/2 to G-500/1/2 renumbering in comments only; the rest is `BACKEND_GAPS.md`, the task file, LOG and PROGRESS |
+| As it will land | passed: `origin/main` merged (already up to date, no conflict, no markers); `npm run check` exit 0, gates 0 fail, task check pass |
 
 ## Owner sign-off
 
