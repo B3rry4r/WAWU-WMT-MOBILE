@@ -3307,6 +3307,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchoolsPublicController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/schools/courses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchoolsPublicController_course"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/schools/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchoolsPublicController_school"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/mine": {
         parameters: {
             query?: never;
@@ -6646,6 +6694,8 @@ export interface components {
             pin: components["schemas"]["PinStateView"];
             bankTransfers: components["schemas"]["BankTransferAccessView"];
             beneficiaryCount: number;
+            /** @enum {string} */
+            accountNumberStatus: "none" | "on_its_way" | "active";
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -9105,6 +9155,77 @@ export interface components {
         ClosestSearchResult: {
             items: components["schemas"]["ContentPieceResponse"][];
         };
+        PublicSchoolCard: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            foundedYear: number | null;
+            expertise: string[];
+            courseCount: number;
+            fromPriceKobo: number | null;
+            matchedCourses: string[];
+        };
+        PublicSchoolsPage: {
+            items: components["schemas"]["PublicSchoolCard"][];
+            nextCursor: string | null;
+        };
+        PublicIntakeView: {
+            id: string;
+            startDate: string;
+            schedule: string;
+            location: string | null;
+            capacity: number;
+            seatsLeft: number;
+            full: boolean;
+        };
+        PublicCourseDetail: {
+            id: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            syllabus: string[];
+            outcomes: string[];
+            priceKobo: number;
+            school: {
+                id: string;
+                name: string;
+                /** @enum {string} */
+                category: "business" | "tech" | "creative" | "languages" | "vocational";
+                location: string;
+                logo: string | null;
+                applyUrl: string | null;
+            };
+            intakes: components["schemas"]["PublicIntakeView"][];
+        };
+        PublicSchoolCourseCard: {
+            id: string;
+            title: string;
+            weeks: number;
+            /** @enum {string} */
+            mode: "in_person" | "online" | "hybrid";
+            priceKobo: number;
+            nextIntake: components["schemas"]["PublicIntakeView"];
+        };
+        PublicSchoolDetail: {
+            about: string;
+            applyUrl: string | null;
+            courses: components["schemas"]["PublicSchoolCourseCard"][];
+            id: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "tech" | "creative" | "languages" | "vocational";
+            location: string;
+            logo: string | null;
+            foundedYear: number | null;
+            expertise: string[];
+            courseCount: number;
+            fromPriceKobo: number | null;
+            matchedCourses: string[];
+        };
         CommunityJoinRequest: {
             id: string;
             userWawuId: string;
@@ -9622,7 +9743,7 @@ export interface components {
         };
         MyTierView: {
             /** @enum {string} */
-            state: "active" | "none" | "ending" | "ended";
+            state: "none" | "active" | "ending" | "ended";
             tier: components["schemas"]["MyTierSummaryView"] | null;
             activeFrom: string | null;
             activeUntil: string | null;
@@ -16140,7 +16261,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                tab?: "all" | "content" | "creators" | "communities";
+                tab?: "all" | "content" | "creators" | "communities" | "schools";
             };
             header?: never;
             path?: never;
@@ -16194,6 +16315,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClosestSearchResult"];
+                };
+            };
+        };
+    };
+    SchoolsPublicController_list: {
+        parameters: {
+            query?: {
+                category?: "tech" | "business" | "creative" | "languages" | "vocational";
+                /**
+                 * @description Matches a school's name or place, or the title of one of its shown
+                 *     courses, ignoring case. Wildcard characters mean themselves.
+                 */
+                q?: string;
+                limit?: number;
+                /**
+                 * @description The `nextCursor` of the previous page: opaque, not to be built by hand,
+                 *     and never longer than the longest one this server gives out.
+                 */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSchoolsPage"];
+                };
+            };
+        };
+    };
+    SchoolsPublicController_course: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCourseDetail"];
+                };
+            };
+        };
+    };
+    SchoolsPublicController_school: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSchoolDetail"];
                 };
             };
         };
