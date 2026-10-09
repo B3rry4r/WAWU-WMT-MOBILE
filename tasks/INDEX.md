@@ -205,6 +205,7 @@ Builder and verifier are always different sessions.
 23. [TEST-01](TEST-01.md) Tests pass on a cold cache and a loaded machine
 24. [WEB-01](WEB-01.md) Port web-only features after launch
 25. [FIX-15](FIX-15.md) A refused upload does not count against storage quota
+26. [FIX-28](FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break
 
 ## Developer
 
