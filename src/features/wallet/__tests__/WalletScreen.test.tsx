@@ -138,6 +138,19 @@ const allText = (app: Awaited<ReturnType<typeof boot>>) => {
     return value;
   });
 };
+/** The test ids drawn, in the order they stand on screen (the tree's order). */
+const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
+  const found: string[] = [];
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== 'object') return;
+    const n = node as { props?: { testID?: unknown }; children?: unknown[] | null };
+    if (typeof n.props?.testID === 'string') found.push(n.props.testID);
+    n.children?.forEach(walk);
+  };
+  walk(app.screen.toJSON());
+  return found;
+};
+const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
 const asked = (path: string) => sent.filter((s) => s.path === `/api/hub${path}`).length;
 
 beforeEach(() => {
@@ -197,14 +210,65 @@ describe('W1 · Wallet · Naira', () => {
     expect(sent.find((s) => s.path.endsWith('/money/transactions'))?.query).toBe('?limit=3');
   });
 
-  it('shows no entry whose screen is not built yet: no Send, Add money, Swap, tabs, scan, settings, bills, card row or See all (R-41)', async () => {
+  it('draws every element W1 draws, in the canvas order: the bar, the tabs, the card, the actions, the bills, the WAWU card row, Transactions with See all', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
-    const text = allText(app);
-    for (const word of ['Send', 'Add money', 'Dollar', 'Crypto', 'Airtime', 'Data', 'Power', 'More', 'WAWU card', 'See all']) {
-      expect(text).not.toContain(`"${word}"`);
+    expect(app.screen.getByRole('header', { name: 'Wallet' })).toBeTruthy();
+    for (const name of ['Scan to pay', 'Wallet settings', 'Send', 'Add money', 'Swap', 'Airtime', 'Data', 'Power', 'TV', 'More', 'WAWU card', 'See all transactions']) {
+      expect(app.screen.getByRole('button', { name })).toBeTruthy();
     }
-    expect(app.screen.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Hide balance', 'Copy account number']);
+    expect(app.screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel)).toEqual(['Naira', 'Dollar', 'Crypto']);
+    expect(app.screen.getByRole('tab', { name: 'Naira' }).props.accessibilityState.selected).toBe(true);
+    expect(app.screen.getByTestId('wallet-card-picture')).toBeTruthy();
+    expect(app.screen.getByText('Transactions')).toBeTruthy();
+    const stands = ['wallet-bar', 'wallet-tabs', 'wallet-balance-card', 'wallet-actions', 'wallet-bills', 'wallet-card-row', 'wallet-transactions', 'wallet-see-all', 'wallet-row-r1'];
+    expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
+    // The canvas's one person's card details are not invented for anyone else: no digits, no status, no brand.
+    expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
+  });
+
+  it('a user can tap every entry whose screen is not built (scan, settings, Dollar, Crypto, Send, Add money, Swap, each bill, the card row, See all, a row) and nothing opens, changes or is asked', async () => {
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    const asks = sent.length;
+    const before = allText(app);
+    const entries: [string, string][] = [
+      ['button', 'Scan to pay'],
+      ['button', 'Wallet settings'],
+      ['tab', 'Dollar'],
+      ['tab', 'Crypto'],
+      ['tab', 'Naira'],
+      ['button', 'Send'],
+      ['button', 'Add money'],
+      ['button', 'Swap'],
+      ['button', 'Airtime'],
+      ['button', 'Data'],
+      ['button', 'Power'],
+      ['button', 'TV'],
+      ['button', 'More'],
+      ['button', 'WAWU card'],
+      ['button', 'See all transactions'],
+    ];
+    for (const [role, name] of entries) {
+      await app.fireEvent.press(app.screen.getByRole(role, { name }));
+    }
+    for (const row of ROWS) await app.fireEvent.press(app.screen.getByTestId(`wallet-row-${row.id}`));
+    expect(mockPushed).toEqual([]);
+    expect(sent.length).toBe(asks);
+    expect(sent.every((s) => s.method === 'GET')).toBe(true);
+    expect(app.screen.getByRole('tab', { name: 'Naira' }).props.accessibilityState.selected).toBe(true);
+    expect(app.screen.getByRole('tab', { name: 'Dollar' }).props.accessibilityState.selected).toBe(false);
+    expect(app.screen.getByRole('tab', { name: 'Crypto' }).props.accessibilityState.selected).toBe(false);
+    expect(allText(app)).toBe(before);
+    expect(allText(app)).not.toMatch(/soon|not available|not built/i);
+  });
+
+  it('a transaction row is a button that says who, what, how much and when, and its detail is not built yet', async () => {
+    const app = await boot();
+    const row = await app.screen.findByTestId('wallet-row-r2');
+    expect(row.props.accessibilityRole).toBe('button');
+    expect(row.props.accessibilityLabel).toContain('Chidinma Okoro');
+    expect(row.props.accessibilityLabel).toContain('−₦25,065.00');
   });
 
   it('a user can copy the account number: its digits as sent go on the clipboard', async () => {
@@ -243,6 +307,28 @@ describe('W4 · Wallet · loading', () => {
     expect(app.screen.queryByText('810 000 0417')).toBeNull();
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
   });
+
+  it('draws the whole of W4: the live bar, then the shapes of the tabs, the card, the actions, five bills tiles and three rows', async () => {
+    routes['GET /money/wallet/balance'] = ['hold'];
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-loading')).toBeTruthy();
+    expect(app.screen.getByRole('header', { name: 'Wallet' })).toBeTruthy();
+    expect(app.screen.getByRole('button', { name: 'Scan to pay' })).toBeTruthy();
+    expect(app.screen.getByRole('button', { name: 'Wallet settings' })).toBeTruthy();
+    for (const id of ['wallet-loading-tabs', 'wallet-loading-card', 'wallet-loading-actions', 'wallet-loading-bills', 'wallet-loading-rows']) {
+      expect(app.screen.getByTestId(id)).toBeTruthy();
+    }
+    expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(3);
+    expect(app.screen.getByTestId('wallet-loading-bills').children).toHaveLength(5);
+    expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
+    // Quiet shapes, not the real entries: nothing to tap but the bar, and no word of the account.
+    expect(app.screen.queryByText('Send')).toBeNull();
+    expect(app.screen.queryByText('Airtime')).toBeNull();
+    expect(app.screen.queryByText('Naira')).toBeNull();
+    // The bar's buttons are live (drawn, inert): pressing one opens nothing.
+    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Wallet settings' }));
+    expect(mockPushed).toEqual([]);
+  });
 });
 
 describe('W5 · Wallet · new account', () => {
@@ -257,6 +343,32 @@ describe('W5 · Wallet · new account', () => {
     expect(app.screen.queryByText('Transactions')).toBeNull();
     await app.fireEvent.press(app.screen.getByTestId('wallet-copy'));
     expect(mockCopied).toEqual(['8100000417']);
+  });
+
+  it('draws every element W5 draws: the bar, the tabs, the card, Send, Add money, Swap and the bills, then the empty card, and no card row or See all', async () => {
+    fallback['GET /money/wallet/balance'] = balance(0);
+    fallback['GET /money/transactions'] = page([]);
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-no-transactions')).toBeTruthy();
+    for (const name of ['Scan to pay', 'Wallet settings', 'Send', 'Add money', 'Swap', 'Airtime', 'Data', 'Power', 'TV', 'More']) {
+      expect(app.screen.getByRole('button', { name })).toBeTruthy();
+    }
+    expect(app.screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel)).toEqual(['Naira', 'Dollar', 'Crypto']);
+    expect(app.screen.queryByRole('button', { name: 'WAWU card' })).toBeNull();
+    expect(app.screen.queryByRole('button', { name: 'See all transactions' })).toBeNull();
+    const stands = ['wallet-bar', 'wallet-tabs', 'wallet-balance-card', 'wallet-actions', 'wallet-bills', 'wallet-no-transactions'];
+    expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
+  });
+
+  it('a new account’s Send, Add money and Swap open nothing and ask nothing', async () => {
+    fallback['GET /money/wallet/balance'] = balance(0);
+    fallback['GET /money/transactions'] = page([]);
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-no-transactions')).toBeTruthy();
+    const asks = sent.length;
+    for (const name of ['Send', 'Add money', 'Swap']) await app.fireEvent.press(app.screen.getByRole('button', { name }));
+    expect(mockPushed).toEqual([]);
+    expect(sent.length).toBe(asks);
   });
 });
 
@@ -277,6 +389,26 @@ describe('W6 · Wallet · can’t reach account', () => {
     expect(asked('/money/wallet/balance')).toBe(2);
   });
 
+  it('draws every element W6 draws: the bar, the tabs, the card with its words and Try again, and the bills, but no balance, Send or Add money', async () => {
+    routes['GET /money/wallet/balance'] = [refusal(503, 'provider_unreachable', UNREACHABLE)];
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-unreachable')).toBeTruthy();
+    for (const name of ['Scan to pay', 'Wallet settings', 'Airtime', 'Data', 'Power', 'TV', 'More', 'Try again']) {
+      expect(app.screen.getByRole('button', { name })).toBeTruthy();
+    }
+    expect(app.screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel)).toEqual(['Naira', 'Dollar', 'Crypto']);
+    for (const name of ['Send', 'Add money', 'Swap', 'WAWU card', 'See all transactions']) {
+      expect(app.screen.queryByRole('button', { name })).toBeNull();
+    }
+    const stands = ['wallet-bar', 'wallet-tabs', 'wallet-unreachable', 'wallet-bills'];
+    expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
+    // The bills and the tabs are drawn and inert here too.
+    for (const name of ['Airtime', 'More']) await app.fireEvent.press(app.screen.getByRole('button', { name }));
+    await app.fireEvent.press(app.screen.getByRole('tab', { name: 'Crypto' }));
+    expect(mockPushed).toEqual([]);
+    expect(app.screen.getByRole('tab', { name: 'Naira' }).props.accessibilityState.selected).toBe(true);
+  });
+
   it('a frozen wallet says so in the server’s words', async () => {
     fallback['GET /money/wallet/balance'] = refusal(423, 'wallet_frozen', 'Your wallet is frozen. Contact support.');
     const app = await boot();
@@ -289,6 +421,48 @@ describe('W6 · Wallet · can’t reach account', () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-error')).toBeTruthy();
     expect(allText(app)).not.toContain('₦0');
+  });
+});
+
+describe('every state without a balance still draws the bar, the tabs and the bills (R-46)', () => {
+  const drawn = (app: Awaited<ReturnType<typeof boot>>) => {
+    for (const name of ['Scan to pay', 'Wallet settings', 'Airtime', 'More']) expect(app.screen.getByRole('button', { name })).toBeTruthy();
+    expect(app.screen.getAllByRole('tab')).toHaveLength(3);
+  };
+
+  it('no wallet', async () => {
+    fallback['GET /money/wallet'] = wallet('not_open', null);
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-none')).toBeTruthy();
+    drawn(app);
+  });
+
+  it('the account is opening', async () => {
+    fallback['GET /money/wallet'] = wallet('opening', null);
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-opening')).toBeTruthy();
+    drawn(app);
+  });
+
+  it('the wallet is frozen', async () => {
+    fallback['GET /money/wallet/balance'] = refusal(423, 'wallet_frozen', 'Your wallet is frozen. Contact support.');
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-frozen')).toBeTruthy();
+    drawn(app);
+  });
+
+  it('the wallet read fails', async () => {
+    routes['GET /money/wallet'] = ['offline'];
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-error')).toBeTruthy();
+    drawn(app);
+  });
+
+  it('the balance cannot be read', async () => {
+    fallback['GET /money/wallet/balance'] = ok({ asOf: '2026-10-07T09:00:00.000Z' });
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-error')).toBeTruthy();
+    drawn(app);
   });
 });
 

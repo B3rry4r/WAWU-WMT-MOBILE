@@ -8,33 +8,40 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Card } from '@/components/Card';
 import { EmptyState, ErrorState } from '@/components/StateViews';
-import { Text } from '@/components/Text';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, useWawu } from '@/theme';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
+import { AccountTabs } from './AccountTabs';
 import { BalanceCard, ACCT } from './BalanceCard';
+import { BillTiles } from './BillTiles';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
+import { WalletActions } from './WalletActions';
+import { WalletBar } from './WalletBar';
+import { WalletCardRow } from './WalletCardRow';
 import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
 
 /**
- * design/_gen/kit.js line 24 (`Big`): the title sits 6 below the status bar and 14 above what follows.
- * wallet.js lines 52 and 65 to 67: the body starts 4 down, and kit.js line 35 (`body`) leaves 120 under it
- * over a tab bar that overlays it; here the bar is its own box. W6's card (line 67) is padded 10 by 16
- * with a 28 corner.
+ * design/_gen/wallet.js lines 44 and 65 to 67: the body starts 4 down (the title bar is `WalletBar`), and
+ * kit.js line 35 (`body`) leaves 120 under it over a tab bar that overlays it; here the bar is its own box.
+ * W6's card (line 67) is padded 10 by 16 with a 28 corner.
  */
-const HOME = { titleTop: 6, titleBottom: 14, bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16 } as const;
+const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16 } as const;
 
 /**
  * The Wallet tab (WALLET-01): W1, and its states W4 (loading), W5 (a new account) and W6 (the bank did
  * not answer), against `GET /money/wallet`, `GET /money/wallet/balance` and `GET /money/transactions`.
  *
- * Built now with what exists (R-41). Left out until the task that builds where each leads adds it as
- * drawn (R-27): the scan icon (WALLET-20) and the settings icon (WALLET-06); the Naira, Dollar and
- * Crypto tabs and Swap (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the bills tiles
- * (BILLS-01); the WAWU card row (WALLET-22); See all and a row's detail (WALLET-04).
+ * Every screen draws its whole artboard (R-46). An entry whose screen is not built is drawn as designed and
+ * does nothing when tapped (`unbuilt`, which names the task that wires it): the scan icon (WALLET-20) and the
+ * settings icon (WALLET-06); the Dollar and Crypto tabs and Swap (WALLET-21); Send (WALLET-02) and Add money
+ * (WALLET-05); the bills tiles (BILLS-01); the WAWU card row (WALLET-22); See all and a row (WALLET-04).
+ * Nothing here reads, charges or moves money beyond the three reads above.
+ *
+ * W6's layout (the tabs, the card with its words, the bills) also holds every other state that has no balance
+ * to show (no wallet, opening, frozen, a failed read), because the canvas draws no other.
  *
  * Nobody has a wallet until they open one (R-6): with none, tapping the tab opens Open your wallet
  * (A26). Coming back without opening one shows the way in again; coming back from A10 shows W5.
@@ -82,11 +89,7 @@ export function WalletScreen() {
 
   return (
     <View testID="wallet-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <View style={styles.title}>
-        <Text variant="title" accessibilityRole="header">
-          Wallet
-        </Text>
-      </View>
+      <WalletBar />
       <ScrollView
         testID="wallet-scroll"
         style={styles.scroll}
@@ -129,6 +132,8 @@ type BodyProps = {
 };
 
 function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+  // W5 draws no card row: an account that has no transactions yet has no card either, and the empty card stands where the row would.
+  const newAccount = recent.rows?.length === 0;
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton />;
@@ -191,6 +196,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
     case 'ready':
       return (
         <>
+          <AccountTabs />
           <BalanceCard
             availableKobo={view.availableKobo}
             accountNumber={view.account.accountNumber}
@@ -198,15 +204,24 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
             hidden={hidden}
             onToggleHidden={onToggleHidden}
           />
+          <WalletActions />
+          <BillTiles />
+          {newAccount ? null : <WalletCardRow />}
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );
   }
 }
 
-/** W6's card: the kit's `card` padded 10 by 16 with a 28 corner, holding the kit's `empty` block. */
+/** W6 (wallet.js line 67): the tabs, then a card padded 10 by 16 with a 28 corner holding the kit's `empty` block, then the bills tiles. */
 function StateCard({ children }: { children: ReactNode }) {
-  return <Card style={styles.state}>{children}</Card>;
+  return (
+    <>
+      <AccountTabs />
+      <Card style={styles.state}>{children}</Card>
+      <BillTiles />
+    </>
+  );
 }
 
 /**
@@ -238,7 +253,6 @@ export function useLeadToOpenWallet(noWallet: boolean, focused: boolean, openFlo
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  title: { paddingTop: HOME.titleTop, paddingBottom: HOME.titleBottom, paddingHorizontal: layout.gutter },
   scroll: { flex: 1 },
   body: { flexGrow: 1, gap: BODY_GAP, paddingTop: HOME.bodyTop, paddingHorizontal: layout.gutter, paddingBottom: HOME.bodyBottom },
   state: { borderRadius: ACCT.radius, paddingVertical: HOME.statePadV, paddingHorizontal: HOME.statePadH },

@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 9 Oct 2026 · COMPLETE-05 · Builder report (branch `wmt/COMPLETE-05`): the Wallet tab draws its whole design now: the scan and settings buttons, the Naira, Dollar and Crypto tabs, Send, Add money, Swap, the five bills tiles, the WAWU card row, See all and tappable rows, on W1, W5 and W6, and the whole W4 loading shape; all eight entries are `unbuilt` (their tasks are all todo), nothing charges or moves money; 18 of 18 own mutants killed, G-493 filed for the card row's line; NOT RUN: a phone check, the real Hub (pictures used a stand-in); status verifying.
 - 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).

@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 114 | 0 | 20 | 21 |
+| todo | 113 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 68 | 27 | 11 | 5 |
 
@@ -19,6 +19,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 
 ## Done
 
@@ -145,6 +149,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · COMPLETE-05 · Builder report (branch `wmt/COMPLETE-05`): the Wallet tab draws its whole design now: the scan and settings buttons, the Naira, Dollar and Crypto tabs, Send, Add money, Swap, the five bills tiles, the WAWU card row, See all and tappable rows, on W1, W5 and W6, and the whole W4 loading shape; all eight entries are `unbuilt` (their tasks are all todo), nothing charges or moves money; 18 of 18 own mutants killed, G-493 filed for the card row's line; NOT RUN: a phone check, the real Hub (pictures used a stand-in); status verifying.
 - 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
@@ -159,4 +164,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
 - 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
-- 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
