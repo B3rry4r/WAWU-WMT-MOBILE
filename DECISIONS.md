@@ -215,7 +215,9 @@ used to say "a copy of production", it means the local backend with seeded data.
 Use your PIN." (for example "Fingerprint failed. Use your PIN."). A failed biometric never uses up a PIN try.
 Tasks: MONEY-02, MONEY-14, WALLET-02, WALLET-06.
 
-**R-27 · Links between screens.** No placeholders, no dead buttons, no feature flags. A hub or menu task builds
+**R-27 · Links between screens.** *The first half (a hub builds only the rows whose destination exists) is replaced
+by R-46 (8 Oct 2026): every entry is drawn, and one whose screen is not built is inert (`unbuilt`).* No placeholders,
+no dead buttons, no feature flags. A hub or menu task builds
 only the rows whose destination screen already exists. The task that builds a destination screen also adds its
 entry row or button to the hub, exactly as the artboard draws it, and owns the check "a user can reach X from
 Y". CHECK-3 confirms every hub matches its artboard in full. Lead default for ordering, not a rule of the
@@ -361,6 +363,18 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 
 **Carried out by:** NUV-02, NUV-03, NUV-04, WEBPAY-01, NUV-10 (opening part), then the app fixes in BRAND-01.
 
+### R-46 · The UI is always complete
+*Owner, 8 Oct 2026 ("if the screens are not ready ... it doesn't mean the UI should be incomplete"; "you are still going to show what is exact what is here only that when it is clicked it's not going to open anything because it has not been built").*
+This replaces the hiding half of R-27 and the "left out" line of R-41.
+- Every built screen draws its whole artboard (the brief's version, R-29): every row, tile, tab, button, icon and section, light and dark.
+- An entry whose screen is not built yet is drawn exactly as designed and does nothing when tapped. In code its handler is `unbuilt('<TASK-ID>')`, naming the task that builds where it leads. The gate fails when that task does not exist or is already built (`review` or `done`), so the task that builds a screen still wires its entry, as R-27 says.
+- A section with nothing to show (the Hub serves none, or its task is not built) draws its designed empty state. Where the canvas draws none, it draws the section's heading and frame with a neutral placeholder picture. Never an invented name, figure or price (rule 7; the fake-data gate still applies).
+- After-launch entries (the `docs/designer/BRIEF.md` list "Not built at launch") are drawn and inert too.
+- Still never: a "coming soon" label, a toast or alert saying a feature is missing, a feature flag, or a section left out. An entry drawn with `unbuilt` is not a dead button under V1; an entry left out is a defect. A screen with no way in (Settings was one) is a defect.
+- Lead default, owner may override: an inert entry looks exactly as drawn, with no greying and no message.
+
+**Carried out by:** COMPLETE-01 (the `unbuilt` helper and its gate), then COMPLETE-02 Explore, COMPLETE-03 Home, COMPLETE-04 Me, COMPLETE-05 Wallet and COMPLETE-06 (Inbox, Settings, the pay sheet, sign-up and profile edit). BRAND-01 adds the Settings entry. Every later screen task follows this.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
@@ -391,7 +405,7 @@ The full list of what the canvas contradicts, with both sides quoted, is in
 
 ### R-41 · Every tab is built now, with what exists
 *Owner, 7 Oct 2026 ("I want all tabs to be built").*
-The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect.
+The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect. *Replaced by R-46 (8 Oct 2026): such an entry is drawn and inert (`unbuilt`), never left out; the task that builds the screen wires it.*
 
 **Carried out by:** HOME-01, ME-01, EXPLORE-01, WALLET-01 now; each later task named in their "Lead note (7 Oct 2026)" adds its own entry.
 
