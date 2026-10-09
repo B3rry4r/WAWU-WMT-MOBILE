@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 106 of 244.**
+**Launch tasks done: 107 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 114 | 0 | 20 | 21 |
+| todo | 113 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 1 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
-| done | 67 | 27 | 11 | 5 |
+| done | 68 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -127,6 +127,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 - [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
@@ -149,6 +150,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 9 Oct 2026 · COMPLETE-02 · Builder: Explore draws the whole of X1 and X14 (R-46): the bar's search pill and bell (with its unread dot from `GET /me/counts`), the hero with its pager dots, the tiles with More always, Featured creators with See all, Upcoming events with See all, the three doors and Create for creator accounts; a section with nothing to show keeps its heading and draws neutral frames; the built entries are wired (tile, event, events See all, List your services), the rest are `unbuilt` (EXPLORE-02 x2, ME-02 x2, ME-14, ME-04, PROS-01, SCHOOLS-03); 15 own mutants, 15 killed; pictures against a stand-in Hub; status verifying
+- 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
 - 9 Oct 2026 · COMPLETE-01 · Verifier: V1 passed (npm run check exit 0 on 620b70f and after a trial merge of origin/main 7e74460: 96 suites, 1608 tests, 10 gates, 398 files, 0 findings; a planted review-task entry made it exit 1); 99 planted sources through the real gate behave as designed for literals, ids, statuses, comments, strings and JSX; 31 own mutants, 23 killed, 8 survived (test gaps: nested `${}` braces, string escapes, the built-task message's action, the TaskId type, a non-console tap side effect); not seen by the gate: aliased or indirect use of `unbuilt` and a few same-line scanner cases (recommend failing an alias outright); V5 NOT RUN (no screen yet); no open defect, status review.
@@ -162,4 +164,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
 - 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
-- 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
