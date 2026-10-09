@@ -1991,6 +1991,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/tickets/held": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My tickets, upcoming or past, one row per order and tier. */
+        get: operations["EventHeldTicketsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/tickets/held/{ticketId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of my tickets, with the code the door scans. */
+        get: operations["EventHeldTicketsController_one"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content/mine/earnings": {
         parameters: {
             query?: never;
@@ -7867,6 +7901,51 @@ export interface components {
                 remaining: number;
             };
         };
+        HeldTicketEventView: {
+            id: string;
+            name: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            timezone: string | null;
+            timeLabel: string | null;
+            format: string;
+            location: string;
+            venueName: string | null;
+            bannerUrl: string | null;
+            status: string;
+            /** Format: date-time */
+            cancelledAt: string | null;
+        };
+        HeldTicketStub: {
+            id: string;
+            /** @enum {string} */
+            status: "valid" | "checked_in" | "void";
+            /** Format: date-time */
+            checkedInAt: string | null;
+        };
+        HeldTicketGroup: {
+            orderId: string;
+            ticketTypeId: string;
+            tierName: string;
+            quantity: number;
+            event: components["schemas"]["HeldTicketEventView"];
+            tickets: components["schemas"]["HeldTicketStub"][];
+        };
+        HeldTicketView: {
+            id: string;
+            orderId: string;
+            code: string;
+            /** @enum {string} */
+            status: "valid" | "checked_in" | "void";
+            /** Format: date-time */
+            checkedInAt: string | null;
+            tierName: string;
+            holderName: string | null;
+            event: components["schemas"]["HeldTicketEventView"];
+            siblings: components["schemas"]["HeldTicketStub"][];
+        };
         QuestionOption: {
             value: string;
             label: string;
@@ -13623,6 +13702,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DoorCheckInResult"];
+                };
+            };
+        };
+    };
+    EventHeldTicketsController_list: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+                view: "upcoming" | "past";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeldTicketGroup"][];
+                };
+            };
+        };
+    };
+    EventHeldTicketsController_one: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeldTicketView"];
                 };
             };
         };
