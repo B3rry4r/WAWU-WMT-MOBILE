@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [EVENTS-02, UI-02, EVENTS-01]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -182,6 +182,28 @@ _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, f
 - **U1 unclear (E15).** "Remove" on a ticket card is not drawn. Without it a host cannot drop a type they added, so it is needed; the designer should draw it or say how a type is removed.
 - **Server vs app, noted:** the Hub accepts a start in the past and an event with no ticket types; the app refuses a past start itself and always sends at least one type. Not a defect here.
 - **differs-for-recorded-reason:** Kind picker on E13 (G-442, builder default recorded); Ends on the start's day (G-443(b)); the VIP ticket is stored with tier `regular` (the Hub's default; the wizard never asks for a tier).
+
+**Verifier round 2 (9 Oct 2026; did not build any of it).** Narrow re-verify of the fix round (`cd0cfb6`). `origin/main` (14 commits behind) merged into the mobile branch; the only conflict was `docs/PROGRESS.md` (generated, theirs taken). The backend branch is not behind main and the fix round touched no backend file. G-444 is unique: one row on this branch, none in `origin/main` or any other `origin/wmt/*` BACKEND_GAPS.md. Live stack on my own database (`wawu_hub_test_events04_r2`, backend branch `da42f75` built, mock-wawu-id on 4260 behind the `{data}` shim on 4262, Hub 4261, `npm run web` on 4263: one port over the 4260 to 4262 range, 4263 was free), real sign-in form, Chromium 390 px at 2x. Images: `/tmp/claude-0/-home-user/5061294a-27a4-5072-ae21-e672def9592e/scratchpad/events04v/shots/m-<ID>-<scheme>.png` (design left, built right), bands from `bands.py` with the design's 100 px status bar removed.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | After the merge `npm run check` EXIT 0: 110 suites, 1874 tests; gates 449 files scanned, 0 fail, 17 warn (unbuilt_entries 16, provisional 1); `check_baseline` ok; `npm run tasks` ok. The first run failed typecheck on `/legal` only because `.expo/types/router.d.ts` (generated, untracked) was stale; starting `expo start --web` regenerated it. Log: `.../scratchpad/check2.log`. |
+| V5 (D1 to D5, D7) | failed (defect D8) | Table below. |
+
+| Artboard and state | Result |
+|---|---|
+| E1, E13 to E15 tab strip | "My events" tab drawn between Discover and Host event as the canvas has it (D1 fixed). Tab text line 20: tab row top, text and underline bands equal the canvas on E13 (text 121 to 147, underline 174 to 177, both frames) (D4 fixed). |
+| E14 Starts | "Wed 28 Oct, 20:00" and "Mon 30 Nov, 22:30" (light and dark) show the whole value, no ellipsis (`scrollWidth` = `clientWidth` = 109, font at the 12 floor). On the artboard's own sample the value now draws at about 12 to 13 px against the canvas's 15.5, and the two halves are equal width where the canvas Starts half is 8 pt wider; see note N1. D2 fixed. |
+| E16 | "My events" secondary button left of Done, Done as drawn (D1 fixed); title, line, note and icon bands equal the canvas. |
+| E21 | "Get verified" drawn, primary, md, under the words (D1 fixed), light and dark. Position: see D8. |
+| E22 | Banner, label and the flagged field start where the canvas has them (banner top 128 and label 300 in both frames; D3 fixed). The label to field gap is still 2 pt more (D5, the shared `TextField`, row EVENTS-04 #1 open). |
+| Dark | Same as light apart from tokens; nothing dark-specific broke on E1, E16, E21, E22. |
+
+- **D1, D2, D3, D4, D6, D7 closed.** D5 stays a recorded lead item: `SHARED-CHANGES.md` row EVENTS-04 #1 asks for the shared edit; the 2 pt drift remains on E13 name and organiser, E15 tier fields and E22 until it is applied.
+- **D8 defect (E21, position).** The canvas `gate` is `phone(nav + body(<div style="flex:1;display:grid;place-items:center">...))`, and `body` defaults to 8 pt above and 120 pt below. The block is therefore centred in the space from 8 pt under the nav to 120 pt above the bottom. `HostGate` centres in the whole space under the nav (`styles.center` has no bottom padding). The icon top measures 754 px against 690 px in the same frame (32 pt lower on the web build, where the status bar inset is 0); with a phone's top inset the centre moves further and the gap is about 55 pt, the figure D1 gave and the button did not change. Fix: give the centred area the canvas's top 8 and bottom 120 (a `paddingTop`/`paddingBottom` on `styles.center`), then re-measure.
+- **N1 note (E14 Starts size).** The value fits and reads, which is what D2 asked. The canvas draws it at full size in its own font; ours is wider, so it shrinks to the 12 floor on long values. If the lead wants the drawn size, the halves would have to be content-sized as in the canvas (Starts 173, Ends 164 at 390 px) rather than equal. Not counted as a defect.
+- **F1 and U1** stay recorded lead items (not defects, per the lead's instruction).
+- **NOT RUN:** V10 (no phone); system Back on the web build.
 
 ## Owner sign-off
 
