@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 4 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 5 | 0 | 0 | 0 |
 | done | 69 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -19,9 +19,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 
 ## Done
@@ -150,6 +147,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · COMPLETE-05 · Verifier, round 2 (branch `wmt/COMPLETE-05` at 19f92ed): both round 1 defects closed, status `review`. V1 passed (npm run check exit 0 on 19f92ed: 96 suites, 1638 tests, 10 gates, 404 files, 0 findings; and after a trial merge of origin/main 942ab7b: 97 suites, 1672 tests, 409 files, 0 findings); V5 passed (390 and wider is the round 1 build box for box: 2880 elements at 390, 412 and 430 compared, 0 differences, `geom.py` output identical); V6 passed (135 of 135 state checks at 390, 360 and 320, every inert entry by real click, no request left the page); V9 NOT RUN (stand-in Hub). Defect 1: 70 DOM captures at 320 to 430, W1, W4, W5, W6 and a failed rows read, light and dark: nothing past the edge, no cut word, equal 20 px margins, and the same script fails the round 1 build at 320, 360 and 375. Defect 2: a MutationObserver over every DOM commit shows the WAWU card row, Transactions and See all never appear for a new account with a slow rows read, a refresh keeps its rows, a failed read keeps W1's layout. The 5 gaps are closed (all 5 round 1 survivors killed) and the recorder mock tests the real wiring. 26 own mutants, 20 killed, 6 survived (test gaps: row room off by one at an unlisted width, glyph size not asserted, two layout rules only a browser sees, the Try again blink). Larger text imitated at 1.15 to 2.0: clean at 1.15; Airtime cut at 320 from 1.3, and at 320 to 360 from 1.5; nothing passes the edge at any scale (`unclear`, finding 1).
 - 9 Oct 2026 · COMPLETE-05 · Builder report, round 2 (branch `wmt/COMPLETE-05`): both verifier defects fixed: the bills tiles and the actions size from the row's width, so nothing on the Wallet tab runs off the screen from 320 to 430 px (measured from the DOM at 320, 340, 360, 375, 390, 412 and 430, light and dark, W1, W5, W6, W4: 0 overflow, 0 clipped word; 390 and wider identical to before, 204 canvas measurements equal), and the card row, "Transactions" and "See all" wait for the transactions read (W4's row shapes stand there, then W5 or W1); the 5 surviving mutants and 13 new ones are killed (18 of 18), the tests pin the order inside each row and the task each inert entry names; npm run check exit 0 (96 suites, 1638 tests, 404 files, 0 findings, 271 tasks); NOT RUN: a large-text setting, a phone check, the real Hub; status verifying.
 - 9 Oct 2026 · COMPLETE-05 · Verifier: V1 passed (npm run check exit 0 on 948c220 and after a trial merge of origin/main fffc816: 96 suites, 1620 tests, 10 gates, 403 files, 0 findings); V5 passed at 390 px (W4's 27 skeleton blocks pixel equal, every text of W1, W5 and W6 within 3 px of the canvas); V6 passed for ten states in light and dark; V9 NOT RUN (stand-in Hub); all 16 inert entries tapped by real click, double click and keyboard in a browser: no request, no error, nothing changes; all eight `unbuilt` ids match their artboard entries; 26 own mutants, 21 killed (survivors: tile and pill order, three wrong-but-real task ids); two defects open, so status building: the Swap button and the More tile run off a 360 px screen, and a new account briefly sees the card row and See all before W5.
 - 9 Oct 2026 · COMPLETE-05 · Builder report (branch `wmt/COMPLETE-05`): the Wallet tab draws its whole design now: the scan and settings buttons, the Naira, Dollar and Crypto tabs, Send, Add money, Swap, the five bills tiles, the WAWU card row, See all and tappable rows, on W1, W5 and W6, and the whole W4 loading shape; all eight entries are `unbuilt` (their tasks are all todo), nothing charges or moves money; 18 of 18 own mutants killed, G-493 filed for the card row's line; NOT RUN: a phone check, the real Hub (pictures used a stand-in); status verifying.
@@ -164,4 +162,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
 - 8 Oct 2026 · BRAND-01 · Verifier: V1 passed (npm run check exit 0, 95 suites, 1606 tests, gates 0 findings); icon measured by pixels (farthest opaque pixel 87% of the 66 dp safe radius, uncut under circle, squircle and rounded square, calibrated against the owner's own screenshot, artwork identical to the logo pack); splash 128 dp whole inside Android 12's circle; A1 cover has no words, WAWU or dashboard; Menu to Z1 to Settings works signed in, with the Hub failing and while Me loads, the other rows inert; 16 own mutants, 14 killed, 2 survived (test gaps, not product); no open defect, one unclear (icon leans right and down by box); V10 NOT RUN (needs the preview build); status review.
 - 8 Oct 2026 · BRAND-01 · Builder: the launcher icon rebuilt from the logo pack so the whole logo (drip included) sits inside the 66 dp safe circle (44% of the canvas; monochrome and store icon the same way; own notification icon); the splash logo 128 dp inside Android 12's circle; A1 shows the website's creators picture under the shade; M1's Menu button raises the Z1 sheet and its Settings row opens `/settings` (the other rows drawn and inert, R-46); 19 tests, 9 of 9 mutants killed; npm run check passed (95 suites, 1606 tests, gates 0 findings); V10 NOT RUN (needs the preview build); status verifying.
-- 8 Oct 2026 · Lead: R-46 the UI is always complete (owner). Unbuilt entries are drawn and inert with `unbuilt(<task>)`; filed COMPLETE-01 (helper and gate) to COMPLETE-06 (Explore, Home, Me, Wallet, the rest); later tasks moved down six places.
