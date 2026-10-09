@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [EVENTS-02, UI-02, EVENTS-01]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -213,6 +213,27 @@ _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, f
 - **N1 note (E14 Starts size).** The value fits and reads, which is what D2 asked. The canvas draws it at full size in its own font; ours is wider, so it shrinks to the 12 floor on long values. If the lead wants the drawn size, the halves would have to be content-sized as in the canvas (Starts 173, Ends 164 at 390 px) rather than equal. Not counted as a defect.
 - **F1 and U1** stay recorded lead items (not defects, per the lead's instruction).
 - **NOT RUN:** V10 (no phone); system Back on the web build.
+
+**Verifier round 3 (9 Oct 2026; did not build any of it).** Narrow: D8 only, plus a check that the earlier fixes hold. `origin/main` merged into the mobile branch (3b16c25): conflicts only in `docs/PROGRESS.md` and `contract/SOURCE_COMMIT` (generated, main's taken) and `BACKEND_GAPS.md` (two appended table rows, G-442 to G-444 and G-620, both kept). Own stack again (scratch DB `wawu_hub_test_events04_r2`, backend `da42f75` built, mock-wawu-id 4260, shim 4262, Hub 4261, `npm run web` 4263), real sign-in form, Chromium 390 px at 2x, user 2 un-ticked for the capture and ticked again after. Images: `.../scratchpad/events04v/shots/E21-r3-light.png` and `E21-r3-dark.png` against `build/design_shots/E21-<scheme>.png`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed for this task, `npm run check` EXIT 1 from main's own gate (see C1) | typecheck 0 errors; lint 0 errors (7 warnings); jest 113 suites, 1914 tests passed; gates 459 files scanned, 1 fail, 16 warn; `check_baseline` ok; the single fail is `unbuilt('PROS-01')` in `src/features/explore/ExploreScreen.tsx:129`, a file identical to `origin/main`. Log `.../scratchpad/events04v/check3.log`. |
+| V5 (D8) | passed | Bands below. |
+
+| Band (px, 2x) | Design E21 | Built E21 | Built + 102 (status bar) | Note |
+|---|---|---|---|---|
+| Nav title top | 144 | 42 | 144 | the design carries the 102 px status bar the web build lacks (PROS-01 round 2) |
+| Icon circle top (dark) | 658 | 608 | | 50 up |
+| Icon glyph top (light) | 690 | 642 | | 48 up |
+| Button bottom | 1017 | 967 | | 50 up |
+
+With a 0 inset the body area is 102 px taller than the design's, so a block centred in it sits 51 px higher than in the design. Measured offsets are 48 to 50 px (1 pt); the whole block (icon, title, text, button) moves together and the block is 325 px against 327. Before the fix it was 32 pt low. The icon to title gap is 2 pt less in the build (67 against 71 px glyph to title) and the text to button gap 1 pt more; both are the block's own content, accepted in round 2 (D1 closed), within 1 to 2 pt. Light and dark equal. D8 closed.
+
+- **Earlier fixes hold.** E13 (tab strip with "My events", tab text 121 to 147, underline 174 to 177) equals the canvas once the 100 px status bar is removed; E16 icon, title, note and the two buttons equal the canvas (bands 240, 468, 557, 635 against 340, 568, 657, 735); the real flow from the sign-in form to "Sent for review" with "My events" and "Done" ran as in round 2; the host jest suites are inside the 1914 passing. D5 (the shared `TextField` 2 pt, SHARED-CHANGES row EVENTS-04 #1) is unchanged and stays a lead item, not a defect.
+- **C1 (for the lead, not an EVENTS-04 defect).** After merging main the `unbuilt_entries` gate fails because PROS-01 is `review` on main while the "Find a professional" tile in `ExploreScreen.tsx` still carries `?? unbuilt('PROS-01')`. The branch has no change to that file (`git diff origin/main` on it is empty), so the fail is on main as it stands and is not this task's to fix (fenced, and a verifier never fixes). It clears when PROS-01 removes the `unbuilt()` fallback, or the lead does. `docs/PROGRESS.md` also needs `python3 scripts/tasks/check_tasks.py --write` after the merge, done in the commit that sets this status.
+- **NOT RUN:** V10 (no phone); system Back on the web build.
+- **Open defects: none.** Status set to `review`.
 
 ## Owner sign-off
 
