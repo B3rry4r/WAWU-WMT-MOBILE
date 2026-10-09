@@ -149,6 +149,16 @@ describe('E21 · Needs a tick', () => {
     expect(rtl.screen.queryByTestId('host-name')).toBeNull();
   });
 
+  it('draws Get verified as designed; it does nothing until ME-12 (R-46)', async () => {
+    serve(false);
+    await bootHost();
+    await rtl.screen.findByTestId('host-gate');
+    const button = rtl.screen.getByTestId('host-get-verified');
+    expect(rtl.screen.getByText('Get verified')).toBeTruthy();
+    await rtl.act(async () => rtl.fireEvent.press(button));
+    expect(rtl.screen.getByTestId('host-gate')).toBeTruthy();
+  });
+
   it('lets a professional tick host', async () => {
     handler = (c) => (c.path === '/verification/me' ? ok(tick(false, true)) : c.path === '/events/options' ? ok(options) : undefined);
     await bootHost();
@@ -318,6 +328,19 @@ describe('E13 to E15 · the wizard', () => {
     });
     expect(await rtl.screen.findByText('Sent for review')).toBeTruthy();
     expect(posts()).toHaveLength(1);
+    expect(rtl.screen.getByText('My events')).toBeTruthy();
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('host-my-events')));
+    expect(rtl.screen.getByTestId('host-submitted')).toBeTruthy();
+  });
+
+  it('draws the My events tab between Discover and Host event; it does nothing until EVENTS-08', async () => {
+    serve(true);
+    await bootHost();
+    await rtl.screen.findByTestId('host-name');
+    const labels = rtl.screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel);
+    expect(labels).toEqual(['Discover', 'My events', 'Host event']);
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('events-tab-mine')));
+    expect(rtl.screen.getByTestId('host-name')).toBeTruthy();
   });
 
   it('keeps everything typed after a failed submit, says why, and sends again on retry', async () => {

@@ -7,7 +7,7 @@ order: 53
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [EVENTS-02, UI-02, EVENTS-01]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -54,8 +54,9 @@ These entries are drawn on this task's artboards but lead to screens built by la
 not build them. Each is added, exactly as drawn, by the task that builds where it leads (docs/WORKFLOW.md
 section 7, R-27). The verifier reports their checks as belonging to that task.
 
-- E16: My events (opens E17): added by EVENTS-08
-- E21: Get verified (opens M11): added by ME-12
+- E16: My events (opens E17): wired by EVENTS-08 (drawn here, inert until then, R-46)
+- E21: Get verified (opens M11): wired by ME-12 (drawn here, inert until then, R-46)
+- E1, E13 to E15: the My events tab: wired by EVENTS-08 (drawn here, inert until then, R-46)
 
 ## Capability checks
 
@@ -123,6 +124,21 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 
 **NOT RUN.** V10 (a real Android phone): no device. Picture-against-picture screenshots at 390 px light and dark against `render_design.py E13 E14 E15 E16 E21 E22` (V5): NOT RUN by this builder (the resumed session ended before a Hub and `npm run web` were stood up); metrics in code are taken from `design/_gen/events_b.js` and `kit.js`, and the small text uses `canvasNormalLineHeight`, but no screen is claimed to match. The verifier compares them. A live submit against a running Hub and web build was not run; the screens are tested against the contract-shaped wire and the backend spec posts the same body to the real app. No SHARED-CHANGES row: no fenced file was edited (the generated contract files were regenerated).
 
+
+## Builder fix round
+
+**Builder (9 Oct 2026), fixing the verifier's D1 to D7.** Not verified by this builder.
+
+- **D1 fixed.** The My events tab is drawn in `src/features/events/chrome.tsx` in the canvas order (Discover, My events, Host event) with `onPress={unbuilt('EVENTS-08')}`; E16's My events button (`HostEnds.tsx` `Submitted`, secondary, left of Done as drawn) uses `unbuilt('EVENTS-08')`; E21's Get verified (`HostGate`, primary, md, not full width, under the words as `empty(...)` draws it) uses `unbuilt('ME-12')`. The "Added by later tasks" list above now says wired by, not added by. Tests updated for the new entries.
+- **D2 fixed.** Starts now fits: the box gap is 10 as in the kit (was 12), and a half-width picker value (`half`, Starts only) shrinks from 15.5 down to a floor of 12 only when its estimated width would not fit (`fittedValueSize`, tested), plus `adjustsFontSizeToFit` on phones. Ends and Category are unchanged.
+- **D3 fixed.** `SentBackScreen` body top is 8 (the kit's `body` default); the bottom stays 14.
+- **D4 fixed.** Tab text takes `canvasNormalLineHeight(15)` = 20.
+- **D5 shared file, requested.** `src/components/TextField.tsx` is fenced. The same change is already open as PROS-03 #3; SHARED-CHANGES row EVENTS-04 #1 adds this task to it. This task's own label (`FieldLabel`, used by the picker and description fields) now draws 17. E13 name and organiser, E15 tier fields and E22 keep the 2 px drift until the row is applied.
+- **D6 filed.** BACKEND_GAPS G-444 (checked unique across main and every origin branch).
+- **D7 fixed.** G-443(a) is closed in BACKEND_GAPS (the picker is on main); only (b) is open.
+- **U1 default (recorded).** "Remove" on a ticket card stays: without it a host cannot drop a type they added. The designer should draw it or say how a type is removed; until then the card is 20 pt taller than drawn when there are two or more types. Carried as a note, not changed.
+- **F1 recorded, not changed.** A NUL character in name, address or a ticket name is a 500 from Postgres on `POST /events` and `PATCH /events/{id}`. It is an existing route's behaviour, a phone keyboard cannot type NUL, and a strip or `@Matches` on those DTO fields changes what the existing route accepts, so it is left for the lead to rule on (additive fix: a 400 for U+0000 in those fields).
+- **NOT RUN.** Picture-against-picture re-check of D1 to D5 (the verifier does it), V10 (real phone).
 
 ## Verifier report
 

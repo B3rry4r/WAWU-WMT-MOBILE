@@ -18,8 +18,8 @@ import { updateEvent } from './hostApi';
 import { addressError, needsAddress } from './hostForm';
 import { SentBackNote } from './hostParts';
 
-/** events_b.js `sentBack`: `body(..., { between: 14 })`. */
-const bodyMetrics = { top: 14, between: 14 } as const;
+/** events_b.js `sentBack`: a body of 14 between rows whose top is the kit's default 8 (kit.js `body`). */
+const bodyMetrics = { top: 8, bottom: 14, between: 14 } as const;
 
 export type SentBackScreenProps = { id: string; onBack: () => void; onDone: () => void };
 
@@ -140,6 +140,6 @@ export function SentBackScreen({ id, onBack, onDone }: SentBackScreenProps) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, paddingBottom: bodyMetrics.top, gap: bodyMetrics.between },
+  body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, paddingBottom: bodyMetrics.bottom, gap: bodyMetrics.between },
   foot: { paddingTop: footMetrics.top, paddingHorizontal: layout.gutter, gap: space.sm },
 });

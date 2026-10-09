@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
 import { FilterChips } from '@/components/FilterChips';
@@ -8,7 +8,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
-import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { STEPS, type Step } from './hostForm';
 
@@ -77,7 +77,25 @@ export function FieldError({ message, testID }: { message?: string; testID?: str
   );
 }
 
+/** kit.js `field`: 10 between the value and its trailing icon (the app's box used 12, which cost the half-width Starts field 2). */
+const PICKER_GAP = 10;
+/** A half-width field in a 20-gutter, 10-gap row (E14's Starts): what is left for the value after 16 each side, the gap and the icon. */
+const halfValueWidth = (screen: number, icon: number) =>
+  (Math.min(screen, layout.screenW) - 2 * layout.gutter - 10) / 2 - 2 * space.lg - PICKER_GAP - icon;
+/** About how wide a character of the 500-weight value is, in em (Alan Sans digits and capitals, measured, rounded up a little). */
+const VALUE_EM = 0.55;
+const VALUE_FLOOR = 12;
+
+/** The value's size: 15.5 as drawn, a little smaller only when a half-width field would otherwise cut the time off (D2). */
+export function fittedValueSize(value: string | null, width: number, size = fieldMetrics.value): number {
+  if (!value) return size;
+  const needed = value.length * VALUE_EM * size;
+  return needed <= width ? size : Math.max(VALUE_FLOOR, Math.floor((size * width) / needed * 2) / 2);
+}
+
 export type PickerFieldProps = {
+  /** True in a half-width field: the value shrinks rather than losing the time to an ellipsis. */
+  half?: boolean;
   label?: string;
   value: string | null;
   placeholder: string;
@@ -88,8 +106,9 @@ export type PickerFieldProps = {
 };
 
 /** A field that opens a picker: the value (or a muted placeholder) and a trailing icon (E14's Starts, Ends, Category). */
-export function PickerField({ label, value, placeholder, icon, onPress, error, testID }: PickerFieldProps) {
+export function PickerField({ half, label, value, placeholder, icon, onPress, error, testID }: PickerFieldProps) {
   const { colors } = useWawu();
+  const { width: screen } = useWindowDimensions();
   const ring = useFocusRing();
   const size = icon === 'ChevronDown' ? trailMetrics.chevron : trailMetrics.clock;
   return (
@@ -115,7 +134,9 @@ export function PickerField({ label, value, placeholder, icon, onPress, error, t
           variant="body"
           numberOfLines={1}
           tone={value ? 'textPrimary' : 'textMuted'}
-          style={[font(value ? 500 : 400), styles.value]}
+          adjustsFontSizeToFit={half}
+          minimumFontScale={0.8}
+          style={[font(value ? 500 : 400), styles.value, half ? { fontSize: fittedValueSize(value, halfValueWidth(screen, size), fieldMetrics.value) } : null]}
         >
           {value ?? placeholder}
         </Text>
@@ -383,7 +404,7 @@ const styles = StyleSheet.create({
   stepper: { flexDirection: 'row', gap: stepperMetrics.between },
   stepCol: { flex: 1, gap: stepperMetrics.between },
   bar: { height: stepperMetrics.bar, borderRadius: stepperMetrics.barCorner },
-  label: { ...font(600), fontSize: fieldMetrics.label, marginBottom: space.sm },
+  label: { ...font(600), fontSize: fieldMetrics.label, lineHeight: canvasNormalLineHeight(fieldMetrics.label), marginBottom: space.sm },
   fieldRoot: { alignSelf: 'stretch' },
   box: {
     height: fieldMetrics.height,
@@ -391,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
+    gap: PICKER_GAP,
   },
   value: { flex: 1, fontSize: fieldMetrics.value },
   hint: { flexDirection: 'row', alignItems: 'center', gap: hintMetrics.between, marginTop: space.sm },

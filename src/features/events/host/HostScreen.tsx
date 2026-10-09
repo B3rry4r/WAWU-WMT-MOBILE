@@ -340,6 +340,7 @@ function WhenWhere({
       <View style={styles.pair}>
         <View style={styles.half}>
           <PickerField
+            half
             label="Starts"
             value={draft.day && draft.startTime ? startLabel(draft.day, draft.startTime, now) : draft.day ? dayLabel(draft.day, now) : null}
             placeholder="Pick a day"
