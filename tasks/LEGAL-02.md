@@ -117,6 +117,17 @@ Builder session, 9 Oct 2026, fix round 1 for D1.
 - **Frame authorization (backend).** `LiveDispatcher.legalThread` sends only to the matter's own client (`LegalRequest.wawuUserId`), after checking the message is a consultant's on that matter. Already covered by `live-legal.contract.spec.ts` ("another person's socket is sent nothing", "wakes nobody"); no new spec needed.
 - **Merges.** origin/main merged into both branches (backend clean, contract unchanged after `npm run contract:build`; mobile conflicts in BACKEND_GAPS, SHARED-CHANGES, PROGRESS, Services, TodayScreen and HomeScreen tests resolved). The services row now holds Events then Legal; the Home tests that counted one tile now count two and one new test taps Legal. `docs/PROGRESS.md` regenerated.
 
+## Verifier report, round 2
+
+Verifier session, 9 Oct 2026, fresh (did not build this task). Mobile verify branch `verify-legal-02b` from `b74b7be`; backend `7d69556`. PARTIAL REPORT, in progress: passes not listed are still running.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 (as it will land) | passed: origin/main merged into mobile (20 new commits; the only conflict was generated `docs/PROGRESS.md`, regenerated with `npm run tasks -- --write`; no conflict markers anywhere); `npm run check` exit 0: 101 suites, 1,744 tests, gates 0 fail, task check pass. Backend `7d69556` already contains origin/main | scratchpad `legal02v2/check.log` |
+| D1 unit | passed: `LegalLive.test.tsx` with the old `live.ts` (`git show 9c7ffad^:...`) fails (1 failed, 1 passed); with the fix both pass. inbox + legal + home suites 10 suites, 161 tests pass (`live.test.ts` covers chat.message, chat.read, community.message). Code read: `legal.thread` goes to `deliver` and never touches `cursor` or `pendingCursor`; `seenKey` is null for it, so it is not de-duplicated away; the only other listener (`unread.ts`) refreshes the unread count, harmless | this report |
+
+**D2 (defect).** Gap ids G-470, G-471 and G-472 are already taken on `origin/wmt/NUV-03` (BACKEND_GAPS.md: Nuvion identity rows). Both branches landing gives duplicate ids with different meanings. Main's highest is G-493, so these three are free on main only; the builder must take unused ids (and the references in the code, tests and this file move with them).
+
 ## Hub entries this task adds (R-41)
 
 The HOME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
