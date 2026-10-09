@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 113 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 68 | 27 | 11 | 5 |
 
@@ -20,7 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 
@@ -149,6 +149,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · COMPLETE-05 · Verifier: V1 passed (npm run check exit 0 on 948c220 and after a trial merge of origin/main fffc816: 96 suites, 1620 tests, 10 gates, 403 files, 0 findings); V5 passed at 390 px (W4's 27 skeleton blocks pixel equal, every text of W1, W5 and W6 within 3 px of the canvas); V6 passed for ten states in light and dark; V9 NOT RUN (stand-in Hub); all 16 inert entries tapped by real click, double click and keyboard in a browser: no request, no error, nothing changes; all eight `unbuilt` ids match their artboard entries; 26 own mutants, 21 killed (survivors: tile and pill order, three wrong-but-real task ids); two defects open, so status building: the Swap button and the More tile run off a 360 px screen, and a new account briefly sees the card row and See all before W5.
 - 9 Oct 2026 · COMPLETE-05 · Builder report (branch `wmt/COMPLETE-05`): the Wallet tab draws its whole design now: the scan and settings buttons, the Naira, Dollar and Crypto tabs, Send, Add money, Swap, the five bills tiles, the WAWU card row, See all and tappable rows, on W1, W5 and W6, and the whole W4 loading shape; all eight entries are `unbuilt` (their tasks are all todo), nothing charges or moves money; 18 of 18 own mutants killed, G-493 filed for the card row's line; NOT RUN: a phone check, the real Hub (pictures used a stand-in); status verifying.
 - 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
@@ -163,4 +164,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
 - 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
 - 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
-- 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
