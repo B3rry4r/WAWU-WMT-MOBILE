@@ -7,7 +7,7 @@ order: 238
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: [COMPLETE-01]
 decisions: [R-46, R-27, R-29]
 passes: [V1, V5, V6, V9]
@@ -212,6 +212,74 @@ Killed: V1 Find a school left out (3 tests); V2 Find a professional opens E1 (th
 - Categories' own artboards (X2, X3, X13) beyond the card's press: not this task.
 - The builder's own mutants M1 to M15 were not re-run; I ran 32 of mine instead.
 
+
+## Builder report, round 2
+
+Fresh Sonnet builder, 9 Oct 2026, on `wmt/COMPLETE-02` from ce326bd (origin/main merged first as e4ce9d7; the only conflict was the generated `docs/PROGRESS.md`, rebuilt by `check_tasks.py --write`). Mobile only, no package change. Round 1's work stands; this round closes the verifier's Defect 1 (eight surviving mutants) and Findings 1 to 4.
+
+**Lead rulings for this round (Default (lead), owner may override)**
+1. The eight test gaps are closed so each of V3, V6, V12, V16, V23, V24, V29 and V31 fails a test; V16 (the owner's own complaint) has a plain test named for it.
+2. Finding 1: a failed categories or featured-creators read never collapses the screen. Every section stays drawn (neutral frames, the doors card, the bar, Create) under one error banner at the top with a Try again that re-reads. X1 has no error artboard (X12 is the search screen's error), so the banner uses the app's `ErrorState` styling in a compact row. No invented words.
+3. Finding 4: the account-type read is retried on refocus, on pull-to-refresh and on Try again, so Create comes back for a creator after a transient failure.
+4. Finding 2: the scroll content's bottom padding clears the Create button.
+5. Finding 3: the stale comment in `src/features/events/ExploreEvents.tsx` line 28 is corrected, nothing else there.
+
+**What changed**
+- `ExploreScreen.tsx`: the failed state no longer replaces the body. Once nothing is pending, the same body is drawn whether or not a read failed (categories fall back to the six neutral tiles, featured creators to the neutral rail), with `LoadFailedBanner` first when `failed`. `refetchAll` (refocus, pull, Try again) now also re-reads the account type; the refocus test also counts a failed account read as stale. `exploreMetrics.bodyBottomCreate` and `contentCreate` give creators the larger bottom padding. The component's comment says what a failed read draws.
+- `LoadFailedBanner.tsx` (new): the compact banner. It is `ErrorState` laid out as one row (the same `IconTile`, the same secondary `Button` "Try again" with its RotateCw, the same words) on a card with the search pill's hairline, with the kit banner's `kvValue` over `bannerBody` text so the title stays on one line at 390. `retrying` puts the button on its spinner while a read is out, so it cannot be sent twice. `ErrorState` has no compact form and `src/components/` is fenced: SHARED-CHANGES row COMPLETE-02 F2 asks for a `compact` prop, after which this file goes.
+- `src/features/events/ExploreEvents.tsx`: one comment line (28). It said the hero's pager dots are not drawn; it now says Explore draws them (`HeroDots`).
+- `__tests__/screens.test.tsx`: 16 tests added (the file went from 62 to 78 in the folder), the one failed-read test rewritten for the new behaviour. `SHARED-CHANGES.md`: row COMPLETE-02 F2.
+
+**Findings, fixed**
+
+| Finding | Fix | Tests |
+|---|---|---|
+| 1, a failed read collapses the screen | the banner above all sections; Try again re-reads the categories, the featured creators, the events, the unread count and the account type | "when %s cannot be read ..." (categories, featured creators: the bar, hero frame, tiles, both rails, three doors, Create, one banner, one Try again, no skeleton); "the banner sits above the hero, and the doors still open List your services"; "Try again reads ... and the screen fills in"; "when only the featured creators fail ..."; the old real-retry test now also checks the sections and the banner going away |
+| 2, Create covers the last chevron | creator padding 90 | below |
+| 3, stale comment | corrected | none (a comment) |
+| 4, Create never retried | the account read is in `refetchAll` and in the stale check | "a pull to refresh reads the unread count and the account type again ..."; "coming back to the tab reads the account type again when the first read failed ..."; "coming back ... with everything read and fresh asks for nothing again" (a refocus with all reads fresh sends nothing); Try again test above |
+
+**Finding 2, the number.** The canvas pads the body 120 over a tab bar that is its own box, which leaves 30 under the last row on the phone (120 less the tab bar's 90). Create stands 16 above the tab bar (106 less 90) and is 58 high, so it covers the bottom 74 and sat on the last row's chevron. The creator's bottom padding is `createButtonMetrics.bottom + createButtonMetrics.size + space.lg` = 16 + 58 + 16 = **90**: the button's own offset, its height, and the same 16 again between the button and the row (all tokens, from `CreateButton.tsx` and `@/theme`). Anyone else has no button and keeps the canvas's 30 (`exploreMetrics.bodyBottom`). Measured in the web export at 390, light and dark: at the end of the scroll the List your services row ends 15.9 px above Create and does not touch it; a buyer has 29.9 under the row and no Create. Tests: "a creator has 90 below the last row ..." and "anyone else keeps the canvas's 30 below the last row".
+
+**The 8 mutants now killed.** I ran the verifier's own scripts (`rig/mutants.py`, `mutants2.py`, `mutants3.py`) on this worktree: V3, V16, V23, V24 and V31 killed. V6, V12 and V29 were SKIPPED by those scripts (their old strings changed: `refetchAll` gained the account read and the Create condition became `showCreate`), so I re-aimed the same three behaviours in my own script (`complete-02r2/mutants.py`, marked ADAPTED) and they are killed. Every restore was checked by sha256.
+
+| Mutant | Result | A test that fails |
+|---|---|---|
+| V3 blank event card carries "OCT 12" | killed (2 failed) | "with nothing served, the words on screen are the headings, the kicker, the tiles All and More, the doors and the bar, and no name, date or figure" |
+| V6 Create while the account type is unknown or unreadable (adapted) | killed (5 failed) | "the Create button is not drawn while the account type is held", "... is unreadable" |
+| V12 pull and Try again forget the unread count (adapted) | killed (2 failed) | "a pull to refresh reads the unread count and the account type again ...", "Try again reads ..." |
+| V16 doors card dropped when nobody is featured | killed (7 failed) | "with nobody featured, a user still sees the doors: Find a professional, Find a school and List your services" (the plain test), and six more |
+| V23 empty hero frame carries "Lagos Creators Summit" | killed (2 failed) | the two "words on screen" tests |
+| V24 a blank tile carries "Music" | killed (1 failed) | "with nothing served, the words on screen ..." |
+| V29 Create not drawn while X14 loads (adapted) | killed (1 failed) | "the bar and the Create button of a creator are drawn while Explore loads (X14)" |
+| V31 bar not drawn after a failed read | killed (2 failed) | "when the categories cannot be read ..." and "when the featured creators cannot be read ..." |
+
+**Mutants of my own, on the new behaviour: 17 applied, 17 killed** (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/complete-02r2/mutants.out`, each with its failing tests): N1 banner never drawn; N2 Featured creators heading left out on a failed read; N3 Upcoming events left out on a failed read; N4 tiles left out; N5 the account type not re-read by pull and Try again; N6 a failed account read not counted stale on refocus; N7 no extra padding for a creator; N8 the extra padding for everyone; N9 padding with no gap above the button; N10 Try again re-reads only the categories; N11 an empty (not failed) featured read raises the banner; N12 the banner title rewritten; N13 Try again stuck on its spinner; N14 the banner message ignores what failed; N15 a failed read draws the skeleton again; N16 doors left out on a failed read; N17 hero left out on a failed read. N3 and N4 first died at compile (my JSX was invalid, which is not a test killing a mutant), so I reran them in valid form and they are killed by tests; the log has both.
+
+**Pictures (V5, changed states only).** Web export of this branch at 390 px x 2, light and dark, against a STAND-IN Hub on my ports (5985 web, 5986 Hub, 5987 ID); 0 external requests; 86 checks, all passed (`shots.log`, `shots/results.json`). Folder: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/complete-02r2/shots/`.
+- The failed read with the banner: `error-categories-X1-*`, `error-featured-X1-*`, `error-hubdown-X1-*` (the Hub unreachable: WifiOff tile, "No connection. Check your internet and try again."), each with `-X15-*` at the end of the scroll. Narrow phones: `narrow360-error-X1-*`, `narrow320-error-X1-*` (nothing sideways; the title wraps to two lines at 320).
+- The end of the scroll: `endscroll-creator-X15-*` (the last row clear of Create) and `endscroll-user-X15-*` (a buyer: no Create, the canvas's 30).
+- Create returning: `retry-before-X1-*` (categories, the account read and the count failing: banner, no Create, no dot) and `retry-after-X1-*` (after Try again: banner gone, Create, the dot and the tiles back). `data-X1-*` is the unchanged data state.
+- Scripts: `shots.py`, `standin.js`.
+
+**Checks.** `npm run check` exit 0, as one command, on the final tree (origin/main e4ce9d7's merge in it): typecheck 0, lint 0 errors (2 warnings, both in `src/features/events/__tests__/eventsFocus.test.tsx`, not this branch), 97 suites / 1642 tests (round 1: 97 / 1626; the 16 added are Explore's, none in a new suite), gates 10 run, 403 files scanned, 0 fail, 0 baseline entries, 6 warnings (the same `unbuilt_entries` list as round 1), task check 271 tasks. `npx jest src/features/explore`: 3 suites, 78 tests. The known `eventsScreens.test.tsx` load flake did not occur (the file passed inside the full run, on a machine with 12 GB free); no events test file is on this branch. Log: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/complete-02r2/check1.log` (the first full run, which finished the whole chain) and `check2.log` (the final run with its exit code).
+
+**Secret scan** of the staged diff: no key-shaped string (no long hex or base64 run, `sk_`, `FLWSECK`, bearer token or private-key header).
+
+**Decisions (Default (agent), owner may override)**
+1. The banner is built in `src/features/explore/` from `IconTile`, `Text` and `Button` (the pieces `ErrorState` is made of), not by editing the fenced `ErrorState`; SHARED-CHANGES COMPLETE-02 F2 asks for a `compact` prop so it can be deleted.
+2. The banner's words are the ones already in the app: the title "Couldn’t load Explore", the Hub's own message (or "Something went wrong. Try again."), and "Try again". Nothing new.
+3. Only a categories or featured-creators read that failed with nothing held raises the banner. A refetch that fails while data is held keeps the data and shows no banner (as before). A failed events read still draws neutral frames and no banner (round 1 decision 7; the ruling names the other two reads).
+4. The neutral frames keep their spoken labels ("Featured creators, none to show") under a banner: nothing is shown in them, so the label is true.
+5. Try again is only on screen when the categories or the featured creators failed. A failed account read alone is recovered by a pull or by coming back to the tab (the web export has no pull; the pull is tested through the refresh control in jest). The account read is still not retried on its own (`retry: false`), so it never holds the screen.
+6. Padding for a creator only (90); a buyer keeps the canvas's 30, so the geometry the verifier compared to the canvas for a buyer is unchanged, and a creator's end-of-scroll differs from the canvas by design (the canvas never scrolls X15 to the end).
+7. In tests, `failAtOnce()` makes the first failed read final (the app retries twice, after 1 s and 2 s); the one test of the real retry path keeps the defaults.
+8. `common-rules.md` lists Claude Opus 5.5 commit trailers; the brief names Claude Sonnet 5.5, which I used.
+
+**NOT RUN**
+- A phone (V10): no device; the banner's layout and the bottom padding were seen on the web export only. Unblocked by the next preview build.
+- The pull-to-refresh gesture on a device or the web export (the web has no pull): covered in jest through the refresh control's `onRefresh`, and by Try again in the browser.
+- The live Hub (V9): unchanged from round 1.
 
 ## Owner sign-off
 
