@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 110 | 0 | 20 | 19 |
-| building | 0 | 0 | 0 | 1 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 1 |
 | review | 6 | 0 | 0 | 1 |
 | done | 71 | 27 | 11 | 5 |
 
@@ -23,7 +23,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [PROS-01](../tasks/PROS-01.md) Find a professional (Developer 3)
 

@@ -7,7 +7,7 @@ order: 44
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [PROS-02, PROS-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -95,6 +95,15 @@ Builder (resumed after a usage-limit crash; I reviewed the crashed builder's unc
 - **Gaps:** G-620. **Shared changes:** none.
 - **NOT RUN:** V5 pictures and measurements (above); V9 live seam against a running Hub and WAWU ID; V10 (a phone).
 
+
+## Builder fix round
+
+Fix round for the verifier's round 1 (D1, D2), 9 Oct 2026.
+
+- **D1 fixed.** `onEndReached` in `DirectoryScreen.tsx` now decides from a ref (`asking`) set when `fetchNextPage()` goes out and cleared when it settles, as well as the query state, so a second end-reached in the same tick cannot ask again. The spec fires two `endReached` events inside one `act` (before any render) and expects one `page=2` ask; it is deterministic. Mutant: dropping the ref check fails that spec (1 failed). `npx jest src/features/professionals` run 3 times: 40 passed each time. `npm run check` run 3 times: exit 0 each time.
+- **The `rows.length > 0` guard.** It cannot be killed by any spec: the page reader turns an empty page into `nextPage: null` (`api.ts`), so with no rows `hasNextPage` is already false, whatever the Hub's counts say. Removing the guard changes nothing anyone can observe, so it is removed from `onEndReached` (an unkillable mutant is dead code, not a gap). A spec now fires `endReached` on an empty list whose counts claim 40 and expects no `page=2` ask, which holds the behaviour either way.
+- **D2 fixed.** P4's empty block now uses the design's body bottom padding (`directoryMetrics.emptyBottom` = 120, the `body` default in `design/_gen/kit.js`, applied when the list is empty; rows keep 40 plus the safe area), so the block centres in the same area as the design. Re-measure at 390 px in a browser: NOT RUN in this round (no browser session; the change is the padding value the design uses), for the verifier to measure.
+- No backend change, no fenced file.
 
 ## Verifier report
 

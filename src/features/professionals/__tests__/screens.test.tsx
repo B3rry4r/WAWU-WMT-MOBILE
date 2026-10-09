@@ -272,10 +272,25 @@ describe('P1 · Professionals', () => {
     answers[ALL_2] = ['hold'];
     await directory();
     await rtl.screen.findByTestId('pros-row-a0');
-    await scrollToEnd();
+    // Both ends reached in the same tick, before any render could show that page 2 is on its way.
+    await rtl.act(async () => {
+      const list = rtl.screen.getByTestId('pros-list');
+      rtl.fireEvent(list, 'endReached');
+      rtl.fireEvent(list, 'endReached');
+    });
+    await settle();
     await scrollToEnd();
     await settle();
     expect(sent.filter((s) => s === ALL_2)).toHaveLength(1);
+  });
+
+  it('reaching the end of an empty list asks for nothing (an empty page ends paging, whatever the counts say)', async () => {
+    answers[ALL_1] = [page([], 1, 40)];
+    await directory();
+    expect(await rtl.screen.findByTestId('pros-empty')).toBeTruthy();
+    await scrollToEnd();
+    await settle();
+    expect(sent.some((s) => s.includes('page=2'))).toBe(false);
   });
 
   it('reaching the end again after page 2 failed does not ask again by itself', async () => {

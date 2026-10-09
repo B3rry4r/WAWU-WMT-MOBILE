@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,6 +33,8 @@ export const directoryMetrics = {
   bodyTop: space.sm,
   partGap: 14,
   bottom: 40,
+  /** `body` default bottom padding in design/_gen/kit.js; P4 centres its block in what is left above it. */
+  emptyBottom: 120,
   rowPadV: 14,
   avatar: 56,
   between: 13,
@@ -99,9 +101,16 @@ export function DirectoryScreen({ initial, onBack, onOpen, onOfferServices, onCh
     }
   }, [refetchFields, refetch]);
 
+  // Set the moment page 2 is asked for and cleared when it settles: `isFetchingNextPage` is state and lags the ask
+  // by a render, so a second end-reached in the same tick would otherwise ask again.
+  const asking = useRef(false);
   const onEndReached = useCallback(() => {
-    if (rows.length > 0 && hasNextPage && !isFetchingNextPage && !isFetchNextPageError) void fetchNextPage();
-  }, [rows.length, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
+    if (asking.current || !hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
+    asking.current = true;
+    void fetchNextPage().finally(() => {
+      asking.current = false;
+    });
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
 
   const failure = fields.error ?? directory.error;
   // A refresh that failed while rows from before are on screen: the rows stay, a line says so.
@@ -175,7 +184,7 @@ export function DirectoryScreen({ initial, onBack, onOpen, onOfferServices, onCh
         onEndReachedThreshold={0.5}
         refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
         style={styles.list}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + directoryMetrics.bottom }, centred && styles.centred]}
+        contentContainerStyle={[styles.content, { paddingBottom: empty ? directoryMetrics.emptyBottom : insets.bottom + directoryMetrics.bottom }, centred && styles.centred]}
       />
     </View>
   );
