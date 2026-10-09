@@ -99,7 +99,7 @@ const noEvents: Answer = {
 
 /** Every destination Explore can open, each a spy; a test names the ones it taps. */
 function entries(over: Partial<ExploreScreenProps> = {}): ExploreScreenProps {
-  return { onOpenCategory: jest.fn(), onOpenEvent: jest.fn(), onSeeAllEvents: jest.fn(), onListServices: jest.fn(), ...over };
+  return { onOpenCategory: jest.fn(), onOpenEvent: jest.fn(), onSeeAllEvents: jest.fn(), onFindProfessional: jest.fn(), onListServices: jest.fn(), ...over };
 }
 
 function wrap(children: ReactNode) {
@@ -230,7 +230,6 @@ describe('X1 · Explore', () => {
       'explore-bell', // M31, ME-14
       'explore-featured-see-all', // X4, EXPLORE-02
       'explore-featured-c1', // M5, ME-02
-      'explore-door-find-professional', // P1, PROS-01
       'explore-door-find-school', // SC1, SCHOOLS-03
       'explore-create', // M19, ME-04
     ];

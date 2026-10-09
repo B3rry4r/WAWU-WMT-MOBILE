@@ -61,7 +61,7 @@ export type ExploreScreenProps = {
   /** Upcoming events' See all (E1, EVENTS-01). */
   onSeeAllEvents: () => void;
   /** The "Find a professional" door (PROS-01): the directory, P1. */
-  onFindProfessional?: () => void;
+  onFindProfessional: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
 };
@@ -126,7 +126,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
 
   // The doors, in X1's order: Find a professional, Find a school, List your services.
   const doors: Door[] = [
-    { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional ?? unbuilt('PROS-01') },
+    { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional },
     { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: unbuilt('SCHOOLS-03') },
     { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
   ];
