@@ -7,7 +7,7 @@ order: 238
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: done
 depends_on: [COMPLETE-01]
 decisions: [R-46, R-27, R-29]
 passes: [V1, V5, V6, V9]
@@ -347,6 +347,10 @@ Fresh Sonnet verifier, 9 Oct 2026, branch `wmt/COMPLETE-02` at 797740d (detached
 - The pull gesture and its spinner (the web has none): the handler was called through the refresh control's `onRefresh` in the browser, and is covered in jest.
 - The longest real Hub or network message: only the stand-in's two and one made-up 140-character message were drawn. Unblocked by the backend's list of error messages for `GET /explore/categories` and `GET /explore/featured-creators`.
 - A banner beside a canvas: X1 draws no error state.
+
+## Lead merge note (9 Oct 2026)
+
+Merged by lead ruling at verifier report e47b90b (round 2). Both verifiers found the screen matching X1, X14 and X15 in every state, and round 1's eight test gaps and four findings are closed. Round 2's verifier left seven new surviving mutants, all test gaps on a product that is right (W1 events forgotten by a refetch, W2 a failing refetch with data held, W4 the retry spinner, W5 the network icon, W6 the Hub unreachable in jest, W16 the alert role, W17 the button variant), and finding 5: Try again shows the X14 loading view for about 3 s instead of keeping the sections (react-query puts a failed query with no data back to pending). These, the 320 px banner layout and the neutral frames' spoken label on a failed read, go to COMPLETE-06's scope. From now on a surviving mutant on styling or an accessibility detail is a note for a follow-up, not a reason to send a task back (docs/roles/VERIFIER.md).
 
 ## Owner sign-off
 
