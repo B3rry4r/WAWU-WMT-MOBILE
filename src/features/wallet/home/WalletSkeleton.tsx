@@ -5,8 +5,9 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { radius, space } from '@/theme';
 
 import { RECENT_ROWS } from '../api/home';
-import { BILL_TILE } from './BillTiles';
+import { BILL_TILE, billTileSize } from './BillTiles';
 import { ACCT } from './BalanceCard';
+import { useRowRoom } from './useRowRoom';
 
 /**
  * design/_gen/wallet.js line 65, W4: the real layout in quiet blocks. The account tabs are a 42 pill; the balance
@@ -19,7 +20,6 @@ const W4 = {
   tabs: 42,
   card: 196,
   action: 54,
-  tile: BILL_TILE.square,
   tileBar: 44,
   tileBarH: 10,
   tileBarRadius: 5,
@@ -34,7 +34,7 @@ const W4 = {
   figure: 64,
   rowsGap: 18,
 } as const;
-const TILES = 5;
+const TILES = BILL_TILE.count;
 
 /** One recent row's stand-in. */
 export function RowSkeleton() {
@@ -65,6 +65,8 @@ export function RowsSkeleton({ testID }: { testID?: string }) {
 
 /** W4: the real layout in quiet blocks. Nothing of the account, not even its number, shows until the balance is in. */
 export function WalletSkeleton() {
+  // The tiles are the size the real ones will be (54 on a 390 screen, less on a narrower phone), so nothing jumps when the wallet loads.
+  const tile = billTileSize(useRowRoom());
   return (
     <LoadingView label="Loading your wallet" testID="wallet-loading">
       <View style={styles.body}>
@@ -78,8 +80,8 @@ export function WalletSkeleton() {
         <View testID="wallet-loading-bills" style={styles.tiles}>
           {Array.from({ length: TILES }, (_, i) => (
             <View key={i} style={styles.tile}>
-              <Skeleton width={W4.tile} height={W4.tile} radius={radius.tile} />
-              <Skeleton width={W4.tileBar} height={W4.tileBarH} radius={W4.tileBarRadius} />
+              <Skeleton width={tile} height={tile} radius={radius.tile} />
+              <Skeleton width={Math.min(W4.tileBar, tile)} height={W4.tileBarH} radius={W4.tileBarRadius} />
             </View>
           ))}
         </View>

@@ -1,7 +1,7 @@
 import { ApiError } from '@/api/errors';
 
 import type { WalletTransaction } from '../api/home';
-import { bankLine, fitFigureSize, fundingLine, homeView, recentRow, rowTime } from '../home/model';
+import { bankLine, fitFigureSize, fundingLine, homeView, recentRow, recentView, rowTime } from '../home/model';
 
 const ACCOUNT = { accountNumber: '8100000417', accountName: 'Ada Eze', bankName: 'Ekiti Trial MFB' };
 const read = <T>(data: T | undefined, error: unknown = null, isPending = data === undefined) => ({ data, error, isPending });
@@ -58,6 +58,32 @@ describe('the Wallet tab picks its state from its reads', () => {
     const offline = new ApiError('network', 0, 'No connection. Check your internet and try again.');
     expect(homeView(read(undefined, offline), read(undefined)).kind).toBe('wallet_error');
     expect(homeView(read({ state: 'open', account: ACCOUNT }), read(undefined, offline)).kind).toBe('balance_error');
+  });
+});
+
+describe('the recent-transactions region picks its state from its read (round 2, defect 2)', () => {
+  const rows = [row()];
+
+  it('is the loading shapes until the read answers, however long that takes, so nothing is drawn as if there were rows', () => {
+    expect(recentView({ rows: undefined, failed: false, pending: true })).toBe('loading');
+    // Not asked yet counts as waiting too: nobody knows there are no rows.
+    expect(recentView({ rows: undefined, failed: false, pending: false })).toBe('loading');
+  });
+
+  it('is W5 when the read answered with nothing, and W1 when it answered with rows', () => {
+    expect(recentView({ rows: [], failed: false, pending: false })).toBe('none');
+    expect(recentView({ rows, failed: false, pending: false })).toBe('some');
+  });
+
+  it('keeps the rows it has while it asks again, even after an earlier failure', () => {
+    expect(recentView({ rows, failed: false, pending: true })).toBe('some');
+    expect(recentView({ rows: [], failed: false, pending: true })).toBe('none');
+    expect(recentView({ rows, failed: true, pending: false })).toBe('some');
+  });
+
+  it('is W1’s layout with the rows’ own message when the read failed, and the shapes again while it is retried', () => {
+    expect(recentView({ rows: undefined, failed: true, pending: false })).toBe('failed');
+    expect(recentView({ rows: undefined, failed: true, pending: true })).toBe('loading');
   });
 });
 

@@ -7,7 +7,7 @@ order: 241
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: [COMPLETE-01]
 decisions: [R-46, R-27, R-29]
 passes: [V1, V5, V6, V9]
@@ -46,6 +46,8 @@ The Wallet tab (W1) leaves out the scan and settings icons, the account tabs, Sw
 - [x] A user can tap every action; built ones open their screen, the rest do nothing, and nothing charges or moves money. No entry on W1, W4, W5 or W6 has a built destination (the eight tasks are all `todo` on main a2f9143), so none is wired to a new screen; the entries that were already live (Copy, the eye, Try again, Open your wallet, Check again) still work and their tests are unchanged. "a user can tap every entry whose screen is not built" (jest, 15 entries and the 3 rows) and the same on the real router (`walletTabFlow.test.tsx`: the path stays `/wallet`) and in a real browser (39 taps, URL unchanged, only reads on the wire).
 - [x] Every element on each artboard is on the built screen (a table in the report: element, built, wired or `unbuilt('<task>')`). The table is in the builder report.
 - [x] `npm run check` exit 0 (numbers in the report).
+- [x] (round 2) Nothing on the Wallet tab runs off the screen at any width from 320 to 430 px, light and dark, on W1, W5 and W6, and the loading shape W4; the margins are equal on both sides; no word is clipped. Measured from the DOM at 320, 340, 360, 375, 390, 412 and 430 (table in the round 2 report); `WalletScreen.test.tsx`: "a narrow phone".
+- [x] (round 2) A new account's first visit never draws the WAWU card row, "Transactions" or "See all" while its transactions read is out: W4's row shapes stand there, then W5 (no rows) or W1 (rows). `WalletScreen.test.tsx`: "the recent rows while their read is out" (a read that answers late).
 
 ## Builder report
 
@@ -171,6 +173,60 @@ Fresh Sonnet verifier, 9 Oct 2026, branch `wmt/COMPLETE-05` at 948c220 (detached
 - V10, a phone check: no device. Unblocked by a built Android or iOS development build on a phone (defect 1 is the reason to try a 360 dp one).
 - The wired half (tap and land on the destination): none of the eight destination screens exists. Unblocked when WALLET-20, WALLET-06, WALLET-21, WALLET-02, WALLET-05, BILLS-01, WALLET-22 and WALLET-04 reach `review`.
 - The builder's own 18 mutants and its stand-in pictures were not re-run; I made and ran mine.
+
+## Builder report, round 2
+
+Fresh Sonnet builder, 9 Oct 2026, continuing `wmt/COMPLETE-05` from the verifier's report (e463af0), merged with origin/main (conflict only in the generated `docs/PROGRESS.md`, regenerated). Mobile only. Files: `src/features/wallet/home/` (`BillTiles.tsx`, `WalletActions.tsx`, `WalletSkeleton.tsx`, `RecentTransactions.tsx`, `WalletScreen.tsx`, `model.ts`, new `useRowRoom.ts`) and the two wallet test files. No money-path code, no shared component, no package change, no new request (the screen asks the same three reads).
+
+**Defect 1 (narrow phones), fixed.** The bills tiles and the actions size themselves from the row's width (the window less the 20 px gutter on each side, `useRowRoom`), so nothing is a fixed 70 px column any more.
+- Tiles: the kit's `Tile` takes a size (kit.js line 23: the column is the size plus 16, the glyph is the size times 0.42, rounded). 54 is the canvas's size and makes five columns the 350 of a 390 screen; below that the size steps down by the same rule until five columns fit (`billTileSize`): 54 from 390 up (identical to before), 51 at 375, 48 at 360, 44 at 340, 40 at 320. The words stay at 12.5 and fit (the longest, "Airtime", is 43 px in a 56 px column at 320). The loading shapes (W4) use the same size, so nothing jumps when the wallet loads.
+- Actions: the pills grow from their content, so a pill is the same width whatever its side padding while there is room. The side padding therefore drops to a floor of 12 (the canvas's 24 was only ever slack) and absorbs the shortage first; nothing changes at 390 and wider (below). Where the floor is not enough the label steps to the next of the kit's own sizes (kit.js line 15, `Btn`: 16, 14.5, 13.5; the pill's 54 height unchanged): 16 from a 350 px phone up, 14.5 from 335, 13.5 below. **Which rule allows it:** the canvas defines those three label sizes; it forbids wrapping (`white-space: nowrap`), so no word wraps and none is clipped. Swap stays the canvas's 54: with the pills at the floor and the smallest label there are 12 px to spare at 320, so it does not have to shrink. `ACTION_ROOM` holds the two thresholds, from the DOM at the default text size (what each step needs: 295, 279 and 268 px of row with the floor padding, plus about 5 percent for a phone's own text rendering).
+
+Measured from the DOM (Chromium on the web export, stand-in Hub, W1 light; dark and W5 and W6 give the same numbers; `widths-before.txt` and `widths-after.txt`, 56 measurements each, 0 overflow and 0 clipped word after, `FAIL` at 320, 340, 360 on W1, W5, W6 before):
+
+| Width | Before: right margin of the bills (px; negative is off the screen) | Before: Swap's right edge | After: tile column / square / glyph | After: label, side padding of Send | After: left and right margin of bills and of actions | Swap's right edge |
+|---|---|---|---|---|---|---|
+| 320 | -50 (More ends at 370) | 362.8 | 56 / 40 / 17 | 13.5, 16 | 20 and 20 | 300 |
+| 340 | -30 (More ends at 370) | 362.8 | 60 / 44 / 18 | 14.5, 18.1 | 20 and 20 | 320 |
+| 360 | -10 (More ends at 370) | 362.8 | 64 / 48 / 20 | 16, 19.3 | 20 and 20 | 340 |
+| 375 | 5 (More ends at 370) | 362.8 | 67 / 51 / 21 | 16, 23 | 20 and 20 | 355 |
+| 390 | 20 | 370 | 70 / 54 / 23 | 16, 26.8 | 20 and 20 | 370 |
+| 412 | 20 | 392 | 70 / 54 / 23 | 16, 32.3 | 20 and 20 | 392 |
+| 430 | 20 | 410 | 70 / 54 / 23 | 16, 36.8 | 20 and 20 | 410 |
+
+(The glyph column is the kit's rule, checked by a test; the rest is measured.) The first and last tile squares sit 8 px inside their columns on both sides at every width (`sqMargins=8,8`). Around the step edges (every width 300 to 360 sampled, `widths-edges.json`): 320 to 360 clean at every sample; at 300, below the brief's range, a transaction row's subtitle is cut with an ellipsis, which is the row's own rule. **At 390, 412 and 430 the build is the build of round 1:** the verifier's 204 text and skeleton measurements of the canvas comparison (`geom.py`, run again on the new build) are identical to the number (0 differences), and the Send, Add money and Swap boxes and the tile squares are the same pixels as before.
+
+**Defect 2 (the flash for a new account), fixed.** The recent-rows region has four states decided by one pure function (`recentView`): `loading` (the read has not answered), `none` (W5), `some` (W1), `failed` (W1's layout with the rows' own message and Try again, as before). While `loading`, neither the card row nor "Transactions" nor "See all" is drawn: W4's three row shapes stand there, then W5 or W1 once the read settles. A refresh keeps the rows it has and never goes back to the shapes. A failed read keeps the card row (the account may have one; the read did not say it has no rows). Browser check with a stand-in that answers the rows after 3.5 s (new account with an empty answer, and an account with rows), light and dark: `slow.py`, 16 checks; at e463af0 the "during the read" check FAILS in all four runs (card row, Transactions heading and See all drawn), on the fix all 16 pass (`slow-before.txt`).
+
+**Test gaps, closed.** `WalletScreen.test.tsx` 30 to 44 tests, `walletHomeModel.test.ts` +4.
+- Order: the tiles (Airtime, Data, Power, TV, More), the actions (Send, Add money, Swap) and the tabs (Naira, Dollar, Crypto) are asserted in their order on W1, W5 and W6 (and in every state without a balance for the tiles and tabs).
+- Which task each inert entry names: the test mocks `@/lib/unbuilt` with a recorder (same one stable handler per id, which also writes the id down) and presses each entry; the table is scan WALLET-20, settings WALLET-06, Dollar, Crypto and Swap WALLET-21, Send WALLET-02, Add money WALLET-05, the five tiles BILLS-01, the card row WALLET-22, See all and each row WALLET-04, on W1, and the shared ones again on W5, W6 and W4's live bar. A wrong but real id now fails. (Naira, the selected tab, may call WALLET-21 or nothing.)
+- New: narrow width (`billTileSize` at every width 280 to 480: five columns always fit, 54 from 390; `actionSize` at both thresholds; renders at 320, 360 and 390 that the tile columns are the size the rule gives and the pills keep `flexShrink` and a 54 height, with the kit's label size and one line; the loading shapes at 320), and the slow read (a late answer that does come back: new account, account with rows, a refresh).
+
+**Mutants.** `rig/mutants.py` in the scratch folder, one edit each, the two wallet test files run, original restored from a copy and sha256 compared. The 5 that survived round 1, all killed now: D10 Data before Airtime (8 tests fail), D15 Add money before Send (2), W1 See all names WALLET-12 (1), W2 scan names WALLET-06 (4), W3 Power names BILLS-04 (3). 13 of my own, all killed: N1 tiles back to a fixed 70 column, N2 pills cannot shrink, N3 card row drawn while the rows load, N4 a pending read counts as no rows, N5 labels never step down, N6 tiles grow past 54 on a wide phone, N7 loading tiles stay 54, N8 the room loses one gutter only, N9 a refresh goes back to the shapes, N10 a failed read drops the card row, N11 a heading above the shapes, N12 Dollar before Naira, N13 Swap names WALLET-22. 18 of 18 killed.
+
+**Pictures** (390 px or the stated width, 2x, light and dark, the web export in a private TMPDIR on port 5993, stand-in Hub and WAWU ID on 5994 and 5995, nothing else reachable): folder `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/complete-05r2/`.
+- `pictures/widths-W1-light-before-after.png`, `-dark-`, `widths-W6-*-before-after.png`: 320, 340, 360, before (round 1) beside after, the tiles, the actions and the rows under them.
+- `shots/before/` and `shots/after/`: W1 and W6 at 320, 340, 360, 375, 390, 412, 430, light and dark (`W1-light-320.png` and so on); `shots/after/W4-*` and `W5-*` at 320, 360, 390.
+- `pictures/slow-new-{light,dark}-before-after.png` and `slow-rows-*`: the slow read, left two the round 1 build (during, after), right two the fix; the single pictures are in `shots/slow/`.
+- Numbers: `widths-before.txt`, `widths-before.json`, `widths-after.txt`, `widths-after.json`, `widths-edges.json`, `geom-after.txt`, `slow-before.txt`, `mutants.log`, `check3.log`. Rig: `rig/standin.js` (a copy of the verifier's with one more mode, `tx=slowrows`), `rig/widths.py`, `rig/slow.py`, `rig/more.py`, `rig/mutants.py`.
+
+**Checks.** `npm run check` exit 0 as one command on the final tree (`check3.log`; `check2.log` is the same result before the report text was written): typecheck 0, lint 0 errors (2 warnings, both in `eventsFocus.test.tsx`, as on the verifier's run), 96 suites / 1638 tests (1620 plus 18 new), 10 gates, 404 files scanned, 0 findings, 8 inert-entry warnings (unchanged: one per task, 14 call sites), task check 271 tasks. A first `npm run check` stopped at the typecheck (a test's `children` typing); fixed, the second run exited 0. In a first jest run of the wallet files (under the load of the other suites) the first test of `WalletScreen.test.tsx` timed out at 20 s on a cold start, and it passed alone and in every later run (30 of 30, then 44 of 44, three full runs); `eventsScreens.test.tsx` did not fail. The "not wrapped in act" console warnings vary from run to run across the whole suite (11 to 17 in the verifier's three runs, 13 in mine), one run naming `WalletScreen`; none fails a test. Secret scan of the staged diff: no key-shaped string.
+
+**Decisions (Default (agent), owner may override)**
+- The type steps (16, 14.5, 13.5) and the tile sizes are the kit's own sizes and rules (kit.js lines 15 and 23); no wrapping, no new size, no truncation.
+- Swap keeps the canvas's 54 at every width from 320.
+- The bills and the actions size from the window width (`useWindowDimensions`) and not from a measured layout: it answers on the first paint, so a narrow phone never sees a frame of the wide layout.
+- While the rows load, the region shows W4's three row shapes and nothing else (W4 draws no heading, no See all and no card row).
+- A failed rows read keeps W1's layout with the card row; only a read that answers with no rows removes it (W5).
+- The new tests mock `@/lib/unbuilt` with a recorder: the gate still checks that each named task exists and is not built; the test now says it is the right one.
+
+**NOT RUN**
+- The system's larger-text setting (font scale above 1): the row sizes are measured at the default text size, so a phone with a large text setting may still ellipsize a pill label or a tile word at the narrowest widths. Unblocked by a phone or an emulator set to a large font size and `widths.py`'s check of clipped words (or a font-scale rule added to `actionSize`).
+- A phone check (V10): no device touched. Unblocked by a built Android or iOS development build on a 360 dp phone.
+- V9, the real Hub: the pictures used a stand-in. Unblocked by a local backend worktree with a seeded wallet and the mock WAWU ID on :4001.
+- The wired half (tap and land on the destination): still none of the eight destination screens exists (all `todo`); the gate fails the build the day one is built.
+- Not touched (outside this round's files): `docs/designer/BRIEF.md` line 87 (the stale "Dollar tab hidden at launch" sentence, verifier finding 4) and the capability checks of WALLET-02, WALLET-04, WALLET-05, WALLET-06 and BILLS-01.
 
 ## Owner sign-off
 

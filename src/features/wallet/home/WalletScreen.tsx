@@ -16,7 +16,7 @@ import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../a
 import { AccountTabs } from './AccountTabs';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { BillTiles } from './BillTiles';
-import { homeView, stateWords, type HomeView } from './model';
+import { homeView, recentView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
 import { WalletActions } from './WalletActions';
 import { WalletBar } from './WalletBar';
@@ -132,8 +132,10 @@ type BodyProps = {
 };
 
 function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRetryBalance, recent }: BodyProps) {
-  // W5 draws no card row: an account that has no transactions yet has no card either, and the empty card stands where the row would.
-  const newAccount = recent.rows?.length === 0;
+  // The card row waits for rows known to be there: W5 draws none (an account with no transactions has no card, and the
+  // empty card stands where the row would), and while the read is out W4's shapes stand there, so a new account never
+  // sees the row appear and vanish (round 2, defect 2).
+  const rows = recentView({ rows: recent.rows, pending: recent.pending, failed: recent.failed });
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton />;
@@ -206,7 +208,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
           />
           <WalletActions />
           <BillTiles />
-          {newAccount ? null : <WalletCardRow />}
+          {rows === 'none' || rows === 'loading' ? null : <WalletCardRow />}
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );

@@ -13,7 +13,7 @@ import { unbuilt } from '@/lib/unbuilt';
 import { space } from '@/theme';
 
 import type { WalletTransaction } from '../api/home';
-import { fundingLine, recentRow } from './model';
+import { fundingLine, recentRow, recentView } from './model';
 import { RowsSkeleton } from './WalletSkeleton';
 
 /**
@@ -33,12 +33,15 @@ export type RecentTransactionsProps = {
 };
 
 /**
- * W1's recent transactions and W5's "No transactions yet". See all (W26, the history) and a row (W27, its
- * detail) are WALLET-04's: both are drawn and do nothing until that task wires them (R-46). W5 draws the
- * empty card alone, with no heading and no See all.
+ * W1's recent transactions, W4's row shapes while the read is out, and W5's "No transactions yet". See all (W26,
+ * the history) and a row (W27, its detail) are WALLET-04's: both are drawn and do nothing until that task wires
+ * them (R-46). W4 and W5 draw no heading and no See all: the shapes, or the empty card, alone.
  */
 export function RecentTransactions({ rows, pending, failed, onRetry, accountNumber, now }: RecentTransactionsProps) {
-  if (rows && rows.length === 0) {
+  const view = recentView({ rows, pending, failed });
+  // Until the read answers nobody knows whether there are rows: W4's shapes, not a heading and a See all over nothing.
+  if (view === 'loading') return <RowsSkeleton testID="wallet-transactions-loading" />;
+  if (view === 'none') {
     return (
       <Card testID="wallet-no-transactions" style={styles.empty}>
         <View style={styles.emptyRow}>
@@ -85,15 +88,13 @@ export function RecentTransactions({ rows, pending, failed, onRetry, accountNumb
             />
           );
         })
-      ) : failed && !pending ? (
+      ) : (
         <View style={styles.failed} testID="wallet-transactions-error">
           <Text variant="secondary" tone="textSecondary" accessibilityRole="alert">
             Couldn’t load your transactions.
           </Text>
           <Button label="Try again" icon="RotateCw" variant="secondary" size="sm" onPress={onRetry} testID="wallet-transactions-retry" />
         </View>
-      ) : (
-        <RowsSkeleton testID="wallet-transactions-loading" />
       )}
     </View>
   );
