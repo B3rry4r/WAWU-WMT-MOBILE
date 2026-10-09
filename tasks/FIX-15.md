@@ -3,7 +3,7 @@ id: FIX-15
 title: A refused upload does not count against storage quota
 owner: YOU
 area: FIX
-order: 254
+order: 270
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

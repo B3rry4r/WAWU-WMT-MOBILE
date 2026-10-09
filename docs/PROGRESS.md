@@ -3,27 +3,28 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 97 of 227.**
+**Launch tasks done: 110 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 109 | 0 | 20 | 20 |
-| building | 1 | 0 | 0 | 0 |
+| todo | 110 | 0 | 20 | 20 |
+| building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 1 |
-| review | 1 | 0 | 0 | 0 |
-| done | 58 | 27 | 11 | 5 |
+| review | 6 | 0 | 0 | 0 |
+| done | 71 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
+- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Being verified
 
 - [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review (Developer 3)
-
-## Being built (or fixing verifier findings)
-
-- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 
 ## Done
 
@@ -113,6 +114,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
+- [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
@@ -123,7 +125,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
+- [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
+- [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
+- [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
+- [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
+- [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
+- [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
+- [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
+- [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -131,27 +145,27 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
 - **Developer:** nothing unblocked
-- **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
+- **Developer 3:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [PROS-01](../tasks/PROS-01.md) Find a professional, [EVENTS-09](../tasks/EVENTS-09.md) At the door: scan, let in, already used, not valid
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
 - 8 Oct 2026 · EVENTS-04 · Built (verifying): the host wizard E13 to E16 with the tick gate E21 and Sent back E22, Host your event on E1, and the backend (`GET /events/options` serves the ticket rules and field limits, `event/banner` upload folder). Backend PR and mobile PR depend on mobile #14 and backend #78.
-- 8 Oct 2026 · FIX-18 to FIX-21 · Lead filed the verifiers' findings outside their tasks: three small 500s (wallet history paging, a repeated export token, a gone socket in the trust-proxy check), control characters in school names, webhook deliveries kept forever, and the money-route checks missing class-level guards and the isolation level. FIX-16 also covers the web's apply form for a taken-down field. CHECK-2, CHECK-3 and later move down by 4.
-- 8 Oct 2026 · NUV-07 · NUV-07 merged (backend PR #87, 8d7a054): fees and limits as settings, nothing moves before they are set.
-- 8 Oct 2026 · Lead takes over SCHOOLS-04, LEGAL-03, EVENTS-01, EVENTS-03 and PROS-03 from Developer 3 (no push since about 02:00 UTC; owner: carry on with delaying developers' tasks).
-- 8 Oct 2026 · FIX-06 · FIX-06 merged (backend PR #86, ea79fca): an admin's takedown of a professional listing holds.
-- 8 Oct 2026 · NUV-07 · Verified (status review): no defect open. Under fintava the quote is byte-identical to main over 5,880 inputs (my own golden) and on the built server with a real wawu-id sign-in; under nuvion (a local trial with NUV-01) every quote is `503 fees_not_set` with no provider call until all three fees are set, then quotes the settings; limits hold for 2 and 10 movements at once; 26 of 26 own mutants killed. Merge actions: SHARED-CHANGES NUV-07 #2 (MoneyModule imports MoneyLimitsModule) and G-411 (only below HTTP 500); the coverage spec misses class-level guards.
-- 8 Oct 2026 · NUV-07 · Built (verifying): Nuvion's fees and WAWU's limits are settings with no figure in code (`NUVION_FEE_*`, `WAWU_LIMIT_*`); under nuvion every quote and money-moving route answers `503 fees_not_set` until the fees are set, and a movement over a set limit, or refused by Nuvion's own limit, answers `403 limit_reached` naming it; Fintava's quotes byte-identical to main.
-- 8 Oct 2026 · PLAN-PAY · Payment plan filed (`docs/PAYMENTS-PLAN.md`): 25 tasks before CHECK-3, the Nuvion adapter NUV-01 to NUV-10, tiers, points and referral TIER-01 to TIER-05, POINTS-01 to POINTS-04 and REF-01, and the website's payments WEBPAY-01 to WEBPAY-05 (R-44); NUV-01, NUV-07, TIER-01 and POINTS-01 can start now; only the (key) checks and NUV-10 wait for Nuvion; CHECK-2 moved after them and depends on NUV-10 instead of OPS-10; four owner questions, each with a default.
-- 8 Oct 2026 · R-44 · Owner: payments on the web are the same as the app; payment work is the priority; the money freeze is lifted for all payment work.
-- 8 Oct 2026 · FIX-06 · Verified round 2 (status review, no open defect): D1 closed, round 1's approve race 0 of 80 and reject race 0 of 20 on built Hubs with the real wawu-id; the admin read 35 of 35 (roles, every state, no protected answer widened); 162-step sweep identical to main except the new state's 5, decided and unknown approve and reject byte-identical; capability 42 of 42; every race 0 (main 34 of 60); protected 253/253; full suite 182 of 184 in its own namespace, the two misses passing alone on the host; backfill keeps main-made rows byte-equal; 19 of 19 mutants killed. The elevate outside the lock now leaves a raised tier on a lost approve, where main silently undid the rejection.
-- 8 Oct 2026 · FIX-06 · Builder round 2 (status verifying): D1 fixed, approve and reject decide under the listing's row lock on the application as it is now (a decided one answers main's exact 409), an approve never lists over a standing takedown and a takedown survives a rejection and a fresh application; new `GET /admin/professionals/:id/visibility` for the dashboard; G-331 names the app's current 409 sentence. 20 of 20 mutants killed; protected 253/253; full suite in its own namespace 181 of 183 suites (hub-rate-limits and one money-recipient test, both pass on the host).
-- 8 Oct 2026 · FIX-06 · Lead rulings after the verifier: D1 (approve and reject lock and re-check pending; an approval never lists over a takedown), an admin visibility read as a new route, G-331 names the app's wrong sentence; dashboard and web follow in FIX-16.
-- 8 Oct 2026 · FIX-06 · Verified (status building, D1): the takedown holds against the owner's Show over real HTTP (42 of 42 checks; Show and unlist raced 60 rounds, 0 shown while down, main 37 of 60), every protected professionals answer identical to main in a 126-step sweep except the new state's 5, protected 253/253, full suite 180 of 181 in its own namespace plus hub-rate-limits 22/22 on the host, migration and backfill hold, 15 of 15 own mutants killed. D1 (low): two approves, or an approve and a reject, that read the application before an unlist can still list it over a standing takedown (7 of 80 rounds over plain HTTP).
-- 8 Oct 2026 · FIX-06 · Built (status verifying): an admin's unlist now holds. New `ProfessionalTakedown` side table (migration `20261015100000`, no backfill rows: nothing ever recorded a professional unlist, so existing hidden rows stay the person's own Hide); the person's Show on a taken-down listing answers 409 `listing_taken_down`, a Hide is kept; new admin `relist` puts back the owner's choice; new `GET /professionals/applications/mine/visibility` for P8 (G-331, PROS-03). Unlist answer unchanged; protected 253/253, lock unchanged; gates as main; 12 of 12 mutants killed; full suite NOT RUN (namespace runner refused here).
-- 8 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
+- 8 Oct 2026 · EVENTS-03 · Verified (round 4, live against the branch Hub and mock WAWU ID): a failed refetch keeps the list and the ticket with its QR and Try again, first-load failure shows the error screen (D1); rows 72 pitch 84, card 397, nav title equal to the canvas in both themes (D2); "NOV 05" badge (D3); FilterChips 1 px is the shared component's; main merge conflicts in EVENTS-01 Explore files, left to EVENTS-01; status review.
+- 8 Oct 2026 · EVENTS-03 · Fix round 1 built: a failed refetch keeps the shown tickets and QR with an inline retry (D1), borders inside so rows are 72, pitch 84, card 397 and the nav title sits right (D2), EVENTS-01's two-digit badge merged in (D3); back to verifying.
+- 8 Oct 2026 · EVENTS-03 · Verified (round 3, independent decoders read the drawn QR for 344 texts and all 8 masks; live door check-in accepted the decoded code; new routes and 244 protected routes hold): three defects, a failed refetch drops the shown data, row and card 2 px tall, badge day not two digits; status building.
+- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier round 5, status review (backend `e87626e`, mobile `58de4a5`): D4 closed (mobile contract byte-equal to the backend branch's, three schools paths and six schemas in the contract and types, `SOURCE_COMMIT` right, `sync_contract.py` no diff); F1 spec passes and kills M4 and the reversed tie; no production change since round 3 but main's; tsc 0, 150 of 150 specs, protected 253/253, gates equal to main's 16 fails, contract additive, mobile `npm run check` exit 0; no defect open.
+- 8 Oct 2026 · SCHOOLS-04 · Builder round 5, status verifying: D4 fixed, the mobile contract and types are copied again from backend branch `e87626e` (main `9d90d57` merged there, contract regenerates with no diff, schools specs 36 of 36) with `sync_contract.py`; `cmp` identical, the three schools paths and six `PublicSchool*` schemas back in `schema.generated.ts`.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent round 2 (lead), back to building (backend `5a602f9`, then `3971fea` and `7291658`; mobile `4a28ede`, then `7972878`): D2 closed over real HTTP (17 worst-case names through the admin route walked past at limits 1 to 3, longest cursor 1498; 360 units and 1498 characters confirmed exact against validator 13.15.35 over 15.4 million strings and the real DTOs), D3 closed, D1 holds on an ICU database (hide, ties, rename, insert, `q` plus `category`), forged cursors reveal nothing and never 500, `/search` protected tabs byte-identical to main, 45 of 45 mutants killed, protected 253/253 three times, full suite green after environment reruns; round 4's F1 spec holds (M4 now killed); one new defect D4: round 4's mobile merge replaced the task's contract and types with backend main's (the three schools paths are gone from the app's contract).
+- 8 Oct 2026 · SCHOOLS-04 · Builder round 4, status verifying: F1 fixed with a new paging spec (ids against name order, ties scrambled, walks at ten limits); the extra id-only branch (M4) and the reversed id comparison both fail it; no production code changed.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier round 3, status building: live keyset walks (85 schools, 40 hide and show trials), cursor tampering, D2 and D3, 1,500 odd inputs, gates, protected suite twice, contract and mobile check all pass; one open finding F1, a spec gap (paging spec ids rise with names, so a mutant with an extra id-only branch survives).
+- 8 Oct 2026 · SCHOOLS-04 · Builder round 3, status verifying (backend `5a602f9`, holds main `8d7a054`): D2 fixed, the cursor's bounds come from the admin's name rule (360 UTF-16 units, 1498 characters, worst cases a flag plus selector and a control character plus selector), walked past through the admin route; D3 fixed, intakes by date then id on both pages; `matchedCourses` in creation order; FIX-07's one search-text rule kept and this branch's copy removed; new spec (10 tests) and 20 of 20 mutants killed.
+- 8 Oct 2026 · SCHOOLS-04 · Lead note: FIX-07 is on backend main; when merging it, keep its one search-text helper and remove this branch's copy in `searchTab`.
+- 8 Oct 2026 · SCHOOLS-04 · Lead rulings after the independent verifier: D2 (cursor bounds derived from the admin name rule, with a worst-case spec through the admin route), D3 (id tiebreak on the school page's intakes), specs for the six surviving mutants, an explicit matchedCourses order; SCHOOLS-05 gets a note to drop ids it already holds when appending a page.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent (lead), back to building (backend `807a6b8`, mobile `a944179`): D1 closed over real HTTP on an ICU en-US database (hiding the cursor school skips nothing, 53 of 53 once at 9 limits, ties, `q` plus `category`), the 7 old mutants now killed, own 18 of 25 killed, forged cursors reveal nothing and never 500, fields public only, `/search` protected tabs byte-identical to main, protected 253/253, full suite green after the two environment reruns; two defects open: D2 a long emoji name the admin accepts gives a cursor the list then refuses (400), D3 the school page's next intake has no id tiebreak; enrol route NOT RUN (SCHOOLS-07 todo).
+- 8 Oct 2026 · SCHOOLS-04 · Builder round 2, status verifying: D1 fixed by keyset paging on (name, id) with an opaque, strictly checked cursor; new paging spec (10 tests) kills the 7 surviving mutants and 2 more; live walks with hide and show mid-walk see every row once; 967 odd inputs incl. cursor tampering, zero 500; protected 253/253.

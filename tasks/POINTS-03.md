@@ -38,6 +38,14 @@ confirm (PT3; brief: "Without confirm, do nothing").
 - Caps from config: daily points per person, characters per job and minutes per job; over a cap the answer is `points_cap_reached` naming the cap and when it resets.
 - Not in scope: the AI tools themselves (ElevenLabs, the Voice Intro), which tasks cut from the PT and VF boards build on this service. They open from the Create button, never a tab (R-38).
 
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **A sweep for stale AI holds:** release `ai_job` holds still `held` after the job's maximum run time (a config value), by `holdId`. A late commit and the sweep cannot both win: the second is refused (`points_hold_settled`). Add an index on `PointHold (state, createdAt)`; POINTS-01 only has `(wawuUserId, createdAt)`.
+- **A fresh hold reference for each attempt:** `hold` with a reference already used returns that hold in its current state, released included, so a retry after a failed job needs a new reference.
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
+
 ## Capability checks
 
 - [ ] A person sees VoiceOver's cost for 2 minutes (from config) before running; a hold takes it, a failed job releases all of it, a finished job keeps it.

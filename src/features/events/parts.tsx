@@ -25,9 +25,9 @@ export const badgeMetrics = {
 } as const;
 
 /** The month and day an event starts, in the event's own zone (Lagos by default). */
-export function DateBadge({ startsAt, zone, scale = 1 }: { startsAt: string; zone?: { timezone?: string | null }; scale?: number }) {
+export function DateBadge({ startsAt, zone, scale = 1 }: { startsAt: string; zone: { timezone?: string | null } | null; scale?: number }) {
   const { colors } = useWawu();
-  const { month, day } = badgeOf(startsAt, zone);
+  const { month, day } = badgeOf(startsAt, zone ?? undefined);
   return (
     <View
       accessible
@@ -198,7 +198,9 @@ export const heroMetrics = {
   name: 20,
   line: 12.5,
   lineOpacity: 0.8,
-  stack: 4,
+  /** The canvas gaps: `margin-top:4px` on the name, `margin-top:3px` on the place line. */
+  nameGap: 4,
+  lineGap: 3,
 } as const;
 
 /** The featured event: the picture under a dark fade, its date, FEATURED, name, place and "from" price. */
@@ -228,7 +230,7 @@ export function FeaturedCard({ event, fromNaira, onOpen }: { event: EventView; f
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.heroBadge}>
-        <DateBadge startsAt={event.startsAt} />
+        <DateBadge startsAt={event.startsAt} zone={event} />
       </View>
       <View style={styles.heroWords}>
         <Text
@@ -237,6 +239,7 @@ export function FeaturedCard({ event, fromNaira, onOpen }: { event: EventView; f
             font(700),
             {
               fontSize: heroMetrics.kicker,
+              lineHeight: canvasNormalLineHeight(heroMetrics.kicker),
               letterSpacing: heroMetrics.kickerTracking * heroMetrics.kicker,
               color: darkColors.accentFg,
             },
@@ -291,8 +294,7 @@ const styles = StyleSheet.create({
     left: heroMetrics.wordsInset,
     right: heroMetrics.wordsInset,
     bottom: heroMetrics.wordsBottom,
-    gap: heroMetrics.stack,
   },
-  heroName: { fontSize: heroMetrics.name },
-  heroLine: { fontSize: heroMetrics.line, opacity: heroMetrics.lineOpacity },
+  heroName: { marginTop: heroMetrics.nameGap, fontSize: heroMetrics.name, lineHeight: canvasNormalLineHeight(heroMetrics.name) },
+  heroLine: { marginTop: heroMetrics.lineGap, fontSize: heroMetrics.line, lineHeight: canvasNormalLineHeight(heroMetrics.line), opacity: heroMetrics.lineOpacity },
 });

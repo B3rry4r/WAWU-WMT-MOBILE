@@ -70,10 +70,10 @@ export function watOf(iso: string, zone?: Zoned): Wat {
   };
 }
 
-/** The date badge's two lines: "OCT" over "12". */
+/** The date badge's two lines: "OCT" over "12", the day always two digits as the canvas draws it ("OCT 09"). */
 export function badgeOf(iso: string, zone?: Zoned): { month: string; day: string } {
   const w = watOf(iso, zone);
-  return { month: w.month.toUpperCase(), day: String(w.day) };
+  return { month: w.month.toUpperCase(), day: String(w.day).padStart(2, '0') };
 }
 
 /**
@@ -95,6 +95,13 @@ export function whenLine(iso: string, zone?: Zoned, now: number = Date.now()): s
 export function shortDate(iso: string, zone?: Zoned): string {
   const w = watOf(iso, zone);
   return `${w.day} ${w.month}`;
+}
+
+/** "16 Mar", or "16 Mar 2027" when the event is not in the current year (Explore's hero line and cards, as E1 and E2 do). */
+export function dateLine(iso: string, zone?: Zoned, now: number = Date.now()): string {
+  const w = watOf(iso, zone);
+  const thisYear = watOf(new Date(now).toISOString(), zone).year;
+  return `${w.day} ${w.month}${w.year === thisYear ? '' : ` ${w.year}`}`;
 }
 
 /** Naira from the API as kobo for `Money`: the Hub sends whole naira, the app draws kobo. */
@@ -144,16 +151,21 @@ export type TierStatus = {
   line: string;
 };
 
-export function tierStatus(tier: TicketType, event: Pick<EventView, 'startsAt'>, now: number): TierStatus {
+/** The tier's "Ended" and "Opens" dates are read in the event's own zone, as every other date on E2 is. */
+export function tierStatus(
+  tier: TicketType,
+  event: Pick<EventView, 'startsAt'> & Zoned,
+  now: number,
+): TierStatus {
   const closesAt = tier.salesEndAt ?? event.startsAt;
   const ended = now >= new Date(closesAt).getTime();
   const notYet = tier.salesStartAt !== null && now < new Date(tier.salesStartAt).getTime();
   const soldOut = tier.soldOut || tier.remaining <= 0;
   const open = !ended && !notYet && !soldOut;
   const line = ended
-    ? `Ended ${shortDate(closesAt)}`
+    ? `Ended ${shortDate(closesAt, event)}`
     : notYet && tier.salesStartAt
-      ? `Opens ${shortDate(tier.salesStartAt)}`
+      ? `Opens ${shortDate(tier.salesStartAt, event)}`
       : soldOut
         ? ''
         : `${tier.remaining} left`;

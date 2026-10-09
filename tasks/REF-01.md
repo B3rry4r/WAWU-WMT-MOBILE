@@ -36,6 +36,12 @@ tier and is verified, after the hold days, with the levels and milestones from c
 - On the invited person's first paid tier (TIER-03 success; paying needs an open wallet, so they are verified): a pending reward of the config base points for that tier times the referrer's level multiplier, available after the hold days, cancelled if the purchase is refunded inside the hold. Only a referrer with an active tier earns. Milestones from config granted once each. Grants go through POINTS-01 (source `referral`, idempotent on the referral).
 - `GET /me/referrals`: link, code, brought, verified, points earned, pending, level, multiplier, next milestone.
 
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
+
 ## Capability checks
 
 - [ ] A new person who claims a code and buys a tier makes a pending reward that becomes points after the hold days, once.

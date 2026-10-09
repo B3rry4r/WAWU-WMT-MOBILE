@@ -34,6 +34,10 @@ Dashboard screens over SCHOOLS-02's endpoints.
 
 - [ ] An admin can add a school with a course and an intake from the dashboard, and the public schools route returns it (SCHOOLS-04).
 
+## Lead note (8 Oct 2026): paging from SCHOOLS-04
+
+`GET /schools` pages by keyset on (name, id). A school renamed between two page reads can come back on a later page, so when the list appends a page it drops any school id it already holds. Add a test for it.
+
 ## Builder report
 
 _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
