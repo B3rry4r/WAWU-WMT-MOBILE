@@ -21,6 +21,9 @@ export function readFailure(error: unknown): string {
   return isApiError(error) && (error.kind === 'network' || error.status === 200) ? error.message : 'Something went wrong. Try again.';
 }
 
+/** The app's own sentence when the photo library failed, or the chosen photo could not be read (lead ruling after the verifier, D1). */
+export const PICK_FAILED = "We couldn't open that photo. Try another one.";
+
 /** A picture that did not go up: no connection, or the storage refused it; whatever else the Hub says, the same plain sentence. */
 export function uploadFailure(error: unknown): string {
   return isApiError(error) && (error.kind === 'network' || error.code === UPLOAD_FAILED) ? error.message : 'Your picture did not upload. Try again.';

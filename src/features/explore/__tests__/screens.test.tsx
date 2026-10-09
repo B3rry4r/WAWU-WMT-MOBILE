@@ -386,3 +386,200 @@ describe('X2, X3, X13 · Categories', () => {
     expect(await rtl.screen.findByText('@tunde')).toBeTruthy();
   });
 });
+
+describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
+  const featured = 'GET /explore/featured-creators?limit=10';
+  const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+  const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
+  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
+    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
+    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
+    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
+    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
+    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
+    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
+  });
+  const pageOf = (items: unknown[]): Answer => ({
+    status: 200,
+    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
+  });
+  // 14 Oct 23:00 UTC is still 14 Oct in New York (15 Oct in Lagos).
+  const summit = ev('ev-1', 'Creators Summit', { featured: true });
+  const nyc = ev('ev-2', 'New York Night', { timezone: 'America/New_York', startsAt: '2026-10-14T23:00:00.000Z', venueName: null, location: 'New York' });
+
+  it('a user sees the featured event and Upcoming events, and opens E2 from either and E1 from See all', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [pageOf([summit])];
+    answers[upcoming] = [pageOf([summit, nyc])];
+    const onOpenEvent = jest.fn();
+    const onSeeAllEvents = jest.fn();
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={onOpenEvent} onSeeAllEvents={onSeeAllEvents} />));
+    expect(await rtl.screen.findByText('FEATURED EVENT')).toBeTruthy();
+    expect(rtl.screen.getByText('2 Nov · Eko Convention Centre')).toBeTruthy();
+    expect(await rtl.screen.findByText('Upcoming events')).toBeTruthy();
+    // The card's badge is read in the event's own zone, the day in two digits.
+    expect(rtl.screen.getByLabelText('OCT 14')).toBeTruthy();
+    expect(rtl.screen.getByLabelText('NOV 02')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event'));
+    expect(onOpenEvent).toHaveBeenLastCalledWith('ev-1');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-event-ev-2'));
+    expect(onOpenEvent).toHaveBeenLastCalledWith('ev-2');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-events-see-all'));
+    expect(onSeeAllEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it('a user still sees the tiles and creators when the events cannot be read, without any event entry', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [refused(500, 'Down')];
+    answers[upcoming] = [refused(500, 'Down')];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} />));
+    expect(await rtl.screen.findByText('Featured creators')).toBeTruthy();
+    await settle();
+    expect(rtl.screen.queryByText('FEATURED EVENT')).toBeNull();
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
+  });
+
+  it('a user sees the featured event block while Explore loads (X14)', async () => {
+    answers[featured] = ['hold'];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} />));
+    const loading = await rtl.screen.findByTestId('explore-loading');
+    expect(JSON.stringify(loading)).toMatch(/"height":196/);
+  });
+});
+
+describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01 round 7, D12, D13, D14, T4)', () => {
+  const featured = 'GET /explore/featured-creators?limit=10';
+  const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+  const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
+  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
+    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
+    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
+    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
+    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
+    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
+    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
+  });
+  const pageOf = (items: unknown[]): Answer => ({
+    status: 200,
+    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
+  });
+  const screen = () => <ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} />;
+
+  it('keeps X14, hero block included, while the events read is held, then draws the tiles once', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = ['hold'];
+    answers[upcoming] = ['hold'];
+    await rtl.render(wrap(screen()));
+    await settle();
+    expect(rtl.screen.getByTestId('explore-loading')).toBeTruthy();
+    expect(JSON.stringify(rtl.screen.getByTestId('explore-loading'))).toMatch(/"height":196/);
+    expect(rtl.screen.queryByTestId('explore-tiles')).toBeNull();
+    // The reads answer: the tiles appear once, with the hero above them already in place.
+    await rtl.act(async () => {
+      queryClient.setQueryData(['events', 'featured', { view: 'upcoming', kind: null, category: null }], ev('ev-1', 'Creators Summit'));
+      queryClient.setQueryData(['events', 'explore-rail'], { events: [ev('ev-1', 'Creators Summit')], nextPage: null, total: 1 });
+    });
+    expect(await rtl.screen.findByTestId('explore-tiles')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-loading')).toBeNull();
+    expect(rtl.screen.getByText('FEATURED EVENT')).toBeTruthy();
+  });
+
+  it('draws Explore without event entries once a failed events read has settled, asking each only once', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [refused(500, 'Down')];
+    answers[upcoming] = [refused(500, 'Down')];
+    await rtl.render(wrap(screen()));
+    expect(await rtl.screen.findByText('Featured creators')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
+    expect(rtl.screen.queryByText('FEATURED EVENT')).toBeNull();
+    expect(sent.filter((s) => s.startsWith('GET /events?'))).toHaveLength(2);
+  });
+
+  it('reads the hero’s day in the event’s own zone, and the featured event need not be the first on the rail', async () => {
+    const summit = ev('ev-1', 'Creators Summit');
+    const nyc = ev('ev-2', 'New York Night', { featured: true, timezone: 'America/New_York', startsAt: '2026-10-14T23:00:00.000Z', venueName: null, location: 'New York' });
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [pageOf([nyc])];
+    answers[upcoming] = [pageOf([summit, nyc])];
+    const onOpenEvent = jest.fn();
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={onOpenEvent} onSeeAllEvents={jest.fn()} />));
+    expect(await rtl.screen.findByText('14 Oct · New York')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event'));
+    expect(onOpenEvent).toHaveBeenLastCalledWith('ev-2');
+  });
+
+  it('shows the year on the hero line and the card’s spoken label for an event not in the current year (D14)', async () => {
+    const far = ev('ev-3', 'Far Fair', { featured: true, startsAt: '2031-03-16T09:00:00.000Z' });
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = [pageOf([far])];
+    answers[upcoming] = [pageOf([far])];
+    await rtl.render(wrap(screen()));
+    expect(await rtl.screen.findByText('16 Mar 2031 · Eko Convention Centre')).toBeTruthy();
+    expect(rtl.screen.getByLabelText('Far Fair, 16 Mar 2031, Eko Convention Centre')).toBeTruthy();
+  });
+});
+
+describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
+  const featured = 'GET /explore/featured-creators?limit=10';
+  const app = { id: 'a1', status: 'approved', listed: false, category: 'finance', headline: 'Chartered accountant', submittedAt: '2026-10-01T00:00:00.000Z' };
+  const open = async (opened: jest.Mock) => {
+    const { listServicesTarget } = require('@/features/pro-listing/door') as typeof import('@/features/pro-listing/door');
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onListServices={() => void listServicesTarget(queryClient).then(opened)} />));
+    await rtl.screen.findByText('Featured creators');
+  };
+
+  it('the card has only List your services, after Featured creators, as the canvas words it', async () => {
+    await open(jest.fn());
+    const doors = rtl.screen.getByTestId('explore-doors');
+    expect(rtl.within(doors).getByText('List your services')).toBeTruthy();
+    expect(rtl.within(doors).getByText('Get paid to answer questions')).toBeTruthy();
+    expect(rtl.screen.queryByText('Find a professional')).toBeNull();
+    expect(rtl.screen.queryByText('Find a school')).toBeNull();
+  });
+
+  it('a creator with no application lands on P5, one with any (here a hidden one) on P8, a user on P5', async () => {
+    const opened = jest.fn();
+    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
+    answers['GET /professionals/applications/mine'] = [ok([])];
+    await open(opened);
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services')));
+    await rtl.waitFor(() => expect(opened).toHaveBeenLastCalledWith('/professional-apply'));
+    answers['GET /professionals/applications/mine'] = [ok([app])];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services')));
+    await rtl.waitFor(() => expect(opened).toHaveBeenLastCalledWith('/professional-listings'));
+    queryClient.removeQueries({ queryKey: ['pro-listing'] });
+    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'user' })];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services')));
+    await rtl.waitFor(() => expect(opened).toHaveBeenLastCalledWith('/professional-apply'));
+  });
+
+  it('with the event entries in, the card waits with them under X14, then follows Upcoming events (merge with EVENTS-01, D12)', async () => {
+    const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+    const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
+    const event = { ...{ id: 'ev-1', hostWawuId: 'h', hostVerification: ticks(false, false), name: 'Creators Summit', description: '', hostOrg: 'Hosts' },
+      hostOrgBio: null, format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
+      location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
+      contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
+      featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
+      speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null };
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[featuredEvent] = ['hold'];
+    answers[upcoming] = ['hold'];
+    await rtl.render(
+      wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} onListServices={jest.fn()} />),
+    );
+    await settle();
+    expect(rtl.screen.getByTestId('explore-loading')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-doors')).toBeNull();
+    await rtl.act(async () => {
+      queryClient.setQueryData(['events', 'featured', { view: 'upcoming', kind: null, category: null }], event);
+      queryClient.setQueryData(['events', 'explore-rail'], { events: [event], nextPage: null, total: 1 });
+    });
+    expect(await rtl.screen.findByTestId('explore-doors')).toBeTruthy();
+    // Tree order: Featured creators, then Upcoming events, then the doors card.
+    const order = rtl.screen.getAllByText(/^(Featured creators|Upcoming events|List your services)$/).map((n) => n.props.children);
+    expect(order).toEqual(['Featured creators', 'Upcoming events', 'List your services']);
+  });
+});
