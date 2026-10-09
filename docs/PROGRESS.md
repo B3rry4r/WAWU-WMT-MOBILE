@@ -7,8 +7,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 114 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
+| todo | 113 | 0 | 20 | 21 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 69 | 27 | 11 | 5 |
@@ -19,6 +19,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being built (or fixing verifier findings)
+
+- [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
 
 ## Done
 
@@ -146,6 +150,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · COMPLETE-02 · Verifier, round 2: V1 passed (npm run check exit 0 on 797740d: 97 suites, 1642 tests, 10 gates, 403 files, 0 findings; origin/main fffc816 is already merged); V5 and V6 passed in the web export against a stand-in Hub (the data, empty, nothing-served, buyer and loading pictures are pixel-identical to round 1's; a failed read keeps the bar, hero, tiles, both rails, doors and Create under one banner at 390, 360 and 320 px in both themes; Try again re-reads everything and recovers; a failed refetch keeps held data; Create clears the last row by 15.9 px at the end of the scroll and a buyer keeps 30; Create returns on refocus, pull and Try again); the 8 round 1 test gaps are closed (V3, V16, V23, V24, V31 directly, V6, V12, V29 re-aimed and split, all killed); V9 NOT RUN. Status back to building: of 14 new mutants 6 are killed and 8 survive (a refetch failing with data held, the Hub unreachable, the events re-read on Try again, the banner's icon, spinner, alert role and button variant), all test gaps with the product right; one question for the lead (Try again swaps the screen for X14 while it reads, so the banner's spinner never shows).
+- 9 Oct 2026 · COMPLETE-02 · Builder, round 2: a failed categories or featured-creators read no longer collapses Explore to one message: every section stays drawn (bar, neutral frames, doors, Create) under one compact banner with Try again; Create clears the last row at the end of the scroll (creator padding 90 = 16 + 58 + 16); the account read is retried on refocus, pull and Try again; the stale comment in ExploreEvents.tsx is fixed; 16 tests added so the verifier's 8 surviving mutants are killed (V6, V12, V29 re-aimed, their lines changed) and 17 mutants of my own on the new behaviour are killed; status verifying
+- 9 Oct 2026 · COMPLETE-02 · Verifier: V1 passed (npm run check exit 0 on 5f3e7f9: 97 suites, 1626 tests, 10 gates, 402 files, 0 findings; origin/main a2f9143 is already merged); V5 and V6 passed in the web export against a stand-in Hub (data, only categories served, nothing served, loading, failed reads, buyer and creator: every X1, X14 and X15 element is on screen, 28 taps on the seven inert entries opened nothing and sent nothing, every wired entry landed on its screen, every `unbuilt` id is the task whose artboard it leads to); V9 NOT RUN (no local Hub). Status back to building: 32 own mutants, 24 killed and 8 survive (the doors card dropped on an empty Hub, three neutral frames showing made-up words, Create during X14 and while the account is unknown, the bar after a failed read, pull-to-refresh and the bell), all test gaps with the product right; two questions for the lead (a failed read hides every section; Create covers the last door's chevron at the end of the scroll).
+- 9 Oct 2026 · COMPLETE-02 · Builder: Explore draws the whole of X1 and X14 (R-46): the bar's search pill and bell (with its unread dot from `GET /me/counts`), the hero with its pager dots, the tiles with More always, Featured creators with See all, Upcoming events with See all, the three doors and Create for creator accounts; a section with nothing to show keeps its heading and draws neutral frames; the built entries are wired (tile, event, events See all, List your services), the rest are `unbuilt` (EXPLORE-02 x2, ME-02 x2, ME-14, ME-04, PROS-01, SCHOOLS-03); 15 own mutants, 15 killed; pictures against a stand-in Hub; status verifying
 - 9 Oct 2026 · FIX-27 · Merged (backend #98): the schools list orders the same way on every database; unblocks the production deploy.
 - 9 Oct 2026 · NUV-04 · Merged (backend #96): the Nuvion account number, money in by bank transfer, and the balance from Nuvion, behind WALLET_PROVIDER=nuvion.
 - 9 Oct 2026 · COMPLETE-01 · Merged: unbuilt entries are drawn and inert with unbuilt('<task>'), and the unbuilt_entries gate fails once that task is built.
@@ -157,7 +165,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
 - 8 Oct 2026 · BRAND-01 · Verifier: V1 passed (npm run check exit 0, 95 suites, 1606 tests, gates 0 findings); icon measured by pixels (farthest opaque pixel 87% of the 66 dp safe radius, uncut under circle, squircle and rounded square, calibrated against the owner's own screenshot, artwork identical to the logo pack); splash 128 dp whole inside Android 12's circle; A1 cover has no words, WAWU or dashboard; Menu to Z1 to Settings works signed in, with the Hub failing and while Me loads, the other rows inert; 16 own mutants, 14 killed, 2 survived (test gaps, not product); no open defect, one unclear (icon leans right and down by box); V10 NOT RUN (needs the preview build); status review.
 - 8 Oct 2026 · BRAND-01 · Builder: the launcher icon rebuilt from the logo pack so the whole logo (drip included) sits inside the 66 dp safe circle (44% of the canvas; monochrome and store icon the same way; own notification icon); the splash logo 128 dp inside Android 12's circle; A1 shows the website's creators picture under the shade; M1's Menu button raises the Z1 sheet and its Settings row opens `/settings` (the other rows drawn and inert, R-46); 19 tests, 9 of 9 mutants killed; npm run check passed (95 suites, 1606 tests, gates 0 findings); V10 NOT RUN (needs the preview build); status verifying.
-- 8 Oct 2026 · Lead: R-46 the UI is always complete (owner). Unbuilt entries are drawn and inert with `unbuilt(<task>)`; filed COMPLETE-01 (helper and gate) to COMPLETE-06 (Explore, Home, Me, Wallet, the rest); later tasks moved down six places.
-- 8 Oct 2026 · R-45 · Owner: Nuvion is the wallet provider; Fintava stays only for bills payments, its wallet code kept unused. The website opens wallets first (WEBPAY-01 no longer waits on dollar wallets). BRAND-01 filed: the app icon, the welcome cover and the Settings entry. CHECK-2 and later move down by 1.
-- 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
-- 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
