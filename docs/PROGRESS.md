@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 115 | 0 | 20 | 21 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 66 | 27 | 11 | 5 |
 
@@ -20,7 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 
@@ -147,6 +147,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Oct 2026 · FIX-27 · Verifier report (independent session, backend `bc533f9`, mobile `972a40e`; backend main had moved to `473b575`, trial merge clean): cause confirmed on my own glibc `en_US` Postgres (unchanged `dc3baa2` fails exactly CI's two tests, `bc533f9` 43 of 43 there and on `C.UTF-8` and ICU; unchanged main's list and cursor agree at every page size, only the tests' order assumption broke); walks at page sizes 1 to 50 over 170 nasty names (longest admin names, case twins, accents, emoji, zero-width, hidden schools) equal an independent oracle on all three databases, 1188 dynamic requests per database with schools hidden, added, renamed and removed between pages, 0 failures; filter output equals main's item for item over 1092 category and search combinations per database, cursor text and bounds unchanged, 252 injection requests per database clean; protected suite 253 of 253 and full suite 5728 passed 4 skipped on `bc533f9` (12 reran clean alone: `fintava-stall` under load, `hub-rate-limits` needs a non-loopback interface); real wawu-id sign-in and signed-out give the same 170 schools. 20 own mutants: 18 killed, 1 equivalent, 1 survived (D1: the new spec cannot tell `lower()` from `upper()` as the first key; test-only). Open: D1; N1 short page when a school is hidden between the two reads (for SCHOOLS-03); N2 owner note, names starting with an accented letter now list after Z. Status back to `building` for D1.
 - 9 Oct 2026 · FIX-27 · Builder (backend `bc533f9`, no migration): reproduced CI's two failures on unchanged dc3baa2 with a glibc `en_US.UTF-8` Postgres built here (2 failed, 34 passed; `C.UTF-8` and ICU databases 36 of 36). Cause: the list and its cursor agreed on every database (walks at 11 page sizes pass on dc3baa2 too, no school skipped), but the order was whatever the database's collation made it, and the two specs assume where a flag emoji and U+20000 sort (glibc puts the Han character first). Fix: `GET /schools` orders and compares its cursor on `lower(name COLLATE "C"), name COLLATE "C", id COLLATE "C"`, written once in `schools-order.ts`; the two SCHOOLS-04 specs are untouched and pass on glibc, `C.UTF-8` and ICU (43 of 43 in `src/schools`); protected 253/253 with the lock unchanged; full suite 5717 passed on both databases with only `hub-rate-limits` (needs a non-loopback interface) not counted; 17 mutants, 17 killed on the glibc database. No other cursor list has a text key (the inbox already pins `"C"`). Production's collation is not written down; production is on d92e998 without `GET /schools`. Status verifying.
 - 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
 - 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
@@ -161,4 +162,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
 - 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
 - 8 Oct 2026 · EVENTS-01 · Lead rulings after the independent round 4: every round 6 ruling passed; round 7 for D11 to D14 and T4; U-H1 ruled (b): Home's services row packs its tiles from the left in canvas order.
-- 8 Oct 2026 · EVENTS-01 · Verifier independent round 4 (lead): D7, D8, D9, D10, T3, V10, V11 all pass live (three browser zones identical) and by mutant; R-41 entries open the right screens and an events failure draws no error; new D11 (H11 has no services shapes), D12 (Explore jumps 216 pt when the event arrives), D13 (entry text line boxes, up to 9 pt), D14 (no year on Explore's date), T4 (6 of 20 own mutants survive: Explore route file, failure spec never reaches the failure); U-H1 Home services row for the lead; npm run check passed (80 suites, 1450 tests); status building.
