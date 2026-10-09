@@ -15,6 +15,7 @@ import { layout, radius, space, useWawu } from '@/theme';
 import { aboutWorksKey, fetchAboutWorks, fetchGridPage, fetchListings, fetchProfileStats, fetchServiceState, gridKey, listingsKey, servicesKey, statsKey, type MyProfile } from './api';
 import { AboutTab } from './AboutTab';
 import { ContentGrid, GridSkeleton } from './ContentGrid';
+import { MeMenuSheet } from './MeMenuSheet';
 import {
   countsOf,
   liveListings,
@@ -58,6 +59,8 @@ export type MeScreenProps = {
   onOpenWork: (wawuId: string, workId: string) => void;
   /** A listing row on Services opens P8, Your listings (PROS-03, R-41). */
   onOpenListings?: () => void;
+  /** Settings, the last row of the Menu sheet (Z1): opens Z2. */
+  onOpenSettings: () => void;
 };
 
 /**
@@ -65,11 +68,13 @@ export type MeScreenProps = {
  * (M1, M2, M4) and "Profile saved" after an edit (M10). The profile, its details and its counts load together
  * for the header; each tab loads its own part when it is first opened.
  *
- * Left out until the task that builds where they lead adds them, as drawn (R-27, R-41): QR (WALLET-20, after
- * launch), Menu (ME-03), the tick and the "Get your professional tick" prompt (ME-12), the Create button
- * (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings (PROS-03) are in.
+ * Menu (BRAND-01) raises the Me menu (Z1) and its Settings row opens Z2, so a signed-in person always has a way
+ * into Settings, also while the profile is loading or has failed. Not drawn yet (COMPLETE-04 draws them
+ * inert, R-46): QR (WALLET-20, after launch), the tick and the "Get your professional tick" prompt (ME-12), the
+ * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
+ * (PROS-03) are in.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenSettings }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -78,6 +83,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings 
   const stats = useQuery({ queryKey: statsKey, queryFn: fetchProfileStats }, cache);
   const [tab, setTab] = useState<ProfileTab>('content');
   const [notice, setNotice] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // M10: "Profile saved", posted by M8's route as it closes, is drawn over the profile while it is up.
   const toast = useProfileSaved();
@@ -127,7 +133,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings 
   return (
     <View testID="me-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <ProfileTop coverUrl={me.data?.coverUrl ?? null} top={insets.top} canShare={ready !== null} onShare={() => void share()} />
+        <ProfileTop coverUrl={me.data?.coverUrl ?? null} top={insets.top} canShare={ready !== null} onShare={() => void share()} onOpenMenu={() => setMenuOpen(true)} />
         <View style={[styles.body, { paddingTop: bodyTop(insets.top) }]}>
           {failed ? (
             <ErrorState
@@ -178,6 +184,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings 
         </View>
       </ScrollView>
       <Toast message={toast ? 'Profile saved' : null} testID="profile-saved" />
+      <MeMenuSheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onOpenSettings={() => {
+          setMenuOpen(false);
+          onOpenSettings();
+        }}
+      />
     </View>
   );
 }

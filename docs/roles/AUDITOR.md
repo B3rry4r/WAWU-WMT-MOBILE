@@ -20,8 +20,8 @@ You audit everything built so far at a checkpoint (`tasks/CHECK-1.md`, `CHECK-2.
 6. **Release build check** (CHECK-1 and CHECK-3): a signed build on the owner's
    Android phone (DECISIONS R-24; an iPhone joins with RELEASE-03).
 7. **Hubs in full** (CHECK-3): every hub and menu matches its artboard: every row, tile, tab and button is
-   there and leads where the artboard says (R-27). Only the entries `docs/designer/BRIEF.md` lists under
-   "Not built at launch" may be missing.
+   there and leads where the artboard says (R-27). Nothing may be missing (R-46): an entry whose screen is
+   not built is drawn and inert (`unbuilt`), and only those whose task is not built may be inert.
 
 Write the result to `audits/<CHECK-ID>/REPORT.md` with screenshots beside it.
 Lead with the biggest thing never covered, then defects by severity. The

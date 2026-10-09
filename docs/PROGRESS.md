@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 104 of 236.**
+**Launch tasks done: 110 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 108 | 0 | 20 | 21 |
+| todo | 111 | 0 | 20 | 21 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 5 | 0 | 0 | 0 |
-| done | 65 | 27 | 11 | 5 |
+| done | 71 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -109,6 +109,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
+- [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
@@ -124,9 +125,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 - [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
+- [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
+- [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
+- [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -155,6 +161,6 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 2, status verifying: D1 fixed by keyset paging on (name, id) with an opaque, strictly checked cursor; new paging spec (10 tests) kills the 7 surviving mutants and 2 more; live walks with hide and show mid-walk see every row once; 967 odd inputs incl. cursor tampering, zero 500; protected 253/253.
 - 7 Oct 2026 · SCHOOLS-04 · Verified (V1), back to building: one defect, hiding the school a page ends on makes the next page skip a school (cursor plus skip); 1,500 odd inputs no 500, protected 253/253 twice, `/search` other tabs byte-identical to main, contract additive; full contract suite NOT RUN (port 4001 held by another session).
 - 7 Oct 2026 · SCHOOLS-04 · Built, status verifying: public schools list and search, school page, course page with intakes and seats left, and a `schools` tab in search (backend `wmt/SCHOOLS-04`); hidden rows hidden at every level, no migration; 11 specs, 10 mutants killed, protected 253/253, gates equal to main.
-- 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
-- 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
-- 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
+- 9 Oct 2026 · COMPLETE-05 · Merged: the Wallet tab shows its whole design at every phone width, with inert entries for unbuilt screens and no money path touched.
+- 9 Oct 2026 · COMPLETE-02 · Merged: Explore shows its whole design (X1, X14, X15), with inert entries for unbuilt screens and every section kept on a failed read.
+- 9 Oct 2026 · COMPLETE-02 · Verifier, round 2: V1 passed (npm run check exit 0 on 797740d: 97 suites, 1642 tests, 10 gates, 403 files, 0 findings; origin/main fffc816 is already merged); V5 and V6 passed in the web export against a stand-in Hub (the data, empty, nothing-served, buyer and loading pictures are pixel-identical to round 1's; a failed read keeps the bar, hero, tiles, both rails, doors and Create under one banner at 390, 360 and 320 px in both themes; Try again re-reads everything and recovers; a failed refetch keeps held data; Create clears the last row by 15.9 px at the end of the scroll and a buyer keeps 30; Create returns on refocus, pull and Try again); the 8 round 1 test gaps are closed (V3, V16, V23, V24, V31 directly, V6, V12, V29 re-aimed and split, all killed); V9 NOT RUN. Status back to building: of 14 new mutants 6 are killed and 8 survive (a refetch failing with data held, the Hub unreachable, the events re-read on Try again, the banner's icon, spinner, alert role and button variant), all test gaps with the product right; one question for the lead (Try again swaps the screen for X14 while it reads, so the banner's spinner never shows).

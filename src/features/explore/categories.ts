@@ -39,15 +39,22 @@ export const TILE_CATEGORIES = 6;
 export type CategoryTileItem =
   | { kind: 'all'; label: string; icon: IconName }
   | { kind: 'category'; id: string; label: string; icon: IconName }
-  | { kind: 'more'; label: string; icon: IconName };
+  | { kind: 'more'; label: string; icon: IconName }
+  /** A neutral frame where a category will be, drawn only while the Hub serves none (R-46). */
+  | { kind: 'blank'; slot: number };
 
-/** X1's row of tiles: All, the first six categories the server lists, then More when there are more than six. */
+/**
+ * X1's row of tiles: All, the first six categories the server lists, then More. The row is always the canvas's: with no
+ * categories served, six neutral frames hold the places of the ones to come (no names are invented), and More is drawn
+ * with six or fewer too (it opens every category, as All does).
+ */
 export function categoryTiles(categories: readonly ExploreCategory[]): CategoryTileItem[] {
   const shown = categories.slice(0, TILE_CATEGORIES).map(
     (c): CategoryTileItem => ({ kind: 'category', id: c.id, label: c.label, icon: categoryIcon(c.id) }),
   );
-  const more: CategoryTileItem[] = categories.length > TILE_CATEGORIES ? [{ kind: 'more', label: 'More', icon: moreIcon }] : [];
-  return [{ kind: 'all', label: 'All', icon: allIcon }, ...shown, ...more];
+  const blanks: CategoryTileItem[] =
+    categories.length === 0 ? Array.from({ length: TILE_CATEGORIES }, (_, slot) => ({ kind: 'blank', slot })) : [];
+  return [{ kind: 'all', label: 'All', icon: allIcon }, ...shown, ...blanks, { kind: 'more', label: 'More', icon: moreIcon }];
 }
 
 export type CategoryChoice = CategoryId | 'all';
