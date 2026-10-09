@@ -84,8 +84,9 @@ Who is who, so the reasons make sense:
   Sending money to another WAWU user (from Wallet or in a chat) is different:
   WAWU's ₦10 is added on top (R-10).
 - **The Dollar account is for later, not launch** (R-16). W2 and the Dollar
-  tab on W1, W3 and W5 stay drawn as they are; at launch the app hides them,
-  and hides W15's "From your Dollar account" option too. The only Dollar
+  tab on W1, W3 and W5 stay drawn as they are; at launch the app draws them
+  and leaves them inert until WALLET-21 (R-46, 8 Oct 2026, replacing "hides
+  them"), and W15's "From your Dollar account" option the same way. The only Dollar
   change now is W2's provider line (see W2).
 - **A refund returns the price, not Fintava's charge.** When a paid message
   goes unanswered or an event is called off, the buyer gets the price back

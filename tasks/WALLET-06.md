@@ -63,6 +63,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps the settings icon and lands on W35 (this task replaces `unbuilt('WALLET-06')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **W35**: a user can open Transaction PIN (W36); turn on fingerprint or face for payments; see Beneficiaries; open Account details.
 - [ ] **W36**: a user can enter a new PIN and confirm it.
 - [ ] **W37**: a user can enter OTP; Resend.
