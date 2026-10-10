@@ -44,6 +44,8 @@ export type SettingsScreenProps = {
   onOpenNotifications: () => void;
   onOpenPrivacy: () => void;
   onOpenPassword: () => void;
+  /** The launch access code screen (JOIN-03): claim the plan an event registration paid for. The row is drawn only when the route gives a place to go. */
+  onOpenClaimCode?: () => void;
   onOpenAbout: () => void;
   onOpenTerms: () => void;
   onOpenPolicy: () => void;
@@ -100,6 +102,9 @@ export function SettingsScreen(props: SettingsScreenProps) {
         <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
         <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
         <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
+        {props.onOpenClaimCode ? (
+          <ListRow testID="settings-claim-code" lead={<IconTile icon="Ticket" size={ROW_TILE} />} title="Access code" subtitle="Claim a plan you paid for at an event" onPress={props.onOpenClaimCode} />
+        ) : null}
       </GroupedList>
       <GroupedList testID="settings-preferences">
         {tgif.query.data ? (

@@ -1088,6 +1088,25 @@ here is redrawn.
   (current password, new password, Save).
 - **Why:** the row is drawn; its screen is built in the canvas's own style.
 
+### Z2 · Settings, one added row (JOIN-03, no artboard)
+- **Now:** Notifications, Privacy and Password in the first group.
+- **Instead:** a fourth row, "Access code" with the line "Claim a plan you paid
+  for at an event" (Ticket icon, the same tile as its neighbours), opening the
+  access code screen. It is drawn only because that screen is built (R-47).
+- **Why:** R-48. The plan screen where the claim also belongs is not built, so
+  Settings is the one place a signed-in person can reach it from.
+
+### Access code screen (JOIN-03, no artboard)
+- **Now:** nothing is drawn: the registration page (JOIN-02) hands a person a
+  code, and no screen takes it.
+- **Instead:** one screen in A22's field style: the title "Your access code",
+  one field (shown "XXXX XXXX", upper case), and a "Claim my plan" button. A
+  refusal keeps the code and says why in plain words (a note above the field,
+  or a line on it for the code itself). On success the same frame shows "Your
+  plan is ready" with the Hub's own list of what the code gave.
+- **Why:** R-48 and JOIN-03. Every line is the Hub's answer; the phone works
+  out nothing.
+
 ### Z6 · Delete account
 - **Now:** "wallet and cards" in what goes.
 - **Instead:** "wallet". No cards at launch.

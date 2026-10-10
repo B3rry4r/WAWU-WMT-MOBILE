@@ -19746,7 +19746,7 @@
       "description": "`reason.code` `payments_unavailable`: payments are not set up."
      }
     },
-    "summary": "Register and get the checkout settings. Reuses this person's own unpaid\nregistration (same offer, phone and email) rather than adding another.\nNothing is charged here: the payment happens in the Flutterwave checkout\nwith the answer's `flutterwaveConfig`, and counts only after\nPOST /waitlist/registrations/verify (or Flutterwave's own notice).",
+    "summary": "Register and get the checkout settings. Every call that passes the checks\nadds a new registration with a new reference, even for the same offer,\nphone and email, so each checkout has its own reference.\nNothing is charged here: the payment happens in the Flutterwave checkout\nwith the answer's `flutterwaveConfig`, and counts only after\nPOST /waitlist/registrations/verify (or Flutterwave's own notice).",
     "tags": [
      "WaitlistPublic"
     ]
@@ -19827,6 +19827,47 @@
     "summary": "Where a registration stands: status and first name only, never a phone or email.",
     "tags": [
      "WaitlistPublic"
+    ]
+   }
+  },
+  "/api/hub/waitlist/claims": {
+   "post": {
+    "operationId": "WaitlistClaimController_claim",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ClaimWaitlistRegistrationDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WaitlistClaimView"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "`reason.code` `code_invalid`: not 8 letters and numbers. A malformed body has no `reason`."
+     },
+     "404": {
+      "description": "`reason.code` `code_not_found`: the same answer for a code that does not exist, is not paid, or is not tied to a phone or email the caller has proven."
+     },
+     "409": {
+      "description": "`reason.code` `contact_not_verified` (the account has no proven phone or email), `code_refunded` (an extra payment being refunded), `already_claimed` (by another account), `claimed_by_you` or `offer_unavailable`."
+     }
+    },
+    "summary": "Claim a paid registration with its launch access code. The caller must\nhold the registration's phone or email, proven to WAWU ID; the code alone\nis never enough. Gives what the registration's plan gives, its days\ncounted from now, once.",
+    "tags": [
+     "WaitlistClaim"
     ]
    }
   },
@@ -24886,6 +24927,20 @@
     "required": [
      "reference",
      "transactionId"
+    ]
+   },
+   "ClaimWaitlistRegistrationDto": {
+    "type": "object",
+    "properties": {
+     "code": {
+      "type": "string",
+      "description": "The launch access code from the registration page: 8 letters and numbers\n(0 to 9, A to F), written \"XXXX XXXX\". Spaces, dashes and lower case are\naccepted; the server reads it without them.",
+      "minLength": 1,
+      "maxLength": 40
+     }
+    },
+    "required": [
+     "code"
     ]
    },
    "CreateAdCreativeDto": {
@@ -39581,9 +39636,15 @@
      "reference": {
       "type": "string"
      },
+     "accessCode": {
+      "type": "string"
+     },
      "flutterwaveTransactionId": {
       "type": "string",
       "nullable": true
+     },
+     "claimed": {
+      "type": "boolean"
      },
      "claimedByWawuId": {
       "type": "string",
@@ -39610,7 +39671,9 @@
      "paidKobo",
      "paidAt",
      "reference",
+     "accessCode",
      "flutterwaveTransactionId",
+     "claimed",
      "claimedByWawuId",
      "claimedAt",
      "createdAt"
@@ -39641,6 +39704,38 @@
      "rowCount",
      "content",
      "generatedAt"
+    ]
+   },
+   "WaitlistClaimView": {
+    "type": "object",
+    "properties": {
+     "offerName": {
+      "type": "string"
+     },
+     "days": {
+      "type": "number"
+     },
+     "extended": {
+      "type": "boolean"
+     },
+     "pointsGranted": {
+      "type": "number"
+     },
+     "pointsExpireAt": {
+      "type": "string",
+      "nullable": true
+     },
+     "tier": {
+      "$ref": "#/components/schemas/MyTierView"
+     }
+    },
+    "required": [
+     "offerName",
+     "days",
+     "extended",
+     "pointsGranted",
+     "pointsExpireAt",
+     "tier"
     ]
    },
    "WaitlistOfferView": {
