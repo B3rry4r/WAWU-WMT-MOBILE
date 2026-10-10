@@ -481,6 +481,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plan as the caller pays for it. Every amount is whole minor units of
+         *     `currency` (kobo for NGN, cents for USD); one currency per answer.
+         *     `no-store`: the answer is the caller's own (their currency).
+         */
+        get: operations["PlansController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/tier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `none`, `active`, `ending` or `ended`, with what the tier gives.
+         *     `no-store`: the answer is the caller's own.
+         */
+        get: operations["MeTierController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/bills/categories": {
         parameters: {
             query?: never;
@@ -1168,6 +1209,11 @@ export interface paths {
         };
         get: operations["ContentPieceController_list"];
         put?: never;
+        /**
+         * Publishes a piece. Needs a running tier or a tick that has not ended, and
+         *     a free place for one more product: otherwise 402 `tier_required` or
+         *     `product_limit_reached` with the offers (TIER-02).
+         */
         post: operations["ContentPieceController_create"];
         delete?: never;
         options?: never;
@@ -1271,7 +1317,10 @@ export interface paths {
         delete: operations["ContentPieceController_remove"];
         options?: never;
         head?: never;
-        /** Edit the details or the file of a piece that is pending or rejected. */
+        /**
+         * Edit the details or the file of a piece that is pending or rejected.
+         *     Sending a file needs a way to publish (402 `tier_required`, TIER-02).
+         */
         patch: operations["ContentPieceController_update"];
         trace?: never;
     };
@@ -1284,7 +1333,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send a rejected piece for review again. */
+        /**
+         * Send a rejected piece for review again. It takes a place like a new
+         *     publish, so it answers the same 402s (TIER-02).
+         */
         post: operations["ContentPieceController_resubmit"];
         delete?: never;
         options?: never;
@@ -1606,6 +1658,62 @@ export interface paths {
         get: operations["ContentMediaController_get"];
         put: operations["ContentMediaController_set"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/product-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My drafts, newest first. */
+        get: operations["ProductDraftController_list"];
+        put?: never;
+        /** Save a draft. Free: no tier is asked and no file is taken. */
+        post: operations["ProductDraftController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/product-drafts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductDraftController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["ProductDraftController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["ProductDraftController_update"];
+        trace?: never;
+    };
+    "/api/hub/product-drafts/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a draft with its two files. Needs a running tier or a tick that
+         *     has not ended, and a free place: otherwise 402 `tier_required` or
+         *     `product_limit_reached` with the offers. The piece is created waiting
+         *     for review, exactly as POST /content creates it, and the draft is gone.
+         */
+        post: operations["ProductDraftController_publish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2504,6 +2612,61 @@ export interface paths {
         get: operations["MoneyFeesController_feeQuote"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/payments/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the pay sheet shows before the PIN (H14, H17): the price from the
+         *     server's own record of the item, the wallet provider's charge, the
+         *     total, the balance and the shortfall, and a signed quote the payment
+         *     sends back. Nothing is reserved. A total above MERCHANT_MAX_PER_TXN_KOBO
+         *     is amount_out_of_range. A kind whose feature has not moved onto the
+         *     wallet yet, or an item not priced in naira, is target_not_payable.
+         *     While the running provider's fees are not set, fees_not_set before
+         *     anything else (NUV-07); `withinDailyLimit` and `remainingTodayKobo` say
+         *     where today's purchase limit stands.
+         */
+        get: operations["MoneyPaymentsController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay from the wallet: the price from the buyer's wallet to WAWU's own
+         *     account at the wallet provider (R-19, R-42), the provider's charge on
+         *     top (R-10), the 85/15 split of the price recorded with it (R-5). Answers
+         *     201 with the payment: completed, pending when the provider has not
+         *     confirmed the debit yet (H18, E10; it is never sent again blindly), or
+         *     failed when the provider refused it and nothing moved. The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN. fees_not_set
+         *     comes before the wallet gate, the key and the PIN; limit_reached (WAWU's
+         *     limit or the provider's) before anything is sent.
+         */
+        post: operations["MoneyPaymentsController_pay"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4953,47 +5116,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The plan as the caller pays for it. Every amount is whole minor units of
-         *     `currency` (kobo for NGN, cents for USD); one currency per answer.
-         *     `no-store`: the answer is the caller's own (their currency).
-         */
-        get: operations["PlansController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/me/tier": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * `none`, `active`, `ending` or `ended`, with what the tier gives.
-         *     `no-store`: the answer is the caller's own.
-         */
-        get: operations["MeTierController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/waitlist/offers/current": {
         parameters: {
             query?: never;
@@ -5242,54 +5364,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/payments/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What the pay sheet shows before the PIN (H14, H17): the price from the
-         *     server's own record of the item, Fintava's charge, the total, the balance
-         *     and the shortfall, and whether it fits today's limit. Nothing is
-         *     reserved. A total above MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range.
-         * @description Declared by MONEY-04, not served yet: MONEY-17 serves it.
-         */
-        get: operations["MoneyPaymentController_quote"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/payments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Pay from the wallet. Answers completed, or pending when Fintava has not
-         *     confirmed the debit yet (H18, E10): the app polls GET /money/payments/{id}.
-         *     A held kind answers with its hold. The money goes through WAWU's
-         *     merchant wallet, so a total above MERCHANT_MAX_PER_TXN_KOBO (config) is
-         *     refused with amount_out_of_range and maximumKobo, never split; a total
-         *     past today's limit is daily_limit_exceeded (Lead rulings, 2 Oct 2026).
-         * @description Declared by MONEY-04, not served yet: MONEY-17 serves it.
-         */
-        post: operations["MoneyPaymentController_pay"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/money/payments/{id}": {
         parameters: {
             query?: never;
@@ -5398,6 +5472,53 @@ export interface components {
              *     URL directly.
              */
             contentLength: number;
+        };
+        TierGateReasonDto: {
+            /** @enum {string} */
+            code: "tier_required" | "product_limit_reached";
+            /**
+             * @description The person's tier: `none` (never had one), `active`, `ending` or `ended`.
+             *     `tier_required` answers `none` or `ended`.
+             * @enum {string}
+             */
+            tierState: "none" | "active" | "ending" | "ended";
+            /** @description Products published now. */
+            productsUsed: number;
+            /** @description Products they may have published at once (0 when nothing allows publishing). */
+            productsAllowed: number;
+            /**
+             * @description The currency of every amount in `tiers` and `extraProducts`. The offers
+             *     (`currency`, `tiers`, `extraProducts`) are always there; they are absent
+             *     only when the Hub could not read the plan at that moment, and the app
+             *     then shows `message` alone.
+             * @enum {string}
+             */
+            currency?: "NGN" | "USD";
+            /**
+             * @description `tier_required`: every tier. `product_limit_reached`: the tiers that
+             *     allow more products than the one the person holds (none when there is
+             *     no way up).
+             */
+            tiers?: components["schemas"]["PlanTierView"][];
+            /** @description The extra products they can buy now, or null when they cannot. */
+            extraProducts?: components["schemas"]["PlanExtraProductsView"] | null;
+            /** @description A sentence the app may show as it is. No em-dash. */
+            message: string;
+        };
+        TierGateErrorEnvelope: {
+            /**
+             * @description 402.
+             * @example 402
+             */
+            statusCode: number;
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            reason: components["schemas"]["TierGateReasonDto"];
+            /** @description Same as reason.message. */
+            message: string;
         };
         ValidateCustomerDto: {
             itemCode: string;
@@ -5685,6 +5806,40 @@ export interface components {
             /** @description How many pages a PDF has. PDFs only. */
             pageCount?: number;
         };
+        CreateProductDraftDto: {
+            title: string;
+            /** @enum {string} */
+            contentType?: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description?: string;
+            /** @enum {string} */
+            category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            /** @description At most three, as on POST /content. */
+            specializations?: string[];
+            /** @description At most twenty, as on POST /content. */
+            tags?: string[];
+            /** @enum {string} */
+            accessType?: "free" | "paid";
+            price?: number;
+        };
+        UpdateProductDraftDto: {
+            title?: string;
+            /** @enum {string} */
+            contentType?: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description?: string;
+            /** @enum {string} */
+            category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            specializations?: string[];
+            tags?: string[];
+            /** @enum {string} */
+            accessType?: "free" | "paid";
+            price?: number;
+        };
+        PublishProductDraftDto: {
+            /** Format: uri */
+            previewAsset: string;
+            /** Format: uri */
+            fullAsset: string;
+        };
         CreateCreditPurchaseDto: {
             /** @enum {string} */
             pack: "starter" | "popular" | "pro";
@@ -5875,7 +6030,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -5908,6 +6063,8 @@ export interface components {
             triesLeft?: number;
             /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
             lockedUntil?: string;
+            /** @description payment_in_progress: the payment for this item still being confirmed (MONEY-17). */
+            paymentId?: string;
             /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
             retryAfterSeconds?: number;
             /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
@@ -6055,6 +6212,23 @@ export interface components {
         PayoutAccountDto: {
             bankCode: string;
             accountNumber: string;
+        };
+        PaymentDto: {
+            /** @enum {string} */
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
+            targetId: string;
+            /** @description Only for a tip. Every other price is the server's own record of the item. */
+            amountKobo?: number;
+            /** @description `totalKobo` from the payment quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /**
+             * @description `quoteToken` from that payment quote (MONEY-17, BACKEND_GAPS G-64): the
+             *     server checks it is its own, for this person and this price, and not
+             *     past `expiresAt`; otherwise `409 quote_changed` with the new quote.
+             */
+            quoteToken: string;
+            /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
+            note?: string;
         };
         MoneyPlainErrorEnvelope: {
             /**
@@ -6839,17 +7013,6 @@ export interface components {
             expectedTotalKobo: number;
             note?: string;
         };
-        PaymentDto: {
-            /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
-            targetId: string;
-            /** @description Only for a tip. Every other price is the server's own record of the item. */
-            amountKobo?: number;
-            /** @description `totalKobo` from the payment quote the person saw. A different server total is `quote_changed`. */
-            expectedTotalKobo: number;
-            /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
-            note?: string;
-        };
         FintavaWebhookAck: {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
@@ -7103,6 +7266,57 @@ export interface components {
             matchesBvnName: boolean | null;
             updatedAt: string;
         };
+        PaymentQuoteView: {
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            targetId: string;
+            title: string;
+            payee: components["schemas"]["MoneyPartyView"] | null;
+            priceKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            balanceKobo: number | null;
+            shortfallKobo: number | null;
+            willBeHeld: boolean;
+            withinDailyLimit: boolean;
+            remainingTodayKobo: number | null;
+            quoteToken: string;
+            expiresAt: string;
+        };
+        HoldView: {
+            id: string;
+            paymentId: string;
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            /** @enum {string} */
+            status: "held" | "released" | "refunded";
+            amountKobo: number;
+            /** @enum {string} */
+            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
+            payer: components["schemas"]["MoneyPartyView"];
+            payee: components["schemas"]["MoneyPartyView"] | null;
+            heldAt: string;
+            settledAt: string | null;
+            refundedKobo: number | null;
+        };
+        PaymentView: {
+            id: string;
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            targetId: string;
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            priceKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            reference: string;
+            hold: components["schemas"]["HoldView"] | null;
+            failureReason: string | null;
+            statusMessage: string | null;
+            createdAt: string;
+            completedAt: string | null;
+        };
         RecipientView: {
             wawuUserId: string;
             displayName: string;
@@ -7213,6 +7427,81 @@ export interface components {
                 }[];
                 pagination: components["schemas"]["PaginationMeta"];
             };
+        };
+        PlanBadgeView: {
+            id: string;
+            numbered: boolean;
+        };
+        MyTierSummaryView: {
+            id: string;
+            name: string | null;
+            badge: components["schemas"]["PlanBadgeView"] | null;
+        };
+        PlanEventPassView: {
+            id: string;
+            name: string;
+        };
+        MyTierView: {
+            /** @enum {string} */
+            state: "none" | "active" | "ending" | "ended";
+            tier: components["schemas"]["MyTierSummaryView"] | null;
+            activeFrom: string | null;
+            activeUntil: string | null;
+            productsAllowed: number;
+            productsUsed: number;
+            extraProducts: number;
+            pointsIncluded: number;
+            firstVoiceIntroIncluded: boolean;
+            eventPass: components["schemas"]["PlanEventPassView"] | null;
+        };
+        PlanTierView: {
+            id: string;
+            name: string;
+            days: number;
+            products: number;
+            bonusPoints: number;
+            bonusPointsExpireDays: number;
+            priceMinor: number;
+            eventPass: components["schemas"]["PlanEventPassView"];
+            badge: components["schemas"]["PlanBadgeView"];
+            packBonusPercent: number;
+            firstVoiceIntroIncluded: boolean;
+            preselected: boolean;
+        };
+        PlanExtraProductsView: {
+            count: number;
+            priceMinor: number;
+        };
+        PlanPackView: {
+            id: string;
+            points: number;
+            priceMinor: number;
+        };
+        PlanCheckoutBumpView: {
+            points: number;
+            priceMinor: number;
+        };
+        PlanActionView: {
+            id: string;
+            points: number;
+            /** @enum {string} */
+            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+        };
+        PlanCapsView: {
+            dailyPoints: number;
+            maxCharactersPerJob: number;
+            maxAudioMinutesPerJob: number;
+        };
+        PlansView: {
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            currencyFixed: boolean;
+            tiers: components["schemas"]["PlanTierView"][];
+            extraProducts: components["schemas"]["PlanExtraProductsView"];
+            packs: components["schemas"]["PlanPackView"][];
+            checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
+            actions: components["schemas"]["PlanActionView"][];
+            caps: components["schemas"]["PlanCapsView"];
         };
         StorageUsage: {
             usedBytes: number;
@@ -7854,6 +8143,22 @@ export interface components {
             lessons: components["schemas"]["DetailLesson"][];
             rating: components["schemas"]["RatingState"];
         };
+        ProductDraftView: {
+            id: string;
+            title: string;
+            /** @enum {string|null} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template" | null;
+            description: string | null;
+            category: string | null;
+            specializations: string[];
+            tags: string[];
+            /** @enum {string|null} */
+            accessType: "free" | "paid" | null;
+            price: number | null;
+            missing: string[];
+            createdAt: string;
+            updatedAt: string;
+        };
         DmSendInitResponse: {
             flutterwaveConfig: {
                 txRef: string;
@@ -7874,7 +8179,7 @@ export interface components {
         DirectMessage: {
             id: string;
             /** @enum {string} */
-            status: "awaiting_response" | "responded" | "refunded";
+            status: "refunded" | "awaiting_response" | "responded";
             amount: number;
             creatorWawuId: string;
             senderWawuId: string;
@@ -7951,7 +8256,7 @@ export interface components {
             text: string;
             amountKobo: number;
             /** @enum {string} */
-            status: "awaiting_response" | "responded" | "refunded";
+            status: "refunded" | "awaiting_response" | "responded";
             mine: boolean;
             sentAt: string;
             deadlineAt: string;
@@ -8099,7 +8404,7 @@ export interface components {
         ShopOrderView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "failed" | "paid" | "refunded" | "cancelled";
+            status: "pending" | "failed" | "refunded" | "paid" | "cancelled";
             subtotalNaira: number;
             deliveryNaira: number;
             totalNaira: number;
@@ -10165,80 +10470,6 @@ export interface components {
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
         };
-        PlanBadgeView: {
-            id: string;
-            numbered: boolean;
-        };
-        MyTierSummaryView: {
-            id: string;
-            name: string | null;
-            badge: components["schemas"]["PlanBadgeView"] | null;
-        };
-        PlanEventPassView: {
-            id: string;
-            name: string;
-        };
-        MyTierView: {
-            /** @enum {string} */
-            state: "none" | "active" | "ending" | "ended";
-            tier: components["schemas"]["MyTierSummaryView"] | null;
-            activeFrom: string | null;
-            activeUntil: string | null;
-            productsAllowed: number;
-            extraProducts: number;
-            pointsIncluded: number;
-            firstVoiceIntroIncluded: boolean;
-            eventPass: components["schemas"]["PlanEventPassView"] | null;
-        };
-        PlanTierView: {
-            id: string;
-            name: string;
-            days: number;
-            products: number;
-            bonusPoints: number;
-            bonusPointsExpireDays: number;
-            priceMinor: number;
-            eventPass: components["schemas"]["PlanEventPassView"];
-            badge: components["schemas"]["PlanBadgeView"];
-            packBonusPercent: number;
-            firstVoiceIntroIncluded: boolean;
-            preselected: boolean;
-        };
-        PlanExtraProductsView: {
-            count: number;
-            priceMinor: number;
-        };
-        PlanPackView: {
-            id: string;
-            points: number;
-            priceMinor: number;
-        };
-        PlanCheckoutBumpView: {
-            points: number;
-            priceMinor: number;
-        };
-        PlanActionView: {
-            id: string;
-            points: number;
-            /** @enum {string} */
-            per: "use" | "minute" | "track" | "message" | "minute_per_language";
-        };
-        PlanCapsView: {
-            dailyPoints: number;
-            maxCharactersPerJob: number;
-            maxAudioMinutesPerJob: number;
-        };
-        PlansView: {
-            /** @enum {string} */
-            currency: "NGN" | "USD";
-            currencyFixed: boolean;
-            tiers: components["schemas"]["PlanTierView"][];
-            extraProducts: components["schemas"]["PlanExtraProductsView"];
-            packs: components["schemas"]["PlanPackView"][];
-            checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
-            actions: components["schemas"]["PlanActionView"][];
-            caps: components["schemas"]["PlanCapsView"];
-        };
         AdminWaitlistRegistrationView: {
             id: string;
             offerId: string;
@@ -10334,7 +10565,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "ended" | "scheduled";
+            status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -10358,7 +10589,7 @@ export interface components {
                 /** @enum {string|null} */
                 placement: "tgif_card" | "today_slot" | null;
                 /** @enum {string|null} */
-                status: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
+                status: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
                 /** @enum {string|null} */
                 phase: "upcoming" | "running" | "over" | null;
                 /** Format: date-time */
@@ -10369,10 +10600,10 @@ export interface components {
             campaigns: number;
             delivery: components["schemas"]["AdCounts"];
             deliveryByStatus: {
+                ended: unknown;
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                ended: unknown;
                 scheduled: unknown;
             };
             deliveryByPlacement: {
@@ -10380,10 +10611,10 @@ export interface components {
                 today_slot: unknown;
             };
             byStatus: {
+                ended: unknown;
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                ended: unknown;
                 scheduled: unknown;
             };
             byPlacement: {
@@ -10404,7 +10635,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "ended" | "scheduled";
+            status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -10414,11 +10645,11 @@ export interface components {
         AdAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "paused" | "updated" | "ended" | "scheduled" | "created" | "resumed" | "deleted";
+            action: "ended" | "paused" | "updated" | "scheduled" | "created" | "resumed" | "deleted";
             /** @enum {string|null} */
-            previousStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
+            previousStatus: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
             /** @enum {string|null} */
-            newStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
+            newStatus: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
             changes: {
                 [key: string]: {
                     from: unknown;
@@ -10440,7 +10671,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "ended" | "scheduled";
+            status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -10494,54 +10725,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        PaymentQuoteView: {
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            targetId: string;
-            title: string;
-            payee: components["schemas"]["MoneyPartyView"] | null;
-            priceKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            balanceKobo: number | null;
-            shortfallKobo: number | null;
-            willBeHeld: boolean;
-            withinDailyLimit: boolean;
-            remainingTodayKobo: number | null;
-        };
-        HoldView: {
-            id: string;
-            paymentId: string;
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            /** @enum {string} */
-            status: "refunded" | "released" | "held";
-            amountKobo: number;
-            /** @enum {string} */
-            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
-            payer: components["schemas"]["MoneyPartyView"];
-            payee: components["schemas"]["MoneyPartyView"] | null;
-            heldAt: string;
-            settledAt: string | null;
-            refundedKobo: number | null;
-        };
-        PaymentView: {
-            id: string;
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            targetId: string;
-            title: string;
-            /** @enum {string} */
-            status: "pending" | "completed" | "failed" | "reversed";
-            priceKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            reference: string;
-            hold: components["schemas"]["HoldView"] | null;
-            failureReason: string | null;
-            createdAt: string;
-            completedAt: string | null;
         };
         HoldPage: {
             items: components["schemas"]["HoldView"][];
@@ -11236,6 +11419,15 @@ export interface operations {
                     };
                 };
             };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
         };
     };
     StorageController_usage: {
@@ -11272,6 +11464,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadAllowanceView"];
+                };
+            };
+        };
+    };
+    PlansController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansView"];
+                };
+            };
+        };
+    };
+    MeTierController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTierView"];
                 };
             };
         };
@@ -12678,6 +12908,15 @@ export interface operations {
                     "application/json": components["schemas"]["ContentPieceResponse"];
                 };
             };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
         };
     };
     ContentPieceController_mine: {
@@ -12852,6 +13091,15 @@ export interface operations {
                     "application/json": components["schemas"]["MyContentItem"];
                 };
             };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
         };
     };
     ContentPieceController_resubmit: {
@@ -12871,6 +13119,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyContentItem"];
+                };
+            };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
                 };
             };
         };
@@ -13359,6 +13616,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MediaDetails"];
+                };
+            };
+        };
+    };
+    ProductDraftController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"][];
+                };
+            };
+        };
+    };
+    ProductDraftController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductDraftDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"];
+                };
+            };
+        };
+    };
+    ProductDraftController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"];
+                };
+            };
+        };
+    };
+    ProductDraftController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProductDraftController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductDraftDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"];
+                };
+            };
+        };
+    };
+    ProductDraftController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishProductDraftDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentPieceResponse"];
+                };
+            };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
                 };
             };
         };
@@ -15549,6 +15947,173 @@ export interface operations {
                 };
             };
             /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPaymentsController_quote: {
+        parameters: {
+            query: {
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
+                /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
+                targetId: string;
+                /**
+                 * @description Only for a tip, where the payer chooses the amount. Refused on every
+                 *     other kind. Digits only, as on the fee quote: `100.00`, `1e4` or
+                 *     `10,000` is a 400, never read as some other number of kobo.
+                 */
+                amountKobo?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPaymentsController_pay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -20284,44 +20849,6 @@ export interface operations {
             };
         };
     };
-    PlansController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlansView"];
-                };
-            };
-        };
-    };
-    MeTierController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MyTierView"];
-                };
-            };
-        };
-    };
     WaitlistPublicController_currentOffer: {
         parameters: {
             query?: never;
@@ -20843,158 +21370,6 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen */
             423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_quote: {
-        parameters: {
-            query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
-                /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
-                targetId: string;
-                /** @description Only for a tip, where the payer chooses the amount. Refused on every other kind. */
-                amountKobo?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentQuoteView"];
-                };
-            };
-            /** @description reason.code: amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: target_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_pay: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PaymentDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentView"];
-                };
-            };
-            /** @description reason.code: idempotency_key_required, amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: insufficient_funds */
-            402: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: target_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable, fees_not_set */
-            503: {
                 headers: {
                     [name: string]: unknown;
                 };
