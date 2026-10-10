@@ -7,7 +7,7 @@ order: 47
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [SETTINGS-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9, V10]
@@ -352,6 +352,125 @@ Backend `origin/wmt/INBOX-03` **7694231** (main 0694ced merged in as 92b79bb). R
 - The full backend suite to the end: not in this round's brief (it names `src/push`, the protected suite, the gates and the contract); unblocked by the namespace run on a quiet machine (about 176 suites).
 - A second live run of `exp-retryafter.js` on the unfixed tree: the "before" is the spec against the unfixed code; unblocked by building `ec02c97` in a worktree and running the same script.
 - Sign-in with the real wawu-id: the specs and the live run use the repo's mock WAWU ID, as in round 3.
+
+## Verifier report, round 4
+
+Independent session (10 Oct 2026). Wrote none of this and none of the earlier rounds. Backend `origin/wmt/INBOX-03` **7694231** (round 3 was ec02c97) against backend `origin/main` **0694ced** (it has not moved since round 3; the merge in 92b79bb is main's newest). Mobile `origin/wmt/INBOX-03` 6ff9f1b. Nothing in either product repo was changed. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vinbox03r4/` (file names in brackets). Provider: only my own stand-in Expo on :6074 (round 3's `expo-standin.js`, with one edit of my own: it now sends a `Retry-After` even when its value is empty, and has a 503 mode), reached through the code's own `EXPO_PUSH_BASE_URL`. Tokens from the repo's mock WAWU ID on :6073. No call to exp.host, api.expo.dev, FCM, APNs, any wawuafrica.com host or an AI provider.
+
+**Verdict: `review`. No blocker, no should-fix.** All six items CONFIRMED. Four notes (N8 to N11, none blocks). Real Expo, FCM and a phone stay NOT RUN.
+
+| # | Item | Result |
+|---|---|---|
+| 1 | Main merge 92b79bb | CONFIRMED |
+| 2 | S1 migration stamp | CONFIRMED |
+| 3 | S2 `Retry-After` clamp | CONFIRMED |
+| 4 | N6 mutant M13 | CONFIRMED (killed by exactly the new test) |
+| 5 | Nothing else changed in round 4 | CONFIRMED |
+| 6 | tsc, eslint, specs, protected suite, gates, contract, own mutants | CONFIRMED (eslint: the 16 problems that are main's own) |
+
+### 1. The main merge (92b79bb)
+
+Parents 52cf2f9 and 0694ced; merge base with main 657a152. Main changed **122 files** since that base. Checked three ways. (a) The merge result differs from main (0694ced) in exactly 32 files, and those are exactly the 32 files the branch itself changed against 657a152 (`comm` of the two lists is empty both ways). (b) It differs from its first parent in exactly the 122 files main changed, so nothing of the branch was lost to the merge. (c) I redid the merge with `git merge-tree 52cf2f9 0694ced`: one conflict, `.env.example`; the other five shared files (`contract/openapi.json`, `prisma/schema.prisma`, `src/account-purge/account-data-map.ts`, `src/app.module.ts`, `src/data-export-request/data-export-sections.ts`) auto-merge, and the builder's tree is **identical to my merge-tree result in every file except `.env.example`**. There the builder kept this branch's `PUSH_ENABLED` / `EXPO_ACCESS_TOKEN` / `EXPO_PUSH_BASE_URL` block and main's `LEGAL_DELIVERY_UPLOADER_IDS` block, in that order, with a blank line between and no conflict markers left. [`main-files.txt`, `merge-vs-main.txt`, `branch-own.txt`, `merge-vs-p1.txt`, `mergetree.txt`]
+
+### 2. S1, the migration stamp
+
+- The folder is `prisma/migrations/20261019090000_push_tokens`. `git diff -M` against ec02c97: `migration.sql` a pure rename (0 added, 0 removed, sha256 `1ab742d0...` before and after); `rollback.sql` one line changed (line 1 quotes the new stamp).
+- Every live reference is updated. Backend: no `20261017090000` anywhere in the tree; `rollback.sql` line 1 is the only place the stamp is quoted. Mobile: SHARED-CHANGES INBOX-03 #1, `docs/LOG.md`, `tasks/INBOX-03.md` and `tasks/POINTS-01.md` line 279 carry the new stamp. What still says an old stamp is history (other tasks' reports, this file's round 1 to 3 text). Round 3's S1 text keeps `20261017090000` as the record of the defect.
+- Sort order: main's newest is `20261018100000_event_waitlist`; the newest folder on any of the 89 `origin/wmt/*` branches other than this one is `20261018140000_waitlist_access_code` (JOIN-01-r4). No branch carries a folder newer than `20261019090000`. [`s1-newest-per-branch.txt`]
+- `prisma migrate deploy` on a database that already had main's 112 folders: "113 migrations found", applies only `20261019090000_push_tokens`; `migrate status` up to date; the last three rows in `_prisma_migrations` are `points`, `event_waitlist`, `push_tokens`, all finished. [`s1-realistic-deploy.txt`, `s1-realistic-status.txt`]
+- On an empty database: all 113 applied, last three `points`, `event_waitlist`, `push_tokens`; status up to date; the three tables `PushToken`, `PushDelivery`, `PushStoppedAccount` exist. [`s1-empty-deploy.txt`]
+- With JOIN-01-r4's `20261018140000_waitlist_access_code` added to the folder set (a scratch copy; 114 folders) on a database that already had main's 112: applies `waitlist_access_code` and then `push_tokens`, in that order; status up to date. [`s1-union-deploy.txt`]
+- `prisma migrate diff` (database after deploy against `schema.prisma`) shows only main's own `DROP INDEX "ContentPiece_specializations_idx"`. [`s1-migrate-diff.txt`]
+- `deploy.yml` runs only on `main`, so the old stamp was never deployed anywhere (SHARED-CHANGES says the same).
+
+### 3. S2, the `Retry-After` clamp
+
+**Reading the code.** `parseRetryAfter` (`expo-push.client.ts`) returns a number only for a header that is digits and nothing else (after `trim`), finite and above zero; everything else is null. `retryOrFail` (`push-sender.service.ts`) writes, in the one `UPDATE` on the database clock, `LEAST(header, 3600, GREATEST(createdAt + 86400 s - now, 0))` when there is a header and the normal doubling when there is not. The largest number the database can see is therefore 3600, so `make_interval` can never overflow a timestamp.
+
+**Live.** First `x/exp-retryafter.js` unchanged (byte-identical to round 3's, `cmp` clean; only `lib.js` / `hub.sh` paths and the database name point at my copy) against a hub built from 7694231 and the stand-in: [`x/ra-unchanged.txt`]
+
+| Header | Result at 35 s |
+|---|---|
+| `30` | pending, attempts 1, next 30 s after the send |
+| `100000` | pending, attempts 1, next 09:22:59 for a send at 08:22:59: **one hour** |
+| `99999999999999999999` | pending, attempts 1, next one hour after the send |
+| `1e20`, `-5`, `abc`, `Wed, 21 Oct 2099 07:28:00 GMT`, `0` | pending, attempts 2 to 3 (the normal 5, 10, 20 s doubling) |
+| empty | same, but the stand-in sends no header at all for `''` (it tests `cfg.retryAfter ?`), so see the next table |
+
+Hub log of the round 4 build for the whole round: **0** "A push pass failed", 0 ERROR lines (4 WARN: three boot notices about unset storage and keys, and the live feed closing when I stopped the hub) [`x/hubA-new.log`]. Then my own table (`x/ra2.js`): one fresh delivery per header, the wait read as `nextAttemptAt - updatedAt` (both written by the hub in the same statement), and the same cases on a hub built from **ec02c97** for the contrast [`x/ra2-out.txt`, `x/ra2-old-out.txt`, `x/hubA-old.log`]:
+
+| Header (429 unless said) | Round 3 build (ec02c97) | Round 4 build (7694231) |
+|---|---|---|
+| `30` | 30 s | 30 s |
+| `100000` | **100 000 s (27.8 h)** | **3600 s** |
+| `3600`, `3601` | - | 3600 s, 3600 s |
+| `99999999999999999999` | **Postgres 22008, pass aborted, row left `sending`** | **3600 s** |
+| `1e20` | **22008, pass aborted** | 5 s (normal backoff) |
+| `-5`, `abc`, HTTP date | 5 s | 5 s |
+| `0`, empty (a real empty header), no header | - | 5 s each |
+| ` 45 ` (spaces), `000000000000000000030` | - | 45 s, 30 s |
+| `+30`, `2.5`, `1e3`, `0x10` | - | 5 s each |
+| `9007199254740993`, 1 followed by 30 zeros, by 307 zeros, by 308 zeros | - | 3600 s each (finite numbers, clamped) |
+| 1 followed by 309 zeros (Infinity), 400 ones | - | 5 s (not a number) |
+| 503 with `100000`, `40`, `1e20`, `abc` | - | 3600 s, 40 s, 5 s, 5 s |
+| delivery queued 86 300 s ago (100 s of life left), header `3000` | **3000 s (past its own life)** | 90 s (100 s minus the up to 10 s until the next tick) |
+| queued 87 000 s ago, and 10 000 000 s ago (life over), header `3000` | - | 0 s (due at the next pass) |
+| queued 82 900 s ago (3500 s left), `3000` | - | 3000 s |
+| queued 82 810 s ago (3590 s left), `99999` | - | about 3580 s |
+| queued 86 350 s ago, `99999999999999999999` / `1e20` | - | about 40 s / 5 s |
+
+On the round 3 build the log has two "A push pass failed" lines with "Raw query failed. Code: `22008`. Message: `timestamp out of range`"; on the round 4 build, none across the 44 deliveries of the round 4 runs (9 + 35). Every row above ends `pending` with `reason http_429` (or `http_503`); none is left `sending`. Nothing is above 3600 s and nothing is past the delivery's life (an expired one is due now). **CONFIRMED.**
+
+**Specs.** `src/push`: 4 suites, **174 of 174**, three runs before the mutants; `git status` was clean after every mutant. The named cases are in the run: 13 sender cases for `Retry-After` and 20 parser cases. [`push-run1.txt`, `push-run2.json`]
+
+### 4. N6, mutant M13
+
+Making `isPushed()` return true for every kind (my patch, in `push-policy.ts`): **1 failing test of 174**, `a delivery queued for a kind that is held when it comes to be sent is skipped, not sent` (`expect(report.skipped).toBe(1)`). Deleting the `return 'kind_held'` line in the sender (my C15) is killed by the same test alone; in round 3 both survived. The test seeds a `credits_low` notification and a due `PushDelivery` row for it by hand, so it tests the second lock, not the sweep's filter. **CONFIRMED.** [`mut/M13.log`, `mut/C15.log`]
+
+### 5. Nothing else changed in round 4
+
+Round 4's own commits are 5cab4b4, 52cf2f9 and 7694231 (the merge 92b79bb is item 1). Together they touch 8 files against ec02c97: the renamed `migration.sql` and `rollback.sql` (item 2); `expo-push.client.ts` (+24 -4: `parseRetryAfter` and its one call), `push-config.ts` (+14 -2: `retryAfterMaxSeconds: 3_600` and the comment), `push-sender.service.ts` (+19 -6: the `UPDATE` and the `PUSH_TTL_SECONDS` import); and the tests `expo-retry-after.spec.ts` (new), `expo-stand-in.ts` (+12 -2: an optional `headers` on a scripted answer), `push-sender.contract.spec.ts` (+134: the N6 test and the `Retry-After` describe). The last commit only renames spec titles (`%s` becomes `$why`); the assertions are the same. No docs, README, contract, schema or other module file. `contract/openapi.json` is main's plus the branch's 127 lines, unchanged by round 4. Mobile: the branch against mobile main is `BACKEND_GAPS.md`, `SHARED-CHANGES.md`, `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/INBOX-03.md` and `tasks/POINTS-01.md` (one line), nothing in `src/`.
+
+### 6. Checks
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | 0 on 7694231 [`tsc-branch.txt`] |
+| eslint on the 24 changed `.ts` files | 0 problems in the 22 files the task wrote; 16 in `src/account/account.module.ts` (1) and `src/account/tests/account.contract.spec.ts` (15), and main's own copies of those two (generated client present) give the same 16, same messages [`eslint-branch.txt`, `eslint-main-account.txt`, `eslint-22.txt`]. Carried as N1 |
+| `src/push` | 174 of 174 (see item 3) |
+| SETTINGS-04 `data-export-map` and `account-data-map` | 9 of 9 |
+| Protected suite `run.sh --fresh HEAD`, lock origin/main 0694ced | **253 of 253** ("all 244 required"); the branch touches no protected-suite file [`protected.txt`] |
+| Gates `scripts/gates/run.py` | branch 1056 files, **16 fail, 83 warn, 76 accepted**; main 0694ced 1039 files, 16 fail, 72 warn, 76 accepted. The 16 FAIL lines are identical once line numbers are stripped. The 11 extra warns are the branch's own `PROVISIONAL(PUSH-...)` markers in `push-config.ts` (12 markers before and after round 4, all with `owner=` and `why=`). `check_baseline.py` OK (108 entries) [`gates-branch.txt`, `gates-main.txt`] |
+| Tripwire (added lines matching the protected-suite pattern) | 0 |
+| `npm run contract:build` | `contract/openapi.json` byte-identical: sha256 `ee07637f...8927` before and after, `git status` clean [`contract-before.txt`, `contract-after.txt`] |
+| Secret scan of the backend diff against main | no key-shaped string (the long matches are a path and an index name); 0 added em-dashes |
+| Own mutants on the clamp and the guard | **16 run, 13 killed, 3 survived** (below) |
+
+**Mutants** (`mutate.py`; each run against all of `src/push`; the file restored from a backup after every run, `git status` clean each time). Killed: M13 `isPushed` always true (1 test); C1 one-hour ceiling out of the `LEAST` (2); C2 time-to-live term out (2); C3 remaining-life floor 0 to 5 s (1); C5 life counted from `updatedAt` instead of `createdAt` (2); C6 zero accepted by the parser (2); C7 `isFinite` dropped, so 400 digits become Infinity (1); C8 prefix match, so `30 seconds` reads as 30 (4); C9 `trim` removed (1); C10 `LEAST` to `GREATEST` (5); C11 the header ignored altogether (5); C13 a fraction accepted (1); C15 the send-time `kind_held` guard deleted (1). Survived: **C4** ceiling 3600 to 86 400 (N8); **C12** the `GREATEST(..., 0)` floor removed, which is equivalent because a negative wait only puts `nextAttemptAt` in the past, and a past value is due at the next pass exactly as zero is; **C14** `Math.abs` in the parser, equivalent because the digits-only test has already refused every sign.
+
+### Defects and notes
+
+No defect at should-fix or blocker level.
+
+- **N1 (note, carried from round 3):** eslint is not literally 0 on the changed files, only on everything the task wrote; the 16 problems are main's own.
+- **N8 (note, test gap, low):** the value of the one-hour ceiling is not pinned. The specs compare against `PUSH_RETRY.retryAfterMaxSeconds` instead of a literal, so changing it from 3600 to 86 400 (my C4) fails nothing. The live table shows 3600 today; a literal `3600` in one assertion would pin it.
+- **N9 (note, design, as the builder wrote it):** the clamp bounds the wait, not the send. A delivery whose life has run out waits 0 and is sent again at the next pass, up to the attempts cap (5), and every send carries a fresh 24 h `ttl` (`push-message.ts`), so a push can still reach a phone more than a day after it was queued when Expo keeps answering 429 with a header. Reproduction: header `3000` on a delivery queued 87 000 s ago leaves it `pending`, wait 0. Whether a day-old push should be sent at all is a decision; the builder's report states the behaviour.
+- **N10 (note, docs):** `docs/contract/PUSH.md` (section 4) says only "retried with a doubling delay up to a limit". It does not say that a whole-seconds `Retry-After` replaces the doubling, that it is held to one hour and to the delivery's remaining life, and that an HTTP date is ignored. One sentence closes it. Also, the 8 Oct line in `docs/LOG.md` was edited to read "push migration restamped `20261019090000_push_tokens (restamped again in round 4)`" (the parenthesis sits inside the code span, and 8 Oct is not when that stamp was chosen); cosmetic.
+- **N11 (process):** round 3's stand-in sends no header when its `retryAfter` is the empty string, so the unchanged script's "empty" row tests an absent header. I ran a real empty header separately (5 s). The specs' empty case does send one (`headers: {'retry-after': ''}`).
+
+Round 3's notes N2 to N5 and N7 are unchanged by this round and stay as written there.
+
+### NOT RUN
+
+- **Real Expo, FCM, APNs, a real receipt within a minute, any phone (V10).** Unchanged. Unblocked by: `exp.host:443` reachable from the session (send to a valid unregistered token, expect a ticket then `DeviceNotRegistered`), then a real Android token and the owner's FCM credentials uploaded to Expo (INBOX-21).
+- **The full backend suite and the neighbouring suites** (account, notification, the notification-emitting modules, `hub-rate-limits`). Not in this round's brief, and round 4 changes nothing outside `src/push`, the migration folder and the merge (item 5). Unblocked by: the namespace run on a quiet machine (about 176 suites; this disk had 2.2 GB free).
+- **A code-level merge with JOIN-01-r4.** Item 2 applied that branch's migration folder together with this one; I did not merge its code (`schema.prisma`, `app.module.ts`) into this branch and compile it. Unblocked by: a trial merge of `origin/wmt/JOIN-01-r4` into 7694231, then `tsc`.
+- **Sign-in with the real wawu-id.** Mock WAWU ID used, as in round 3.
+- **Mobile `npm run check` in full.** The branch's mobile change is docs and task files only; I ran `npm run gates` and `npm run tasks`. The builder's full run (exit 0 on the third run, two load flakes) stands as theirs.
+
+### Process notes
+
+Ports 6071 (hub, first the 7694231 build, then ec02c97's, one at a time), 6073 (mock WAWU ID), 6074 (stand-in Expo); the specs start their own stand-in on 127.0.0.1 port 0. Databases `vi03r4_*_test` (real, empty, union, tpl, spec, hub, prot) all dropped. Worktrees `vb-INBOX-03r4`, `vb-INBOX-03r4-main`, `vb-INBOX-03r4-old` removed. Every process was one I started and stopped by PID after reading its command line; no `pkill`, no `pgrep -f`.
 
 ## Owner sign-off
 
