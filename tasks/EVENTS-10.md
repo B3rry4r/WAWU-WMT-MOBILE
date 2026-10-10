@@ -1,7 +1,7 @@
 ---
 id: EVENTS-10
 title: Refund ticket buyers when an event is called off
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 149
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # EVENTS-10 · Refund ticket buyers when an event is called off
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

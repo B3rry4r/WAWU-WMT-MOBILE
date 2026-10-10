@@ -7,7 +7,7 @@ order: 32
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -541,6 +541,10 @@ Everything else asked of this round passed. Stack: mock-wawu-id (envelope added 
 **Defects:** none open.
 
 **Status:** no open defect, so `status: review`.
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 

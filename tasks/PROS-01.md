@@ -1,19 +1,21 @@
 ---
 id: PROS-01
 title: Find a professional
-owner: DEV3
+owner: YOU
 area: PROS
 order: 44
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [PROS-02, PROS-03, UI-02, UI-03]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
 artboards: [P1, P2, P3, P4]
 ---
 # PROS-01 · Find a professional
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 
@@ -142,6 +144,10 @@ No defect is open. D1 and D2 are closed. V10 (a phone) remains NOT RUN. Ports 42
 ## Hub entries this task adds (R-41)
 
 The EXPLORE-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 

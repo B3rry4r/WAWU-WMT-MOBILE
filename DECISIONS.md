@@ -402,6 +402,21 @@ registration link, like a wait list .... dont mess with the sign up page").*
 **Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
 next).
 
+### R-49 · The app comes first; the developers' tasks are the lead's; Sonnet agents only
+*Owner, 10 Oct 2026 ("proceed to building the app ... leave the web, the registration link is enough for now ...
+leave the web tasks and proceed with all app full integrations ... claim all other dev tasks as their subscriptions
+are up ... never use opus agents again to do tasks").*
+- The app and the backend it needs are the work. Website tasks are paused: WEBPAY-01 to WEBPAY-05, FIX-23, the web
+  half of FIX-25 and of FIX-16. The website serves only the registration link (R-48), and stays that way until the
+  owner says otherwise. This reverses the 9 Oct "the website wallet comes first".
+- Every open task owned by Developer 2 or Developer 3 is taken over by the lead's agents (owner `YOU`, with a
+  "Taken over" line). Their half-built branches are continued, never restarted.
+- Every builder and verifier is a Sonnet agent. The lead orchestrates, rules and merges; it builds nothing itself.
+- The order of work is the dependency order in `tasks/INDEX.md`: the money core (MONEY-17, then MONEY-18, MONEY-19,
+  MONEY-16 and the Nuvion tasks) first, because most of the app's remaining screens pay from the wallet.
+
+**Carried out by:** the lead's queue, one task per agent, at most four agents at a time.
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
