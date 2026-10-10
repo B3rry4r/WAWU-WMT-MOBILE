@@ -2050,6 +2050,7 @@ export interface paths {
         };
         /** Is a PIN set, when it last changed, tries left, and the lock if any. */
         get: operations["MoneyPinController_state"];
+        /** Change the PIN. The current PIN is X-Transaction-Pin. */
         put: operations["MoneyPinController_change"];
         /** Set the first PIN (A9, A10, W36). Both entries in one request; a difference is pin_mismatch. */
         post: operations["MoneyPinController_set"];
@@ -2110,6 +2111,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** The code and the new PIN. Clears the lock and the wrong-try count, and turns biometric approval off. */
         post: operations["MoneyPinResetController_confirmReset"];
         delete?: never;
         options?: never;
