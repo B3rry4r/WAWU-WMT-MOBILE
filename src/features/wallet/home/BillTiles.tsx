@@ -32,21 +32,28 @@ export function billGlyph(square: number): number {
 
 /**
  * The canvas's hotspot for the bills row (design/_gen/wallet.js, "Wallet · Airtime, Data, Power, TV: that bill,
- * preselected, S2") sends every tile to the Services list, `/bills` (S2, BILLS-01). The preselected bill (Airtime, Data and
- * Cable TV open their own screens from S2) is BILLS-03's refinement, so until it lands every tile opens S2 itself.
+ * preselected, S2") sends every tile to the Services list, `/bills` (S2, BILLS-01). The preselected bill is BILLS-03's
+ * refinement, so until it lands every tile opens S2 itself.
+ *
+ * Only the tiles whose screens are built are drawn (R-47): Power (electricity, S3 and S4) and More (S2 itself). Airtime, Data
+ * and TV open screens that BILLS-03 builds, so BILLS-03 adds those three tiles, as drawn, in the canvas's order:
+ * `{ key: 'airtime', icon: 'Smartphone', label: 'Airtime' }`, `{ key: 'data', icon: 'Wifi', label: 'Data' }` before Power and
+ * `{ key: 'tv', icon: 'Tv', label: 'TV' }` after it. The two that are drawn sit in the canvas's own columns (packed from the left,
+ * each a column of `BILL_TILE.square + BILL_TILE.extra`), at the size five columns give, so adding the three moves nothing.
  */
 type Bill = { key: string; icon: IconName; label: string };
 const BILLS: readonly Bill[] = [
-  { key: 'airtime', icon: 'Smartphone', label: 'Airtime' },
-  { key: 'data', icon: 'Wifi', label: 'Data' },
   { key: 'power', icon: 'Zap', label: 'Power' },
-  { key: 'tv', icon: 'Tv', label: 'TV' },
   { key: 'more', icon: 'LayoutGrid', label: 'More' },
 ];
 
+/** How many tiles are drawn, for the loading shapes that stand for them (W4). */
+export const BILLS_DRAWN = BILLS.length;
+
 export function BillTiles() {
   const router = useRouter();
-  const size = billTileSize(useRowRoom(), BILLS.length);
+  // The size the canvas's five columns give, not the two that are drawn: a bigger tile now would shrink when BILLS-03 adds three.
+  const size = billTileSize(useRowRoom());
   return (
     <View testID="wallet-bills" style={styles.row}>
       {BILLS.map((bill) => (
@@ -79,7 +86,7 @@ function Tile({ bill, size, onPress }: { bill: Bill; size: number; onPress: () =
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  row: { flexDirection: 'row', justifyContent: 'flex-start' },
   tile: { alignItems: 'center', gap: BILL_TILE.gap },
   square: {
     borderRadius: radius.tile,

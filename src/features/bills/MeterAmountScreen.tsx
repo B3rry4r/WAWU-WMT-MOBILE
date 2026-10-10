@@ -10,11 +10,10 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { fieldMetrics } from '@/components/TextField';
 import { space } from '@/theme';
 
-import { billsCodes, billsKeys, fetchElectricityBillers, previewMeter, type ElectricityBiller } from './api';
+import { billsCodes, billsKeys, fetchElectricityBillers, previewMeter, type ElectricityBiller, type ElectricityBillers } from './api';
 import { BILLS_TITLE } from './BillsScreen';
 import {
-  amountDigits,
-  amountField,
+  amountBoxText,
   amountKobo,
   amountProblem,
   amountProblemWords,
@@ -25,7 +24,9 @@ import {
   METER_CHECK_DELAY_MS,
   METER_CHECK_MIN_DIGITS,
   METER_MAX_DIGITS,
-  presetDigits,
+  NAIRA_SIGN,
+  presetText,
+  takeAmount,
 } from './model';
 import { AmountPresets, BillField, HintLine, StepChip, billMetrics } from './parts';
 import { useSettled } from './useSettled';
@@ -117,12 +118,15 @@ function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onU
   );
   const line = meterLine(meter, settled, { isFetching: check.isFetching, isError: check.isError, error: check.error, data: check.data });
 
-  // The bills service stopped being usable while the person was on this screen: ask the list again and let S2 say so.
+  // The bills service stopped being usable while the person was on this screen: S2 is told at once (the list it will draw is
+  // replaced by "not available" before it is shown, so it opens as S13 and never as the normal screen for a moment), and the
+  // list is asked again so S2 then says what the Hub says (D6).
   const told = useRef(false);
   const stopped = check.isError && isApiError(check.error) && check.error.code === billsCodes.unavailable;
   useEffect(() => {
     if (stopped && !told.current) {
       told.current = true;
+      queryClient.setQueryData<ElectricityBillers>(billsKeys.electricity, { available: false, billers: [] });
       void queryClient.invalidateQueries({ queryKey: billsKeys.electricity });
       onUnavailable();
     }
@@ -149,6 +153,9 @@ function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onU
           {line.kind === 'found' ? <HintLine testID="meter-line" tone="positive" icon="CircleCheck" strong words={line.words} /> : null}
           {line.kind === 'checking' ? <HintLine testID="meter-line" tone="textMuted" words="Checking this meter" /> : null}
           {line.kind === 'not_found' ? <HintLine testID="meter-line" tone="danger" icon="CircleAlert" words="We couldn't find this meter. Check the number." /> : null}
+          {line.kind === 'unconfirmed' ? (
+            <HintLine testID="meter-line" tone="danger" icon="CircleAlert" words="We couldn't confirm this meter." action={{ label: 'Try again', onPress: () => void check.refetch() }} />
+          ) : null}
           {line.kind === 'problem' ? (
             <HintLine testID="meter-line" tone="danger" icon="CircleAlert" words={line.message} action={{ label: 'Try again', onPress: () => void check.refetch() }} />
           ) : null}
@@ -156,16 +163,18 @@ function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onU
         <BillField
           testID="amount"
           label="Amount"
-          value={amountField(amount)}
-          onChangeText={(typed) => setAmount(amountDigits(typed))}
+          value={amountBoxText(amount)}
+          onChangeText={(typed) => setAmount((was) => takeAmount(typed, was))}
           placeholder="Amount"
-          keyboardType="number-pad"
+          keyboardType="decimal-pad"
+          prefix={NAIRA_SIGN}
+          prefixTestID="amount-glyph"
           valueSize={billMetrics.amountValue}
           invalid={problem !== null}
         >
           {problem ? <HintLine testID="amount-line" tone="danger" icon="CircleAlert" words={amountProblemWords(problem)} /> : null}
         </BillField>
-        <AmountPresets testID="amount-presets" presetsKobo={biller.presetsKobo} chosenKobo={kobo} onPick={(picked) => setAmount(presetDigits(picked))} />
+        <AmountPresets testID="amount-presets" presetsKobo={biller.presetsKobo} chosenKobo={kobo} onPick={(picked) => setAmount(presetText(picked))} />
       </View>
     </AuthFrame>
   );

@@ -119,7 +119,7 @@ describe('bills, on the real router', () => {
     await fireEvent.changeText(screen.getByTestId('meter-number'), '0412 3456 789');
     expect(await screen.findByText('Chidinma Okoro · 14 Admiralty Way', undefined, { timeout: 4000 })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: '₦5,000' }));
-    expect(screen.getByTestId('amount').props.value).toBe('₦5,000');
+    expect(screen.getByTestId('amount').props.value).toBe('5,000');
     expect(asked.filter((a) => a === 'POST /bills/electricity/meter-preview')).toHaveLength(1);
 
     // Back walks S4, S3, S2 and the Wallet tab again.

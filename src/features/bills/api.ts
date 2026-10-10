@@ -7,7 +7,8 @@ import type { components } from '@/api/schema.generated';
  * - `GET /bills/electricity/billers`: every electricity company Fintava lists as available, one row per company and plan,
  *   each with its own minimum and maximum in kobo and the quick amounts that fit them. `available: false` is S13;
  * - `POST /bills/electricity/meter-preview`: the name and address on a meter. `422 meter_not_found` is S10;
- *   `503 bills_unavailable` is S13 again; `503 provider_unreachable` and `429 bills_rate_limited` are a try-again.
+ *   `502 meter_unconfirmed` is an answer the Hub could not use (S4 says so, never green); `503 bills_unavailable` is S13
+ *   again; `503 provider_unreachable` and `429 bills_rate_limited` are a try-again.
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row 11),
  * so each call reads `data` itself. The app never talks to the bills provider.
@@ -56,13 +57,17 @@ export async function previewMeter(code: string, meterNumber: string): Promise<M
   )) as unknown as Envelope<MeterPreview>;
   const data = body?.data;
   if (!data || typeof data !== 'object' || !isText(data.meterNumber) || !isText(data.code)) throw unreadable('meter');
-  if ((data.name !== null && !isText(data.name)) || (data.address !== null && !isText(data.address))) throw unreadable('meter');
+  if (data.address !== null && !isText(data.address)) throw unreadable('meter');
+  // A found meter has a name (D2). An answer without one is not a meter found: the Hub never sends it, and an older one's
+  // is read as a meter that could not be confirmed, never drawn as found.
+  if (!isText(data.name) || data.name.trim() === '') throw new ApiError('unknown', 200, 'This meter could not be confirmed. Try again.', billsCodes.meterUnconfirmed);
   return data;
 }
 
 /** The reason codes the two routes answer with, as `ApiError.code`. */
 export const billsCodes = {
   meterNotFound: 'meter_not_found',
+  meterUnconfirmed: 'meter_unconfirmed',
   billerNotFound: 'biller_not_found',
   unavailable: 'bills_unavailable',
   unreachable: 'provider_unreachable',

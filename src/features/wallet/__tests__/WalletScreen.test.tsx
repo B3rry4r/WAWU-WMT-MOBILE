@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
-import { Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockVault = new Map<string, string>();
@@ -165,12 +165,16 @@ const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
 };
 const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
 /** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. */
-const NOT_BUILT_BUTTONS = ['Scan to pay', 'Wallet settings', 'Send', 'Add money', 'Swap', 'WAWU card', 'See all transactions'];
-/** The five bills tiles (BILLS-01), drawn on every state of the tab, each opening Pay a bill (S2). */
-const BILL_TILES = ['Airtime', 'Data', 'Power', 'TV', 'More'];
+const NOT_BUILT_BUTTONS = ['Scan to pay', 'Wallet settings', 'Send', 'Add money', 'Swap', 'WAWU card', 'See all transactions', 'Airtime', 'Data', 'TV'];
+/**
+ * The bills tiles that are built, drawn on every state of the tab, each opening Pay a bill (S2). The canvas draws Airtime, Data and TV
+ * too; their screens are BILLS-03's, so until it adds them they are not drawn (R-47, U1).
+ */
+const BILL_TILES = ['Power', 'More'];
 const NOT_BUILT_IDS = [
   'wallet-scan', 'wallet-settings', 'wallet-tabs', 'wallet-actions', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row', 'wallet-see-all',
   'wallet-loading-tabs', 'wallet-loading-actions',
+  'wallet-bill-airtime', 'wallet-bill-data', 'wallet-bill-tv',
 ];
 /** Fails when anything the Wallet tab has no screen for is drawn: a button, a tab, a tile or a row of them. */
 const expectNothingUnbuilt = (app: Awaited<ReturnType<typeof boot>>) => {
@@ -256,7 +260,7 @@ describe('W1 · Wallet · Naira', () => {
     expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
   });
 
-  it('every button on W1 does something: the eye, Copy and the five bills tiles, and each one works', async () => {
+  it('every button on W1 does something: the eye, Copy and the two bills tiles, and each one works', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(buttonNames(app).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance'].sort());
@@ -271,20 +275,42 @@ describe('W1 · Wallet · Naira', () => {
     expect(allText(app)).not.toMatch(/soon|not available|not built/i);
   });
 
-  it('a user can tap any of the five bills tiles and land on Pay a bill (S2, BILLS-01)', async () => {
+  it('a user can tap either bills tile (Power, More) and land on Pay a bill (S2, BILLS-01); Airtime, Data and TV are not drawn until BILLS-03 builds them (R-47, U1)', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(inOrder(idsInOrder(app), ['wallet-bill-airtime', 'wallet-bill-data', 'wallet-bill-power', 'wallet-bill-tv', 'wallet-bill-more'])).toEqual([
-      'wallet-bill-airtime',
-      'wallet-bill-data',
       'wallet-bill-power',
-      'wallet-bill-tv',
       'wallet-bill-more',
     ]);
+    for (const name of ['Airtime', 'Data', 'TV']) expect(app.screen.queryByRole('button', { name })).toBeNull();
+    expect(app.screen.queryByText(/^(Airtime|Data|TV)$/)).toBeNull();
     for (const name of BILL_TILES) {
       mockPushed.length = 0;
       await app.fireEvent.press(app.screen.getByRole('button', { name }));
       expect(mockPushed).toEqual(['/bills']);
+    }
+  });
+
+  it('the two bills tiles sit where the canvas puts its first two of five columns: packed from the left, each column 16 wider than its square (U1)', async () => {
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    const row = StyleSheet.flatten(app.screen.getByTestId('wallet-bills').props.style);
+    expect(row.flexDirection).toBe('row');
+    // Spread edge to edge, two tiles would sit at the two ends of the row; the canvas's columns are side by side.
+    expect(row.justifyContent).toBe('flex-start');
+    // On a 390 window the canvas's square is 54, so a column is 70 wide.
+    for (const key of ['power', 'more']) {
+      expect(StyleSheet.flatten(app.screen.getByTestId(`wallet-bill-${key}`).props.style).width).toBe(70);
+    }
+  });
+
+  it('the bills tiles keep the size five columns would give them, so BILLS-03 adds its three without moving these', async () => {
+    Dimensions.set({ window: { width: 320, height: 740, scale: 2, fontScale: 1 } });
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    // 320 less the two gutters, over five columns, less 16: a 40 square in a 56 column (not 54 and 70).
+    for (const key of ['power', 'more']) {
+      expect(StyleSheet.flatten(app.screen.getByTestId(`wallet-bill-${key}`).props.style).width).toBe(56);
     }
   });
 
@@ -339,7 +365,7 @@ describe('W4 · Wallet · loading', () => {
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
   });
 
-  it('draws W4 for what is built: the bar, then the shapes of the card, five bills tiles and three rows, and no shape of a tab or an action (R-47)', async () => {
+  it('draws W4 for what is built: the bar, then the shapes of the card, two bills tiles and three rows, and no shape of a tab or an action (R-47)', async () => {
     routes['GET /money/wallet/balance'] = ['hold'];
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-loading')).toBeTruthy();
@@ -348,7 +374,7 @@ describe('W4 · Wallet · loading', () => {
       expect(app.screen.getByTestId(id)).toBeTruthy();
     }
     expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
-    expect(app.screen.getByTestId('wallet-loading-bills').children).toHaveLength(5);
+    expect(app.screen.getByTestId('wallet-loading-bills').children).toHaveLength(2);
     const stands = ['wallet-bar', 'wallet-loading-card', 'wallet-loading-bills', 'wallet-loading-rows'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
@@ -432,7 +458,7 @@ describe('every state without a balance draws the bar and its card, and nothing 
     expect(app.screen.getByRole('header', { name: 'Wallet' })).toBeTruthy();
     expect(app.screen.getByTestId('wallet-bar')).toBeTruthy();
     expectNothingUnbuilt(app);
-    // Every button is the state's own (it asks again or opens Open your wallet), then the five bills tiles, which need no wallet.
+    // Every button is the state's own (it asks again or opens Open your wallet), then the two bills tiles, which need no wallet.
     expect(buttonNames(app)).toEqual([...only, ...BILL_TILES]);
   };
 
@@ -655,11 +681,11 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-bills', 'wallet-transactions', 'wallet-row-r1', 'wallet-row-r2'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    // The card's own two buttons and the five bills tiles are the only ones pressable.
+    // The card's own two buttons and the two bills tiles are the only ones pressable.
     expect(buttonNames(app).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance'].sort());
   });
 
-  it('the loading shapes are the bar, the card, five bills tiles and three rows at 320, and nothing else', async () => {
+  it('the loading shapes are the bar, the card, two bills tiles and three rows at 320, and nothing else', async () => {
     narrow(320);
     routes['GET /money/wallet/balance'] = ['hold'];
     const app = await boot();
@@ -670,7 +696,7 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
       await new Promise((resolve) => setTimeout(resolve, 30));
     });
     expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
-    expect(app.screen.getByTestId('wallet-loading-bills').children).toHaveLength(5);
+    expect(app.screen.getByTestId('wallet-loading-bills').children).toHaveLength(2);
     expectNothingUnbuilt(app);
   });
 });

@@ -182,7 +182,7 @@ describe('the Wallet tab with no wallet yet, on the real router', () => {
 });
 
 describe('the Wallet tab with a wallet, on the real router', () => {
-  it('a user sees no scan, settings, Dollar, Crypto, Send, Add money or Swap entry (their screens are not built, R-47), the bills tiles, and the tab stays on /wallet', async () => {
+  it('a user sees no scan, settings, Dollar, Crypto, Send, Add money or Swap entry (their screens are not built, R-47), the two built bills tiles, and the tab stays on /wallet', async () => {
     opened = true;
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
@@ -192,10 +192,11 @@ describe('the Wallet tab with a wallet, on the real router', () => {
       expect(screen.queryByRole('button', { name })).toBeNull();
     }
     for (const name of ['Naira', 'Dollar', 'Crypto']) expect(screen.queryByRole('tab', { name })).toBeNull();
-    // The buttons on the tab are the card's own two (hide the balance, copy the number) and the five bills tiles (BILLS-01); the rest of the bar is the tab bar.
+    // The buttons on the tab are the card's own two (hide the balance, copy the number) and the two built bills tiles, Power and More (BILLS-01; Airtime, Data and TV wait for BILLS-03, R-47); the rest of the bar is the tab bar.
     expect(screen.getByRole('button', { name: 'Hide balance' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy account number' })).toBeTruthy();
-    for (const name of ['Airtime', 'Data', 'Power', 'TV', 'More']) expect(screen.getByRole('button', { name })).toBeTruthy();
+    for (const name of ['Power', 'More']) expect(screen.getByRole('button', { name })).toBeTruthy();
+    for (const name of ['Airtime', 'Data', 'TV']) expect(screen.queryByRole('button', { name })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
     expect(pathname()).toBe('/wallet');
     expect(screen.queryByRole('header', { name: 'A26' })).toBeNull();

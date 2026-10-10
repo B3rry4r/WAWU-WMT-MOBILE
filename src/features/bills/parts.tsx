@@ -51,8 +51,12 @@ export const billMetrics = {
   fieldValue: 15.5,
   monoTracking: 0.04,
   fieldGap: 8,
+  prefixGap: 2,
 } as const;
 const m = billMetrics;
+
+/** The phone's own face for a glyph Alan Sans lacks (the ₦, R-35); `Money` does the same for the sign inside its figures. */
+const platformFace = { fontFamily: 'System', fontWeight: '500' } as const;
 
 /** The chip that says what has been chosen so far ("Paying for  Electricity  X"); its X takes the choice back. */
 export function StepChip({ label, value, onClear, clearLabel, testID }: { label: string; value: string; onClear: () => void; clearLabel: string; testID?: string }) {
@@ -183,6 +187,13 @@ type FieldProps = {
   mono?: boolean;
   /** 20 for the amount, 15.5 otherwise (`fs`). */
   valueSize?: number;
+  /**
+   * A sign drawn in front of the value while there is one (the amount's ₦). It is its own run in the phone's face, which has
+   * the glyph (R-35: Alan Sans has none), the same size and line as the value, so the two read as one figure. It is not read
+   * out; the input's label says what the box is for.
+   */
+  prefix?: string;
+  prefixTestID?: string;
   /** The red outline: a meter that was not found, an amount outside the limits. */
   invalid?: boolean;
   maxLength?: number;
@@ -195,7 +206,7 @@ type FieldProps = {
  * (SHARED-CHANGES.md BILLS-01 #1 asks for them; this is its look, from the same `fieldMetrics`, and it goes when that lands).
  * The line under the field is the screen's own, passed as children.
  */
-export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, invalid, maxLength, children, testID }: FieldProps) {
+export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, prefix, prefixTestID, invalid, maxLength, children, testID }: FieldProps) {
   const { colors } = useWawu();
   const [focused, setFocused] = useState(false);
   const border = invalid ? colors.danger : focused ? colors.accent : colors.borderHairline;
@@ -210,6 +221,19 @@ export function BillField({ label, value, onChangeText, placeholder, keyboardTyp
           { backgroundColor: colors.surfaceInput, borderColor: border, borderWidth: focused || invalid ? fieldMetrics.ring : StyleSheet.hairlineWidth },
         ]}
       >
+        {prefix && value !== '' ? (
+          <Text
+            testID={prefixTestID}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[
+              platformFace,
+              { color: colors.textPrimary, fontSize: valueSize, lineHeight: canvasNormalLineHeight(valueSize), marginRight: m.prefixGap },
+            ]}
+          >
+            {prefix}
+          </Text>
+        ) : null}
         <TextInput
           testID={testID}
           accessibilityLabel={label}
@@ -274,8 +298,16 @@ const styles = StyleSheet.create({
   preset: { flex: 1, height: m.presetHeight, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   field: { alignSelf: 'stretch', gap: m.fieldGap },
   fieldLabel: { fontSize: fieldMetrics.label, lineHeight: canvasNormalLineHeight(fieldMetrics.label) },
-  fieldBox: { height: fieldMetrics.height, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, borderRadius: fieldMetrics.radius },
+  fieldBox: { height: fieldMetrics.height, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, borderRadius: fieldMetrics.radius },
   fieldInput: { flex: 1, paddingVertical: 0 },
   hint: { flexDirection: 'row', alignItems: 'center', gap: m.hintGap },
-  hintWords: { flexShrink: 1, fontSize: m.hintWord, lineHeight: canvasNormalLineHeight(m.hintWord) },
+  // minWidth 0 lets the words shrink to the row (a flex item's default is its longest word), and the web breaks a word that is
+  // longer than the row; a phone's text already does. Text from the provider is capped at 200 characters by the Hub (D9).
+  hintWords: {
+    flexShrink: 1,
+    minWidth: 0,
+    fontSize: m.hintWord,
+    lineHeight: canvasNormalLineHeight(m.hintWord),
+    ...(Platform.OS === 'web' ? ({ overflowWrap: 'anywhere', wordBreak: 'break-word' } as object) : null),
+  },
 });

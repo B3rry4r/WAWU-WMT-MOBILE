@@ -48,7 +48,7 @@ const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { BillsScreen } = require('../BillsScreen') as typeof import('../BillsScreen');
 const { ElectricityBillersScreen } = require('../ElectricityBillersScreen') as typeof import('../ElectricityBillersScreen');
 const { MeterAmountScreen } = require('../MeterAmountScreen') as typeof import('../MeterAmountScreen');
-const { METER_CHECK_DELAY_MS } = require('../model') as typeof import('../model');
+const { METER_CHECK_DELAY_MS, takeAmount } = require('../model') as typeof import('../model');
 
 // The app retries a failed read twice before it shows the error; these tests turn that off so the error shows at once.
 queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, retry: false } });
@@ -314,13 +314,50 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     expect(sent.filter((s) => s.key === PREVIEW_PATH).map((s) => s.body)).toEqual([{ code: 'Ikeja_Electric_Bill_Payment', meterNumber: '04123456789' }]);
   });
 
-  it('says only the name when the Hub has no address, and only that the meter was found when it has neither', async () => {
+  it('says only the name when the Hub has no address', async () => {
     await ready();
-    answers[PREVIEW_PATH] = [found({ address: null }), found({ name: null, address: null, meterNumber: '04123456780' })];
+    answers[PREVIEW_PATH] = [found({ address: null })];
     await type('meter-number', '04123456789');
     expect(await rtl.screen.findByText('Chidinma Okoro', undefined, LATER)).toBeTruthy();
-    await type('meter-number', '04123456780');
-    expect(await rtl.screen.findByText('Meter found', undefined, LATER)).toBeTruthy();
+    expect(rtl.screen.queryByText(/Meter found/)).toBeNull();
+  });
+
+  it('never draws "Meter found": an answer without a name (an older Hub) is a meter that could not be confirmed (D2)', async () => {
+    await ready();
+    answers[PREVIEW_PATH] = [found({ name: null, address: null })];
+    await type('meter-number', '04123456789');
+    expect(await rtl.screen.findByText("We couldn't confirm this meter.", undefined, LATER)).toBeTruthy();
+    expect(rtl.screen.queryByText(/Meter found/)).toBeNull();
+    expect(rtl.screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('an answer with a blank name is not a found meter either', async () => {
+    await ready();
+    answers[PREVIEW_PATH] = [found({ name: '   ', address: '14 Admiralty Way' })];
+    await type('meter-number', '04123456789');
+    expect(await rtl.screen.findByText("We couldn't confirm this meter.", undefined, LATER)).toBeTruthy();
+    expect(rtl.screen.queryByText(/Admiralty/)).toBeNull();
+  });
+
+  it('D2: a meter the Hub could not confirm says so in plain words with Try again, never green and never "not found"', async () => {
+    await ready();
+    answers[PREVIEW_PATH] = [refusal(502, 'meter_unconfirmed', "We couldn't confirm this meter. Try again."), found()];
+    await type('meter-number', '04123456789');
+    expect(await rtl.screen.findByText("We couldn't confirm this meter.", undefined, LATER)).toBeTruthy();
+    expect(rtl.screen.queryByText(/couldn't find/)).toBeNull();
+    expect(rtl.screen.queryByText(/Meter found/)).toBeNull();
+    // The line is an alert in the danger colour, with Try again beside it.
+    const line = rtl.screen.getByTestId('meter-line');
+    expect(line.props.accessibilityRole).toBe('alert');
+    const words = rtl.within(line).getByText("We couldn't confirm this meter.");
+    expect(StyleSheet.flatten(words.props.style).color).not.toBe(lightColors.positive);
+    expect([lightColors.danger, darkColors.danger]).toContain(StyleSheet.flatten(words.props.style).color);
+    // The box is not reddened as a meter that does not exist is.
+    const box = StyleSheet.flatten(rtl.screen.getByTestId('meter-number').parent!.props.style);
+    expect([lightColors.danger, darkColors.danger]).not.toContain(box.borderColor);
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' })));
+    expect(await rtl.screen.findByText('Chidinma Okoro · 14 Admiralty Way')).toBeTruthy();
+    expect(asked(PREVIEW_PATH)).toBe(2);
   });
 
   it('every word under the number is the Hub’s: another name and address are drawn as they come', async () => {
@@ -329,6 +366,26 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     await type('meter-number', '04123456789');
     expect(await rtl.screen.findByText('Ada Eze · 2 Bode Thomas Street', undefined, LATER)).toBeTruthy();
     expect(rtl.screen.queryByText(/Chidinma|Admiralty/)).toBeNull();
+  });
+
+  it('D9: text from the provider wraps inside S4: the words can shrink to the row and break a long word, with no line running off the edge', async () => {
+    await ready();
+    const name = 'N'.repeat(200);
+    answers[PREVIEW_PATH] = [found({ name, address: 'A'.repeat(200) })];
+    await type('meter-number', '04123456789');
+    const words = await rtl.screen.findByText(`${name} · ${'A'.repeat(200)}`, undefined, LATER);
+    const style = StyleSheet.flatten(words.props.style);
+    expect(style.flexShrink).toBe(1);
+    // A flex item's default minimum is its longest word: without this the web draws a 200 character name past the right edge.
+    expect(style.minWidth).toBe(0);
+    expect(words.props.numberOfLines).toBeUndefined();
+  });
+
+  it('D1: the amount box offers a keyboard with a decimal point, so kobo can be typed on a phone', async () => {
+    await ready();
+    expect(rtl.screen.getByTestId('amount').props.keyboardType).toBe('decimal-pad');
+    // The meter number is digits only.
+    expect(rtl.screen.getByTestId('meter-number').props.keyboardType).toBe('number-pad');
   });
 
   it('S10: a meter Fintava does not know says "We couldn\'t find this meter. Check the number." and reddens the box', async () => {
@@ -343,17 +400,87 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     expect(rtl.screen.queryByText('Meter found')).toBeNull();
   });
 
-  it('asks for a check only once five digits are typed and the person has stopped', async () => {
+  it('asks for a check only once ten digits are typed and the person has stopped (U3)', async () => {
     await ready();
     answers[PREVIEW_PATH] = [found()];
-    await type('meter-number', '0412');
+    // Five to nine digits, and a long pause: nothing is asked and nothing is said, so no red sentence flashes mid-typing.
+    await type('meter-number', '99999');
     await settle(METER_CHECK_DELAY_MS + 300);
     expect(asked(PREVIEW_PATH)).toBe(0);
     expect(rtl.screen.queryByTestId('meter-line')).toBeNull();
-    await type('meter-number', '04123');
-    await type('meter-number', '041234');
+    await type('meter-number', '041234567');
+    await settle(METER_CHECK_DELAY_MS + 300);
+    expect(asked(PREVIEW_PATH)).toBe(0);
+    expect(rtl.screen.queryByTestId('meter-line')).toBeNull();
+    await type('meter-number', '0412345678');
     await rtl.waitFor(() => expect(asked(PREVIEW_PATH)).toBe(1), LATER);
-    expect(sent.filter((s) => s.key === PREVIEW_PATH)[0].body).toEqual({ code: 'Ikeja_Electric_Bill_Payment', meterNumber: '041234' });
+    expect(sent.filter((s) => s.key === PREVIEW_PATH)[0].body).toEqual({ code: 'Ikeja_Electric_Bill_Payment', meterNumber: '0412345678' });
+  });
+
+  describe('D3: the wait after the last key is 600 ms, pinned with a literal and fake timers', () => {
+    // The real timers of the other tests are put back whatever happens here.
+    afterEach(() => jest.useRealTimers());
+    const flush = () =>
+      rtl.act(async () => {
+        for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setImmediate(resolve));
+      });
+    const advance = async (ms: number) => {
+      await rtl.act(async () => {
+        jest.advanceTimersByTime(ms);
+      });
+      await flush();
+    };
+
+    it('eleven digits typed 100 ms apart ask nothing until 600 ms after the last, and then ask once', async () => {
+      await ready();
+      answers[PREVIEW_PATH] = [found()];
+      jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+      const digits = '04123456789';
+      for (let i = 1; i <= digits.length; i += 1) {
+        await type('meter-number', digits.slice(0, i));
+        await advance(100);
+      }
+      // 100 ms have passed since the last key. Another 499 ms is 599 in all: still nothing asked, nothing said.
+      await advance(499);
+      expect(asked(PREVIEW_PATH)).toBe(0);
+      expect(rtl.screen.queryByTestId('meter-line')).toBeNull();
+      // One more millisecond is the 600th: exactly one check.
+      await advance(1);
+      expect(asked(PREVIEW_PATH)).toBe(1);
+      expect(sent.filter((s) => s.key === PREVIEW_PATH)[0].body).toEqual({ code: 'Ikeja_Electric_Bill_Payment', meterNumber: digits });
+      // Quiet for much longer asks nothing more.
+      await advance(5000);
+      expect(asked(PREVIEW_PATH)).toBe(1);
+    });
+
+    it('a key pressed 599 ms after the last starts the wait again', async () => {
+      await ready();
+      answers[PREVIEW_PATH] = [found(), found({ meterNumber: '041234567890' })];
+      jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+      await type('meter-number', '0412345678');
+      await advance(599);
+      expect(asked(PREVIEW_PATH)).toBe(0);
+      await type('meter-number', '04123456789');
+      await advance(599);
+      expect(asked(PREVIEW_PATH)).toBe(0);
+      await advance(1);
+      expect(asked(PREVIEW_PATH)).toBe(1);
+      expect(sent.filter((s) => s.key === PREVIEW_PATH)[0].body).toMatchObject({ meterNumber: '04123456789' });
+    });
+
+    it('ten digits are enough and nine are not, however long the person waits', async () => {
+      await ready();
+      answers[PREVIEW_PATH] = [found()];
+      jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+      await type('meter-number', '041234567');
+      await advance(60_000);
+      expect(asked(PREVIEW_PATH)).toBe(0);
+      await type('meter-number', '0412345678');
+      await advance(599);
+      expect(asked(PREVIEW_PATH)).toBe(0);
+      await advance(1);
+      expect(asked(PREVIEW_PATH)).toBe(1);
+    });
   });
 
   it('takes digits only, from a number pasted with letters, spaces and dashes, and at most twenty', async () => {
@@ -411,12 +538,27 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     await rtl.waitFor(() => expect(asked(BILLERS_PATH)).toBe(2));
   });
 
+  it('D6: S2 is S13 at once: the kept list is replaced by "not available" before S2 is drawn, not after the next read', async () => {
+    const seen: unknown[] = [];
+    // The list is asked again after the check; this answer is the Hub still holding a list that looks fine (the old behaviour).
+    answers[BILLERS_PATH] = [LIST];
+    answers[PREVIEW_PATH] = [refusal(503, 'bills_unavailable', "Bill payments aren't switched on yet.")];
+    await ready(undefined, {
+      onUnavailable: () => seen.push(queryClient.getQueryData(['bills', 'electricity', 'billers'])),
+    });
+    await type('meter-number', '04123456789');
+    await rtl.waitFor(() => expect(seen).toHaveLength(1), LATER);
+    // At the moment S4 hands over to S2 the list S2 will draw already says S13.
+    expect(seen[0]).toEqual({ available: false, billers: [] });
+  });
+
   it('offers the Hub’s quick amounts for this company, in order, and a tap fills the amount box', async () => {
     await ready('Ibadan_Disco_Prepaid');
     const chips = rtl.within(rtl.screen.getByTestId('amount-presets')).getAllByRole('button').map((b) => b.props.accessibilityLabel);
     expect(chips).toEqual(['₦2,000', '₦5,000']);
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: '₦5,000' })));
-    expect(rtl.screen.getByTestId('amount').props.value).toBe('₦5,000');
+    expect(rtl.screen.getByTestId('amount').props.value).toBe('5,000');
+    expect(rtl.screen.getByTestId('amount-glyph', { includeHiddenElements: true })).toBeTruthy();
     expect(rtl.screen.getByRole('button', { name: '₦5,000' }).props.accessibilityState.selected).toBe(true);
     expect(rtl.screen.getByRole('button', { name: '₦2,000' }).props.accessibilityState.selected).toBe(false);
   });
@@ -431,12 +573,86 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
   it('a user can type their own amount, drawn in naira with commas', async () => {
     await ready();
     await type('amount', '12500');
-    expect(rtl.screen.getByTestId('amount').props.value).toBe('₦12,500');
+    expect(rtl.screen.getByTestId('amount').props.value).toBe('12,500');
     await type('amount', '₦12,500x9');
-    expect(rtl.screen.getByTestId('amount').props.value).toBe('₦125,009');
+    expect(rtl.screen.getByTestId('amount').props.value).toBe('125,009');
     await type('amount', '000');
     expect(rtl.screen.getByTestId('amount').props.value).toBe('');
     expect(rtl.screen.getByTestId('amount').props.placeholder).toBe('Amount');
+    // Nothing typed: no naira sign beside the placeholder.
+    expect(rtl.screen.queryByTestId('amount-glyph', { includeHiddenElements: true })).toBeNull();
+  });
+
+  describe('D1: a decimal point is kobo, never more naira', () => {
+    const kobo = (text: string, previous = '') => takeAmount(text, previous);
+
+    it('"10,000.00" is ten thousand naira and "1,500.50" is ₦1,500.50, typed or pasted', async () => {
+      await ready('Eko_Postpaid');
+      await type('amount', '10,000.00');
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('10,000.00');
+      // Eko postpaid allows ₦300,000,000: a million would have been accepted without a word.
+      expect(rtl.screen.queryByTestId('amount-line')).toBeNull();
+      expect(rtl.screen.getByRole('button', { name: '₦10,000' }).props.accessibilityState.selected).toBe(true);
+      await type('amount', '1,500.50');
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('1,500.50');
+      expect(rtl.screen.getByRole('button', { name: '₦10,000' }).props.accessibilityState.selected).toBe(false);
+      expect(kobo('1,500.50')).toBe('1500.50');
+    });
+
+    it('keys typed one at a time reach the same figure, and the third kobo digit and a second point are not taken', async () => {
+      await ready('Eko_Postpaid');
+      for (const typed of ['1', '15', '150', '1,500', '1,500.', '1,500.5', '1,500.50', '1,500.505', '1,500.50.']) await type('amount', typed);
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('1,500.50');
+    });
+
+    it('a paste with too many kobo digits or two points is not taken at all, not cut to fit', async () => {
+      await ready('Eko_Postpaid');
+      await type('amount', '5000');
+      await type('amount', '10.999');
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('5,000');
+      await type('amount', '1.2.3');
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('5,000');
+      await type('amount', '1'.repeat(15));
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('5,000');
+    });
+
+    it('checks the limits in kobo: ₦999.99 is below a ₦1,000 minimum and ₦1,000.01 is not', async () => {
+      await ready('Eko_Prepaid');
+      await type('amount', '999.99');
+      expect(rtl.screen.getByText('The least you can pay is ₦1,000.')).toBeTruthy();
+      await type('amount', '1,000.01');
+      expect(rtl.screen.queryByTestId('amount-line')).toBeNull();
+      await type('amount', '500,000.01');
+      expect(rtl.screen.getByText('The most you can pay is ₦500,000.')).toBeTruthy();
+      await type('amount', '500,000.00');
+      expect(rtl.screen.queryByTestId('amount-line')).toBeNull();
+    });
+
+    it('words a limit that has kobo with its kobo', async () => {
+      answers[BILLERS_PATH] = [ok({ available: true, billers: [biller({ code: 'K', name: 'Kobo Power', minimumKobo: 100050, maximumKobo: 10000005, presetsKobo: [] })] })];
+      await open('K');
+      await rtl.screen.findByTestId('meter-amount');
+      await type('amount', '1000');
+      expect(rtl.screen.getByText('The least you can pay is ₦1,000.50.')).toBeTruthy();
+      await type('amount', '100,000.06');
+      expect(rtl.screen.getByText('The most you can pay is ₦100,000.05.')).toBeTruthy();
+    });
+  });
+
+  it('D8: the naira sign beside the amount is drawn in the phone’s own face, which has it, and the digits in the app’s face', async () => {
+    await ready();
+    await type('amount', '10000');
+    const glyph = rtl.screen.getByTestId('amount-glyph', { includeHiddenElements: true });
+    expect(glyph.props.children).toBe('₦');
+    const glyphStyle = StyleSheet.flatten(glyph.props.style);
+    expect(glyphStyle.fontFamily).toBe('System');
+    const inputStyle = StyleSheet.flatten(rtl.screen.getByTestId('amount').props.style);
+    expect(String(inputStyle.fontFamily)).toMatch(/AlanSans/);
+    // Same size and line as the digits, so the two read as one figure.
+    expect(glyphStyle.fontSize).toBe(inputStyle.fontSize);
+    expect(glyphStyle.lineHeight).toBe(inputStyle.lineHeight);
+    // The sign is not read out twice, and the input still says what it is for.
+    expect(rtl.screen.getByTestId('amount').props.accessibilityLabel).toBe('Amount');
   });
 
   it('an amount below this company’s own minimum says so with that minimum, and one above its maximum with that maximum', async () => {
