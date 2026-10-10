@@ -5,8 +5,11 @@ import { Platform, StyleSheet, Text as NativeText, TextInput, View, type StylePr
 import { initialsOf } from '@/components/Avatar';
 import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
+import { amountTracking, Money } from '@/components/Money';
 import { hueFor } from '@/features/feed/model';
 import { font, radius, useWawu, type ColorToken } from '@/theme';
+
+import { FREE, hasKobo } from './model';
 
 /**
  * design/_gen/schools.js `sSearch`: a 46 high pill on the input colour with a 1 hairline ring, an 18 search glyph, 10 to
@@ -126,6 +129,35 @@ export function SchoolLogo({ school, size, corner, initials, ring, rise = 0, sty
       </View>
     </View>
   );
+}
+
+export type FeeProps = {
+  /** The fee in kobo as the Hub sends it. */
+  kobo: number;
+  size: number;
+  testID?: string;
+};
+
+/**
+ * A fee as the screens draw it (SC1's card, SC2's course row, SC3's foot): the amount through the shared `Money`, with its kobo
+ * only when it has some (₦150,000 and ₦12,345.67), and the word "Free" in the same type for a fee of nothing (R-8, as events
+ * word a free price).
+ */
+export function Fee({ kobo, size, testID }: FeeProps) {
+  const { colors } = useWawu();
+  if (kobo === 0) {
+    return (
+      <NativeText
+        testID={testID}
+        accessibilityLabel={FREE}
+        numberOfLines={1}
+        style={[font(600), { fontSize: size, letterSpacing: amountTracking * size, lineHeight: size, color: colors.textPrimary }]}
+      >
+        {FREE}
+      </NativeText>
+    );
+  }
+  return <Money minorUnits={kobo} decimals={hasKobo(kobo)} size={size} testID={testID} />;
 }
 
 /**
