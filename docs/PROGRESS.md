@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 107 | 0 | 20 | 19 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 3 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 6 | 0 | 0 | 2 |
 | done | 71 | 27 | 11 | 5 |
 
@@ -24,12 +24,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
-
-- [WEBPAY-01](../tasks/WEBPAY-01.md) Open your wallet on the website (You)
-
 ## Being built (or fixing verifier findings)
 
+- [WEBPAY-01](../tasks/WEBPAY-01.md) Open your wallet on the website (You)
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 
@@ -161,6 +158,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · WEBPAY-01 · Verifier, round 1 (website `511095f`, backend `78e8c2c`; `wmt/NUV-02` moved to `577a35b` meanwhile, trial merge conflicts in five files, nothing merged): 97 browser assertions pass on the built page and the local hub, no BVN, NIN, ID number or PIN left the one request that sends it; one blocker open, so `building`: D1 the account's country is ignored (a Ghana account is asked for BVN and NIN and wallet routes are called); also open: D2 errors not tied to fields, D3 targets under 44 px, D4 words that do not fit, D5 the page does not know NUV-02 round 3's `expired` and `canResubmit` false, D8 the CLAUDE.md note dropped R-10. JOIN-02 collides in `client.ts` and `Select` (shapes that should survive are in the report). V5 NOT RUN.
 - 10 Oct 2026 · WEBPAY-01 · Builder report (website `wmt/WEBPAY-01` `511095f`, backend read-only at `wmt/NUV-03` `78e8c2c`): a person with no wallet opens one on the website at `/wallet/open` (details with BVN and NIN masked to the last 4, ID and proof of address checked on the page against the server's limits, the hosted selfie only when the server has it on, Checking your details, approved with the account number then the PIN, rejected with what to fix and correct-and-send-again, the held-BVN and daily-cap answers); the step is read from the server on every visit; walked in a real browser against the built backend with Nuvion stood in (70 checks, 0 failing; 156 pictures at 390 and 1280, light and dark); no BVN or NIN left in storage, cookies, the network log (one request) or any log; website typecheck, lint, build and check:copy all 0; V5 NOT RUN (round 2 boards not exported), real sandbox NOT RUN (key); status verifying.
 - 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
 - 9 Oct 2026 · PROS-01 · Built: Find a professional (P1 directory with field chips, paging and P4, P2 and P3 profile) against PROS-02's routes; Explore's Find a professional door opens P1; V5 pictures NOT RUN; status verifying.
@@ -175,4 +173,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
 - 8 Oct 2026 · SCHOOLS-04 · Verifier round 5, status review (backend `e87626e`, mobile `58de4a5`): D4 closed (mobile contract byte-equal to the backend branch's, three schools paths and six schemas in the contract and types, `SOURCE_COMMIT` right, `sync_contract.py` no diff); F1 spec passes and kills M4 and the reversed tie; no production change since round 3 but main's; tsc 0, 150 of 150 specs, protected 253/253, gates equal to main's 16 fails, contract additive, mobile `npm run check` exit 0; no defect open.
 - 8 Oct 2026 · SCHOOLS-04 · Builder round 5, status verifying: D4 fixed, the mobile contract and types are copied again from backend branch `e87626e` (main `9d90d57` merged there, contract regenerates with no diff, schools specs 36 of 36) with `sync_contract.py`; `cmp` identical, the three schools paths and six `PublicSchool*` schemas back in `schema.generated.ts`.
-- 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent round 2 (lead), back to building (backend `5a602f9`, then `3971fea` and `7291658`; mobile `4a28ede`, then `7972878`): D2 closed over real HTTP (17 worst-case names through the admin route walked past at limits 1 to 3, longest cursor 1498; 360 units and 1498 characters confirmed exact against validator 13.15.35 over 15.4 million strings and the real DTOs), D3 closed, D1 holds on an ICU database (hide, ties, rename, insert, `q` plus `category`), forged cursors reveal nothing and never 500, `/search` protected tabs byte-identical to main, 45 of 45 mutants killed, protected 253/253 three times, full suite green after environment reruns; round 4's F1 spec holds (M4 now killed); one new defect D4: round 4's mobile merge replaced the task's contract and types with backend main's (the three schools paths are gone from the app's contract).
