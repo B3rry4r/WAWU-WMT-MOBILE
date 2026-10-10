@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 144 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 82 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending (You)
 
@@ -160,6 +160,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · INBOX-05 · Builder report, round 4 (backend 1cabfe3, mobile code 192b992, main merged into both): the room, the price and Suggested read the backend's three routes (G-450 and G-451 closed, G-623 filed); live in a room opened alone on all three entry paths (0.10 to 0.15 s); contract byte-identical across two builds; M7 and M8 killed; own name recovers; Suggested lists open rooms only; verifying.
 - 10 Oct 2026 · INBOX-05 · Verifier report, round 3 (mobile 9f7bab1, backend 715807d, trial-merged with main): D12 fixed by its real cause (20 of 20 alone, 3 of 3 in the full suite at load 21 to 26) and defects 1 to 5 stay closed; merged checks green (mobile check exit 0 on the second run, backend specs, protected 253 of 253, gates same 16 FAIL); new defects 13 (a room opened without the tabs gets no live messages), 14 (contract:build drifts one line after merging main), 15, 16; 17 and 18 for the lead; 19 of 26 mutants killed (6 survived, 1 equivalent); status building.
 - 8 Oct 2026 · INBOX-05 · Builder: Communities chip (I24), room (I25) and sending (I26) built on INBOX-04's inbox and live client; community rows, the chip and Browse communities wired; 9 gaps filed (G-450 to G-458); verifying.
 - 10 Oct 2026 · JOIN-02 · Rounds 4 and 5 merged (website #26 73c14eb, backend #102 7b4ffef): the double charge is closed; the payment window says Who Made This.
@@ -174,4 +175,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
 - 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-01 · Verifier report, round 4 (independent session; backend `d317094` on main `0694ced`, unmoved; mobile `2186734`): merge after one small step (S1: backend main moved to `12e18e3` with `20261019090000_push_tokens`, so the access-code migration folder must be restamped after it; the deploy works either way, proved; trial merge clean, 137 of 137, contract identical), no blocker, status stays done. The double charge is closed on the built server under my own layouts (reload, start again, pay again: two references, two transactions, rows `paid` and `failed` with the refund's amount and transaction id in the admin list and CSV; second tab and device; webhook for both; 20 starts walked one by one and purged after 7 days; paid phone and email refused before any charge in nine forms; 6 concurrent verifies leave one paid), the access code is unique (collisions redrawn, 503 after exactly 5 with nothing written, code on the page equals `accessCode`, no CSV cell can run as a formula), the migration applies over existing rows, stops on a seeded collision changing nothing, rolls back, and the old app version keeps registering. tsc 0, eslint 0, waitlist and webhook specs 137 of 137, rate-limit 22 of 22, protected 253 of 253, gates the same 16 FAIL lines, contract only the summary and `accessCode`. 20 own mutants: 17 killed, 3 survived as test gaps (C2 and C3 pin only the constant, C5 no non-unique error). Notes: a failed migration leaves a P3009 row (runbook line), more pending rows per person, the refund screen's reference looks like the access code. NOT RUN: the production collision SELECT and the production Postgres version (the repo does not say; 13 or later by its own migrations, generated columns need 12).
-- 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
