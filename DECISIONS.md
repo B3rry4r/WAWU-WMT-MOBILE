@@ -215,8 +215,7 @@ used to say "a copy of production", it means the local backend with seeded data.
 Use your PIN." (for example "Fingerprint failed. Use your PIN."). A failed biometric never uses up a PIN try.
 Tasks: MONEY-02, MONEY-14, WALLET-02, WALLET-06.
 
-**R-27 · Links between screens.** *The first half (a hub builds only the rows whose destination exists) is replaced
-by R-46 (8 Oct 2026): every entry is drawn, and one whose screen is not built is inert (`unbuilt`).* No placeholders,
+**R-27 · Links between screens.** *In force again by R-47 (9 Oct 2026); R-46's change to it is withdrawn.* No placeholders,
 no dead buttons, no feature flags. A hub or menu task builds
 only the rows whose destination screen already exists. The task that builds a destination screen also adds its
 entry row or button to the hub, exactly as the artboard draws it, and owns the check "a user can reach X from
@@ -363,7 +362,7 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 
 **Carried out by:** NUV-02, NUV-03, NUV-04, WEBPAY-01, NUV-10 (opening part), then the app fixes in BRAND-01.
 
-### R-46 · The UI is always complete
+### R-46 · The UI is always complete (withdrawn by R-47, 9 Oct 2026)
 *Owner, 8 Oct 2026 ("if the screens are not ready ... it doesn't mean the UI should be incomplete"; "you are still going to show what is exact what is here only that when it is clicked it's not going to open anything because it has not been built").*
 This replaces the hiding half of R-27 and the "left out" line of R-41.
 - Every built screen draws its whole artboard (the brief's version, R-29): every row, tile, tab, button, icon and section, light and dark.
@@ -374,6 +373,33 @@ This replaces the hiding half of R-27 and the "left out" line of R-41.
 - Lead default, owner may override: an inert entry looks exactly as drawn, with no greying and no message.
 
 **Carried out by:** COMPLETE-01 (the `unbuilt` helper and its gate), then COMPLETE-02 Explore, COMPLETE-03 Home, COMPLETE-04 Me, COMPLETE-05 Wallet and COMPLETE-06 (Inbox, Settings, the pay sheet, sign-up and profile edit). BRAND-01 adds the Settings entry. Every later screen task follows this.
+
+### R-47 · Show only what is built (reverses R-46)
+*Owner, 9 Oct 2026: "UI isn't even necessary to be there if the tasks are not complete", and the website wallet comes first.*
+- R-46 is withdrawn; R-27 and R-41 are in force again. A part of a screen whose task is not complete is not drawn: no inert entries, no placeholder rows or tiles for unbuilt screens. The task that builds a screen adds its entry, exactly as drawn, and owns "a user can reach X from Y".
+- A section whose own task is complete stays drawn, with its designed empty state when the Hub serves nothing.
+- FIX-29 removes the inert entries R-46 added (every `unbuilt('<ID>')` site and BRAND-01's seven do-nothing menu rows). COMPLETE-03, COMPLETE-04 and COMPLETE-06 are cancelled. The `unbuilt` helper and its gate stay in the repo, unused.
+- Order of work: the website wallet (WEBPAY-01 and the Nuvion opening tasks it needs) takes agent slots first; app UI work never goes ahead of it.
+
+**Carried out by:** FIX-29.
+
+### R-48 · Event registration link: register and pay on the website, finish in the app
+*Owner, 10 Oct 2026 ("a registration page on the web where they also pay a 2k fee for the 1k subscription"; "It's a
+registration link, like a wait list .... dont mess with the sign up page").*
+- People at a WAWU event register on wawuafrica.com/join (name, phone, email) and pay the event fee, ₦2,000 today,
+  for the ₦1,000 tier (Verify). It is a waiting list, not an account: no WAWU ID account, password or OTP; the
+  website's sign-up page is not touched. The rest happens in the app: signing up there with the same phone or email
+  turns the paid registration into the tier (JOIN-03).
+- The fee is a config value (`event_offers` in the price file), never a literal. It is paid by Flutterwave checkout
+  (card, bank transfer, USSD), the rail that is live in production today; this is an exception to R-44's "no card" for
+  this fee only, because the Nuvion wallet is not live yet. WAWU is the merchant of its own fee, so no creator money is
+  held (the wallet note is unaffected).
+- Open, defaults built until the owner says otherwise: what ₦2,000 buys (default: the Verify tier for its own 30
+  days), when the plan's days start (default: when the person claims it in the app, so nobody loses days before the
+  app reaches them), and the event's closing date (`open_until`).
+
+**Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
+next).
 
 ## Artboards that are not built
 
@@ -405,7 +431,7 @@ The full list of what the canvas contradicts, with both sides quoted, is in
 
 ### R-41 · Every tab is built now, with what exists
 *Owner, 7 Oct 2026 ("I want all tabs to be built").*
-The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect. *Replaced by R-46 (8 Oct 2026): such an entry is drawn and inert (`unbuilt`), never left out; the task that builds the screen wires it.*
+The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect. *In force again by R-47 (9 Oct 2026).*
 
 **Carried out by:** HOME-01, ME-01, EXPLORE-01, WALLET-01 now; each later task named in their "Lead note (7 Oct 2026)" adds its own entry.
 

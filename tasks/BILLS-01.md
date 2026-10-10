@@ -78,6 +78,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps any bills tile and lands on S2 (this task replaces `unbuilt('BILLS-01')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **S2**: a user can pick Electricity (S3); repeat a recent bill.
 - [ ] **S3**: a user sees the billers Fintava lists, each with its prepaid or postpaid code, and can pick one (S4).
 - [ ] **S4**: a user can enter a meter number and see the name on it; pick an amount within that disco's minimum and maximum.

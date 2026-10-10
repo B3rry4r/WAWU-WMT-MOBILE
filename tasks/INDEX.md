@@ -171,10 +171,10 @@ Builder and verifier are always different sessions.
 153. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly · needs BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, SCHOOLS-06, SCHOOLS-11 from Developer 2 first
 154. [COMPLETE-01](COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest
 155. [COMPLETE-02](COMPLETE-02.md) Explore shows its whole design
-156. [COMPLETE-03](COMPLETE-03.md) Home shows its whole design
-157. [COMPLETE-04](COMPLETE-04.md) Me shows its whole design
+156. [FIX-29](FIX-29.md) Unbuilt screens' entries are not drawn (R-47)
+157. [JOIN-01](JOIN-01.md) Event registration link: register and pay the event fee (backend)
 158. [COMPLETE-05](COMPLETE-05.md) Wallet shows its whole design
-159. [COMPLETE-06](COMPLETE-06.md) Inbox, Settings, the feed and the smaller screens show their whole design
+159. [JOIN-02](JOIN-02.md) Event registration link: the website page (wawuafrica.com/join)
 160. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built) · needs ADS-01, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, SCHOOLS-05, SUPPORT-01 from Developer 2 first
 161. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
@@ -205,6 +205,7 @@ Builder and verifier are always different sessions.
 23. [TEST-01](TEST-01.md) Tests pass on a cold cache and a loaded machine
 24. [WEB-01](WEB-01.md) Port web-only features after launch
 25. [FIX-15](FIX-15.md) A refused upload does not count against storage quota
+26. [FIX-28](FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break
 
 ## Developer
 

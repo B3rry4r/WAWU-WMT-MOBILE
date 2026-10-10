@@ -44,7 +44,7 @@ export type TodayScreenProps = {
  *
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
  * search (EXPLORE-02), the bell (ME-14), Send (WALLET-02), Add (WALLET-05), Bills and Pay bills
- * (BILLS-01), Legal (LEGAL-02), Schools (SCHOOLS-03), See all (EXPLORE-02),
+ * (BILLS-01), Schools (SCHOOLS-03), See all (EXPLORE-02),
  * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The sponsored
  * card that takes TGIF's place when it is off (H36) is ADS-01's; with no campaign nothing shows. The Events tile
  * (E1) is EVENTS-01's, in the services row (`Services`).
@@ -143,7 +143,7 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
       ) : tgifOn && tgifDay.isError ? (
         <TgifProblem date={date} onRetry={() => void tgifDay.refetch()} retrying={tgifDay.isFetching} />
       ) : null}
-      <Services onOpenEvents={() => router.push('/events')} />
+      <Services onOpenEvents={() => router.push('/events')} onOpenLegal={() => router.push('/legal')} />
       <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} />
     </>
   );

@@ -3,26 +3,31 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 105 of 244.**
+**Launch tasks done: 110 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 115 | 0 | 20 | 21 |
-| building | 1 | 0 | 0 | 0 |
+| todo | 108 | 0 | 20 | 19 |
+| building | 2 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 4 | 0 | 0 | 0 |
-| done | 66 | 27 | 11 | 5 |
+| review | 6 | 0 | 0 | 2 |
+| done | 71 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
+- [PROS-01](../tasks/PROS-01.md) Find a professional (Developer 3)
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
+- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (Developer 3)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Being built (or fixing verifier findings)
 
-- [NUV-02](../tasks/NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected (You)
+- [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
+- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 
 ## Done
 
@@ -112,6 +117,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
+- [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
@@ -127,10 +133,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
 - [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 - [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
 - [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
+- [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
+- [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -138,27 +148,27 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
 - **Developer:** nothing unblocked
 - **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
-- **Developer 3:** [PROS-01](../tasks/PROS-01.md) Find a professional, [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins
+- **Developer 3:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [EVENTS-09](../tasks/EVENTS-09.md) At the door: scan, let in, already used, not valid
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
-- 9 Oct 2026 · NUV-02 · Verifier report round 2 (independent Sonnet session; backend `259e20a`, mobile `f3d77e5`, wawu-id `fb8717e`; backend main had moved to `473b575`): status back to building. Closed by their own reproductions on built servers: D2 (every JSON null a 400), D4 (a correction moves the claim only with the number Nuvion is sent), D6 (one notice per decision, none for replays, no number), D7, U3 (a permanent 409 `step_not_used`; main answered 503). D3 and D5 closed for what the round named (residuals N4, N5). D1 is NOT closed: an opening abandoned at documents-needed holds its BVN for ever (aged 400 days, still held; no admin route clears it) (N3); a document-only rejection hands the real owner's BVN to whoever asks first (squatter won 5 of 8 races) (N2); a BVN is let go when Nuvion fails or suspends an entity that already has its account, so a second entity for one BVN opens (N1). The oracle is closed (five kinds of holder, one body, medians within 1.95 ms); the cap is exact (3 a day rolling 24 hours, held answers counted, double taps not, bursts across two servers never learn more than 3; a person who types one wrong digit three times is locked about 24 hours). Trial merge of main `473b575`: four conflicts, both `view()` changes hold, tsc 0 and 1,579 tests pass, but NUV-04's `onItsWay` tells a person stopped for a taken BVN that an account number is on its way. Fintava sweep 211 of 219 byte-identical (the other 8 carry the new optional fields). Protected suite 253/253; touched modules 67 suites 2,287 tests; full suite 220 suites 5,849 tests, no assertion failure; 23 mutants of mine (19 killed by specs, 3 only by live phases, 1 equivalent). Mobile `npm run check` NOT RUN to exit 0 as one command (EVENTS-01's `eventsScreens` test races under load; passes alone and under `jest --maxWorkers=2`).
-- 9 Oct 2026 · NUV-02 · Builder report round 2 (status verifying; backend `wmt/NUV-02` `259e20a`, merged with main `dc3baa2`): the verifier's D1 to D7 fixed and each reproduction run before and after on built servers (live `p-null` 7 FAIL to 0, `p-odd` E1 and E8 and `p-review` R7b, C3, C4 FAIL to PASS; C2 passes as to the typed number and differs only in the stored form); a BVN is held only while the opening is with Nuvion or approved and a rejected, failed or stopped opening lets go of it at once, one plain `409 identity_has_wallet` that does not say wallet or check, the claim moves only in the step that sends the number (D1, D4); 3 opening tries a day (`BVN_CHECKS_PER_DAY`, `429 identity_checks_exhausted`, held answers counted; U2); a null is a missing field (D2); a second rejection after a correction is seen, told from the correction's own echo by Nuvion's `updated` time (D3, one nullable column in this task's migration); grouped digits masked (D5); one `identity_review` notification per decision (D6); `POST /money/identity/bvn` is a permanent `409 step_not_used` (U3); CONVENTIONS section 9a and the reason table, G-460 corrected (D7); G-490 to G-492 filed. 22 mutants of my own all killed (V4, V14, V19 included); protected suite 253/253, lock unchanged; gates the same 16 FAIL lines; fintava and unset sweep 211 of 219 byte-identical, the 8 the new optional fields. NOT RUN: the (key) sandbox items, the phone-to-BVN match (G-492 says what the sandbox must show).
-- 8 Oct 2026 · NUV-02 · Verifier report (independent session, backend `9184ee0`, mobile `9bfd5ed`, wawu-id `fb8717e`; backend main had moved to `dc3baa2`, trial merge clean): status back to building, 7 defects. Held on the built servers: one entity per person under ten taps and ten corrections, a lost create settled from Nuvion's list before any resend, one NGN account behind a claim for seven deliveries on two servers, a lying delivery opening nothing, Fintava answers byte-identical (211 of 219, the other 8 carry the new fields), protected suite 253/253, touched modules 62 suites and full suite 216 suites with only the two known environment failures passing alone, 17 of 20 own mutants killed. Open: D1 anyone can hold another person's BVN and the owner is told they already have a wallet, D2 an explicit null passes the required fields (gender null is sent as female), D3 a second rejection after a correction is not shown, D4 a correction moves the BVN hash to a BVN Nuvion never got, D5 grouped digits in Nuvion text reach the log and a column, D6 the promise "we will let you know" has no sender, D7 backend docs and G-460 do not match the code. Evidence in the lead's scratchpad `vnuv-02/`.
-- 9 Oct 2026 · Lead: backend main dc3baa2 (SCHOOLS-04) failed its pre-deploy Test job on one schools paging spec, so production stays on d92e998; filed FIX-27. GitHub Actions also stopped starting jobs (account billing).
-- 8 Oct 2026 · BRAND-01 · Merged: the launcher icon fits Samsung's circle, the splash logo is 128, the welcome page has the website's creators picture, and Me's Menu opens Settings. Phone check waits on the new preview build.
-- 8 Oct 2026 · BRAND-01 · Verifier: V1 passed (npm run check exit 0, 95 suites, 1606 tests, gates 0 findings); icon measured by pixels (farthest opaque pixel 87% of the 66 dp safe radius, uncut under circle, squircle and rounded square, calibrated against the owner's own screenshot, artwork identical to the logo pack); splash 128 dp whole inside Android 12's circle; A1 cover has no words, WAWU or dashboard; Menu to Z1 to Settings works signed in, with the Hub failing and while Me loads, the other rows inert; 16 own mutants, 14 killed, 2 survived (test gaps, not product); no open defect, one unclear (icon leans right and down by box); V10 NOT RUN (needs the preview build); status review.
-- 8 Oct 2026 · BRAND-01 · Builder: the launcher icon rebuilt from the logo pack so the whole logo (drip included) sits inside the 66 dp safe circle (44% of the canvas; monochrome and store icon the same way; own notification icon); the splash logo 128 dp inside Android 12's circle; A1 shows the website's creators picture under the shade; M1's Menu button raises the Z1 sheet and its Settings row opens `/settings` (the other rows drawn and inert, R-46); 19 tests, 9 of 9 mutants killed; npm run check passed (95 suites, 1606 tests, gates 0 findings); V10 NOT RUN (needs the preview build); status verifying.
-- 8 Oct 2026 · Lead: R-46 the UI is always complete (owner). Unbuilt entries are drawn and inert with `unbuilt(<task>)`; filed COMPLETE-01 (helper and gate) to COMPLETE-06 (Explore, Home, Me, Wallet, the rest); later tasks moved down six places.
-- 8 Oct 2026 · R-45 · Owner: Nuvion is the wallet provider; Fintava stays only for bills payments, its wallet code kept unused. The website opens wallets first (WEBPAY-01 no longer waits on dollar wallets). BRAND-01 filed: the app icon, the welcome cover and the Settings entry. CHECK-2 and later move down by 1.
-- 8 Oct 2026 · EVENTS-01 · Verifier round 9: E1 featured card kicker, name and place line match the render to the device pixel at 2x, light and dark (D13-E1b closed); new spec fails with the margins removed and with the old 4; main e1c975a merged, check exit 0 (1521 tests); status review
-- 8 Oct 2026 · EVENTS-01 · Builder round 9: E1 featured card gaps as the canvas draws them (4 before the name, 3 before the place line, D13-E1b); new spec fails on the old shared 4; browser re-measure NOT RUN
-- 8 Oct 2026 · EVENTS-01 · Verifier round 8: E1 featured card line boxes match, place line exact at 2x; kicker and name 1 css px high (name-to-place gap 4, drawn 3, D13-E1b); new spec fails on old heights; check exit 1 only on main's FIX-22 (main fails identically); no conflict markers; status building
-- 8 Oct 2026 · EVENTS-01 · Builder round 8: E1 featured card name and place line moved to the canvas normal line heights (D13-E1), with a spec that fails on the old heights; live pixel re-measure NOT RUN; status verifying.
-- 8 Oct 2026 · EVENTS-01 · Independent verifier round 7: check exit 0 on the merge with main, contract `bb10ef0` equals the backend branch, mutants N2 N3 N4 N5b N6 N10 D12 D14 killed, U-H1, D11, D12, D14 and round 6 regression passed live; one minor defect open (E1 hero name and place line still 3 to 6 pt above the drawn place); status building.
-- 8 Oct 2026 · EVENTS-01 · Builder round 7: U-H1 (services row packs from the left), D11 (H11 tile shape), D12 (Explore holds X14 until the events read settles), D13, D14 and T4 specs with mutants N2, N3, N4, N5b, N6, N10 shown failing; status verifying.
+- 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
+- 9 Oct 2026 · PROS-01 · Built: Find a professional (P1 directory with field chips, paging and P4, P2 and P3 profile) against PROS-02's routes; Explore's Find a professional door opens P1; V5 pictures NOT RUN; status verifying.
+- 9 Oct 2026 · LEGAL-02 · Verifier, round 3: gap ids unique on every branch, the legal.thread cursor mutant is now caught, `npm run check` exit 0; no defect open, status review.
+- 9 Oct 2026 · LEGAL-02 · Builder, round 3: D2 fixed (gaps renumbered G-500 to G-502, clear of every branch) and D3 fixed (a test pins that `legal.thread` never moves the catch-up cursor; fails with the mutant).
+- 9 Oct 2026 · LEGAL-02 · Verifier, round 2: D1 verified live (consultant message on screen in about 60 ms, light and dark, also after a foreground; frame reaches only the matter's client); V4, V5, V6, V9 and the backend checks pass; two defects open, so `building`: D2 gap ids G-470 to G-472 are also used on `wmt/NUV-03`, D3 no test pins that `legal.thread` leaves the catch-up cursor alone.
+- 9 Oct 2026 · LEGAL-02 · Builder, round 2: D1 fixed (the shared live client now passes `legal.thread` frames on; a test over the real client with a fake socket fails on the old code; live run: the consultant's message shows 72 ms after the admin write, no refresh); origin/main merged into both branches.
+- 8 Oct 2026 · LEGAL-02 · Builder: legal assistant chat (S14 to S17) with brief, Send to a consultant and consultant handover, live `legal.thread` frame on backend wmt/LEGAL-02 (PR #95), Legal tile on Home; gaps G-470 to G-472; status verifying.
+- 8 Oct 2026 · EVENTS-03 · Verified (round 4, live against the branch Hub and mock WAWU ID): a failed refetch keeps the list and the ticket with its QR and Try again, first-load failure shows the error screen (D1); rows 72 pitch 84, card 397, nav title equal to the canvas in both themes (D2); "NOV 05" badge (D3); FilterChips 1 px is the shared component's; main merge conflicts in EVENTS-01 Explore files, left to EVENTS-01; status review.
+- 8 Oct 2026 · EVENTS-03 · Fix round 1 built: a failed refetch keeps the shown tickets and QR with an inline retry (D1), borders inside so rows are 72, pitch 84, card 397 and the nav title sits right (D2), EVENTS-01's two-digit badge merged in (D3); back to verifying.
+- 8 Oct 2026 · EVENTS-03 · Verified (round 3, independent decoders read the drawn QR for 344 texts and all 8 masks; live door check-in accepted the decoded code; new routes and 244 protected routes hold): three defects, a failed refetch drops the shown data, row and card 2 px tall, badge day not two digits; status building.
+- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier round 5, status review (backend `e87626e`, mobile `58de4a5`): D4 closed (mobile contract byte-equal to the backend branch's, three schools paths and six schemas in the contract and types, `SOURCE_COMMIT` right, `sync_contract.py` no diff); F1 spec passes and kills M4 and the reversed tie; no production change since round 3 but main's; tsc 0, 150 of 150 specs, protected 253/253, gates equal to main's 16 fails, contract additive, mobile `npm run check` exit 0; no defect open.
+- 8 Oct 2026 · SCHOOLS-04 · Builder round 5, status verifying: D4 fixed, the mobile contract and types are copied again from backend branch `e87626e` (main `9d90d57` merged there, contract regenerates with no diff, schools specs 36 of 36) with `sync_contract.py`; `cmp` identical, the three schools paths and six `PublicSchool*` schemas back in `schema.generated.ts`.
+- 8 Oct 2026 · SCHOOLS-04 · Verifier report, independent round 2 (lead), back to building (backend `5a602f9`, then `3971fea` and `7291658`; mobile `4a28ede`, then `7972878`): D2 closed over real HTTP (17 worst-case names through the admin route walked past at limits 1 to 3, longest cursor 1498; 360 units and 1498 characters confirmed exact against validator 13.15.35 over 15.4 million strings and the real DTOs), D3 closed, D1 holds on an ICU database (hide, ties, rename, insert, `q` plus `category`), forged cursors reveal nothing and never 500, `/search` protected tabs byte-identical to main, 45 of 45 mutants killed, protected 253/253 three times, full suite green after environment reruns; round 4's F1 spec holds (M4 now killed); one new defect D4: round 4's mobile merge replaced the task's contract and types with backend main's (the three schools paths are gone from the app's contract).
+- 8 Oct 2026 · SCHOOLS-04 · Builder round 4, status verifying: F1 fixed with a new paging spec (ids against name order, ties scrambled, walks at ten limits); the extra id-only branch (M4) and the reversed id comparison both fail it; no production code changed.

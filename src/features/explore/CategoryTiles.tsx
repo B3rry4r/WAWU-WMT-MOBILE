@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
@@ -14,7 +14,15 @@ import type { CategoryTileItem } from './categories';
  */
 export const tileMetrics = { width: 92, height: 84, padH: 6, icon: 21, iconGap: 7, label: 11, labelLeading: 1.2, ringOn: 1.5 } as const;
 
-function Tile({ item, on, onPress }: { item: CategoryTileItem; on: boolean; onPress: () => void }) {
+type PressableTile = Exclude<CategoryTileItem, { kind: 'blank' }>;
+
+/** A neutral frame at a tile's size where a category will be: no name, no icon, nothing to press. */
+function BlankTile() {
+  const { colors } = useWawu();
+  return <View testID="explore-tile-blank" style={[styles.tile, { backgroundColor: colors.surfaceSunken }]} />;
+}
+
+function Tile({ item, on, onPress }: { item: PressableTile; on: boolean; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
@@ -44,10 +52,13 @@ function Tile({ item, on, onPress }: { item: CategoryTileItem; on: boolean; onPr
 
 export type CategoryTilesProps = {
   items: readonly CategoryTileItem[];
-  onOpen: (item: CategoryTileItem) => void;
+  onOpen: (item: PressableTile) => void;
 };
 
-/** X1's category tiles: All, the first categories, More. Each opens Categories (X2, X3). */
+/**
+ * X1's category tiles: All, the first categories, More. Each opens Categories (X2, X3). While the Hub serves no
+ * categories, neutral frames stand where they will be (R-46).
+ */
 export function CategoryTiles({ items, onOpen }: CategoryTilesProps) {
   return (
     <ScrollView
@@ -57,9 +68,13 @@ export function CategoryTiles({ items, onOpen }: CategoryTilesProps) {
       style={styles.scroller}
       contentContainerStyle={styles.row}
     >
-      {items.map((item) => (
-        <Tile key={item.kind === 'category' ? item.id : item.kind} item={item} on={item.kind === 'all'} onPress={() => onOpen(item)} />
-      ))}
+      {items.map((item) =>
+        item.kind === 'blank' ? (
+          <BlankTile key={`blank-${item.slot}`} />
+        ) : (
+          <Tile key={item.kind === 'category' ? item.id : item.kind} item={item} on={item.kind === 'all'} onPress={() => onOpen(item)} />
+        ),
+      )}
     </ScrollView>
   );
 }

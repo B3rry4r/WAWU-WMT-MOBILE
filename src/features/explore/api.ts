@@ -7,7 +7,8 @@ import type { components, operations } from '@/api/schema.generated';
  * - `GET /explore/categories`: the creator categories, in the order the chips and tiles show them;
  * - `GET /explore/featured-creators`: the creators an admin featured, in the admin's order;
  * - `GET /explore/creators`: every creator, or one category's, a page at a time;
- * - `POST` and `DELETE /creators/{wawuId}/follow`: the viewer follows or unfollows a creator.
+ * - `POST` and `DELETE /creators/{wawuId}/follow`: the viewer follows or unfollows a creator;
+ * - `GET /me/counts`: how many notifications are unread, for the bell's dot on X1 (ME-10).
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only
  * `data` (SHARED-CHANGES.md row 11), so each call reads `data` itself.
@@ -47,6 +48,7 @@ function itemsOf<T>(data: { items?: unknown }, what: string): T[] {
 export const exploreKey = ['explore'] as const;
 export const categoriesKey = ['explore', 'categories'] as const;
 export const featuredKey = ['explore', 'featured'] as const;
+export const unreadKey = ['explore', 'unread-notifications'] as const;
 /** `all` is every creator; anything else is one category's id. */
 export const creatorsKey = (category: CategoryId | 'all') => ['explore', 'creators', category] as const;
 
@@ -93,6 +95,14 @@ export async function fetchCreatorsPage(category: CategoryId | 'all', page: numb
   }
   const more = items.length > 0 && data.currentPage * data.perPage < data.total;
   return { items, nextPage: more ? data.currentPage + 1 : null };
+}
+
+/** How many notifications the viewer has not read: the bell on X1 shows its dot when this is above zero. */
+export async function fetchUnreadNotifications(): Promise<number> {
+  const data = dataOf<{ unreadNotifications?: unknown }>(await unwrap(api.GET('/api/hub/me/counts')), 'notification count');
+  const count = data.unreadNotifications;
+  if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) throw unreadable('notification count');
+  return Math.floor(count);
 }
 
 /** Follows (`true`) or unfollows (`false`) a creator. Resolves with what the Hub now holds. */
