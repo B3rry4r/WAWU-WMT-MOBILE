@@ -159,7 +159,10 @@ SURVIVED the first time: no spec had the other person's passed check as the only
 of the same phone" now kills it). Logs `join03/mut/`.
 
 **Numbers (mobile).** Before: `npm run gates` 10 run, 469 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`), 0 accepted. After: 477 files, the same.
-New tests `src/features/claim/__tests__`: `model` 7, `claimScreen` 16, `settingsEntry` 2. Mobile `npm run check`: see the line at the end of this report.
+New tests `src/features/claim/__tests__`: `model` 7, `claimScreen` 16, `settingsEntry` 2. Mobile `npm run check` on the final head (backend contract `8bb6045` copied in, mobile main `aff0e96` merged): EXIT 0, typecheck and lint 0, jest 123
+suites 2043 tests (it was 121 and 2029 before the later tests and the merge), gates 10 run, 480 files, 0 fail, 1 warn, 0 accepted, 273 tasks and 279
+artboards. The runs before it: EXIT 0 on the earlier head; then one run EXIT 1 with the known load flake in `eventsScreens.test.tsx` (D8, at a load average of
+30), which passes alone (46 of 46); then the run above.
 **Mutants (mobile, 11, applied alone, `src/features/claim` and the Settings tests run, source restored; all killed):** MM1 no guard against a second
 send in the same frame; MM2 the field not upper-casing; MM3 the space sent with the code; MM4 a refund code given the generic words; MM5 "already used"
 told as "yours"; MM6 the points lines left out; MM7 an extended plan told as new; MM8 a short code sent; MM9 the Settings row drawn without a place to
