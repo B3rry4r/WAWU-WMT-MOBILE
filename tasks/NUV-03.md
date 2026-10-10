@@ -7,7 +7,7 @@ order: 202
 priority: launch
 repo: wawu-backend
 type: third-party
-status: review
+status: done
 depends_on: [NUV-01, KYC-02]
 decisions: [R-39, R-42]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -325,3 +325,5 @@ Mobile `wmt/NUV-03` with this report (mobile `a6e1f0b` plus this commit): `npm r
 - The hosted selfie live with the switch on (specs only); the full backend suite; behind nginx (request buffering, U7; the header lines were read); the selfie's browser hand-off and any documents screen (none built).
 
 ## Owner sign-off
+
+Merged by the lead, 10 Oct 2026: backend PR #103 (merge `181ee5d`) and mobile main (merge of `52da8df`; the contract regenerated from backend main `181ee5d`). The combined verifier round found no blocker. R4-1, R4-2 and R4-3 follow in NUV-03 round 4 on the same branch.
