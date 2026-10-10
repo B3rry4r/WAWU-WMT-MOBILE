@@ -55,13 +55,13 @@ tier, and published products never exceed the tier's products plus any extra pro
 
 ## Builder report
 
-Builder, 10 Oct 2026. wawu-backend `wmt/TIER-02` 389ffba (backend main `8e57981` merged in); mobile `wmt/TIER-02`
+Builder, 10 Oct 2026. wawu-backend `wmt/TIER-02` 2c2543d (backend main `8e57981` merged in); mobile `wmt/TIER-02`
 (this branch) (this file, mobile main `b04cbe6`). depends_on TIER-01 and ME-17 are `done`. No screens: `artboards: []`, so
 no pictures; the app change is the regenerated contract and types. This task moves no money and calls no provider.
 
 **Headline for the lead: the protected suite cannot be 253/253 on the main lock, by design.** The suite's own setup
 publishes a piece with a brand-new creator (`POST /content as creator2`), and R-43 says a new person with no tier is
-refused. Run A (code `f48c3e4`, lock origin/main `8e57981`, fresh database; `389ffba` adds only specs and a type-only change): setup step 402, 244 of 244 required tests
+refused. Run A (code `f48c3e4`, lock origin/main `8e57981`, fresh database; the later commits add specs, a type-only change and the migration folder's new name): setup step 402, 244 of 244 required tests
 fail, 9 of 253 pass. Run B, the same code and the same lock, on a database where a trigger gives every profile a running
 tier (a private test database; the suite, the lock and the code unchanged): **253 of 253, 244 of 244 required**. So the
 gate is the only change. The entries that change by design are `POST /uploads/presign` (entry 23, content folders) and
@@ -165,7 +165,7 @@ purchase is TIER-03's; 32 tests; every figure compared is read from the config)
   `receipt-units` (a Unicode digit table against this Node), and two suites jest reports as `focused`
   (`legal-intake`, `live-hardening`). `ledger.contract` failed once in its shard and passes alone. No failing test
   touches a file this task changed. Control: backend main, `run.sh --fresh origin/main`, same environment: 253 of 253.
-- Mobile: `contract/openapi.json` copied from the backend branch (`SOURCE_COMMIT` `wmt/TIER-02@389ffba`) and
+- Mobile: `contract/openapi.json` copied from the backend branch (`SOURCE_COMMIT` `wmt/TIER-02@2c2543d`) and
   `python3 scripts/api/sync_contract.py` (without `--backend`, which copies backend main): `ProductDraftView`,
   `TierGateErrorEnvelope`, `MyTierView.productsUsed` are in `schema.generated.ts`. `npm run check` (typecheck, lint,
   tests, gates, tasks, run as the same steps with two jest workers) exit 0: typecheck 0, lint 0 errors (7 warnings in files this
