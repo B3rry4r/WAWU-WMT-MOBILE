@@ -21411,6 +21411,107 @@
         ]
       }
     },
+    "/api/hub/communities/suggested": {
+      "get": {
+        "operationId": "CommunityRoomsController_suggested",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CommunityResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "INBOX-05. Rooms the caller could join (I24, Suggested): none they host,\nare in or have asked to join, none hosted by somebody hidden from them.\nMost members first, then by name.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
+    "/api/hub/communities/message-cost": {
+      "get": {
+        "operationId": "CommunityRoomsController_messageCost",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityMessageCost"
+                }
+              }
+            }
+          }
+        },
+        "summary": "INBOX-05. What one message in a community costs a member, in WAWU\nCredits (I24: \"1 credit per message you send\"). Reading is free.",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
+    "/api/hub/communities/{id}/room": {
+      "get": {
+        "operationId": "CommunityRoomsController_room",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRoomView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "INBOX-05. One room as the caller sees it (I25): its counts and link,\n`role` (host, member, pending or none) and `messageCostInCredits`, what\none message costs the caller there (0 for the host).",
+        "tags": [
+          "CommunityRooms"
+        ]
+      }
+    },
     "/api/hub/communities/rooms": {
       "post": {
         "operationId": "CommunityRoomsController_createRoom",
@@ -26766,7 +26867,7 @@
             "description": "`reason.code` `payments_unavailable`: payments are not set up."
           }
         },
-        "summary": "Register and get the checkout settings. Reuses this person's own unpaid\nregistration (same offer, phone and email) rather than adding another.\nNothing is charged here: the payment happens in the Flutterwave checkout\nwith the answer's `flutterwaveConfig`, and counts only after\nPOST /waitlist/registrations/verify (or Flutterwave's own notice).",
+        "summary": "Register and get the checkout settings. Every call that passes the checks\nadds a new registration with a new reference, even for the same offer,\nphone and email, so each checkout has its own reference.\nNothing is charged here: the payment happens in the Flutterwave checkout\nwith the answer's `flutterwaveConfig`, and counts only after\nPOST /waitlist/registrations/verify (or Flutterwave's own notice).",
         "tags": [
           "WaitlistPublic"
         ]
@@ -44726,6 +44827,83 @@
           "lastActivityAt"
         ]
       },
+      "CommunityMessageCost": {
+        "type": "object",
+        "properties": {
+          "creditsPerMessage": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "creditsPerMessage"
+        ]
+      },
+      "CommunityRoomView": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "open",
+              "private"
+            ]
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "hostWawuId": {
+            "type": "string"
+          },
+          "memberCount": {
+            "type": "number"
+          },
+          "messagesToday": {
+            "type": "number"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "host",
+              "member",
+              "pending",
+              "none"
+            ]
+          },
+          "messageCostInCredits": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "kind",
+          "imageUrl",
+          "description",
+          "hostWawuId",
+          "memberCount",
+          "messagesToday",
+          "slug",
+          "link",
+          "role",
+          "messageCostInCredits"
+        ]
+      },
       "CommunityRoom": {
         "type": "object",
         "properties": {
@@ -47143,6 +47321,9 @@
           "reference": {
             "type": "string"
           },
+          "accessCode": {
+            "type": "string"
+          },
           "flutterwaveTransactionId": {
             "type": "string",
             "nullable": true
@@ -47172,6 +47353,7 @@
           "paidKobo",
           "paidAt",
           "reference",
+          "accessCode",
           "flutterwaveTransactionId",
           "claimedByWawuId",
           "claimedAt",

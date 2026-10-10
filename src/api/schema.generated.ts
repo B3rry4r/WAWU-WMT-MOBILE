@@ -3432,6 +3432,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/suggested": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. Rooms the caller could join (I24, Suggested): none they host,
+         *     are in or have asked to join, none hosted by somebody hidden from them.
+         *     Most members first, then by name.
+         */
+        get: operations["CommunityRoomsController_suggested"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/message-cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. What one message in a community costs a member, in WAWU
+         *     Credits (I24: "1 credit per message you send"). Reading is free.
+         */
+        get: operations["CommunityRoomsController_messageCost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/room": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. One room as the caller sees it (I25): its counts and link,
+         *     `role` (host, member, pending or none) and `messageCostInCredits`, what
+         *     one message costs the caller there (0 for the host).
+         */
+        get: operations["CommunityRoomsController_room"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/rooms": {
         parameters: {
             query?: never;
@@ -4960,8 +5022,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Register and get the checkout settings. Reuses this person's own unpaid
-         *     registration (same offer, phone and email) rather than adding another.
+         * Register and get the checkout settings. Every call that passes the checks
+         *     adds a new registration with a new reference, even for the same offer,
+         *     phone and email, so each checkout has its own reference.
          *     Nothing is charged here: the payment happens in the Flutterwave checkout
          *     with the answer's `flutterwaveConfig`, and counts only after
          *     POST /waitlist/registrations/verify (or Flutterwave's own notice).
@@ -9543,6 +9606,25 @@ export interface components {
             /** Format: date-time */
             lastActivityAt: string | null;
         };
+        CommunityMessageCost: {
+            creditsPerMessage: number;
+        };
+        CommunityRoomView: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+            /** @enum {string} */
+            role: "host" | "member" | "pending" | "none";
+            messageCostInCredits: number;
+        };
         CommunityRoom: {
             name: string;
             id: string;
@@ -10101,6 +10183,7 @@ export interface components {
             paidKobo: number | null;
             paidAt: string | null;
             reference: string;
+            accessCode: string;
             flutterwaveTransactionId: string | null;
             claimedByWawuId: string | null;
             claimedAt: string | null;
@@ -16843,6 +16926,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyCommunity"][];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_suggested: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"][];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_messageCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityMessageCost"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_room: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoomView"];
                 };
             };
         };
