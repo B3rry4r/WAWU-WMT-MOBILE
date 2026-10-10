@@ -594,6 +594,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/bills/electricity/billers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * S2 and S3. Every company Fintava lists as available, one row per company and plan, each with its own minimum and
+         *     maximum in kobo and the quick amounts that fit them. `available: false` is S13: Fintava lists none, or its bills
+         *     service cannot be used. Fintava not answering at all is `503 provider_unreachable`, with `retryAfterSeconds`.
+         */
+        get: operations["BillsCatalogueController_billers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/bills/electricity/meter-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * S4 and S10. The name and address Fintava holds for a meter. 422 `meter_not_found` is S10. 404 `biller_not_found` is a
+         *     `code` that is not on the list now. 503 `bills_unavailable` is S13. 429 `bills_rate_limited` carries
+         *     `retryAfterSeconds` (and `Retry-After`). Answers are `no-store`: they name someone else.
+         */
+        post: operations["BillsCatalogueController_meterPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/care/plans": {
         parameters: {
             query?: never;
@@ -4960,8 +5002,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Register and get the checkout settings. Reuses this person's own unpaid
-         *     registration (same offer, phone and email) rather than adding another.
+         * Register and get the checkout settings. Every call that passes the checks
+         *     adds a new registration with a new reference, even for the same offer,
+         *     phone and email, so each checkout has its own reference.
          *     Nothing is charged here: the payment happens in the Flutterwave checkout
          *     with the answer's `flutterwaveConfig`, and counts only after
          *     POST /waitlist/registrations/verify (or Flutterwave's own notice).
@@ -5375,6 +5418,10 @@ export interface components {
         };
         AdminRefreshDto: {
             refreshToken: string;
+        };
+        MeterPreviewDto: {
+            code: string;
+            meterNumber: string;
         };
         InitHealthSubscriptionDto: {
             planCode: string;
@@ -7866,6 +7913,27 @@ export interface components {
             certificateExpectedBy: string | null;
             latestUpdateLabel: string | null;
         };
+        ElectricityBillerView: {
+            code: string;
+            name: string;
+            /** @enum {string} */
+            plan: "prepaid" | "postpaid";
+            minimumKobo: number;
+            maximumKobo: number;
+            presetsKobo: number[];
+        };
+        ElectricityBillersView: {
+            available: boolean;
+            billers: components["schemas"]["ElectricityBillerView"][];
+        };
+        MeterPreviewView: {
+            meterNumber: string;
+            code: string;
+            /** @enum {string} */
+            plan: "prepaid" | "postpaid";
+            name: string | null;
+            address: string | null;
+        };
         BillCategory: {
             id: number;
             name: string;
@@ -10101,6 +10169,7 @@ export interface components {
             paidKobo: number | null;
             paidAt: string | null;
             reference: string;
+            accessCode: string;
             flutterwaveTransactionId: string | null;
             claimedByWawuId: string | null;
             claimedAt: string | null;
@@ -11322,6 +11391,83 @@ export interface operations {
                         total: number;
                     };
                 };
+            };
+        };
+    };
+    BillsCatalogueController_billers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElectricityBillersView"];
+                };
+            };
+            /** @description reason.code provider_unreachable: Fintava did not answer. Try again after retryAfterSeconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BillsCatalogueController_meterPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeterPreviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeterPreviewView"];
+                };
+            };
+            /** @description reason.code biller_not_found: the code is not on the list now. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code meter_not_found: Fintava does not know this meter for this company. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code bills_rate_limited, with retryAfterSeconds. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code bills_unavailable (bills are not switched on) or provider_unreachable (Fintava did not answer). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
