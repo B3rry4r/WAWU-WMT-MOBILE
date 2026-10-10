@@ -7,7 +7,7 @@ order: 202
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [NUV-01, KYC-02]
 decisions: [R-39, R-42]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -254,5 +254,74 @@ Also: NUV-03's migration `20261016230000_nuvion_documents` is `20261019120000_nu
 - A live server on the merged build running NUV-03's own document routes (multipart uploads, the selfie, the submit call) against a live stand-in: only the NUV-02 phases listed above ran on it; the document routes ran in specs. Unblocked by a lead brief that gives the verifier's `vnuv-03/live` scripts a stand-in with `/documents` and `/onboarding-submissions` (the NUV-03 specs' `DocumentsNuvion` is one).
 - The verifier's V9 with the real WAWU ID for NUV-03's own routes: as above.
 - Behind nginx: request buffering (U7), a real `entities.updated` after a submission and the review time, the selfie's browser hand-off and the screens: unchanged from round 2.
+
+## Verifier report, round 3 (combined)
+
+Verifier, 10 Oct 2026 (a Sonnet session; it wrote none of this code or of any earlier report; it restarts an earlier verifier of this round that was lost in a container restart and used none of its work). This is one verification of the combined backend branch: `wmt/NUV-03` `4ab8da7` carries NUV-02 round 4 (`024e592`, whose report is in `tasks/NUV-02.md`, "Verifier report, round 4") and backend main `7b4ffef`, and it merges as one backend PR. Everything that report measured was measured on this head. Mobile `wmt/NUV-03` `a6e1f0b`, mobile main `bda7c68`; the real wawu-id `fb8717e` in its own worktree with its own `npm ci` and database; evidence in the session scratchpad `vnuv0203r4/` (`live/out/`, `v1/`, `mut/`, `trial/`, `pics/`). **No Nuvion, Fintava, Flutterwave, wawuafrica.com or AI host was called**: every built server ran in a private network namespace with loopback only, `https://api.nuvion.dev` went to my own stand-in on 127.0.0.1:5963 (written from the docs' examples; it answers `/documents` and `/onboarding-submissions` itself, and can lose an answer with the file kept or not), every other non-loopback host was refused (no refusal was ever logged); ports 5961 to 5964; databases `vn0203r4_*` all dropped.
+
+**Verdict for NUV-03 and the combination: no blocker; status review.** NUV-03's round 2 fixes D0 to D3 and the keyed fingerprint hold on built servers; the documents path on top of NUV-02 meets its capability checks; NUV-03 now feeds NUV-02's hold expiry (G-497 closed). One low defect in the combination (R4-1, below, same as in NUV-02's report), one owner question (R4-2).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | Same as NUV-02's report (the merged tree is this head): `tsc` 0, eslint 0 on 57 changed files, gates 16 fail with the same FAIL lines as main and 88 warn against main's 83 (the five extra are NUV-02's two and NUV-03's three `PROVISIONAL` markers), `check_baseline` 0, tripwire 0, protected lock diff 0, `contract:build` byte-identical twice (`da995a85...419af0e`), the mobile copy byte-equal. |
+| V2 Contract | passed | `p-v9` 26 of 26, `p-docs` 16 of 17 (the one is R4-1), `p-exp` 7 of 8 (the one is my own wrong expectation: a person whose documents are closed gets `409 documents_closed` from `POST /liveness`, which is right), `p-d3` 7 of 7. The upload matrix: over 10 MB (10 MB plus 10 bytes), a GIF, HTML named `.png`, an empty file: 422 before any call to Nuvion (the stand-in saw none); an unknown kind: 400; the field `entity_id` naming someone else: 400 `document_request_invalid`. |
+| V3 Regression | passed | Protected suite 253 of 253 at `4ab8da7` (lock `7b4ffef`). `money-contract.spec` and `wallet-gate-coverage.spec` (round 1's D0) pass in the namespace run with 4 other suites (`v1/specs-env2.json`: 30 passed, 16 failed, all 16 in `data-export.contract`, which fails 14 of 16 on main in the same environment). Fintava and unset: 85 of 104 answers byte-identical, the 19 that differ are the two new GET routes and the new optional fields (NUV-02's report). |
+| V4 Field trace | passed | `p-v9`: after uploads of an ID (front and back, PNG), a proof of address (PDF) and rejected and tiny files, a scan of a `pg_dump --inserts` of every table and every hub log for 10 planted markers (raw and base64): **0 hits**. `NuvionDocument` holds exactly: `wawuUserId, kind, entityId, sides, state, nuvionDocumentId, knownDocumentIds, fingerprint, attempts, attemptStartedAt, uploadedAt, reviewRefusedAt, failure, createdAt, updatedAt`. |
+| V6 States | passed except R4-1 | `missing`, `confirming` (a lost answer), `uploaded`, `needs_new`, `send_again`, `documents_closed` (before the corrected details, after the submission, expired), `submitted`, the selfie `not_in_use`; the wallet stages around them. |
+| V7 Flow walk | passed | From a cold start: sign in through the real wawu-id, `GET /money/wallet` (`not_open`), `POST /money/wallet/open` (one entity, `needs_documents`), the documents view (both missing, open), the ID front and back in one request (one `POST /documents`), the proof of address sent twice at once on two servers (one document, ONE `POST /onboarding-submissions`), the wallet reads `checking`, an approval delivered three times on two servers opens one NGN account, `approved` and `on_its_way`, one notice. |
+| V8 Money (identity safety) | passed | Forward once and submit once on two servers (`p-v9`), a person cannot touch another's documents, the lost-answer matrix (`p-d3`), and everything in NUV-02's report. |
+| V9 Live seam | passed | Real wawu-id for every phase (26 checks in `p-v9`: register, email verified, login over HTTP, the Hub verifies by JWKS on two servers, a forged token is 401). |
+| App side (V5, V6) | see below | Web export of mobile `wmt/NUV-03`, 390 px, light and dark, beside the rendered artboards. |
+| Mutants | 38 of mine, 37 killed | NUV-02's report; two of them are on NUV-03's progress calls (both killed). |
+
+### NUV-03's capability checks, on the head
+
+1. **Upload and forward once, linked to the person; 422 before any call.** ID front and back are ONE `POST /documents` whose body carries the child `entity_id`, `key` `identity`, `meta.file_type` `image/png` and `link_to_identity.person_id`; a second person's upload is linked to their own entity, never the first person's. PASSED.
+2. **Submitted exactly once, also when the last upload is sent twice.** Two servers, the same PDF at the same moment: one document, one submission (200 and 200). The same ID twice before the proof of address: one document. After the submission a different file is `409 documents_closed`, nothing sent. PASSED.
+3. **Another person's documents; no opening.** With no opening started every documents route is `409 wallet_not_open` and nothing is sent (the brief's "(404)" cannot be reached: no route takes an id). A second person reads only their own rows. PASSED.
+4. **The hosted selfie.** Off by default under nuvion: `GET liveness` says `enabled: false`, `not_in_use`; under Fintava and unset the same. The switched-on path (start, return, result, refusals that turn it off) was proved by the specs only (123 and 113 tests pass in the namespace); NOT RUN live.
+5. **No document content kept.** Scan above: 0 hits; `StorageObject` untouched; the spec that lists the temporary folder passes with a private `TMPDIR` (it fails on the host when another session has made a directory in the shared `/tmp`).
+6. (key) NOT RUN.
+
+### Round 2's findings, by their own reproductions
+
+- **D0 (the mount turned three tests red): CLOSED.** `money-contract.spec`, `wallet-gate-coverage.spec` and `money-moving-coverage.spec` pass; the four operations are served and in the contract (`/api/hub/money/identity/documents` and `/liveness`, GET and POST each), and they answered on built servers in every phase.
+- **D1 (a refused document was sent again): CLOSED, for both behaviours Nuvion might have.** `p-docs`: open, both documents, submitted; Nuvion refuses the ID (entity `rejected`, document check `rejected`): the wallet reads `rejected`, identity `needs_new`, uploads not open, a new ID is `409 documents_closed`; the person sends corrected details, and Nuvion answers the correction with the checks **reset to `pending`** (stand-in mode `reset`) or **kept** (mode `keep`): in both the documents view still says identity `needs_new`, uploads open, **no new `POST /onboarding-submissions`** (0 added by the read), the replacement ID is taken and the opening is sent again exactly once.
+- **D2 (one refusal switched the selfie off for everyone): CLOSED by the specs; the default is live-checked.** The three answer types that may turn it off are written down; nothing here turns it on.
+- **D3 (a lost upload read `confirming` for ever): CLOSED.** `p-d3`: the answer is lost and Nuvion kept the file: at once `confirming` (503 `provider_unreachable`), after the call's own time plus 15 s the view reads `uploaded` from Nuvion's list, one `POST /documents` in all; the answer is lost and Nuvion never got the file: `confirming`, then `send_again` (sides empty, uploads open, the step asked for again), and the person's retry is taken once (2 calls at Nuvion for that person: the lost one and the retry).
+- **The fingerprint: CLOSED.** While the opening waits the row holds a 64-hex value that is not the plain SHA-256 of the file (an HMAC under `IDENTITY_HASH_KEY`); once the opening is submitted every fingerprint is `null`; after that even the same file is `409 documents_closed` (the stated consequence).
+- **U1 to U8 stand as written** (Nuvion may ignore `file_back`: (key); the rest are notes).
+
+### What NUV-03 adds on top of NUV-02
+
+- **N17b / G-497: CONFIRMED** (NUV-02's report): uploads and the submit call are progress; the expiry sweep leaves an opening being worked on and expires one idle 15 days after the last upload. A 4-byte file counts: R4-2.
+- **R4-1 (defect, low): an expired opening still takes documents** and sends the entity: the documents routes read the entity's word, the wallet view reads the opening's `expired` state (reproduction and effect in NUV-02's report, `live/out/exp.txt`). NUV-03's file (`documents-flow.ts`) owns the fix: refuse with `documents_closed` while the opening is `expired`.
+- **After an expiry, starting again then uploading works as designed** (`p-docs`): the same entity is corrected (one PATCH, no second create), the stage is `needs_documents`, uploads are open and an upload is taken.
+
+### The trial merges (throwaway copies, all removed)
+
+- **Backend:** `git merge origin/main` (`7b4ffef`) into `wmt/NUV-03`: "Already up to date", no conflict; `main` is also an ancestor of `wmt/NUV-02`, which is an ancestor of `wmt/NUV-03`, so the one PR is a fast-forward of main. On that tree: `tsc` 0, eslint 0, the NUV specs and the protected suite as above (the specs that need the mock pass in the namespace), gates, `check_baseline`, tripwire, `contract:build` twice byte-identical.
+- **Backend, MONEY-17 (`wmt/MONEY-17` `89fb795`) into the NUV-03 head:** one conflict, `contract/openapi.json` (regenerate); the migration folders `20261019110000_nuvion_entity_review` and `20261019110000_wallet_payments` apply in that order on a fresh database and in either arrival order on a database that has one of them; nothing breaks (NUV-02's report, `trial/mig`).
+- **Mobile main `bda7c68` into `wmt/NUV-02` and into `wmt/NUV-03`:** one conflict each, `docs/PROGRESS.md` (generated). **`wmt/NUV-02` into `wmt/NUV-03`:** six conflicts: `BACKEND_GAPS.md` (keep both tables), `contract/SOURCE_COMMIT`, `contract/openapi.json`, `contract/openapi.mobile.json`, `src/api/schema.generated.ts` (take NUV-03's, then `python3 scripts/api/sync_contract.py`), `docs/PROGRESS.md`. `wmt/NUV-03` holds a stale copy of `tasks/NUV-02.md` and has none of G-494 to G-499 or SHARED-CHANGES NUV-02 #8 to #15 (they are on `wmt/NUV-02`), so both mobile branches must land with the backend PR.
+
+### The app side, mobile `wmt/NUV-03` (V5, V6, R-47)
+
+The mobile branch changes no app code (`git diff origin/main...origin/wmt/NUV-03 -- src` is the generated schema only) and **no documents or selfie screen exists**: no route in `src/app`, nothing in `src` calls `/money/identity/documents` or `/liveness`, and no entry points at one (R-47 holds: nothing is drawn whose task is not done). So there are no documents screens to compare. The Open your wallet screens that exist (KYC-03 to KYC-05, built for Fintava) were exercised against a Nuvion-mode Hub, real sign-in, web export at 390 px light and dark (Metro cache of my own, the bundle grepped: only `127.0.0.1:5961` and `:5964`), artboards rendered with `render_design.py` (A5, A6, A7, A8, A9, A10, A14, A16) in `pics/artboard-*`:
+
+- A person with no wallet: Home says "You don't have a wallet yet / Open your wallet" and the first step (`pics/a14-step1-light.png`, `-dark`) is KYC-05's BVN and NIN step. The artboard A14 is the sign-up screen ("Create your account", email, password); KYC-05 owns that difference (R-6 moved the BVN out of sign-up), and I did not re-judge it.
+- Entering a BVN and a NIN and tapping Continue ends in the red banner "We couldn't check your BVN. This step is not used for your wallet. Your BVN is checked when you send your details to open it." (`pics/a14-409-light.png`, `a14-409-dark.png`, beside the artboard in `cmp-A14-409-*.png`): the Hub's `409 step_not_used` sentence, and there is no next screen.
+- A person at `needs_documents` or `rejected` sees the same first step (the app ignores `review`: no reasons, no "what to fix"); a person being checked or approved sees the Wallet tab's "Your account is opening. Check again in a moment." (`pics/states-light-dark.png`, `wallet-checking-*`, `wallet-approved-*`).
+- BVN, NIN and phone: the Hub's answers never carry them (masked or absent: the review view has only our reason codes); the app shows the phone and the numbers only in the fields the person types into, as the artboard does. No em-dash in any screen text seen.
+
+So the app cannot open a Nuvion wallet today (G-460, as filed): production must not move to `WALLET_PROVIDER=nuvion` with this app. That is a fact for the lead, not a defect of NUV-02 or NUV-03, which built no screens.
+
+### Mobile checks
+
+Mobile `wmt/NUV-03` with this report (mobile `a6e1f0b` plus this commit): `npm run check` exit 0 on the first run (typecheck 0 errors; lint 0 errors and 7 warnings in test files this branch does not touch; jest 113 suites and 1,914 tests; gates 0 fail and 16 warn on 459 files; tasks 271 and 279 artboards; `mobile/check-nuv03-1.txt`), then, with this section and the status flip in place, one full run failed one test in `eventsScreens.test.tsx` ("a tier ended ... (D8)", the known load flake; the machine was shared with other sessions' runs at a load average of 12 to 16), that file alone failed one of 47 at that load (`mobile/events-alone-nuv03.txt`), and the next full run exited 0 on the same counts (`mobile/check-nuv03-3.txt`); the push is gated on a last full run after the final wording (`mobile/check-nuv03-4.txt`). The contract copy is byte-equal to backend `4ab8da7`'s file (`contract/SOURCE_COMMIT` `wmt/NUV-03@4ab8da7`).
+
+### NOT RUN
+
+- (key) every check marked (key) in both tasks, G-473 (a `PATCH` of a rejected entity and a new document on a rejected entity), `file_back`, the hosted selfie for a child entity, a real `entities.updated` after a submission: no sandbox key.
+- The hosted selfie live with the switch on (specs only); the full backend suite; behind nginx (request buffering, U7; the header lines were read); the selfie's browser hand-off and any documents screen (none built).
 
 ## Owner sign-off

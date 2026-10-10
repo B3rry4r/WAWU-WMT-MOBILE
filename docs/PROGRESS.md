@@ -9,18 +9,18 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 143 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 2 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 82 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+- [NUV-03](../tasks/NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review (You)
 
 ## Being verified
 
 - [NUV-02](../tasks/NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected (You)
-- [NUV-03](../tasks/NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review (You)
 
 ## Done
 
