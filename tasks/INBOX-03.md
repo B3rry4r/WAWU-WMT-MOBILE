@@ -7,7 +7,7 @@ order: 47
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: verifying
 depends_on: [SETTINGS-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9, V10]
@@ -165,7 +165,7 @@ For Developer 2's fix round. Both reports (D1 to D14 and VB-1 to VB-6, VU-1 to V
 
 Taken over from Developer 2 (owner line on main). Backend `wmt/INBOX-03` dc783c5 (backend main 965280e merged in first: 28 commits since 6c0e435, FIX-07 and FIX-08 among them); mobile `wmt/INBOX-03` at this report's commit (mobile main e73915a merged at 15f164e). Every ruling above is closed or recorded below; nothing was pushed to exp.host (Expo stood in at `EXPO_PUSH_BASE_URL`, always a local server).
 
-**Files (backend).** `src/push/push-sender.service.ts` (claim, check, then `sending`; reaper puts rows back; blocks; deletions; claim-scoped writes; one clock), `push-clock.ts` (new, `NOW_UTC`), `push-token.service.ts` (`register` returns false for a stopped account; `stopAccount`), `push-token.controller.ts`, `push-view.type.ts` (`registered: boolean`), `push-message.ts` (`priority: 'high'`; `PUSH_BODY` for `content_rejected`), `expo-push.client.ts` (timeout read by name; a 4xx without Expo's error shape retried; `requestTimeoutMs` field for specs), `push-config.ts` (a PROVISIONAL marker on each of 11 figures; first receipt check 30 s; `PUSH_PRUNE_EVERY_MINUTES`), `push-sweep.service.ts` (summary counts rows put back), `dto/push-token.dto.ts` (`IsCleanText` on every string), `push.module.ts` (imports BlockedAccountModule, exports PushTokenService); `src/account/account.service.ts` and `account.module.ts` (`DELETE /account` calls `stopAccount`, loud not fatal, response unchanged); `account-data-map.ts`, `data-export-sections.ts` (`PushStoppedAccount` OWNED, export-excluded with a reason); `prisma/schema.prisma` and the migration, restamped `20261017090000_push_tokens` (main's newest is now `20261012100000`; open branches reach `20261015100000`, FIX-06): third table `PushStoppedAccount`, columns `PushDelivery.claimId`, `interruptedSend`; specs (`push-sender` 68, `push-token` 29, `push-policy` 43, `account` +1, the stand-in now refuses unknown message fields, over 100 messages, over 300 ids, non-JSON); `docs/contract/PUSH.md`; `contract/openapi.json` (regenerated; against main: `/push-tokens` and four schemas added, nothing else). Mobile: this file, BACKEND_GAPS (G-23, G-260, G-266, G-267, G-268), SHARED-CHANGES INBOX-03 #1 and #4, `contract/SOURCE_COMMIT` (`npm run api -- --backend <worktree>` copies backend main 965280e; no other file changed), LOG.
+**Files (backend).** `src/push/push-sender.service.ts` (claim, check, then `sending`; reaper puts rows back; blocks; deletions; claim-scoped writes; one clock), `push-clock.ts` (new, `NOW_UTC`), `push-token.service.ts` (`register` returns false for a stopped account; `stopAccount`), `push-token.controller.ts`, `push-view.type.ts` (`registered: boolean`), `push-message.ts` (`priority: 'high'`; `PUSH_BODY` for `content_rejected`), `expo-push.client.ts` (timeout read by name; a 4xx without Expo's error shape retried; `requestTimeoutMs` field for specs), `push-config.ts` (a PROVISIONAL marker on each of 11 figures; first receipt check 30 s; `PUSH_PRUNE_EVERY_MINUTES`), `push-sweep.service.ts` (summary counts rows put back), `dto/push-token.dto.ts` (`IsCleanText` on every string), `push.module.ts` (imports BlockedAccountModule, exports PushTokenService); `src/account/account.service.ts` and `account.module.ts` (`DELETE /account` calls `stopAccount`, loud not fatal, response unchanged); `account-data-map.ts`, `data-export-sections.ts` (`PushStoppedAccount` OWNED, export-excluded with a reason); `prisma/schema.prisma` and the migration, restamped `20261019090000_push_tokens` (round 4; it was `20261017090000` in rounds 2 and 3, and `20261009090000` before; at round 2 main's newest was `20261012100000` and open branches reached `20261015100000`, FIX-06): third table `PushStoppedAccount`, columns `PushDelivery.claimId`, `interruptedSend`; specs (`push-sender` 68, `push-token` 29, `push-policy` 43, `account` +1, the stand-in now refuses unknown message fields, over 100 messages, over 300 ids, non-JSON); `docs/contract/PUSH.md`; `contract/openapi.json` (regenerated; against main: `/push-tokens` and four schemas added, nothing else). Mobile: this file, BACKEND_GAPS (G-23, G-260, G-266, G-267, G-268), SHARED-CHANGES INBOX-03 #1 and #4, `contract/SOURCE_COMMIT` (`npm run api -- --backend <worktree>` copies backend main 965280e; no other file changed), LOG.
 
 | Finding | Closed by | Proof |
 |---|---|---|
@@ -213,7 +213,7 @@ Taken over from Developer 2 (owner line on main). Backend `wmt/INBOX-03` dc783c5
 
 ## Builder report, round 3 (merge with main 657a152, 8 Oct 2026)
 
-A second builder session worked on the same branch in parallel with round 2; its work stands and nothing of the other session's divergent copy was pushed. Round 3 is only what main's movement needed: backend main (LEGAL-03, TIER-01, NUV-01) merged in; `PUSH_RULE` got its `legal_delivered` rule (held, the round 2 default for D12; the build failed with TS2741 without it) and the policy spec lists it; the migration is restamped `20261017090000_push_tokens` (main's newest `20261016180000_nuvion_adapter`, open branches' newest `20261016200000`); `contract/openapi.json` regenerated (127 lines added, none removed); SHARED-CHANGES #1 and G-265 say so. Mobile main merged (both gap and shared-change tables keep both sides; G-265 to G-268 are unique across all branches). Checks: see the push message and the lead's list; the full backend suite was run in a private namespace.
+A second builder session worked on the same branch in parallel with round 2; its work stands and nothing of the other session's divergent copy was pushed. Round 3 is only what main's movement needed: backend main (LEGAL-03, TIER-01, NUV-01) merged in; `PUSH_RULE` got its `legal_delivered` rule (held, the round 2 default for D12; the build failed with TS2741 without it) and the policy spec lists it; the migration was restamped `20261017090000_push_tokens` then (main's newest `20261016180000_nuvion_adapter`, open branches' newest `20261016200000`), and again in round 4 to `20261019090000_push_tokens`; `contract/openapi.json` regenerated (127 lines added, none removed); SHARED-CHANGES #1 and G-265 say so. Mobile main merged (both gap and shared-change tables keep both sides; G-265 to G-268 are unique across all branches). Checks: see the push message and the lead's list; the full backend suite was run in a private namespace.
 
 ## Verifier report, round 3
 
@@ -303,6 +303,55 @@ Round 1 reproductions are the earlier verifier's own scripts, copied unchanged a
 ### Process notes
 
 Specs start their own stand-in on an ephemeral port on 127.0.0.1 (`expo-stand-in.ts` listens on port 0), outside my four ports; nothing else of mine listened. Ports used: 6071 (Hub), 6072 (second Hub, and the proxy-403 server at another time), 6073 (mock WAWU ID), 6074 (stand-in Expo). Databases `vi03r3_*test*`, dropped at the end. I ran `pgrep -f` once in a read-only wait loop (stopped at once); nothing was ever killed by pattern, only by PIDs I started.
+
+## Builder report, round 4 (10 Oct 2026)
+
+Backend `origin/wmt/INBOX-03` **7694231** (main 0694ced merged in as 92b79bb). Round 4 is only the two should-fix items of the round 3 verifier, the one test gap that was cheap, and the merge with main. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/inbox03r4/` (file names in brackets). Nothing was sent to exp.host, FCM, APNs or any wawuafrica.com host: the only Expo in any run was the stand-in on 127.0.0.1.
+
+| Item | Before | After |
+|---|---|---|
+| S1 migration stamp | `20261017090000_push_tokens` sorted before main's `20261018100000_event_waitlist` | `20261019090000_push_tokens`: after main's newest and after the newest on any open `origin/wmt/*` branch (`20261018140000_waitlist_access_code`, JOIN-01-r4). Contents unchanged (100% rename); `rollback.sql` line 1 quotes the new stamp |
+| S2 `Retry-After: 100000` | parked 99 999.996 s (27.8 h) ahead, past the push's own 24 h life [`s2-before-spec.txt`] | 3600 s (live hub: `wait_s` 3600) [`live-after2.txt`] |
+| S2 `1e20` | Postgres `22008 timestamp out of range`, the pass aborts, row left `sending` for the reaper [`s2-before-spec.txt`] | plain backoff 5 s, pass completes, hub log has 0 "A push pass failed" |
+| S2 `99999999999999999999` | same 22008 | 3600 s |
+| S2 `-5`, `abc`, `0`, empty, HTTP date `Wed, 21 Oct 2099 07:28:00 GMT` | already plain backoff (Number() gave NaN or a non-positive value) | plain backoff 5 s, unchanged |
+| S2 `30` | 30 s | 30 s |
+| S2 remaining time to live | not considered | a delivery with 100 s of its 24 h left and `Retry-After: 3000` waits 100 s; one already past its life waits 0 (next pass); the attempts cap still ends it |
+| N6 mutant M13 | survived | killed |
+
+**S2, how it works.** The one `UPDATE` in `retryOrFail` (database clock, as every push write) now takes `LEAST(retryAfter, PUSH_RETRY.retryAfterMaxSeconds, GREATEST(createdAt + PUSH_TTL_SECONDS - now, 0))`, and the normal doubling when there is no usable header. `parseRetryAfter` (new, `expo-push.client.ts`) reads only a plain whole number of seconds above zero: text, a sign, a fraction, scientific notation (`1e20`), hex, a number too long to be a number (400 digits is `Infinity`) and an HTTP date all return null. The value the database sees is never above 3600, so no timestamp error is possible. Decisions (Default (agent), owner may override): (a) an HTTP date is not read, because turning it into a wait needs this server's clock and the push tables use the database's alone (D4); it falls back to the normal backoff; (b) the delivery's life is counted from the delivery row's `createdAt` for `PUSH_TTL_SECONDS`, the figure already sent to Expo as `ttl`; (c) the one-hour ceiling is `PUSH_RETRY.retryAfterMaxSeconds`, inside the existing `PUSH-RETRY` marker, so there is no new PROVISIONAL marker and no new gate warning; (d) the per-message `MessageRateExceeded` path never had a header and still passes none.
+
+**S2, how it was proved.** First reproduced on the unfixed code: 5 new cases red in `push-sender.contract.spec.ts` (`100000` gives 99 999.996 s, `99999999999999999999` and `1e20` give 22008, both TTL cases give 2999.99 s). After the fix: 13 cases green, 20 cases of the new pure `expo-retry-after.spec.ts` green. Then the verifier's own `x/exp-retryafter.js` (copied to my scratch, pointed at my DB, the wait read as `nextAttemptAt - updatedAt` right after the first 429) against a built hub on :6071 and a stand-in Expo on :6074, with each header value, results in the table above [`live-after2.txt`]. The "before" in the table is the spec against the unfixed code (same Postgres, same HTTP header path); I did not build the old tree for a second live run.
+
+**N6.** `a delivery queued for a kind that is held when it comes to be sent is skipped, not sent` seeds a `credits_low` notification and a due `PushDelivery` row for it (as if the kind had been `send` when queued) and expects `skipped` / `kind_held` and no request to Expo. With `isPushed()` made to return true it fails at `expect(report.skipped).toBe(1)` (received 0) [`m13-mutant.txt`]; the file was restored and is clean. Not equivalent, so no waiver.
+
+**Merge with main.** Backend: `git merge origin/main` (0694ced), one conflict, `.env.example` (this branch's `PUSH_ENABLED`, `EXPO_ACCESS_TOKEN`, `EXPO_PUSH_BASE_URL` block and main's `LEGAL_DELIVERY_UPLOADER_IDS` block, both appended at the end): both kept. `contract/openapi.json`, `prisma/schema.prisma`, `src/app.module.ts`, `src/account-purge/account-data-map.ts`, `src/data-export-request/data-export-sections.ts` auto-merged. Generated: `prisma generate`, `npm run contract:build` leaves the merged `contract/openapi.json` byte-identical (sha256 ee07637f...). Mobile: `git merge origin/main` (ad79993), one conflict, `docs/PROGRESS.md` (generated), regenerated with `scripts/tasks/check_tasks.py --write`; `BACKEND_GAPS.md`, `SHARED-CHANGES.md` and `docs/LOG.md` merged without conflict. `npm run api -- --backend <worktree>` leaves the mobile generated types unchanged. Stamp edits: SHARED-CHANGES INBOX-03 #1, `docs/LOG.md` (the 8 Oct line), `tasks/INBOX-03.md` (the two builder-report sentences that name the folder) and `tasks/POINTS-01.md` line 279. Left as they were, because they record what was true when they were written: the verifier's S1 text above, the round 3 LOG line, POINTS-01 line 234, LOG line 108, and JOIN-01 #2's "newest seen".
+
+**Checks.**
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` (merged tree) | 0 |
+| eslint on the 24 changed `.ts` files | 0 in all 22 the task wrote; 16 problems, all in `src/account/account.module.ts` (1) and `src/account/tests/account.contract.spec.ts` (15), and main's own copies of those two files give the same 1 and 15 (note N1) [`eslint-branch.txt`, `eslint-main-account.txt`] |
+| `src/push` specs | 4 suites, **174 of 174** (was 140; plus 20 parser, 13 Retry-After, 1 M13) against a migrated and seeded database with the mock WAWU ID on :6073 [`push-specs-merged.txt`] |
+| `prisma migrate deploy`, database with main's 112 folders applied first | applies only `20261019090000_push_tokens`, after `event_waitlist`; `migrate status` up to date [`migrate-deploy.txt`] |
+| `prisma migrate deploy`, empty database | all 113 applied; status up to date |
+| `migrate diff` after deploy | only main's `DROP INDEX "ContentPiece_specializations_idx"` drift [`migrate-diff.txt`] |
+| Protected suite `run.sh --fresh HEAD`, lock `origin/main` 0694ced | **253 of 253** (all 244 required) [`protected.txt`] |
+| Gates `scripts/gates/run.py` | branch 16 fail, 83 warn, 76 accepted; main 16 fail, 72 warn. The 16 FAIL lines are identical once line numbers are stripped; the 11 extra warns are the branch's own `PROVISIONAL(PUSH-...)` markers (none added this round); `check_baseline.py` OK (108 entries) [`gates-branch.txt`, `gates-main.txt`] |
+| Tripwire | 0 added lines match the protected-suite pattern outside its own files |
+| `npm run contract:build` | `contract/openapi.json` byte-identical to the merged one |
+| SETTINGS-04 `data-export-map` and `account-data-map` specs | 9 of 9 on the merged tree |
+| Secret scan of the diff against main | no key-shaped string; no em-dash added in either repo |
+| Mobile `npm run check` | **exit 0 on the third run** (113 suites, 1914 tests, gates 459 files 0 fail, tasks check clean). Run 1 (load average 8 to 10): `OpenWalletScreen` and `settingsScreens` timed out at 20 s (2 tests); both pass alone, 128 of 128 [`mobile-two-alone.txt`]. Run 2: only the known flake `eventsScreens` failed (1 of 47); alone it passes 47 of 47 [`mobile-events-alone.txt`]. Run 3: all green [`mobile-check3.txt`]. This branch changes no mobile source (docs and task files only) |
+
+**Process notes.** The first commit (5cab4b4, "cap Retry-After (S2), test the send-time kind_held lock (N6)") also carries the folder rename: the `git mv` was already staged when it was made, and `rollback.sql`'s line 1 followed in 52cf2f9. Not amended (no amends). Databases `bi03r4_*_test`, the hub on :6071, the stand-in on :6074 and the mock on :6073 were mine and are gone; no other agent's process or worktree was touched.
+
+**NOT RUN.**
+- Real Expo, FCM, APNs, a real receipt, any phone: unblocked by `exp.host:443` reachable from the session, then a real Android token and the owner's FCM credentials uploaded to Expo (INBOX-21). Unchanged from round 3.
+- The full backend suite to the end: not in this round's brief (it names `src/push`, the protected suite, the gates and the contract); unblocked by the namespace run on a quiet machine (about 176 suites).
+- A second live run of `exp-retryafter.js` on the unfixed tree: the "before" is the spec against the unfixed code; unblocked by building `ec02c97` in a worktree and running the same script.
+- Sign-in with the real wawu-id: the specs and the live run use the repo's mock WAWU ID, as in round 3.
 
 ## Owner sign-off
 
