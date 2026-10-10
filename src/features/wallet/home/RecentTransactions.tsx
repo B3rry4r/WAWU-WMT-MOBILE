@@ -1,21 +1,27 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import { rowMetrics } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 import { TransactionRow } from '@/components/TransactionRow';
 import { groupedAccountNumber } from '@/features/open-wallet/pin';
+import { unbuilt } from '@/lib/unbuilt';
 import { space } from '@/theme';
 
 import type { WalletTransaction } from '../api/home';
-import { fundingLine, recentRow } from './model';
+import { fundingLine, recentRow, recentView } from './model';
 import { RowsSkeleton } from './WalletSkeleton';
 
-/** design/_gen/wallet.js line 52 (W1): the heading, then the rows, 16 apart. Line 66 (W5): the empty card is padded 14 by 16 and its two lines sit 3 apart at 1.4. */
-const RECENT = { emptyPadV: 14, emptyPadH: 16, emptyLineTop: 3, emptyLeading: 1.4, emptyLine: 13 } as const;
+/**
+ * design/_gen/wallet.js line 44 (W1): the heading with See all at its far end (kit `SH`: 13.5 / 600 in the accent,
+ * bottom-aligned), then the rows, 16 apart. Line 66 (W5): the empty card is padded 14 by 16 and its two lines sit 3
+ * apart at 1.4.
+ */
+const RECENT = { emptyPadV: 14, emptyPadH: 16, emptyLineTop: 3, emptyLeading: 1.4, emptyLine: 13, seeAll: 13.5, headGap: 10 } as const;
 
 export type RecentTransactionsProps = {
   rows: WalletTransaction[] | undefined;
@@ -27,11 +33,15 @@ export type RecentTransactionsProps = {
 };
 
 /**
- * W1's recent transactions and W5's "No transactions yet". The rows open nothing yet: the
- * transaction detail (W27) and See all (W26) are WALLET-04's, which adds both as drawn (R-27, R-41).
+ * W1's recent transactions, W4's row shapes while the read is out, and W5's "No transactions yet". See all (W26,
+ * the history) and a row (W27, its detail) are WALLET-04's: both are drawn and do nothing until that task wires
+ * them (R-46). W4 and W5 draw no heading and no See all: the shapes, or the empty card, alone.
  */
 export function RecentTransactions({ rows, pending, failed, onRetry, accountNumber, now }: RecentTransactionsProps) {
-  if (rows && rows.length === 0) {
+  const view = recentView({ rows, pending, failed });
+  // Until the read answers nobody knows whether there are rows: W4's shapes, not a heading and a See all over nothing.
+  if (view === 'loading') return <RowsSkeleton testID="wallet-transactions-loading" />;
+  if (view === 'none') {
     return (
       <Card testID="wallet-no-transactions" style={styles.empty}>
         <View style={styles.emptyRow}>
@@ -50,9 +60,12 @@ export function RecentTransactions({ rows, pending, failed, onRetry, accountNumb
   }
   return (
     <View style={styles.section} testID="wallet-transactions">
-      <Text variant="h2" accessibilityRole="header">
-        Transactions
-      </Text>
+      <View style={styles.head}>
+        <Text variant="h2" accessibilityRole="header">
+          Transactions
+        </Text>
+        <SeeAll />
+      </View>
       {rows ? (
         rows.map((row) => {
           const shown = recentRow(row, now);
@@ -64,6 +77,7 @@ export function RecentTransactions({ rows, pending, failed, onRetry, accountNumb
               subtitle={shown.subtitle}
               amountMinor={shown.amountKobo}
               time={shown.meta}
+              onPress={unbuilt('WALLET-04')}
               lead={
                 shown.lead.kind === 'avatar' ? (
                   <Avatar name={shown.lead.name} hue={shown.lead.hue} source={shown.lead.source} decorative />
@@ -74,22 +88,43 @@ export function RecentTransactions({ rows, pending, failed, onRetry, accountNumb
             />
           );
         })
-      ) : failed && !pending ? (
+      ) : (
         <View style={styles.failed} testID="wallet-transactions-error">
           <Text variant="secondary" tone="textSecondary" accessibilityRole="alert">
             Couldn’t load your transactions.
           </Text>
           <Button label="Try again" icon="RotateCw" variant="secondary" size="sm" onPress={onRetry} testID="wallet-transactions-retry" />
         </View>
-      ) : (
-        <RowsSkeleton testID="wallet-transactions-loading" />
       )}
     </View>
   );
 }
 
+/** "See all" beside the heading: the whole history (W26). */
+function SeeAll() {
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID="wallet-see-all"
+      accessibilityRole="button"
+      accessibilityLabel="See all transactions"
+      hitSlop={space.md}
+      onPress={unbuilt('WALLET-04')}
+      {...ring.handlers}
+      style={[styles.seeAll, ring.style]}
+    >
+      <Text variant="linkStrong" style={styles.seeAllText}>
+        See all
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   section: { gap: space.lg },
+  head: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: RECENT.headGap },
+  seeAll: { flexShrink: 0 },
+  seeAllText: { fontSize: RECENT.seeAll },
   empty: { paddingVertical: RECENT.emptyPadV, paddingHorizontal: RECENT.emptyPadH },
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between },
   emptyWords: { flex: 1, minWidth: 0 },

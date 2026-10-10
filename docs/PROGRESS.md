@@ -3,19 +3,18 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 100 of 235.**
+**Launch tasks done: 121 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 113 | 0 | 20 | 21 |
+| todo | 144 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
-| done | 61 | 27 | 11 | 5 |
+| review | 1 | 0 | 0 | 0 |
+| done | 82 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Being built (or fixing verifier findings)
@@ -43,6 +42,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
 - [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
+- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
@@ -54,17 +54,23 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
+- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here (Developer)
+- [PROS-01](../tasks/PROS-01.md) Find a professional (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end (Developer)
+- [INBOX-03](../tasks/INBOX-03.md) Phone push notifications (You)
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
 - [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
+- [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
@@ -73,7 +79,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-05](../tasks/ME-05.md) Profile fields (Developer)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales (Developer)
+- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (You)
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
 - [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
@@ -110,6 +118,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
+- [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
@@ -124,6 +133,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
+- [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
+- [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
+- [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
+- [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
+- [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
+- [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
+- [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
+- [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
+- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -131,10 +151,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
-- **Developer 2:** [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount
-- **Developer 3:** [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **Developer 2:** nothing unblocked
+- **Developer 3:** nothing unblocked
 
 ## Latest
 
@@ -142,16 +162,16 @@ From `docs/LOG.md`, newest first.
 
 - 10 Oct 2026 · INBOX-05 · Verifier report, round 3 (mobile 9f7bab1, backend 715807d, trial-merged with main): D12 fixed by its real cause (20 of 20 alone, 3 of 3 in the full suite at load 21 to 26) and defects 1 to 5 stay closed; merged checks green (mobile check exit 0 on the second run, backend specs, protected 253 of 253, gates same 16 FAIL); new defects 13 (a room opened without the tabs gets no live messages), 14 (contract:build drifts one line after merging main), 15, 16; 17 and 18 for the lead; 19 of 26 mutants killed (6 survived, 1 equivalent); status building.
 - 8 Oct 2026 · INBOX-05 · Builder: Communities chip (I24), room (I25) and sending (I26) built on INBOX-04's inbox and live client; community rows, the chip and Browse communities wired; 9 gaps filed (G-450 to G-458); verifying.
-- 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
-- 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
-- 8 Oct 2026 · LEGAL-03 · Verifier report, independent round 4 (lead), backend 1c48fb6 and merged main 6ce2ddf with real WAWU ID: N1 as ruled holds on both heads (88 foreign, look-alike and odd urls refused, foreign stored keys never signed, host read from the storage config, virtual-hosted too), T1 closed (S5 killed), `+01` names scheduledFor, web route byte-identical to main, 30 race rounds 0 double bookings, protected suite 253 of 253, 61 of 61 /legal answers identical, full suite in namespace chunks (4 suites fail only in the chunk, all pass alone), 26 mutants 21 killed (5 survivors judged); new defect N2: any client's own legal/document key can be delivered to and downloaded by another client; status left as on the branch for the lead to file the fix.
-- 8 Oct 2026 · FIX-23 · Lead filed TIER-01 verifier finding F1: the web sign-up drops the phone dial code and defaults the country to Nigeria, so a US person can be billed in naira. CHECK-2 and later move down by 1.
-- 8 Oct 2026 · NUV-01 · NUV-01 merged (backend PR #91, 657a152): Nuvion adapter and webhook receiver behind the seam, Fintava still running; migration restamped to 20261016180000 at merge.
-- 8 Oct 2026 · SETTINGS-06 · Lead note: account deletion must reach POINTS-01's points purge (POINTS-01 verifier U3).
-- 8 Oct 2026 · TIER-01 · TIER-01 merged (backend PR #90, 38a0dca): prices, tiers and the billing currency from one config file; migration restamped to 20261016170000 at merge.
-- 8 Oct 2026 · LEGAL-03 · Verifier report, round 5 (backend 1c48fb6 plus main): N1 holds live (90 of 90 foreign or odd urls refused, foreign stored keys never signed), 569 odd requests 0 5xx, 90-minute race one winner, mutants killed (3 survivors are second layers), protected suite twice 244 of 244, mobile check exit 0; status review.
-- 8 Oct 2026 · LEGAL-03 · Builder report, round 5 (backend 1c48fb6): delivered files only from legal/document on our bucket (N1), odd paths refused, legacy link never unsigned (T1), `+01` offset names scheduledFor, migration now 20261016160000; probe of 500 odd urls: 0 5xx. Status verifying.
-- 7 Oct 2026 · LEGAL-03 · Verifier report, independent round 3 (lead), backend 9895dd3 with real WAWU ID: D1 to D5, U2 and the LEGAL-07 row hold live (90-minute races 0 double bookings over one and two Hubs, links signed fresh and still good 8 days on, 78 names refused, zone rule, 19 of 20 mutants killed); new N1 (delivery signs any bucket key, a KYC document included) and T1 (legacy re-sign unpinned) open, E1 and E2 reproduced; status building.
-- 7 Oct 2026 · LEGAL-03 · Builder round 4: E1 (non-object `files` entry gave 500) and E2 (url path decoding to NUL gave 500) fixed in the backend; 24-case spec fails 11 without the fix; 663 live probes of the deliverables route on a built Hub with a real admin login, 0 5xx; migration renamed `20261014200000_legal_consultations` after EVENTS-11; E3 left for the lead.
-- 7 Oct 2026 · LEGAL-03 · Verifier round 3: D1 to D6 and U2 hold live (90-minute race 30 of 30, links re-signed for 15 minutes, file names, booking zone, mutants killed, protected suite twice, contract additive); two admin-route 500s (E1, E2) found; status building.
-- 7 Oct 2026 · LEGAL-03 · Builder round 3: delivered files stored as keys and signed fresh for 15 minutes, file name and booking-zone rules, notification text without the matter, specs for M11 and M18, migration renamed `20261013100000`; status verifying.
+- 10 Oct 2026 · JOIN-02 · Rounds 4 and 5 merged (website #26 73c14eb, backend #102 7b4ffef): the double charge is closed; the payment window says Who Made This.
+- 10 Oct 2026 · INBOX-03 · Merged (backend #101 12e18e3): phone push notifications (tokens, queue, retries, privacy).
+- 10 Oct 2026 · INBOX-03 · Verifier report, round 4 (independent session, backend `7694231`, main 0694ced): no blocker, status review. Main merge: only `.env.example` conflicted (both blocks kept), the merge equals a fresh merge-tree in every other file and loses nothing of main's 122 changed files. S1: `20261019090000_push_tokens` is a pure rename (same sha256), no old stamp left, `migrate deploy` applies it after main's 112 folders, on an empty database, and after JOIN-01-r4's `20261018140000_waitlist_access_code`. S2: live on a hub, `100000` and `99999999999999999999` wait 3600 s, `1e20`, `-5`, `abc`, an HTTP date, `0` and empty use the normal 5 s backoff, a delivery with 100 s of life waits about 90 s (the round 3 build: 100000 s, Postgres 22008, 3000 s); 0 pass failures. N6: the new test alone kills M13. Nothing else changed (8 files). tsc 0, `src/push` 174 of 174, protected 253 of 253, gates the same 16 FAIL, contract identical, 13 of 16 own mutants killed (the 3 survivors: one unpinned ceiling value, two equivalent). Notes only (N8 to N11). Real Expo and a phone still NOT RUN.
+- 10 Oct 2026 · INBOX-03 · Builder report, round 4 (backend `7694231`, main 0694ced merged in): S1 migration restamped `20261019090000_push_tokens`; S2 provider `Retry-After` capped at one hour and at the delivery's remaining life, only a plain whole number of seconds is read (anything else uses the normal backoff), proved on a live hub for `100000`, `1e20`, `-5`, `abc` and an HTTP date; N6 test kills mutant M13. Only conflict `.env.example` (both blocks kept). `src/push` 174 of 174, protected suite 253 of 253, gates the same 16 FAIL as main, contract byte-identical. Real Expo and a phone still NOT RUN. Status `verifying`.
+- 10 Oct 2026 · INBOX-03 · Verifier report, round 3 (independent session, backend `ec02c97`, trial-merged with main `b5e7877` and `0694ced`): no blocker, status review. Trial merge conflicts only in `.env.example` (both blocks kept); tsc 0; eslint 0 in everything the task wrote (16 problems are main's own in two account files); gates 16 fail as main; protected 253/253 on the branch and the merge; `contract:build` identical; push specs 140/140 three times, all 140 tables unchanged; 18 neighbouring suites and 35 notification-emitting suites pass in a private namespace. Every earlier finding closed by re-running its reproduction (crash loses 0, a block either way and a deleted account push 0, NUL is 400, non-UTC database zones deliver in 47 s, a proxy 403 is retried, the admin reason never leaves); 2 Hubs on one database: 0 duplicates in 2100 messages; 17 of 18 own mutants killed. Should fix: the migration stamp `20261017090000` now sorts before main's `20261018100000_event_waitlist` (restamp at merge), and an uncapped `Retry-After` (100000 parks a push 27 hours, 1e20 aborts the pass). Real Expo, FCM and a phone still NOT RUN.
+- 8 Oct 2026 · INBOX-03 · Merged main 657a152 into the branch: `legal_delivered` ruled (held), push migration restamped `20261019090000_push_tokens (restamped again in round 4)`, contract regenerated; real Expo and a phone still NOT RUN.
+- 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
+- 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
+- 10 Oct 2026 · JOIN-02 · Verifier report, rounds 4 and 5 (independent session; website `d172f0b` on main `b4a2921`, unmoved; backend `d317094`; mobile `7314b54`; backend main moved to `12e18e3` at the end, see JOIN-01 S1): merge, no blocker, status review. Round 4 held in a real browser: no Start again while checking, it appears after the 5 minutes end with no paid answer, the plain-words question, the last ask for paid, failed and unreachable, Keep checking, a new reference on starting again, a second tab and a second device, and both deploy orders (live page with the new backend; new page with the old backend shows the held screen, one transaction). Round 5: the owner's words identical to main as code points over 13 rendered states and both head tags; V1 title, description and logo (absolute, same origin, 200) on /join in full and `VERCEL_ENV=production` mode, the ticket checkout keeps WAWU's; site mode still locked; nothing under (auth) changed. typecheck, lint, build, check:copy 0. One should-fix (S1: a doc line and three comments still say the window is titled WAWU and the server reuses an unpaid registration) and four notes. NOT RUN: a real Flutterwave window, phones and in-app browsers, the Edge middleware, website mutants.
+- 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
+- 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
+- 10 Oct 2026 · JOIN-01 · Verifier report, round 4 (independent session; backend `d317094` on main `0694ced`, unmoved; mobile `2186734`): merge after one small step (S1: backend main moved to `12e18e3` with `20261019090000_push_tokens`, so the access-code migration folder must be restamped after it; the deploy works either way, proved; trial merge clean, 137 of 137, contract identical), no blocker, status stays done. The double charge is closed on the built server under my own layouts (reload, start again, pay again: two references, two transactions, rows `paid` and `failed` with the refund's amount and transaction id in the admin list and CSV; second tab and device; webhook for both; 20 starts walked one by one and purged after 7 days; paid phone and email refused before any charge in nine forms; 6 concurrent verifies leave one paid), the access code is unique (collisions redrawn, 503 after exactly 5 with nothing written, code on the page equals `accessCode`, no CSV cell can run as a formula), the migration applies over existing rows, stops on a seeded collision changing nothing, rolls back, and the old app version keeps registering. tsc 0, eslint 0, waitlist and webhook specs 137 of 137, rate-limit 22 of 22, protected 253 of 253, gates the same 16 FAIL lines, contract only the summary and `accessCode`. 20 own mutants: 17 killed, 3 survived as test gaps (C2 and C3 pin only the constant, C5 no non-unique error). Notes: a failed migration leaves a P3009 row (runbook line), more pending rows per person, the refund screen's reference looks like the access code. NOT RUN: the production collision SELECT and the production Postgres version (the repo does not say; 13 or later by its own migrations, generated columns need 12).
+- 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.

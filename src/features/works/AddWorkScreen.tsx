@@ -11,7 +11,24 @@ import { EditFrame } from '@/features/profile-edit/EditFrame';
 
 import { createWork, fetchMyWorks, myWorksKey, worksRoot } from './api';
 import { PROFILE_FULL, saveFailure, uploadFailure, type SaveFailure } from './failure';
-import { bodyOf, emptyForm, hasProblems, isComplete, isDirty, mediaHint, mediaRefused, mediaRoom, problemsOf, type FormField, type MediaItem, type PickedFile, type WorkForm } from './form';
+import {
+  bodyOf,
+  emptyForm,
+  hasProblems,
+  isComplete,
+  isDirty,
+  MEDIA_LIBRARY_FAILED,
+  mediaHint,
+  mediaRefused,
+  mediaRoom,
+  mediaUnreadable,
+  problemsOf,
+  type FormField,
+  type MediaItem,
+  type MediaKind,
+  type PickedFile,
+  type WorkForm,
+} from './form';
 import { WORK_LIMITS } from './limits';
 import { MediaPicker } from './MediaPicker';
 import { canPickMedia, pickMedia } from './pickMedia';
@@ -90,11 +107,25 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
   };
 
   const add = async () => {
-    const picked = await pickMedia();
-    if (picked.length === 0) return;
+    let unreadable: MediaKind[] = [];
+    let picked: PickedFile[];
+    try {
+      picked = await pickMedia((kinds) => {
+        unreadable = kinds;
+      });
+    } catch {
+      // The photo library itself failed: said plainly. A cancel stays silent.
+      setPickNotice(MEDIA_LIBRARY_FAILED);
+      return;
+    }
+    if (picked.length === 0 && unreadable.length === 0) return;
     // A work carries up to the Hub's limit: what fits is added in the order chosen, the rest is refused here, in words, never sent.
     const files = picked.slice(0, mediaRoom(media.length));
-    setPickNotice(files.length < picked.length ? mediaRefused(picked.length - files.length) : null);
+    picked.slice(files.length).forEach((file) => file.discard?.());
+    // A file that could not be read is counted for the person (D1), before any that did not fit.
+    const notices = [unreadable.length > 0 ? mediaUnreadable(unreadable) : null, files.length < picked.length ? mediaRefused(picked.length - files.length) : null];
+    const notice = notices.filter((line): line is string => line !== null).join(' ');
+    setPickNotice(notice === '' ? null : notice);
     if (files.length === 0) return;
     const items = files.map(newItem);
     setMedia((current) => [...current, ...items]);

@@ -1,7 +1,7 @@
 ---
 id: EVENTS-09
 title: At the door: scan, let in, already used, not valid
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 58
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [E19, E20, E23, E24]
 ---
 # EVENTS-09 · At the door: scan, let in, already used, not valid
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

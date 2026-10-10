@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-03
 title: Schools: directory, school page, course page, no results
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 62
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [SC1, SC2, SC3, SC10]
 ---
 # SCHOOLS-03 · Schools: directory, school page, course page, no results
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

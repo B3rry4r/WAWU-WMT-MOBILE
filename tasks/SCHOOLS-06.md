@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-06
 title: Enrol and pay, class full
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 129
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [SC4, SC5, SC6, SC7, SC11]
 ---
 # SCHOOLS-06 · Enrol and pay, class full
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

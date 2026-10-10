@@ -48,6 +48,8 @@ ask for one; don't pick work yourself.
   `SHARED-CHANGES.md`.
 - The app is "Who Made This" (R-37). Its logo is drawn only with
   `<BrandMark>`; the canvas's WAWU logo images are never used.
+- Show only what is built (R-47): an entry whose screen is not built yet is not drawn; the task that
+  builds that screen adds it, as drawn.
 - No em-dashes in anything a user reads. No "Flutterwave" in the app. Links
   are written `wawu/...`. WAWU Credits are a count, never naira.
 - Never `git stash`, `git reset --hard`, `git checkout -- .`, or force-push.
