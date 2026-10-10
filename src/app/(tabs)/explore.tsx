@@ -7,9 +7,9 @@ import { listServicesTarget } from '@/features/pro-listing/door';
 /**
  * The Explore tab (X1, X14), inside the tabs so the bottom bar stays. It wires the destinations that are built: a category
  * tile opens Categories (X2, X3); the featured event and an event card open E2, Upcoming events' See all opens E1; the
- * "List your services" door opens P5 or P8 (PROS-03). Every other entry X1 draws is `unbuilt(...)` inside the screen
- * (search and Featured creators' See all: EXPLORE-02; the bell: ME-14; a creator card: ME-02; Find a professional:
- * PROS-01; Find a school: SCHOOLS-03; Create: ME-04), and its task wires it there.
+ * "List your services" door opens P5 or P8 (PROS-03), and "Find a professional" opens P1 (PROS-01). What X1 draws for screens
+ * that are not built (search and Featured creators' See all: EXPLORE-02; the bell: ME-14; a creator card: ME-02; Find a
+ * school: SCHOOLS-03; Create: ME-04) is not drawn (R-47), and the task that builds each one adds it.
  */
 export default function ExploreTab() {
   const router = useRouter();

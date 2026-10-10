@@ -26,7 +26,7 @@ import { DateBadge } from './parts';
  *   off the right edge; a card is a 120 high picture with the date badge 10 in, then the name 15 semi-bold and the
  *   place 12.5 muted after a 13 pin, padded 11 above, 13 at the sides and below;
  * - X14's 196 high block where the hero will be.
- * The hero's three pager dots are drawn by Explore itself (`HeroDots` in src/features/explore/parts.tsx, R-46), not here.
+ * The hero's three pager dots are drawn by Explore itself (`HeroDots` in src/features/explore/parts.tsx), not here.
  */
 export const exploreEventMetrics = {
   heroHeight: 196,

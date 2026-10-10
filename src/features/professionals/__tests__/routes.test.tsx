@@ -91,11 +91,11 @@ afterEach(async () => {
 });
 
 describe('the professionals routes', () => {
-  it('Explore draws Find a professional first in its doors card, as X15 does, and it opens P1', async () => {
+  it('Explore draws Find a professional first in its doors card, as X15 does (Find a school is SCHOOLS-03\'s, not drawn yet), and it opens P1', async () => {
     await rtl.render(wrap(<ExploreTab />));
     const doors = await rtl.screen.findByTestId('explore-doors');
     const titles = rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel);
-    expect(titles).toEqual(['Find a professional, Accountants, lawyers, designers', 'Find a school, Courses from schools and academies', 'List your services, Get paid to answer questions']);
+    expect(titles).toEqual(['Find a professional, Accountants, lawyers, designers', 'List your services, Get paid to answer questions']);
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-professional')));
     expect(mockRouter.push).toHaveBeenCalledWith('/professionals');
   });

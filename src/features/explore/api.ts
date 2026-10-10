@@ -48,7 +48,6 @@ function itemsOf<T>(data: { items?: unknown }, what: string): T[] {
 export const exploreKey = ['explore'] as const;
 export const categoriesKey = ['explore', 'categories'] as const;
 export const featuredKey = ['explore', 'featured'] as const;
-export const unreadKey = ['explore', 'unread-notifications'] as const;
 /** `all` is every creator; anything else is one category's id. */
 export const creatorsKey = (category: CategoryId | 'all') => ['explore', 'creators', category] as const;
 
@@ -95,14 +94,6 @@ export async function fetchCreatorsPage(category: CategoryId | 'all', page: numb
   }
   const more = items.length > 0 && data.currentPage * data.perPage < data.total;
   return { items, nextPage: more ? data.currentPage + 1 : null };
-}
-
-/** How many notifications the viewer has not read: the bell on X1 shows its dot when this is above zero. */
-export async function fetchUnreadNotifications(): Promise<number> {
-  const data = dataOf<{ unreadNotifications?: unknown }>(await unwrap(api.GET('/api/hub/me/counts')), 'notification count');
-  const count = data.unreadNotifications;
-  if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) throw unreadable('notification count');
-  return Math.floor(count);
 }
 
 /** Follows (`true`) or unfollows (`false`) a creator. Resolves with what the Hub now holds. */

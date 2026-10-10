@@ -7,10 +7,10 @@ import { Text } from '@/components/Text';
 import { radius, space, useWawu } from '@/theme';
 
 /**
- * The failed-read banner at the top of Explore (R-46: a failed read never collapses the screen to one message). It is
+ * The failed-read banner at the top of Explore (R-47: a failed read never collapses the screen to one message). It is
  * the app's `ErrorState` (a tile, a title, what went wrong, "Try again") laid out as one compact row, because the
  * sections stay drawn under it. X1 has no error artboard (X12 is the search screen's), so the look is `ErrorState`'s:
- * the same tile, words and secondary button, on a card with the hairline the search pill uses, with the kit banner's
+ * the same tile, words and secondary button, on a card with the card hairline, with the kit banner's
  * smaller text (`kvValue` over `bannerBody`, design/_gen/kit.js line 58) so the title keeps to one line beside the
  * button. `ErrorState` itself is a centred block with no compact form; the SHARED-CHANGES row COMPLETE-02 F2 asks for
  * one so this file can go.

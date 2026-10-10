@@ -88,10 +88,10 @@ export function stateWords(view: Exclude<HomeView, { kind: 'loading' } | { kind:
  * What the recent-transactions region of W1 shows, decided from the read alone (pure, for the tests):
  *
  * - `loading`: the read has not answered yet, so nobody knows whether there are rows. W4's three row shapes stand
- *   there, and the WAWU card row, the "Transactions" heading and "See all" are not drawn as if there were rows
- *   (round 2, defect 2: a new account used to see them for a moment and lose them to W5);
- * - `none`: the read answered with no rows, so W5's empty card stands and an account with no transactions has no card row;
- * - `some`: W1's card row, heading, See all and the rows;
+ *   there, and the "Transactions" heading is not drawn as if there were rows (round 2, defect 2: a new account used to
+ *   see it for a moment and lose it to W5);
+ * - `none`: the read answered with no rows, so W5's empty card stands;
+ * - `some`: W1's heading and the rows;
  * - `failed`: the read failed and is not being retried. The account may well have rows, so W1's layout stays,
  *   with the rows' own message and Try again in place of them.
  *
