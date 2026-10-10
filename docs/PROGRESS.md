@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 120 of 244.**
+**Launch tasks done: 121 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 146 | 0 | 0 | 0 |
+| todo | 145 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 81 | 27 | 11 | 5 |
+| done | 82 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -61,6 +61,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PROS-01](../tasks/PROS-01.md) Find a professional (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end (Developer)
+- [INBOX-03](../tasks/INBOX-03.md) Phone push notifications (You)
 - [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
@@ -155,6 +156,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · INBOX-03 · Merged (backend #101 12e18e3): phone push notifications (tokens, queue, retries, privacy).
+- 10 Oct 2026 · INBOX-03 · Verifier report, round 4 (independent session, backend `7694231`, main 0694ced): no blocker, status review. Main merge: only `.env.example` conflicted (both blocks kept), the merge equals a fresh merge-tree in every other file and loses nothing of main's 122 changed files. S1: `20261019090000_push_tokens` is a pure rename (same sha256), no old stamp left, `migrate deploy` applies it after main's 112 folders, on an empty database, and after JOIN-01-r4's `20261018140000_waitlist_access_code`. S2: live on a hub, `100000` and `99999999999999999999` wait 3600 s, `1e20`, `-5`, `abc`, an HTTP date, `0` and empty use the normal 5 s backoff, a delivery with 100 s of life waits about 90 s (the round 3 build: 100000 s, Postgres 22008, 3000 s); 0 pass failures. N6: the new test alone kills M13. Nothing else changed (8 files). tsc 0, `src/push` 174 of 174, protected 253 of 253, gates the same 16 FAIL, contract identical, 13 of 16 own mutants killed (the 3 survivors: one unpinned ceiling value, two equivalent). Notes only (N8 to N11). Real Expo and a phone still NOT RUN.
+- 10 Oct 2026 · INBOX-03 · Builder report, round 4 (backend `7694231`, main 0694ced merged in): S1 migration restamped `20261019090000_push_tokens`; S2 provider `Retry-After` capped at one hour and at the delivery's remaining life, only a plain whole number of seconds is read (anything else uses the normal backoff), proved on a live hub for `100000`, `1e20`, `-5`, `abc` and an HTTP date; N6 test kills mutant M13. Only conflict `.env.example` (both blocks kept). `src/push` 174 of 174, protected suite 253 of 253, gates the same 16 FAIL as main, contract byte-identical. Real Expo and a phone still NOT RUN. Status `verifying`.
+- 10 Oct 2026 · INBOX-03 · Verifier report, round 3 (independent session, backend `ec02c97`, trial-merged with main `b5e7877` and `0694ced`): no blocker, status review. Trial merge conflicts only in `.env.example` (both blocks kept); tsc 0; eslint 0 in everything the task wrote (16 problems are main's own in two account files); gates 16 fail as main; protected 253/253 on the branch and the merge; `contract:build` identical; push specs 140/140 three times, all 140 tables unchanged; 18 neighbouring suites and 35 notification-emitting suites pass in a private namespace. Every earlier finding closed by re-running its reproduction (crash loses 0, a block either way and a deleted account push 0, NUL is 400, non-UTC database zones deliver in 47 s, a proxy 403 is retried, the admin reason never leaves); 2 Hubs on one database: 0 duplicates in 2100 messages; 17 of 18 own mutants killed. Should fix: the migration stamp `20261017090000` now sorts before main's `20261018100000_event_waitlist` (restamp at merge), and an uncapped `Retry-After` (100000 parks a push 27 hours, 1e20 aborts the pass). Real Expo, FCM and a phone still NOT RUN.
+- 8 Oct 2026 · INBOX-03 · Merged main 657a152 into the branch: `legal_delivered` ruled (held), push migration restamped `20261019090000_push_tokens (restamped again in round 4)`, contract regenerated; real Expo and a phone still NOT RUN.
+- 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
+- 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
 - 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
@@ -163,10 +171,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · LEGAL-02 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
 - 10 Oct 2026 · EVENTS-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
 - 10 Oct 2026 · PROS-01 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
-- 10 Oct 2026 · PROS-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
-- 10 Oct 2026 · EVENTS-01 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
-- 10 Oct 2026 · SCHOOLS-04 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
-- 10 Oct 2026 · JOIN-01 · Merged (backend #99 9311447): event registration link routes, Flutterwave verify, webhook branch and 5-minute re-check, admin list and CSV; D1-D3 follow in round 3.
-- 10 Oct 2026 · JOIN-01 · Built: event registration link, backend. Four public routes (offer, register, verify, status) under /waitlist, a pending/paid/failed registration table with one paid row per offer and phone or email, the fee in plans.config.json, Flutterwave webhook plus a 5-minute by-reference re-check for payers who never came back, 7-day purge of unpaid rows, team list and CSV; backend wmt/JOIN-01 (contract at 5773fdb); 86 specs, protected suite 253/253, 13 mutants killed; a real payment NOT RUN (owner pays once after deploy); status verifying.
-- 10 Oct 2026 · JOIN-02 · Built: the event registration page `/join` (and `/join/paid`) on the website, against the JOIN-01 routes: form, pay in the Flutterwave window, "Checking your payment" with a retry and never a second charge, "You're registered, <first name>" with the reference, and plain refusals (already registered, closed, none open, cancelled, network); only the reference is kept in sessionStorage; walked in Chromium against the real backend (70 assertions) and pictured at 390 and 1280 px, light and dark; the sign-up page is untouched; status verifying; real payment NOT RUN.
-- 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
