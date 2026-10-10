@@ -215,7 +215,8 @@ used to say "a copy of production", it means the local backend with seeded data.
 Use your PIN." (for example "Fingerprint failed. Use your PIN."). A failed biometric never uses up a PIN try.
 Tasks: MONEY-02, MONEY-14, WALLET-02, WALLET-06.
 
-**R-27 · Links between screens.** No placeholders, no dead buttons, no feature flags. A hub or menu task builds
+**R-27 · Links between screens.** *In force again by R-47 (9 Oct 2026); R-46's change to it is withdrawn.* No placeholders,
+no dead buttons, no feature flags. A hub or menu task builds
 only the rows whose destination screen already exists. The task that builds a destination screen also adds its
 entry row or button to the hub, exactly as the artboard draws it, and owns the check "a user can reach X from
 Y". CHECK-3 confirms every hub matches its artboard in full. Lead default for ordering, not a rule of the
@@ -329,7 +330,7 @@ These are identifiers, not names a user reads. Changing them would break the Exp
 
 ### R-38 · The bottom bar does not get a Studio tab
 *Owner, 6 Oct 2026 ("bugs like this would not be condoned", about the boss brief v2.0's centre "Create ✨" Studio tab).*
-The bottom bar stays **Home · Communities · Explore · Messages · Settings**, and Create stays the floating button for creator accounts. This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
+The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · Inbox · Wallet · Me**, and Create stays the floating button for creator accounts. (Corrected 7 Oct 2026 after the CHECK-1 audit, F-2: this line first quoted the old web app's bar by mistake; the ruling itself, no Studio tab, is unchanged.) This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
 
 **Carried out by:** every navigation and AI-tools task; a verifier treats a bar with a sixth or swapped slot as a defect.
 
@@ -344,6 +345,77 @@ The bottom bar stays **Home · Communities · Explore · Messages · Settings**,
 - **Waiting on:** Nuvion's NGN fees and limits (the owner is asking).
 
 **Carried out by:** MONEY-20 (the provider seam), AUTH-07 (email sign-up codes), then a Nuvion adapter task once fees and limits are in. R-1's Loma Bank licence line is superseded by this ruling.
+
+### R-44 · Payments on the web are the same as the app
+*Owner, 8 Oct 2026 ("Same as the app"; payments are the priority now).*
+- On the website (wawuafrica.com) people can buy a tier, buy points, add money by bank transfer and pay from their wallet, through the same Hub routes as the app. The website is not a checkout that the app sends people to, and there is no card payment for now.
+- The money freeze is lifted for all payment work, not only the Nuvion adapter (R-42). Builders build against the provider seam (MONEY-20) with Nuvion stood in until its sandbox key works.
+
+**Carried out by:** the payment plan (`docs/PAYMENTS-PLAN.md` and its tasks: the Nuvion adapter, tiers and points, then the web payment screens).
+
+### R-45 · Nuvion is the wallet provider; Fintava stays only for bills
+*Owner, 8 Oct 2026 ("Nuvion is the go-to"; "the only thing we are keeping from them" is bills payments).*
+- Every wallet is opened and run on Nuvion. Production moves to `WALLET_PROVIDER=nuvion` once wallet opening on Nuvion is built, checked and set up live (NUV-02, NUV-03, NUV-04, the opening part of NUV-10).
+- Fintava stays for bills payments only (BILLS tasks). Its wallet code stays in the repo behind the provider seam, unused, in case it is needed; nothing is deleted.
+- The website opens wallets first (WEBPAY-01). Naira first: dollar wallets (NUV-09) are not needed for the website's opening. Until the app's open-wallet screens ask for what Nuvion needs (G-460), the app sends a person with no wallet to the website to open it (lead default).
+- Every agent runs on Sonnet, and every screen shows its full designed UI with unbuilt parts present but inert (owner, 8 Oct 2026).
+
+**Carried out by:** NUV-02, NUV-03, NUV-04, WEBPAY-01, NUV-10 (opening part), then the app fixes in BRAND-01.
+
+### R-46 · The UI is always complete (withdrawn by R-47, 9 Oct 2026)
+*Owner, 8 Oct 2026 ("if the screens are not ready ... it doesn't mean the UI should be incomplete"; "you are still going to show what is exact what is here only that when it is clicked it's not going to open anything because it has not been built").*
+This replaces the hiding half of R-27 and the "left out" line of R-41.
+- Every built screen draws its whole artboard (the brief's version, R-29): every row, tile, tab, button, icon and section, light and dark.
+- An entry whose screen is not built yet is drawn exactly as designed and does nothing when tapped. In code its handler is `unbuilt('<TASK-ID>')`, naming the task that builds where it leads. The gate fails when that task does not exist or is already built (`review` or `done`), so the task that builds a screen still wires its entry, as R-27 says.
+- A section with nothing to show (the Hub serves none, or its task is not built) draws its designed empty state. Where the canvas draws none, it draws the section's heading and frame with a neutral placeholder picture. Never an invented name, figure or price (rule 7; the fake-data gate still applies).
+- After-launch entries (the `docs/designer/BRIEF.md` list "Not built at launch") are drawn and inert too.
+- Still never: a "coming soon" label, a toast or alert saying a feature is missing, a feature flag, or a section left out. An entry drawn with `unbuilt` is not a dead button under V1; an entry left out is a defect. A screen with no way in (Settings was one) is a defect.
+- Lead default, owner may override: an inert entry looks exactly as drawn, with no greying and no message.
+
+**Carried out by:** COMPLETE-01 (the `unbuilt` helper and its gate), then COMPLETE-02 Explore, COMPLETE-03 Home, COMPLETE-04 Me, COMPLETE-05 Wallet and COMPLETE-06 (Inbox, Settings, the pay sheet, sign-up and profile edit). BRAND-01 adds the Settings entry. Every later screen task follows this.
+
+### R-47 · Show only what is built (reverses R-46)
+*Owner, 9 Oct 2026: "UI isn't even necessary to be there if the tasks are not complete", and the website wallet comes first.*
+- R-46 is withdrawn; R-27 and R-41 are in force again. A part of a screen whose task is not complete is not drawn: no inert entries, no placeholder rows or tiles for unbuilt screens. The task that builds a screen adds its entry, exactly as drawn, and owns "a user can reach X from Y".
+- A section whose own task is complete stays drawn, with its designed empty state when the Hub serves nothing.
+- FIX-29 removes the inert entries R-46 added (every `unbuilt('<ID>')` site and BRAND-01's seven do-nothing menu rows). COMPLETE-03, COMPLETE-04 and COMPLETE-06 are cancelled. The `unbuilt` helper and its gate stay in the repo, unused.
+- Order of work: the website wallet (WEBPAY-01 and the Nuvion opening tasks it needs) takes agent slots first; app UI work never goes ahead of it.
+
+**Carried out by:** FIX-29.
+
+### R-48 · Event registration link: register and pay on the website, finish in the app
+*Owner, 10 Oct 2026 ("a registration page on the web where they also pay a 2k fee for the 1k subscription"; "It's a
+registration link, like a wait list .... dont mess with the sign up page").*
+- People at a WAWU event register on wawuafrica.com/join (name, phone, email) and pay the event fee, ₦2,000 today,
+  for the ₦1,000 tier (Verify). It is a waiting list, not an account: no WAWU ID account, password or OTP; the
+  website's sign-up page is not touched. The rest happens in the app: signing up there with the same phone or email
+  turns the paid registration into the tier (JOIN-03).
+- The fee is a config value (`event_offers` in the price file), never a literal. It is paid by Flutterwave checkout
+  (card, bank transfer, USSD), the rail that is live in production today; this is an exception to R-44's "no card" for
+  this fee only, because the Nuvion wallet is not live yet. WAWU is the merchant of its own fee, so no creator money is
+  held (the wallet note is unaffected).
+- Owner answers, 10 Oct 2026: the ₦2,000 buys whatever the ₦1,000 Verify tier gives ("whatever the 1k own says");
+  the plan's days start when the person joins the app (the claim, JOIN-03); the link stays open until the owner says
+  (no `open_until`; closing is a config change). The page shows no offer card, no plan length and no start date
+  ("Don't write the plans time there"); the price appears only on the Pay button.
+
+**Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
+next).
+
+### R-49 · The app comes first; the developers' tasks are the lead's; Sonnet agents only
+*Owner, 10 Oct 2026 ("proceed to building the app ... leave the web, the registration link is enough for now ...
+leave the web tasks and proceed with all app full integrations ... claim all other dev tasks as their subscriptions
+are up ... never use opus agents again to do tasks").*
+- The app and the backend it needs are the work. Website tasks are paused: WEBPAY-01 to WEBPAY-05, FIX-23, the web
+  half of FIX-25 and of FIX-16. The website serves only the registration link (R-48), and stays that way until the
+  owner says otherwise. This reverses the 9 Oct "the website wallet comes first".
+- Every open task owned by Developer 2 or Developer 3 is taken over by the lead's agents (owner `YOU`, with a
+  "Taken over" line). Their half-built branches are continued, never restarted.
+- Every builder and verifier is a Sonnet agent. The lead orchestrates, rules and merges; it builds nothing itself.
+- The order of work is the dependency order in `tasks/INDEX.md`: the money core (MONEY-17, then MONEY-18, MONEY-19,
+  MONEY-16 and the Nuvion tasks) first, because most of the app's remaining screens pay from the wallet.
+
+**Carried out by:** the lead's queue, one task per agent. The cap was four agents at a time until the owner raised it on 10 Oct 2026 ("Spawn more agents and carry more work"): now up to nine Sonnet agents at once, bounded by the machine's memory (a heavy run starts only with 5 GB free).
 
 ## Artboards that are not built
 
@@ -366,3 +438,34 @@ both 2 Oct 2026.
 
 The full list of what the canvas contradicts, with both sides quoted, is in
 `docs/analysis/ANALYSIS-EVIDENCE.md` ("Conflicts with the current product").
+
+### R-40 · Changing ticket prices needs a current verification and goes back to review
+*Owner, 7 Oct 2026 ("yes then add it", on event price edits).*
+`PUT /events/:id/tickets`, the web's route for a host's ticket tiers and prices, follows the same rules as creating or editing an event: the host must hold a current verification (B3, hosting is verified-only), and a change to an approved event sends it back to review. Once a ticket is sold, tiers stay locked as they are today (409). This is a deliberate change to a protected route.
+
+**Carried out by:** EVENTS-11.
+
+### R-41 · Every tab is built now, with what exists
+*Owner, 7 Oct 2026 ("I want all tabs to be built").*
+The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALLET-01) are built now, so every screen already built can be reached from the tabs. On a hub, an entry that leads to a screen not built yet is left out (never a dead button, never a "coming soon"), and the task that builds that screen adds the entry exactly as drawn (R-27). A verifier treats a hub entry that opens nothing as a defect. *In force again by R-47 (9 Oct 2026).*
+
+**Carried out by:** HOME-01, ME-01, EXPLORE-01, WALLET-01 now; each later task named in their "Lead note (7 Oct 2026)" adds its own entry.
+
+### R-42 · The owner's answers of 7 Oct 2026 (decisions page)
+*Owner, 7 Oct 2026, on the "Fintava to Nuvion: approve and go" page.*
+- **Nuvion: start now.** The Nuvion build starts without waiting for Nuvion's NGN fees and limits; they are settings filled in when Nuvion answers, and nothing moves real money before they are set. The sandbox key is coming from the owner. This lifts the money freeze for the Nuvion work.
+- **Bills: off at launch,** switched off and not deleted ("Leave them switched off, don't delete for now").
+- **Opening a wallet** adds an ID document and a proof of address, as Nuvion requires.
+- **Adding money is by bank transfer only** at launch.
+- **Held money** (paid questions, tickets) moves through a WAWU operational account on Nuvion.
+- **Legal consultation prices confirmed:** chat ₦25,000 for 60 minutes, video ₦45,000 for 60 minutes, in person on request (LEGAL-03 F8 closed).
+- **Phone numbers:** yes to the fix for someone signing up with another person's phone (AUTH-07). The owner adds: "phone number should be verified with the BVN. Check if Nuvion's response makes this possible, else we have to figure out a fix." Carried out by AUTH-07 and the Nuvion identity work.
+- **Events:** reviewers see ticket types and prices in the dashboard; the ticket types of an event that is not approved are hidden from the public (EVENTS-02 F2 and F3).
+- **TGIF:** the second count beside Amen is readers that day (G-160).
+- **PR #26** (retire the Shop routes): the owner adds the relock-approved label.
+
+### R-43 · The 5 Oct plan is adopted (Verify, Create, Earn)
+*Owner, 7 Oct 2026 ("Adopt it: I'll send prices and rules").*
+The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Developer Brief v2.0 is adopted: free sign-up and drafts; publishing or uploading a file needs a paid tier (Verify, Verify Plus, Founding Maker, with 3, 6 or 10 products); points for AI tools with lots that expire and a cash-out rate; dollar prices outside Nigeria; Voice Intro in the person's own voice; referral points. This reverses the "no subscription, no tier" rule, the 5-item cap and naira-only for those features. **The owner sends the final prices and rules;** until then the plan's figures are config values, never facts. Still open and not to be assumed: whether points replace WAWU Credits, the commission ("WAWU keeps up to 10%" against the 85/15 split, R-5), the tier-expiry rule, and the Christmas event date. R-38 stands: no Studio tab; AI tools open from the Create button.
+
+**Carried out by:** the design round 2 brief (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`), then tasks cut from the new boards.

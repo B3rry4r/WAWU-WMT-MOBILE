@@ -59,8 +59,16 @@ const { PayoutAccountScreen } = require('../PayoutAccountScreen') as typeof impo
 const api = require('../api/payoutAccount') as typeof import('../api/payoutAccount');
 const { ApiError } = require('@/api/errors') as typeof import('@/api/errors');
 
+/**
+ * Every client a test made. Nothing is kept for a later read (`gcTime: 0`, queries and mutations: a mutation's
+ * default 5 minute garbage-collection timer otherwise held an in-band jest run open for about 5 minutes), and
+ * each is cancelled and emptied after its test (SHARED-CHANGES WALLET-01 #3).
+ */
+const clients: QueryClient[] = [];
+
 async function boot(onSaved?: jest.Mock) {
-  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: 0 }, mutations: { gcTime: 0 } } });
+  clients.push(client);
   const onBack = jest.fn();
   await render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
@@ -75,6 +83,13 @@ async function boot(onSaved?: jest.Mock) {
 beforeEach(() => {
   answers = {};
   sent = [];
+});
+
+afterEach(async () => {
+  for (const client of clients.splice(0)) {
+    await client.cancelQueries();
+    client.clear();
+  }
 });
 
 describe('A21 · Payout bank', () => {

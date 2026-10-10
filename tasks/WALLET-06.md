@@ -63,6 +63,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps the settings icon and lands on W35 (this task replaces `unbuilt('WALLET-06')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **W35**: a user can open Transaction PIN (W36); turn on fingerprint or face for payments; see Beneficiaries; open Account details.
 - [ ] **W36**: a user can enter a new PIN and confirm it.
 - [ ] **W37**: a user can enter OTP; Resend.
@@ -100,6 +101,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The WALLET-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

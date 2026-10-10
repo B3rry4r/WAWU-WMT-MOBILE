@@ -1,7 +1,7 @@
 ---
 id: LEGAL-06
 title: Legal: quote, pay to start, delivery, fixed price
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 120
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S21, S22, S23, S24, S26]
 ---
 # LEGAL-06 · Legal: quote, pay to start, delivery, fixed price
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

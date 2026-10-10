@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-07
 title: Enrol in a course and pay from the wallet (backend)
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 125
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # SCHOOLS-07 · Enrol in a course and pay from the wallet (backend)
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

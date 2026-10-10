@@ -1,7 +1,7 @@
 ---
 id: INBOX-12
 title: Paid message settings, warning, switched off
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 65
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I21, I22, I23]
 ---
 # INBOX-12 · Paid message settings, warning, switched off
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 
@@ -92,6 +94,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The ME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

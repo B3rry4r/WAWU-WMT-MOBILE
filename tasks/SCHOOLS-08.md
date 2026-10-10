@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-08
 title: My courses and apply on the school's site
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 136
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [SC8, SC9]
 ---
 # SCHOOLS-08 · My courses and apply on the school's site
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

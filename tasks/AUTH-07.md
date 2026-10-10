@@ -3,7 +3,7 @@ id: AUTH-07
 title: Sign-up verifies by email code; no SMS
 owner: YOU
 area: AUTH
-order: 181
+order: 245
 priority: launch
 repo: both
 type: flow

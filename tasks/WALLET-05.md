@@ -66,6 +66,7 @@ Top-up at launch is a bank transfer to the account number (`account_funded`). Th
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps Add money and lands on its first screen (this task replaces `unbuilt('WALLET-05')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **W15**: a user can copy and share the account details.
 - [ ] **W17**: a user can enter an amount; Max; Change destination; see ₦40 + ₦25 = ₦65 and "Withdraw ₦50,065" with "Your bank gets ₦50,000" for ₦50,000; Withdraw (then PIN W11).
 - [ ] **W19**: a user can Share receipt through the phone's share sheet; Done.
@@ -108,6 +109,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

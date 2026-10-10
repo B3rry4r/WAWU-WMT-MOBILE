@@ -62,6 +62,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps Send and lands on W7 (this task replaces `unbuilt('WALLET-02')` in `src/features/wallet/home/` with the real navigation; COMPLETE-05).
 - [ ] **W7**: a user can type name/@handle/phone; pick a recent; pick a result.
 - [ ] **W9**: a user can enter amount; tap quick amount; add note; Continue.
 - [ ] **W10**: a user sending ₦25,000 to a WAWU user sees ₦15.75 + ₦10 = ₦25.75, a total of ₦25,025.75 on the button and "They get ₦25,000".
@@ -103,6 +104,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

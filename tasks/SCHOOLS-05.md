@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-05
 title: Admin screens: schools, courses, intakes
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 36
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V6, V7, V9]
 artboards: []
 ---
 # SCHOOLS-05 · Admin screens: schools, courses, intakes
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 
@@ -33,6 +35,10 @@ Dashboard screens over SCHOOLS-02's endpoints.
 ## Capability checks
 
 - [ ] An admin can add a school with a course and an intake from the dashboard, and the public schools route returns it (SCHOOLS-04).
+
+## Lead note (8 Oct 2026): paging from SCHOOLS-04
+
+`GET /schools` pages by keyset on (name, id). A school renamed between two page reads can come back on a later page, so when the list appends a page it drops any school id it already holds. Add a test for it.
 
 ## Builder report
 

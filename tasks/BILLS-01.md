@@ -1,7 +1,7 @@
 ---
 id: BILLS-01
 title: Pay a bill: choose biller, meter and amount
-owner: DEV2
+owner: YOU
 area: BILLS
 order: 69
 priority: launch
@@ -13,7 +13,11 @@ decisions: [R-20]
 passes: [V1, V4, V5, V6, V9]
 artboards: [S2, S3, S4, S10, S13]
 ---
+On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
+
 # BILLS-01 · Pay a bill: choose biller, meter and amount
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 
@@ -76,6 +80,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps any bills tile and lands on S2 (this task replaces `unbuilt('BILLS-01')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **S2**: a user can pick Electricity (S3); repeat a recent bill.
 - [ ] **S3**: a user sees the billers Fintava lists, each with its prepaid or postpaid code, and can pick one (S4).
 - [ ] **S4**: a user can enter a meter number and see the name on it; pick an amount within that disco's minimum and maximum.
@@ -116,6 +121,10 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Hub entries this task adds (R-41)
+
+The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

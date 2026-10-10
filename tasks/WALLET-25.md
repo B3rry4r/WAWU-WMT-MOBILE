@@ -3,7 +3,7 @@ id: WALLET-25
 title: Add money by card
 owner: YOU
 area: WALLET
-order: 194
+order: 265
 priority: after-launch
 repo: wawu-backend
 type: third-party

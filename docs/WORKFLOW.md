@@ -167,6 +167,7 @@ any of these.
 | `removal` | V1 V3 V4 V7 V9 |
 | `admin-screen` | V1 V6 V7 V9 |
 | `web-port` | V1 V3 V4 V5 V6 V7 V9 |
+| `backend-refactor` | V1 V2 V3 V9 (no route, field or behaviour changes: the contract must come out unchanged) |
 
 A mobile screen that takes money also lists V7 and V8. V10 runs once per
 checkpoint on the tester build, and on any task touching permissions, push, the
@@ -201,7 +202,9 @@ that as a balance.
 **Payments are tested one at a time, safest first:** credits, tips, unlocks,
 ticks, paid DMs, event tickets, bills, legal, school fees. Each one is tested
 locally against the sandbox, then with a small real payment, and all of them launch
-with the app (R-20). The web stays on Flutterwave until after launch.
+with the app (R-20). The web stays on Flutterwave until after launch, except buying a tier, buying points, adding
+money by bank transfer and paying from the wallet, which the web does through the same Hub routes as the app (R-44,
+`docs/PAYMENTS-PLAN.md`).
 
 **Nobody has a wallet until they open one** (R-6): identity checks happen
 then, not at sign-up. Every money screen handles "this user has no wallet yet"
@@ -244,10 +247,11 @@ anything else.
 
 ### Links between screens
 
-No placeholders, no dead buttons, no feature flags (DECISIONS R-27).
+Show only what is built (DECISIONS R-47, restoring R-27). No placeholders, no dead buttons, no feature flags.
 
 - A hub or menu task (a home screen, a menu, a list whose rows open other screens) builds only the rows,
-  tiles, tabs and buttons whose destination screen already exists.
+  tiles, tabs and buttons whose destination screen already exists. A section whose own task is complete
+  stays drawn, with its designed empty state when there is nothing to show.
 - The task that builds a destination screen also adds its entry row or button to the hub, exactly as the
   artboard draws it, and owns the check "a user can reach X from Y". Its task file says so ("this task adds
   it, as drawn") and depends on the hub's task.

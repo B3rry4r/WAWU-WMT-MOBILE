@@ -1,7 +1,7 @@
 ---
 id: BILLS-06
 title: Bill reminders
-owner: DEV2
+owner: YOU
 area: BILLS
 order: 128
 priority: launch
@@ -13,7 +13,11 @@ decisions: [R-33]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
+On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
+
 # BILLS-06 · Bill reminders
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 
