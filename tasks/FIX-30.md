@@ -7,7 +7,7 @@ order: 244
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: done
 depends_on: [FIX-29]
 decisions: [R-47]
 passes: [V1, V5, V6]
@@ -156,3 +156,5 @@ How it was checked: a web export of this head (`npx expo export -p web`, own `TM
 - INBOX-05, -10, -18, -19 and EVENTS-06 when they land: each must draw its parts back as drawn and rewrite the tests that pin their absence.
 
 ## Owner sign-off
+
+Merged by the lead, 10 Oct 2026 (mobile main, merge of `2491202`): every capability check passed. The verifier's one defect (the read-on stalls when a refresh lands during it) is latent: no row kind has a renderer yet, so nothing reads on. It is fixed in round 2 on the same branch (the verifier's one-line patch and its stall test) before any Inbox renderer task merges.
