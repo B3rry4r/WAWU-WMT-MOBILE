@@ -13,14 +13,11 @@ import {
   useExploreEvents,
 } from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
-import { fetchIsCreator, proKeys } from '@/features/pro-listing/api';
-import { unbuilt } from '@/lib/unbuilt';
 import { layout, space, useWawu } from '@/theme';
 
-import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators, fetchUnreadNotifications, unreadKey } from './api';
+import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators } from './api';
 import { categoryTiles, type CategoryChoice } from './categories';
 import { CategoryTiles } from './CategoryTiles';
-import { CreateButton, createButtonMetrics } from '@/components/CreateButton';
 import { CreatorCard, creatorCardMetrics } from './CreatorCard';
 import { DoorsCard, type Door } from './DoorsCard';
 import { ExploreBar } from './ExploreBar';
@@ -33,22 +30,16 @@ import {
   ExploreFeaturedEventEmpty,
   HeroDots,
   SectionHeading,
-  SeeAllCreators,
 } from './parts';
 
 /**
  * design/_gen/explore.js `body`: the body pads 8 above and 120 below (over a tab bar that here is its own box), 20
  * between sections; a section heading sits 12 above its rail (`col(..., 12)`). The bar above it is `ExploreBar`'s.
- *
- * `bodyBottomCreate` is the bottom padding while the Create button is drawn (creator accounts). The canvas's 120 leaves
- * 30 under the last row here, but the button stands 16 above the tab bar and is 58 high, so it covers the bottom 74 and
- * the last row's chevron sat under it at the end of the scroll. The padding is the button's own offset, its height and
- * the same 16 again (`space.lg`) between the button and the row: 16 + 58 + 16 = 90. Everyone else keeps the canvas's 30.
+ * The task that draws the Create button (ME-04) also gives the body the room under its last row that the button covers.
  */
 export const exploreMetrics = {
   bodyTop: space.sm,
   bodyBottom: 120 - layout.tabbarH,
-  bodyBottomCreate: createButtonMetrics.bottom + createButtonMetrics.size + space.lg,
   sectionGap: space.xl,
   headingGap: space.md,
 } as const;
@@ -62,32 +53,32 @@ export type ExploreScreenProps = {
   onSeeAllEvents: () => void;
   /** The "Find a professional" door (PROS-01): the directory, P1. */
   onFindProfessional: () => void;
+  /** The "Find a school" door (SCHOOLS-03): the schools list, SC1. */
+  onFindSchool: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
 };
 
 /**
- * X1 and X14: Explore, drawn whole (R-46). It reads the creator categories, the featured creators, the featured event
- * and the upcoming events, and, for the bar and the Create button, the unread notifications and the account type.
- * When the categories or the featured creators cannot be read, every section stays drawn as it is when nothing is served
- * (the bar, the neutral frames, the doors, Create) under one banner with a Try again that reads everything again.
+ * X1 and X14: Explore, showing what is built (R-47). It reads the creator categories, the featured creators, the featured
+ * event and the upcoming events. When the categories or the featured creators cannot be read, every section stays drawn as
+ * it is when nothing is served (the bar, the neutral frames, the doors) under one banner with a Try again that reads
+ * everything again.
  *
- * Every entry X1 draws is here. Built destinations are wired: a category tile (X2, X3), the featured event and an event
- * card (E2), Upcoming events' See all (E1) and "List your services" (PROS-03). The rest are `unbuilt(...)`: the search
- * pill and Featured creators' See all (EXPLORE-02), the bell (ME-14), a creator card (ME-02), Find a professional
- * (wired by PROS-01's route), Find a school (SCHOOLS-03) and Create (ME-04); the task that builds each one wires it. A section with
- * nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
+ * Every entry drawn here opens something: a category tile (X2, X3), the featured event and an event card (E2), Upcoming
+ * events' See all (E1), "Find a professional" (PROS-01), "Find a school" (SCHOOLS-03) and "List your services" (PROS-03). A featured creator's card shows
+ * the creator and its Follow follows, but the card itself opens nothing, because the profile it leads to is not built. What
+ * X1 draws for screens that are not built is not drawn: the search pill and Featured creators' See all (EXPLORE-02), the
+ * bell (ME-14) and Create (ME-04). The task that builds each one adds it, as drawn. A section
+ * with nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
   const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories }, queryClient);
   const featured = useQuery({ queryKey: featuredKey, queryFn: fetchFeaturedCreators }, queryClient);
   const me = useQuery({ queryKey: meKey, queryFn: fetchMyId }, queryClient);
-  // The bell's dot and the Create button read on their own: neither holds the screen up, and neither fails it (no dot, no button).
-  const unread = useQuery({ queryKey: unreadKey, queryFn: fetchUnreadNotifications, retry: false }, queryClient);
-  const creator = useQuery({ queryKey: proKeys.account, queryFn: fetchIsCreator, retry: false }, queryClient);
   const follow = useFollow();
   const events = useExploreEvents();
   const refetchEvents = events.refetch;
@@ -95,17 +86,14 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
 
   const refetchCategories = categories.refetch;
   const refetchFeatured = featured.refetch;
-  const refetchUnread = unread.refetch;
-  const refetchCreator = creator.refetch;
-  // One list of reads for coming back to the tab, a pull and Try again. The account type is in it so that Create comes back
-  // for a creator after a read that failed once (it is not retried on its own, so a failure settles at once).
+  // One list of reads for coming back to the tab, a pull and Try again.
   const refetchAll = useCallback(
-    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents(), refetchUnread(), refetchCreator()]),
-    [refetchCategories, refetchFeatured, refetchEvents, refetchUnread, refetchCreator],
+    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents()]),
+    [refetchCategories, refetchFeatured, refetchEvents],
   );
 
   // Coming back to the tab reads again when what is held has gone stale (a read that failed holds nothing, so it is stale).
-  const stale = categories.isStale || featured.isStale || unread.isStale || creator.isStale;
+  const stale = categories.isStale || featured.isStale;
   const wasFocused = useRef(focused);
   useEffect(() => {
     if (focused && !wasFocused.current && stale) void refetchAll();
@@ -124,10 +112,10 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
   const failed = (categories.isError && !categories.data) || (featured.isError && !featured.data);
   const failure = categories.error ?? featured.error;
 
-  // The doors, in X1's order: Find a professional, Find a school, List your services.
+  // The doors whose screens are built, in X1's order: Find a professional, Find a school, List your services.
   const doors: Door[] = [
     { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional },
-    { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: unbuilt('SCHOOLS-03') },
+    { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: onFindSchool },
     { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
   ];
 
@@ -137,7 +125,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
   } else {
     const creators = featured.data ?? [];
     const featuredEvent = events.featured;
-    // A failed read draws every section as a read that served nothing does (neutral frames), under one banner (R-46).
+    // A failed read draws every section as a read that served nothing does (neutral frames), under one banner.
     body = (
       <>
         {failed ? (
@@ -162,7 +150,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
           onOpen={(tile) => onOpenCategory(tile.kind === 'category' ? (tile.id as CategoryChoice) : 'all')}
         />
         <View testID="explore-featured" style={styles.section}>
-          <SectionHeading title="Featured creators" action={<SeeAllCreators />} />
+          <SectionHeading title="Featured creators" />
           {creators.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
               {creators.map((creator) => (
@@ -170,7 +158,6 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
                   key={creator.wawuId}
                   testID={`explore-featured-${creator.wawuId}`}
                   creator={creator}
-                  onPress={unbuilt('ME-02')}
                   onToggleFollow={creator.wawuId === me.data ? undefined : () => follow.toggle(creator)}
                 />
               ))}
@@ -189,20 +176,17 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
     );
   }
 
-  const showCreate = creator.data === true;
-
   return (
     <View testID="explore-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <ExploreBar unread={unread.data ?? 0} />
+      <ExploreBar />
       <ScrollView
         testID="explore-scroll"
         style={styles.scroll}
-        contentContainerStyle={[styles.content, showCreate ? styles.contentCreate : null]}
+        contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
       >
         {body}
       </ScrollView>
-      {showCreate ? <CreateButton /> : null}
       <Toast message={follow.notice} tone="alert" placement="bottom" lines={2} duration={FOLLOW_NOTICE_MS} onHide={follow.dismiss} testID="follow-notice" />
     </View>
   );
@@ -218,8 +202,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.gutter,
     gap: exploreMetrics.sectionGap,
   },
-  /** While Create is drawn the last row ends above it (`exploreMetrics.bodyBottomCreate`). */
-  contentCreate: { paddingBottom: exploreMetrics.bodyBottomCreate },
   section: { gap: exploreMetrics.headingGap },
   bleed: { marginHorizontal: -layout.gutter, flexGrow: 0 },
   rail: { gap: creatorCardMetrics.between, paddingHorizontal: layout.gutter },

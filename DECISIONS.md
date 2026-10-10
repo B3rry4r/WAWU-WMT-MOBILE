@@ -415,7 +415,7 @@ are up ... never use opus agents again to do tasks").*
 - The order of work is the dependency order in `tasks/INDEX.md`: the money core (MONEY-17, then MONEY-18, MONEY-19,
   MONEY-16 and the Nuvion tasks) first, because most of the app's remaining screens pay from the wallet.
 
-**Carried out by:** the lead's queue, one task per agent, at most four agents at a time.
+**Carried out by:** the lead's queue, one task per agent. The cap was four agents at a time until the owner raised it on 10 Oct 2026 ("Spawn more agents and carry more work"): now up to nine Sonnet agents at once, bounded by the machine's memory (a heavy run starts only with 5 GB free).
 
 ## Artboards that are not built
 

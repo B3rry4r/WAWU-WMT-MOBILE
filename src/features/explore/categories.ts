@@ -40,7 +40,7 @@ export type CategoryTileItem =
   | { kind: 'all'; label: string; icon: IconName }
   | { kind: 'category'; id: string; label: string; icon: IconName }
   | { kind: 'more'; label: string; icon: IconName }
-  /** A neutral frame where a category will be, drawn only while the Hub serves none (R-46). */
+  /** A neutral frame where a category will be, drawn only while the Hub serves none (R-47). */
   | { kind: 'blank'; slot: number };
 
 /**

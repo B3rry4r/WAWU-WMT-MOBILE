@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { Linking, Share } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -146,7 +146,7 @@ describe('M1 · Me', () => {
     expect(screen.queryByText('Shop')).toBeNull();
   });
 
-  it('does not yet draw QR, the tick prompt or Create (COMPLETE-04 draws them, inert); the Menu button is drawn (BRAND-01)', async () => {
+  it('does not yet draw QR, the tick prompt or Create (the tasks that build them add them, R-47); the Menu button is drawn (BRAND-01)', async () => {
     answers = header();
     await boot();
     await screen.findByTestId('me-name');
@@ -251,48 +251,47 @@ describe('M1 · Me', () => {
   });
 });
 
-const MENU_TITLES = ['Creator dashboard', 'My content', 'My purchases', 'My courses', 'Saved', 'Notifications', 'Verification', 'Settings'];
+/** The rows Z1 draws above Settings (BRAND-01); each is drawn by the task that builds its screen (R-47), so none is drawn today. */
+const NOT_BUILT_ROWS = ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification'];
+const NOT_BUILT_TITLES = ['Creator dashboard', 'My content', 'My purchases', 'My courses', 'Saved', 'Notifications', 'Verification'];
 
 describe('Z1 · the Me menu (BRAND-01)', () => {
-  it('a signed-in user can tap Menu, see the eight rows Z1 draws in its order, and tap Settings to open Z2', async () => {
+  it('a signed-in user can tap Menu, see Settings, the one row whose screen is built, and tap it to open Z2', async () => {
     answers = header();
     const { onOpenSettings } = await boot();
     await screen.findByTestId('me-name');
     expect(screen.queryByTestId('me-menu')).toBeNull();
     await fireEvent.press(screen.getByTestId('me-menu-button'));
     expect(await screen.findByTestId('me-menu')).toBeTruthy();
-    const ids = ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification', 'settings'];
-    MENU_TITLES.forEach((title, i) => expect(screen.getByTestId(`me-menu-${ids[i]}`)).toHaveTextContent(title));
+    expect(screen.getByTestId('me-menu-settings')).toHaveTextContent('Settings');
     await fireEvent.press(screen.getByTestId('me-menu-settings'));
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
   });
 
-  it('every other row is drawn with its chevron, is not a button, and opens nothing when tapped (R-46)', async () => {
+  it('draws none of the seven rows whose screens are not built, and every row it draws is a button that opens something (R-47)', async () => {
     answers = header();
     const { onOpenSettings, onEditProfile } = await boot();
     await screen.findByTestId('me-name');
     await fireEvent.press(screen.getByTestId('me-menu-button'));
     await screen.findByTestId('me-menu');
-    for (const id of ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification']) {
-      const row = screen.getByTestId(`me-menu-${id}`);
-      expect(row.props.accessibilityRole).not.toBe('button');
-      await fireEvent.press(row);
-    }
-    expect(onOpenSettings).not.toHaveBeenCalled();
-    expect(onEditProfile).not.toHaveBeenCalled();
-    // The sheet is still up: nothing was opened, nothing was closed.
-    expect(screen.getByTestId('me-menu')).toBeTruthy();
+    for (const id of NOT_BUILT_ROWS) expect(screen.queryByTestId(`me-menu-${id}`)).toBeNull();
+    for (const title of NOT_BUILT_TITLES) expect(within(screen.getByTestId('me-menu')).queryByText(title)).toBeNull();
+    const list = within(screen.getByTestId('me-menu-list'));
+    expect(list.getAllByRole('button').map((row) => row.props.testID)).toEqual(['me-menu-settings']);
     expect(screen.getByTestId('me-menu-settings').props.accessibilityRole).toBe('button');
+    await fireEvent.press(screen.getByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    expect(onEditProfile).not.toHaveBeenCalled();
   });
 
-  it('draws no figure the Hub has not served: no naira amount, count or tick state under the rows', async () => {
+  it('draws no figure the Hub has not served: the sheet holds the one title and no naira amount, count or tick state', async () => {
     answers = header();
     await boot();
     await screen.findByTestId('me-name');
     await fireEvent.press(screen.getByTestId('me-menu-button'));
     const list = await screen.findByTestId('me-menu-list');
-    expect(list).toHaveTextContent(new RegExp(`^${MENU_TITLES.join('')}$`));
+    expect(list).toHaveTextContent(/^Settings$/);
   });
 
   it('a person can reach Settings while the profile is still loading', async () => {

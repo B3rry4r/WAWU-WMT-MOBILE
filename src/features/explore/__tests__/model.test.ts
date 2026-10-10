@@ -38,7 +38,7 @@ describe('X1 category tiles', () => {
     expect(tiles[7]).toMatchObject({ kind: 'more', icon: 'Ellipsis' });
   });
 
-  it('draws More even when every category already fits (R-46: X1 draws the whole row)', () => {
+  it('draws More even when every category already fits (More opens every category, so it stays: R-47)', () => {
     expect(categoryTiles(twelve.slice(0, 6)).map((t) => t.kind)).toEqual(['all', 'category', 'category', 'category', 'category', 'category', 'category', 'more']);
     expect(categoryTiles(twelve.slice(0, 2)).map((t) => t.kind)).toEqual(['all', 'category', 'category', 'more']);
   });

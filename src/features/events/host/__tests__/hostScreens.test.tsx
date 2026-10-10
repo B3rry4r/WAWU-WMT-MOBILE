@@ -149,14 +149,13 @@ describe('E21 · Needs a tick', () => {
     expect(rtl.screen.queryByTestId('host-name')).toBeNull();
   });
 
-  it('draws Get verified as designed; it does nothing until ME-12 (R-46)', async () => {
+  it('draws no Get verified button: the screen it opens (ME-12) is not built (R-47)', async () => {
     serve(false);
     await bootHost();
     await rtl.screen.findByTestId('host-gate');
-    const button = rtl.screen.getByTestId('host-get-verified');
-    expect(rtl.screen.getByText('Get verified')).toBeTruthy();
-    await rtl.act(async () => rtl.fireEvent.press(button));
-    expect(rtl.screen.getByTestId('host-gate')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-get-verified')).toBeNull();
+    expect(rtl.screen.queryByText('Get verified')).toBeNull();
+    expect(rtl.screen.queryAllByRole('button').map((b) => b.props.testID)).toEqual(['host-back']);
   });
 
   it('lets a professional tick host', async () => {
@@ -328,19 +327,19 @@ describe('E13 to E15 · the wizard', () => {
     });
     expect(await rtl.screen.findByText('Sent for review')).toBeTruthy();
     expect(posts()).toHaveLength(1);
-    expect(rtl.screen.getByText('My events')).toBeTruthy();
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('host-my-events')));
-    expect(rtl.screen.getByTestId('host-submitted')).toBeTruthy();
+    // My events (E17) is EVENTS-08's: until it is built the confirmation offers Done alone (R-47).
+    expect(rtl.screen.queryByText('My events')).toBeNull();
+    expect(rtl.screen.queryByTestId('host-my-events')).toBeNull();
+    expect(rtl.screen.getByTestId('host-done')).toBeTruthy();
   });
 
-  it('draws the My events tab between Discover and Host event; it does nothing until EVENTS-08', async () => {
+  it('draws Discover and Host event only: the My events tab (EVENTS-08) is not drawn (R-47)', async () => {
     serve(true);
     await bootHost();
     await rtl.screen.findByTestId('host-name');
     const labels = rtl.screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel);
-    expect(labels).toEqual(['Discover', 'My events', 'Host event']);
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('events-tab-mine')));
-    expect(rtl.screen.getByTestId('host-name')).toBeTruthy();
+    expect(labels).toEqual(['Discover', 'Host event']);
+    expect(rtl.screen.queryByTestId('events-tab-mine')).toBeNull();
   });
 
   it('keeps everything typed after a failed submit, says why, and sends again on retry', async () => {

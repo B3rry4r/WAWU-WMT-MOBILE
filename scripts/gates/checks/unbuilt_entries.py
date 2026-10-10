@@ -1,7 +1,9 @@
 """An inert entry always names the task that will wire it, and goes live with it.
 
-DECISIONS R-46: a screen draws its whole artboard, and an entry whose screen is
-not built yet does nothing when tapped. In code that is one call,
+DECISIONS R-47: a part of a screen whose task is not complete is not drawn, so
+no screen calls `unbuilt` today; the helper (`src/lib/unbuilt.ts`) and this gate
+stay in the repo, unused. If an entry whose screen is not built yet is ever
+drawn so that it does nothing when tapped, in code that is one call,
 
     onPress={unbuilt('ME-03')}
 
