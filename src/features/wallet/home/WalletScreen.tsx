@@ -31,9 +31,9 @@ const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, stat
  * not answer), against `GET /money/wallet`, `GET /money/wallet/balance` and `GET /money/transactions`.
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where
- * it leads, as drawn: the scan icon (WALLET-20) and the settings icon (WALLET-06); the Dollar and Crypto tabs and Swap
+ * it leads, as drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap
  * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the bills tiles (BILLS-01); the WAWU card row (WALLET-22);
- * See all and a row's detail (WALLET-04). Nothing here reads, charges or moves money beyond the three reads above.
+ * See all and a row's detail (WALLET-04). The settings icon is built (WALLET-06, W35). Nothing here reads, charges or moves money beyond the three reads above.
  *
  * W6's card with its words also holds every other state that has no balance to show (no wallet, opening, frozen, a
  * failed read), because the canvas draws no other.

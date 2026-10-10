@@ -39,7 +39,7 @@ function tokenFor(sub: string) {
 const clients: QueryClient[] = [];
 
 /** A10's end that says the account already has a PIN, reached the way a person reaches it: a set the server refuses. */
-async function atAlreadySet(onForgotPin?: () => void) {
+async function atAlreadySet(onForgotPin?: () => void, afterReset = false) {
   const { CreatePinScreen } = require('../CreatePinScreen') as typeof import('../CreatePinScreen');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   clients.push(client);
@@ -47,7 +47,7 @@ async function atAlreadySet(onForgotPin?: () => void) {
   await rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <CreatePinScreen {...props} onForgotPin={onForgotPin} />
+        <CreatePinScreen {...props} onForgotPin={onForgotPin} afterReset={afterReset} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
@@ -91,5 +91,17 @@ describe('A10 · a PIN the server already holds, and W37 (BACKEND_GAPS G-116)', 
   it('with nowhere to open the reset, the end shows no Forgot PIN? (no dead button)', async () => {
     await atAlreadySet(undefined);
     expect(rtl.screen.queryByRole('button', { name: 'Forgot PIN?' })).toBeNull();
+  });
+
+  it('the end says that an earlier PIN still approves payments, as it cannot tell which PIN the account holds', async () => {
+    await atAlreadySet(jest.fn());
+    expect(rtl.screen.getByText(/If you set one before, that earlier PIN still approves payments/)).toBeTruthy();
+  });
+
+  it('after a reset made from it the end names the new PIN and no longer mentions an earlier one (D5)', async () => {
+    await atAlreadySet(jest.fn(), true);
+    expect(rtl.screen.getByText('Your PIN was reset. The new PIN you just chose is the one that approves payments.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/earlier PIN/)).toBeNull();
+    expect(rtl.screen.getByText('You already have a transaction PIN')).toBeTruthy();
   });
 });

@@ -9,17 +9,21 @@ import { Text } from '@/components/Text';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { space, useWawu } from '@/theme';
 
-import { changePin, fetchPinState, verifyPin } from '../api/settings';
+import { changePin, fetchPinState, newRequestKey, verifyPin } from '../api/settings';
 import { PinDots, PinFrame, PinHead, StatusLine } from './PinFrame';
-import { CONFIRM_TITLE, CURRENT_LINE, CURRENT_TITLE, lockLeftMs, movedOn, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, stepLabel } from './pinFlow';
+import { CONFIRM_TITLE, CURRENT_LINE, CURRENT_TITLE, lockLeftMs, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, type Refusal, stepLabel, UNKNOWN_CHANGE } from './pinFlow';
 
 /** How often the lock's countdown refreshes. */
 const TICK_MS = 1000;
+/** A change with no answer is sent this many times in a row (the same request, the same key) before the person is asked to tap Try again. */
+const REPEATS = 2;
 
 type Stage = 'current' | 'new' | 'confirm';
-/** `checking`: the current PIN is out. `saving`: the change is out. `unchecked`: the change got no answer and neither did the read that tells whether it landed. */
-type Busy = 'idle' | 'checking' | 'saving' | 'unchecked';
+/** `checking`: the current PIN is out. `saving`: the change is out. `unsent`: the change got no answer twice (or the server said it is still running); Try again sends it once more under the same key. */
+type Busy = 'idle' | 'checking' | 'saving' | 'unsent';
 type Line = { text: string; wrongPin: boolean };
+/** One attempt to change the PIN: what is sent, and the Idempotency-Key it is sent under, every time it is sent. */
+type Attempt = { key: string; current: string; newPin: string; newPinConfirmation: string };
 
 export type ChangePinScreenProps = {
   /** Back from W36 to W35. */
@@ -44,8 +48,13 @@ export type ChangePinScreenProps = {
  * the server compares them. Default (agent), owner may override.
  *
  * Every PIN lives in this screen's memory only, and is dropped the moment its request is answered, whatever the
- * answer, and on leaving. Nothing is stored, logged or put in a URL. A change that got no answer is checked by reading
- * the PIN's state: if `changedAt` moved on it landed, and if not the person starts again at the new PIN.
+ * answer, and on leaving. Nothing is stored, logged or put in a URL.
+ *
+ * One attempt is one Idempotency-Key (WALLET-06 round 2, D1). A change that got no answer is sent again, once at
+ * once and then by Try again, with the same key and the same entries: if the first landed the server answers it again
+ * without looking at the PIN (no try is spent), and if it did not the repeat is the request. The screen never judges
+ * by the PIN's `changedAt`, which moves for a change by anyone, and never asks the server with the new PIN. A new
+ * attempt (other entries after a refusal) is a new key.
  */
 export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoWallet }: ChangePinScreenProps) {
   const { colors } = useWawu();
@@ -63,8 +72,8 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
   /** The PIN in use, once checked; the first new entry, held until the second. Memory only. */
   const current = useRef<string | null>(null);
   const first = useRef<string | null>(null);
-  /** `changedAt` as it stood when this screen opened: what "the change landed" is compared with. Undefined until read. */
-  const baseline = useRef<string | null | undefined>(undefined);
+  /** The change being sent, with its key, from the second entry until it is answered or given up. Memory only. */
+  const attempt = useRef<Attempt | null>(null);
   const inFlight = useRef(false);
   const alive = useRef(true);
   useEffect(
@@ -72,15 +81,14 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
       alive.current = false;
       current.current = null;
       first.current = null;
+      attempt.current = null;
     },
     [],
   );
 
   const read = pin.data;
   useEffect(() => {
-    if (!read) return;
-    if (baseline.current === undefined) baseline.current = read.changedAt;
-    if (!read.isSet) onNoPin();
+    if (read && !read.isSet) onNoPin();
   }, [read, onNoPin]);
 
   // The lock: from the read at the start, and again after a refusal that says locked.
@@ -105,6 +113,7 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
 
   const startAgainAt = (next: Stage, text: string | null, wrongPin = false) => {
     first.current = null;
+    attempt.current = null;
     setDigits('');
     setStage(next);
     if (text === null) setLine(null);
@@ -114,28 +123,9 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
   const finish = () => {
     current.current = null;
     first.current = null;
+    attempt.current = null;
     void queryClient.invalidateQueries({ queryKey: ['money'] });
     onChanged();
-  };
-
-  /** Where the change stands when no answer came: moved on is done; unchanged is a fresh start at the new PIN; no answer again waits for Try again. */
-  const check = async () => {
-    setBusy('saving');
-    setLine(null);
-    try {
-      const now = await fetchPinState();
-      if (!alive.current) return;
-      if (movedOn(baseline.current, now.changedAt)) {
-        finish();
-        return;
-      }
-      setBusy('idle');
-      startAgainAt('new', "We couldn't change your PIN. Try again.");
-    } catch (error) {
-      if (!alive.current) return;
-      setBusy('unchecked');
-      say(`We couldn't check whether your PIN was changed. ${refusalOf(error).line}`);
-    }
   };
 
   const submitCurrent = async (entered: string) => {
@@ -164,52 +154,80 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     }
   };
 
-  const submitNew = async (firstEntry: string, secondEntry: string) => {
+  /** The second entry is in: this is one attempt, with one key for as long as it goes unanswered. */
+  const submitNew = (firstEntry: string, secondEntry: string) => {
     const pinInUse = current.current;
     if (inFlight.current || pinInUse === null) return;
+    attempt.current = { key: newRequestKey(), current: pinInUse, newPin: firstEntry, newPinConfirmation: secondEntry };
+    void send();
+  };
+
+  /**
+   * Sends the attempt held. With no answer it is sent once more at once, under the same key; with none again (or the
+   * server saying the first is still running) the person is told so and Try again sends it again, still the same.
+   */
+  const send = async () => {
+    const held = attempt.current;
+    if (inFlight.current || held === null) return;
     inFlight.current = true;
     setBusy('saving');
     setLine(null);
     try {
-      await changePin(pinInUse, firstEntry, secondEntry);
-      if (!alive.current) return;
-      finish();
-    } catch (error) {
-      if (!alive.current) return;
-      const refusal = refusalOf(error);
-      first.current = null;
-      setDigits('');
-      switch (refusal.kind) {
-        case 'mismatch':
-          startAgainAt('new', refusal.line, true);
-          break;
-        case 'wrong_pin':
-          // The PIN in use was changed under this screen (another phone, a reset): ask for it again.
-          current.current = null;
-          startAgainAt('current', refusal.line, true);
-          break;
-        case 'locked':
-          current.current = null;
-          startAgainAt('current', null);
-          await learnLock();
-          say(refusal.line);
-          break;
-        case 'no_pin':
-          onNoPin();
-          break;
-        case 'no_wallet':
-          onNoWallet();
-          break;
-        case 'unanswered':
-          inFlight.current = false;
-          await check();
-          break;
-        default:
-          startAgainAt('new', refusal.line);
+      let unanswered: Refusal | null = null;
+      for (let sends = 0; sends < REPEATS; sends += 1) {
+        try {
+          await changePin(held);
+          if (!alive.current) return;
+          finish();
+          return;
+        } catch (error) {
+          if (!alive.current) return;
+          const refusal = refusalOf(error);
+          if (refusal.kind !== 'unanswered' && refusal.kind !== 'in_progress') {
+            await refused(refusal);
+            return;
+          }
+          unanswered = refusal;
+          // The server is still on the first one: it will answer it. Do not send a third.
+          if (refusal.kind === 'in_progress') break;
+        }
       }
+      setBusy('unsent');
+      say(unanswered?.kind === 'in_progress' ? unanswered.line : `${UNKNOWN_CHANGE} ${unanswered?.line ?? ''}`.trim());
     } finally {
       inFlight.current = false;
       if (alive.current) setBusy((was) => (was === 'saving' ? 'idle' : was));
+    }
+  };
+
+  /** An answer that says the change did not happen: why, and where the person starts again. */
+  const refused = async (refusal: Refusal) => {
+    attempt.current = null;
+    first.current = null;
+    setDigits('');
+    switch (refusal.kind) {
+      case 'mismatch':
+        startAgainAt('new', refusal.line, true);
+        break;
+      case 'wrong_pin':
+        // The PIN in use was changed under this screen (another phone, a reset): ask for it again.
+        current.current = null;
+        startAgainAt('current', refusal.line, true);
+        break;
+      case 'locked':
+        current.current = null;
+        startAgainAt('current', null);
+        await learnLock();
+        say(refusal.line);
+        break;
+      case 'no_pin':
+        onNoPin();
+        break;
+      case 'no_wallet':
+        onNoWallet();
+        break;
+      default:
+        startAgainAt('new', refusal.line);
     }
   };
 
@@ -234,7 +252,7 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     } else {
       const entered = first.current;
       setDigits(next);
-      if (entered !== null) void submitNew(entered, next);
+      if (entered !== null) submitNew(entered, next);
     }
   };
   const onDelete = () => {
@@ -248,6 +266,8 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
   const back = () => {
     if (waiting) return;
     if (stage === 'confirm') {
+      // Back from a change that has no answer yet gives that attempt up and frees the keypad (D4).
+      setBusy('idle');
       startAgainAt('new', null);
       return;
     }
@@ -272,7 +292,7 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     status = (
       <>
         <StatusLine text={line.text} testID="change-pin-line" />
-        {busy === 'unchecked' ? <Button label="Try again" icon="RotateCw" variant="secondary" size="md" onPress={() => void check()} testID="change-pin-check-again" /> : null}
+        {busy === 'unsent' ? <Button label="Try again" icon="RotateCw" variant="secondary" size="md" onPress={() => void send()} testID="change-pin-try-again" /> : null}
       </>
     );
   }

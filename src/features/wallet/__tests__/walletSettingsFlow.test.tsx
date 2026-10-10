@@ -38,6 +38,8 @@ const ME = {
 const RESET_ID = '5f1c1c1e-6a1d-4d4e-9a53-0d6b0b0c0b01';
 let pinSetAt = '2026-07-10T09:00:00.000Z';
 let walletState: 'open' | 'not_open' = 'open';
+/** Whether the wallet read says a PIN is set. A10 is reached with it false while the Hub already holds one (a set on another phone). */
+let walletKnowsPin = true;
 const calls: { method: string; path: string; pin: string | null; body: unknown }[] = [];
 const ok = (data: unknown) => new Response(JSON.stringify({ statusCode: 200, message: 'OK', data }), { status: 200, headers: { 'content-type': 'application/json' } });
 const pinState = () => ({ isSet: true, changedAt: pinSetAt, triesLeft: 5, lockedUntil: null });
@@ -54,7 +56,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
         state: walletState,
         account: walletState === 'open' ? ACCOUNT : null,
         limits: null,
-        pin: walletState === 'open' ? pinState() : { isSet: false, changedAt: null, triesLeft: 5, lockedUntil: null },
+        pin: walletState === 'open' && walletKnowsPin ? pinState() : { isSet: false, changedAt: null, triesLeft: 5, lockedUntil: null },
         bankTransfers: { allowed: true, blockedBy: null },
         beneficiaryCount: 3,
       });
@@ -64,6 +66,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       return ok({ items: [], nextCursor: null });
     case 'GET /money/pin':
       return ok(pinState());
+    case 'POST /money/pin':
+      return new Response(JSON.stringify({ statusCode: 409, message: 'You already have a transaction PIN.', data: null, reason: { code: 'pin_already_set', message: 'You already have a transaction PIN.' } }), { status: 409, headers: { 'content-type': 'application/json' } });
     case 'POST /money/pin/verify':
       return request.headers.get('x-transaction-pin') === '1234'
         ? ok(pinState())
@@ -72,7 +76,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       pinSetAt = new Date().toISOString();
       return ok(pinState());
     case 'POST /money/pin/reset':
-      return ok({ resetId: RESET_ID, sentTo: '+234 *** *** 4412', resendAvailableAt: new Date(Date.now() + 60_000).toISOString(), expiresAt: new Date(Date.now() + 300_000).toISOString() });
+      return ok({ resetId: RESET_ID, sentTo: '+234 *** *** 4412', resendAvailableAt: new Date(Date.now() + 60_000).toISOString(), resendInSeconds: 60, expiresAt: new Date(Date.now() + 300_000).toISOString() });
     case 'POST /money/pin/reset/confirm':
       pinSetAt = new Date().toISOString();
       return ok(pinState());
@@ -134,6 +138,15 @@ beforeAll(async () => {
         </QueryClientProvider>
       );
     },
+    // A10 draws from the app's one cache, as the root layout gives it.
+    'open-wallet-pin': () => {
+      const A10Route = page('@/app/open-wallet-pin');
+      return (
+        <QueryClientProvider client={app.queryClient}>
+          <A10Route />
+        </QueryClientProvider>
+      );
+    },
     'wallet-settings': page('@/app/wallet-settings'),
     'change-pin': page('@/app/change-pin'),
     'reset-pin': page('@/app/reset-pin'),
@@ -146,6 +159,7 @@ beforeAll(async () => {
 beforeEach(() => {
   pinSetAt = '2026-07-10T09:00:00.000Z';
   walletState = 'open';
+  walletKnowsPin = true;
   calls.length = 0;
   app.queryClient.clear();
   app.queryClient.setDefaultOptions({ queries: { ...app.queryClient.getDefaultOptions().queries, gcTime: 0, retry: false } });
@@ -235,6 +249,56 @@ describe('changing the PIN from Wallet settings', () => {
     expect(await screen.findByTestId('reset-pin-code')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(pathname()).toBe('/wallet-settings'));
+  });
+});
+
+describe('Forgot PIN? on A10, the end that says the account already has a PIN (BACKEND_GAPS G-116)', () => {
+  /** A10 as a person reaches it: a PIN typed twice that the Hub refuses because it already holds one. */
+  async function atAlreadySet() {
+    walletKnowsPin = false;
+    await renderRouter(routes, { initialUrl: '/open-wallet-pin' });
+    await waitFor(() => expect(screen.getByRole('button', { name: '1' }).props.accessibilityState?.disabled).toBeFalsy());
+    await type('27492749');
+    expect(await screen.findByTestId('open-wallet-pin-already-set')).toBeTruthy();
+    expect(pathname()).toBe('/open-wallet-pin');
+  }
+
+  it('Forgot PIN? opens the reset (W37, /reset-pin), not the PIN change (kills: the button routed to /change-pin)', async () => {
+    await atAlreadySet();
+    await fireEvent.press(screen.getByRole('button', { name: 'Forgot PIN?' }));
+    expect(await screen.findByTestId('reset-pin-code')).toBeTruthy();
+    expect(pathname()).toBe('/reset-pin');
+    expect(screen.queryByTestId('change-pin-current')).toBeNull();
+    // A code was asked for: this is the reset, and a change would have asked for nothing.
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.path === '/money/pin/reset')).toBe(true));
+    expect(calls.some((c) => c.path === '/money/pin/verify')).toBe(false);
+  });
+
+  it('Back from the reset returns to the end it was opened from', async () => {
+    await atAlreadySet();
+    await fireEvent.press(screen.getByRole('button', { name: 'Forgot PIN?' }));
+    expect(await screen.findByTestId('reset-pin-code')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(pathname()).toBe('/open-wallet-pin'));
+    expect(await screen.findByTestId('open-wallet-pin-already-set')).toBeTruthy();
+    // Nothing was reset, so the words are the ones that say what is true either way.
+    expect(screen.getByText(/that earlier PIN still approves payments/)).toBeTruthy();
+  });
+
+  it('after a reset made from it, the end names the new PIN and no longer says an earlier PIN still approves payments (D5)', async () => {
+    await atAlreadySet();
+    expect(screen.getByText(/If you set one before, that earlier PIN still approves payments/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Forgot PIN?' }));
+    expect(await screen.findByTestId('reset-pin-code')).toBeTruthy();
+    await type('481902');
+    await type('4821');
+    await type('4821');
+    await waitFor(() => expect(pathname()).toBe('/open-wallet-pin'));
+    expect(await screen.findByTestId('open-wallet-pin-already-set')).toBeTruthy();
+    expect(screen.getByText('Your PIN was reset. The new PIN you just chose is the one that approves payments.')).toBeTruthy();
+    expect(screen.queryByText(/earlier PIN still approves/)).toBeNull();
+    // Done is still the way on, and the reset sent what it should.
+    expect(calls.find((c) => c.path === '/money/pin/reset/confirm')?.body).toEqual({ resetId: RESET_ID, code: '481902', newPin: '4821', newPinConfirmation: '4821' });
   });
 });
 

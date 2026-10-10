@@ -16,8 +16,10 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 type Reply = { status: number; body: unknown };
-type Answer = Reply | 'offline' | 'hold';
-type Sent = { method: string; path: string; url: string; pin: string | null; body: unknown };
+/** A reply made when the request arrives, from what it carried: a stand-in server with a rule of its own. */
+type Rule = (call: Sent) => Reply | 'offline';
+type Answer = Reply | 'offline' | 'hold' | Rule;
+type Sent = { method: string; path: string; url: string; pin: string | null; key: string | null; body: Record<string, unknown> | null };
 
 const OWNER = '00000000-0000-4000-8000-0000000000a7';
 const SET_AT = '2026-07-10T09:00:00.000Z';
@@ -34,10 +36,19 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   const text = await request.clone().text();
-  sent.push({ method: request.method, path: url.pathname, url: request.url, pin: request.headers.get('x-transaction-pin'), body: text ? JSON.parse(text) : null });
+  const call: Sent = {
+    method: request.method,
+    path: url.pathname,
+    url: request.url,
+    pin: request.headers.get('x-transaction-pin'),
+    key: request.headers.get('idempotency-key'),
+    body: text ? (JSON.parse(text) as Record<string, unknown>) : null,
+  };
+  sent.push(call);
   const key = `${request.method} ${url.pathname.replace(/^\/api\/hub/, '')}`;
-  const answer = routes[key]?.shift() ?? fallback[key];
+  let answer = routes[key]?.shift() ?? fallback[key];
   if (!answer) throw new Error(`no answer for ${key}`);
+  if (typeof answer === 'function') answer = answer(call);
   if (answer === 'offline') throw new TypeError('Network request failed');
   // Held until the test ends: the cache's cancel aborts it, so nothing is left in flight.
   if (answer === 'hold')
@@ -199,42 +210,174 @@ describe('W36 · Change the transaction PIN', () => {
     expect(asked('PUT', '/money/pin').map((c) => c.pin)).toEqual(['1234', '1234']);
   });
 
-  it('a change that got no answer is checked: if the PIN’s time moved on it landed and the user is done', async () => {
-    routes['PUT /money/pin'] = ['offline'];
-    routes['GET /money/pin'] = [state(), state({ changedAt: '2026-10-10T09:00:00.000Z' })];
+  it('the request carries BOTH entries as typed: a server that compares them refuses two different ones, and accepts the same twice (kills: the first entry sent as both)', async () => {
+    // The stand-in compares the two entries the way the Hub does; it does not just say what the test hopes.
+    fallback['PUT /money/pin'] = (call) =>
+      call.body?.newPin === call.body?.newPinConfirmation
+        ? state({ changedAt: '2026-10-10T09:00:00.000Z' })
+        : refusal(400, 'pin_mismatch', 'The two PINs do not match. Enter the same PIN twice.');
     const props = await boot();
     await type('1234');
     await type('4821');
-    await type('4821');
-    await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
-    expect(asked('PUT', '/money/pin')).toHaveLength(1);
-  });
-
-  it('a change that got no answer and did not land starts again at the new PIN, with nothing claimed', async () => {
-    routes['PUT /money/pin'] = ['offline'];
-    const props = await boot();
-    await type('1234');
-    await type('4821');
-    await type('4821');
-    expect(await rtl.screen.findByText("We couldn't change your PIN. Try again.")).toBeTruthy();
-    expect(rtl.screen.getByText('Step 1 of 2')).toBeTruthy();
+    await type('4822');
+    expect(await rtl.screen.findByText('The two PINs do not match. Enter the same PIN twice.')).toBeTruthy();
     expect(props.onChanged).not.toHaveBeenCalled();
+    expect(asked('PUT', '/money/pin')).toHaveLength(1);
+    expect(asked('PUT', '/money/pin')[0].body).toEqual({ newPin: '4821', newPinConfirmation: '4822' });
+    // Typed the same twice, it goes through.
+    await type('4821');
+    await type('4821');
+    await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+    expect(asked('PUT', '/money/pin')[1].body).toEqual({ newPin: '4821', newPinConfirmation: '4821' });
   });
 
-  it('when neither the change nor the check got an answer, the screen says it does not know and Try again checks again', async () => {
-    routes['PUT /money/pin'] = ['offline'];
-    routes['GET /money/pin'] = [state(), 'offline'];
+  it('every attempt has its own Idempotency-Key, in the Hub’s format; a new entry after a refusal is a new attempt and a new key', async () => {
+    routes['PUT /money/pin'] = [refusal(400, 'pin_mismatch', 'The two PINs do not match. Enter the same PIN twice.')];
     const props = await boot();
     await type('1234');
     await type('4821');
+    await type('4822');
+    await rtl.screen.findByText('The two PINs do not match. Enter the same PIN twice.');
     await type('4821');
-    expect(await rtl.screen.findByText("We couldn't check whether your PIN was changed. No connection. Check your internet and try again.")).toBeTruthy();
-    // Keys stay off: a new PIN is never asked for while the first may have landed.
-    expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBe(true);
-    routes['GET /money/pin'] = [state({ changedAt: '2026-10-10T09:00:00.000Z' })];
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    await type('4821');
     await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
-    expect(asked('PUT', '/money/pin')).toHaveLength(1);
+    const keys = asked('PUT', '/money/pin').map((c) => c.key);
+    expect(keys).toHaveLength(2);
+    for (const key of keys) expect(key).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
+    expect(keys[0]).not.toBe(keys[1]);
+    // The key is not on the other calls, and carries nothing of the PIN.
+    expect(asked('POST', '/money/pin/verify')[0].key).toBeNull();
+    for (const key of keys) expect(key).not.toMatch(/1234|4821|4822/);
+  });
+
+  describe('a change that got no answer is sent again with the same key (WALLET-06 round 2, D1)', () => {
+    /** A stand-in Hub that keeps what landed under each key and answers a repeat as the Hub does. */
+    function serverThatLoses(lose: number) {
+      const landed = new Map<string, Reply>();
+      let lost = 0;
+      fallback['PUT /money/pin'] = (call) => {
+        const key = call.key ?? '';
+        const first = landed.get(key);
+        const reply = first ?? state({ changedAt: '2026-10-10T09:00:00.000Z' });
+        landed.set(key, reply);
+        // The change reached the Hub; its answer did not reach the phone.
+        if (lost < lose) {
+          lost += 1;
+          return 'offline';
+        }
+        return reply;
+      };
+      return landed;
+    }
+
+    it('the change landed and its answer was lost: the same request goes again at once, the user is done, and nothing else is read to find out', async () => {
+      const landed = serverThatLoses(1);
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+      const puts = asked('PUT', '/money/pin');
+      expect(puts).toHaveLength(2);
+      // The same request twice: same key, same PIN in use, same two entries.
+      expect(puts[1].key).toBe(puts[0].key);
+      expect(puts[1].pin).toBe('1234');
+      expect(puts[1].body).toEqual(puts[0].body);
+      expect(landed.size).toBe(1);
+      // No verify with the new PIN (a wrong one would spend a try) and no read of the PIN's time to judge by.
+      expect(asked('POST', '/money/pin/verify')).toHaveLength(1);
+      expect(asked('POST', '/money/pin/verify')[0].pin).toBe('1234');
+      // Nothing was asked between the two sends (the one read after the change is the screen refreshing what it shows).
+      const first = sent.findIndex((c) => c.method === 'PUT');
+      const second = sent.findIndex((c, i) => i > first && c.method === 'PUT');
+      expect(sent.slice(first, second + 1).map((c) => c.method)).toEqual(['PUT', 'PUT']);
+    });
+
+    it('the PIN’s time moving for another reason while the change never lands is NOT taken for a change (kills: judging by changedAt)', async () => {
+      // Another phone changed the PIN: every read of its time shows a new one. This phone's change never reaches the Hub.
+      fallback['GET /money/pin'] = state({ changedAt: '2026-10-10T09:30:00.000Z' });
+      routes['GET /money/pin'] = [state()];
+      fallback['PUT /money/pin'] = 'offline';
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText(/^We couldn't tell whether your PIN was changed\./)).toBeTruthy();
+      expect(props.onChanged).not.toHaveBeenCalled();
+      // Sent twice (the repeat), never judged by a read.
+      expect(asked('PUT', '/money/pin')).toHaveLength(2);
+      expect(asked('GET', '/money/pin')).toHaveLength(1);
+    });
+
+    it('with no answer twice it says it does not know, keeps the keys off, and Try again sends the same request a third time under the same key', async () => {
+      serverThatLoses(2);
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText("We couldn't tell whether your PIN was changed. No connection. Check your internet and try again.")).toBeTruthy();
+      expect(props.onChanged).not.toHaveBeenCalled();
+      // The keys stay off: a new PIN is never asked for while the first may have landed.
+      expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBe(true);
+      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+      await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+      const keys = asked('PUT', '/money/pin').map((c) => c.key);
+      expect(keys).toHaveLength(3);
+      expect(new Set(keys).size).toBe(1);
+    });
+
+    it('someone else changed the PIN meanwhile: the repeat is refused for the PIN in use, the screen asks for it again and claims nothing', async () => {
+      routes['PUT /money/pin'] = ['offline', refusal(403, 'pin_incorrect', 'Wrong PIN. 4 tries left.')];
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText('Wrong PIN. 4 tries left.')).toBeTruthy();
+      expect(rtl.screen.getByTestId('change-pin-current')).toBeTruthy();
+      expect(props.onChanged).not.toHaveBeenCalled();
+      expect(asked('GET', '/money/pin')).toHaveLength(1);
+    });
+
+    it('the Hub saying the first request is still running is shown in its own words with Try again, and no third send is made on its own', async () => {
+      routes['PUT /money/pin'] = ['offline', refusal(409, 'idempotency_in_progress', 'This request is still going through. Check again in a moment.')];
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText('This request is still going through. Check again in a moment.')).toBeTruthy();
+      expect(asked('PUT', '/money/pin')).toHaveLength(2);
+      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+      await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+      const keys = asked('PUT', '/money/pin').map((c) => c.key);
+      expect(keys).toHaveLength(3);
+      expect(new Set(keys).size).toBe(1);
+    });
+
+    it('Back from the unanswered change gives that attempt up and the keypad works again (D4)', async () => {
+      fallback['PUT /money/pin'] = 'offline';
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      await rtl.screen.findByText(/^We couldn't tell whether your PIN was changed\./);
+      expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBe(true);
+      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' }));
+      expect(await rtl.screen.findByText('Step 1 of 2')).toBeTruthy();
+      expect(props.onBack).not.toHaveBeenCalled();
+      // The keys are on and the line and Try again are gone.
+      expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBeFalsy();
+      expect(rtl.screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+      expect(rtl.screen.queryByText(/We couldn't tell/)).toBeNull();
+      await type('1');
+      expect(rtl.screen.getByLabelText('1 of 4 digits entered')).toBeTruthy();
+      // And a new attempt made from here is a new key.
+      fallback['PUT /money/pin'] = state({ changedAt: '2026-10-10T09:00:00.000Z' });
+      await type('234');
+      await type('1234');
+      await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+      const keys = asked('PUT', '/money/pin').map((c) => c.key);
+      expect(new Set(keys).size).toBe(2);
+    });
   });
 
   it('the last digit sent twice at once makes one request', async () => {

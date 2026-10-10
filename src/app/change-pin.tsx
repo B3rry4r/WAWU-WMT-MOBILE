@@ -7,7 +7,7 @@ import { ChangePinScreen } from '@/features/wallet/settings/ChangePinScreen';
 /**
  * W36 · Change the transaction PIN (`/change-pin`), pushed on top of W35. Done, it goes back to W35, which reads the
  * wallet again. "Forgot PIN?" replaces it with W37 (`/reset-pin`), so a finished reset lands on W35 too. No PIN yet
- * leads to A9; no wallet to Open your wallet. Signed in only (SHARED-CHANGES WALLET-06 #2).
+ * leads to A9; no wallet to Open your wallet. Signed in only (SHARED-CHANGES WALLET-06 R1).
  */
 export default function ChangePinRoute() {
   const router = useRouter();

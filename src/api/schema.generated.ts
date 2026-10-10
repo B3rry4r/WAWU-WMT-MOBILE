@@ -2050,7 +2050,6 @@ export interface paths {
         };
         /** Is a PIN set, when it last changed, tries left, and the lock if any. */
         get: operations["MoneyPinController_state"];
-        /** Change the PIN. The current PIN is X-Transaction-Pin. */
         put: operations["MoneyPinController_change"];
         /** Set the first PIN (A9, A10, W36). Both entries in one request; a difference is pin_mismatch. */
         post: operations["MoneyPinController_set"];
@@ -2111,7 +2110,6 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** The code and the new PIN. Clears the lock and the wrong-try count, and turns biometric approval off. */
         post: operations["MoneyPinResetController_confirmReset"];
         delete?: never;
         options?: never;
@@ -2504,6 +2502,61 @@ export interface paths {
         get: operations["MoneyFeesController_feeQuote"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/payments/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the pay sheet shows before the PIN (H14, H17): the price from the
+         *     server's own record of the item, the wallet provider's charge, the
+         *     total, the balance and the shortfall, and a signed quote the payment
+         *     sends back. Nothing is reserved. A total above MERCHANT_MAX_PER_TXN_KOBO
+         *     is amount_out_of_range. A kind whose feature has not moved onto the
+         *     wallet yet, or an item not priced in naira, is target_not_payable.
+         *     While the running provider's fees are not set, fees_not_set before
+         *     anything else (NUV-07); `withinDailyLimit` and `remainingTodayKobo` say
+         *     where today's purchase limit stands.
+         */
+        get: operations["MoneyPaymentsController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay from the wallet: the price from the buyer's wallet to WAWU's own
+         *     account at the wallet provider (R-19, R-42), the provider's charge on
+         *     top (R-10), the 85/15 split of the price recorded with it (R-5). Answers
+         *     201 with the payment: completed, pending when the provider has not
+         *     confirmed the debit yet (H18, E10; it is never sent again blindly), or
+         *     failed when the provider refused it and nothing moved. The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN. fees_not_set
+         *     comes before the wallet gate, the key and the PIN; limit_reached (WAWU's
+         *     limit or the provider's) before anything is sent.
+         */
+        post: operations["MoneyPaymentsController_pay"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5242,54 +5295,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/payments/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What the pay sheet shows before the PIN (H14, H17): the price from the
-         *     server's own record of the item, Fintava's charge, the total, the balance
-         *     and the shortfall, and whether it fits today's limit. Nothing is
-         *     reserved. A total above MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range.
-         * @description Declared by MONEY-04, not served yet: MONEY-17 serves it.
-         */
-        get: operations["MoneyPaymentController_quote"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/payments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Pay from the wallet. Answers completed, or pending when Fintava has not
-         *     confirmed the debit yet (H18, E10): the app polls GET /money/payments/{id}.
-         *     A held kind answers with its hold. The money goes through WAWU's
-         *     merchant wallet, so a total above MERCHANT_MAX_PER_TXN_KOBO (config) is
-         *     refused with amount_out_of_range and maximumKobo, never split; a total
-         *     past today's limit is daily_limit_exceeded (Lead rulings, 2 Oct 2026).
-         * @description Declared by MONEY-04, not served yet: MONEY-17 serves it.
-         */
-        post: operations["MoneyPaymentController_pay"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/money/payments/{id}": {
         parameters: {
             query?: never;
@@ -5875,7 +5880,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
             /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -5908,6 +5913,8 @@ export interface components {
             triesLeft?: number;
             /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
             lockedUntil?: string;
+            /** @description payment_in_progress: the payment for this item still being confirmed (MONEY-17). */
+            paymentId?: string;
             /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
             retryAfterSeconds?: number;
             /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
@@ -6055,6 +6062,23 @@ export interface components {
         PayoutAccountDto: {
             bankCode: string;
             accountNumber: string;
+        };
+        PaymentDto: {
+            /** @enum {string} */
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
+            targetId: string;
+            /** @description Only for a tip. Every other price is the server's own record of the item. */
+            amountKobo?: number;
+            /** @description `totalKobo` from the payment quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /**
+             * @description `quoteToken` from that payment quote (MONEY-17, BACKEND_GAPS G-64): the
+             *     server checks it is its own, for this person and this price, and not
+             *     past `expiresAt`; otherwise `409 quote_changed` with the new quote.
+             */
+            quoteToken: string;
+            /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
+            note?: string;
         };
         MoneyPlainErrorEnvelope: {
             /**
@@ -6839,17 +6863,6 @@ export interface components {
             expectedTotalKobo: number;
             note?: string;
         };
-        PaymentDto: {
-            /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
-            targetId: string;
-            /** @description Only for a tip. Every other price is the server's own record of the item. */
-            amountKobo?: number;
-            /** @description `totalKobo` from the payment quote the person saw. A different server total is `quote_changed`. */
-            expectedTotalKobo: number;
-            /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
-            note?: string;
-        };
         FintavaWebhookAck: {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
@@ -7048,6 +7061,7 @@ export interface components {
             resetId: string;
             sentTo: string;
             resendAvailableAt: string;
+            resendInSeconds: number;
             expiresAt: string;
         };
         TickState: {
@@ -7102,6 +7116,57 @@ export interface components {
             accountName: string;
             matchesBvnName: boolean | null;
             updatedAt: string;
+        };
+        PaymentQuoteView: {
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            targetId: string;
+            title: string;
+            payee: components["schemas"]["MoneyPartyView"] | null;
+            priceKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            balanceKobo: number | null;
+            shortfallKobo: number | null;
+            willBeHeld: boolean;
+            withinDailyLimit: boolean;
+            remainingTodayKobo: number | null;
+            quoteToken: string;
+            expiresAt: string;
+        };
+        HoldView: {
+            id: string;
+            paymentId: string;
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            /** @enum {string} */
+            status: "held" | "released" | "refunded";
+            amountKobo: number;
+            /** @enum {string} */
+            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
+            payer: components["schemas"]["MoneyPartyView"];
+            payee: components["schemas"]["MoneyPartyView"] | null;
+            heldAt: string;
+            settledAt: string | null;
+            refundedKobo: number | null;
+        };
+        PaymentView: {
+            id: string;
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            targetId: string;
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            priceKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            reference: string;
+            hold: components["schemas"]["HoldView"] | null;
+            failureReason: string | null;
+            statusMessage: string | null;
+            createdAt: string;
+            completedAt: string | null;
         };
         RecipientView: {
             wawuUserId: string;
@@ -7874,7 +7939,7 @@ export interface components {
         DirectMessage: {
             id: string;
             /** @enum {string} */
-            status: "awaiting_response" | "responded" | "refunded";
+            status: "refunded" | "awaiting_response" | "responded";
             amount: number;
             creatorWawuId: string;
             senderWawuId: string;
@@ -7951,7 +8016,7 @@ export interface components {
             text: string;
             amountKobo: number;
             /** @enum {string} */
-            status: "awaiting_response" | "responded" | "refunded";
+            status: "refunded" | "awaiting_response" | "responded";
             mine: boolean;
             sentAt: string;
             deadlineAt: string;
@@ -8099,7 +8164,7 @@ export interface components {
         ShopOrderView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "failed" | "paid" | "refunded" | "cancelled";
+            status: "pending" | "failed" | "refunded" | "paid" | "cancelled";
             subtotalNaira: number;
             deliveryNaira: number;
             totalNaira: number;
@@ -10494,54 +10559,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        PaymentQuoteView: {
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            targetId: string;
-            title: string;
-            payee: components["schemas"]["MoneyPartyView"] | null;
-            priceKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            balanceKobo: number | null;
-            shortfallKobo: number | null;
-            willBeHeld: boolean;
-            withinDailyLimit: boolean;
-            remainingTodayKobo: number | null;
-        };
-        HoldView: {
-            id: string;
-            paymentId: string;
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            /** @enum {string} */
-            status: "refunded" | "released" | "held";
-            amountKobo: number;
-            /** @enum {string} */
-            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
-            payer: components["schemas"]["MoneyPartyView"];
-            payee: components["schemas"]["MoneyPartyView"] | null;
-            heldAt: string;
-            settledAt: string | null;
-            refundedKobo: number | null;
-        };
-        PaymentView: {
-            id: string;
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            targetId: string;
-            title: string;
-            /** @enum {string} */
-            status: "pending" | "completed" | "failed" | "reversed";
-            priceKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            reference: string;
-            hold: components["schemas"]["HoldView"] | null;
-            failureReason: string | null;
-            createdAt: string;
-            completedAt: string | null;
         };
         HoldPage: {
             items: components["schemas"]["HoldView"][];
@@ -14228,6 +14245,8 @@ export interface operations {
             header: {
                 /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
                 "X-Transaction-Pin": string;
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
             };
             path?: never;
             cookie?: never;
@@ -14441,7 +14460,10 @@ export interface operations {
     MoneyPinResetController_confirmReset: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -15549,6 +15571,173 @@ export interface operations {
                 };
             };
             /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPaymentsController_quote: {
+        parameters: {
+            query: {
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
+                /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
+                targetId: string;
+                /**
+                 * @description Only for a tip, where the payer chooses the amount. Refused on every
+                 *     other kind. Digits only, as on the fee quote: `100.00`, `1e4` or
+                 *     `10,000` is a 400, never read as some other number of kobo.
+                 */
+                amountKobo?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPaymentsController_pay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -20843,158 +21032,6 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen */
             423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_quote: {
-        parameters: {
-            query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
-                /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
-                targetId: string;
-                /** @description Only for a tip, where the payer chooses the amount. Refused on every other kind. */
-                amountKobo?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentQuoteView"];
-                };
-            };
-            /** @description reason.code: amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: target_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_pay: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PaymentDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentView"];
-                };
-            };
-            /** @description reason.code: idempotency_key_required, amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: insufficient_funds */
-            402: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: target_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable, fees_not_set */
-            503: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -17,7 +17,7 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 import { OPEN_WALLET_KEY } from './api/account';
 import { fetchOpenedWallet, openedWalletQuery, setTransactionPin } from './api/wallet';
 import { OpenWalletEnd } from './OpenWalletEnd';
-import { afterPinRefusal, ALREADY_SET, lengthLine, PIN_LENGTH, PIN_PURPOSE, unconfirmedLine } from './pin';
+import { afterPinRefusal, ALREADY_SET, ALREADY_SET_AFTER_RESET, lengthLine, PIN_LENGTH, PIN_PURPOSE, unconfirmedLine } from './pin';
 import { useSessionAccount } from './sessionAccount';
 
 /**
@@ -63,6 +63,11 @@ export type CreatePinScreenProps = {
    * for someone who does not know the earlier PIN. Drawn only when the screen is given somewhere to open it.
    */
   onForgotPin?: () => void;
+  /**
+   * The person came back from W37 after resetting the PIN from this end (WALLET-06 round 2, D5): the earlier PIN no
+   * longer approves, so the words name the new one.
+   */
+  afterReset?: boolean;
 };
 
 /**
@@ -78,7 +83,7 @@ export type CreatePinScreenProps = {
  * URL. An answer that lands after the session ended, or after the screen
  * closed, changes nothing.
  */
-export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave, onForgotPin }: CreatePinScreenProps) {
+export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave, onForgotPin, afterReset = false }: CreatePinScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
@@ -291,7 +296,7 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave, onForgotPi
         tone="warn"
         icon="LockKeyhole"
         title={ALREADY_SET.title}
-        message={ALREADY_SET.message}
+        message={afterReset ? ALREADY_SET_AFTER_RESET.message : ALREADY_SET.message}
         actionLabel="Done"
         onAction={onDone}
         secondaryLabel={onForgotPin ? 'Forgot PIN?' : undefined}

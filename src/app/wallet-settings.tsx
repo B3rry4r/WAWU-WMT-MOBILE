@@ -6,7 +6,7 @@ import { WalletSettingsScreen } from '@/features/wallet/settings/WalletSettingsS
 
 /**
  * W35 · Wallet settings (`/wallet-settings`). The Wallet tab's settings icon (W1) and Settings' Wallet and PIN row
- * (Z2) open it. Signed in only: the route graph does not guard it (SHARED-CHANGES WALLET-06 #2), so a signed-out visit
+ * (Z2) open it. Signed in only: the route graph does not guard it (SHARED-CHANGES WALLET-06 R1), so a signed-out visit
  * is sent to the welcome screen here, as the other wallet routes do.
  */
 export default function WalletSettingsRoute() {

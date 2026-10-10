@@ -64,6 +64,8 @@ export type Refusal =
   | { kind: 'no_wallet'; line: string }
   /** No answer that proves what happened (no connection, a timeout, a server fault). */
   | { kind: 'unanswered'; line: string }
+  /** `idempotency_in_progress`: the same request is still running on the server; its answer will be this request's. */
+  | { kind: 'in_progress'; line: string }
   /** Anything else the server refused, in its own sentence. */
   | { kind: 'other'; line: string };
 
@@ -86,6 +88,8 @@ export function refusalOf(error: unknown): Refusal {
       return { kind: 'bad_code', line };
     case 'pin_not_set':
       return { kind: 'no_pin', line };
+    case 'idempotency_in_progress':
+      return { kind: 'in_progress', line };
     case 'wallet_not_open':
     case 'wallet_opening':
       return { kind: 'no_wallet', line };
@@ -98,13 +102,11 @@ export function refusalOf(error: unknown): Refusal {
 }
 
 /**
- * Whether the PIN is now a new one: the server's `changedAt` moved on from what it was before the request. Used when
- * a change or a reset got no answer, to learn whether it landed. Never true without a time to compare with.
+ * What the screen says when a change or a reset got no answer, and the same request is sent again with the same key
+ * until one comes. The words never claim it happened or did not: the server's answer to the repeat is what tells.
  */
-export function movedOn(before: string | null | undefined, after: string | null): boolean {
-  if (before === undefined || after === null) return false;
-  return before !== after;
-}
+export const UNKNOWN_CHANGE = "We couldn't tell whether your PIN was changed.";
+export const UNKNOWN_RESET = "We couldn't tell whether your PIN was reset.";
 
 /** The lock's remaining time in ms from the server's `lockedUntil`; 0 when there is none, it has passed or cannot be read. */
 export function lockLeftMs(lockedUntil: string | null, now: number): number {

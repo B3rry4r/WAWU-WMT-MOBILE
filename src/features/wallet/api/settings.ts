@@ -14,6 +14,11 @@ import type { components } from '@/api/schema.generated';
  *   second entry are the body.
  * - `POST /money/pin/reset` and `/reset/confirm` (MONEY-14): a code to the person, then the code with a new PIN.
  *
+ * The change and the confirm take an optional `Idempotency-Key` (WALLET-06 round 2, backend CONVENTIONS section 4, "On the
+ * PIN routes"). The screen makes one key per attempt and sends the SAME request again with the SAME key when no answer
+ * came: if the first landed the server answers it again without looking at the PIN, so no try is spent, and if it did
+ * not land the repeat is the request. Nothing here judges by `changedAt`, which moves for any change by anyone.
+ *
  * Nothing here keeps, logs or echoes a PIN or a code: they go out in one request and the caller drops them when it
  * is answered.
  */
@@ -30,6 +35,21 @@ type Envelope<T> = { statusCode: number; message: string; data: T | null };
 const states: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 const orNull = (value: unknown): string | null => (filled(value) ? value : null);
+
+let keyCounter = 0;
+
+/**
+ * One key for one attempt to change or reset the PIN: 8 to 128 of `[A-Za-z0-9_-]` (the Hub's rule). A UUID where the
+ * runtime has one; otherwise the time, a counter and random digits, which cannot repeat for one person within the
+ * 48 hours the Hub keeps a key. It is a label for the attempt, not a secret, and carries nothing about the PIN.
+ */
+export function newRequestKey(): string {
+  const made = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (typeof made?.randomUUID === 'function') return made.randomUUID();
+  keyCounter += 1;
+  const random = Array.from({ length: 4 }, () => Math.floor(Math.random() * 36 ** 4).toString(36).padStart(4, '0')).join('');
+  return `w-${Date.now().toString(36)}-${keyCounter.toString(36)}-${random}`;
+}
 
 function unreadable(what: string): ApiError {
   return new ApiError('unknown', 200, `Your ${what} could not be read. Try again.`);
@@ -104,18 +124,28 @@ export async function verifyPin(pin: string): Promise<void> {
   await unwrap(api.POST('/api/hub/money/pin/verify', { params: { header: { 'X-Transaction-Pin': pin } } }));
 }
 
-/** PUT /money/pin. `current` is the header; the two new entries are the body, and the server compares them (`400 pin_mismatch`). */
-export async function changePin(current: string, newPin: string, newPinConfirmation: string): Promise<PinSummary> {
+/**
+ * PUT /money/pin. `current` is the header; the two new entries are the body, and the server compares them (`400
+ * pin_mismatch`). `key` is the attempt's Idempotency-Key: sent again unchanged when no answer came.
+ */
+export async function changePin(input: { current: string; newPin: string; newPinConfirmation: string; key: string }): Promise<PinSummary> {
   const body = (await unwrap(
-    api.PUT('/api/hub/money/pin', { params: { header: { 'X-Transaction-Pin': current } }, body: { newPin, newPinConfirmation } }),
+    api.PUT('/api/hub/money/pin', {
+      params: { header: { 'X-Transaction-Pin': input.current, 'Idempotency-Key': input.key } },
+      body: { newPin: input.newPin, newPinConfirmation: input.newPinConfirmation },
+    }),
   )) as unknown as Envelope<PinState>;
   const state = readPin(body?.data);
   if (!state.isSet) throw unreadable('PIN');
   return state;
 }
 
-/** What a reset code was sent to and when the next one can be asked for. `sentTo` is the server's own words (a masked phone, or a masked email under Nuvion). */
-export type PinResetStarted = { resetId: string; sentTo: string; resendAvailableAt: string; expiresAt: string };
+/**
+ * What a reset code was sent to and when the next one can be asked for. `sentTo` is the server's own words (a masked phone,
+ * or a masked email under Nuvion). `resendInSeconds` is the server's count of seconds until Resend opens, taken as it
+ * answered: the countdown starts from it on the phone's own timer, never from `resendAvailableAt` against the phone's clock.
+ */
+export type PinResetStarted = { resetId: string; sentTo: string; resendAvailableAt: string; resendInSeconds: number; expiresAt: string };
 
 /**
  * POST /money/pin/reset: sends a code. Asked again before `resendAvailableAt` it answers the same reset and sends
@@ -127,12 +157,20 @@ export async function startPinReset(): Promise<PinResetStarted> {
   if (!v || typeof v !== 'object' || !filled(v.resetId) || !filled(v.sentTo) || !filled(v.resendAvailableAt) || !filled(v.expiresAt)) {
     throw unreadable('code');
   }
-  return { resetId: v.resetId, sentTo: v.sentTo, resendAvailableAt: v.resendAvailableAt, expiresAt: v.expiresAt };
+  if (!Number.isSafeInteger(v.resendInSeconds) || (v.resendInSeconds as number) < 0) throw unreadable('code');
+  return { resetId: v.resetId, sentTo: v.sentTo, resendAvailableAt: v.resendAvailableAt, resendInSeconds: v.resendInSeconds as number, expiresAt: v.expiresAt };
 }
 
-/** POST /money/pin/reset/confirm: the code and the new PIN with its second entry. Clears the lock and turns off fingerprint or face approval. */
-export async function confirmPinReset(input: { resetId: string; code: string; newPin: string; newPinConfirmation: string }): Promise<PinSummary> {
-  const body = (await unwrap(api.POST('/api/hub/money/pin/reset/confirm', { body: input }))) as unknown as Envelope<PinState>;
+/**
+ * POST /money/pin/reset/confirm: the code and the new PIN with its second entry. Clears the lock and turns off fingerprint
+ * or face approval. `key` is the attempt's Idempotency-Key: sent again unchanged when no answer came (a code works once, so
+ * without it the repeat of a reset that landed would be refused as a dead code).
+ */
+export async function confirmPinReset(input: { resetId: string; code: string; newPin: string; newPinConfirmation: string; key: string }): Promise<PinSummary> {
+  const { key, ...request } = input;
+  const body = (await unwrap(
+    api.POST('/api/hub/money/pin/reset/confirm', { params: { header: { 'Idempotency-Key': key } }, body: request }),
+  )) as unknown as Envelope<PinState>;
   const state = readPin(body?.data);
   if (!state.isSet) throw unreadable('PIN');
   return state;

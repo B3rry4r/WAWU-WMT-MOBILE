@@ -1,7 +1,8 @@
 import { ApiError } from '@/api/errors';
 
 import { accountLine, agoWords, limitsLine, pinLine, savedLine } from '../settings/model';
-import { CODE_LENGTH, lengthLine, lockLeftMs, movedOn, NEW_PIN_LINE, PIN_LENGTH, refusalOf, sentToLine, stepLabel } from '../settings/pinFlow';
+import { newRequestKey } from '../api/settings';
+import { CODE_LENGTH, lengthLine, lockLeftMs, NEW_PIN_LINE, PIN_LENGTH, refusalOf, sentToLine, stepLabel } from '../settings/pinFlow';
 
 const NOW = new Date('2026-10-10T12:00:00.000Z');
 const ago = (ms: number) => new Date(NOW.getTime() - ms).toISOString();
@@ -94,6 +95,11 @@ describe('the PIN flow rules', () => {
     expect(refuse(400, 'pin_mismatch').kind).toBe('mismatch');
     expect(refuse(400, 'reset_code_invalid').kind).toBe('bad_code');
     expect(refuse(409, 'pin_not_set').kind).toBe('no_pin');
+    // The same request still running on the server is not a refusal and not "no answer": its answer will come.
+    expect(refuse(409, 'idempotency_in_progress', 'This request is still going through. Check again in a moment.')).toEqual({
+      kind: 'in_progress',
+      line: 'This request is still going through. Check again in a moment.',
+    });
     expect(refuse(409, 'wallet_not_open').kind).toBe('no_wallet');
     expect(refuse(409, 'wallet_opening').kind).toBe('no_wallet');
     // A frozen wallet is an answer, though its status is not one of the usual ones.
@@ -105,11 +111,24 @@ describe('the PIN flow rules', () => {
     expect(refusalOf(new Error('boom')).kind).toBe('unanswered');
   });
 
-  it('a change or reset landed only when the PIN time moved on from a time that was read', () => {
-    expect(movedOn('2026-10-01T00:00:00.000Z', '2026-10-10T00:00:00.000Z')).toBe(true);
-    expect(movedOn('2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')).toBe(false);
-    expect(movedOn(undefined, '2026-10-10T00:00:00.000Z')).toBe(false);
-    expect(movedOn('2026-10-01T00:00:00.000Z', null)).toBe(false);
+  it('an Idempotency-Key is in the Hub’s format, never repeats, and says nothing of the PIN', () => {
+    const keys = Array.from({ length: 200 }, () => newRequestKey());
+    for (const key of keys) expect(key).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('where the runtime has no randomUUID the key is made from the time, a counter and random digits, in the same format and still unique', () => {
+    const real = globalThis.crypto;
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
+    try {
+      const keys = Array.from({ length: 200 }, () => newRequestKey());
+      for (const key of keys) expect(key).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
+      expect(new Set(keys).size).toBe(keys.length);
+      // Not a UUID: it came from the fallback.
+      expect(keys[0]).toMatch(/^w-/);
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: real, configurable: true });
+    }
   });
 
   it('the lock has time left only while its end is ahead', () => {
