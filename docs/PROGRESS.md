@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 121 of 244.**
+**Launch tasks done: 122 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 145 | 0 | 0 | 0 |
+| todo | 144 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 82 | 27 | 11 | 5 |
+| done | 83 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -137,6 +137,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
 - [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
 - [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [FIX-29](../tasks/FIX-29.md) Unbuilt screens' entries are not drawn (R-47) (You)
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
@@ -156,6 +157,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · FIX-29 · Merged: unbuilt screens' entries are not drawn (Explore, Wallet tab, Me menu, Events), R-47.
 - 10 Oct 2026 · JOIN-02 · Rounds 4 and 5 merged (website #26 73c14eb, backend #102 7b4ffef): the double charge is closed; the payment window says Who Made This.
 - 10 Oct 2026 · INBOX-03 · Merged (backend #101 12e18e3): phone push notifications (tokens, queue, retries, privacy).
 - 10 Oct 2026 · INBOX-03 · Verifier report, round 4 (independent session, backend `7694231`, main 0694ced): no blocker, status review. Main merge: only `.env.example` conflicted (both blocks kept), the merge equals a fresh merge-tree in every other file and loses nothing of main's 122 changed files. S1: `20261019090000_push_tokens` is a pure rename (same sha256), no old stamp left, `migrate deploy` applies it after main's 112 folders, on an empty database, and after JOIN-01-r4's `20261018140000_waitlist_access_code`. S2: live on a hub, `100000` and `99999999999999999999` wait 3600 s, `1e20`, `-5`, `abc`, an HTTP date, `0` and empty use the normal 5 s backoff, a delivery with 100 s of life waits about 90 s (the round 3 build: 100000 s, Postgres 22008, 3000 s); 0 pass failures. N6: the new test alone kills M13. Nothing else changed (8 files). tsc 0, `src/push` 174 of 174, protected 253 of 253, gates the same 16 FAIL, contract identical, 13 of 16 own mutants killed (the 3 survivors: one unpinned ceiling value, two equivalent). Notes only (N8 to N11). Real Expo and a phone still NOT RUN.
@@ -170,4 +172,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-01 · Verifier report, round 4 (independent session; backend `d317094` on main `0694ced`, unmoved; mobile `2186734`): merge after one small step (S1: backend main moved to `12e18e3` with `20261019090000_push_tokens`, so the access-code migration folder must be restamped after it; the deploy works either way, proved; trial merge clean, 137 of 137, contract identical), no blocker, status stays done. The double charge is closed on the built server under my own layouts (reload, start again, pay again: two references, two transactions, rows `paid` and `failed` with the refund's amount and transaction id in the admin list and CSV; second tab and device; webhook for both; 20 starts walked one by one and purged after 7 days; paid phone and email refused before any charge in nine forms; 6 concurrent verifies leave one paid), the access code is unique (collisions redrawn, 503 after exactly 5 with nothing written, code on the page equals `accessCode`, no CSV cell can run as a formula), the migration applies over existing rows, stops on a seeded collision changing nothing, rolls back, and the old app version keeps registering. tsc 0, eslint 0, waitlist and webhook specs 137 of 137, rate-limit 22 of 22, protected 253 of 253, gates the same 16 FAIL lines, contract only the summary and `accessCode`. 20 own mutants: 17 killed, 3 survived as test gaps (C2 and C3 pin only the constant, C5 no non-unique error). Notes: a failed migration leaves a P3009 row (runbook line), more pending rows per person, the refund screen's reference looks like the access code. NOT RUN: the production collision SELECT and the production Postgres version (the repo does not say; 13 or later by its own migrations, generated columns need 12).
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
 - 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
-- 10 Oct 2026 · LEGAL-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).

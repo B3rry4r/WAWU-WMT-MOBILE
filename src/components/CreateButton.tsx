@@ -3,7 +3,6 @@ import { Pressable, StyleSheet } from 'react-native';
 import { pressScale } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { ICON_STROKE, Icon } from '@/components/icon';
-import { unbuilt } from '@/lib/unbuilt';
 import { layout, useWawu } from '@/theme';
 
 /**
@@ -14,10 +13,11 @@ import { layout, useWawu } from '@/theme';
 export const createButtonMetrics = { size: 58, glyph: 26, right: 18, bottom: 106 - layout.tabbarH } as const;
 
 /**
- * The Create button over Explore (X1, X14), for creator accounts only (R-38, DECISIONS: Create stays the floating button
- * for creator accounts). Create (M19) is ME-04's: until it is built the button is drawn and opens nothing.
+ * The Create button (X1, X14), for creator accounts only (R-38, DECISIONS: Create stays the floating button for creator
+ * accounts). Create (M19) is ME-04's, so no screen draws this button yet (R-47): the task that builds M19 renders it over
+ * Explore, passing the route that opens M19, and reads the account type that decides who sees it.
  */
-export function CreateButton() {
+export function CreateButton({ onPress }: { onPress: () => void }) {
   const { colors, shadows } = useWawu();
   const ring = useFocusRing();
   return (
@@ -25,7 +25,7 @@ export function CreateButton() {
       testID="explore-create"
       accessibilityRole="button"
       accessibilityLabel="Create"
-      onPress={unbuilt('ME-04')}
+      onPress={onPress}
       {...ring.handlers}
       style={({ pressed }) => [
         styles.button,

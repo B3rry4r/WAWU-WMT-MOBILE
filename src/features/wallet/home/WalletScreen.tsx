@@ -13,14 +13,10 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, useWawu } from '@/theme';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
-import { AccountTabs } from './AccountTabs';
 import { BalanceCard, ACCT } from './BalanceCard';
-import { BillTiles } from './BillTiles';
-import { homeView, recentView, stateWords, type HomeView } from './model';
+import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
-import { WalletActions } from './WalletActions';
 import { WalletBar } from './WalletBar';
-import { WalletCardRow } from './WalletCardRow';
 import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
 
 /**
@@ -34,14 +30,13 @@ const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, stat
  * The Wallet tab (WALLET-01): W1, and its states W4 (loading), W5 (a new account) and W6 (the bank did
  * not answer), against `GET /money/wallet`, `GET /money/wallet/balance` and `GET /money/transactions`.
  *
- * Every screen draws its whole artboard (R-46). An entry whose screen is not built is drawn as designed and
- * does nothing when tapped (`unbuilt`, which names the task that wires it): the scan icon (WALLET-20) and the
- * settings icon (WALLET-06); the Dollar and Crypto tabs and Swap (WALLET-21); Send (WALLET-02) and Add money
- * (WALLET-05); the bills tiles (BILLS-01); the WAWU card row (WALLET-22); See all and a row (WALLET-04).
- * Nothing here reads, charges or moves money beyond the three reads above.
+ * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where
+ * it leads, as drawn: the scan icon (WALLET-20) and the settings icon (WALLET-06); the Dollar and Crypto tabs and Swap
+ * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the bills tiles (BILLS-01); the WAWU card row (WALLET-22);
+ * See all and a row's detail (WALLET-04). Nothing here reads, charges or moves money beyond the three reads above.
  *
- * W6's layout (the tabs, the card with its words, the bills) also holds every other state that has no balance
- * to show (no wallet, opening, frozen, a failed read), because the canvas draws no other.
+ * W6's card with its words also holds every other state that has no balance to show (no wallet, opening, frozen, a
+ * failed read), because the canvas draws no other.
  *
  * Nobody has a wallet until they open one (R-6): with none, tapping the tab opens Open your wallet
  * (A26). Coming back without opening one shows the way in again; coming back from A10 shows W5.
@@ -132,10 +127,6 @@ type BodyProps = {
 };
 
 function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRetryBalance, recent }: BodyProps) {
-  // The card row waits for rows known to be there: W5 draws none (an account with no transactions has no card, and the
-  // empty card stands where the row would), and while the read is out W4's shapes stand there, so a new account never
-  // sees the row appear and vanish (round 2, defect 2).
-  const rows = recentView({ rows: recent.rows, pending: recent.pending, failed: recent.failed });
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton />;
@@ -198,7 +189,6 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
     case 'ready':
       return (
         <>
-          <AccountTabs />
           <BalanceCard
             availableKobo={view.availableKobo}
             accountNumber={view.account.accountNumber}
@@ -206,24 +196,15 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
             hidden={hidden}
             onToggleHidden={onToggleHidden}
           />
-          <WalletActions />
-          <BillTiles />
-          {rows === 'none' || rows === 'loading' ? null : <WalletCardRow />}
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );
   }
 }
 
-/** W6 (wallet.js line 67): the tabs, then a card padded 10 by 16 with a 28 corner holding the kit's `empty` block, then the bills tiles. */
+/** W6 (wallet.js line 67): a card padded 10 by 16 with a 28 corner holding the kit's `empty` block. */
 function StateCard({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <AccountTabs />
-      <Card style={styles.state}>{children}</Card>
-      <BillTiles />
-    </>
-  );
+  return <Card style={styles.state}>{children}</Card>;
 }
 
 /**

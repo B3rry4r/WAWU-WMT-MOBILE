@@ -57,7 +57,7 @@ export type CategoryTilesProps = {
 
 /**
  * X1's category tiles: All, the first categories, More. Each opens Categories (X2, X3). While the Hub serves no
- * categories, neutral frames stand where they will be (R-46).
+ * categories, neutral frames stand where they will be (R-47: the section's task is built, so it stays drawn).
  */
 export function CategoryTiles({ items, onOpen }: CategoryTilesProps) {
   return (

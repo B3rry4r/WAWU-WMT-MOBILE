@@ -182,32 +182,21 @@ describe('the Wallet tab with no wallet yet, on the real router', () => {
 });
 
 describe('the Wallet tab with a wallet, on the real router', () => {
-  it('a user who taps every entry whose screen is not built (scan, settings, Dollar, Crypto, Send, Add money, Swap, each bill) stays on the Wallet tab and nothing opens', async () => {
+  it('a user sees no scan, settings, Dollar, Crypto, Send, Add money, Swap or bills entry (their screens are not built, R-47), and the tab stays on /wallet', async () => {
     opened = true;
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
     expect(await screen.findByText('No transactions yet')).toBeTruthy();
     await waitFor(() => expect(pathname()).toBe('/wallet'));
-    const asks = (globalThis.fetch as jest.Mock).mock.calls.length;
-    for (const [role, name] of [
-      ['button', 'Scan to pay'],
-      ['button', 'Wallet settings'],
-      ['tab', 'Dollar'],
-      ['tab', 'Crypto'],
-      ['button', 'Send'],
-      ['button', 'Add money'],
-      ['button', 'Swap'],
-      ['button', 'Airtime'],
-      ['button', 'Data'],
-      ['button', 'Power'],
-      ['button', 'TV'],
-      ['button', 'More'],
-    ] as const) {
-      await fireEvent.press(screen.getByRole(role, { name }));
-      expect(pathname()).toBe('/wallet');
+    for (const name of ['Scan to pay', 'Wallet settings', 'Send', 'Add money', 'Swap', 'Airtime', 'Data', 'Power', 'TV', 'More', 'WAWU card', 'See all transactions']) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
     }
-    expect(screen.getByRole('tab', { name: 'Naira' }).props.accessibilityState.selected).toBe(true);
-    expect((globalThis.fetch as jest.Mock).mock.calls.length).toBe(asks);
+    for (const name of ['Naira', 'Dollar', 'Crypto']) expect(screen.queryByRole('tab', { name })).toBeNull();
+    // The only buttons on the tab are the card's own two (hide the balance, copy the number); the rest of the bar is the tab bar.
+    expect(screen.getByRole('button', { name: 'Hide balance' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy account number' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
+    expect(pathname()).toBe('/wallet');
     expect(screen.queryByRole('header', { name: 'A26' })).toBeNull();
   });
 });

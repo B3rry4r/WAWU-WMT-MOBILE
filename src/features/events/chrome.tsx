@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Text } from '@/components/Text';
-import { unbuilt } from '@/lib/unbuilt';
 import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
 
 /** design/_gen/kit.js `nav`: a 56 bar, 20 sides, a 42 round button each end, a 17 bold title between. */
@@ -33,15 +32,14 @@ export function NavBar({ title, onBack, right, backTestID }: NavBarProps) {
   );
 }
 
-export type EventsTab = 'discover' | 'mine' | 'host';
+export type EventsTab = 'discover' | 'host';
 
 /**
- * The tabs under the title (E1, E13 to E15), as drawn: Discover, My events, Host event. My events (E17)
- * is built by EVENTS-08, so its tab is drawn and does nothing yet (R-46); that task wires it.
+ * The tabs under the title (E1, E13 to E15): Discover and Host event. The canvas draws My events between them; it opens E17,
+ * which EVENTS-08 builds, so the tab is not drawn until then (R-47) and that task adds it, as drawn, between the two.
  */
 const tabs: readonly { value: EventsTab; label: string }[] = [
   { value: 'discover', label: 'Discover' },
-  { value: 'mine', label: 'My events' },
   { value: 'host', label: 'Host event' },
 ];
 
@@ -50,7 +48,7 @@ export function EventsTabs({ active, onChange }: { active: EventsTab; onChange: 
   return (
     <View accessibilityRole="tablist" style={[styles.tabs, { borderBottomColor: colors.borderHairline }]}>
       {tabs.map((tab) => (
-        <Tab key={tab.value} label={tab.label} selected={tab.value === active} onPress={tab.value === 'mine' ? unbuilt('EVENTS-08') : () => onChange(tab.value)} testID={`events-tab-${tab.value}`} />
+        <Tab key={tab.value} label={tab.label} selected={tab.value === active} onPress={() => onChange(tab.value)} testID={`events-tab-${tab.value}`} />
       ))}
     </View>
   );
