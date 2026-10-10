@@ -20,5 +20,5 @@ export default function OpenWalletPinRoute() {
   const notOpen = useCallback(() => router.replace(OPEN_WALLET_ACCOUNT_PATH), [router]);
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
-  return <CreatePinScreen onBack={toAccount} onDone={way.leave} onNotOpen={notOpen} onLeave={way.leave} />;
+  return <CreatePinScreen onBack={toAccount} onDone={way.leave} onNotOpen={notOpen} onLeave={way.leave} onForgotPin={() => router.push('/reset-pin')} />;
 }

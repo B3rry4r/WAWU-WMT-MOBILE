@@ -58,6 +58,11 @@ export type CreatePinScreenProps = {
   onLeave: () => void;
   /** The wallet is not open (a link or a reload with no account): A8 says where it stands. */
   onNotOpen: () => void;
+  /**
+   * "Forgot PIN?" on the end that says the account already has a PIN: W37 (WALLET-06, BACKEND_GAPS G-116). The way out
+   * for someone who does not know the earlier PIN. Drawn only when the screen is given somewhere to open it.
+   */
+  onForgotPin?: () => void;
 };
 
 /**
@@ -73,7 +78,7 @@ export type CreatePinScreenProps = {
  * URL. An answer that lands after the session ended, or after the screen
  * closed, changes nothing.
  */
-export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePinScreenProps) {
+export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave, onForgotPin }: CreatePinScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
@@ -289,6 +294,8 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave }: CreatePi
         message={ALREADY_SET.message}
         actionLabel="Done"
         onAction={onDone}
+        secondaryLabel={onForgotPin ? 'Forgot PIN?' : undefined}
+        onSecondary={onForgotPin}
       />
     );
   }

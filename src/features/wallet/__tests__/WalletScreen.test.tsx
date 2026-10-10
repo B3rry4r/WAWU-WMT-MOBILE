@@ -164,10 +164,10 @@ const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
   return found;
 };
 const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
-/** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. */
-const NOT_BUILT_BUTTONS = ['Scan to pay', 'Wallet settings', 'Send', 'Add money', 'Swap', 'Airtime', 'Data', 'Power', 'TV', 'More', 'WAWU card', 'See all transactions'];
+/** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. The settings icon is built since WALLET-06 (W35) and is drawn in every state. */
+const NOT_BUILT_BUTTONS = ['Scan to pay', 'Send', 'Add money', 'Swap', 'Airtime', 'Data', 'Power', 'TV', 'More', 'WAWU card', 'See all transactions'];
 const NOT_BUILT_IDS = [
-  'wallet-scan', 'wallet-settings', 'wallet-tabs', 'wallet-actions', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-bills', 'wallet-card-row', 'wallet-see-all',
+  'wallet-scan', 'wallet-tabs', 'wallet-actions', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-bills', 'wallet-card-row', 'wallet-see-all',
   'wallet-loading-tabs', 'wallet-loading-actions', 'wallet-loading-bills',
 ];
 /** Fails when anything the Wallet tab has no screen for is drawn: a button, a tab, a tile or a row of them. */
@@ -254,10 +254,10 @@ describe('W1 · Wallet · Naira', () => {
     expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
   });
 
-  it('every button on W1 does something: the eye and Copy are the only two, and each one works', async () => {
+  it('every button on W1 does something: the settings icon, the eye and Copy are the only three, and each one works', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
-    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance']);
+    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance', 'Wallet settings']);
     const asks = sent.length;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Hide balance' }));
     expect(app.screen.getByLabelText('Balance hidden')).toBeTruthy();
@@ -332,8 +332,8 @@ describe('W4 · Wallet · loading', () => {
     const stands = ['wallet-bar', 'wallet-loading-card', 'wallet-loading-rows'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    // Quiet shapes, not the real entries: nothing to press, and no word of the account.
-    expect(buttonNames(app)).toEqual([]);
+    // Quiet shapes, not the real entries: only the bar's settings icon to press, and no word of the account.
+    expect(buttonNames(app)).toEqual(['Wallet settings']);
     expect(app.screen.queryByText('Naira')).toBeNull();
   });
 });
@@ -360,7 +360,7 @@ describe('W5 · Wallet · new account', () => {
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-no-transactions'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance']);
+    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance', 'Wallet settings']);
   });
 });
 
@@ -387,7 +387,7 @@ describe('W6 · Wallet · can’t reach account', () => {
     expect(await app.screen.findByTestId('wallet-unreachable')).toBeTruthy();
     const stands = ['wallet-bar', 'wallet-unreachable'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
-    expect(buttonNames(app)).toEqual(['Try again']);
+    expect(buttonNames(app)).toEqual(['Wallet settings', 'Try again']);
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
     expectNothingUnbuilt(app);
   });
@@ -412,8 +412,8 @@ describe('every state without a balance draws the bar and its card, and nothing 
     expect(app.screen.getByRole('header', { name: 'Wallet' })).toBeTruthy();
     expect(app.screen.getByTestId('wallet-bar')).toBeTruthy();
     expectNothingUnbuilt(app);
-    // Every button is the state's own: it asks again or opens Open your wallet.
-    expect(buttonNames(app)).toEqual(only);
+    // Every button is the bar's settings icon or the state's own: it asks again or opens Open your wallet.
+    expect(buttonNames(app)).toEqual(['Wallet settings', ...only]);
   };
 
   it('no wallet', async () => {
@@ -635,8 +635,8 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-transactions', 'wallet-row-r1', 'wallet-row-r2'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    // Only the card's own two buttons are pressable.
-    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance']);
+    // Only the settings icon and the card's own two buttons are pressable.
+    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance', 'Wallet settings']);
   });
 
   it('the loading shapes are the bar, the card and three rows at 320, and nothing else', async () => {
