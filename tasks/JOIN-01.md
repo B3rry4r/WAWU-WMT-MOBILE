@@ -16,6 +16,7 @@ artboards: []
 # JOIN-01 · Event registration link: register and pay the event fee (backend)
 
 Round 3 follow-up: wmt/JOIN-01-r3
+Round 4 follow-up: wmt/JOIN-01-r4
 
 ## Read first
 
@@ -606,5 +607,174 @@ Killed (15): P1 cursor id tie-break reversed (`id < cursor`; would never end) ; 
 - A real Flutterwave `verify_by_reference` answer, including how it answers a rate limit (N2) and how long one call takes (N3): needs one test-mode payment and a timed call.
 - Two server processes each running the cron: I ran three sweeps at once on one server over one database, which is the same race on the same conditional write; the claim is not different, but a second process was not started.
 - Round 1's open question (a failed attempt then a successful one on one tx_ref): unchanged, needs a test-mode payment.
+
+## Round 4 (builder, 10 Oct 2026)
+
+Backend `wmt/JOIN-01-r4` `d317094` (two commits on main `0694ced`: `e708227` the new reference, `d317094` the unique access code), mobile
+`wmt/JOIN-01-r4` (this file, on main `e43ec89`). One payment-safety change: `POST /waitlist/registrations` never reuses a pending row, so
+every checkout has its own reference; and the lead's addition of the same round, the launch access code unique across all registrations
+(its own section below). Status stays `done`. No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called (Flutterwave stood in at
+the two DI seams in the specs and in the walk). Files: `src/waitlist/waitlist.service.ts` (the reuse lookup and its update are gone;
+`register` always creates, and redraws on a taken access code), `src/waitlist/waitlist-public.controller.ts` (the route's doc comment),
+`src/waitlist/tests/*` (the contract spec, the admin spec, the harness), `contract/openapi.json`, and for the access code `prisma/schema.prisma`,
+the migration `20261018140000_waitlist_access_code`, `waitlist-random.ts`, `waitlist-config.ts`, `waitlist-contact.ts`, `waitlist-core.module.ts`,
+`waitlist-export.ts`, `waitlist-view.type.ts`. No route, status code, reason code, throttle or config moved.
+
+**Why.** A reused reference could carry two Flutterwave transactions (the person pays, the page is reloaded, they start again with
+the same details, and the checkout runs on the same tx_ref). The re-check finds a payment by its reference, so it could settle one
+and never show the other, and the second charge was invisible to the server (round 3's N1 for the page, JOIN-02 round 4's finding for
+the backend). With a new reference per start each transaction has its own reference: the re-check, the webhook and the browser's verify
+find it, and the existing rule decides what happens when one person has two successful payments.
+
+**What stays as it was, and is still held by specs.** A phone or email that already PAID is refused before any charge (409
+`already_registered`, `initCharge` never called). At most one `paid` row per offer per phone and per email (the two partial unique
+indexes). A second successful payment by the same person becomes `failed` with its transaction id and amount, is kept (never purged) and
+shows in the admin list. The 5-minute re-check walks every due pending row (5 minutes to 48 hours, all pages). Pending rows older than 7
+days are deleted. Verify, status, webhook, sweep, purge code are untouched.
+
+**Round 3's N1 is gone with the reuse code.** N1 was: a reused pending row kept its FIRST `createdAt`, so a person who started again
+after 48 hours was outside the re-check window and a row re-registered seconds ago could be purged (8 days after the first start). No row
+is reused now, so every row's re-check window and 7-day purge age count from its own start. A spec holds it: the first row is byte for byte
+unchanged (fields and times) after a second start with the same details.
+
+**Contract text (first commit, and why).** The register operation's `summary` in `contract/openapi.json` said "Reuses this person's own
+unpaid registration (same offer, phone and email) rather than adding another." That sentence would now be false, so it reads "Every call
+that passes the checks adds a new registration with a new reference, even for the same offer, phone and email, so each checkout has its
+own reference." (It comes from the controller's doc comment.) No path, schema, status code or reason text moved with it. The access code
+adds one field (next section). `npm run api -- --backend` copies backend main (`0694ced`), so mobile's copy is unchanged until the
+backend merges; no type moves on this branch.
+
+### The launch access code is unique across all registrations (the lead's addition, `d317094`)
+
+The short reference each payer sees ("XXXX XXXX", the first 8 hex characters after `wawu-join-`) is what they redeem their launch discount
+with, so no two registrations may share it. Built as asked, with one choice of mechanism (below):
+- **Migration `20261018140000_waitlist_access_code`** (sorts after main's newest, `20261018100000_event_waitlist`; additive; `rollback.sql`
+  beside it and the same steps in its header): `WaitlistRegistration.accessCode`, a stored column Postgres computes as
+  `upper(substr(reference, 11, 8))`, and the unique index `WaitlistRegistration_accessCode_key`. `prisma/schema.prisma` declares it
+  `String @unique @default(dbgenerated())`; `prisma migrate diff` of the migrated database against the schema shows nothing for it.
+- **Backfill:** adding a generated column fills every existing row (no UPDATE; no code anyone holds is rewritten). **If any existing rows
+  already share a code, the migration stops** with an exception ("N code(s) are shared by M existing registration(s), P of them paid.
+  Nothing was changed. Report this to the lead") and changes nothing; it never picks a winner. The check to run against production before
+  merging: `SELECT upper(substr("reference", 11, 8)) AS code, count(*), count(*) FILTER (WHERE "status" = 'paid') AS paid FROM
+  "WaitlistRegistration" GROUP BY 1 HAVING count(*) > 1;` (not run here: no production access; an empty result means the migration passes).
+- **Collision retry:** `register` inserts the row with a fresh random reference; if the database refuses it (a unique violation: the
+  derived code, or the reference itself, is taken) nothing was written and a new reference is drawn, up to `REFERENCE_ATTEMPTS` (5), then
+  503 "We could not start your registration just now. Please try again in a moment." with nothing written (no new reason code; the contract's
+  503 text is unchanged). Each draw collides with probability (rows / 2^32), so the 503 cannot happen in practice. The random source is
+  injectable (`WAITLIST_RANDOM`, default `crypto.randomBytes`) so a spec can force the collision.
+- **Admin:** the list item gains `accessCode` ("XXXX XXXX") and the CSV an "Access code" column, formatted the same, just before
+  "Reference". Nothing else in either changes; the page derives the code from the reference as it does now.
+- **Migration proven by hand on a scratch database** (`join01r4/logs/migration-proof.log`): rollback drops index and column; two old rows
+  sharing a code (one paid) make the migration stop, naming 1 shared code, 2 rows, 1 paid, and the column is absent afterwards; with the
+  collision removed it applies and backfills (`AAAA1111`, `BBBB2222`); a second row with the taken code is refused (23505), also when only
+  the case differs; a row inserted without naming the column (the previous app version) gets its code; writing the column is refused
+  ("can only be updated to DEFAULT"); rollback then apply again is clean.
+- **Specs** (`the launch access code is unique across all registrations`, 5 tests in `waitlist.contract.spec.ts`, plus the admin spec):
+  the stored code is the first 8 characters, upper-case; a scripted random source makes the second start's first draw carry a taken code
+  and the second draw a free one: 3 draws, the colliding reference was never stored, the checkout carries the stored reference; a code
+  taken by a PAID registration is taken too; five taken draws in a row give 503 with nothing written (exactly `REFERENCE_ATTEMPTS`
+  draws); the database refuses two rows with one code (tail differs, case differs) and refuses a written code. The admin spec checks
+  `accessCode` on every listed row and the CSV header and cell.
+- **Mechanism choice (Default (agent), the lead may override):** a GENERATED column rather than a column the app writes. The lead's
+  example was "a stored accessCode column, upper-case, with a unique index"; this is that, and in addition it cannot disagree with the
+  reference, backfills itself, and keeps the app version still running during a deploy working (a NOT NULL column the old version does not
+  know would fail every registration until the new one is live; a nullable one would leave those rows outside the uniqueness). Cost: the
+  table is rewritten once when the column is added (a table of a few thousand rows, a lock for the length of that rewrite).
+
+### Before and after: the JOIN-02 reproduction (`sa.mjs`), on the round 4 page
+
+The page is the website at `origin/wmt/JOIN-02-r4` (`4a3f959`), production build, against the real `AppModule` built from each backend
+(`dist/`), real Postgres (`bj01r4_test_join`), Flutterwave stood in strictly (a transaction exists only if the browser stand-in made it).
+`sa.mjs` itself stops at its first check on this page: since round 4 the page does not draw "Start again" for five minutes (that is the
+page's fix), so the same story is `sa4.mjs` (same steps, page clock faked: reload with the window open and money moved, five minutes,
+Start again, confirm, the same details, Pay). Scripts and logs: the lead's scratchpad `join01r4/` (`v/sa4.mjs`, `v/s20.mjs`, `logs/sa4-before.log`,
+`logs/sa4-after.log`, `logs/sa4-after-2.log`, `logs/s20-after.log`, `logs/s20-after-2.log`, `logs/migration-proof.log`, `logs/r4-regress.log`).
+
+| | Before (backend `0694ced`) | After (backend `e708227`, and again on `d317094`) |
+|---|---|---|
+| The same details registered twice over HTTP | one reference both times, one pending row | two references, two pending rows |
+| B: reload with the window open, money moved (1 transaction on A), 5 minutes, Start again, same details, Pay | the server answers reference A again; the page's guard opens no window ("A payment you started with these details has not been settled yet, so we have not opened a new one"); 1 reference, 1 transaction (A); the person is held until A is paid by the re-check | a window opens on a NEW reference B; the person pays; verify of B is paid and the page shows "You're registered"; references 2, transactions 1 on A and 1 on B; the re-check then finds A: rows `paid` (B) and `failed` (A, 200000 kobo and its transaction id kept for a refund) |
+| C: the same, but the re-check settles A while B's window is open | not reachable (no second window) | A `paid`, B `failed`; the page, polling B, shows "You're already registered. This extra payment will be refunded. Email support@wawuafrica.com with your reference ..." |
+| Money truth | the round 3 page (`233d6b1`) on this backend charged twice against one reference: 2 transactions, the second invisible to the server (JOIN-02 round 4 builder's `sa-before.log`, not re-run here) | two references, two transactions, one `paid` row, one `failed` row in the refund list; the person sees "You're registered" or the refund screen, never a silent second charge |
+
+`sa4.mjs` after: 11 of 11 checks pass (A1, A2, B1 to B6, C1 to C3; B6 reads the stored access code and finds it on the page and on one row only;
+run again on the final build, `sa4-after-2.log`). Before: the 10 checks it had then all fail, by design (they state the after behaviour); the
+printed lines in `sa4-before.log` are what happened.
+
+**20 starts by one person (`s20.mjs`, same server):** 20 starts give 20 different references and 20 pending rows; the re-check (one run)
+looked up each of the 20 by its own reference exactly once (20 lookups, 20 distinct); the one that Flutterwave had as paid was settled
+and the other 19 stayed pending; with the 19 aged 8 days the purge deleted 19 and kept the paid row. 5 of 5 checks (again on the final
+build, with the access-code migration applied: 5 of 5).
+
+**The round 4 page's own walks on the new backend (`r4.mjs s1 s3 s4 s5 s6`):** 14 of 14 pass (re-check settles a late payer, Start
+again with another email, paid between the button and the tap, status route unreachable at the tap, a kept duplicate shows the refund screen).
+`s2` and `s2b` assert the page's held screen for a reference the server hands back again; with this change the server never does, so
+that screen cannot be reached from the backend and those two were not re-run (the page compares references, so it needs no change).
+
+### Specs (`src/waitlist`, `src/payment-webhook`: 9 suites, 137 of 137; `waitlist.contract.spec.ts` 75, was 66)
+- Rewritten: "reuses this person's own unpaid row" is now "every start is a new registration": the same details twice give two rows and two
+  references (`wawu-join-` + 36 hex), each checkout's `txRef` is its own reference, the second start's corrected name and state are on the
+  second row only, the first row is unchanged (the N1 check), another email is another person as before. "A person's own unpaid row is
+  charged today's fee" is now "a start after the price was changed asks today's fee on its own new row, and the earlier row keeps the
+  fee it asked", and a short payment against the new row is 422.
+- New (`starting again with the same details`): a person who pays on two references is registered once (verify A 200, verify B 409 with the
+  refund words, A `paid`, B `failed` with its transaction id and 200000 kobo, the status route says `failed`); both payments reaching the
+  re-check leave one `paid` and one `failed`, each found by its own reference; a payment on the first reference, never confirmed, is found
+  by that reference after the person started again, and a third start is then refused before any charge; 20 starts leave 20 pending rows,
+  the re-check looks up each by its own reference, the paid one is settled, the purge removes the 19 unpaid after 7 days and keeps the paid one.
+- New (`the launch access code is unique across all registrations`, 5 tests), described above. The sweep spec's burst helper now gives every
+  direct-insert row its own access code (its references used to share their first 8 characters).
+
+### Mutants (each applied alone, the contract spec and, for the A mutants, the admin spec run, source restored, tree clean after; logs `join01r4/mut-*.log`)
+| | Result |
+|---|---|
+| M1 the reuse code brought back (same details answer the same pending row) | killed (6 tests) |
+| M1b the reference derived from phone and email (same details, same reference) | killed (6) |
+| M2 the paid-uniqueness indexes dropped (phone and email), recreated after | killed (6) |
+| M3 the second payment not kept as `failed` (left pending) | killed (3) |
+| M4 the unique violation on the paid write not turned into the kept-for-refund path | killed (4) |
+| M5 the re-check looks up one row per phone only | killed (6) |
+| M6 the purge keeps unpaid rows 30 days, not 7 | killed (2) |
+| A1 the access-code unique index dropped, recreated after | killed (4) |
+| A2 no retry: a taken code is thrown, not redrawn | killed (3) |
+| A3 the retry bound is one too many | killed (1) |
+| A4 the CSV has no Access code column | killed (1) |
+| A5 the code shown without the space | killed (2) |
+| A6 the stored code computed lower-case (column regenerated with `lower()`, restored after) | killed (3) |
+
+### Checks
+`npx tsc --noEmit` exit 0. eslint (`--no-fix`) 0 problems on every changed `.ts` file; prettier clean. `src/waitlist` and `src/payment-webhook`
+137 of 137 (above), and with `src/tests/hub-rate-limits.contract.spec.ts` on the host network 159 of 159 (22 of 22 for the rate-limit spec; no throttle
+moved). Protected suite `scripts/protected-routes/run.sh --fresh HEAD` in a private network namespace on `d317094` (the fresh database applies the new
+migration), lock `origin/main` `0694ced`: 253 of 253, "all 244 required tests passed"; `git diff origin/main..HEAD` on `src/protected-routes`,
+`test/protected-routes` and `.pipeline/protected-registry.json` is empty. Gates `python3 scripts/gates/run.py`: 16 fail, 72 warn on the branch and on main
+(`git archive` of `origin/main`), the sorted FAIL lines identical (`diff` empty). `npm run contract:build` exit 0, run again on the final head with no
+change; against main: the register summary sentence and the `accessCode` property of `AdminWaitlistRegistrationView` (4 lines), nothing else.
+Migration folder `20261018140000_waitlist_access_code` sorts after main's newest. Tripwire on added lines: 0. Em-dashes added: 0. Secret scan of the
+staged diffs (hex and base64 runs, `sk_`, `FLWSECK`, bearer tokens, key headers): nothing. The website worktree was never pushed.
+Mobile `npm run check`: typecheck and lint pass; jest 112 of 113 suites, 1,913 of 1,914 tests; the one failure is the known
+`src/features/events/__tests__/eventsScreens.test.tsx` ("a user sees when a tier ended and when one opens in the event's zone", D8: "Unable to
+find an element with text: Ended 6 Oct"). It failed on the first run (26.8 s), failed ALONE (145 ms, so not load this time) and failed on the second
+full run. This branch changes only `tasks/JOIN-01.md`, `docs/LOG.md`, `SHARED-CHANGES.md` and the generated progress files (no `src/` line), so the
+failure is main's own (the fixture holds fixed 2026 dates; the same file passed on 10 Oct earlier in the day in the JOIN-02 round 4 report). Because
+`npm run check` stops at a failed jest step, the two steps after it were run on their own and pass: `npm run gates` (10 gates, 459 files, 0 fail, 16
+warn, 0 accepted, baseline clean) and `npm run tasks` (271 tasks, 279 artboards).
+
+### Decisions (Default (agent), the lead may override)
+- No cap on pending rows per person. The register route's throttle (300 a 10 minutes per address) bounds how many a person can add, the
+  re-check cost is one lookup per due row per run, and the purge removes them after 7 days. Said plainly: a venue address can now add up to
+  300 pending rows in 10 minutes where a repeating person added none.
+- The admin list and the CSV show every pending row, so a person who started three times shows as three pending rows (and the unpaid rows
+  go after 7 days as before). A starting-again person's earlier pending row keeps the values typed then and the fee asked then; a pending row
+  from before a price change can still be paid at the old price, since that is what its checkout asked.
+- The access code is a database-computed column (above), not a column the app writes.
+
+### NOT RUN
+- The production collision check for the migration (the SELECT above): no production access here. Unblocked by running it against the production database before the backend merges; an empty result means the migration applies, a row means stop and tell the lead.
+- A real Flutterwave payment, and how the real `verify_by_reference` answers when one tx_ref has several attempts: unchanged from round 1
+  (needs one test-mode payment); this change makes it less likely to matter, since a reference now has one checkout.
+- The full backend suite (229 suites) and the wider suites that boot `AppModule` or read the table (`src/data-export-request`, `src/account*`, `src/openapi`, `src/plans`, `src/admin`, `src/common`): not in this round's list; the touched code is reached from `src/waitlist` (run above) and the schema change is one derived column. Unblocked by `npm run test:contract` in a private network namespace.
+- `sa.mjs` unchanged on the round 3 page (`233d6b1`): not rebuilt; the double charge it showed is in the JOIN-02 round 4 builder's `sa-before.log`.
+- Two servers running the cron at once, and a phone or bank app returning to the page: as in earlier rounds.
 
 ## Owner sign-off
