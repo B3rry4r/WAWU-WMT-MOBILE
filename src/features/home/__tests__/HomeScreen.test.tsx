@@ -234,6 +234,8 @@ describe('H1 · Today', () => {
     await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Following'));
     expect(sent).toContain(`POST /creators/${ADA}/follow`);
+    // The button turns at once and is busy, ignoring presses, until the Hub has answered: Unfollow is for after that.
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`).props.accessibilityState).toMatchObject({ busy: false }));
     await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
     await rtl.waitFor(() => expect(sent).toContain(`DELETE /creators/${ADA}/follow`));
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Follow'));

@@ -2,12 +2,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { ActivityIndicator, Animated, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-// The first test in this file also pays for loading the screen's modules,
-// which took over 5 s (jest's default) on a loaded machine in 4 runs of
-// 3 Oct. A longer limit keeps that cold start from failing a correct test.
-jest.setTimeout(20000);
 
 const mockVault = new Map<string, string>();
 const mockStored: string[] = [];
@@ -90,6 +86,21 @@ function serve(extra: Record<string, Answer> = {}) {
 
 installFetch();
 
+/*
+ * The first test in this file used to pay for loading the screen's modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 25 s on a cold transform cache,
+ * which is what a fresh checkout has, against a test's 20 s. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+const { OpenWalletScreen } = require('../OpenWalletScreen') as typeof import('../OpenWalletScreen');
+const kept = require('../keptCheck') as typeof import('../keptCheck');
+void [ActivityIndicator, Animated, Image, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
+
 const clients: QueryClient[] = [];
 
 /** A token shaped as WAWU ID's: only its `sub` claim is read by the app. */
@@ -105,8 +116,6 @@ const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: fa
  * the app has one cache for every account that signs in on the phone.
  */
 async function boot(shared?: QueryClient) {
-  const { OpenWalletScreen } = require('../OpenWalletScreen') as typeof import('../OpenWalletScreen');
-  const kept = require('../keptCheck') as typeof import('../keptCheck');
   const onClose = jest.fn();
   const onContinue = jest.fn();
   // No garbage-collection timer: a cache timer left running keeps jest from exiting.
@@ -161,7 +170,7 @@ beforeEach(() => {
   mockVault.set('wawu.session.access', tokenFor(OWNER));
   mockVault.set('wawu.session.refresh', 'refresh-1');
   serve();
-  (require('../keptCheck') as typeof import('../keptCheck')).forgetKeptCheck();
+  kept.forgetKeptCheck();
   (require('@/api/session') as typeof import('@/api/session')).resetSessionForTests();
 });
 

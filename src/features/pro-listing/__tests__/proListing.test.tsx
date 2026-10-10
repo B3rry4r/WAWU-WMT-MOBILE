@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { ActivityIndicator, Animated, BackHandler, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockStore = new Map<string, string>();
@@ -92,6 +93,20 @@ function frame(child: ReactElement) {
   );
 }
 const mod = <T,>(path: string) => require(path) as T;
+
+/*
+ * The first test in this file used to pay for loading the screens' modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 19 s of a test's 20 s on a cold
+ * transform cache, which is what a fresh checkout has. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+void [mod('../ApplyScreen'), mod('../ListingsScreen')];
+void [ActivityIndicator, Animated, BackHandler, Image, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await render(<View />);
+  warm.unmount();
+});
 const tap = (testID: string) => act(async () => fireEvent.press(screen.getByTestId(testID)));
 const type = (testID: string, value: string) => act(async () => fireEvent.changeText(screen.getByTestId(testID), value));
 const bodiesOf = (method: string, path: string) => sent.filter((s) => s.method === method && s.path === path).map((s) => s.body);

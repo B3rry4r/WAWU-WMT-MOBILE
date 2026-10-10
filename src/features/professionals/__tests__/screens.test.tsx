@@ -257,7 +257,11 @@ describe('P1 · Professionals', () => {
     await scrollToEnd();
     // The list draws rows as they scroll into view, so page 2's row is read from what the list holds.
     await rtl.waitFor(() => expect(sent).toContain(ALL_2));
-    await settle();
+    // Page 2 is asked for; it is the Hub's answer (not a pause) that takes the skeleton away, a render after the cache has it.
+    await rtl.waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+      expect(rtl.screen.queryByTestId('pros-loading-more')).toBeNull();
+    });
     expect(rtl.screen.queryByTestId('pros-loading-more')).toBeNull();
     await scrollToEnd();
     await settle();
