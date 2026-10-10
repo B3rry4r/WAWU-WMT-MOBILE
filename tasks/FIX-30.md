@@ -7,7 +7,7 @@ order: 244
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: done
+status: verifying
 depends_on: [FIX-29]
 decisions: [R-47]
 passes: [V1, V5, V6]
@@ -154,6 +154,26 @@ How it was checked: a web export of this head (`npx expo export -p web`, own `TM
 - Creating events through the host wizard and the admin approval, the payment of a ticket: other tasks'.
 - A full backend suite (the brief asks for none; the branch changes no backend file).
 - INBOX-05, -10, -18, -19 and EVENTS-06 when they land: each must draw its parts back as drawn and rewrite the tests that pin their absence.
+
+## Builder report, round 2
+
+Branch `wmt/FIX-30`, built on `2491202` (the verifier's head), merged with main `aff0e96` (a fast-forward: main already held the branch). Mobile only, two code files: `src/features/inbox/InboxScreen.tsx` (the effect) and `src/features/inbox/__tests__/InboxScreen.test.tsx`; plus one line in `tasks/EVENTS-06.md`. No backend, package or fenced file touched.
+
+**The defect (verifier finding 1).** A refresh landing during the Inbox read-on (a live event, start-up, a return to the tab: `refreshInbox`) cancels the page being read and refetches the pages held. When that refetch ended, `readingPast` was still true, `isFetchingNextPage` false and `pagesRead` unchanged, so the read-on effect did not run again and the screen sat on the loading list with nothing being read.
+
+**Before.** The verifier's repro is now committed (`describe('the inbox read-on when a refresh lands during it')`, 13 tests). On the unfixed code it fails 6 or 7 of 13 per run (three runs: 7, 7, 6): all four scripted tests every time, and 2 or 3 of the verifier's 9 timings, a different set each run (60/30, 100/30, 120/100 in some; timing-dependent, as the verifier saw). Each failure reads `state: loading, requestsInFlight: 0` where `empty` or `rows` is expected.
+
+**What I changed, and why not only the verifier's patch.** The verifier's patch (`inbox.isFetching` in the guard and the dependencies) fixes all 9 real-time timings, but I wrote a deterministic variant that it does not fix: the refresh lands in the instant the page is asked for (the request reaches the network, then the whole refetch settles, before React renders that anything was in flight). The screen then sees `isFetching` false before and after, and the refetch changes no flag and no page count. That test (second page asked, third page asked, each ending on the empty state or on a drawn row) failed with the patch alone, 4 of 4. The fix keeps the patch and adds `inbox.dataUpdatedAt` to the dependencies: a refetch always moves it, so the effect runs when any read ends. It cannot loop: each run needs a read to have ended, and a read-on stops at the last page, at an error (one Try again) or at a drawn row. The comment above the effect says why.
+
+**The test.** Four scripted cases: the refresh is fired from the request itself for the second page, and for the third, each with the pages ending on the empty state (only rows nobody draws) and on a drawn row. Then the verifier's 9 timings (refresh at 0, 10, 30, 60, 100 ms with pages of 30 ms; 20, 50, 120, 200 ms with pages of 100 ms), ending on the empty state. Each waits for `{ state, requestsInFlight: 0 }` to equal `empty` or `rows` and 0, then asks nothing more in 100 ms. The harness gained two optional answer fields, `delay` and `onSend`; no existing test changed.
+
+**After.** 13 of 13 pass, **20 runs in a row** (`loop20.log` in the scratchpad: `RUNS_ALL_PASSED=20 of 20`, every run `13 passed`). With the verifier's patch alone: 9 of 9 timings pass, 4 of 4 scripted fail. On the effect as it was: see Before.
+
+**EVENTS-06.** The per-tier maximum and a free total at the screen belong to EVENTS-06 (the wiring left the screen when the steppers did), so they are one new capability line in `tasks/EVENTS-06.md`, not tests here. Nothing else added.
+
+**Checks**: `npm run check` EXIT 0 as one command, first run, no flake (log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/fix30r2-check1.log`, last line `EXIT 0`): typecheck 0; lint 0 errors and 7 warnings (the same 7 as round 1, none in a file this round touched); jest 120 suites and 2031 tests, all passed (round 1: 2018; this round adds the 13); gates 10 run, 472 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`, EVENTS-04's), baseline 0; 273 tasks. The 5 inbox suites alone: 76 of 76. Secret scan of the diff: none; no em-dash in anything a user reads.
+
+**NOT RUN**: a live run against the Hub (the read-on cannot run in the shipped app until a row kind has a renderer, as the verifier found); a phone (V10).
 
 ## Owner sign-off
 

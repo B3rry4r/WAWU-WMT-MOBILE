@@ -13,7 +13,8 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async () => undefined),
 }));
 
-type Answer = { status: number; body: unknown } | 'offline' | 'hold';
+/** `delay`: the answer comes this many ms late. `onSend`: runs at the moment the request reaches the network, before anything answers it. */
+type Answer = { status: number; body: unknown; delay?: number; onSend?: () => void } | 'offline' | 'hold';
 let answers: Record<string, Answer[]> = {};
 let sent: string[] = [];
 
@@ -32,6 +33,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (!answer) throw new Error(`no answer for ${key}${url.search}`);
   if (answer === 'hold') return new Promise<Response>(() => undefined);
   if (answer === 'offline') throw new TypeError('Network request failed');
+  answer.onSend?.();
+  if (answer.delay) await new Promise((resolve) => setTimeout(resolve, answer.delay));
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
@@ -271,4 +274,81 @@ describe('the inbox screen', () => {
     });
     await rtl.screen.findByTestId('row-chat:new');
   });
+});
+
+/**
+ * A refresh (`refreshInbox`: at start-up, on every live event, on every return to the tab) cancels the page
+ * being read and refetches the pages held. Whenever it lands during the read-on, the screen must go on to
+ * the end of the pages and stop there, on a drawn row or the empty state, never on the loading list with
+ * no request in flight (the FIX-30 verifier's stall).
+ */
+describe('the inbox read-on when a refresh lands during it', () => {
+  const community = (id: string) => row(id, { kind: 'community', chat: null });
+  const CUR2 = 'GET /inbox?limit=20&cursor=cur2';
+  const CUR3 = 'GET /inbox?limit=20&cursor=cur3';
+  /** What the person is looking at. */
+  const screenState = () => {
+    if (rtl.screen.queryByTestId('inbox-error')) return 'error';
+    if (rtl.screen.queryByTestId('inbox-loading')) return 'loading';
+    if (rtl.screen.queryByTestId('inbox-empty')) return 'empty';
+    return ids().length > 0 ? 'rows' : 'blank';
+  };
+  /** Waits for the read-on to end, then checks it stopped: on the state expected, with nothing in flight and nothing more asked. */
+  async function expectReadOnEnds(state: 'empty' | 'rows') {
+    await rtl.waitFor(() => expect({ state: screenState(), requestsInFlight: queryClient.isFetching() }).toEqual({ state, requestsInFlight: 0 }), { timeout: 4000 });
+    const asked = sent.length;
+    await settle();
+    expect(sent).toHaveLength(asked);
+  }
+  const endings = [
+    { name: 'the empty state', last: () => community('community:3'), state: 'empty' },
+    { name: 'a drawn row', last: () => row('chat:late'), state: 'rows' },
+  ] as const;
+
+  // The refresh lands at the moment the named page is asked for, before the screen has drawn that the page is being read: the
+  // refresh then cancels that read and refetches the pages held, which is what the stall needs. The page is answered when it is asked again.
+  for (const ending of endings) {
+    it.each([
+      ['second', CUR2],
+      ['third', CUR3],
+    ] as const)(`ends on ${ending.name}, not the loading list, when the refresh lands as the %s page is asked for`, async (_page, asked) => {
+      const { inboxKey } = require('../api') as typeof import('../api');
+      const refresh = () => void queryClient.invalidateQueries({ queryKey: inboxKey, predicate: (query) => query.queryKey[1] !== 'unread' });
+      const page = { [CUR2]: pageOf([community('community:2')], 'cur3'), [CUR3]: pageOf([ending.last()], null) };
+      const answerAt = (url: typeof CUR2 | typeof CUR3): Answer[] => (url === asked ? [{ ...(page[url] as object), onSend: refresh } as Answer, page[url]] : [page[url]]);
+      answers[FIRST] = [pageOf([community('community:1')], 'cur2')];
+      answers[CUR2] = answerAt(CUR2);
+      answers[CUR3] = answerAt(CUR3);
+      await renderScreen(testRows);
+      await expectReadOnEnds(ending.state);
+      // The page was asked again after the refresh cancelled the first ask.
+      expect(sent.filter((s) => s === asked).length).toBeGreaterThanOrEqual(2);
+    }, 10_000);
+  }
+
+  // The same, with pages that take time, so the refresh lands at each of these moments (ms after the screen opens, then ms a page takes).
+  // It invalidates as `refreshInbox` does once the count has arrived.
+  it.each([
+    [0, 30],
+    [10, 30],
+    [30, 30],
+    [60, 30],
+    [100, 30],
+    [20, 100],
+    [50, 100],
+    [120, 100],
+    [200, 100],
+  ] as const)('ends on the empty state, not the loading list: refresh at %i ms, pages of %i ms', async (refreshAt, pageMs) => {
+    const after = (answer: Answer): Answer => ({ ...(answer as object), delay: pageMs }) as Answer;
+    answers[FIRST] = [after(pageOf([community('community:1')], 'cur2'))];
+    answers[CUR2] = [after(pageOf([community('community:2')], 'cur3'))];
+    answers[CUR3] = [after(pageOf([community('community:3')], null))];
+    await renderScreen(testRows);
+    await new Promise((resolve) => setTimeout(resolve, refreshAt));
+    const { inboxKey } = require('../api') as typeof import('../api');
+    await rtl.act(async () => {
+      void queryClient.invalidateQueries({ queryKey: inboxKey, predicate: (query) => query.queryKey[1] !== 'unread' });
+    });
+    await expectReadOnEnds('empty');
+  }, 10_000);
 });

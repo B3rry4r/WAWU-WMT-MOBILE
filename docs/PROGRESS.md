@@ -3,19 +3,23 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 124 of 246.**
+**Launch tasks done: 123 of 246.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 144 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 85 | 27 | 11 | 5 |
+| done | 84 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [FIX-30](../tasks/FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording (You)
 
 ## Done
 
@@ -142,7 +146,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
-- [FIX-30](../tasks/FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -159,6 +162,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · FIX-30 · Builder report, round 2 (mobile `wmt/FIX-30`, main `aff0e96` merged, a fast-forward): the Inbox read-on no longer stalls on the loading list when a refresh lands during it (`InboxScreen.tsx`: the effect waits on `inbox.isFetching` and `inbox.dataUpdatedAt`; the verifier's patch alone leaves a case where the refetch ends before any render showed it under way). The verifier's repro is committed with four scripted cases and its 9 timings: 6 or 7 of 13 fail on the old code, 13 of 13 pass 20 runs in a row. EVENTS-06 has one line naming the screen-level tests it owes (per-tier maximum, a free total). `npm run check` EXIT 0 (120 suites, 2031 tests, gates 10 run, 472 files, 0 fail). Status verifying.
 - 10 Oct 2026 · FIX-30 · Verifier report (independent session, mobile `80319b1`, main `5de924a` already in the branch: trial merge a no-op, 0 conflicts; real local Hub from backend main `7b4ffef` and wawu-id `fb8717e`, real sign-in): status building for one latent defect. The empty state for undrawn rows, the badge (per-kind sum ruled right), the read-on finding its row, ending, showing the loading list and failing with one Try again, and E2 without stepper or total all pass, each entered by its real cause, light and dark; E9's Sold out bar ruled a fact; the three changed tests follow the task; no R-46 in src or scripts. Defect (medium, latent until a renderer exists): a refresh landing during the read-on leaves the loading list for ever (the effect's dependencies do not change; one-line fix tried in a throwaway copy). 18 own mutants, 17 killed, 1 survivor (a test gap in FIX-29's called-off logic).
 - 10 Oct 2026 · FIX-30 · Builder report (mobile `wmt/FIX-30`, main `5de924a` merged): the Inbox draws its empty state when the Hub serves rows and none can be drawn, and its tab badge counts only the kinds that are drawn (`drawnUnread`; reads on past undrawn pages when some kind is drawn); E2 no longer draws the quantity steppers or the running total until EVENTS-06 (`TicketStepper` kept, pinned alone; EVENTS-06 has a check to draw them back); the `unbuilt_entries` docstring, its tests and `src/lib/unbuilt.ts` say R-47, not R-46. `npm run check` EXIT 0 (120 suites, 2018 tests, gates 10 run, 472 files, 0 fail), 8 own mutants all killed, pictures at 390 px light and dark against a real local Hub, status verifying.
 - 10 Oct 2026 · SCHOOLS-03 · Verifier report (independent session, mobile `9396579` trial-merged with main `bda7c68`: already up to date, 0 conflicts; backend main `7b4ffef` built and run locally, real wawu-id sign-in): no blocker, status review. Full `npm run check` EXIT 0 (118 suites, 2004 tests, gates 10 run, 469 files, 0 fail). SC1, SC2, SC3, SC10, the Explore door and Home's tile (H1, H36) match their artboards light and dark but for recorded differences; V4 traced through the real admin routes; every state entered by its real cause; one request per search or chip change, NUL and control characters never sent, 100 characters, 49 rows over 3 cursor pages with no duplicate or lost row, a slow older answer never overwrites a newer one, Starts follows the phone's calendar day. Builder decisions 1 to 8 and the Home tile CONFIRMED. 24 own mutants: 20 killed, 4 survived (a UTC `todayOf` passes in a UTC jest run). Open, low: `SchoolLogo` stands in for `Avatar` (check 2), a fee with kobo is drawn without them, M7 test gap; unclear: a free course reads ₦0, the course line carries no class days. NOT RUN: a phone (V10), Android hardware back, share sheet.
@@ -173,4 +177,3 @@ From `docs/LOG.md`, newest first.
 - 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 10 Oct 2026 · JOIN-02 · Verifier report, rounds 4 and 5 (independent session; website `d172f0b` on main `b4a2921`, unmoved; backend `d317094`; mobile `7314b54`; backend main moved to `12e18e3` at the end, see JOIN-01 S1): merge, no blocker, status review. Round 4 held in a real browser: no Start again while checking, it appears after the 5 minutes end with no paid answer, the plain-words question, the last ask for paid, failed and unreachable, Keep checking, a new reference on starting again, a second tab and a second device, and both deploy orders (live page with the new backend; new page with the old backend shows the held screen, one transaction). Round 5: the owner's words identical to main as code points over 13 rendered states and both head tags; V1 title, description and logo (absolute, same origin, 200) on /join in full and `VERCEL_ENV=production` mode, the ticket checkout keeps WAWU's; site mode still locked; nothing under (auth) changed. typecheck, lint, build, check:copy 0. One should-fix (S1: a doc line and three comments still say the window is titled WAWU and the server reuses an unpaid registration) and four notes. NOT RUN: a real Flutterwave window, phones and in-app browsers, the Edge middleware, website mutants.
-- 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
