@@ -11,9 +11,8 @@ export const doorMetrics = { padV: 13, padH: 14, iconToWords: 12, tile: 40, tile
 export type Door = { id: string; icon: IconName; title: string; sub: string; onPress: () => void };
 
 /**
- * X1 and X15's doors card, one row per door as the canvas draws them: Find a professional, Find a school, List your
- * services. A door whose screen is not built yet is passed `unbuilt('<task>')` as its `onPress` (R-46): it is drawn and
- * opens nothing until its task wires it.
+ * X1 and X15's doors card, one row per door whose screen is built: Find a professional, Find a school, List your services.
+ * Every door passed here opens something (R-47).
  */
 export function DoorsCard({ doors }: { doors: readonly Door[] }) {
   const { colors } = useWawu();

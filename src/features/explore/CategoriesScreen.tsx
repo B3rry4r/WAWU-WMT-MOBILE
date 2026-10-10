@@ -12,7 +12,6 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { fetchMyId, meKey } from '@/features/feed/api';
-import { unbuilt } from '@/lib/unbuilt';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { categoriesKey, creatorsKey, fetchCategories, fetchCreatorsPage, type ExploreCreator } from './api';
@@ -158,7 +157,6 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
             creator={item}
             width={cell}
             height={creatorCardMetrics.gridHeight}
-            onPress={unbuilt('ME-02')}
             onToggleFollow={item.wawuId === me.data ? undefined : () => follow.toggle(item)}
           />
         )}

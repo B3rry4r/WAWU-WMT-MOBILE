@@ -47,6 +47,10 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
 
   const rows = drawableRows(inbox.items, renderers);
   const { refetch, fetchNextPage, hasNextPage, isFetchingNextPage, isStale } = inbox;
+  // Some kind can be drawn but the pages read so far hold none of it: read on until one is found or the pages end.
+  // With no kind drawn at all there is nothing to look for, so nothing is read ahead.
+  const canDraw = Object.values(renderers).some((renderer) => renderer !== undefined);
+  const readingPast = rows.length === 0 && canDraw && hasNextPage && !inbox.isFetchNextPageError;
 
   // Coming back to the tab reads again when what is held has gone stale.
   const wasFocused = useRef(focused);
@@ -63,6 +67,12 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
       setPulled(false);
     }
   }, [refetch]);
+
+  // Runs again for every page that arrives (`pagesRead`), because a page can land with no render in between that shows the read as under way.
+  const pagesRead = inbox.data?.pages.length ?? 0;
+  useEffect(() => {
+    if (readingPast && !isFetchingNextPage) void fetchNextPage();
+  }, [readingPast, isFetchingNextPage, pagesRead, fetchNextPage]);
 
   // Nothing is read ahead unless a row is drawn: a page that adds nothing to the screen is not worth a request.
   const onEndReached = useCallback(() => {
@@ -86,15 +96,31 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
         onRetry={() => void refetch()}
       />
     );
-  } else if (inbox.items.length === 0) {
-    center = true;
-    body = (
-      <EmptyState
-        testID="inbox-empty"
-        title="No messages yet"
-        message="Message a creator from their profile, or join a community to talk with people like you."
-      />
-    );
+  } else if (rows.length === 0) {
+    // No row to draw: the Hub served none, or every row it served is of a kind nobody has built yet (R-47).
+    // The same empty state either way; a blank body would read as a broken screen.
+    if (readingPast) {
+      body = <InboxSkeleton />;
+    } else if (inbox.isFetchNextPageError) {
+      center = true;
+      body = (
+        <ErrorState
+          testID="inbox-error"
+          title="Couldn’t load your inbox"
+          message="Something went wrong. Try again."
+          onRetry={() => void fetchNextPage()}
+        />
+      );
+    } else {
+      center = true;
+      body = (
+        <EmptyState
+          testID="inbox-empty"
+          title="No messages yet"
+          message="Message a creator from their profile, or join a community to talk with people like you."
+        />
+      );
+    }
   } else {
     body = null;
   }
@@ -113,8 +139,9 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
         keyExtractor={(item) => item.id}
         renderItem={renderRow}
         ListEmptyComponent={body}
+        // Under no row, the body already says what the next page is doing.
         ListFooterComponent={
-          inbox.isFetchNextPageError ? (
+          rows.length === 0 ? null : inbox.isFetchNextPageError ? (
             <View style={styles.footer}>
               <Text variant="secondary">Couldn’t load more messages.</Text>
               <Button label="Try again" variant="secondary" size="sm" onPress={() => void fetchNextPage()} />

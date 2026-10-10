@@ -69,8 +69,8 @@ export type MeScreenProps = {
  * for the header; each tab loads its own part when it is first opened.
  *
  * Menu (BRAND-01) raises the Me menu (Z1) and its Settings row opens Z2, so a signed-in person always has a way
- * into Settings, also while the profile is loading or has failed. Not drawn yet (COMPLETE-04 draws them
- * inert, R-46): QR (WALLET-20, after launch), the tick and the "Get your professional tick" prompt (ME-12), the
+ * into Settings, also while the profile is loading or has failed. Not drawn yet (the task that builds
+ * where each leads adds it, R-47): QR (WALLET-20, after launch), the tick and the "Get your professional tick" prompt (ME-12), the
  * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
  * (PROS-03) are in.
  */

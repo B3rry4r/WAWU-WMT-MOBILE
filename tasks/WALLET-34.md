@@ -3,7 +3,7 @@ id: WALLET-34
 title: Admin screens: proof-of-address review queue
 owner: YOU
 area: WALLET
-order: 254
+order: 264
 priority: after-launch
 repo: wawu-dashboard
 type: admin-screen

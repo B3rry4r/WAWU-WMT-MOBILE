@@ -131,14 +131,68 @@ describe('the inbox screen', () => {
     expect(rtl.screen.queryByText('No messages yet')).toBeNull();
   });
 
-  it('draws nothing for a kind of row nobody has built yet, and does not call the inbox empty', async () => {
+  it('a user whose rows are all of a kind nobody has built yet sees the empty state, not a blank page (R-47)', async () => {
     answers[FIRST] = [pageOf([row('chat:1'), row('community:1', { kind: 'community', chat: null })])];
     await renderScreen({});
     await rtl.waitFor(() => expect(sent).toContain(FIRST));
-    await rtl.waitFor(() => expect(rtl.screen.queryByTestId('inbox-loading')).toBeNull());
+    expect(await rtl.screen.findByTestId('inbox-empty')).toBeTruthy();
+    expect(rtl.screen.getByText('No messages yet')).toBeTruthy();
+    expect(rtl.screen.getByText('Message a creator from their profile, or join a community to talk with people like you.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('inbox-loading')).toBeNull();
+    expect(rtl.screen.queryByTestId('inbox-error')).toBeNull();
     expect(ids()).toEqual([]);
+  });
+
+  it('draws the rows it can and nothing for the kinds it cannot, with no empty state', async () => {
+    answers[FIRST] = [pageOf([row('community:1', { kind: 'community', chat: null }), row('chat:1')])];
+    await renderScreen(testRows);
+    await rtl.screen.findByTestId('row-chat:1');
+    expect(ids()).toEqual(['row-chat:1']);
     expect(rtl.screen.queryByText('No messages yet')).toBeNull();
   });
+
+  it('reads on past a page of rows it cannot draw to find ones it can, and shows no empty state on the way', async () => {
+    const community = (id: string) => row(id, { kind: 'community', chat: null });
+    answers[FIRST] = [pageOf([community('community:1'), community('community:2')], 'cur2')];
+    answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([community('community:3')], 'cur3')];
+    answers['GET /inbox?limit=20&cursor=cur3'] = [pageOf([row('chat:late')], null)];
+    await renderScreen(testRows);
+    expect(await rtl.screen.findByTestId('row-chat:late')).toBeTruthy();
+    expect(rtl.screen.queryByText('No messages yet')).toBeNull();
+    expect(sent.filter((s) => s.startsWith('GET /inbox?'))).toEqual([FIRST, 'GET /inbox?limit=20&cursor=cur2', 'GET /inbox?limit=20&cursor=cur3']);
+  });
+
+  it('shows the loading list, not the empty state, while it reads on past rows it cannot draw', async () => {
+    answers[FIRST] = [pageOf([row('community:1', { kind: 'community', chat: null })], 'cur2')];
+    answers['GET /inbox?limit=20&cursor=cur2'] = ['hold'];
+    await renderScreen(testRows);
+    await rtl.waitFor(() => expect(sent).toContain('GET /inbox?limit=20&cursor=cur2'));
+    expect(await rtl.screen.findByTestId('inbox-loading')).toBeTruthy();
+    expect(rtl.screen.queryByText('No messages yet')).toBeNull();
+  });
+
+  it('says the inbox is empty when every page held only rows it cannot draw', async () => {
+    const community = (id: string) => row(id, { kind: 'community', chat: null });
+    answers[FIRST] = [pageOf([community('community:1')], 'cur2')];
+    answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([community('community:2')], null)];
+    await renderScreen(testRows);
+    expect(await rtl.screen.findByTestId('inbox-empty')).toBeTruthy();
+    expect(ids()).toEqual([]);
+    expect(sent.filter((s) => s.startsWith('GET /inbox?'))).toEqual([FIRST, 'GET /inbox?limit=20&cursor=cur2']);
+  });
+
+  it('shows an error with Try again, not the empty state, when reading on past undrawable rows fails', async () => {
+    const community = (id: string) => row(id, { kind: 'community', chat: null });
+    answers[FIRST] = [pageOf([community('community:1')], 'cur2')];
+    answers['GET /inbox?limit=20&cursor=cur2'] = ['offline', 'offline', 'offline', pageOf([row('chat:late')])];
+    await renderScreen(testRows);
+    expect(await rtl.screen.findByTestId('inbox-error', {}, { timeout: 8000 })).toBeTruthy();
+    expect(rtl.screen.queryByText('No messages yet')).toBeNull();
+    expect(rtl.screen.getAllByRole('button', { name: 'Try again' })).toHaveLength(1);
+    rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    expect(await rtl.screen.findByTestId('row-chat:late')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('inbox-error')).toBeNull();
+  }, 20_000);
 
   it('a user can retry when the network is cut, and then sees their inbox', async () => {
     answers[FIRST] = ['offline', 'offline', 'offline', pageOf([row('chat:1')])];
