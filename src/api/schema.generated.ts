@@ -2041,6 +2041,576 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Is a PIN set, when it last changed, tries left, and the lock if any. */
+        get: operations["MoneyPinController_state"];
+        /** Change the PIN. The current PIN is X-Transaction-Pin. */
+        put: operations["MoneyPinController_change"];
+        /** Set the first PIN (A9, A10, W36). Both entries in one request; a difference is pin_mismatch. */
+        post: operations["MoneyPinController_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/pin/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check the PIN without moving money, for a screen that must confirm the
+         *     person before it changes something. A wrong PIN counts toward the lock
+         *     exactly as it does on a debit.
+         */
+        post: operations["MoneyPinController_verify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/pin/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgot PIN (W37): send a code to the phone on file. Asked again before
+         *     resendAvailableAt, it answers the same reset and sends nothing; after
+         *     it, a new code (the old one stops working).
+         */
+        post: operations["MoneyPinResetController_startReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/pin/reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The code and the new PIN. Clears the lock and the wrong-try count, and turns biometric approval off. */
+        post: operations["MoneyPinResetController_confirmReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which phone, if any, may approve with a fingerprint or face (W35's switch). */
+        get: operations["MoneyDeviceController_device"];
+        /**
+         * Turn it on for this phone (W35): its public key, with the current PIN in
+         *     X-Transaction-Pin. Replaces any other phone: one per person.
+         */
+        put: operations["MoneyDeviceController_register"];
+        post?: never;
+        /** Turn it off (W35). Needs no PIN: it only takes a way to approve away. */
+        delete: operations["MoneyDeviceController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/device/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** One challenge for one approval, for the registered phone to sign with the request. */
+        post: operations["MoneyDeviceController_challenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/approval/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check an approval, the PIN or a fingerprint or face, without moving
+         *     money: what every debit asks for, for a screen that must confirm the
+         *     person first (and for W35 to confirm the phone's key works). A PIN try
+         *     counts as on a debit; a refused biometric approval uses none.
+         */
+        post: operations["MoneyDeviceController_verify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/wallet/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fintava's available balance, asked for on every call (W1, W9, W13).
+         *     503 provider_unreachable when the bank does not answer (W6): never a 0.
+         */
+        get: operations["MoneyBalanceController_balance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where the person's identity step stands: last 4 digits only, and checks left today. */
+        get: operations["MoneyIdentityController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/bvn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Checks the BVN with Fintava (charged per check) and keeps the NIN given
+         *     with it for account opening. The BVN's phone must be the account's phone
+         *     (A14: `bvn_phone_mismatch`). On a pass, answers A5's prefill once; it is
+         *     not stored. Limited per person per day (`identity_checks_exhausted`) and
+         *     per address by the app's throttler.
+         */
+        post: operations["MoneyIdentityController_checkBvn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/selfie": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The selfie step: whether the selfie has matched the BVN photo, and matches left today. */
+        get: operations["MoneyIdentityController_getSelfie"];
+        put?: never;
+        /**
+         * A6: matches the selfie against the BVN record's photo with Fintava
+         *     (charged per match, a failed one too). A face match, not a liveness
+         *     check. Needs a passed BVN check, and the BVN it passed with
+         *     (`bvn_not_checked` otherwise). A failed match is A16
+         *     (`selfie_not_matched`, with matches left today); the fourth in 24 hours
+         *     is `selfie_checks_exhausted`, and Fintava is not asked. Only an explicit
+         *     match from Fintava passes: an answer with no verdict is
+         *     `provider_unreachable` and still counts. A match counts only for the
+         *     BVN check it was compared against (`bvn_not_checked` if another check
+         *     passed meanwhile). Neither the
+         *     selfie nor the BVN photo is stored or logged. Limited per address by the
+         *     app's throttler, as the BVN check is.
+         */
+        post: operations["MoneyIdentityController_matchSelfie"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/occupation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A5: stores the occupation the person typed. Needs a passed BVN check first. */
+        put: operations["MoneyIdentityController_setOccupation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The wallet as WAWU records it: state, account details, limits, PIN state.
+         *     Never calls Fintava and never carries a balance. With no wallet it answers
+         *     200 with state not_open (R-6), so the Wallet tab can lead to Open your
+         *     wallet; while the account is being opened, state opening (A7); once
+         *     open, the account number Fintava gave (W1, A8).
+         */
+        get: operations["MoneyWalletController_wallet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/wallet/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The end of Open your wallet (A7): opens the person's account at Fintava
+         *     with the BVN and NIN whose check passed (KYC-01), after a selfie that
+         *     matched against that check (KYC-02), A5's name and date of birth, the
+         *     address typed, and the account's email. None of these is stored.
+         *
+         *     Safe to repeat: one account per person, whatever the number of taps.
+         *     Answers the wallet: `open` with its account number, or `opening` while
+         *     Fintava's answer is being confirmed (a lost answer is checked with
+         *     Fintava, never sent again blindly; GET /money/wallet shows when it
+         *     settles). An open wallet is answered as it is, with nothing sent.
+         */
+        post: operations["MoneyWalletController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/beneficiaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved beneficiaries, newest first (W8). Their number is WalletView.beneficiaryCount (W35). */
+        get: operations["MoneySavedAccountsController_list"];
+        put?: never;
+        /**
+         * Save a beneficiary (W12 "Save as beneficiary"): a WAWU user with a
+         *     wallet, or a bank account the bank confirms by name check (the name
+         *     saved is the bank's). Saving one already saved answers the existing one.
+         *     At most BENEFICIARIES_MAX per person (`beneficiary_limit_reached`).
+         */
+        post: operations["MoneySavedAccountsController_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/beneficiaries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a saved beneficiary. Removing one already gone, or not the caller's, is a 200 that removes nothing. */
+        delete: operations["MoneySavedAccountsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/payout-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The payout account (A21, W17's default destination), or null when none is saved. */
+        get: operations["MoneySavedAccountsController_getPayoutAccount"];
+        /**
+         * Save or replace the payout account. The server name-checks it with the
+         *     bank and compares the bank's name with the BVN name: an account in
+         *     another name is saved and flagged (`matchesBvnName: false`).
+         */
+        put: operations["MoneySavedAccountsController_setPayoutAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W26, W28: search, filter chips, an optional month. W1's recent rows are the first page with limit=3. */
+        get: operations["MoneyHistoryController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W26's In and Out for one month. Declared before transactions/{id} so the literal path wins. */
+        get: operations["MoneyHistoryController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One row as a receipt (W27). Only the wallet's owner can read it. */
+        get: operations["MoneyHistoryController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One statement. `from` and `to` are calendar days in Africa/Lagos time
+         *     and BOTH are included: from 00:00 on `from` to 23:59:59.999 on `to`,
+         *     Lagos time. A day that does not exist, `from` after `to`, `to` after
+         *     today in Lagos, or more than 366 days is a 400; a period with more than
+         *     50,000 movements is `400 statement_too_large`. The app's global
+         *     per-address limits apply as on every route; on top, one person may ask
+         *     for 5 a minute and 30 an hour (`429 statement_rate_limited`, counted
+         *     here, after the token is verified), and two statements are built at
+         *     once in the process (`503 statement_busy` after 5 s of waiting).
+         *     The route's own 400s never count: the period is checked before the
+         *     person is counted, and `statement_too_large` gives the place back.
+         */
+        get: operations["MoneyStatementController_statement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/fees/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a send, a withdrawal, a purchase or a bill will cost, before the
+         *     PIN (W10, W17, H14): Fintava's charge plus WAWU's fee from config
+         *     (R-10, R-31), each charge as its own part, the total, and a signed
+         *     quote the paying request can send back. Nothing is reserved and
+         *     Fintava is not asked. A purchase or bill whose total is above
+         *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
+         *
+         *     NUV-07: the provider's charge comes from the running provider's
+         *     settings. While any of them is unset (Nuvion's, until the owner fills
+         *     them in) every quote is fees_not_set, before the wallet gate; under
+         *     Nuvion, which has no bill payments, a bill is target_not_payable.
+         */
+        get: operations["MoneyFeesController_feeQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** W41: the receipt and its code. The same code every time. */
+        post: operations["MoneyReceiptController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}/receipt/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W42: the receipt as a PNG, always a white document. */
+        get: operations["MoneyReceiptController_image"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transactions/{id}/receipt/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** W43: the receipt as a one-page A4 PDF. */
+        get: operations["MoneyReceiptController_pdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/r/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PublicReceiptController_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** WAWU users with an open wallet, by name, @handle or phone (W7). Blocked people never appear. At most 20. */
+        get: operations["MoneyRecipientController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/recipients/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The people this user sent money to most recently, newest first (W7). At most 10. */
+        get: operations["MoneyRecipientController_recentRecipients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/account": {
         parameters: {
             query?: never;
@@ -3883,576 +4453,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/pin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Is a PIN set, when it last changed, tries left, and the lock if any. */
-        get: operations["MoneyPinController_state"];
-        /** Change the PIN. The current PIN is X-Transaction-Pin. */
-        put: operations["MoneyPinController_change"];
-        /** Set the first PIN (A9, A10, W36). Both entries in one request; a difference is pin_mismatch. */
-        post: operations["MoneyPinController_set"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/pin/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check the PIN without moving money, for a screen that must confirm the
-         *     person before it changes something. A wrong PIN counts toward the lock
-         *     exactly as it does on a debit.
-         */
-        post: operations["MoneyPinController_verify"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/pin/reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Forgot PIN (W37): send a code to the phone on file. Asked again before
-         *     resendAvailableAt, it answers the same reset and sends nothing; after
-         *     it, a new code (the old one stops working).
-         */
-        post: operations["MoneyPinResetController_startReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/pin/reset/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** The code and the new PIN. Clears the lock and the wrong-try count, and turns biometric approval off. */
-        post: operations["MoneyPinResetController_confirmReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/device": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Which phone, if any, may approve with a fingerprint or face (W35's switch). */
-        get: operations["MoneyDeviceController_device"];
-        /**
-         * Turn it on for this phone (W35): its public key, with the current PIN in
-         *     X-Transaction-Pin. Replaces any other phone: one per person.
-         */
-        put: operations["MoneyDeviceController_register"];
-        post?: never;
-        /** Turn it off (W35). Needs no PIN: it only takes a way to approve away. */
-        delete: operations["MoneyDeviceController_remove"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/device/challenge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** One challenge for one approval, for the registered phone to sign with the request. */
-        post: operations["MoneyDeviceController_challenge"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/approval/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check an approval, the PIN or a fingerprint or face, without moving
-         *     money: what every debit asks for, for a screen that must confirm the
-         *     person first (and for W35 to confirm the phone's key works). A PIN try
-         *     counts as on a debit; a refused biometric approval uses none.
-         */
-        post: operations["MoneyDeviceController_verify"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/wallet/balance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Fintava's available balance, asked for on every call (W1, W9, W13).
-         *     503 provider_unreachable when the bank does not answer (W6): never a 0.
-         */
-        get: operations["MoneyBalanceController_balance"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/identity": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Where the person's identity step stands: last 4 digits only, and checks left today. */
-        get: operations["MoneyIdentityController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/identity/bvn": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Checks the BVN with Fintava (charged per check) and keeps the NIN given
-         *     with it for account opening. The BVN's phone must be the account's phone
-         *     (A14: `bvn_phone_mismatch`). On a pass, answers A5's prefill once; it is
-         *     not stored. Limited per person per day (`identity_checks_exhausted`) and
-         *     per address by the app's throttler.
-         */
-        post: operations["MoneyIdentityController_checkBvn"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/identity/selfie": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The selfie step: whether the selfie has matched the BVN photo, and matches left today. */
-        get: operations["MoneyIdentityController_getSelfie"];
-        put?: never;
-        /**
-         * A6: matches the selfie against the BVN record's photo with Fintava
-         *     (charged per match, a failed one too). A face match, not a liveness
-         *     check. Needs a passed BVN check, and the BVN it passed with
-         *     (`bvn_not_checked` otherwise). A failed match is A16
-         *     (`selfie_not_matched`, with matches left today); the fourth in 24 hours
-         *     is `selfie_checks_exhausted`, and Fintava is not asked. Only an explicit
-         *     match from Fintava passes: an answer with no verdict is
-         *     `provider_unreachable` and still counts. A match counts only for the
-         *     BVN check it was compared against (`bvn_not_checked` if another check
-         *     passed meanwhile). Neither the
-         *     selfie nor the BVN photo is stored or logged. Limited per address by the
-         *     app's throttler, as the BVN check is.
-         */
-        post: operations["MoneyIdentityController_matchSelfie"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/identity/occupation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** A5: stores the occupation the person typed. Needs a passed BVN check first. */
-        put: operations["MoneyIdentityController_setOccupation"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/wallet": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The wallet as WAWU records it: state, account details, limits, PIN state.
-         *     Never calls Fintava and never carries a balance. With no wallet it answers
-         *     200 with state not_open (R-6), so the Wallet tab can lead to Open your
-         *     wallet; while the account is being opened, state opening (A7); once
-         *     open, the account number Fintava gave (W1, A8).
-         */
-        get: operations["MoneyWalletController_wallet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/wallet/open": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * The end of Open your wallet (A7): opens the person's account at Fintava
-         *     with the BVN and NIN whose check passed (KYC-01), after a selfie that
-         *     matched against that check (KYC-02), A5's name and date of birth, the
-         *     address typed, and the account's email. None of these is stored.
-         *
-         *     Safe to repeat: one account per person, whatever the number of taps.
-         *     Answers the wallet: `open` with its account number, or `opening` while
-         *     Fintava's answer is being confirmed (a lost answer is checked with
-         *     Fintava, never sent again blindly; GET /money/wallet shows when it
-         *     settles). An open wallet is answered as it is, with nothing sent.
-         */
-        post: operations["MoneyWalletController_open"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/beneficiaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Saved beneficiaries, newest first (W8). Their number is WalletView.beneficiaryCount (W35). */
-        get: operations["MoneySavedAccountsController_list"];
-        put?: never;
-        /**
-         * Save a beneficiary (W12 "Save as beneficiary"): a WAWU user with a
-         *     wallet, or a bank account the bank confirms by name check (the name
-         *     saved is the bank's). Saving one already saved answers the existing one.
-         *     At most BENEFICIARIES_MAX per person (`beneficiary_limit_reached`).
-         */
-        post: operations["MoneySavedAccountsController_add"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/beneficiaries/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a saved beneficiary. Removing one already gone, or not the caller's, is a 200 that removes nothing. */
-        delete: operations["MoneySavedAccountsController_remove"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/payout-account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The payout account (A21, W17's default destination), or null when none is saved. */
-        get: operations["MoneySavedAccountsController_getPayoutAccount"];
-        /**
-         * Save or replace the payout account. The server name-checks it with the
-         *     bank and compares the bank's name with the BVN name: an account in
-         *     another name is saved and flagged (`matchesBvnName: false`).
-         */
-        put: operations["MoneySavedAccountsController_setPayoutAccount"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** W26, W28: search, filter chips, an optional month. W1's recent rows are the first page with limit=3. */
-        get: operations["MoneyHistoryController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** W26's In and Out for one month. Declared before transactions/{id} so the literal path wins. */
-        get: operations["MoneyHistoryController_summary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One row as a receipt (W27). Only the wallet's owner can read it. */
-        get: operations["MoneyHistoryController_detail"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/statements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One statement. `from` and `to` are calendar days in Africa/Lagos time
-         *     and BOTH are included: from 00:00 on `from` to 23:59:59.999 on `to`,
-         *     Lagos time. A day that does not exist, `from` after `to`, `to` after
-         *     today in Lagos, or more than 366 days is a 400; a period with more than
-         *     50,000 movements is `400 statement_too_large`. The app's global
-         *     per-address limits apply as on every route; on top, one person may ask
-         *     for 5 a minute and 30 an hour (`429 statement_rate_limited`, counted
-         *     here, after the token is verified), and two statements are built at
-         *     once in the process (`503 statement_busy` after 5 s of waiting).
-         *     The route's own 400s never count: the period is checked before the
-         *     person is counted, and `statement_too_large` gives the place back.
-         */
-        get: operations["MoneyStatementController_statement"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/fees/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What a send, a withdrawal, a purchase or a bill will cost, before the
-         *     PIN (W10, W17, H14): Fintava's charge plus WAWU's fee from config
-         *     (R-10, R-31), each charge as its own part, the total, and a signed
-         *     quote the paying request can send back. Nothing is reserved and
-         *     Fintava is not asked. A purchase or bill whose total is above
-         *     MERCHANT_MAX_PER_TXN_KOBO is amount_out_of_range with maximumKobo.
-         *
-         *     NUV-07: the provider's charge comes from the running provider's
-         *     settings. While any of them is unset (Nuvion's, until the owner fills
-         *     them in) every quote is fees_not_set, before the wallet gate; under
-         *     Nuvion, which has no bill payments, a bill is target_not_payable.
-         */
-        get: operations["MoneyFeesController_feeQuote"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/{id}/receipt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** W41: the receipt and its code. The same code every time. */
-        post: operations["MoneyReceiptController_issue"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/{id}/receipt/image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** W42: the receipt as a PNG, always a white document. */
-        get: operations["MoneyReceiptController_image"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transactions/{id}/receipt/pdf": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** W43: the receipt as a one-page A4 PDF. */
-        get: operations["MoneyReceiptController_pdf"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/r/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["PublicReceiptController_page"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/recipients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** WAWU users with an open wallet, by name, @handle or phone (W7). Blocked people never appear. At most 20. */
-        get: operations["MoneyRecipientController_search"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/recipients/recent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The people this user sent money to most recently, newest first (W7). At most 10. */
-        get: operations["MoneyRecipientController_recentRecipients"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/about": {
         parameters: {
             query?: never;
@@ -4960,8 +4960,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Register and get the checkout settings. Reuses this person's own unpaid
-         *     registration (same offer, phone and email) rather than adding another.
+         * Register and get the checkout settings. Every call that passes the checks
+         *     adds a new registration with a new reference, even for the same offer,
+         *     phone and email, so each checkout has its own reference.
          *     Nothing is charged here: the payment happens in the Flutterwave checkout
          *     with the answer's `flutterwaveConfig`, and counts only after
          *     POST /waitlist/registrations/verify (or Flutterwave's own notice).
@@ -5811,6 +5812,200 @@ export interface components {
             handle?: string;
             label?: string;
         };
+        MoneyErrorReason: {
+            /** @enum {string} */
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
+            /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
+            balanceKobo?: number;
+            /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
+            totalKobo?: number;
+            /** @description insufficient_funds: totalKobo minus balanceKobo, what to add before trying again. */
+            shortfallKobo?: number;
+            /** @description daily_limit_exceeded: what is left of today's limit. */
+            remainingTodayKobo?: number;
+            /** @description amount_out_of_range: the smallest amount accepted. */
+            minimumKobo?: number;
+            /** @description amount_out_of_range: the largest amount accepted. */
+            maximumKobo?: number;
+            /** @description quote_changed on a transfer: the quote as it stands now. */
+            feeQuote?: components["schemas"]["FeeQuoteView"];
+            /** @description quote_changed on a payment: the quote as it stands now. */
+            paymentQuote?: components["schemas"]["PaymentQuoteView"];
+            /**
+             * @description bank_transfers_blocked: why (W18).
+             * @enum {string}
+             */
+            blockedBy?: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted";
+            /**
+             * @description limit_reached: which limit the movement passes (NUV-07), WAWU's own or the provider's.
+             * @enum {string}
+             */
+            limit?: "per_transaction" | "daily" | "monthly";
+            /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
+            message: string;
+            /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
+            triesLeft?: number;
+            /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
+            lockedUntil?: string;
+            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
+            retryAfterSeconds?: number;
+            /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
+            checksLeft?: number;
+        };
+        MoneyErrorEnvelope: {
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            /** @description The HTTP status again. */
+            statusCode: number;
+            /** @description Same as reason.message. */
+            message: string;
+            reason: components["schemas"]["MoneyErrorReason"];
+        };
+        SetPinDto: {
+            pin: string;
+            /** @description The second entry (A10 "Enter it again"). A difference is `pin_mismatch`. */
+            pinConfirmation: string;
+        };
+        ChangePinDto: {
+            newPin: string;
+            newPinConfirmation: string;
+        };
+        ConfirmPinResetDto: {
+            /** @description The code from the text message. Its length is set by whoever sends it (MONEY-14). */
+            code: string;
+            newPin: string;
+            newPinConfirmation: string;
+            /**
+             * Format: uuid
+             * @description From POST /money/pin/reset.
+             */
+            resetId: string;
+        };
+        RegisterApprovalDeviceDto: {
+            /**
+             * @description The public half of a P-256 key the phone made, as SubjectPublicKeyInfo
+             *     (DER), base64url without padding. Its private half stays on the phone,
+             *     unlocked only by the phone's biometric.
+             */
+            publicKey: string;
+            /**
+             * @description What the phone approves with, for W35's label.
+             * @enum {string}
+             */
+            biometric: "fingerprint" | "face";
+        };
+        BvnCheckDto: {
+            /** @description The Bank Verification Number: 11 digits, no spaces. */
+            bvn: string;
+            /** @description The National Identification Number: 11 digits, no spaces. Fintava needs it to open the account. */
+            nin: string;
+        };
+        SelfieMatchDto: {
+            /**
+             * @description The BVN whose check passed: 11 digits, no spaces. Leave it out and send
+             *     `checkHandle` instead (KYC-03); one of the two, never both.
+             */
+            bvn?: string;
+            /**
+             * @description The `checkHandle` the passed BVN check answered, in place of `bvn`
+             *     (KYC-03): the server takes the BVN from it. One of the two, never both.
+             */
+            checkHandle?: string;
+            /**
+             * Format: byte
+             * @description The selfie: plain base64 (no `data:` prefix) of a JPEG or PNG, 1 KB to
+             *     about 75 KB (at most 100,000 base64 characters), at most 2,048 pixels
+             *     on each side. A face match against the BVN photo, not a liveness check.
+             */
+            image: string;
+        };
+        IdentityOccupationDto: {
+            /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
+            occupation: string;
+        };
+        OpenNairaWalletDto: {
+            /**
+             * @description The BVN whose check passed: 11 digits, no spaces. Leave it and `nin` out
+             *     and send `checkHandle` instead (KYC-03); never both.
+             */
+            bvn?: string;
+            /** @description The NIN given with that check: 11 digits, no spaces. Left out with `checkHandle`. */
+            nin?: string;
+            /**
+             * @description The `checkHandle` the passed BVN check answered, in place of `bvn` and
+             *     `nin` (KYC-03): the server takes both from it. Never with them.
+             */
+            checkHandle?: string;
+            middleName?: string;
+            /** @enum {string} */
+            gender?: "male" | "female";
+            /** @description A second address line (flat, estate), when there is one. */
+            addressLine2?: string;
+            /** @description The town or city. */
+            city?: string;
+            /** @description The state (Lagos, FCT ...). */
+            state?: string;
+            /** @description The postal code, 1 to 20 letters, digits, spaces or dashes. */
+            postalCode?: string;
+            /**
+             * @description The ID document the person will upload (NUV-03).
+             * @enum {string}
+             */
+            idType?: "international_passport" | "drivers_license" | "national_id";
+            /** @description Its number, as printed: 5 to 30 letters, digits or dashes. Never stored. */
+            idNumber?: string;
+            /** @description When it was issued, `YYYY-MM-DD`, when it says. */
+            idIssueDate?: string;
+            /** @description When it expires, `YYYY-MM-DD`, when it says; not already passed. */
+            idExpiryDate?: string;
+            /**
+             * @description The proof of address the person will upload (NUV-03).
+             * @enum {string}
+             */
+            proofOfAddressType?: "utility_bill" | "bank_statement";
+            /** @description A5's first name, as the BVN check prefilled it. */
+            firstName: string;
+            /** @description A5's last name, as the BVN check prefilled it. */
+            lastName: string;
+            /** @description A5's date of birth, `YYYY-MM-DD`. */
+            dateOfBirth: string;
+            /**
+             * @description The full home address in one line (street, town, state), 5 to 200
+             *     characters with a letter in it. Fintava takes it as one field.
+             */
+            address: string;
+        };
+        CreateBeneficiaryDto: {
+            /** @enum {string} */
+            kind: "wawu_user" | "bank_account";
+            /** @description Required when kind is bank_account. */
+            bankCode?: string;
+            /** @description Required when kind is bank_account. */
+            accountNumber?: string;
+            /**
+             * Format: uuid
+             * @description Required when kind is wawu_user.
+             */
+            wawuUserId?: string;
+        };
+        PayoutAccountDto: {
+            bankCode: string;
+            accountNumber: string;
+        };
+        MoneyPlainErrorEnvelope: {
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            /** @description 400. */
+            statusCode: number;
+            /** @description A sentence about the first field that is wrong. */
+            message: string;
+        };
         EventDecisionReasonDto: {
             reason: string;
         };
@@ -6348,173 +6543,6 @@ export interface components {
             recapText?: string;
             speakers?: components["schemas"]["EventSpeakerDto"][];
         };
-        MoneyErrorReason: {
-            /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached";
-            /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
-            balanceKobo?: number;
-            /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
-            totalKobo?: number;
-            /** @description insufficient_funds: totalKobo minus balanceKobo, what to add before trying again. */
-            shortfallKobo?: number;
-            /** @description daily_limit_exceeded: what is left of today's limit. */
-            remainingTodayKobo?: number;
-            /** @description amount_out_of_range: the smallest amount accepted. */
-            minimumKobo?: number;
-            /** @description amount_out_of_range: the largest amount accepted. */
-            maximumKobo?: number;
-            /** @description quote_changed on a transfer: the quote as it stands now. */
-            feeQuote?: components["schemas"]["FeeQuoteView"];
-            /** @description quote_changed on a payment: the quote as it stands now. */
-            paymentQuote?: components["schemas"]["PaymentQuoteView"];
-            /**
-             * @description bank_transfers_blocked: why (W18).
-             * @enum {string}
-             */
-            blockedBy?: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted";
-            /**
-             * @description limit_reached: which limit the movement passes (NUV-07), WAWU's own or the provider's.
-             * @enum {string}
-             */
-            limit?: "per_transaction" | "daily" | "monthly";
-            /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
-            message: string;
-            /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
-            triesLeft?: number;
-            /** @description pin_locked: when the lock ends, ISO 8601 UTC. */
-            lockedUntil?: string;
-            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
-            retryAfterSeconds?: number;
-            /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
-            checksLeft?: number;
-        };
-        MoneyErrorEnvelope: {
-            /**
-             * @description Always null on an error.
-             * @example null
-             */
-            data: Record<string, never> | null;
-            /** @description The HTTP status again. */
-            statusCode: number;
-            /** @description Same as reason.message. */
-            message: string;
-            reason: components["schemas"]["MoneyErrorReason"];
-        };
-        SetPinDto: {
-            pin: string;
-            /** @description The second entry (A10 "Enter it again"). A difference is `pin_mismatch`. */
-            pinConfirmation: string;
-        };
-        ChangePinDto: {
-            newPin: string;
-            newPinConfirmation: string;
-        };
-        ConfirmPinResetDto: {
-            /** @description The code from the text message. Its length is set by whoever sends it (MONEY-14). */
-            code: string;
-            newPin: string;
-            newPinConfirmation: string;
-            /**
-             * Format: uuid
-             * @description From POST /money/pin/reset.
-             */
-            resetId: string;
-        };
-        RegisterApprovalDeviceDto: {
-            /**
-             * @description The public half of a P-256 key the phone made, as SubjectPublicKeyInfo
-             *     (DER), base64url without padding. Its private half stays on the phone,
-             *     unlocked only by the phone's biometric.
-             */
-            publicKey: string;
-            /**
-             * @description What the phone approves with, for W35's label.
-             * @enum {string}
-             */
-            biometric: "fingerprint" | "face";
-        };
-        BvnCheckDto: {
-            /** @description The Bank Verification Number: 11 digits, no spaces. */
-            bvn: string;
-            /** @description The National Identification Number: 11 digits, no spaces. Fintava needs it to open the account. */
-            nin: string;
-        };
-        SelfieMatchDto: {
-            /**
-             * @description The BVN whose check passed: 11 digits, no spaces. Leave it out and send
-             *     `checkHandle` instead (KYC-03); one of the two, never both.
-             */
-            bvn?: string;
-            /**
-             * @description The `checkHandle` the passed BVN check answered, in place of `bvn`
-             *     (KYC-03): the server takes the BVN from it. One of the two, never both.
-             */
-            checkHandle?: string;
-            /**
-             * Format: byte
-             * @description The selfie: plain base64 (no `data:` prefix) of a JPEG or PNG, 1 KB to
-             *     about 75 KB (at most 100,000 base64 characters), at most 2,048 pixels
-             *     on each side. A face match against the BVN photo, not a liveness check.
-             */
-            image: string;
-        };
-        IdentityOccupationDto: {
-            /** @description 2 to 80 characters with at least one letter; spaces at either end are dropped. */
-            occupation: string;
-        };
-        OpenNairaWalletDto: {
-            /**
-             * @description The BVN whose check passed: 11 digits, no spaces. Leave it and `nin` out
-             *     and send `checkHandle` instead (KYC-03); never both.
-             */
-            bvn?: string;
-            /** @description The NIN given with that check: 11 digits, no spaces. Left out with `checkHandle`. */
-            nin?: string;
-            /**
-             * @description The `checkHandle` the passed BVN check answered, in place of `bvn` and
-             *     `nin` (KYC-03): the server takes both from it. Never with them.
-             */
-            checkHandle?: string;
-            /** @description A5's first name, as the BVN check prefilled it. */
-            firstName: string;
-            /** @description A5's last name, as the BVN check prefilled it. */
-            lastName: string;
-            /** @description A5's date of birth, `YYYY-MM-DD`. */
-            dateOfBirth: string;
-            /**
-             * @description The full home address in one line (street, town, state), 5 to 200
-             *     characters with a letter in it. Fintava takes it as one field.
-             */
-            address: string;
-        };
-        CreateBeneficiaryDto: {
-            /** @enum {string} */
-            kind: "wawu_user" | "bank_account";
-            /** @description Required when kind is bank_account. */
-            bankCode?: string;
-            /** @description Required when kind is bank_account. */
-            accountNumber?: string;
-            /**
-             * Format: uuid
-             * @description Required when kind is wawu_user.
-             */
-            wawuUserId?: string;
-        };
-        PayoutAccountDto: {
-            bankCode: string;
-            accountNumber: string;
-        };
-        MoneyPlainErrorEnvelope: {
-            /**
-             * @description Always null on an error.
-             * @example null
-             */
-            data: Record<string, never> | null;
-            /** @description 400. */
-            statusCode: number;
-            /** @description A sentence about the first field that is wrong. */
-            message: string;
-        };
         PolicySectionDto: {
             heading: string;
             body: string;
@@ -6902,6 +6930,20 @@ export interface components {
             /** @enum {string|null} */
             blockedBy: "kyc_pending" | "kyc_rejected" | "kyc_not_submitted" | null;
         };
+        WalletReviewReasonView: {
+            /** @enum {string} */
+            code: "bvn_not_verified" | "nin_not_verified" | "id_document_not_verified" | "proof_of_address_not_verified" | "bvn_phone_mismatch" | "details_not_verified" | "review_stopped" | "review_expired";
+            message: string;
+            fix: string;
+        };
+        WalletReviewView: {
+            /** @enum {string} */
+            stage: "needs_documents" | "checking" | "approved" | "rejected" | "stopped" | "expired";
+            reasons: components["schemas"]["WalletReviewReasonView"][];
+            canResubmit: boolean;
+            canResubmitAt: string | null;
+            decidedAt: string | null;
+        };
         WalletView: {
             /** @enum {string} */
             state: "not_open" | "opening" | "open" | "frozen";
@@ -6912,6 +6954,9 @@ export interface components {
             beneficiaryCount: number;
             /** @enum {string} */
             accountNumberStatus: "none" | "on_its_way" | "active";
+            /** @enum {string|null} */
+            openingFlow?: "check" | "review" | null;
+            review?: components["schemas"]["WalletReviewView"] | null;
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -7118,7 +7163,7 @@ export interface components {
             durationLabel: string | null;
             pageCount: number | null;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             creatorFirstUploadFree: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -7135,11 +7180,11 @@ export interface components {
         AdminContentReviewEntryView: {
             id: string;
             /** @enum {string} */
-            decision: "rejected" | "removed" | "approved";
+            decision: "approved" | "rejected" | "removed";
             /** @enum {string} */
-            previousStatus: "pending" | "live" | "rejected" | "removed";
+            previousStatus: "pending" | "rejected" | "live" | "removed";
             /** @enum {string} */
-            newStatus: "pending" | "live" | "rejected" | "removed";
+            newStatus: "pending" | "rejected" | "live" | "removed";
             reason: string | null;
             slotReturned: boolean;
             reviewedByAdminId: string;
@@ -7171,7 +7216,7 @@ export interface components {
             durationLabel: string | null;
             pageCount: number | null;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             creatorFirstUploadFree: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -7200,7 +7245,7 @@ export interface components {
             payoutBankName: string;
             identifiers: components["schemas"]["AdminKycMaskedIdentifiersView"];
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7222,7 +7267,7 @@ export interface components {
         AdminKycHistoryEntryView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             idDocumentType: string;
             /** Format: date-time */
             submittedAt: string;
@@ -7233,11 +7278,11 @@ export interface components {
         AdminKycAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "rejected" | "approved" | "document_viewed" | "identifiers_revealed";
+            action: "approved" | "rejected" | "document_viewed" | "identifiers_revealed";
             /** @enum {string|null} */
-            previousStatus: "pending" | "rejected" | "approved" | null;
+            previousStatus: "pending" | "approved" | "rejected" | null;
             /** @enum {string|null} */
-            newStatus: "pending" | "rejected" | "approved" | null;
+            newStatus: "pending" | "approved" | "rejected" | null;
             reason: string | null;
             actedByAdminId: string;
             actedByAdminEmail: string;
@@ -7260,7 +7305,7 @@ export interface components {
             payoutBankName: string;
             identifiers: components["schemas"]["AdminKycMaskedIdentifiersView"];
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7301,7 +7346,7 @@ export interface components {
             /** @enum {string} */
             tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7320,7 +7365,7 @@ export interface components {
             /** @enum {string} */
             tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7330,11 +7375,11 @@ export interface components {
         AdminVerificationAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "rejected" | "approved" | "document_viewed";
+            action: "approved" | "rejected" | "document_viewed";
             /** @enum {string|null} */
-            previousStatus: "pending" | "rejected" | "approved" | null;
+            previousStatus: "pending" | "approved" | "rejected" | null;
             /** @enum {string|null} */
-            newStatus: "pending" | "rejected" | "approved" | null;
+            newStatus: "pending" | "approved" | "rejected" | null;
             reason: string | null;
             documentIndex: number | null;
             tierElevatedAtWawuId: boolean;
@@ -7353,7 +7398,7 @@ export interface components {
             /** @enum {string} */
             tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             /** Format: date-time */
@@ -7389,7 +7434,7 @@ export interface components {
             issuingBody: string | null;
             documentCount: number;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** Format: date-time */
             submittedAt: string;
             waitingHours: number;
@@ -7397,7 +7442,7 @@ export interface components {
         AdminProfessionalOtherCategoryView: {
             category: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
         };
         AdminProfessionalDetailView: {
             id: string;
@@ -7419,7 +7464,7 @@ export interface components {
             issuingBody: string | null;
             documents: string[];
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             rejectionReason: string | null;
             /** Format: date-time */
             submittedAt: string;
@@ -7447,7 +7492,7 @@ export interface components {
         AdminProfessionalVisibilityView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             /** @enum {string|null} */
             visibility: "listed" | "hidden" | "taken_down" | null;
             /** Format: date-time */
@@ -7460,7 +7505,7 @@ export interface components {
         AdminProfessionalDecisionView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "approved";
+            status: "pending" | "approved" | "rejected";
             rejectionReason: string | null;
             /** Format: date-time */
             reviewedAt: string | null;
@@ -7478,7 +7523,7 @@ export interface components {
         ContentPieceResponse: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             /** Format: date-time */
             createdAt: string;
             title: string;
@@ -7507,7 +7552,7 @@ export interface components {
         MyContentItem: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             /** Format: date-time */
             createdAt: string;
             title: string;
@@ -7591,7 +7636,7 @@ export interface components {
         FeedItem: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "live" | "rejected" | "removed";
+            status: "pending" | "rejected" | "live" | "removed";
             /** Format: date-time */
             createdAt: string;
             title: string;
@@ -8482,7 +8527,7 @@ export interface components {
         };
         AdminCreatorGatesView: {
             /** @enum {string|null} */
-            kycStatus: "pending" | "rejected" | "approved" | "not_started" | null;
+            kycStatus: "pending" | "approved" | "rejected" | "not_started" | null;
             /** Format: date-time */
             kycSubmittedAt: string | null;
             /** Format: date-time */
@@ -8702,6 +8747,13 @@ export interface components {
             balance: components["schemas"]["AdminFinanceWalletBalanceView"];
             lifetime: components["schemas"]["AdminFinanceWalletLifetimeView"];
         };
+        IdentityHoldReleaseView: {
+            wawuUserId: string;
+            /** @enum {string} */
+            outcome: "released" | "already_released";
+            /** @enum {string} */
+            state: "expired" | "unchanged";
+        };
         EventSpeakerView: {
             name: string;
             title: string | null;
@@ -8753,7 +8805,7 @@ export interface components {
         AdminEventReviewEntryView: {
             id: string;
             /** @enum {string} */
-            action: "rejected" | "removed" | "approved" | "featured" | "unfeatured" | "restored";
+            action: "approved" | "rejected" | "removed" | "featured" | "unfeatured" | "restored";
             /** @enum {string} */
             previousStatus: "pending" | "rejected" | "removed" | "cancelled" | "published";
             /** @enum {string} */
@@ -8985,7 +9037,7 @@ export interface components {
         CreatorStateResponse: {
             wawuUserId: string;
             /** @enum {string} */
-            kycStatus: "pending" | "rejected" | "approved";
+            kycStatus: "pending" | "approved" | "rejected";
             slotsUsed: number;
             dmPrice: number | null;
             dmEnabled: boolean;
@@ -9088,7 +9140,7 @@ export interface components {
             submission: {
                 id: string;
                 /** @enum {string} */
-                status: "pending" | "rejected" | "approved";
+                status: "pending" | "approved" | "rejected";
                 /** Format: date-time */
                 reviewedAt: string | null;
                 /** @enum {string} */
@@ -10101,6 +10153,7 @@ export interface components {
             paidKobo: number | null;
             paidAt: string | null;
             reference: string;
+            accessCode: string;
             flutterwaveTransactionId: string | null;
             claimedByWawuId: string | null;
             claimedAt: string | null;
@@ -10363,7 +10416,7 @@ export interface components {
             /** @enum {string} */
             kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
             /** @enum {string} */
-            status: "refunded" | "held" | "released";
+            status: "refunded" | "released" | "held";
             amountKobo: number;
             /** @enum {string} */
             releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
@@ -14032,6 +14085,1665 @@ export interface operations {
             };
         };
     };
+    MoneyPinController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinStateView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPinController_change: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePinDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinStateView"];
+                };
+            };
+            /** @description reason.code: pin_mismatch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPinController_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPinDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinStateView"];
+                };
+            };
+            /** @description reason.code: pin_mismatch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_already_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPinController_verify: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinStateView"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPinResetController_startReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinResetView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: reset_codes_exhausted */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPinResetController_confirmReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPinResetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinStateView"];
+                };
+            };
+            /** @description reason.code: reset_code_invalid, pin_mismatch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyDeviceController_device: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDeviceView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyDeviceController_register: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterApprovalDeviceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDeviceView"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyDeviceController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDeviceView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyDeviceController_challenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalChallengeView"];
+                };
+            };
+            /** @description reason.code: device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyDeviceController_verify: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinStateView"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyBalanceController_balance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletBalanceView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletIdentityView"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_checkBvn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BvnCheckDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BvnCheckView"];
+                };
+            };
+            /** @description reason.code: wallet_already_open, step_not_used */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: bvn_not_confirmed, bvn_phone_mismatch, phone_not_nigerian */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_checks_exhausted */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_getSelfie: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelfieMatchView"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_matchSelfie: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelfieMatchDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelfieMatchView"];
+                };
+            };
+            /** @description reason.code: selfie_already_matched, bvn_not_checked, wallet_already_open */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: selfie_not_matched */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: selfie_checks_exhausted */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyIdentityController_setOccupation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityOccupationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletIdentityView"];
+                };
+            };
+            /** @description reason.code: bvn_not_checked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyWalletController_wallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
+                };
+            };
+        };
+    };
+    MoneyWalletController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenNairaWalletDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
+                };
+            };
+            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity, identity_under_review */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: account_not_opened, phone_not_nigerian */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_checks_exhausted, open_address_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneySavedAccountsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BeneficiaryView"][];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneySavedAccountsController_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBeneficiaryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BeneficiaryView"];
+                };
+            };
+            /** @description reason.code: self_transfer */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: recipient_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, recipient_has_no_wallet, beneficiary_limit_reached */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneySavedAccountsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneySavedAccountsController_getPayoutAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutAccountView"] | null;
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneySavedAccountsController_setPayoutAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutAccountView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHistoryController_list: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                filter?: "all" | "money_in" | "money_out" | "bills" | "content";
+                /** @description Only rows from this month, YYYY-MM in Africa/Lagos time (W28 "Bills in September"). */
+                month?: string;
+                /**
+                 * @description Free-text search over the counterparty's name, the description, the
+                 *     note and the reference. Spaces around it are dropped first; what is
+                 *     left must be 2 to 60 characters.
+                 */
+                q?: string;
+                /**
+                 * @description A grouped row's `group.key`: lists the movements it stands for, one per
+                 *     row, instead of the history. Opaque: send it back as given.
+                 */
+                group?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPage"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHistoryController_summary: {
+        parameters: {
+            query: {
+                /** @description YYYY-MM in Africa/Lagos time. */
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlySummaryView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHistoryController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyStatementController_statement: {
+        parameters: {
+            query: {
+                /** @description The first day of the statement, YYYY-MM-DD in Africa/Lagos time, included. */
+                from: string;
+                /**
+                 * @description The last day of the statement, YYYY-MM-DD in Africa/Lagos time,
+                 *     included. On or after `from`, not after today in Lagos, and at most
+                 *     366 days from `from`, both days counted (STATEMENT_MAX_DAYS).
+                 */
+                to: string;
+                /**
+                 * @description The file. Only `csv` today: Fintava issues no stamped statement
+                 *     (WALLET-27, BACKEND_GAPS G-68), so there is no `pdf`.
+                 */
+                format: "csv";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementView"];
+                };
+            };
+            /** @description reason.code: statement_too_large */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: statement_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: statement_busy */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyFeesController_feeQuote: {
+        parameters: {
+            query: {
+                kind: "wawu_transfer" | "bank_transfer" | "purchase" | "bill";
+                /**
+                 * @description In kobo: what the recipient gets on a send, the price on a purchase,
+                 *     the bill's own amount on a bill. Fees are added on top, never taken
+                 *     out of it. Digits only: `100.00` (a naira decimal), `1e4` or `10,000`
+                 *     is a 400, never read as some other number of kobo.
+                 */
+                amountKobo: number;
+                /** @description Required when kind is `bill`; any other kind with it is a 400. */
+                billCategory?: "electricity" | "cable" | "airtime" | "data";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeeQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyReceiptController_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyReceiptController_image: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt as a PNG image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description Receipts are busy right now. Try again in a few seconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MoneyReceiptController_pdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt as a one-page A4 PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description Receipts are busy right now. Try again in a few seconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicReceiptController_page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt check page: amount, date, status, both sides masked, reference. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description No receipt has this code. The same page for every miss. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    MoneyRecipientController_search: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipientView"][];
+                };
+            };
+            /** @description q is missing, repeated, shorter than 2 characters (not counting a leading @) or longer than 60, or another field was sent. No `reason`: a malformed field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyPlainErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: recipient_search_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyRecipientController_recentRecipients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipientView"][];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     AccountController_deleteAccount: {
         parameters: {
             query?: never;
@@ -15004,7 +16716,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -15018,7 +16730,7 @@ export interface operations {
                         items: {
                             id: string;
                             /** @enum {string} */
-                            status: "pending" | "rejected" | "approved";
+                            status: "pending" | "approved" | "rejected";
                             /** Format: date-time */
                             reviewedAt: string | null;
                             /** @enum {string} */
@@ -15058,7 +16770,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -15096,7 +16808,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -15134,7 +16846,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         /** @enum {string} */
@@ -15284,7 +16996,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         listed: boolean;
@@ -15323,7 +17035,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         listed: boolean;
@@ -15387,7 +17099,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         listed: boolean;
@@ -15805,7 +17517,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         wawuUserId: string;
@@ -15846,7 +17558,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         wawuUserId: string;
@@ -15889,7 +17601,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         /** @enum {string} */
-                        status: "pending" | "rejected" | "approved";
+                        status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
                         wawuUserId: string;
@@ -17592,1656 +19304,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdCardView"];
-                };
-            };
-        };
-    };
-    MoneyPinController_state: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinStateView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPinController_change: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePinDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinStateView"];
-                };
-            };
-            /** @description reason.code: pin_mismatch */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPinController_set: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetPinDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinStateView"];
-                };
-            };
-            /** @description reason.code: pin_mismatch */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_already_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPinController_verify: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinStateView"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPinResetController_startReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinResetView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: reset_codes_exhausted */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPinResetController_confirmReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfirmPinResetDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinStateView"];
-                };
-            };
-            /** @description reason.code: reset_code_invalid, pin_mismatch */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyDeviceController_device: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApprovalDeviceView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyDeviceController_register: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterApprovalDeviceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApprovalDeviceView"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyDeviceController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApprovalDeviceView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyDeviceController_challenge: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApprovalChallengeView"];
-                };
-            };
-            /** @description reason.code: device_approval_refused */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyDeviceController_verify: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin"?: string;
-                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
-                "X-Device-Approval"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PinStateView"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect, device_approval_refused */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyBalanceController_balance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletBalanceView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyIdentityController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletIdentityView"];
-                };
-            };
-        };
-    };
-    MoneyIdentityController_checkBvn: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BvnCheckDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BvnCheckView"];
-                };
-            };
-            /** @description reason.code: wallet_already_open */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: bvn_not_confirmed, bvn_phone_mismatch, phone_not_nigerian */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: identity_checks_exhausted */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyIdentityController_getSelfie: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SelfieMatchView"];
-                };
-            };
-        };
-    };
-    MoneyIdentityController_matchSelfie: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SelfieMatchDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SelfieMatchView"];
-                };
-            };
-            /** @description reason.code: selfie_already_matched, bvn_not_checked, wallet_already_open */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: selfie_not_matched */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: selfie_checks_exhausted */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyIdentityController_setOccupation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IdentityOccupationDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletIdentityView"];
-                };
-            };
-            /** @description reason.code: bvn_not_checked */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyWalletController_wallet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletView"];
-                };
-            };
-        };
-    };
-    MoneyWalletController_open: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpenNairaWalletDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WalletView"];
-                };
-            };
-            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: account_not_opened */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneySavedAccountsController_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BeneficiaryView"][];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneySavedAccountsController_add: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateBeneficiaryDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BeneficiaryView"];
-                };
-            };
-            /** @description reason.code: self_transfer */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: recipient_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, recipient_has_no_wallet, beneficiary_limit_reached */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: name_check_failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneySavedAccountsController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneySavedAccountsController_getPayoutAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayoutAccountView"] | null;
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneySavedAccountsController_setPayoutAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutAccountDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayoutAccountView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: name_check_failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyHistoryController_list: {
-        parameters: {
-            query?: {
-                /** @description Rows per page, 1 to 100. */
-                limit?: number;
-                filter?: "all" | "money_in" | "money_out" | "bills" | "content";
-                /** @description Only rows from this month, YYYY-MM in Africa/Lagos time (W28 "Bills in September"). */
-                month?: string;
-                /**
-                 * @description Free-text search over the counterparty's name, the description, the
-                 *     note and the reference. Spaces around it are dropped first; what is
-                 *     left must be 2 to 60 characters.
-                 */
-                q?: string;
-                /**
-                 * @description A grouped row's `group.key`: lists the movements it stands for, one per
-                 *     row, instead of the history. Opaque: send it back as given.
-                 */
-                group?: string;
-                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
-                cursor?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransactionPage"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyHistoryController_summary: {
-        parameters: {
-            query: {
-                /** @description YYYY-MM in Africa/Lagos time. */
-                month: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MonthlySummaryView"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyHistoryController_detail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransactionView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyStatementController_statement: {
-        parameters: {
-            query: {
-                /** @description The first day of the statement, YYYY-MM-DD in Africa/Lagos time, included. */
-                from: string;
-                /**
-                 * @description The last day of the statement, YYYY-MM-DD in Africa/Lagos time,
-                 *     included. On or after `from`, not after today in Lagos, and at most
-                 *     366 days from `from`, both days counted (STATEMENT_MAX_DAYS).
-                 */
-                to: string;
-                /**
-                 * @description The file. Only `csv` today: Fintava issues no stamped statement
-                 *     (WALLET-27, BACKEND_GAPS G-68), so there is no `pdf`.
-                 */
-                format: "csv";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatementView"];
-                };
-            };
-            /** @description reason.code: statement_too_large */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: statement_rate_limited */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: statement_busy */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyFeesController_feeQuote: {
-        parameters: {
-            query: {
-                kind: "wawu_transfer" | "bank_transfer" | "purchase" | "bill";
-                /**
-                 * @description In kobo: what the recipient gets on a send, the price on a purchase,
-                 *     the bill's own amount on a bill. Fees are added on top, never taken
-                 *     out of it. Digits only: `100.00` (a naira decimal), `1e4` or `10,000`
-                 *     is a 400, never read as some other number of kobo.
-                 */
-                amountKobo: number;
-                /** @description Required when kind is `bill`; any other kind with it is a 400. */
-                billCategory?: "electricity" | "cable" | "airtime" | "data";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeeQuoteView"];
-                };
-            };
-            /** @description reason.code: amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: fees_not_set */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyReceiptController_issue: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyReceiptController_image: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The receipt as a PNG image. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "image/png": string;
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description Receipts are busy right now. Try again in a few seconds. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    MoneyReceiptController_pdf: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The receipt as a one-page A4 PDF. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/pdf": string;
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description Receipts are busy right now. Try again in a few seconds. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    PublicReceiptController_page: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The receipt check page: amount, date, status, both sides masked, reference. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
-                };
-            };
-            /** @description No receipt has this code. The same page for every miss. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
-                };
-            };
-        };
-    };
-    MoneyRecipientController_search: {
-        parameters: {
-            query: {
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipientView"][];
-                };
-            };
-            /** @description q is missing, repeated, shorter than 2 characters (not counting a leading @) or longer than 60, or another field was sent. No `reason`: a malformed field. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyPlainErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: recipient_search_rate_limited */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyRecipientController_recentRecipients: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipientView"][];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
         };
