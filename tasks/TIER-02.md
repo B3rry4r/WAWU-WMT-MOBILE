@@ -7,7 +7,7 @@ order: 208
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: [TIER-01, ME-17]
 decisions: [R-43, R-7, R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -227,5 +227,191 @@ fenced file was edited), #3 (mobile contract and types), #4 (the protected route
 - Screens VF2, VF5, VF12, VF13, VF14: not cut from the round 2 boards; they read these routes.
 
 ## Verifier report
+
+Verifier, 10 Oct 2026 (independent; wrote none of this). Backend `wmt/TIER-02` `2c2543d` in detached worktree
+`/home/user/wt/vb-TIER-02`; mobile `wmt/TIER-02` `d918761` in `/home/user/wt/vm-TIER-02`. Trial merges: backend main
+`e1d436f` (what main was when I started, `/home/user/wt/vbm-TIER-02`) and backend main `40b1970` (MONEY-18, what main is
+now, `/home/user/wt/vbm2-TIER-02`); main alone in `/home/user/wt/vbmain-TIER-02`. Evidence (logs, JSON, scripts, the live
+transcript): the lead's scratchpad `vtier02/`. No Fintava, Nuvion, Flutterwave, wawuafrica.com or AI host was called. The
+sign-in was the Hub repo's stand-in WAWU ID (`mock-wawu-id`) on :6181, through its real `POST /auth/register` and
+`POST /auth/login` (no injected token), not the real wawu-id service. Two Hubs (the build of the branch merged with `e1d436f`) on :6182 and :6183
+shared one database.
+
+**Verdict: back to `building`. One blocker (D1), three smaller defects (D2 to D4), and the test gaps T1 to T5 (eight surviving mutants, seven of my 31 and one of the 5 route mutants, on behaviours the task states, which the verifier rule counts as defects).**
+What is built is right where the report says it is: the allowance arithmetic, the gate on every listed route, the 402
+body and offers, drafts, the tick grandfather, the ended-tier rule, concurrent publishes at the limit on two Hub
+processes, the protected suite under the relock. What is wrong is next to it: the counter the whole gate stands on
+(`CreatorState.slotsUsed`) can be driven down by a double `DELETE`, so a person on a 3-product tier can hold more than 3
+live products and keep going (D1).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed (eslint NOT RUN) | `tsc --noEmit` 0 on the branch merged with `e1d436f` and with `40b1970` (`tsc-merged.log`, `tsc-merged2.log`). Gates on the merged trees: 16 fail, 76 accepted, warnings 95 (`e1d436f` merge) and 96 (`40b1970` merge) against 95 on main `40b1970`; the 16 FAIL lines are the same as main, one line number moved (`content-piece.service.ts:46` to `:41`, the same `FlutterwaveConfigResponse` fork finding); the one new warning is `PROVISIONAL(PRODUCT-DRAFTS-MAX, owner=YOU, why=...)`; files scanned 1,124 / 1,133 against 1,119 (`gates-*.log`, `fails-*.txt`). `check_baseline` ok (108 entries) on both. Specs on a fresh migrated and seeded database: `e1d436f` merge, 40 suites, 1,159 tests: plans, content-piece, storage, creator-state and the admin directories; 1,133 passed and 26 failed, all 26 in `admin-payments.contract.spec.ts` (`fetch failed / other side closed` on its first request to the stand-in under load); that file alone passes 26 of 26 on the merged tree and on main (`payments-merged-alone.log`, `payments-main.log`). `40b1970` merge: 33 suites, 668 tests, 668 passed, EXIT 0 (plans, content-piece, storage, creator-state, admin creators, KYC review and content review, chat, legal-delivery-uploaders, profile-works, account-purge map, data-export map; `specs-merged2.json`). eslint (no `--fix`) on the changed files was killed by the memory limit: NOT RUN. |
+| V2 Contract | passed | `contract:build` on the `e1d436f` merge, twice: byte-identical (sha256 `f82a...916955`) and equal to the committed auto-merged file (`contract1.log`, `contract2.log`). On the `40b1970` merge the auto-merged `contract/openapi.json` equals a fresh build byte for byte (sha256 `9b94...6550`). Against main: +3 paths (`/product-drafts`, `/{id}`, `/{id}/publish`), +6 schemas (`CreateProductDraftDto`, `ProductDraftView`, `PublishProductDraftDto`, `TierGateErrorEnvelope`, `TierGateReasonDto`, `UpdateProductDraftDto`), 0 removed; the four gated operations gain a typed 402. The mobile `contract/openapi.json` is the backend branch's file (sha256 `f25a7ac6...`, equal as JSON) and `SOURCE_COMMIT` names `wmt/TIER-02@2c2543d`. Notes: the offers (`currency`, `tiers`, `extraProducts`) are optional in the 402 schema (always present on the wire); `ProductDraftView.price` is `number`, not `integer`; the draft routes' `400 draft_incomplete`, `409 draft_limit_reached` and `404` are documented in CONVENTIONS only, not as responses in the contract. |
+| V3 Regression | passed under the relock; failed on the main lock as designed | Run A (`prot-a.log`): code `2c2543d`, lock origin/main `40b1970`, fresh database `vt02_prota_test`: 253 tests, 9 passed, 244 failed, "0 of 244 required tests passed". Every failure is the one `beforeAll` error `setup step POST /content as creator2 failed: 402 ... tier_required`; the suite stops in its setup, so run A shows the designed 402 and cannot show any other effect. Run B2 (`prot-b.log`), the same code and lock, a database where only a profile that becomes a creator account gets a REAL Verify tier row (3 products, a trigger on `UserProfile`): 253 of 253, "all 244 required tests passed", EXIT 0, `MakerTier` rows left after the run 0. That is stricter than the builder's run B (every profile, 25 products): the five identities and every route other than the two publishing ones answer the lock. |
+| V4 Field trace | failed (D1, D2), one note | `slotsUsed` is the one counter. Writers: `POST /content` +1, `POST /content/:id/resubmit` +1, `DELETE /content/:id` -1 unless rejected, admin reject -1, admin take-down -1. Readers: the gate (create, resubmit, presign, draft publish), `GET /me/tier` `productsUsed`, `GET /creator/state`, `GET /uploads/allowance`, the admin creator, KYC and content-review views. The allowance (`slotsTotal`, `productsAllowed`, `uploads.allowed`) has one reader, `PublishingAllowanceService`, and live all four agreed for a tick holder (25), a tier plus extras (8) and a tier plus a tick (30). Writer `DELETE /content/:id` is not safe under concurrency (D1). Note N1 below: `GET /me/tier` `productsAllowed` is tier-only, `productsUsed` is the gate's. Both clients: the website calls the same `POST /uploads/presign` and `POST /content` (`wawuafrica` `src/lib/api/uploads.ts:123`, `creator-content.ts:207`) and shows the server's sentence, so it gets the same answers as the app by construction (G-663 stands). |
+| V9 Live seam | passed (stand-in WAWU ID); NOT RUN (real wawu-id) | `live-transcript.txt`: 63 checks, 58 passed, 5 failed (D1 twice, D2, D3, and one check of mine that was wrong, N2). People were registered and signed in through the stand-in's real endpoints; a new creator saw `GET /me/tier` `none` with `productsUsed` 0 and a 201 draft; `POST /content` and `POST /uploads/presign` for `content/preview` and `content/full` answered 402 `tier_required` with the three tiers in kobo (NGN) and, for a phone abroad, in cents (USD only, no `NGN` or `kobo` anywhere in the body); the eleven other folders (avatars, covers, KYC, service-application, professional, legal, community image and message, event speaker and banner, featured work) all presigned 200 with no tier. |
+
+**The brief's items**
+1. **The allowance: CONFIRMED.** Running tier (`active` or `ending`) = tier products + extras; unexpired tick = 25; both =
+   the larger (tick 25 with Founding 10 + 5 = 25; with 10 + 20 = 30, not 55); neither = 0; an ended tier with an unexpired
+   tick = 25; an ended tier or an expired tick stops only the next publish or file (25 pieces still listed and counted
+   after the tick ended; 2 pieces kept after a tier ended at the second; renewed, the place that was left works; a tier
+   2.5 s from its end published, 0.7 s after it answered `tier_required` with `tierState: ended`). **Concurrent publishes:**
+   16 at once at 0 of 3 over two Hub processes: exactly 3 pieces and `slotsUsed` 3 in every one of four runs; two at once
+   at 2 of 3: one 201, one 402; a draft publish against `POST /content` at 2 of 3: one place, and the draft left if and only
+   if it lost; four taps on Publish over two Hubs: one piece; resubmit against resubmit, six taps on Send again, and
+   resubmit against publish: one place each (L7). The allowance holds on the claim; what breaks it is D1.
+2. **Every gated route: CONFIRMED.** `POST /content`, `POST /content/:id/resubmit`, `PATCH /content/:id` with a file,
+   `POST /uploads/presign` for the two content folders, `POST /product-drafts/:id/publish` all answer 402 `tier_required`
+   or `product_limit_reached`, in the contract's one error shape, with `tierState`, `productsUsed`, `productsAllowed`
+   and the offers in the caller's billing currency, in plain words, no em-dash. The offers equal `GET /plans` (spec) and
+   at the limit carry the tiers that allow more and the extra products (`{"count":5,"priceMinor":150000}`), and none of
+   either for a tick holder at 25. **Coverage spec, five route mutants** (`mutants-routes.log`): R1 `resubmit` loses the
+   decorator KILLED; R2 a new `fullAsset` body on `PUT /content/:id/media` KILLED; R3 the decorator on an unlisted route
+   KILLED; R5 a new `folder` body KILLED; **R4 a new file-carrying body under another property name (`assetUrl`) SURVIVED**
+   (T5): the spec looks only at the property names `previewAsset`, `fullAsset` and `folder`. **The builder's list: RULED
+   right**, with three points for the owner (U1 to U3 below). The routes that must stay open do (eleven folders, drafts,
+   profile, KYC, legal, community, events).
+3. **Drafts: CONFIRMED** with D3. Free with no tier, ended tier or tick; never counted (`slotsUsed` unchanged by 3 drafts;
+   a draft publish takes one place and deletes the draft once); creator accounts only (a plain user is 403); another
+   person's draft is 404 on read, change, delete and publish, and the list shows only mine; a blank title and a body that
+   carries a file are 400; publish order gate, then completeness, then one transaction (no tier and an incomplete draft:
+   402 `tier_required`; with a tier: 400 `draft_incomplete` with `missing`, draft kept; a paid draft priced 0 or with
+   preview equal to full: 400, draft kept, no place taken; a free draft with a stale price publishes at 0). The cap holds
+   one person at a time (the 21st is 409) but not under concurrency (D3).
+4. **The protected suite and the relock recipe, RULED.** Run A and B2 above. **The recipe in SHARED-CHANGES TIER-02 #4 is
+   right in substance and incomplete in five places; use this in its place:**
+   (a) *Where:* the grant goes in `test/protected-routes/harness.ts` as a helper (like `createAdmins`) and is called from
+   `beforeAll` in `src/protected-routes/protected-routes.regression.spec.ts`, **after `takeSnapshot` and before the setup
+   steps**, so the snapshot restore removes it (B2 left 0 rows). (b) *Who:* the identities that publish, `creator` and
+   `creator2` (B2 passed with only those two); granting all five is harmless (the builder's run B). (c) *The row:*
+   `MakerTier(wawuUserId, tierId, activeFrom <= now, activeUntil > now, productsIncluded >= 1, pointsIncluded)`; the suite
+   publishes once per creator identity, so a real Verify row of 3 passes, 25 is not needed. (d) *The lock is not
+   re-recorded:* its `sha256` covers only `setup` and `routes` (`lockHash` in `registry.ts`), and a harness change leaves both
+   alone; but `lock-diff.py` counts any change under `test/protected-routes` or `src/protected-routes` as a relock, so the
+   PR needs the owner's `relock-approved` label applied AFTER its last push (`ci-check.sh`). (e) *Order:* `deploy.yml`
+   runs `npx jest --runInBand` over everything in `src/`, which includes the suite's copy of the lock, so merging the gate
+   without the grant fails the deploy test job on every push to main. Put the grant in the same PR as the gate, or land
+   it first (granting a tier before the gate exists changes no answer). The entry numbers in #4 (11, 23, 24, 25, 26) are
+   0-based positions in the registry; the file's own `id`s are the method and path. One more visible change #4 does not
+   list: the admin dashboard's creator, KYC and content-review screens now show `slotsTotal` 0 for a creator with neither
+   a tier nor a tick (their specs were changed to say so; shape `number`, lock unchanged).
+5. **Trial merges.** Backend main `e1d436f` into the branch: **no conflicts** (`contract/openapi.json` auto-merged and
+   regenerates byte-identical). Backend main `40b1970` (MONEY-18) into the branch: **one conflict,
+   `docs/contract/CONVENTIONS.md`**, two additions at the end of the file that are both headed `## 18.`
+   (MONEY-18 "Hold, release and refund" and TIER-02 "Publishing needs a tier"). Resolution that I built and checked: keep
+   both, renumber TIER-02's to `## 19.` (nothing in `src/` or `docs/` cites the number 18 for it); then `tsc` 0,
+   gates and baseline as above, auto-merged contract equals a fresh build, 668 of 668 specs. `prisma/schema.prisma` and
+   `src/account-purge/account-data-map.ts` auto-merge; the migration folder `20261020170000_product_drafts` sorts after
+   main's newest, `20261020160000_wallet_holds`, and applies on top of it. The merge commit is for the lead; I changed no product file.
+
+**Defects**
+- **D1 (blocker, high): two or more concurrent `DELETE /content/:id` of one piece each give the place back, so a person
+  can hold more live products than their tier or tick allows, and repeat.** `ContentPieceService.delete`
+  (`content-piece.service.ts` near line 480) reads the piece, then in a transaction sets `status: 'removed'` with an
+  unconditional `update` and decrements `CreatorState.slotsUsed` whenever the status it READ was not `rejected`. Nothing
+  makes the flip conditional, so every concurrent request sees `pending` or `live`, every one flips, every one
+  decrements. `slotsUsed` is the counter the gate claims against, so TIER-02's own invariant ("published products never
+  exceed the tier's products plus extras") breaks. The same stale read lets a creator `DELETE` race an admin reject: the
+  reject hands the place back, the delete (read `pending` before) hands it back again. The admin paths are safe: they
+  flip with `updateMany ... status not removed` and decrement only when it changed a row. **Reproduction**
+  (`live.js L3`, two Hubs): a person on Verify (3 products) with 3 published pieces; 6 concurrent `DELETE`s of one piece
+  across :6182 and :6183 answered 204 six times and moved `slotsUsed` from 2 to 0; the next 6 `POST /content` gave 3 x 201
+  and 3 x 402, leaving **4 live pieces on a 3-product tier**; each repeat of the trick adds more. Fix: make the flip
+  conditional (`updateMany where { id, status: { not: 'removed' } }`), decrement only when it changed a row and the status
+  it changed from was not `rejected`, read inside the transaction; a spec that fires N concurrent deletes and one
+  delete against one reject and asserts `slotsUsed` moved once.
+- **D2 (medium): a person's first publishes, sent together, can be refused with `409 "That record already exists."`
+  although they have room.** The person has no `CreatorState` row until the first publish; `create` and `resubmit` both
+  `upsert` it inside the transaction, and two requests that miss the row race to insert it. Reproduction (`race2.js`, two
+  Hubs): a Verify Plus person (6 products) sends two `POST /content` at once: 9 of 12 runs ended with one 201 and one 409.
+  The allowance still holds (3 pieces in the 16-at-once run), but the refused request was a valid publish, with an error
+  that is not in plain words, and a first publish right after buying a tier is exactly when a double tap happens. The
+  code is the main branch's; TIER-02 makes it the first thing every new tier holder meets. Fix: create the row with
+  `INSERT ... ON CONFLICT DO NOTHING` (or `createMany({ skipDuplicates: true })`) before the claim, or retry once on
+  `P2002`.
+- **D3 (low): the draft cap of 20 is exceeded under concurrency.** `ProductDraftService.create` counts, then inserts. 30
+  `POST /product-drafts` over two Hubs left 22 rows; `GET /product-drafts` shows the newest 20, so two are hidden. A
+  provisional cap on a free table: fix with a per-person advisory lock or a conditional insert.
+- **D4 (low, copy): the `product_limit_reached` sentence promises ways on that the body does not offer.** "You have used 25
+  of 25 products. Add more products or move up a tier to publish another." is sent to a tick holder at the tick-era cap,
+  with `tiers: []` and `extraProducts: null` (nothing a tier or extras could add). The task asks for "the two ways on";
+  for a tick holder there are none, so the sentence should say that.
+**Test gaps: the mutants that survived** (defects under the verifier rule, severity low, none blocks on its own; the code is right in each, checked live; 31 of mine, `mutants.log`; 23 killed, 8 survived, 1 of them equivalent)
+- T1 *V05 professional tick ignored* SURVIVED: no TIER-02 spec holds a professional-only tick, which "either tick
+  counts" (ME-17) and "paid for a tick" cover. Kill with: a professional-tick-only creator publishes and has
+  `slotsTotal` 25.
+- T2 *V08 resubmit claim one too generous* SURVIVED: no spec races two resubmits, or a resubmit against a publish. Kill
+  with the L7 case (two resubmits at 2 of 3, one place).
+- T3 *V10 `PATCH` with a file also asks for room* SURVIVED: the decision "an edit with a file needs a way to publish, not
+  a free place" is not tested at the limit. Kill with: at 3 of 3, `PATCH` of a waiting piece with a new `fullAsset` is 200.
+- T4 *V11 draft publish: completeness before the gate* SURVIVED: the brief's "gate, then completeness" is held only for a
+  complete draft. Kill with: no tier plus an incomplete draft answers 402 `tier_required`, not 400.
+- T5 *V13 draft cap counts everyone* SURVIVED, *V27 a free draft keeps its stale price* SURVIVED, *V26 a lost claim always
+  says limit* SURVIVED, *R4 another property name* SURVIVED. Kill with: a second person's 20 drafts do not stop the first
+  person's first; a free draft with `price: 900` publishes at 0; a claim lost because the tier ended answers
+  `tier_required`; and make the coverage spec read every `Is...` property of a body DTO whose name ends `Asset`, `Url`
+  or `Key`, not three names. *V23 `heldRowsOf` ignores the injected clock* SURVIVED and is equivalent (production
+  passes the real clock).
+
+**Mutants** (31 + 5 route mutants of my own, each applied to `vb-TIER-02`, eight gate and allowance specs run, the file
+restored from git; the tree is clean): killed: both held = the smaller (V01), an ending tier not running (V02), the tick
+keeps 5 (V03), an expired tick counts (V04), the gate `>` for `>=` (V06), the claim on publish one too generous (V07), a
+fullAsset edit ungated (V09), the draft cap `>` (V12), delete of a draft not keyed on the owner (V14), the draft list for
+everyone (V15), presign gating only `content/full` (V16), over-gating `legal/document` (V17), `community/image` (V18),
+`service-application/document` and `profile/work` (V19), offers priced with no claims (V20), no tiers in `tier_required`
+(V21), the claim read-then-write (V22), `/creator/state` showing 5 for nothing (V24), tick holders on 1 GB (V25), a doubled
+publish both succeeding (V28), a tier plus a tick summed (V29), an em-dash in the sentence (V30), delete no longer
+freeing the place (V31). Survivors: V05, V08, V10, V11, V13, V23 (equivalent), V26, V27, R4.
+
+**Capability checks, as written**
+1. A new person saves a draft with no file and gets `tier_required` with the offers on publish and on a file: passed (L1).
+2. Verify: 3 publish, the 4th is `product_limit_reached` 3 of 3; with 5 extras the 4th to 8th publish and the 9th is
+   refused: passed (L3, L5).
+3. A draft does not count; unpublishing frees a place: passed one request at a time, **failed under concurrency (D1)**.
+4. After a tier ends published products stay (listed, counted, visible to buyers by spec) and a new publish or file is
+   `tier_required`: passed (L5).
+5. An unexpired paid tick keeps publishing as before (25); once it ends `tier_required`: passed (L4); see U1 for a
+   tick that never ends.
+6. The app's and the website's calls get the same answers: passed by construction (same two routes, one gate).
+
+**Findings for the owner (`unclear`)**
+- U1: any tick `holdsTick` accepts keeps 25 products, including a PERPETUAL tick (`verifiedUntil` NULL), which is what
+  accounts grandfathered off the old ladder and admin grants carry (`verification-state.ts`). PAYMENTS-PLAN question 3
+  says people who PAID keep publishing until the tick ends; a perpetual tick never ends, so those accounts publish 25
+  products for ever without a tier. The code cannot tell a bought tick from a granted one (the builder says so). A query
+  of the production `UserProfile` ticks before launch shows how many accounts this is.
+- U2: featured works (`profile/work`) accept photos and `video/mp4` up to 100 MB on any signed-in account with no tier, are
+  not counted in content storage, and are shown publicly on the profile. R-43 says "uploading any file"; the builder
+  and the brief read "build a profile free". Decide whether a showreel video needs a tier.
+- U3: `PUT /content/:id/media` accepts links to files this person already uploaded (the earlier gated presign), on a
+  waiting or live piece, with no tier; documented in PLANS.md section 6. With D1 and U1 closed this only re-orders files
+  already paid for.
+- U4: `counter drift`: `productsUsed` is a counter, not a count of pieces. Pieces removed or turned down before the
+  decrements existed (admin reject and creator delete were added later) may have left `slotsUsed` too high, so a creator
+  could be told "3 of 3" with fewer live pieces. Run before launch (read-only):
+  `SELECT cs."wawuUserId", cs."slotsUsed", count(cp.id) FILTER (WHERE cp.status NOT IN ('rejected','removed')) FROM "CreatorState" cs LEFT JOIN "ContentPiece" cp ON cp."creatorWawuId"=cs."wawuUserId" GROUP BY 1,2 HAVING cs."slotsUsed" <> count(cp.id) FILTER (WHERE cp.status NOT IN ('rejected','removed'));`
+  (it returns no rows on my test database; I did not run it on production).
+- U5: at the limit the offers list every tier with more products than the tier held, extras ignored, so a person on Verify
+  with 5 extras (8 products) is offered Plus (6). That is right only if extras carry over an upgrade (TIER-03/TIER-04
+  must keep them); the report does not say so.
+
+**Notes (not defects)**
+- N1: `GET /me/tier` `productsAllowed` is the tier's (plus extras) and `productsUsed` is the gate's count, so for a tick
+  holder with no tier the meter reads "6 of 0" while `GET /creator/state` says 25. The two screens that will draw the
+  meter (VF12, VF14) should read `slotsTotal` or the task should make `productsAllowed` the gate's figure.
+- N2: my check "no tier offered that holds fewer than 8" failed because of U5, not a defect.
+- N3: presign at the limit refuses a content file, so a person at 3 of 3 cannot swap the file of a piece waiting for
+  review (`PATCH` itself would allow it). Recorded by the builder; accepted as the task's wording.
+- N4: the website shows the server's sentence "Pick one to carry on" with no way to pick (G-663).
+
+**NOT RUN**
+- A private network namespace with a stand-in on :4001 and the full backend suite: ports are 6181 to 6184, and about 100
+  spec files hard-code :4001. I ran every spec that touches the files this task changed or that names a presign or
+  `POST /content` (plans, content-piece, storage, creator-state, admin creators, KYC review and content review, chat,
+  legal-delivery-uploaders, profile-works, account-purge and data-export maps) plus the protected suite.
+- eslint (killed for memory). The real wawu-id for the live seam (the Hub repo's stand-in was used). The website (R-49).
+- The relock itself and the `relock-approved` label: the owner's. I changed no product code, test, lock or harness.
 
 ## Owner sign-off
