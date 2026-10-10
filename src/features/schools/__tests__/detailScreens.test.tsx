@@ -44,6 +44,40 @@ function inDays(days: number): string {
   return `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(at.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * Makes `new Date()` (no arguments) read as a phone whose own calendar day is `local` while its UTC day is another, whatever
+ * zone the test runs in (under TZ=UTC no real clock can disagree with itself). Dates built from arguments are the real ones.
+ */
+const RealDate = Date;
+function phoneDay(local: { year: number; month: number; day: number }, utcIso: string): () => void {
+  class PhoneDate extends RealDate {
+    constructor(...args: unknown[]) {
+      super(...(args as [number]));
+      if (args.length === 0) {
+        const utc = new RealDate(utcIso);
+        Object.defineProperties(this, {
+          getFullYear: { value: () => local.year },
+          getMonth: { value: () => local.month - 1 },
+          getDate: { value: () => local.day },
+          getUTCFullYear: { value: () => utc.getUTCFullYear() },
+          getUTCMonth: { value: () => utc.getUTCMonth() },
+          getUTCDate: { value: () => utc.getUTCDate() },
+          toISOString: { value: () => utcIso },
+        });
+      }
+    }
+  }
+  globalThis.Date = PhoneDate as unknown as DateConstructor;
+  return () => {
+    globalThis.Date = RealDate;
+  };
+}
+/** Lagos just after midnight (the phone says 10 October, UTC still says 9 October), and Kiritimati late in its day (31 December here, 1 January in UTC). */
+const PHONE_DAYS = [
+  { name: 'Lagos just after midnight', local: { year: 2026, month: 10, day: 10 }, utcIso: '2026-10-09T23:30:00.000Z', started: '2026-10-09', today: '2026-10-10' },
+  { name: 'Kiritimati late in its day', local: { year: 2026, month: 12, day: 31 }, utcIso: '2027-01-01T09:30:00.000Z', started: '2026-12-30', today: '2026-12-31' },
+] as const;
+
 const intake = (startDate: string, over: Record<string, unknown> = {}) => ({
   id: `i-${startDate}`,
   startDate,
@@ -113,6 +147,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  globalThis.Date = RealDate;
   held.splice(0).forEach((release) => release());
   await queryClient.cancelQueries();
   await settle(10);
@@ -136,8 +171,9 @@ describe('SC2 · School', () => {
     expect(rtl.screen.getByRole('header', { name: 'Courses' })).toBeTruthy();
     expect(rtl.screen.getByTestId('school-course-count').props.children).toBe(3);
     expect(rtl.screen.getByText('Product Design Bootcamp')).toBeTruthy();
-    expect(rtl.screen.getByText('12 weeks · online + in person')).toBeTruthy();
-    expect(rtl.screen.getByText('16 weeks · online')).toBeTruthy();
+    // The days come from each course's next class: after the mode with " + ", after a hybrid's "online + in person" with " · ".
+    expect(rtl.screen.getByText('12 weeks · online + in person · Saturdays')).toBeTruthy();
+    expect(rtl.screen.getByText('16 weeks · online + Saturdays')).toBeTruthy();
     expect(rtl.screen.getByText('4 weeks · in person')).toBeTruthy();
     expect(rtl.screen.getByLabelText('150,000 naira')).toBeTruthy();
     expect(rtl.screen.getByLabelText('180,000 naira')).toBeTruthy();
@@ -173,7 +209,7 @@ describe('SC2 · School', () => {
     await openSchool({ onOpenCourse });
     await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByTestId('school-course-c2')));
     expect(onOpenCourse).toHaveBeenCalledWith('c2');
-    expect(rtl.screen.getByRole('button', { name: 'Frontend Development, 16 weeks · online, ₦180,000' })).toBeTruthy();
+    expect(rtl.screen.getByRole('button', { name: 'Frontend Development, 16 weeks · online + Saturdays, ₦180,000' })).toBeTruthy();
   });
 
   it('a school with no expertise, no about text or no course leaves that part out and says so for the courses', async () => {
@@ -191,6 +227,94 @@ describe('SC2 · School', () => {
     await openSchool();
     expect(await rtl.screen.findByText('Data Analysis with Excel')).toBeTruthy();
     expect(rtl.screen.getByText('4 weeks · in person')).toBeTruthy();
+  });
+
+  it('a course row carries the days of its next class as the school wrote them, and another school’s course carries its own', async () => {
+    answers['GET /schools/s1'] = [
+      ok(
+        school({
+          courses: [
+            course('c1', 'Pattern Cutting Basics', { weeks: 6, mode: 'in_person', nextIntake: intake(inDays(9), { schedule: 'Weekday evenings' }) }),
+            course('c2', 'Hybrid Welding', { weeks: 10, mode: 'hybrid', nextIntake: intake(inDays(9), { schedule: 'weekends' }) }),
+          ],
+        }),
+      ),
+    ];
+    await openSchool();
+    expect(await rtl.screen.findByText('6 weeks · in person + Weekday evenings')).toBeTruthy();
+    expect(rtl.screen.getByText('10 weeks · online + in person · weekends')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Saturdays/)).toBeNull();
+    expect(rtl.screen.getByRole('button', { name: 'Pattern Cutting Basics, 6 weeks · in person + Weekday evenings, ₦150,000' })).toBeTruthy();
+  });
+
+  it('a course whose class has started, or whose class has no days, or that has no class, reads its length and mode only', async () => {
+    answers['GET /schools/s1'] = [
+      ok(
+        school({
+          courses: [
+            course('c1', 'Started Course', { nextIntake: intake(inDays(-3), { schedule: 'Saturdays' }) }),
+            course('c2', 'No Days Course', { nextIntake: intake(inDays(9), { schedule: '  ' }) }),
+            course('c3', 'No Class Course', { nextIntake: null }),
+            course('c4', 'Starts Today Course', { nextIntake: intake(inDays(0), { schedule: 'Mondays' }) }),
+          ],
+        }),
+      ),
+    ];
+    await openSchool();
+    await rtl.screen.findByText('Started Course');
+    expect(rtl.screen.getAllByText('12 weeks · online')).toHaveLength(3);
+    expect(rtl.screen.getByText('12 weeks · online + Mondays')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Saturdays/)).toBeNull();
+  });
+
+  it.each(PHONE_DAYS)('reads today as the phone’s own day ($name): a class that started on the day before is not coming, one on the phone’s day is', async ({ local, utcIso, started, today }) => {
+    answers['GET /schools/s1'] = [
+      ok(
+        school({
+          courses: [
+            course('c1', 'Started Yesterday', { nextIntake: intake(started, { schedule: 'Old days' }) }),
+            course('c2', 'Starts Today', { nextIntake: intake(today, { schedule: 'New days' }) }),
+          ],
+        }),
+      ),
+    ];
+    const restore = phoneDay(local, utcIso);
+    try {
+      await openSchool();
+      expect(await rtl.screen.findByText('12 weeks · online + New days')).toBeTruthy();
+      expect(rtl.screen.queryByText(/Old days/)).toBeNull();
+      expect(rtl.screen.getByText('12 weeks · online')).toBeTruthy();
+    } finally {
+      restore();
+    }
+  });
+
+  it('a fee with kobo keeps its kobo on the course row and a whole-naira fee drops its .00, neither floored nor rounded', async () => {
+    answers['GET /schools/s1'] = [ok(school({ courses: [course('c1', 'Research Methods', { priceKobo: 1234567 }), course('c2', 'Bootcamp', { priceKobo: 15000000 }), course('c3', 'Workshop', { priceKobo: 1234600 })] }))];
+    await openSchool();
+    await rtl.screen.findByText('Research Methods');
+    const part = rtl.within(rtl.screen.getByTestId('school-course-price-c1'));
+    expect(rtl.screen.getByTestId('school-course-price-c1').props.accessibilityLabel).toBe('12,345 naira 67 kobo');
+    expect(part.getByText('.67')).toBeTruthy();
+    expect(rtl.screen.getByRole('button', { name: 'Research Methods, 12 weeks · online + Saturdays, ₦12,345.67' })).toBeTruthy();
+    expect(rtl.screen.getByTestId('school-course-price-c2').props.accessibilityLabel).toBe('150,000 naira');
+    expect(rtl.within(rtl.screen.getByTestId('school-course-price-c2')).queryByText('.00')).toBeNull();
+    // A whole-naira fee that is not a round number of kobo still has no .00.
+    expect(rtl.screen.getByTestId('school-course-price-c3').props.accessibilityLabel).toBe('12,346 naira');
+    expect(rtl.within(rtl.screen.getByTestId('school-course-price-c3')).queryByText('.00')).toBeNull();
+  });
+
+  it('a course with a fee of 0 reads "Free" on its row, with no naira sign', async () => {
+    answers['GET /schools/s1'] = [ok(school({ courses: [course('c1', 'Open Evening Workshop', { priceKobo: 0 }), course('c2', 'Bootcamp', { priceKobo: 15000000 })] }))];
+    await openSchool();
+    await rtl.screen.findByText('Open Evening Workshop');
+    const row = rtl.within(rtl.screen.getByTestId('school-course-c1'));
+    expect(row.getByText('Free')).toBeTruthy();
+    expect(row.queryByText('₦')).toBeNull();
+    expect(rtl.screen.getByTestId('school-course-price-c1').props.accessibilityLabel).toBe('Free');
+    expect(rtl.screen.getByRole('button', { name: 'Open Evening Workshop, 12 weeks · online + Saturdays, Free' })).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('0 naira')).toBeNull();
+    expect(rtl.within(rtl.screen.getByTestId('school-course-price-c2')).getByText('₦')).toBeTruthy();
   });
 
   it('the logo is the school’s initials when it has no picture', async () => {
@@ -308,6 +432,41 @@ describe('SC3 · Course', () => {
     // Whole naira: no kobo drawn after the figure.
     expect(foot.queryByText('.00')).toBeNull();
     expect(foot.getByText('₦')).toBeTruthy();
+  });
+
+  it('a fee with kobo keeps its kobo in the bar at the foot, neither floored nor rounded', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail({ priceKobo: 1234567 }))];
+    await openCourse();
+    await rtl.screen.findByText('Product Design Bootcamp');
+    const price = rtl.screen.getByTestId('course-price');
+    expect(price.props.accessibilityLabel).toBe('12,345 naira 67 kobo');
+    expect(rtl.within(price).getByText('.67')).toBeTruthy();
+    expect(rtl.within(rtl.screen.getByTestId('course-foot')).queryByLabelText('12,345 naira')).toBeNull();
+  });
+
+  it('a course with a fee of 0 reads "Free" in the bar at the foot, with no naira sign', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail({ priceKobo: 0 }))];
+    await openCourse();
+    await rtl.screen.findByText('Product Design Bootcamp');
+    const foot = rtl.within(rtl.screen.getByTestId('course-foot'));
+    expect(foot.getByText('Free')).toBeTruthy();
+    expect(foot.queryByText('₦')).toBeNull();
+    expect(foot.queryByLabelText('0 naira')).toBeNull();
+  });
+
+  it.each(PHONE_DAYS)('reads today as the phone’s own day ($name): Starts skips a class from the day before and counts one on the phone’s day', async ({ local, utcIso, started, today }) => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail({ intakes: [intake(started, { schedule: 'Old days' }), intake(today, { schedule: 'New days' })] }))];
+    const restore = phoneDay(local, utcIso);
+    try {
+      await openCourse();
+      await rtl.screen.findByText('Product Design Bootcamp');
+      const { dayLabel } = require('../model') as typeof import('../model');
+      expect(rtl.within(rtl.screen.getByTestId('course-fact-starts')).getByText(dayLabel(today) as string)).toBeTruthy();
+      expect(rtl.screen.getByText('Online, New days in Yaba')).toBeTruthy();
+      expect(rtl.screen.queryByText(/Old days/)).toBeNull();
+    } finally {
+      restore();
+    }
   });
 
   it('draws no Enroll, no "Or apply on ... website" and no payment claim until the tasks that build them land (R-47)', async () => {

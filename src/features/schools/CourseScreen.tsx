@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Card } from '@/components/Card';
-import { Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -14,8 +13,9 @@ import { NavBar } from '@/features/events/chrome';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchCourse, schoolsKeys } from './api';
-import { classesLine, dayLabel, nonEmpty, todayOf, upcomingIntake, weeksLabel, youGetLine } from './model';
-import { Cover } from './parts';
+import { classesLine, dayLabel, nonEmpty, upcomingIntake, weeksLabel, youGetLine } from './model';
+import { Cover, Fee } from './parts';
+import { useToday } from './useToday';
 
 /**
  * design/_gen/schools.js `courseInner`: the body pads 8 above and 20 at the sides with 16 between the parts (`gap: 16`)
@@ -63,8 +63,7 @@ export function CourseScreen({ id, onBack }: CourseScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const course = useQuery({ queryKey: schoolsKeys.course(id), queryFn: () => fetchCourse(id) }, queryClient);
-  // Today is read once, so the screen does not change under a person reading it at midnight.
-  const [today] = useState(() => todayOf(new Date()));
+  const today = useToday();
 
   if (course.isPending) {
     return (
@@ -159,7 +158,7 @@ export function CourseScreen({ id, onBack }: CourseScreenProps) {
         ) : null}
       </ScrollView>
       <View testID="course-foot" style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
-        <Money minorUnits={data.priceKobo} decimals={false} size={courseMetrics.fee} testID="course-price" />
+        <Fee kobo={data.priceKobo} size={courseMetrics.fee} testID="course-price" />
       </View>
     </View>
   );

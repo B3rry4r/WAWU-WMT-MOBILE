@@ -125,6 +125,36 @@ describe('SC1 · Schools', () => {
     expect(rtl.screen.queryByText('Greenfield Tech Academy')).toBeNull();
   });
 
+  it('a lowest fee with kobo keeps its kobo on the card, neither floored nor rounded', async () => {
+    answers[LIST] = [page([card('s6', 'Kobo College', { fromPriceKobo: 1234567 }), GREENFIELD])];
+    await open();
+    await rtl.screen.findByText('Kobo College');
+    const price = rtl.screen.getByTestId('schools-price-s6');
+    expect(price.props.accessibilityLabel).toBe('12,345 naira 67 kobo');
+    expect(rtl.within(price).getByText('.67')).toBeTruthy();
+    expect(rtl.screen.getByRole('button', { name: 'Kobo College, Yaba, Lagos · 18 courses, from ₦12,345.67' })).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('12,345 naira')).toBeNull();
+    // The other school's whole-naira fee still drops its .00.
+    expect(rtl.screen.getByTestId('schools-price-s1').props.accessibilityLabel).toBe('45,000 naira');
+    expect(rtl.within(rtl.screen.getByTestId('schools-price-s1')).queryByText('.00')).toBeNull();
+    expect(rtl.screen.getAllByText('from')).toHaveLength(2);
+  });
+
+  it('a school whose lowest fee is 0 reads "Free" on its card, with no "from" and no naira sign', async () => {
+    answers[LIST] = [page([card('s7', 'Free Lessons Academy', { fromPriceKobo: 0, courseCount: 1 }), GREENFIELD])];
+    await open();
+    await rtl.screen.findByText('Free Lessons Academy');
+    const row = rtl.within(rtl.screen.getByTestId('schools-row-s7'));
+    expect(row.getByText('Free')).toBeTruthy();
+    expect(row.queryByText('from')).toBeNull();
+    expect(row.queryByText('₦')).toBeNull();
+    expect(rtl.screen.getByTestId('schools-price-s7').props.accessibilityLabel).toBe('Free');
+    expect(rtl.screen.getByRole('button', { name: 'Free Lessons Academy, Yaba, Lagos · 1 course, Free' })).toBeTruthy();
+    // The other card still says from and its fee.
+    expect(rtl.within(rtl.screen.getByTestId('schools-row-s1')).getByText('from')).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('0 naira')).toBeNull();
+  });
+
   it('the logo is the school’s picture when it has one, and its initials when it has not', async () => {
     answers[LIST] = [page([GREENFIELD, card('s3', 'Kano Skills Workshop', { logo: 'https://files.example/kano.png' })])];
     await open();
@@ -258,6 +288,26 @@ describe('SC1 · search', () => {
     await rtl.waitFor(() => expect(sent).toContain('GET /schools?limit=20&q=aba'), { timeout: 3000 });
     expect(rtl.screen.getByText('Greenfield Tech Academy')).toBeTruthy();
     expect(rtl.screen.queryByTestId('schools-empty')).toBeNull();
+  });
+
+  it('after an empty answer, the next search shows the loading shapes while the Hub is held, never the old empty words or the new ones', async () => {
+    answers[LIST] = [page([GREENFIELD])];
+    answers['GET /schools?limit=20&q=zzz'] = [page([])];
+    answers['GET /schools?limit=20&q=zzzy'] = ['hold'];
+    await open();
+    await rtl.screen.findByText('Greenfield Tech Academy');
+    await type('zzz');
+    expect(await rtl.screen.findByText('No schools for "zzz"', {}, { timeout: 3000 })).toBeTruthy();
+    // Typing again with the Hub held: there are no rows from before to keep, so the shapes show, not empty words.
+    await type('zzzy');
+    await rtl.waitFor(() => expect(sent).toContain('GET /schools?limit=20&q=zzzy'), { timeout: 3000 });
+    expect(rtl.screen.getByTestId('schools-loading')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('schools-empty')).toBeNull();
+    expect(rtl.screen.queryByText('No schools for "zzz"')).toBeNull();
+    expect(rtl.screen.queryByText('No schools for "zzzy"')).toBeNull();
+    expect(rtl.screen.queryByTestId('schools-error')).toBeNull();
+    // The search box keeps what was typed while it waits.
+    expect(rtl.screen.getByTestId('schools-search').props.value).toBe('zzzy');
   });
 
   it('a NUL or a control character never reaches the Hub: it is a space, and the request is clean', async () => {
@@ -435,6 +485,30 @@ describe('SC1 · loading, failing, paging', () => {
     expect(await rtl.screen.findByText('Aba Fashion Institute')).toBeTruthy();
   }, 15000);
 
+  it('after a page fails, reaching the end again asks for nothing; only Try again asks, once', async () => {
+    answers[LIST] = [page([GREENFIELD], 'CURSOR-1')];
+    answers['GET /schools?limit=20&cursor=CURSOR-1'] = [failed(500, 'Down'), failed(500, 'Down'), failed(500, 'Down'), page([ABA], null)];
+    await open();
+    await rtl.screen.findByText('Greenfield Tech Academy');
+    await rtl.act(async () => rtl.fireEvent(rtl.screen.getByTestId('schools-list'), 'endReached'));
+    expect(await rtl.screen.findByTestId('schools-more-error', {}, { timeout: 8000 })).toBeTruthy();
+    // The read and its two retries are in; nothing more is asked while the person only keeps reaching the end.
+    const asked = sent.length;
+    expect(sent.filter((s) => s.includes('cursor='))).toHaveLength(3);
+    await rtl.act(async () => {
+      rtl.fireEvent(rtl.screen.getByTestId('schools-list'), 'endReached');
+      rtl.fireEvent(rtl.screen.getByTestId('schools-list'), 'endReached');
+    });
+    await settle(200);
+    expect(sent).toHaveLength(asked);
+    expect(rtl.screen.getByTestId('schools-more-error')).toBeTruthy();
+    expect(rtl.screen.getByText('Greenfield Tech Academy')).toBeTruthy();
+    // Try again is the one way to ask, and it asks once.
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('schools-more-retry')));
+    expect(await rtl.screen.findByText('Aba Fashion Institute')).toBeTruthy();
+    expect(sent).toHaveLength(asked + 1);
+  }, 15000);
+
   it('a new search starts from the first page, not from the old cursor', async () => {
     answers[LIST] = [page([GREENFIELD], 'CURSOR-1')];
     answers['GET /schools?limit=20&q=aba'] = [page([ABA], null)];
@@ -458,5 +532,23 @@ describe('SC1 · loading, failing, paging', () => {
     expect(rtl.screen.queryByTestId('schools-error')).toBeNull();
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('schools-refresh-failed-retry')));
     await rtl.waitFor(() => expect(rtl.screen.queryByTestId('schools-refresh-failed')).toBeNull());
+  }, 20000);
+
+  it('a refresh that fails over an empty list draws no "Could not check for updates." line: the empty words stay', async () => {
+    answers[LIST] = [page([]), failed(500, 'Down'), failed(500, 'Down'), failed(500, 'Down'), page([])];
+    await open();
+    expect(await rtl.screen.findByText('No schools yet')).toBeTruthy();
+    const refresh = rtl.screen.getByTestId('schools-list').props.refreshControl;
+    await rtl.act(async () => {
+      await refresh.props.onRefresh();
+    });
+    // The refresh and its two retries all failed: three more asks of the plain list after the first read.
+    await rtl.waitFor(() => expect(sent.filter((s) => s === LIST)).toHaveLength(4), { timeout: 8000 });
+    await settle(100);
+    expect(rtl.screen.queryByTestId('schools-refresh-failed')).toBeNull();
+    expect(rtl.screen.queryByText('Could not check for updates.')).toBeNull();
+    expect(rtl.screen.getByTestId('schools-empty')).toBeTruthy();
+    expect(rtl.screen.getByText('No schools yet')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('schools-error')).toBeNull();
   }, 20000);
 });
