@@ -15,6 +15,8 @@ artboards: []
 ---
 # JOIN-01 · Event registration link: register and pay the event fee (backend)
 
+Round 3 follow-up: wmt/JOIN-01-r3
+
 ## Read first
 
 - `docs/WORKFLOW.md`, `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, `docs/people/YOU.md`
@@ -472,5 +474,64 @@ normalised (10 specs); V22 a failed lookup treated as paid in the sweep.
 ## Lead merge note (10 Oct 2026)
 
 Merged 10 Oct 2026 as backend #99 (9311447) on the independent verifier's review (mobile bd51855, no blocker). Should-fix D1 (the 5-minute re-check pages only the oldest 200 pending rows), D2 (a NUL byte answers 500) and D3 (verify-time already_registered copy) follow in JOIN-01 round 3 before the event. Owner answers of 10 Oct folded in: the link stays open until the owner says (no open_until), the plan's days start at claim in the app (JOIN-03), the page shows no plan length.
+
+## Round 3 (builder, 10 Oct 2026)
+
+Backend `wmt/JOIN-01-r3` `f38bfcd` (two commits on main `9311447`), mobile `wmt/JOIN-01-r3` (this file, on main `ed5eb3f`).
+The verifier's three should-fix defects, and the five surviving mutants; nothing else. No route, contract shape or
+throttle moved, and `contract/openapi.json` is byte-identical after `npm run contract:build` (no message string of these
+three is in the contract). No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called. Status stays `done`.
+
+| | Closed by | Proved by (the verifier's drivers, same built server, before then after) |
+|---|---|---|
+| D1 | `recheckPending` walks ALL due pending rows (5 minutes to 48 hours old) in one run, `RECHECK_PAGE` (200) at a time, with a keyset cursor on (createdAt, id); a lookup error on one row is logged and the run goes on; the cron has `waitForCompletion: true`; the paid write is still conditional, so two servers stay safe | `t-sweep.mjs` E8 to E10 on the unfixed build: `checked=200 paid=0` in run 1 and run 2, payer still pending. Fixed build: `checked=206 paid=1`, payer paid in the FIRST run, run 2 `checked=205 paid=0`. Own driver `t-d1.mjs`, 205 abandoned rows plus a payer on page 1 and one on page 2, once with spread created times and once with one shared created time: 207 rows looked up once each, both payers paid in run 1, one unreachable lookup in the middle of page 1 did not stop it. Real scheduler (`ScheduleModule`) with a slow sweep: 3 ticks during one run start 1 run with the option, 3 without |
+| D2 | `byReference` answers null (no query) unless the reference is `^wawu-join-[0-9a-f]{36}$`; a character below U+0020 (NUL included, no exception) in `fullName`, `email`, `state` or `makes` is a 400 in plain words | `t-nul.mjs` N1 to N6 failed on the unfixed build (500 each); all pass on the fixed build. `t-d2.mjs`: 12 odd references (NUL, upper case, 35 and 37 hex digits, non-hex, trailing newline, leading space, 500 characters) on the status route, and the 11 within the 100-character limit on the verify route, are byte-identical to the unknown-reference 404; register with NUL, bell, tab, line feed, carriage return, U+001F in each of the four fields is 400; emoji, accents and an ordinary name still 200 |
+| D3 | `alreadyRegistered()` (verify-time, a payment already taken) now says "You're already registered. This extra payment will be refunded. Email support@wawuafrica.com with your reference."; the register-time sentence is unchanged | `t-d3.mjs` on both builds: before, the second payer's verify answered "You have not been charged again"; after, the new words in `reason.message` and `message`, again on a second ask, and register still gives the old sentence |
+
+**Specs (src/waitlist, 7 files, 111 of 111: the 91 plus 20 new).** Mutants, each run against the spec that should catch it, source restored from a copy after, tree clean:
+
+| Mutant | Result |
+|---|---|
+| D1 stop after the first page | killed (4 tests) |
+| D1 cursor drops the id tie-break (rows with one created time skipped) | killed (2) |
+| D1 cursor by id only | killed (4) |
+| D1 offset paging (`skip`) instead of a cursor | killed (4) |
+| D1 cursor re-reads the last row (`gte`) | killed (4) |
+| D1 one row's error stops the run | killed (4) |
+| D1 cron without `waitForCompletion` | killed (the new `waitlist-sweep-cron.spec.ts`) |
+| D2 old guard (prefix and length only); guard without the end anchor | killed (3 each) |
+| D2 no control check on name, email, state or makes (four mutants); tab, line feed, carriage return let through; U+001F let through | killed (6, 6, 6, 6, 3, 1) |
+| D3 old message back | killed (1) |
+| V9 CSV state, and makes, not formula-guarded | killed (1 each) |
+| V18 stored transaction id is the browser's, not Flutterwave's | killed (1) |
+| V19 paid write without the `pending` pre-state | killed (1) |
+| V21 reused row keeps the old fee | killed (1) |
+| V20 pre-write transaction-id check removed | survives, equivalent as the verifier said: the unique index and the holder check give the same 409; the only difference is one more `verify` call at Flutterwave. Left as asked |
+
+**Decisions** (Default (agent), owner may override)
+- "A control character" is any character below U+0020 with no exception, as the brief says. A tab, line feed or carriage return in a
+  name, email, state or makes is now a 400; before, the name's white space was collapsed and the email trimmed (the verifier's
+  "trailing newline" email spelling is now `email_invalid`). A browser text field cannot send these.
+- The name answers `name_invalid` and the email `email_invalid`, which the contract already lists. State and makes answer a plain
+  400 with no `reason.code` (the contract's "a malformed body has no `reason`"), because a new code would change the contract text.
+  JOIN-02 must not depend on a code for those two fields.
+- `POST /waitlist/registrations/verify` with a reference over 100 characters or empty still gets the body validation's 400, not
+  the 404: `reference` is `minLength 1, maxLength 100` in the contract and this round moves no contract shape. It reveals nothing
+  about any registration. The status route has no such limit and answers the 404 for any length.
+- `RECHECK_BATCH` is renamed `RECHECK_PAGE` (it is a page size now, not a cap on the run).
+
+**Checks.** `tsc --noEmit` 0. eslint 0 and prettier clean on the 7 changed files. `src/waitlist` 111/111; `src/payment-webhook`
+17/17; `hub-rate-limits.contract.spec.ts` 22/22 on the host network. Protected suite `run.sh --fresh HEAD` 253/253 ("all 244
+required tests passed") at `f38bfcd`, lock `origin/main` `9311447`, lock files untouched, tripwire 0 added lines. Gates: 16 fail and
+72 warn on main and on the branch, the sorted FAIL lines identical (the first run showed a 17th: the paging note said "is never
+read", which the deferrals gate takes for dead code; reworded). `npm run contract:build` exit 0, `contract/openapi.json`
+unchanged. Secret scan of the diff: no key-shaped string. No em-dash added.
+
+**NOT RUN**
+- The full backend suite (229 suites): not in this round's check list; the touched code is reached only from `src/waitlist` and the
+  webhook's `wawu-join-` branch, both run above. Unblocked by `npm run test:contract` in a private network namespace.
+- Two servers running the cron at once: unchanged from round 1 (the verifier ran two sweeps together over the same rows, all paid
+  exactly once). The paid write was not touched.
+- A real Flutterwave `verify_by_reference` answer (round 1's open question): unchanged, needs one test-mode payment.
 
 ## Owner sign-off
