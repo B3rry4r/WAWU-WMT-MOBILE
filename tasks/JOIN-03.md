@@ -511,7 +511,7 @@ touch (prettier and one unnecessary-assertion rule at lines 164 to 169, 186 and 
 earlier because of my comment), none in `phone-proof.ts`, the specs or my lines. `python3 scripts/gates/run.py` 9 run, 102 files, 0 fail, 20 warn;
 `check_baseline.py` clean. `npm run contract:build` twice: `contract/openapi.json` sha256 `eae61a48...ea11` before and after, each time (it does not describe token
 claims). New and changed specs: `token-contact-proof` 15 tests (it was 7), `phone-signup.service` 45 (it was 44: one new test for the number the code went to when
-the account's phone moved meanwhile, and an existing test now also checks the recorded number). `jest src/auth` at the tip (`logs/id-auth-final.log`): see the last line of this section. Live (`harness/s3`,
+the account's phone moved meanwhile, and an existing test now also checks the recorded number). `jest src/auth` at the tip, two workers and `--testTimeout=300000` (`logs/id-auth-final.log`): 16 suites, 15 pass; the sixteenth, `refresh-token-lookup`, fails only AUTH-08's "under a second" timing test in that loaded run (1242 ms against 1000, load average about 21) and passes alone, 20 of 20 (refresh 829 ms, sign-out 514 ms): the machine's load, as AUTH-08 and the first JOIN-03 report found; none of the other 202 tests failed. Live (`harness/s3`,
 `s5`, `s10`, the real built wawu-id and Hub): the table in ruling 1.
 
 **Numbers (backend).** `npx tsc --noEmit` 0. `eslint --no-fix` 0 on the 8 changed `.ts` files. Specs in a private network namespace (own :4001) on a fresh migrated
@@ -524,7 +524,13 @@ operation. The same file is in mobile `contract/` (`SOURCE_COMMIT` `wmt/JOIN-03@
 Migration `20261020140000_waitlist_claim_result` sorts after every folder on main (newest `20261019130000`, MONEY-17) and on every open `origin/wmt/*` branch
 (newest seen `20261020120000`, INBOX-05); `prisma migrate diff` shows only the `ContentPiece` index line main's schema also shows.
 
-**Numbers (mobile).** MOBILE_NUMBERS
+**Numbers (mobile).** `npm run check` as the same steps with two jest workers (`npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks`), on
+the head `2821dc3` (this report's numbers and the final `check_tasks.py --write` are the only change after it, and `npm run tasks` passes on the final head): **EXIT 0**.
+Typecheck 0; lint 0 errors and 7 warnings, all in other tasks' tests (`eventsFocus`, `ticketsRefetchFails`, `professionals` screens), none in this task's files;
+jest 127 suites, **2095 of 2095** (it was 123 and 2043 in round 1); gates 10 run, 491 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`), 0 accepted; 273 tasks and 279
+artboards. New and changed tests in `src/features/claim/__tests__`: `claimFresh` 14 (new), `claimOfferStep` 10 (new, the real root layout), `signupMarksOffer` 3 (new),
+`settingsRoute` 1 (new), `claimScreen` 19 (was 16), `model` 5 (the lines), `settingsEntry` 2 (as it was). Mobile `tsc --noEmit` 0 after the contract was copied from the
+backend branch.
 
 **Mutants.** Applied alone, the specs that should catch it run, source restored from a copy, tree clean after (`mut/`, `result-*.json`). Backend 10, all killed: B1
 a replay told `claimed_by_you` though an answer is stored; B2 any account answered the stored result; B3 the answer not stored; B4 the replay says 30 days
