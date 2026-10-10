@@ -383,6 +383,24 @@ This replaces the hiding half of R-27 and the "left out" line of R-41.
 
 **Carried out by:** FIX-29.
 
+### R-48 · Event registration link: register and pay on the website, finish in the app
+*Owner, 10 Oct 2026 ("a registration page on the web where they also pay a 2k fee for the 1k subscription"; "It's a
+registration link, like a wait list .... dont mess with the sign up page").*
+- People at a WAWU event register on wawuafrica.com/join (name, phone, email) and pay the event fee, ₦2,000 today,
+  for the ₦1,000 tier (Verify). It is a waiting list, not an account: no WAWU ID account, password or OTP; the
+  website's sign-up page is not touched. The rest happens in the app: signing up there with the same phone or email
+  turns the paid registration into the tier (JOIN-03).
+- The fee is a config value (`event_offers` in the price file), never a literal. It is paid by Flutterwave checkout
+  (card, bank transfer, USSD), the rail that is live in production today; this is an exception to R-44's "no card" for
+  this fee only, because the Nuvion wallet is not live yet. WAWU is the merchant of its own fee, so no creator money is
+  held (the wallet note is unaffected).
+- Open, defaults built until the owner says otherwise: what ₦2,000 buys (default: the Verify tier for its own 30
+  days), when the plan's days start (default: when the person claims it in the app, so nobody loses days before the
+  app reaches them), and the event's closing date (`open_until`).
+
+**Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
+next).
+
 ## Artboards that are not built
 
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
