@@ -20,6 +20,8 @@ let sent: string[] = [];
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const pageOf = (items: unknown[], nextCursor: string | null = null) => ok({ items, nextCursor });
+/** A read the Hub refuses (a 400): the app does not retry it, so it ends at once. */
+const refused = (over: { delay?: number } = {}): Answer => ({ status: 400, body: { statusCode: 400, message: 'Bad request' }, ...over });
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
@@ -351,4 +353,72 @@ describe('the inbox read-on when a refresh lands during it', () => {
     });
     await expectReadOnEnds('empty');
   }, 10_000);
+
+  // The same refresh, but the refetch it starts is REFUSED. A failed read moves `errorUpdatedAt`, not `dataUpdatedAt`, and a refusal that comes
+  // in the same instant as the ask is never drawn as under way, so `isFetching` is false before and after: the effect has to hear it end by
+  // `errorUpdatedAt`, or the screen sits on the loading list with nothing being read.
+  describe('and the refetch it starts is refused', () => {
+    /** The refresh fires from the request itself, when the named page is asked for, as in the cases above. */
+    const refreshFromRequest = (answer: Answer): Answer => {
+      const { inboxKey } = require('../api') as typeof import('../api');
+      const refresh = () => void queryClient.invalidateQueries({ queryKey: inboxKey, predicate: (query) => query.queryKey[1] !== 'unread' });
+      return { ...(answer as object), onSend: refresh } as Answer;
+    };
+    for (const ending of endings) {
+      it(`ends on ${ending.name} when the refetch of the first page is refused`, async () => {
+        const [first, second, third] = [pageOf([community('community:1')], 'cur2'), pageOf([community('community:2')], 'cur3'), pageOf([ending.last()], null)];
+        answers[FIRST] = [first, refused(), first];
+        answers[CUR2] = [refreshFromRequest(second), second];
+        answers[CUR3] = [third];
+        await renderScreen(testRows);
+        await expectReadOnEnds(ending.state);
+        expect(sent.filter((s) => s === CUR2).length).toBeGreaterThanOrEqual(2);
+      }, 10_000);
+
+      it(`ends on ${ending.name} when two pages are held and the refetch of the second is refused`, async () => {
+        const [first, second, third] = [pageOf([community('community:1')], 'cur2'), pageOf([community('community:2')], 'cur3'), pageOf([ending.last()], null)];
+        answers[FIRST] = [first];
+        answers[CUR2] = [second, refused(), second];
+        answers[CUR3] = [refreshFromRequest(third), third];
+        await renderScreen(testRows);
+        await expectReadOnEnds(ending.state);
+        expect(sent.filter((s) => s === CUR3).length).toBeGreaterThanOrEqual(2);
+      }, 10_000);
+
+      it(`ends on the error with one Try again, not a loop, when the refetch and the page being read are both refused (then ${ending.name} once the page answers)`, async () => {
+        const [first, second, third] = [pageOf([community('community:1')], 'cur2'), pageOf([community('community:2')], 'cur3'), pageOf([ending.last()], null)];
+        answers[FIRST] = [first, refused(), first];
+        answers[CUR2] = [refreshFromRequest(second), refused()];
+        answers[CUR3] = [third];
+        await renderScreen(testRows);
+        await rtl.waitFor(() => expect({ state: screenState(), requestsInFlight: queryClient.isFetching() }).toEqual({ state: 'error', requestsInFlight: 0 }), { timeout: 4000 });
+        const asked = sent.length;
+        await settle();
+        expect(sent).toHaveLength(asked);
+        expect(rtl.screen.getAllByText('Try again')).toHaveLength(1);
+        answers[CUR2] = [second];
+        await rtl.act(async () => {
+          rtl.fireEvent.press(rtl.screen.getByText('Try again'));
+        });
+        await expectReadOnEnds(ending.state);
+      }, 10_000);
+    }
+
+    // Refused at once, with the refresh landing at each of these moments (ms after the screen opens; pages of 30 ms). Which of them stall on
+    // the unfixed code differs from run to run with the load, as with the timings above.
+    it.each([0, 10, 30, 60, 80, 100] as const)('ends on the empty state, not the loading list: refresh at %i ms, the refetch refused at once', async (refreshAt) => {
+      const after = (answer: Answer, delay: number): Answer => ({ ...(answer as object), delay }) as Answer;
+      const first = pageOf([community('community:1')], 'cur2');
+      answers[FIRST] = [after(first, 30), refused(), after(first, 30)];
+      answers[CUR2] = [after(pageOf([community('community:2')], 'cur3'), 30)];
+      answers[CUR3] = [after(pageOf([community('community:3')], null), 30)];
+      await renderScreen(testRows);
+      await new Promise((resolve) => setTimeout(resolve, refreshAt));
+      const { inboxKey } = require('../api') as typeof import('../api');
+      await rtl.act(async () => {
+        void queryClient.invalidateQueries({ queryKey: inboxKey, predicate: (query) => query.queryKey[1] !== 'unread' });
+      });
+      await expectReadOnEnds('empty');
+    }, 10_000);
+  });
 });
