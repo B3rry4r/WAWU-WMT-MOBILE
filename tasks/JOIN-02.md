@@ -122,3 +122,59 @@ The walk is `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scrat
 - A real phone and the WhatsApp link preview (V10): the tags are in the page HTML (above); the preview itself needs the page live at `https://wawuafrica.com/join` and the link pasted into WhatsApp.
 - The real Flutterwave checkout script (stood in); card, bank transfer and USSD screens inside it.
 - A backend newer than `5773fdb`: JOIN-01 had not pushed again when this was written; if its contract changes, re-copy `contract/openapi.json`, run `npm run contract:types` and `npx tsc --noEmit`, and re-run `walk2.mjs`.
+
+## Round 2 (builder, 10 Oct 2026)
+
+Website `wmt/JOIN-02` `c522c9f` (one commit on `e3ae2f7`), against backend `wmt/JOIN-01` `d26e1e6`. Owner rulings of 10 Oct 2026,
+and nothing else changed. No Flutterwave, Nuvion, Fintava, wawuafrica.com or AI host was called (the walk aborts and records any
+other host; none was reached).
+
+**What changed**
+- No offer card. `/join` is the logo, the "EVENT REGISTRATION" eyebrow, the "Register for WAWU" heading, then the form. The
+  price (from the API) is on the pay button only ("Pay ₦2,000"). The page no longer names the offer, says what the fee
+  includes, how long the plan lasts or when it starts, or when registration closes, and it reads no `days` or `closesAt`
+  (the API still sends them), so a link with no closing date needs no special case. The unused code and copy are gone:
+  `OfferSummary` and `summariseOffer` (replaced by `offerPrice`, the formatted fee), the card in `JoinForm.tsx`, and the
+  card's skeleton in the loading state. This replaces the earlier round 2 copy ("for 30 days, starting when you join" and
+  then "Includes the Verify plan."): the card is gone, nothing replaces it.
+- A short reference on the registered screen, under "Your reference": the first 8 characters of the random part of the
+  reference, upper-cased, in two groups of 4 (for example `A698 DA83`). `shortReference` in `src/lib/join-session.ts`. The full
+  reference stays in sessionStorage, in the `/join/paid` address and in every API call, and starts with the short form, so
+  support can match it in the admin export. No backend change.
+- Contract re-copied from backend `d26e1e6` (`closesAt` is `string | null`), `npm run contract:types`; `docs/03_USER_FLOWS.md`
+  section E updated. Files: `src/app/join/components/JoinFlow.tsx`, `JoinForm.tsx`, `src/lib/api/waitlist.ts`,
+  `src/lib/join-session.ts`, `contract/openapi.json`, `src/types/api.generated.ts`, `docs/03_USER_FLOWS.md`. Nothing under
+  `src/app/(auth)/` changed (`git diff` against the round 1 head is empty there).
+
+**How proved**
+- `typecheck` 0, `lint` exit 0 (the repo's existing `<img>` and hook warnings only), `npm run build` exit 0 with
+  `NEXT_PUBLIC_API_BASE_URL` set to the local backend (`/join` and `/join/paid` static, 335 kB), `check:copy` clean, no
+  em-dash and no key-shaped string in the diff.
+- `walk2.mjs` (copied to the lead's scratch `joinr2/`, ports 6011 and 6021, database `bjr2_test_walk`, Flutterwave stood in at
+  the backend's DI seams and in the browser as in round 1) against the production build and the round 2 backend with the
+  shipped config (no closing date): 15 scenarios, 89 assertions, 0 failed (log `joinr2/walk2-run1.log`). New: the registered
+  screen shows `A698 DA83` for `wawu-join-a698da83...` (upper-case, two groups of 4, equal to the first 8 of the checkout's
+  tx_ref), the full reference is not drawn anywhere on it, sessionStorage holds the full reference, the verify call used the
+  full reference, a refresh shows the same short form, and on `/join/paid` the address carries the full `tx_ref` while the screen
+  shows the short one; `noOfferCard` at 390 and 1280 px: only the eyebrow, heading and form, no offer name, no "Includes", no
+  plan, no days, no closing line, "₦2,000" once (on the button), the form starts one flex gap below the heading, and a person
+  still registers and pays with an offer whose `closesAt` is null; with `open_until` set the API answers the date and the page
+  still draws no closing line; `priceFollowsConfig` (₦2,500 appears once, on the button; the window opened with 2500 NGN).
+  All round 1 scenarios still pass (already registered, cancel, declined, retry, redirect, redirectCancel, hang, validation,
+  unreachable, no offer, closed midway).
+- Pictures, 390 and 1280 px, dark and light, the states that showed the card or the reference, from the production build:
+  `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/joinr2/pics/final/<state>-<390|1280>-<dark|light>.png`,
+  36 files: `01-loading`, `02-form`, `03-form-filled`, `04-form-errors`, `08-registered`, `12-cancelled`, `13-declined`,
+  `17-server-field-error`, `19-return-registered`. The other round 1 states (paying, checking, already, closed, no offer,
+  unreachable, busy, resume) never drew the card and are unchanged in `join02/pics/final/`. I do not say they match anything:
+  there is no artboard.
+
+**Decisions (Default (agent), owner may override)**
+- The short form is for the eye only; a person reading "A698 DA83" to support is matched by prefix against the full reference
+  in the admin export. The reference is `wawu-join-` and 36 hex characters in the backend, not 64; only the first 8 are shown.
+- The registered screen's reference is set large (28 px, monospaced, letter-spaced) because it is the one thing read aloud.
+
+**NOT RUN**
+- A real Flutterwave payment, a real phone and the WhatsApp preview: as in round 1.
+- The Flutterwave modal's own title still carries the offer name (`WAWU event registration`) inside Flutterwave's window; the
+  page does not draw it. Unblocked if the owner wants it changed: it is `title: offer.name` in `JoinFlow.tsx`.
