@@ -50,8 +50,8 @@ second price here. If the owner rules otherwise before this is built, the builde
 
 ## Builder report
 
-Builder, 10 Oct 2026 (Sonnet agent). Backend `wmt/JOIN-03` `a89512b` (on main `7b4ffef`, which already holds JOIN-01 round 4), mobile
-`wmt/JOIN-03` (this file, on main `5de924a`). depends_on JOIN-01 and TIER-01 are `done`. No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI
+Builder, 10 Oct 2026 (Sonnet agent). Backend `wmt/JOIN-03` `8bb6045` (a merge of backend main `181ee5d`, NUV-02 and NUV-03, into the branch built on `7b4ffef`, which already holds JOIN-01
+round 4), mobile `wmt/JOIN-03` (this file, with mobile main `aff0e96` merged). depends_on JOIN-01 and TIER-01 are `done`. No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI
 host was called. Scratch, scripts, logs and pictures: the lead's scratchpad `join03/` (`live/walk.py`, `shots/`, `mut/`, `logs/`).
 
 **The lead's rulings, as built**
@@ -89,7 +89,7 @@ granted and when they end, and the person's tier exactly as `GET /me/tier` answe
 `waitlist-view.type.ts`, `waitlist.module.ts` (now imports `PlansModule`, `WawuAuthModule`; the claim lives here and NOT in the route-free
 `WaitlistCoreModule` the Flutterwave webhook imports). `src/plans/tier-grant.service.ts`, `plans.module.ts` (imports `PointsModule`, exports the
 service; both already mounted ahead of it, so no route moves). Admin: `claimed` on the list, `Claimed` and `Refund due (₦)` columns on the CSV
-(`waitlist-export.ts`, `waitlist.service.ts`). Migration `20261019130000_waitlist_claim_paid` (+ `rollback.sql`): one CHECK, only a paid row can
+(`waitlist-export.ts`, `waitlist.service.ts`). Migration `20261019150000_waitlist_claim_paid` (+ `rollback.sql`): one CHECK, only a paid row can
 have an owner; `prisma/schema.prisma` untouched. `account-data-map.ts` comment; `docs/contract/PLANS.md`. `contract/openapi.json` regenerated: one
 operation, two schemas, one field; nothing removed or changed.
 **Built (mobile).** `src/features/claim/` (`ClaimCodeScreen`, `model`, `claimFailure`, `api`), route `src/app/claim-code.tsx`, a Settings row
@@ -127,20 +127,22 @@ each (`the purge and export maps cover everything a claim writes`); a CHECK refu
 `Refund due (₦)` and not in `Paid (₦)`.
 
 **Numbers (backend).** `npx tsc --noEmit` 0. eslint (`--no-fix`) 0 and prettier clean on every changed `.ts` file. New and changed specs:
-`waitlist-claim.contract` 25, `waitlist-claim-proof` 8, `tier-grant` 6, `waitlist-admin` 6 (was 5). Private network namespace (own :4001, fresh
-migrated and seeded `bj03_ns_test`) on the final code: `waitlist plans points payment-webhook account-purge openapi common me`: 29 suites, 536 of 536
-(`src/waitlist` 9 suites 155, `src/plans` 6 suites 102, `src/points` 59, `src/payment-webhook` 17, `src/common` including route shadowing 148, `src/me` 37,
-`src/account-purge` 4). An earlier run of the same set plus `src/account` and `src/data-export-request` (before the proven-phone change, which
-touches neither): 32 suites, 540 of 554; the 14 failures are all in `data-export.contract.spec.ts` ("a user can ask for their data and the link
-is emailed", `fulfil` answers false) and the same 14 fail on `git archive` of backend `origin/main` in the same harness (16 tests, 14 failed), so
-they are not from this task (`src/account` passes). `hub-rate-limits.contract.spec.ts` (host network) 22 of 22 (no `@Throttle` was added: the claim
+`waitlist-claim.contract` 25, `waitlist-claim-proof` 8, `tier-grant` 6, `waitlist-admin` 6 (was 5). Private network namespace (own :4001, fresh migrated and seeded `bj03_ns_test`) on the final head `8bb6045`:
+`waitlist plans points payment-webhook account-purge account openapi common me`: 30 suites, 542 of 542 (`src/waitlist` 9 suites 155, `src/plans` 6 suites 102,
+`src/points` 59, `src/payment-webhook` 17, `src/common` including route shadowing 148, `src/me` 37, `src/account` 6, `src/account-purge` 4). A run before
+the merge of backend main added `src/data-export-request`: its `data-export.contract.spec.ts` fails 14 tests in this harness ("a user can ask for
+their data and the link is emailed", `fulfil` answers false) and the same 14 fail on `git archive` of backend `origin/main` in the same harness (16
+tests, 14 failed), so they are not from this task; it was left out of the final set for that reason. `hub-rate-limits.contract.spec.ts` (host network) 22 of 22 (no `@Throttle` was added: the claim
 answers under the global limits, and a guess learns nothing). Protected suite `scripts/protected-routes/run.sh --fresh HEAD` in a private network
-namespace on the final head `a89512b` (the earlier run on `da3c58f`, the same code before the migration folder was renamed, is 253 of 253 too), lock
-`origin/main` `7b4ffef`: 253 of 253, "all 244 required tests passed", lock files untouched. Gates `python3 scripts/gates/run.py`: 16 fail, 83 warn, 76 accepted on the branch and on
-`git archive` of main, the output identical line for line (the first run had a 17th: a comment said "never a start in the future", which the deferrals
-gate reads as prose; reworded). `check_baseline.py` clean. `npm run contract:build` run three times on the branch: `contract/openapi.json` byte
-identical each time (sha256 `20557e76...13bf`) and the same file is in mobile `contract/`. Migration `20261019130000_waitlist_claim_paid` sorts after
-every folder on main (newest `20261019100000`) and on every open branch (newest seen `20261019120000`, NUV-03); `migrate deploy` applies it after
+namespace on the final head `8bb6045` (earlier runs on `da3c58f` and `a89512b`, before the merge of main and the migration renames, were 253 of 253 too),
+lock `origin/main` `181ee5d`: 253 of 253, "all 244 required tests passed", lock files untouched. Gates `python3 scripts/gates/run.py`: 16 fail, 88 warn, 76 accepted on the branch and on
+`git archive` of `origin/main` `181ee5d`, the output identical line for line (the first run had a 17th: a comment said "never a start in the future", which the deferrals
+gate reads as prose; reworded). `check_baseline.py` clean. `npm run contract:build` run on the branch after the merge, twice: `contract/openapi.json` byte
+identical each time and to the auto-merged file (sha256 `9163705b...3b74`); before the merge it was identical three times (`20557e76...13bf`). The
+same file is in mobile `contract/` (`SOURCE_COMMIT` `wmt/JOIN-03@8bb6045`); against backend main it adds one path (`POST /waitlist/claims`), two schemas
+and the admin list's `claimed`, and removes or changes nothing. Migration `20261019150000_waitlist_claim_paid` sorts after
+every folder on main (newest `20261019120000`, NUV-02 and NUV-03) and on every open branch, leaving room for MONEY-17 and INBOX-05 (the lead's note; it was
+`20261019110000`, then `...130000`, and is now `...150000`); `migrate deploy` applies it after
 main's 114, its `rollback.sql` runs and applies again clean; `prisma migrate diff` shows only the `ContentPiece` index line main's schema also shows.
 wawu-id (the ready patch, worktree `bi-JOIN-03`): `token-contact-proof.spec.ts` 6 of 6; the rest of `src/auth`: the other 15 suites pass except one timing test (`AUTH-08 ... under a second`, 1208 to 1317 ms against the 1000
 limit at a load average of 18 to 36); the same test fails the same way on an unpatched checkout of wawu-id `origin/main` `fb8717e` (1408 ms), so it
