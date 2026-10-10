@@ -534,4 +534,77 @@ unchanged. Secret scan of the diff: no key-shaped string. No em-dash added.
   exactly once). The paid write was not touched.
 - A real Flutterwave `verify_by_reference` answer (round 1's open question): unchanged, needs one test-mode payment.
 
+## Verifier report, round 3
+
+Verifier, 10 Oct 2026 (independent session; wrote none of this). Backend `wmt/JOIN-01-r3` `f38bfcd` (detached worktree `/home/user/wt/vb-JOIN-01r3`)
+on `origin/main` `9311447`, which did not move during the run (checked at the start and again before the push). Mobile `wmt/JOIN-01-r3` `98be230`.
+Evidence: the lead's scratchpad `vjoin01r3/` (`out-*.txt`, `mut-run*.txt`, `mut/`, driver `.mjs` files). The real `AppModule` built from the branch
+(`dist/`), real Postgres (`vj01r3_` databases, dropped at the end), Flutterwave stood in at the two DI seams, every call over HTTP. No Flutterwave,
+Nuvion, Fintava, wawuafrica.com or AI host was called. The diff against main is 7 files, all in `src/waitlist` (611 added, 40 removed), exactly the
+builder's list; no migration, no controller, no DTO, no contract file.
+
+**Verdict: merge. No blocker.** D1, D2 and D3 are CLOSED on the built server under my own layouts. One new should-fix (low, N1), six notes (N2 to N7), and
+three surviving mutants (test gaps; the built behaviour is right for all three).
+
+| Defect | Result | Evidence |
+|---|---|---|
+| D1 the re-check reaches every due row | CLOSED | round 1's `t-sweep.mjs` E8 unchanged: `checked=206 paid=1` in run 1 (was `checked=200 paid=0`), E9 run 2 `checked=205 paid=0`. My layouts (`v-d1.mjs`, `v-d1b.mjs`, `v-d1c.mjs`): 1,000 rows with distinct created times and 5 unreachable lookups at the page edges and middle; 1,000 rows with ONE shared created time; 801 rows in clusters of 200 per created time; 650 rows with odd ids (mixed case, hyphen, underscore) at one time; 0, 199, 200, 201 and 400 rows. Every row looked up exactly once (counted per reference at the stand-in), exactly the payers paid, nothing `failed` |
+| D1 during the run | CLOSED | 600 rows stretched to about 20 s: five registrations made during the run are not looked up (too young); a due row inserted ahead of the cursor is looked up in the same run; one inserted behind it is not reached (no loop back) and is paid by the next run; a row paid by the browser mid-run on a page not yet read is not looked up; on the page already in memory it is looked up once and stays paid with the browser's transaction id, no `failed` twin; a row deleted mid-run and a lookup that throws do not stop the run |
+| D1 no overlap, paid write | CLOSED | three sweeps at once over 1,048 rows with 40 payers: all 40 paid exactly once, 40 distinct transaction ids, 200000 kobo each, no `failed` row (round 1's `t-overlap.mjs` 2 of 2 as well). The real `waitlist-recheck-pending` job object (`waitForCompletion: true`, `*/5 * * * *`): four ticks during one run started one run (30 lookups, never 2 in flight), the next tick after it ended ran again. Real scheduler, no fire-by-hand: 200 rows at 4 s each, run 04:10:00 to 04:23:20, the 04:15 and 04:20 ticks started nothing (smallest gap between lookups 4,000 ms, 1 in flight at most), the 04:25 tick began a new run |
+| D2 references | CLOSED | `v-d2.mjs`: 33 odd references (NUL at the end, start and middle, NUL alone, upper-case hex, upper-case prefix, a real reference upper-cased, 35 and 37 hex, a real reference plus or minus one digit, non-hex, Cyrillic, fullwidth and Arabic-Indic digits, Unicode and non-breaking hyphens in the prefix, trailing LF, CRLF, space, tab, leading space, 100, 101, 500, 3,000 and 12,000 characters, prefix only, quote, `%`, `_`, `/`) on the status route (plus 3,000 and 12,000 characters; `..` is rewritten into another URL by the HTTP client, so it is not counted) are 404 and byte-identical to the unknown-reference answer; the same on verify, except empty and over 100 characters, which are the documented 400. Raw `%00`, `%2500`, `%0A`, `%2F`, `%5C` are the same 404. Database scan counters on `WaitlistRegistration` (index and sequential) before and after the whole batch: 1272 and 1272 (a control request for a well-formed unknown reference moved it to 1274). Round 1's `t-nul.mjs` N1 to N11 all pass |
+| D2 text fields | CLOSED | `v-d2b.mjs`: each of 12 control characters (NUL, 01, bell, backspace, tab, LF, VT, FF, CR, ESC, 1C, 1F) at the start, middle and end of fullName, email, state, makes: all 400 with plain words, none 500 (name `name_invalid`, email `email_invalid`, state and makes no `reason`). A NUL last in a 100-character name, a 254-character email and a 60-character state or makes: 400. Ordinary names (Yoruba tonal marks, umlaut, Cyrillic, Chinese, apostrophe, hyphen) still 200 |
+| D3 words | CLOSED | `v-d3.mjs` and round 1's `t-person.mjs` D7: the second payer (same phone, then same email) gets 409 `already_registered` with the new sentence in `message` and `reason.message`, on the first ask and on every later ask (also with a made-up transaction id), the row kept `failed` with its transaction id and 200000 kobo; four simultaneous taps, the sweep path and a double tap staggered to reach the lost-race branch all give the new words or end `failed`; a declined or short payment is NOT told "refunded" (`payment_not_confirmed`, `payment_mismatch`); the register-time refusal is unchanged to the word. The address `support@wawuafrica.com` is the live support address (`docs/release/PLAY-LISTING.md` lines 19, 78, 138) |
+
+**Round 1's drivers, unchanged, against the fixed build.** `t-sweep` E1 to E9 pass (E10 is info), `t-nul` 11 of 11, `t-overlap` 2 of 2, `t-money` 37 of 37,
+`t-webhook` 18 of 18 (my copy had the old hash string; fixed in the driver, not the server), `t-throttle` all pass (600 and 300 in the window, the next call 429,
+`x-ratelimit-limit-medium` 600 and 300, another route and another address untouched, `short` still 20 a second), `t-admin` 30 of 30. `t-person` passes except C2:
+an email written with a trailing newline is now 400 `email_invalid` (it was trimmed and accepted). That is the builder's disclosed choice, judged below.
+
+**The builder's choices, judged.**
+- A character below U+0020 refused with no exception (tab, LF, CR too): acceptable, it is what the brief asked for and it is the only rule that cannot be argued around. Cost: it is asymmetric with spaces. A trailing or leading space in the email or the name is still trimmed, but a trailing tab or newline from a paste is a 400, and for the email the words are only "Enter a valid email address.", which does not say why a visually correct address fails (N5).
+- State and makes answer a plain 400 with no `reason.code`: acceptable (the contract already says a malformed body has no `reason`); the words differ per field ("Your state has..." and "What you make has...") so a page can show the right one.
+- Verify with an empty or over-100-character reference stays the validation 400: acceptable, it reveals nothing and no contract shape moves.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | exit 0 |
+| eslint on the 7 changed files; prettier | 0 problems; clean |
+| `src/waitlist` and `src/payment-webhook` | 9 suites, 128 of 128 (111 and 17) |
+| `hub-rate-limits.contract.spec.ts` (host network) | 22 of 22 |
+| protected suite `run.sh --fresh HEAD` (code `f38bfcd`, lock `origin/main` `9311447`) | 253 of 253, "all 244 required tests passed" |
+| gates | 16 fail on main and on the branch, the sorted FAIL lines identical (file and line), 72 warn on both; files scanned 1036 and 1037 |
+| `npm run contract:build` | exit 0; `contract/openapi.json` byte-identical to before and to main |
+| tripwire, em-dash, key scan on the added lines | 0 added lines match the tripwire; 0 em-dashes; no key-shaped string (the long strings are URL paths) |
+| migrations | none |
+| mobile `npm run check` (this branch with the report) | exit 0 on the first run: 109 suites, 1,852 tests, gates 0 fail; the known `eventsScreens` flake did not occur |
+
+### New findings
+
+- **N1 · should fix (low) · a payer who tries again after 48 hours is outside the re-check, and a row re-registered a moment ago can be purged.** Registering again with the same phone and email reuses the person's pending row and keeps its first `createdAt`. The re-check window (5 minutes to 48 hours) and the purge (7 days) both count from that first time. Reproduction (`v-reuse.mjs`): a pending row backdated 3 days, the same person registers again (same reference), Flutterwave says paid by reference, the sweep answers `checked=0` and the row stays `pending` (U2); a row backdated 8 days and re-registered seconds ago is deleted by the next purge (U3). It is not from this round (main has it) and I found it hunting for an input that makes the run skip a row. It bites only when the payer closes the page after paying AND the webhook fails or is not set up, the same condition as D1, and only for someone returning after 2 days. Fix: set `createdAt` to now when a pending row is reused (the admin list stays newest first), or window the sweep and the purge on `updatedAt`.
+- **N2 · note · the lookup treats every 4xx as "no transaction yet", silently.** `waitlist-payment-lookup.ts` returns null for any status from 400 to 499 with no log, so a rate limit (429) or a revoked key (401, 403) reads as `checked=N paid=0`. Not changed this round, but D1 raised the exposure: one call per due row per run, up to 576 runs in the 48 hours (an abandoned row is asked about about 576 times). Unblocked by Flutterwave's published limit for `verify_by_reference` on this account (NOT RUN); a small fix is to throw on 429, 401 and 403 so the existing per-row warning appears.
+- **N3 · note · a run now takes as long as the walk.** The lookups are one after another. Measured: 200 rows at 4 s is 13 min 20 s per run, the ticks inside it are skipped. At about 0.5 s a real call, 1,000 due rows is about 8 minutes, and a payer registered 5 minutes ago is reached near the end. Fine at event scale; a small pool of 5 lookups, or skipping rows looked at in the last few runs, if abandoned rows reach thousands.
+- **N4 · note · more of the NUL class on routes the round did not list.** A signed webhook delivery with a NUL in `tx_ref` or `data.id` is 500 from `payment-webhook.service.ts` (the receipt write; Flutterwave cannot send one, a caller needs the shared secret). `GET /admin/waitlist/registrations` and `/export` with `offerId=%00` are 500 (admin tokens only). Neither is a registration route.
+- **N5 · note for JOIN-02 · trim before sending.** The page should trim the fields or use an email input (a browser strips surrounding white space and line breaks from one), because a tab or newline from a paste is now a 400 and the email words do not name the cause.
+- **N6 · note · the phone still accepts tab, LF, VT, FF and CR** (stripped as white space, the stored phone is digits and `+` only; every other character below U+0020 in the phone is 400). Harmless; the only text field with a different rule. Characters from DEL up (DEL, C1 controls, zero-width space, right-to-left override, line and paragraph separators) are accepted in name, state and makes and none gives a 500.
+- **N7 · note · the refund promise is manual.** "This extra payment will be refunded" is backed by the `failed` row in the admin list with its transaction id and amount and a warning line in the log; nothing tells the team when one appears. The status route answers 200 `status: "failed"` with the first name for such a row, so JOIN-02 must show the sentence, not an error, and must show the 46-character reference with a copy button. Also: a bad percent escape on the status route (`%`, `%ED%A0%80`) is the framework's 400 "Failed to decode param", not the 404 (same on every route in the app, reveals nothing).
+
+### Mutants (18 of my own, applied one at a time to the source, run against `waitlist.contract.spec.ts` and `waitlist-sweep-cron.spec.ts`, `git checkout`ed after; tree clean)
+
+Killed (15): P1 cursor id tie-break reversed (`id < cursor`; would never end) ; P2 cursor loses the later-created-time branch ; P3 a lookup error ends the rest of its page (`break` in the catch) ; P4 cursor taken from the second-last row ; P6 `checked` counts only rows whose lookup did not fail ; P7 a page of exactly 200 ends the run ; P8 pages after the first forget the due filter ; P9 the first page ignores the status filter ; C1 the cron loses `waitForCompletion` ; G1 control check skips the last character ; G3 reference accepts upper-case hex ; G4 reference accepts 36 or 37 digits ; G5 state checked with makes' value ; G6 reference trimmed before the shape test ; D3a the failed-row path in verify keeps the old words.
+
+**Survived (3), all test gaps; the built behaviour is right for each (checked by hand above).**
+- P5 window floor inclusive (a row exactly 48 hours old is looked up). Boundary only. Kill it: seed a row created exactly `RECHECK_UNTIL_MS` before the `now` passed to `recheckPending`; assert it is not looked up.
+- G2 control check reads only the first 60 characters. Would bring back the 500 for a NUL late in a 100-character name or a 254-character email. Kill it: a NUL as the last character of a maximum-length name and email in `waitlist.contract.spec.ts`. The built server answers 400 (`v-long.mjs`, 7 of 7).
+- D3b the lost-race path in `settle` (`updateMany` count 0, row now `failed`) keeps the old "not charged again" words. It is reachable by a real double tap: with a mutant build, two verifies of one second-payer reference 150 ms apart and a 400 ms Flutterwave answer gave the second tap the OLD sentence (`v-d3race.mjs`); the branch as built gives the new one. Kill it: use the harness's `holds` to put one verify behind another and assert both sentences.
+
+### NOT RUN
+
+- The full backend suite (229 suites): not in this brief's list. Unblocked by `npm run test:contract` in a private network namespace.
+- Paging on a database with a locale collation (en_US). This machine has only `C`, `C.utf8` and `POSIX` (`locale -a`); my databases are `C.UTF-8`. The cursor and the order both use the column's own collation, so they agree under any collation, but it was not run. Unblocked by a Postgres with `en_US.utf8` and `v-d1.mjs` layouts B and D.
+- A real Flutterwave `verify_by_reference` answer, including how it answers a rate limit (N2) and how long one call takes (N3): needs one test-mode payment and a timed call.
+- Two server processes each running the cron: I ran three sweeps at once on one server over one database, which is the same race on the same conditional write; the claim is not different, but a second process was not started.
+- Round 1's open question (a failed attempt then a successful one on one tx_ref): unchanged, needs a test-mode payment.
+
 ## Owner sign-off
