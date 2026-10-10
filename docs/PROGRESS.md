@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 145 | 0 | 0 | 0 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 83 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending (You)
 
@@ -161,6 +161,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · INBOX-05 · Verifier report, round 4 (mobile 8e4222d, backend 1cabfe3, the real WAWU ID, one fresh session): defects 13 (all three entry paths 0.06 to 0.10 s, harness catches two live mutants), 14 (contract byte-identical twice), 15 as specified, 16 and 1 to 5 and 12 closed; finding 17 confirmed; finding 18 ruled (R-47, not a defect against I24); merged checks green (mobile check exit 0 on the head and on the merge with main 5de924a, backend specs 141, protected 253 of 253, gates the same 16 FAIL, tripwire 0); trial merges: backend 0 conflicts, mobile one generated file; new defects 21 (a message stored and charged twice when the did-it-land read fails, medium), 22 (Suggested stalls when page 1 gives few open rooms), 23 and 24 (test gaps S6 and L3); status building.
 - 10 Oct 2026 · INBOX-05 · Builder report, round 4 (backend 1cabfe3, mobile code 192b992, main merged into both): the room, the price and Suggested read the backend's three routes (G-450 and G-451 closed, G-623 filed); live in a room opened alone on all three entry paths (0.10 to 0.15 s); contract byte-identical across two builds; M7 and M8 killed; own name recovers; Suggested lists open rooms only; verifying.
 - 10 Oct 2026 · INBOX-05 · Verifier report, round 3 (mobile 9f7bab1, backend 715807d, trial-merged with main): D12 fixed by its real cause (20 of 20 alone, 3 of 3 in the full suite at load 21 to 26) and defects 1 to 5 stay closed; merged checks green (mobile check exit 0 on the second run, backend specs, protected 253 of 253, gates same 16 FAIL); new defects 13 (a room opened without the tabs gets no live messages), 14 (contract:build drifts one line after merging main), 15, 16; 17 and 18 for the lead; 19 of 26 mutants killed (6 survived, 1 equivalent); status building.
 - 8 Oct 2026 · INBOX-05 · Builder: Communities chip (I24), room (I25) and sending (I26) built on INBOX-04's inbox and live client; community rows, the chip and Browse communities wired; 9 gaps filed (G-450 to G-458); verifying.
@@ -175,4 +176,3 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
 - 10 Oct 2026 · JOIN-02 · Verifier report, rounds 4 and 5 (independent session; website `d172f0b` on main `b4a2921`, unmoved; backend `d317094`; mobile `7314b54`; backend main moved to `12e18e3` at the end, see JOIN-01 S1): merge, no blocker, status review. Round 4 held in a real browser: no Start again while checking, it appears after the 5 minutes end with no paid answer, the plain-words question, the last ask for paid, failed and unreachable, Keep checking, a new reference on starting again, a second tab and a second device, and both deploy orders (live page with the new backend; new page with the old backend shows the held screen, one transaction). Round 5: the owner's words identical to main as code points over 13 rendered states and both head tags; V1 title, description and logo (absolute, same origin, 200) on /join in full and `VERCEL_ENV=production` mode, the ticket checkout keeps WAWU's; site mode still locked; nothing under (auth) changed. typecheck, lint, build, check:copy 0. One should-fix (S1: a doc line and three comments still say the window is titled WAWU and the server reuses an unpaid registration) and four notes. NOT RUN: a real Flutterwave window, phones and in-app browsers, the Edge middleware, website mutants.
 - 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
-- 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
