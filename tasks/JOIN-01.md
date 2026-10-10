@@ -227,3 +227,61 @@ phone; M9 the purge deleting paid rows; M10 the price not copied onto the row. L
   webhook switched off, and at once with it on.
 - The website page (JOIN-02) against these routes, and the claim in the app (JOIN-03): other tasks.
 - The Nuvion and Fintava providers: this task does not touch them.
+
+## Round 2 (builder, 10 Oct 2026)
+
+Backend `wmt/JOIN-01` `d26e1e6` (one commit on `d9d9c9f`). Three owner rulings of 10 Oct 2026, nothing else touched. No
+Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called.
+
+**What changed**
+- The link stays open until the owner says: `open_until` is optional in `event_offers` (absent or `null` is no closing
+  date; a value is checked exactly as before, including "must be after open_from"). The shipped `event-oct-2026` offer
+  has none. `closesAt` in `GET /waitlist/offers/current` is `string | null` (null: no closing date), and the contract
+  carries it as `nullable`. An offer with no `open_until` is open from `open_from` for ever; before `open_from` it is
+  still not open (404 `no_open_offer`, 409 `offer_closed`). Closing later is a config change (set `open_until`) and a
+  restart. Of two open offers the one closing soonest still comes first; one with no closing date comes last.
+- Throttles, per address per 10 minutes, each route counted apart: `GET /waitlist/offers/current` and
+  `GET /waitlist/registrations/:reference` 600; `POST /waitlist/registrations` and `POST /waitlist/registrations/verify`
+  300 (was 120 each, one class-level override). Now one `@Throttle` per route (`WAITLIST_THROTTLE_READ`,
+  `WAITLIST_THROTTLE_WRITE` in `waitlist-config.ts`, still under `PROVISIONAL(WAITLIST-LIMITS ...)` with its new reason).
+- Files: `src/plans/plans-config.ts`, `src/plans/plans.config.json`, `src/waitlist/waitlist.service.ts`,
+  `waitlist-config.ts`, `waitlist-public.controller.ts`, `waitlist-view.type.ts`, three waitlist specs,
+  `src/tests/hub-rate-limits.contract.spec.ts`, `contract/openapi.json`.
+
+**How proved**
+- `src/waitlist`: 6 files, 91 of 91 (was 86): the config spec now holds the shipped offer with no closing date, absent and
+  null `open_until`, and a dated one still checked; the contract spec holds closesAt null over HTTP for both spellings,
+  open a century on (service called with that moment, a registration then taken), not open before `open_from`, and two
+  offers (the dated one first, the open-ended one once it has closed); the existing closed and not-yet-open specs pass
+  unchanged. The throttle spec now fills the routes side by side: 300 registers then the 301st is 429 on that route only
+  (header limit 300), the offer and status routes 600 then 429, verify 300 then 429.
+- `src/tests/hub-rate-limits.contract.spec.ts` (host network): 22 of 22. It lists the four overrides with their exact
+  figures (`@Throttle(` four times in the controller file, one per handler).
+- tsc 0; eslint 0 on every changed file; `npm run contract:build`: against the round 1 contract only
+  `closesAt` gained `"nullable": true`.
+- Protected suite `run.sh --fresh HEAD` on `d26e1e6` in a private network namespace, lock `origin/main` `046444b`: 253 of
+  253 (244 of 244 required), lock files unchanged. Gates: the same 16 FAIL lines as main (compared line by line after
+  stripping colour), 72 warnings as in round 1. Tripwire on added lines empty. Secret scan of the staged diff: nothing.
+  No em-dash added.
+- Namespace run (own :4001, fresh migrated and seeded database, `src/plans`, `src/payment-webhook`, `src/openapi`,
+  `src/common`, `src/admin`, `src/data-export-request`, `src/account`, `src/waitlist`): 39 suites, 1,037 of 1,037. The
+  full suite was not re-run (see NOT RUN).
+- The website walk (JOIN-02 round 2) ran against this backend with the shipped config (no closing date): the offer answered
+  `closesAt: null`, registrations and payments worked, and with `open_until` set the answer carried the date.
+
+**Decisions (Default (agent), owner may override)**
+- Findings for the lead: 600 and 300 are above the app's own `medium` count of 200 a minute, so the "an override can only
+  tighten" check in the rate-limit spec could not hold for these four routes as written. The spec still requires every other
+  override to tighten as before; for these four it now requires that the sustained rate over the window (600 in 600 s is 1 a
+  second, 300 in 600 s is 0.5) be no higher than `medium`'s (200 in 60 s is 3.3 a second) and that `short` (20 a second) is
+  untouched. A burst of up to 600 calls inside one minute from one address is therefore allowed on the two read routes, bounded
+  by `short`.
+- `open_until: null` written out is accepted the same as leaving it out.
+- The reference is `wawu-join-` and 36 hex characters (144 bits), not 64; the website's short form is the first 8 of those.
+
+**NOT RUN**
+- The full backend suite on this head (only the 39 related suites and the protected suite ran): unblocked by one run of the
+  lead's namespace runner with no test filter; round 1's full run on `7b36135` had 19 failures in three files, none touching
+  this task.
+- A real Flutterwave payment and a real throttle under a venue's load: as in round 1; the throttle figures are held by specs
+  at the app's guard, not by a load test.
