@@ -609,6 +609,8 @@ My staged diff (this task file, `docs/LOG.md` and the generated progress files) 
 - Light theme from a phone's own colour scheme: the page switches only by `data-theme`, as the builder said; the light pictures set that attribute.
 - Mobile `npm run check`: skipped on purpose (docs only); `npm run gates` and `npm run tasks` were run instead (below).
 
+Merge preparation (builder, 10 Oct 2026): S1 closed, words only. Website `wmt/JOIN-02-r4` `c32eaa6` on `d172f0b`: `docs/03_USER_FLOWS.md` now says the Flutterwave window is titled "WHO MADE THIS?" with the description "Pre-registration" and the Who Made This logo; the comments in `JoinFlow.tsx` (the round 4 list and the one at the walked-away guard) and `join-session.ts` (`joinAbandoned`) now say the server gives every start a new reference and that the guard stays for the deploy window, when an older server reuses an unpaid registration. `git diff d172f0b` is 3 files, 15 added and 10 removed lines, every changed line in `src` a comment. Checks: typecheck 0, lint 0, build 0 (`NEXT_PUBLIC_API_BASE_URL` set), `check:copy` 0; em-dash and secret scans of the added lines nothing. NOT RUN: a page walk (no code changed; unblocked by the verifier's `w-double.mjs` and `w-held.mjs` if wanted).
+
 ## Owner sign-off
 
 ## Round 4 (builder) (10 Oct 2026)
