@@ -8,7 +8,6 @@ import { queryClient } from '@/api/query';
 import { Button, pressScale } from '@/components/Button';
 import { FilterChips } from '@/components/FilterChips';
 import { useFocusRing } from '@/components/focusRing';
-import { formatMoney, Money } from '@/components/Money';
 import { LoadingView, Skeleton, SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -17,8 +16,8 @@ import { RefreshFailed } from '@/features/professionals/parts';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchSchoolsPage, schoolsKeys, type SchoolCard } from './api';
-import { cardLine, categoryChips, cleanQuery, emptyCopy, rowsOf, SEARCH_MAX, type CategoryChoice } from './model';
-import { Cover, SchoolLogo, SearchPill } from './parts';
+import { cardLine, categoryChips, cleanQuery, emptyCopy, fromText, rowsOf, SEARCH_MAX, type CategoryChoice } from './model';
+import { Cover, Fee, SchoolLogo, SearchPill } from './parts';
 import { SEARCH_DELAY_MS, useDebounced } from './useDebounced';
 
 /**
@@ -26,7 +25,7 @@ import { SEARCH_DELAY_MS, useDebounced } from './useDebounced';
  * (`body(..., { gap: 14 })`); a card is the card colour at corner 22 with a hairline, a 110 picture, then 12 above and
  * below and 14 at the sides with 12 between a 44 logo (corner 14, 3 ring in the card colour, pulled 34 up over the
  * picture), the words (name 15.5 at 700, the line under it 12.5 muted, 2 below) and the price (the word "from" 11.5
- * muted, then the amount 14.5 without kobo). The words sit on the canvas's normal line.
+ * muted, then the amount 14.5, with its kobo only when it has some; a lowest fee of nothing reads "Free" with no "from"). The words sit on the canvas's normal line.
  */
 export const schoolsMetrics = {
   bodyTop: space.sm,
@@ -206,7 +205,7 @@ export function SchoolRow({ school, onPress }: { school: SchoolCard; onPress: ()
   const { colors } = useWawu();
   const ring = useFocusRing();
   const from = school.fromPriceKobo;
-  const label = [school.name, cardLine(school), from === null ? null : `from ${formatMoney(from, { decimals: false })}`].filter(Boolean).join(', ');
+  const label = [school.name, cardLine(school), from === null ? null : fromText(from)].filter(Boolean).join(', ');
   return (
     <Pressable
       testID={`schools-row-${school.id}`}
@@ -245,10 +244,12 @@ export function SchoolRow({ school, onPress }: { school: SchoolCard; onPress: ()
         </View>
         {from === null ? null : (
           <View style={styles.price}>
-            <Text variant="body" tone="textMuted" style={styles.from}>
-              from
-            </Text>
-            <Money minorUnits={from} decimals={false} size={schoolsMetrics.price} testID={`schools-price-${school.id}`} />
+            {from === 0 ? null : (
+              <Text variant="body" tone="textMuted" style={styles.from}>
+                from
+              </Text>
+            )}
+            <Fee kobo={from} size={schoolsMetrics.price} testID={`schools-price-${school.id}`} />
           </View>
         )}
       </View>
