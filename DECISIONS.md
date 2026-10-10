@@ -394,9 +394,10 @@ registration link, like a wait list .... dont mess with the sign up page").*
   (card, bank transfer, USSD), the rail that is live in production today; this is an exception to R-44's "no card" for
   this fee only, because the Nuvion wallet is not live yet. WAWU is the merchant of its own fee, so no creator money is
   held (the wallet note is unaffected).
-- Open, defaults built until the owner says otherwise: what ₦2,000 buys (default: the Verify tier for its own 30
-  days), when the plan's days start (default: when the person claims it in the app, so nobody loses days before the
-  app reaches them), and the event's closing date (`open_until`).
+- Owner answers, 10 Oct 2026: the ₦2,000 buys whatever the ₦1,000 Verify tier gives ("whatever the 1k own says");
+  the plan's days start when the person joins the app (the claim, JOIN-03); the link stays open until the owner says
+  (no `open_until`; closing is a config change). The page shows no offer card, no plan length and no start date
+  ("Don't write the plans time there"); the price appears only on the Pay button.
 
 **Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
 next).

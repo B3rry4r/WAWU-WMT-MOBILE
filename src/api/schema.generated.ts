@@ -4911,6 +4911,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/waitlist/offers/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The offer open for registration. */
+        get: operations["WaitlistPublicController_currentOffer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/waitlist/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register and get the checkout settings. Reuses this person's own unpaid
+         *     registration (same offer, phone and email) rather than adding another.
+         *     Nothing is charged here: the payment happens in the Flutterwave checkout
+         *     with the answer's `flutterwaveConfig`, and counts only after
+         *     POST /waitlist/registrations/verify (or Flutterwave's own notice).
+         */
+        post: operations["WaitlistPublicController_register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/waitlist/registrations/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a payment. The server asks Flutterwave itself (succeeded, this
+         *     registration's reference, naira, not less than the fee) before it marks
+         *     the registration paid, so the transaction id is only a claim. Idempotent:
+         *     a paid registration answers the same result again.
+         */
+        post: operations["WaitlistPublicController_verify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/waitlist/registrations/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where a registration stands: status and first name only, never a phone or email. */
+        get: operations["WaitlistPublicController_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/waitlist/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Registrations, newest first, every status unless `status` is given
+         *     (`pending`, `paid` or `failed`; a `failed` row is a second payment kept
+         *     for a refund). `offerId` narrows to one offer.
+         */
+        get: operations["WaitlistAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/waitlist/registrations/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The same rows as a CSV file, oldest first, inside the usual envelope
+         *     (`content` is the file; save it as `fileName`). A byte-order mark first,
+         *     so a spreadsheet opens it as UTF-8 and shows the naira sign.
+         */
+        get: operations["WaitlistAdminController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ads/{id}/events": {
         parameters: {
             query?: never;
@@ -6484,6 +6605,32 @@ export interface components {
              * @enum {string}
              */
             kind?: "amen";
+        };
+        CreateWaitlistRegistrationDto: {
+            /** @description The offer the page showed (`GET /waitlist/offers/current`). */
+            offerId: string;
+            /** @description Full name, as the person writes it. */
+            fullName: string;
+            /**
+             * @description Phone. A Nigerian mobile in any common form (`08031234567`,
+             *     `8031234567`, `2348031234567`, `+2348031234567`), or a number from
+             *     elsewhere written with its country code. The server stores E.164.
+             */
+            phone: string;
+            /** @description Email. The server stores it in lower case. */
+            email: string;
+            /** @description The state they are in (optional, up to 60 characters). */
+            state?: string;
+            /** @description What they make (optional, up to 60 characters). */
+            makes?: string;
+            /** @description The consent line (with the privacy link) was accepted. Must be true. */
+            consent: boolean;
+        };
+        VerifyWaitlistRegistrationDto: {
+            /** @description The reference POST /waitlist/registrations gave. */
+            reference: string;
+            /** @description The transaction id the payment modal handed back (digits). */
+            transactionId: string;
         };
         CreateAdCreativeDto: {
             headline: string;
@@ -9880,6 +10027,63 @@ export interface components {
             checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
             actions: components["schemas"]["PlanActionView"][];
             caps: components["schemas"]["PlanCapsView"];
+        };
+        AdminWaitlistRegistrationView: {
+            id: string;
+            offerId: string;
+            fullName: string;
+            phone: string;
+            email: string;
+            state: string | null;
+            makes: string | null;
+            /** @enum {string} */
+            status: "pending" | "failed" | "paid";
+            amountKobo: number;
+            paidKobo: number | null;
+            paidAt: string | null;
+            reference: string;
+            flutterwaveTransactionId: string | null;
+            claimedByWawuId: string | null;
+            claimedAt: string | null;
+            createdAt: string;
+        };
+        AdminWaitlistExportView: {
+            fileName: string;
+            contentType: string;
+            rowCount: number;
+            content: string;
+            generatedAt: string;
+        };
+        WaitlistOfferView: {
+            id: string;
+            name: string;
+            priceKobo: number;
+            tierName: string;
+            products: number;
+            days: number;
+            closesAt: string | null;
+        };
+        WaitlistCheckoutView: {
+            publicKey: string;
+            txRef: string;
+            amount: number;
+            /** @enum {string} */
+            currency: "NGN";
+            customerName: string;
+            customerEmail: string;
+            customerPhone: string;
+        };
+        WaitlistRegistrationStartView: {
+            reference: string;
+            offerId: string;
+            amountKobo: number;
+            flutterwaveConfig: components["schemas"]["WaitlistCheckoutView"];
+        };
+        WaitlistRegistrationStatusView: {
+            reference: string;
+            /** @enum {string} */
+            status: "pending" | "failed" | "paid";
+            firstName: string;
         };
         NuvionWebhookAck: {
             /** @enum {string} */
@@ -19657,6 +19861,210 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyTierView"];
+                };
+            };
+        };
+    };
+    WaitlistPublicController_currentOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistOfferView"];
+                };
+            };
+            /** @description `reason.code` `no_open_offer`: no offer is open now. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WaitlistPublicController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWaitlistRegistrationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistRegistrationStartView"];
+                };
+            };
+            /** @description `reason.code` `phone_invalid`, `email_invalid`, `name_invalid` or `consent_required`; a malformed body has no `reason`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `no_open_offer`: no offer has this id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `offer_closed` (closed or not open yet) or `already_registered` (this phone or email already paid; nothing is charged). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `payments_unavailable`: payments are not set up. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WaitlistPublicController_verify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyWaitlistRegistrationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistRegistrationStatusView"];
+                };
+            };
+            /** @description `reason.code` `not_found`: no registration has this reference. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `payment_not_confirmed` (Flutterwave does not say it succeeded yet: check again, never pay again), `transaction_already_used` or `already_registered`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `payment_mismatch`: the payment is not this registration's (amount, currency or reference). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `payment_check_unavailable`: Flutterwave could not be reached; try the check again. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WaitlistPublicController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistRegistrationStatusView"];
+                };
+            };
+            /** @description `reason.code` `not_found`: the same answer for a reference that does not exist and one that was never issued. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WaitlistAdminController_list: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+                /** @description Only this offer. Omitted means every offer. */
+                offerId?: string;
+                /** @description Only this status. Omitted means every status. */
+                status?: "pending" | "paid" | "failed";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWaitlistRegistrationView"][];
+                };
+            };
+        };
+    };
+    WaitlistAdminController_export: {
+        parameters: {
+            query?: {
+                offerId?: string;
+                status?: "pending" | "paid" | "failed";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWaitlistExportView"];
                 };
             };
         };

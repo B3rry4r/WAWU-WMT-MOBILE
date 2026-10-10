@@ -7,7 +7,7 @@ order: 240
 priority: launch
 repo: wawu-backend
 type: money-path
-status: review
+status: done
 depends_on: [TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -468,3 +468,9 @@ normalised (10 specs); V22 a failed lookup treated as paid in the sweep.
 - A full production boot of `AppModule`: it needs live Fintava and Nuvion settings and would risk those hosts. Run instead: the real `WaitlistModule` with the real Flutterwave adapter in production mode (above).
 - A load test of the venue case (N3). Unblocked by a script firing 200 page loads in 10 seconds from one address at the deployed server.
 - The JOIN-02 page and the JOIN-03 claim: other tasks.
+
+## Lead merge note (10 Oct 2026)
+
+Merged 10 Oct 2026 as backend #99 (9311447) on the independent verifier's review (mobile bd51855, no blocker). Should-fix D1 (the 5-minute re-check pages only the oldest 200 pending rows), D2 (a NUL byte answers 500) and D3 (verify-time already_registered copy) follow in JOIN-01 round 3 before the event. Owner answers of 10 Oct folded in: the link stays open until the owner says (no open_until), the plan's days start at claim in the app (JOIN-03), the page shows no plan length.
+
+## Owner sign-off
