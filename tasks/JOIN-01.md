@@ -7,7 +7,7 @@ order: 240
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -285,3 +285,186 @@ Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called.
   this task.
 - A real Flutterwave payment and a real throttle under a venue's load: as in round 1; the throttle figures are held by specs
   at the app's guard, not by a load test.
+
+## Verifier report (independent, rounds 1 and 2)
+
+Verifier, 10 Oct 2026 (independent session; wrote none of this). Backend `wmt/JOIN-01` `d26e1e6` (detached worktree
+`/home/user/wt/vb-JOIN-01`); backend `origin/main` `046444b`, which is also the branch's merge base: main has not moved
+since the builder branched, so a trial merge is the branch itself (nothing to merge). Mobile `wmt/JOIN-01` `c65b526`
+(the builder's report) and mobile main `00f84cc` (unmoved). Evidence: the lead's scratchpad `vjoin01/` (`out-*.txt`, `mut/`, `ns/`).
+No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called. Flutterwave was stood in at the two DI seams
+(`FLUTTERWAVE_CLIENT` and `WAITLIST_PAYMENT_LOOKUP`) on the REAL `AppModule` built from the branch (`dist/`), real
+Postgres (`vj01_` databases), real admin login (argon2 and HS256) and a genuine RS256 user token from the mock WAWU ID,
+every call over HTTP. My own driver scripts, not the builder's specs, produced the numbers below; the builder's specs
+were also run (`src/waitlist` 6 files, 91 of 91).
+
+**Verdict: review. No blocker.** Every money check held under my own attack: a payment below the fee, in another
+currency, under another tx_ref, with a spent transaction id or with a Flutterwave status other than `successful` is
+refused and the row stays `pending`; one paid row per offer per phone and per email held at 2 and 6 concurrent verifies;
+a second payment for the same person is kept `failed` with its transaction id and amount and is visible to the admin.
+Three should-fix defects (D1 to D3) and ten notes are below. D1 (the re-check's 200-row limit) should be fixed before the
+event unless the Flutterwave webhook is confirmed live first.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `tsc --noEmit` 0 (40 s). eslint `--no-fix` on the 27 changed `.ts` files: 0 errors on 26; `payment-webhook.service.ts` has 7 errors, the same 7 as origin/main's copy (linted from stdin, line numbers shifted by 3), none on a line this task touched. `scripts/gates/run.py`: branch 16 fail and 72 warn, main 16 fail and 70 warn; the sorted FAIL lines are identical (`diff` empty); the two extra warnings are `PROVISIONAL(WAITLIST-LIMITS)` and `PROVISIONAL(WAITLIST-RECHECK)`, both with `why=`. Tripwire on added lines: empty. Secret scan of the whole diff (hex runs, base64 runs, `sk_`, `FLWSECK`, bearer, key headers): only `$ref` strings in the contract. No em-dash added outside code comments. |
+| V2 Contract | passed (D2 on odd input) | `npm run contract:build` exit 0 and `contract/openapi.json` identical to the branch's (`git diff` empty). Against main: 6 paths and 8 schemas added, none removed or changed, the existing paths keep their order (python comparison), `WaitlistOfferView.closesAt` is `{type: string, nullable: true}`. Phones in four Nigerian forms plus spaced, dashed and bracketed spellings, and 8 email spellings, behave (C1, C2 below). Odd input: a NUL byte gives 500 (D2). |
+| V3 Regression | passed | Protected suite `scripts/protected-routes/run.sh --fresh HEAD` in a private network namespace: 253/253, "all 244 required tests passed", code `d26e1e6`, lock `origin/main` `046444b`; lock files unchanged (`git diff origin/main..HEAD` on `src/protected-routes`, `test/protected-routes`, `.pipeline/protected-registry.json` is empty). Full suite in a private network namespace (own :4001, checked before, after start and after the run; fresh migrated and seeded `vj01_ns_test`): 229 suites, 5,856 passed, 4 skipped, 11 failed, all 11 in `hub-rate-limits.contract.spec.ts` ("needs a non-loopback IPv4 interface", as the common rules say), which is 22 of 22 on the host network; 993 s; no timing flake this time. The other purchases' webhook behaviour: `src/payment-webhook/tests/payment-webhook.contract.spec.ts` and `payment-webhook-throttle.contract.spec.ts` are inside those 228 passing suites; the new branch is last in `resolve()` and entered only for a `wawu-join-` reference. |
+| V4 Field trace | passed | Name, phone, email, state, "what you make", consent time: written by `register` (normalised), read by the admin list and CSV (full), the checkout config (returned only to the caller who sent them: on the reuse path the row's phone and email equal the request's and the name is overwritten by it, so nobody else's data comes back), `firstName` only on the status route, the data export (claimed rows only, no reference or transaction id) and the purge map (`claimedByWawuId` OWNED). Phone and email appear in no log line (grep of the app log over every driver run: only `***1234` masks). |
+| V6 States | passed | Each state from its real cause on the built server: no open offer (404; config with a future `open_from`), closed (409 `offer_closed`; config with a past `open_until`), `payments_unavailable` (503; production mode, empty public key), `payment_check_unavailable` (503; Flutterwave throws), `payment_not_confirmed` (409), `payment_mismatch` (422), `transaction_already_used` (409), `already_registered` (409), `consent_required` (400), 429 on each of the four routes. |
+| V7 Flow walk | passed | New person: register, pay, verify, status. Phone closed after paying: the webhook settles; webhook consumed by a failed first attempt: the sweep settles; payment verified after the offer closed. The same person twice (sequential, 2 and 6 concurrent, four phone forms): one paid, the rest `failed`. Resume by reference only (the status route). |
+| Mobile check | exit 0 on the second run | `npm run check` run after the status was set to `review` (the `unbuilt_entries` gate reads it): first run exit 1, three suites timed out at 20 s with the machine at load average 5 to 6 (`eventsScreens.test.tsx`, the known flake, plus `OpenWalletScreen.test.tsx` and `settingsScreens.test.tsx`); run alone they pass, 175 of 175; second full run exit 0: 109 suites, 1,852 tests, gates 0 fail on 445 files, 271 tasks and 279 artboards. This task changes only the task file, `docs/LOG.md` and the generated progress files on this branch. |
+| V8 Money attack | passed | Below. |
+| V9 Live seam | passed for the Hub; NOT RUN for Flutterwave | Real server, real database, real admin and user tokens (the RS256 user token is 401 on both admin routes). Flutterwave itself was never called: see NOT RUN. |
+| Mutants | 22 run, 17 killed, 5 survived | Below. |
+
+### Money attack (V8), my reproductions
+
+Built server, Flutterwave scripted per transaction id (`vj-boot.cjs`). Drivers: `t-money.mjs` 37 of 37, `t-person.mjs` 24 of 24,
+`t-webhook.mjs` 18 of 18, `t-sweep.mjs` 7 pass and 2 fail (the two fails are the D1 probe), `t-overlap.mjs` 2 of 2, `t-admin.mjs` 29 pass
+and 1 fail (D2), `t-throttle.mjs` 6 of 6, `t-boot.sh` 7 of 7 plus the two refused boots, `t-prod.sh` 5 cases as described.
+- **Refused, row stays `pending`, no transaction id stored** (422 `payment_mismatch` unless stated): amount 1999.99, 0.01,
+  1999.999 (a fraction of a kobo), -2000, 0, 1e12 (over the integer column) and the string "2000"; currency USD, "ngn" and empty;
+  the tx_ref of another registration and an empty tx_ref; status `failed`, `pending`, `cancelled`, `SUCCESSFUL`, `success` and empty
+  (409 `payment_not_confirmed`); Flutterwave unreachable (503 `payment_check_unavailable`); a transaction id already used by
+  another registration (409 `transaction_already_used`, Flutterwave not asked); a payment made for registration A presented on B (422).
+  Extra body fields (`amountKobo`, `status`) are refused 400 by the whitelist pipe.
+- **Correct payment**: paid, `paidKobo` 200000, transaction id stored; verifying again with the same or another id
+  answers the identical body and Flutterwave is asked once (call log).
+- **Amount ABOVE the fee (judged): acceptable, and the right call.** ₦2,500.50 against a ₦2,000 fee marked the row paid and
+  recorded `paidKobo 250050`. Flutterwave's `amount` is the amount the checkout asked for, so more than the fee happens only
+  when the payer edits the amount in the browser; refusing it would leave a charged payer unregistered. The excess is
+  visible to the team (Fee and Paid columns, `paidKobo` in the list) but nothing flags it (N1).
+- **Payment after the offer closed (judged): honoured, correct.** With `open_until` 80 s ahead: after it passed,
+  `offers/current` was 404, register 409 `offer_closed` (nothing written), a verify for a row registered before the close
+  answered paid, and the sweep settled a payer who never came back. The person was charged on a link that was open when
+  they registered; refusing would keep their money.
+- **One paid per offer per phone and per email**: after one paid registration, eight phone spellings (`0…`, without the 0,
+  `234…`, `+234…`, spaced, bracketed and dashed, padded) with a new email, and four email spellings (upper case,
+  surrounding spaces, first letter capital, trailing newline) with a new phone, each answered 409 `already_registered`,
+  `initCharge` was never called and no row was written. Concurrent verifies of separate rows (separate references, each with a
+  valid payment): same phone 2 and 6, same email 2 and 6, the same phone in four forms 4: every time exactly one HTTP 200, one `paid`
+  row and the others `failed` with their transaction id and `paidKobo` (money to refund). The same reference and id verified 6
+  at once: six identical 200s and one paid row. Two references paid in turn for one phone: the second is 409 and `failed`,
+  verifying it again stays 409, the status route says `failed`, and the admin list (`status=failed`) shows it with its
+  transaction id and amount (I7).
+- **Webhook**: no `verif-hash`, a wrong one, one character short and an empty one: 401, no receipt written, row `pending`.
+  A signed delivery whose payload claims 99999 while Flutterwave says 1000: `rejected`, row `pending`. A signed delivery whose
+  payload says `failed` and 1 while Flutterwave says successful 2000: `settled` (the payload is never consulted). Replay:
+  `duplicate`, row unchanged. Flutterwave unreachable: 503, receipt `failed` (reclaimable), and a redelivery then settles. A
+  `wawu-join-` reference with no registration: `unmatched`. A tx id used by another registration: `rejected`. `charge.failed`:
+  `ignored`. A failed first attempt consumes the single `event:tx_ref` claim, so the later successful delivery is `duplicate` and
+  the row stays `pending` (as the builder said); the sweep then settles it from the reference (W16, W17) and so does a browser verify with the good id (W18).
+- **Sweep**: rows at 2 min, 4.5 min, 49 h and 3 days are not looked up; 6 min and 47 h are, by reference, and paid. Flutterwave
+  answering failed, 1999, USD, another tx_ref, an empty tx_ref or 2000.004: nothing marked, no transaction id stored. One
+  unreachable lookup marks nothing and the rest of the run goes on. A second run is harmless. Two sweeps started together over the
+  same 5 rows (what a run longer than 5 minutes on one server, or two servers, would do): all five paid exactly once, no
+  `failed` row, no error; the only cost is each row asked twice. The cron has no `waitForCompletion` and no lock, so the two
+  copies CAN overlap on one server (a run is up to 200 rows at up to 10 s each) and on two; the conditional write makes that
+  safe (N2). The sweep's batch limit is D1.
+- **Purge**: `pending` older than 7 days deleted (8 days, 7 days 1 minute), `pending` at 6 days kept, `paid` and `failed` of 30 and 8 days kept.
+- **Status route**: only `reference`, `status`, `firstName`, never phone, email, transaction id or amount. Unknown, an upper-cased
+  real reference, `wawu-join-` alone, 500 characters, an SQL-ish string, a path-ish string and an encoded `₦` all answer
+  byte-identical 404 bodies with identical headers; verify with an unknown or malformed reference answers the same 404; the one
+  exception is a NUL byte (D2). The reference is `wawu-join-` plus 18 bytes from `node:crypto` `randomBytes` (144 bits; no
+  `Math.random` in the module); 40 draws in my run were all distinct. `Cache-Control: no-store` on all four routes.
+- **Boot**: production mode with the REAL Flutterwave adapter (no stand-in; a minimal module, because a full production boot
+  needs live Fintava and Nuvion settings and calling those hosts is forbidden): an empty or unset `FLUTTERWAVE_PUBLIC_KEY` gives
+  503 `payments_unavailable` on register and the row count did not move (26 before and after); with a public key it answers 200
+  with that key; no secret key, and a placeholder secret key, refuse to boot with the existing "FLUTTERWAVE_SECRET_KEY is
+  missing or a placeholder" message. A malformed `event_offers` stops a real boot naming the field
+  (`event_offers[0].price_kobo ... (it is 0)`, `event_offers[0].open_until ... (it is "garbage")`). The parse check over 27
+  variants: `open_until` absent and `null` accepted, a valid date accepted; before or equal to `open_from`, garbage, empty
+  string, `false`, `0`, no offset and 31 February refused; `price_kobo` 0, -1, 1.5, a string, missing and 3e9 refused; unknown
+  tier, `tier_days` 0, upper-case id, duplicate id, unknown field, missing and non-list `event_offers` and an empty name
+  refused; an empty list accepted (the link is then simply closed).
+
+### Round 2
+
+- **Open-ended offer**: the shipped offer answers 200 with `closesAt: null`. Before `open_from` it is 404 `no_open_offer`
+  (current) and 409 `offer_closed` "has not opened yet" (register); at the instant `open_from` it opens; in 2090 it is still
+  open. A dated offer is open at the closing instant and closed 1 ms later. With two open offers the dated one comes first,
+  and the open-ended one remains after it closes. A present `open_until` is still validated at boot (above).
+- **Throttles** (one address, the four routes at once): offer and status read 600 times and the 601st is 429; register and
+  verify 300 and the 301st is 429; `x-ratelimit-limit-medium` says 600 and 300; the routes are counted apart (another route from
+  the same address still answers, another address is untouched). `hub-rate-limits.contract.spec.ts` on the host network: 22 of 22,
+  and the four routes are listed there with their exact figures.
+- **The relaxed rate-limit rule (judged): acceptable.** Only a handler named `WaitlistPublicController.<method>` can use
+  the new allowance, and the same spec pins the per-file count of `@Throttle(` (4 in that controller) and the exact figures of
+  each of the four, so a fifth override, another route or a changed figure fails. My mutants: read limit 6000 (killed), `short:
+  1000 a second` added to the write routes (killed), a 1000-a-minute `@Throttle` on `GET /plans` (killed by the count test).
+  `short` is untouched: 60 offer reads in one instant from one address gave 20 answers and 40 429s. A burst of 600 in one
+  minute from one address is therefore bounded by `short` (about 30 seconds to spend the 10-minute allowance); the offer read touches
+  no database and the status read is one indexed lookup, so I judge it acceptable. What a venue will feel is the `short` limit (N3).
+
+### Admin list and CSV
+
+superadmin, finance and support: list 200 and export 200; reviewer 403 on both; the RS256 user token 401 on both; no token 401.
+Paging: `perPage=2` pages 1 and 2 do not overlap, newest first, `pagination` block present; `page=0`, `-1`, `1001`, `abc`,
+`perPage=0`, `101`, `1.5` and `status=bogus` all 400. `status=paid` returns only paid; the failed second payment is listed with
+its transaction id and `paidKobo`. **CSV formula injection**: names, state and "what you make" of `=HYPERLINK(...)`, `+1+1`,
+`-2+3`, `@SUM(1+1)`, a leading TAB, a leading CR, `=cmd|' /C calc'!A0`, and an email beginning `=`, read back with a quote-aware
+parser: no data cell starts with `=`, `+`, `-`, `@`, TAB or CR (each is written with a `'` in front); the BOM, header and
+`rowCount` match the lines. **Phone: the full number is the right choice** for the team that calls people back (only
+superadmin, finance and support can read it); a masked phone would make the call-back impossible. The CSV writes every phone as `'+234…` (N4).
+
+### Mutants (22 applied; each run against the specs that should catch it; `git restore`d; tree clean after)
+
+Killed (17): V1 one kobo short of the fee accepted; V2 the webhook settles from the payload without asking Flutterwave; V3
+sweep without its 48 hour bound; V4 sweep without its 5 minute floor; V5 purge keeps 1 day not 7; V6 reference of 8 bytes
+(36 specs); V7 reviewer allowed on the admin list; V8 names not formula-guarded in the CSV; V10 status route returns the full
+name; V11 an offer with no `open_until` treated as closed; V12 open before `open_from`; V13 read throttle 6000; V14 `short`
+raised on the write routes; V15 another route loosened (`GET /plans`); V16 email not lower-cased; V17 Nigerian phone not
+normalised (10 specs); V22 a failed lookup treated as paid in the sweep.
+**Survived (5): all test gaps; the behaviour is right on the built server (checked by hand above).**
+- V9 state and "what you make" not formula-guarded in the CSV. Kill it: put `=HYPERLINK(...)` into `state` and `makes` in `waitlist-admin.contract.spec.ts`.
+- V18 `settle` stores the id the browser sent, not the one Flutterwave returned. Kill it: a stand-in whose `verifyCharge` returns another `transactionId` than asked; assert the stored one.
+- V19 the paid write has no `status: pending` in its WHERE. Kill it: two concurrent verifies of one reference with two different valid ids; assert the first id and `paidAt` are kept.
+- V20 the pre-write transaction-id check removed (the unique index and the post-write holder check remain): equivalent, defence in depth.
+- V21 reusing a person's own pending row does not refresh the fee. Kill it: change `price_kobo`, register the same person again, assert the new amount.
+
+### Defects
+
+- **D1 · should fix (before the event, unless the webhook is confirmed live) · the re-check can leave a payer unregistered for two days.**
+  `recheckPending` takes `RECHECK_BATCH` = 200 rows ordered by `createdAt` ascending and keeps no cursor or last-checked
+  time. Once more than 200 `pending` rows sit in the 5 minute to 48 hour window, the same oldest 200 are looked up on every
+  run and a newer payer is not reached until older rows are paid or leave the window. Reproduction (`t-sweep.mjs`, E8 to E10):
+  205 abandoned pending rows plus one payer who paid and never came back (10 minutes old; Flutterwave scripted to say
+  successful): run 1 `checked=200 paid=0`, run 2 the same, and still unpaid after the 205 were aged by 28 hours. Abandoned
+  registrations are what a people-at-an-event form produces, and the sweep is the only net for a payer whose first webhook
+  attempt failed or whose webhook is not set up. Impact: not lost (the pending row with phone and email stays 7 days and shows in
+  the admin list), but unregistered for about 45 hours, and after a registration burst a payer can miss their window entirely. Fix: page through all
+  due rows with a cursor inside one run (or order by a `lastCheckedAt`), keep the 10 second timeout, and add `waitForCompletion: true` to the cron.
+- **D2 · should fix (low) · a NUL byte gives 500, not 404 or 400.** `GET /waitlist/registrations/wawu-join-<36 hex>%00` and
+  `POST /waitlist/registrations/verify` with a NUL in `reference` answer 500 "Something went wrong" instead of the same 404 as every
+  other miss; a NUL in `fullName`, `state`, `makes` or `email` on register is also a 500 (Postgres refuses `0x00`). Each writes a
+  20-line ERROR stack (no phone or email in it). Reproduction: `t-nul.mjs` N1 to N6. Fix: `byReference` returns null unless the
+  reference matches `^wawu-join-[0-9a-f]{36}$`, and a text field containing `\u0000` is refused 400 or stripped in `tidy`.
+- **D3 · should fix (copy) · "You have not been charged again" is untrue after a second payment.** `refuseDuplicate` and the
+  verify of a `failed` row answer 409 `already_registered` with "You are already registered for this event. You have not been
+  charged again." For a payer whose second payment was just kept for a refund that is false: they were charged. At register time the sentence is right. Fix: a distinct
+  message or code on the verify path ("You are already registered. This second payment will be refunded; contact support with
+  your reference"), and JOIN-02 must not show "no charge" for an `already_registered` that comes back from verify.
+
+### Notes (none stops the release)
+
+- **N1** An overpayment is accepted and recorded (`paidKobo` above `amountKobo`); nothing flags it for a refund, the team compares two columns.
+- **N2** The two crons have no overlap guard (`waitForCompletion`, a lock); safe because the write is conditional (proved with two sweeps at once). The other crons in this backend have none either.
+- **N3** `short` (20 a second per route per address) is untouched, so a venue of several hundred people scanning at once behind
+  one Wi-Fi address gets 429 on `GET /waitlist/offers/current` above 20 page loads a second. A scan spread over 30 to 60 seconds is under
+  that; "scan now" from a stage may not be. JOIN-02's page should retry a 429 after a short random wait. Unclear whether the owner wants `short` relaxed for the offer read (it needs another change in the rate-limit spec).
+- **N4** The CSV writes every phone as `'+2348…` with a leading apostrophe (the formula guard treats `+` as dangerous). The phone
+  is server-normalised to `+` and digits so it cannot be a formula, but the apostrophe shows in Excel and Sheets and is copied into a dialer. Cosmetic.
+- **N5** Six simultaneous registers of one person (a double tap) produced 3 pending rows and 3 references (no unique key on pending). Harmless: whichever is paid wins; a second paid one is kept `failed` for refund.
+- **N6** A paid registration is claimable by phone or email and neither is proven at payment: anyone can pay for another person's phone or email, and the real owner is then told `already_registered`. JOIN-03's claim must verify the claimer holds that phone or email.
+- **N7** A foreign number written with a bracketed trunk zero (`+44 (0)7700…`) normalises to a different E.164 than `+44 7700…`, so one-per-phone is bypassed for those; the email check still holds. `00234…` for a Nigerian number is refused as invalid (the person retypes).
+- **N8** The existing webhook logs the full `wawu-join-` reference in its error and warn lines (`Webhook <event>:<reference> failed (retryable)`). It is not personal data but it is the key to the status and verify routes. No phone or email is logged anywhere (grep).
+- **N9** Every verify of a `pending` reference asks Flutterwave once (300 a 10 minutes per address); a known pending reference can be used to spend Flutterwave API calls. Low.
+- **N10** The mock Flutterwave adapter (non-production, no key) keys its charges by its own `initCharge` tx_ref, but this task uses its own reference, so on a dev box without a stand-in a registration can never be confirmed. Production refuses the mock. Only an EMPTY public key is guarded (503); a placeholder public key would be handed to the page.
+
+### NOT RUN
+
+- A real Flutterwave payment and a real `verify_by_reference` answer. Unblocked by one test-mode payment with `FLUTTERWAVE_SECRET_KEY`, `FLUTTERWAVE_PUBLIC_KEY` and `FLUTTERWAVE_SECRET_HASH` set on the server and the dashboard webhook pointing at `/api/hub/webhooks/flutterwave`. One question matters most: when one tx_ref has a failed attempt and then a successful one, does `GET /v3/transactions/verify_by_reference` return the successful one? The sweep (and so D1's cost) depends on it. Unblocked by paying once with a declined card and then a transfer on the same reference, with the webhook switched off.
+- A full production boot of `AppModule`: it needs live Fintava and Nuvion settings and would risk those hosts. Run instead: the real `WaitlistModule` with the real Flutterwave adapter in production mode (above).
+- A load test of the venue case (N3). Unblocked by a script firing 200 page loads in 10 seconds from one address at the deployed server.
+- The JOIN-02 page and the JOIN-03 claim: other tasks.
