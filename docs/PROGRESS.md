@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 118 of 244.**
+**Launch tasks done: 119 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 147 | 0 | 0 | 0 |
+| todo | 146 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 79 | 27 | 11 | 5 |
+| done | 80 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -69,6 +69,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
 - [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
+- [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
@@ -157,6 +158,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
 - 10 Oct 2026 · LEGAL-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
 - 10 Oct 2026 · LEGAL-02 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
 - 10 Oct 2026 · EVENTS-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
@@ -167,8 +169,7 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-01 · Merged (backend #99 9311447): event registration link routes, Flutterwave verify, webhook branch and 5-minute re-check, admin list and CSV; D1-D3 follow in round 3.
 - 10 Oct 2026 · JOIN-01 · Built: event registration link, backend. Four public routes (offer, register, verify, status) under /waitlist, a pending/paid/failed registration table with one paid row per offer and phone or email, the fee in plans.config.json, Flutterwave webhook plus a 5-minute by-reference re-check for payers who never came back, 7-day purge of unpaid rows, team list and CSV; backend wmt/JOIN-01 (contract at 5773fdb); 86 specs, protected suite 253/253, 13 mutants killed; a real payment NOT RUN (owner pays once after deploy); status verifying.
 - 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
+- 9 Oct 2026 · EVENTS-04 · Verified (back to building): V1, V4, V6, V7, V9 and the protected suite pass, 6 of 6 mutants killed, V10 NOT RUN; V5 found D1 to D7 (R-46 entries left out: My events tab and button, Get verified; E14 Starts truncated; E22 top gap; tab line height; shared TextField label line; E14 hint unfiled; G-443 stale) and F1 (NUL is a 500 on POST /events), see the task's Verifier report.
+- 8 Oct 2026 · EVENTS-04 · Built (verifying): the host wizard E13 to E16 with the tick gate E21 and Sent back E22, Host your event on E1, and the backend (`GET /events/options` serves the ticket rules and field limits, `event/banner` upload folder). Backend PR and mobile PR depend on mobile #14 and backend #78.
 - 9 Oct 2026 · PROS-01 · Built: Find a professional (P1 directory with field chips, paging and P4, P2 and P3 profile) against PROS-02's routes; Explore's Find a professional door opens P1; V5 pictures NOT RUN; status verifying.
 - 9 Oct 2026 · LEGAL-02 · Verifier, round 3: gap ids unique on every branch, the legal.thread cursor mutant is now caught, `npm run check` exit 0; no defect open, status review.
-- 9 Oct 2026 · LEGAL-02 · Builder, round 3: D2 fixed (gaps renumbered G-500 to G-502, clear of every branch) and D3 fixed (a test pins that `legal.thread` never moves the catch-up cursor; fails with the mutant).
-- 9 Oct 2026 · LEGAL-02 · Verifier, round 2: D1 verified live (consultant message on screen in about 60 ms, light and dark, also after a foreground; frame reaches only the matter's client); V4, V5, V6, V9 and the backend checks pass; two defects open, so `building`: D2 gap ids G-470 to G-472 are also used on `wmt/NUV-03`, D3 no test pins that `legal.thread` leaves the catch-up cursor alone.
-- 9 Oct 2026 · LEGAL-02 · Builder, round 2: D1 fixed (the shared live client now passes `legal.thread` frames on; a test over the real client with a fake socket fails on the old code; live run: the consultant's message shows 72 ms after the admin write, no refresh); origin/main merged into both branches.

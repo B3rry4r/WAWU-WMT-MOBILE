@@ -5302,7 +5302,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "event/speaker" | "profile/work";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "event/speaker" | "event/banner" | "profile/work";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -9582,6 +9582,22 @@ export interface components {
             createdAt: string;
             lastDecisionReason: string | null;
         };
+        EventTicketRulesView: {
+            hostSharePercent: number;
+            minPriceNaira: number;
+            maxPriceNaira: number;
+            minQuantity: number;
+            maxQuantity: number;
+            nameMinLength: number;
+            nameMaxLength: number;
+            maxTypes: number;
+        };
+        EventFieldLimitsView: {
+            nameMax: number;
+            descriptionMax: number;
+            hostOrgMax: number;
+            addressMax: number;
+        };
         EventOptionsView: {
             categories: {
                 /** @enum {string} */
@@ -9598,6 +9614,8 @@ export interface components {
                 value: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
                 label: string;
             }[];
+            tickets: components["schemas"]["EventTicketRulesView"];
+            fields: components["schemas"]["EventFieldLimitsView"];
         };
         EventFromPricesView: {
             prices: {
