@@ -86,7 +86,7 @@ no way to buy a tier while web work is paused (R-49; BACKEND_GAPS G-663).
 - Routes that ask the gate (listed and held to the code by `publishing-gate-coverage.spec.ts`): `POST /content`,
   `POST /content/:id/resubmit`, `PATCH /content/:id` (only when it carries `previewAsset` or `fullAsset`),
   `POST /uploads/presign` (only `content/preview` and `content/full`), `POST /product-drafts/:id/publish`.
-- Drafts (new, free, no tier asked): `ProductDraft` table (migration `20261020150000_product_drafts`, additive, rollback
+- Drafts (new, free, no tier asked): `ProductDraft` table (migration `20261020170000_product_drafts`, additive, rollback
   in its header) and `POST/GET /product-drafts`, `GET/PATCH/DELETE /product-drafts/:id`,
   `POST /product-drafts/:id/publish` (`src/content-piece/product-draft.*`). A draft is a title and optional details with
   no file; it holds no place and is shown to nobody else. `missing` lists what publishing still needs. Publishing asks
