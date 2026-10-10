@@ -1018,10 +1018,13 @@ here is redrawn.
   address." (it was "We'll text a code to your phone."); A3 still asks for the phone number
   and verifies nothing about it. No separate "Check your email" step follows A4: the email is
   proven here. Layout, spacing and type are unchanged: only the channel words move.
-- **Rollback:** with WAWU ID's `SIGNUP_VERIFY_CHANNEL=sms` the app draws the old words above
-  ("Verify your phone", "Sent by SMS to 0803 ••• 4412") because WAWU ID answers without a
-  channel; A3's line is the one exception (the app does not know the channel before A3), and
-  would then still say email.
+- **Which words show (lead, 10 Oct 2026):** WAWU ID's `SIGNUP_VERIFY_CHANNEL` is `phone` until
+  the release steps switch it to `email` (task AUTH-07, "Release steps"). Under
+  `phone` WAWU ID answers without a channel and the app draws the old words above ("Verify
+  your phone", "Sent by SMS to 0803 ••• 4412"); under `email` it draws the mailed ones. A3's
+  line is the one exception (the app does not know the channel before A3), so it says email
+  from the first build with email codes even while WAWU ID still texts; that window is the
+  time between the testers' build and the switch, and the release steps keep it short.
 
 ### A10 · Confirm PIN
 - **Now:** no mismatch state drawn.

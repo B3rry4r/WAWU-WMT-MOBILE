@@ -13,7 +13,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A3: create the account and send a 6-digit code: mailed to the email by default (R-39, `channel: email` in the answer), texted to the phone when SIGNUP_VERIFY_CHANNEL is sms. No session yet (R-36). */
+        /** A3: create the account and send a 6-digit code: texted to the phone by default, mailed to the email when SIGNUP_VERIFY_CHANNEL is email (R-39; the answer then carries `channel: email`). No session yet (R-36). */
         post: operations["signup"];
         delete?: never;
         options?: never;
@@ -149,7 +149,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Where a sign-up stands before its code (mailed by default, texted with SIGNUP_VERIFY_CHANNEL=sms), for an app that was closed between A3 and A4. Sends nothing. A sign-up whose code went by the other channel answers `details`. */
+        /** Where a sign-up stands before its code (texted by default, mailed with SIGNUP_VERIFY_CHANNEL=email), for an app that was closed between A3 and A4. Sends nothing. A sign-up whose code went by the other channel answers `details`. */
         post: operations["signupResume"];
         delete?: never;
         options?: never;
@@ -166,7 +166,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A4 (mailed sign-up, the default): mail another code. The same answer for any number and secret; only a live sign-up is mailed. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are texted. */
+        /** A4 (mailed sign-up, SIGNUP_VERIFY_CHANNEL=email): mail another code. The same answer for any number and secret; only a live sign-up is mailed, and when Resend refuses it the answer is 503 EMAIL_SEND_FAILED (the code that was live keeps working). Answers 409 SIGNUP_CHANNEL_DISABLED while codes are texted. */
         post: operations["signupEmailCodeStart"];
         delete?: never;
         options?: never;
@@ -183,7 +183,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A4 (mailed sign-up, the default): check the mailed code. Right: the email is proven and the first session is issued. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are texted. */
+        /** A4 (mailed sign-up, SIGNUP_VERIFY_CHANNEL=email): check the mailed code. Right: the email is proven and the first session is issued. Answers 409 SIGNUP_CHANNEL_DISABLED while codes are texted. */
         post: operations["signupEmailCodeConfirm"];
         delete?: never;
         options?: never;
@@ -272,7 +272,7 @@ export interface components {
             /** @description Texted sign-up only: the confirm call must also carry `emailCode`, the code mailed to the email. Always false when the code was mailed. */
             emailCodeRequired: boolean;
             /**
-             * @description `email`: the code was mailed (the default, DECISIONS R-39): send it to `signup/email-code/*`. Absent: the code was texted (`SIGNUP_VERIFY_CHANNEL=sms`): `phone/verify/*`.
+             * @description `email`: the code was mailed (`SIGNUP_VERIFY_CHANNEL=email`, DECISIONS R-39): send it to `signup/email-code/*`. Absent: the code was texted (the default): `phone/verify/*`.
              * @enum {string}
              */
             channel?: "email";
@@ -1005,7 +1005,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description EMAIL_NOT_CONFIGURED. */
+            /** @description EMAIL_NOT_CONFIGURED, EMAIL_SEND_FAILED (the mail was not handed over: no wait was started and the code that was live still works). */
             503: {
                 headers: {
                     [name: string]: unknown;

@@ -65,12 +65,13 @@ const refuse = (status: number, code: string, extra: Record<string, unknown> = {
   body: { statusCode: status, code, message: `refused ${code}`, ...extra },
 });
 /**
- * A texted sign-up: what WAWU ID answers with SIGNUP_VERIFY_CHANNEL=sms (no channel field), the rollback of R-39.
- * The app still draws it as it was (the suites below up to "AUTH-07"); the default sign-up is `mailed()`.
+ * A texted sign-up: what WAWU ID answers while SIGNUP_VERIFY_CHANNEL is `phone`, its default until the release steps
+ * switch it to `email` (no channel field). The app draws it as it always did (the suites below up to "AUTH-07");
+ * a mailed sign-up is `mailed()`.
  */
 const started = (over: Record<string, unknown> = {}) =>
   ok({ phone: '+2348031234412', expiresIn: 600, resendIn: 7, attempt: 'secret-attempt-1', emailCodeRequired: false, ...over }, 201);
-/** A mailed sign-up (the default, R-39): the answer names the channel and the masked address. */
+/** A mailed sign-up (SIGNUP_VERIFY_CHANNEL=email, R-39): the answer names the channel and the masked address. */
 const mailed = (over: Record<string, unknown> = {}) =>
   started({ channel: 'email', maskedEmail: 'l•••@wawu.africa', expiresIn: 600, ...over });
 const session = ok({ accessToken: 'access-new', refreshToken: 'refresh-new', user: { id: 'u1' } });
@@ -739,7 +740,7 @@ describe('fix round 1', () => {
   });
 });
 
-describe('AUTH-07: the sign-up code is mailed (R-39, the default)', () => {
+describe('AUTH-07: the sign-up code is mailed (R-39, SIGNUP_VERIFY_CHANNEL=email)', () => {
   const MASKED = 'l•••@wawu.africa';
   const confirm = () => callsTo('/auth/signup/email-code/confirm');
 
@@ -810,6 +811,43 @@ describe('AUTH-07: the sign-up code is mailed (R-39, the default)', () => {
     answers['POST /auth/signup/email-code/start'] = refuse(429, 'EMAIL_CODE_RESEND_TOO_SOON', { retryAfterSeconds: 25 });
     await press('Resend code');
     await waitFor(() => expect(screen.getByText('Resend in 0:25')).toBeTruthy());
+  });
+
+  it('a resend that Resend refuses (503 EMAIL_SEND_FAILED) is not reported as sent: the banner says so, the Resend code button stays, and the code that was live still signs in', async () => {
+    jest.useFakeTimers();
+    await toMailedA4();
+    await act(async () => {
+      jest.advanceTimersByTime(7000);
+    });
+    answers['POST /auth/signup/email-code/start'] = refuse(503, 'EMAIL_SEND_FAILED', {
+      message: 'We could not send the code. Try again in a moment.',
+    });
+    await press('Resend code');
+    await waitFor(() => expect(screen.getByText("We couldn't send the code")).toBeTruthy());
+    expect(screen.queryByText('We sent a new code.')).toBeNull();
+    // the server gave the wait back: the person may ask again at once
+    expect(screen.queryByText(/Resend in/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Resend code' })).toBeTruthy();
+    // ... and the code that was live still works
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(confirm()[0].body).toEqual({ phone: '+2348031234412', attempt: 'secret-attempt-1', code: '481902' });
+  });
+
+  it('asking again at once after a refused resend works and shows the server\'s new countdown', async () => {
+    jest.useFakeTimers();
+    await toMailedA4();
+    await act(async () => {
+      jest.advanceTimersByTime(7000);
+    });
+    answers['POST /auth/signup/email-code/start'] = refuse(503, 'EMAIL_SEND_FAILED');
+    await press('Resend code');
+    await waitFor(() => expect(screen.getByText("We couldn't send the code")).toBeTruthy());
+    answers['POST /auth/signup/email-code/start'] = ok({ phone: '+2348031234412', expiresIn: 600, resendIn: 60, channel: 'email' });
+    await press('Resend code');
+    await waitFor(() => expect(screen.getByText('Resend in 1:00')).toBeTruthy());
+    expect(screen.getByText('We sent a new code.')).toBeTruthy();
+    expect(callsTo('/auth/signup/email-code/start')).toHaveLength(2);
   });
 
   it('A15: a wrong code shows "That code isn\'t right" with the digits kept, and the fourth wrong 400 in a row ends the sign-up', async () => {
