@@ -7,7 +7,7 @@ order: 242
 priority: launch
 repo: wawuafrica
 type: web-port
-status: verifying
+status: review
 depends_on: [JOIN-01]
 decisions: [R-48, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V9]
@@ -393,3 +393,122 @@ Website: `npx tsc --noEmit` 0; `npm run lint` exit 0 (the repo's existing `<img>
 - The middleware on Vercel's Edge runtime: walked only on `next start`. Unblocked by one deploy of this branch to production and `curl -sI https://wawuafrica.com/sign-in` (307 to `/join`), `https://wawuafrica.com/join` (200), and `SITE_MODE=full` in Vercel reopening it after a redeploy.
 - Pages inside `/terms` itself: the terms page keeps the app's header and links, which now redirect to `/join` in production; checked only that it loads and shows the privacy section.
 - The WhatsApp preview and a real phone: as before (the tags are served).
+
+## Verifier report, round 3 (10 Oct 2026)
+
+Independent verifier (wrote none of this). Website `origin/wmt/JOIN-02` verified at `69d3d2d`; the branch then moved to `ac6679d`
+(`git diff 69d3d2d ac6679d` is two comment lines at the top of `src/lib/site-mode.ts`, comment-only, confirmed) and website `main`
+moved from `80c3671` to `233d6b1`, the merge of JOIN-02 (#24): `git diff 233d6b1 origin/wmt/JOIN-02` is empty, so what was verified is
+what is on main. Backend `origin/main` `b5e7877` (JOIN-01 and its round 3), built locally on :6042 with its own database
+(`vj02r3_test_join`, dropped), Flutterwave stood in at the DI seams (the round 1 strict stand-in: a transaction exists only if the
+browser stand-in made it) and in the browser. Nothing outside 127.0.0.1/localhost was called (every other host aborted and recorded).
+Scripts, logs and pictures: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vjoin02r3/` (`mx.mjs` the payment matrix, `codes.mjs` and `codes2.mjs` the reason codes, `sm.sh` and `sm2.sh`
+the site-mode attacks, `ic.mjs` the icon compare, `d.mjs`, `slow.mjs`, `sa.mjs`, the round 1 `t1` to `t15` re-run).
+
+**Verdict: review. No blocker.** One should-fix that needs a lead decision (N1), the rest notes. Website typecheck, lint, build,
+check:copy and check:icons all pass.
+
+### D1 to D17
+
+| D | Result | Evidence (this round) |
+|---|---|---|
+| D1 | CLOSED | `t1` unchanged: redirect `status=successful` with no `transaction_id` after a real charge: "Checking your payment", no Pay, no Back link, reference kept; `t4` steps 1 to 3: the server sweep marks it paid and a refresh shows registered; the "Back to registration" link that caused the double charge no longer exists on that screen (`t4` step 4 cannot click it) |
+| D2 | CLOSED | `status=cancelled` with a real id: registered (verify decides) |
+| D3 | CLOSED | callback `pending` and `failed` WITH an id: Checking your payment, no form, no "not charged" |
+| D4 | CLOSED | `t12` unchanged: a kept duplicate (`failed`) after refresh: "You're already registered. This extra payment will be refunded. Email support@wawuafrica.com with your reference XXXX XXXX.", no Pay |
+| D5 | CLOSED | all 13 codes x verify route and status route (`codes.mjs`) and register route (`codes2.mjs`): verify `already_registered` gives the refund sentence, `payment_mismatch`, `transaction_already_used`, `not_found` give support words + short reference, `payment_not_confirmed`, `payment_check_unavailable`, 429, 5xx, network and an unknown new code stay on Checking; register route: `no_open_offer`, `offer_closed`, `already_registered` have their own screens, the four field codes show under their field, `payments_unavailable` its own sentence, the rest (and 429/500/network) "Something went wrong/Busy/We couldn't reach WAWU ... You have not been charged" with the form and no window ever opened |
+| D6 | CLOSED | static HTML holds the logo, "Register for WAWU" and the skeleton (no bailout template); `/join/paid` static HTML says "Checking your payment". Slow 3G (400 kbit/s, 400 ms, CPU x4): heading in the DOM at 0.76 s, first contentful paint 3.2 s (CSS and logo are the cost), input usable 7.2 s (round 1: about 8 s). No throttle: FCP 0.3 s, usable 0.7 s. Transfer 267 kB in 20 requests, scripts 165 kB gzipped; Next's first load 163 kB (335 kB before). `slow.mjs` |
+| D7 | CLOSED | phone textbox named "Phone number"; four invalid fields carry `aria-invalid` and `aria-describedby` to their message; alert "4 fields need fixing: Full name, Phone number, Email, Consent."; focus lands on the first invalid field |
+| D8 | CLOSED | 3 `requestSubmit` + 2 clicks in one task: 1 registration call, 1 window (`d.mjs`, `t3`) |
+| D9 | CLOSED | offer shown as ₦1,900 against a server charging ₦2,000: no window, "The fee is now ₦2,000. Tap Pay to continue.", button becomes ₦2,000, second tap opens 2000 NGN and registers |
+| D10 | CLOSED | `+2348031234567`, `2348031234567`, `08031234567` all accepted |
+| D11 | CLOSED | a 46-letter first name fits at 320 (h1 right 279), 360 (319) and 390 (349), no sideways scroll |
+| D12 | CLOSED | at 390 px all six fields 16 px, privacy link row 44 px, consent row 59 px, Pay 56 px. iPhone Safari itself NOT RUN |
+| D13 | OPEN (not the builder's) | "your plan will be waiting" is still a promise nothing backs until JOIN-03 and an app release; unchanged |
+| D14 | CLOSED | the window opens with `customizations.title` "WAWU" and `redirect_url` `<origin>/join/paid` |
+| D15 | not the builder's | the merge into main happened (`233d6b1`); the WEBPAY-01 conflict is whoever merges second |
+| D16 | CLOSED | a never-answered checkout script: still "Opening secure payment" at 14 s, "Payment did not start / The payment window did not load" with Try again at about 15 s; no "not charged" claim; the registration is reused on retry |
+| D17 | CLOSED | 429 on the offer load: calls at 0.5, 2.5, 6.5, 14.5 s (initial + 2, 4, 8 s retries), then "Please wait a moment ... Try again in a few seconds"; manual Try again recovers |
+
+### The one rule (payment return), attacked
+
+`mx.mjs ret` (96 cases, each also refreshed and opened in a new tab: 288 loads): `/join/paid` with status in successful, completed,
+pending, cancelled, failed, unknown, empty, absent, with and without a transaction id, status route paid, pending, failed, 404 (reason
+code), 429, 500, network error, and verify paid, 409 not confirmed, 429, 500, network. `mx.mjs cb` (103 cases, the real register route,
+the callback and the window closing, refreshed after): same grid. **0 violations in both.** "You have not been charged" appeared in
+exactly the cases where Flutterwave said cancelled or failed, no id existed and the status route answered pending or `not_found`
+(never on 429, 500, network, an unknown status word, an empty status, or any case with an id). A paid answer always gave the registered
+screen, a `failed` row always the refund sentence, and no case with an id or an unknown outcome showed a Pay button, the form or
+"Back to registration" (the one exception, the stored "Start again", is N1). Polling (`mx.mjs poll`, fake clock): status route every 15 s
+(calls at 15, 30, 45, 60 ... 300 s), 20 calls in 5 minutes, no burst, then it stops and the support line with the short reference
+appears; a 429, 500, network error and an HTML 404 are all read as unknown (still Checking, never "not charged"); a row that turns
+paid at 40 s shows registered by itself without a refresh.
+
+### Site mode (`VERCEL_ENV=production`, production build, `next start`)
+
+About 190 raw requests (`curl --path-as-is`, `sm.sh`, `sm2.sh`, logs `logs/sm-*.log`) and a Chromium walk (`prodwalk.mjs`). Every path
+outside the allowed list ended on 307 to `/join` or on a 404 that is not a page; **no bypass found, nothing but `/join`, `/join/paid`,
+`/terms`, `/privacy/policy` and root static files ever rendered.** Tried: `/JOIN`, `/Join/` (308 then 307), `/join/` (308 to `/join`),
+`/join/../wallet`, `/%6Aoin`, `/join%2F..%2Fwallet`, `//wallet`, `///wallet`, `/join/paid/../../admin` (plain and percent-encoded dots),
+`/_next/data/<build>/wallet.json` (307; `/join.json` serves the join page), `/_next/static/../../wallet` (404), `/_next/image?url=/wallet`
+(400), `/_next/staticx`, `/_next/image/..`, RSC, prefetch, `Next-Router-State-Tree`, `x-nextjs-data`, `x-middleware-subrequest` (the
+CVE-2025-29927 header, Next 14.2.35 is patched: 307), `x-middleware-prefetch`, `x-matched-path`, `x-invoke-path`, Next-Action POST,
+Host and X-Forwarded-Host changes, HEAD/POST/PUT/PATCH/DELETE/OPTIONS on `/wallet` and `/api/anything` (307; the same methods on
+`/join` give 405 as a page does), `/api/*`, nested public files (`/icons/x.svg`, `/mock/x`, the PDF: 307), root files with encoded
+slashes (`/wawu%2fjohn.png`, `/wallet%2fx.png`, `/admin%2f..%2fx.svg`: 404), `/wawu/john.png` (307), `/wallet.png` (404, no such file),
+the reverse direction (`/wallet/../join`, `/wallet/%2e%2e/join`, `/home/./../join`: 404, never `/wallet`), `/terms/x.png` and
+`/privacy/policy/x` (307), `/robots.txt` (open, there is no such file: 404), `/sitemap.xml` (307), query strings
+(`/join?x=/wallet` serves `/join`). `/privacy/policy` is the app's own `redirect()` to `/terms#privacy-and-data-protection` (same
+answer in full mode); in a browser the consent link opens `/terms#privacy-and-data-protection`. **`/terms` open: acceptable.** Its
+rendered page has no navigation: no link at all except in-page anchors (header, nav, footer links none), so nothing on it leads
+anywhere useful. `SITE_MODE=full` with `VERCEL_ENV=production`, `VERCEL_ENV` unset and `VERCEL_ENV=preview` all serve the whole site
+(`/` 200, `/about` 200, `/wallet` 200, `/sign-in` 200, `/sign-up` 200, identical byte counts across the three; `/admin` and `/api/x`
+404 as before). `SITE_MODE=jionly` (typo) with production stays closed; `SITE_MODE=JOIN-ONLY` (upper case) with no `VERCEL_ENV` is
+closed. In the production-mode browser walk `/join` loaded with no broken request and no redirect.
+
+### Sign-up and auth untouched
+
+`git diff origin/main --stat -- 'src/app/(auth)'` is empty. The shared `Input` and `PhoneInput` (both used by the sign-up page) DID change
+(additive props, `aria-invalid`, `aria-describedby`, ids on the message line, the phone label is now a real `<label for>`), so the
+brief's literal "no shared auth component changed" is not met; see N3. Main against branch, production builds: sign-up (including the
+details step that holds the six fields and the shared `PhoneInput`), sign-in, forgot-password and reset-password at 390 and 1280 px, dark
+and light: 16 screenshots and the sign-up details step, all pixel-identical (the only difference is a 30 x 25 px region in one light
+shot with 0 pixels above the visible threshold); DOM identical after ids are stripped.
+
+### The shared Icon change (`69d3d2d`)
+
+**Verdict: SHIP it today (no revert needed).** Main (`80c3671`) against the branch, both production builds with mock data and a signed-in
+creator session, 390 px, dark: `/home`, `/wallet`, `/events`, `/settings`, `/notifications`, `/explore`, `/admin/notifications`,
+`/communities`, `/earnings`, `/creator`, `/search`, `/messages`, `/profile/WAWU-0001`, `/learn`, `/tickets`, `/saved`, `/purchases`, `/about`,
+`/shop`, `/content/1`, `/services`, `/professionals`, `/create` (23 pages, 3 to 56 icons each): the list of drawn `lucide` svgs (class
+and path content) is identical on every page, the screenshots are identical in 22 and in `/earnings` differ in an 8 x 32 px area with no pixel
+above the visible threshold; console messages identical (only my own blocked font request), no hydration message. A runtime-only name
+(probe page in a throwaway worktree, deleted): names in the set (`shield-check`, `building-office`, `Check`) are in the server HTML; a valid name
+not in the set (`Dog`, `Cat`) is not in the server HTML and appears after hydration (about 4 s in dev on a cold compile), a nonsense name draws nothing,
+and the console holds no error or hydration warning. The icons that arrive late are only names no source file writes (the
+backend-supplied `PartnerService.icon` is the one such path found); I could not drive those with real API data. Effect on `/join`: first load
+163 kB (335 kB before).
+
+### New defects
+
+- **N1 (should fix; the lead decides whether it is a blocker). "I have not paid. Start again" after a reload while the payment window was open offers the form and Pay although money may have moved.** The brief's rule is "never the form once the outcome is unknown". Reproduction `sa.mjs`: Pay with the window open, the bank transfer lands at Flutterwave, the browser reloads the page (what a phone often does on return from a bank app): "Checking your payment ... If you finished paying, check again. If you did not pay, you can start again." with Check again and "I have not paid. Start again"; tapping the second shows the form with Pay; paying again made two successful transactions against one reference (the row records the second; the first is orphaned, no `failed` row, the sweep finds nothing, owed back by hand). The builder made this choice on purpose (the person's own statement; the copy is explicit) and round 1 accepted it as a note; I rate it should-fix because the only protection is the person reading the sentence, and because a second tab opened from the QR gets a clean form the same way (sessionStorage is per tab), so removing the button would not close the path alone. Cheap mitigation if wanted today: show "Start again" only after the 5-minute Checking period ends (the support line time), or ask for a second tap; the real fix is server side (refuse a second initCharge while the first transaction exists for the reference, or reconcile an orphaned transaction by reference).
+- **N2 (note, deploy). The lock-down depends on Vercel exposing `VERCEL_ENV`.** If the project has "Automatically expose System Environment Variables" off, `VERCEL_ENV` is undefined and the site stays fully open (fail open). Set `SITE_MODE=join-only` explicitly in the Production environment (the code accepts it) and, after the deploy, check `curl -sI https://wawuafrica.com/sign-in` (307 to `/join`), `/wallet`, `/admin`, `/api/x`, and that `/join` is 200. The Edge runtime itself is NOT RUN.
+- **N3 (note). Shared `Input` and `PhoneInput` changed.** Additive and off by default; the sign-up page is pixel-identical and DOM-identical (above); the visible behaviour difference is that tapping the phone label now focuses the phone field. If "do not touch the sign-up page" means zero changed shared files, this is the one thing to reconsider.
+- **N4 (note). A status route `not_found` counts as "not paid".** `status=cancelled` with no id and a 404 `not_found` for a well-formed reference shows "You have not been charged". A bare 404 without `reason.code` (a wrong gateway) is read as unknown, so only the API's own answer reaches that screen. Defensible; recorded.
+- **N5 (note). "You have not been charged" also appears before any window opens** (register route errors, closed offer, already registered, script unavailable). True by construction (the matrix shows the window never opened in each), outside the return rule.
+- **N6 (note). Slow 3G first paint is still about 3.2 s** (the stylesheet and logo, 400 ms per round trip); the form is usable at about 7.2 s. Better than round 1, still a visible wait on a crowded venue network.
+- **N7 (note). `/_next/static/*` stays open** (the build's script and style files, including those of blocked pages). Expected; no page or data.
+
+### Checks
+
+Website (worktree at `69d3d2d`, `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:6042`): `npx tsc --noEmit` 0 (26 s); `npm run lint` exit 0 (17 warnings, the repo's `<img>` and hook warnings, one in `JoinShell.tsx`); `npm run build` exit 0 (`/join` and `/join/paid` static, 163 kB first load, middleware 26.8 kB); `npm run check:copy` 0 ("copy rules: clean"); `npm run check:icons` 0 ("icon set: current (175 icons)"); no em-dash in any `src/app/join` file or `waitlist.ts`. Round 1 scripts re-run on this build: `t1`, `t3`, `t4`, `t6`, `t12`, `t15` pass (t4 step 4 and t9 wait for a button that no longer exists on purpose). Backend and mobile source unchanged by this branch.
+Mobile `npm run check` on this report commit: exit 0 (typecheck, lint, jest 109 passed, 109 total; 1852 passed, 1852 total, gates 10 run, 445 files, 0 fail, 13 warn, 0 accepted, task check passes: 271 tasks, 279 artboards). The known `eventsScreens.test.tsx` flake did not occur. Log: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vjoin02r3/logs/mobile-check.log`. Secret scan of the staged diff (Flutterwave secret-key prefix, `sk_`, bearer tokens, private-key headers, 40+ hex or 60+ base64 runs): the only long hex strings are the website commit hashes quoted in the text; nothing else matched.
+
+### NOT RUN
+
+- A real Flutterwave payment, and which of callback or redirect, with which status and id, the real checkout sends for bank transfer and USSD. Unblocked by one live card payment and one live bank transfer watched in the address bar.
+- The middleware on Vercel's Edge runtime (N2). Unblocked by the post-deploy `curl -sI` checks above.
+- iPhone Safari on the 16 px fields, a real phone, the WhatsApp preview (the tags are served: `og:title`, `og:description`, `og:url`, `og:image` absolute, `twitter:*`, canonical, noindex), a phone camera on the printed QR. Unblocked by a phone on the live link.
+- The icon compare at 1280 px, in light theme, and on pages that draw backend-supplied icon names; the Icon verdict rests on 23 pages at 390 px dark plus the sign-up and auth shots at both widths and themes.
+- The full backend suite and the protected suite (no backend change here). The Flutterwave webhook path (the sweep `recheckPending` stood in for it).
+- A stalled real checkout script on Flutterwave's host (D16 was driven with a never-answered stand-in).
