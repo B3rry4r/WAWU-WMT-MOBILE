@@ -10,7 +10,7 @@ import { creatorCardMetrics } from './CreatorCard';
 /**
  * X14 (design/_gen/explore.js `loading`): four 80 square tiles at corner 18, a heading bar half the width, 20 high at
  * corner 8, and three 150 by 200 cards at corner 20, 20 apart, under the 196 high block for the featured event
- * (EVENTS-01). The bar above it (search, bell) and the Create button are the screen's, drawn in this state too.
+ * (EVENTS-01). The bar above it is the screen's, drawn in this state too.
  */
 export const exploreSkeletonMetrics = { tile: 80, tiles: 4, heading: 20, headingRadius: 8, cards: 3 } as const;
 

@@ -1,20 +1,18 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
 import { SeeAll } from '@/features/events/EventsScreen';
-import { unbuilt } from '@/lib/unbuilt';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { creatorCardMetrics } from './CreatorCard';
 
 /**
- * The smaller parts of X1. Where the Hub serves nothing yet (R-46: a section is never left out) the canvas has no empty
- * state, so each section keeps its heading and its frame and holds the place with a neutral picture: the sunken block the
- * shared `Skeleton` uses, a quiet glyph on it, and no name, date, place or price. A neutral picture is not pressable.
+ * The smaller parts of X1. Where the Hub serves nothing yet the canvas has no empty state, so a section whose task is built
+ * keeps its heading and its frame and holds the place with a neutral picture (R-47): the sunken block the shared `Skeleton`
+ * uses, a quiet glyph on it, and no name, date, place or price. A neutral picture is not pressable.
  */
 export const placeholderMetrics = {
   glyph: 36,
@@ -26,8 +24,6 @@ export const placeholderMetrics = {
   dot: 6,
   dotActive: 22,
   dotDim: 0.4,
-  /** The heading's See all: 13.5 semi-bold (`SH`). */
-  seeAll: 13.5,
 } as const;
 
 const count = (n: number) => Array.from({ length: n }, (_, i) => i);
@@ -42,8 +38,8 @@ function Frame({ icon, testID, style }: { icon: IconName; testID?: string; style
   );
 }
 
-/** `SH`: a heading with its action at the right, the two sitting on one baseline row (aligned to the bottom). */
-export function SectionHeading({ title, action }: { title: string; action: ReactNode }) {
+/** `SH`: a heading with its action at the right (when its destination is built), the two sitting on one baseline row (aligned to the bottom). */
+export function SectionHeading({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <View style={styles.headingLine}>
       <Text variant="h2" accessibilityRole="header">
@@ -51,26 +47,6 @@ export function SectionHeading({ title, action }: { title: string; action: React
       </Text>
       {action}
     </View>
-  );
-}
-
-/** Featured creators' See all (X4): the list of every creator is EXPLORE-02's, so until it is built the link opens nothing. */
-export function SeeAllCreators() {
-  const ring = useFocusRing();
-  return (
-    <Pressable
-      testID="explore-featured-see-all"
-      accessibilityRole="button"
-      accessibilityLabel="See all creators"
-      hitSlop={space.md}
-      onPress={unbuilt('EXPLORE-02')}
-      {...ring.handlers}
-      style={ring.style}
-    >
-      <Text variant="linkStrong" style={styles.seeAll}>
-        See all
-      </Text>
-    </Pressable>
   );
 }
 
@@ -161,7 +137,6 @@ export function ExploreEventsEmpty({ onSeeAll }: { onSeeAll: () => void }) {
 const styles = StyleSheet.create({
   frame: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 },
   headingLine: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  seeAll: { fontSize: placeholderMetrics.seeAll },
   section: { gap: ev.railGap },
   /** Runs off both edges as the real rails do, and is clipped there: a neutral frame is not a list, so it does not scroll. */
   bleed: { marginHorizontal: -layout.gutter, flexGrow: 0, overflow: 'hidden' },
