@@ -7,7 +7,7 @@ order: 243
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: money-path
-status: building
+status: verifying
 depends_on: [JOIN-01, TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -424,5 +424,146 @@ screen has no back arrow (only Done), as designed. `states.py` ran 21 of 21 chec
 gates 10 run, 480 files, 0 fail, 1 warn, 0 accepted, 273 tasks. The first two runs of the chain ended EXIT 1 on the one known load flake, `OpenWalletScreen.test.tsx` (a 20 s
 timeout at a load average of 24 to 34; 37 of 37 alone each time, in 9 and 16 s); the third, at a load average of 14, was clean. Setting `review` would add the `unbuilt_entries`
 gate; this task has no `unbuilt()` entry (grep of `src/features/claim`, the route and the Settings row), but that run was not made because the status is `building`.
+
+## Builder report, round 2
+
+Builder, 10 Oct 2026 (Sonnet agent, round 2 of JOIN-03; the lead's rulings of the same day, each Default (lead), owner may override). Heads: backend `wmt/JOIN-03`
+`800dee6` (backend main `8e57981`, MONEY-17 #105, merged in), wawu-id `wmt/JOIN-03` `1d8b54e` (main `fb8717e` is inside it), mobile `wmt/JOIN-03` (this
+commit; mobile main `b04cbe6` merged in). Evidence: the lead's scratchpad `join03r2/` (`harness/` the live scripts `s3`, `s5`, `s10`, `live/pics.py` the
+browser walk, `mut/` the mutants and their logs, `logs/`, `shots/`). No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called; ports 6161 to
+6164 only; Resend and the SMS provider were the stand-in on 6163 that records what was mailed and texted.
+
+**The lead's rulings, as built (before, then after)**
+
+1. **D1: `phoneVerified` no longer outlives the number that was proven (wawu-id).** *Before* (real wawu-id `5b132f7`, real Hub `8bb6045`; `logs/repro-s5.txt`,
+   `repro-s3.txt`): an account that proved its phone by SMS has its phone changed through `PATCH /internal/users/:id/phone`, or through `POST .../phone/request`
+   and `.../phone/confirm` (the code goes to its own email): the next token says `phoneVerified: true` for the new number and `POST /waitlist/claims` with the
+   registration of that number answers **200** and grants the plan (s5: 200 OK; s3 last check: FAIL, 200). *After* (`logs/after-s5.txt`, `after-s3.txt`,
+   `after-s10.txt`): the token says `phoneVerified: false`, the same claim answers **409 `contact_not_verified`** and nothing is granted (s5 and s3: 0 FAILS).
+   What was built: one additive nullable column `wawu_users.phone_verified_for`, the number `phone_verified_at` was set for (the number the sign-up code was
+   texted to: `phone-signup.service.ts` writes `pending.phone`), migration `20261011120000_phone_verified_for` which backfills it in the same migration
+   (`UPDATE ... SET phone_verified_for = phone WHERE phone_verified_at IS NOT NULL`; on a populated database 4 of 6 and later 15 of 20 accounts had it,
+   `logs/id-migrate-backfill.txt`, `id-migrate-rollback.txt`: the rollback in the header runs, `migrate deploy` applies it again, 15 of 15 backfilled, none
+   wrong). `src/auth/phone-proof.ts` `phoneIsProven`: true only when `phone_verified_at` is set AND the recorded number is the account's phone, the same number
+   in any spelling (`0803...`, `234803...`, `+234803...`); a row with no recorded number, no phone, a `released:<id>` or `deleted:<id>` marker proves nothing.
+   `tokens.service.ts` reads it. Sign-in rules are untouched (they read `phone_verified_at`): live, the account whose phone was changed still signs in by the new
+   phone (200), and its token says `phoneVerified: false`; an account whose phone was only respelled by the internal route keeps `phoneVerified: true` and claims
+   its own registration (`after-s10.txt`). Known limit: an account that changed its phone through those routes BEFORE the migration cannot be told apart from
+   one that never did (the routes left no trace), so it is backfilled with the number it holds; every change after the migration is caught (stated in the
+   migration, the contract doc and SHARED-CHANGES JOIN-03 #7).
+   **AUTH-07 trial merge** (throwaway copy of my tip `1d8b54e`, never pushed): `origin/wmt/AUTH-07` `90f507c` (round 3, which holds `926ee7a` and `955e61f`) merged
+   with **0 conflicts** (git merged `WAWUAfrica_API_Contracts.md`, `prisma/schema.prisma`, `phone-signup.service.ts`, `phone-signup.service.spec.ts` and
+   `tokens.service.ts` on its own; I put my line before `phoneVerifiedAt: new Date()` in `phone-signup.service.ts` so it does not touch AUTH-07 round 3's added
+   `...(takesNumber ...)` line, which an earlier placement did conflict with). On the merged copy: `tsc` 0; `src/auth` and `src/contract`: 20 of 21 suites, 326 of
+   327 tests, the one failure the AUTH-08 timing test (see Numbers). A released phone (`released:<id>`, never proven) still gives `phoneVerified: false` and an
+   empty `phone` (`token-contact-proof` "a released phone" and "a released or deleted marker", both green on the merged copy), and an AUTH-07 email-code sign-up
+   (phone never proven) still gives `phoneVerified: false`.
+2. **D2: the three references say G-634** (`src/waitlist/waitlist-claim-proof.ts`, `src/waitlist/tests/waitlist-claim.contract.spec.ts`,
+   `docs/contract/PLANS.md`). *Before* they said G-629 (SCHOOLS-03's gap). `grep -rn G-629 src docs` in the backend finds nothing now.
+3. **N1: a person who just proved their email claims at once (mobile).** *Before* (verifier's `s7`): the app renewed its token only on a 401, so for up to 15
+   minutes after the email step the token still said `emailVerified: false` and a claim by that email answered `code_not_found` ("... that you have confirmed
+   it"). *After*, two rules in `src/features/claim/freshToken.ts`, used by `claimCode` in `api.ts`: (1) the email step notes which token was current when the
+   email was proven (`noteContactProved`, one line in `confirmEmailCode`, SHARED-CHANGES JOIN-03 #6; kept in memory and in the phone's store per account), and
+   before a claim a token issued at or before that moment (its `iat`, WAWU ID's clock against WAWU ID's clock, never this phone's) is exchanged once; (2) on
+   `contact_not_verified` the token is exchanged once and the claim is sent once more, and a second answer is final (no third claim, no second exchange); no other
+   refusal renews anything; a renewal that fails leaves the first answer standing. Live, in the real app (`live/pics.py`, flow A and C): a real sign-up, the email
+   proven by the mailed code, then Enter code with a registration made with that email: the network shows one `POST /auth/refresh` and then **one** claim, 200,
+   "Your plan is ready" (A3, A4). A web-registered account whose email was proven after its token was issued: claim 409, one refresh, claim 200 (C1).
+   `claimFresh.test.ts` 14 tests.
+4. **N2: "Your plan is ready" lists only what the Hub granted and the app puts to use today.** *Before*: Plan, Runs until, Products you can publish (3), Points
+   added, Points last until, Event pass, Voice Intro. *After*: Plan, Runs until, and, when points were credited, Points added and Points last until. The
+   products, the pass and the Voice Intro are not drawn (their tasks, TIER-02 to TIER-05, the points tools and Voice Intro, are not built, and the cap the
+   backend enforces is still the flat `MAX_ITEMS_PER_ACCOUNT`); their lines come back with those tasks. Recorded in `docs/designer/BRIEF.md`. Live: the screen's
+   text is "Plan, Verify, Runs until, 9 Nov, Points added, 100, Points last until, 8 Jan 2027" and none of the removed words (A5).
+5. **N3: a claim repeated by the same account with the same code answers 200 with the first result (backend).** *Before*: "You already claimed this code" (409
+   `claimed_by_you`), so an answer lost on the way left the person with nothing to look at. *After*: the claim keeps what it told its claimer on the row
+   (`WaitlistRegistration.claimResult`, one nullable jsonb column, written in the claim's own transaction: the offer's name, the days, whether they were added to
+   a running plan, the points and when they end; nothing about anybody) and the same account sending the same code again is answered from it as a 200 with the
+   tier read fresh, nothing granted or written a second time; anyone else still gets 409 `already_claimed` (a stranger the same 404 as before). The six-taps-at-once
+   test is now six 200s with one body. Migration `20261020140000_waitlist_claim_result` (+ `rollback.sql`, run and re-applied clean: `logs/be-migrate-rollback.txt`),
+   SHARED-CHANGES JOIN-03 #5; a row claimed before the column existed has none and keeps answering `claimed_by_you` (no such row can exist in production: this task
+   is unmerged). Live: the repeat on the other server is byte-identical to the first answer, one tier, one pass, one lot, one ledger row, the answer kept on the row
+   (`after-s10.txt`); in the app, "Your plan is ready" again for the same code (A7).
+6. **N4: the CSV's header and rows line up.** *Before*: two parallel lists (the header and the row), 17 cells each. *After*: the row is built FROM the header list
+   (`CELLS` keyed by heading), so a column cannot drift from its heading, and `src/waitlist/tests/waitlist-export.spec.ts` (4 tests, no database) reads each row
+   back by header with a real CSV reader (quotes, commas and line breaks inside a cell) for a paid and claimed, a refund, a pending and an awkward row.
+   **N5:** a body with no code, an empty one or one that is not text answers 400 "Enter your access code."; one too long "Type the 8 letters and numbers of your
+   access code." (it was the validator's "code must be shorter than or equal to 40 characters"). The offer-gone banner's title is now "That code cannot be
+   claimed", so it no longer repeats the Hub's sentence under it ("The offer for that code is no longer available. Email support@wawuafrica.com with your code.").
+7. **The post-sign-up step (SHARED-CHANGES JOIN-03 #4, approved).** Right after sign-up a guarded step asks "Have an access code?" with **Enter code** and **Skip**
+   (`claim-offer` route, `ClaimOfferScreen`, no back arrow). It shows once per account and never blocks the app. How: sign-up marks the NEW account where it adopts
+   its first session (`confirmPhone`, one line, row #6), so only a person who just signed up ever sees it (existing accounts and every sign-in never do); the
+   root layout got one import, one hook line and one `Stack.Protected` group, and the tabs' group gained `&& !offer.visible` so the step is the first screen while
+   it shows (a person with an email step left sees that first: `needsEmail` has priority); the step settles its own mark the moment it is drawn, so closing the app
+   on it never brings it back; every read and write of the mark is bounded to 1.5 s and swallowed (`localStore.ts`), so a store that fails or hangs means no step,
+   never a held-up app. Settings > Access code stays. Live (real sign-up through the screens): the step is the first screen after the email step with no flash of
+   the tabs (A1); Enter code opens the claim screen (A2); Done lands on Home (A6); a reload does not show the step again (A8); Skip opens Home (B1); signing in
+   as that account later shows nothing (B2). Router tests render the real root layout (`claimOfferStep.test.tsx`, 10 tests). AUTH-07: its `confirmSignupCode`
+   replaces `confirmPhone`; a trial merge of mobile `origin/wmt/AUTH-07` (`50005bc`) into this branch has one conflict, the generated `docs/PROGRESS.md`, and
+   git placed the `markOfferPending` line between `clearSignup()` and `adoptSession(tokens)` inside `confirmSignupCode` on its own.
+8. **Tests that kill the survivors.** H4 (`Cache-Control: no-store`) is asserted on a 200, a repeated 200, a 404, a 409 (used), a 409 (nothing proven) and a 400
+   (`waitlist-claim.contract.spec.ts`, mutant B7). V5 (an answer with no plan drawn), V7 (the last refusal stays while the next try is sent), V8 (a refusal stays
+   after the code is edited) in `claimScreen.test.tsx`, V11 (the Settings row opens `/claim-code?x=1`) in `settingsRoute.test.tsx` (the route file, with the
+   router's `push` seen). Each killed (below).
+
+**Numbers (wawu-id).** `npx tsc --noEmit` 0. `eslint --no-fix` on the five changed `.ts` files: 8 errors, all in `tokens.service.ts` lines this change did not
+touch (prettier and one unnecessary-assertion rule at lines 164 to 169, 186 and 375; on `origin/main` the same 8 at 159 to 164, 181 and 370, five lines
+earlier because of my comment), none in `phone-proof.ts`, the specs or my lines. `python3 scripts/gates/run.py` 9 run, 102 files, 0 fail, 20 warn;
+`check_baseline.py` clean. `npm run contract:build` twice: `contract/openapi.json` sha256 `eae61a48...ea11` before and after, each time (it does not describe token
+claims). New and changed specs: `token-contact-proof` 15 tests (it was 7), `phone-signup.service` 45 (it was 44: one new test for the number the code went to when
+the account's phone moved meanwhile, and an existing test now also checks the recorded number). `jest src/auth` at the tip (`logs/id-auth-final.log`): see the last line of this section. Live (`harness/s3`,
+`s5`, `s10`, the real built wawu-id and Hub): the table in ruling 1.
+
+**Numbers (backend).** `npx tsc --noEmit` 0. `eslint --no-fix` 0 on the 8 changed `.ts` files. Specs in a private network namespace (own :4001) on a fresh migrated
+database `bj03r2_ns_test`, `src/waitlist src/plans src/points`: 18 suites, 328 of 328 (it was 17 and 316: +8 in the claim spec, +4 in the new export spec).
+Protected suite `scripts/protected-routes/run.sh --fresh HEAD` in a private network namespace: code `HEAD (800dee6)`, lock `origin/main (8e57981)`: 253 of 253,
+"all 244 required tests passed". Gates: 16 fail, 91 warn, 76 accepted on the branch and on `git archive` of `origin/main` `8e57981`, the 16 FAIL lines identical
+(sorted `diff` empty); `check_baseline.py` clean. `npm run contract:build` twice after the merge of main: sha256 `135df7e5...6d8c` both times, equal to the
+auto-merged file, tree clean; against backend main it adds one path (`POST /waitlist/claims`), two schemas and the admin list's `claimed`, and changes no
+operation. The same file is in mobile `contract/` (`SOURCE_COMMIT` `wmt/JOIN-03@800dee6`, types regenerated with `python3 scripts/api/sync_contract.py`).
+Migration `20261020140000_waitlist_claim_result` sorts after every folder on main (newest `20261019130000`, MONEY-17) and on every open `origin/wmt/*` branch
+(newest seen `20261020120000`, INBOX-05); `prisma migrate diff` shows only the `ContentPiece` index line main's schema also shows.
+
+**Numbers (mobile).** MOBILE_NUMBERS
+
+**Mutants.** Applied alone, the specs that should catch it run, source restored from a copy, tree clean after (`mut/`, `result-*.json`). Backend 10, all killed: B1
+a replay told `claimed_by_you` though an answer is stored; B2 any account answered the stored result; B3 the answer not stored; B4 the replay says 30 days
+whatever was given; B5 a tap that lost the race by the same account refused; B6 the early check refuses the claimer; **B7 `Cache-Control: no-store` removed
+(the verifier's H4)**; B8 the validator's words back; B9 the Paid and Refund due cells swapped; B10 the Claimed cells swapped. wawu-id 6, all killed: W1
+`phoneVerified` from `phone_verified_at` alone (the D1 bug); W2 no respelling; W3 any recorded number proves; W4 the token back to `phone_verified_at`; W5 the
+confirm records nothing; W6 the confirm records the account's phone at that moment, not the number the code went to. Mobile 22, all killed: M1 no renewal before a
+claim; M2 renews on every claim; M3 a token issued in the same second as the proof is not renewed; M4 a third claim after the retry; M5 retry on any refusal; M6 the
+email step does not note the proof; M7 sign-up does not mark the account; M8 marked after the session is adopted; M9 and M10 the products, the pass and the Voice
+Intro drawn again; M11 the offer-gone title repeats; M12 the step shown to every sign-in; M13 the step not settled when drawn; M14 Skip does not end it; **M15 a
+read of the phone's store not bounded SURVIVED the first time** (only the app's start was tested, and that is not held up by a read; a claim is), so
+`claimFresh.test.ts` gained "never hangs on a store that does not answer" and the same mutant (M15b) is killed; M16 the tabs not held back while the step shows;
+M17 Enter code keeps the step; **V5, V7, V8, V11 (the verifier's survivors)**.
+
+**Pictures** (390 px, light and dark; the real app from a web export with its OWN Metro cache, `TMPDIR` in the scratchpad; the bundle was grepped: `localhost:6161`
+and `localhost:6162` only, no other host; every request outside 6161 to 6164 was aborted and none was made): the real app, signed up through the real sign-up
+screens (the text and the mail read from the stand-in on 6163), against the real built Hub and the real built wawu-id. There is no artboard for these screens, so
+none is "beside" and I do not say they match anything. `shots/01-post-signup-step-{light,dark}.png` "Have an access code?" (the first screen after sign-up, an
+email proven moments before), `02-claim-screen-*` the claim screen (Enter code), `03-claim-typed-*` a code typed, `04-plan-ready-*` "Your plan is ready" (Plan, Runs
+until, Points added, Points last until), `05-plan-ready-repeat-*` the same code claimed again by the same account. Every state came from its real cause.
+
+**Decisions (each Default (agent), owner may override)**
+- The first result is KEPT on the row (a jsonb column) rather than worked out again from the plans file and the points lot: the days, the name and whether the
+  plan was extended are not stored anywhere else, and a later change to the file would otherwise change what a lost answer says. The cost is one nullable column.
+- `phone_verified_for` compares the SAME number in any spelling (the internal route writes digits only, sign-up writes `+234...`), so a respelling is not a change.
+- The post-sign-up step comes after the email step when there is one (a texted sign-up), and straight after the code for a sign-up that proves the email at the
+  code (AUTH-07). It is marked at the place the first session is adopted, not by guessing from the state of the app later.
+- The claim renews its token on the account's own record of the proof (the `iat` of the token current at the proof), kept in the phone's store too so a restart in
+  the 15 minutes does not lose it; it asks WAWU ID, never the clock of the phone.
+- The words: "Enter your access code." for a body with no code; "That code cannot be claimed" for the offer-gone banner's title.
+
+**NOT RUN**
+- A claim against a DEPLOYED wawu-id that has the migration and the new token: unblocked by the owner merging and deploying `wmt/JOIN-03` of wawu-id (until then
+  production refuses every claim with `contact_not_verified`, G-634); the walk ran a local build of the same code.
+- The legacy WAWU API's proxying of users' own phone updates to the internal routes (the repo is not here): D1 is closed at the token whichever way it calls them.
+- A phone or a store build (V10): the web export at 390 px only.
+- The mobile AUTH-07 round 3 working tree (uncommitted in another builder's worktree): the trial merge on mobile is against `origin/wmt/AUTH-07` (round 2) only;
+  the wawu-id trial merge is against the pushed round 3 (`90f507c`).
+- The whole backend suite as one run (the waitlist, plans and points specs and the protected suite ran), and the whole wawu-id suite (`src/auth` and `src/contract` ran).
+- Mailed and texted codes were the stand-in's on 127.0.0.1: Resend and the SMS provider were not called.
 
 ## Owner sign-off
