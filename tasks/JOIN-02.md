@@ -7,7 +7,7 @@ order: 242
 priority: launch
 repo: wawuafrica
 type: web-port
-status: review
+status: done
 depends_on: [JOIN-01]
 decisions: [R-48, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V9]
@@ -610,6 +610,10 @@ My staged diff (this task file, `docs/LOG.md` and the generated progress files) 
 - Mobile `npm run check`: skipped on purpose (docs only); `npm run gates` and `npm run tasks` were run instead (below).
 
 Merge preparation (builder, 10 Oct 2026): S1 closed, words only. Website `wmt/JOIN-02-r4` `c32eaa6` on `d172f0b`: `docs/03_USER_FLOWS.md` now says the Flutterwave window is titled "WHO MADE THIS?" with the description "Pre-registration" and the Who Made This logo; the comments in `JoinFlow.tsx` (the round 4 list and the one at the walked-away guard) and `join-session.ts` (`joinAbandoned`) now say the server gives every start a new reference and that the guard stays for the deploy window, when an older server reuses an unpaid registration. `git diff d172f0b` is 3 files, 15 added and 10 removed lines, every changed line in `src` a comment. Checks: typecheck 0, lint 0, build 0 (`NEXT_PUBLIC_API_BASE_URL` set), `check:copy` 0; em-dash and secret scans of the added lines nothing. NOT RUN: a page walk (no code changed; unblocked by the verifier's `w-double.mjs` and `w-held.mjs` if wanted).
+
+## Lead merge note (10 Oct 2026)
+
+Rounds 4 and 5 merged 10 Oct 2026 as website #26 (73c14eb) after backend #102 (7b4ffef) deployed: safe Start again, every start a new reference, the Who Made This payment window. Verifier: MERGE, no blocker.
 
 ## Owner sign-off
 
