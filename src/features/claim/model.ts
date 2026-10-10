@@ -34,21 +34,22 @@ export const CODE_PROBLEM_WORDS: Record<CodeProblem, string> = {
 export type PlanLine = { label: string; value: string };
 
 /**
- * What the code gave, from the Hub's own answer: the plan, how long it runs, what it lets the person publish, the
- * points added and the pass. Nothing here is worked out on the phone; a line is left out when the Hub sent nothing for it.
+ * What the code gave, from the Hub's own answer: the plan, the day it ends and the points added. Only what the Hub
+ * granted AND the app puts to use today (JOIN-03 round 2, N2): the products the plan allows, the event pass and the first
+ * Voice Intro are the Hub's grants too, but the screens that spend them are not built and the publishing limit the app
+ * enforces is still the flat one, so none of them is listed (R-47: nothing is promised that the app does not do). When
+ * those tasks land (TIER-02 to TIER-05, the points tools, Voice Intro) their lines come back with them. Nothing here is
+ * worked out on the phone; a line is left out when the Hub sent nothing for it.
  */
 export function planLines(result: ClaimResult, now: number = Date.now()): PlanLine[] {
   const { tier } = result;
   const lines: PlanLine[] = [];
   if (tier.tier?.name) lines.push({ label: 'Plan', value: tier.tier.name });
   if (tier.activeUntil) lines.push({ label: result.extended ? 'Now runs until' : 'Runs until', value: dateLine(tier.activeUntil, undefined, now) });
-  if (tier.productsAllowed > 0) lines.push({ label: 'Products you can publish', value: String(tier.productsAllowed) });
   if (result.pointsGranted > 0) {
     lines.push({ label: 'Points added', value: String(result.pointsGranted) });
     if (result.pointsExpireAt) lines.push({ label: 'Points last until', value: dateLine(result.pointsExpireAt, undefined, now) });
   }
-  if (tier.eventPass) lines.push({ label: 'Event pass', value: tier.eventPass.name });
-  if (tier.firstVoiceIntroIncluded) lines.push({ label: 'Voice Intro', value: 'First one included' });
   return lines;
 }
 

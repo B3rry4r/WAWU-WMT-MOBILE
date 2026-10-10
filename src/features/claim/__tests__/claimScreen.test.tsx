@@ -24,7 +24,7 @@ jest.mock('@/api/tokenStore', () => ({
 }));
 
 type Plain = { status: number; body: unknown };
-type Answer = Plain | 'offline' | 'hang' | (Plain | 'offline')[];
+type Answer = Plain | 'offline' | 'hang' | (Plain | 'offline' | 'hang')[];
 type Sent = { method: string; path: string; body: unknown };
 
 let answer: Answer = { status: 404, body: {} };
@@ -108,8 +108,13 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     expect(claims()[0].body).toEqual({ code: '5F6C15E4' });
     expect(screen.getByText('Your plan is ready')).toBeTruthy();
     expect(screen.getByTestId('claim-ready-line').props.children).toBe('Verify for 30 days, starting today.');
-    for (const text of ['Verify', '16 Nov', '3', '100', '15 Jan 2027', 'Watch live, apply', 'First one included']) {
+    // What is in force in the app today: the plan, its end and the points. The Hub also granted three products, a pass and
+    // a Voice Intro; their screens are not built, so they are not listed (round 2, N2).
+    for (const text of ['Verify', '16 Nov', '100', '15 Jan 2027']) {
       expect(screen.getByText(text)).toBeTruthy();
+    }
+    for (const text of ['Products you can publish', 'Event pass', 'Watch live, apply', 'Voice Intro', 'First one included']) {
+      expect(screen.queryByText(text)).toBeNull();
     }
     await fireEvent.press(screen.getByTestId('claim-done-button'));
     expect(onDone).toHaveBeenCalledTimes(1);
@@ -182,8 +187,10 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     await open();
     await type('5F6C15E4');
     await submit();
-    await waitFor(() => expect(screen.getByText('That offer is no longer available')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('That code cannot be claimed')).toBeTruthy());
     expect(screen.getByText(/no longer available\. Email support/)).toBeTruthy();
+    // The title does not say again what the sentence under it says (round 2, N5).
+    expect(screen.queryByText('That offer is no longer available')).toBeNull();
     answer = refusal(400, 'code_invalid');
     await submit();
     await waitFor(() => expect(screen.getByText('Type all 8 letters and numbers of your access code.')).toBeTruthy());
@@ -221,6 +228,49 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     await waitFor(() => expect(screen.getByText('Your code was accepted')).toBeTruthy());
     expect(screen.getByText(/Open your account again to see your plan/)).toBeTruthy();
     expect(screen.queryByTestId('claim-done')).toBeNull();
+  });
+
+  it('is told the same, and shows no plan, for an answer that has no plan in it (round 2, V5)', async () => {
+    await open();
+    await type('5F6C15E4');
+    for (const data of [{}, { tier: null }, { tier: 'Verify' }, [], 'ok']) {
+      answer = { status: 200, body: { statusCode: 200, message: 'OK', data } };
+      await submit();
+      await waitFor(() => expect(screen.getByText('Your code was accepted')).toBeTruthy());
+      expect(screen.queryByTestId('claim-done')).toBeNull();
+      expect(screen.queryByText('Your plan is ready')).toBeNull();
+    }
+  });
+
+  it('takes the last refusal off the screen the moment the next try is sent, and puts the new answer there (round 2, V7)', async () => {
+    answer = [refusal(404, 'code_not_found'), 'hang'];
+    await open();
+    await type('5F6C15E4');
+    await submit();
+    await waitFor(() => expect(screen.getByTestId('claim-banner')).toBeTruthy());
+    await submit();
+    // The second try is on its way and has not been answered: the first answer is not left standing as if it were this one's.
+    await waitFor(() => expect(claims()).toHaveLength(2));
+    expect(screen.queryByTestId('claim-banner')).toBeNull();
+    expect(screen.queryByText('We could not match that code to you')).toBeNull();
+  });
+
+  it('takes a refusal off the screen when the code is edited, and keeps what was typed (round 2, V8)', async () => {
+    answer = refusal(404, 'code_not_found');
+    await open();
+    await type('5F6C15E4');
+    await submit();
+    await waitFor(() => expect(screen.getByTestId('claim-banner')).toBeTruthy());
+    await type('5F6C15E');
+    expect(screen.queryByTestId('claim-banner')).toBeNull();
+    expect(screen.getByTestId('claim-code').props.value).toBe('5F6C 15E');
+    // A line on the field goes the same way.
+    answer = refusal(400, 'code_invalid');
+    await type('5F6C15E4');
+    await submit();
+    await waitFor(() => expect(screen.getByText('Type all 8 letters and numbers of your access code.')).toBeTruthy());
+    await type('5F6C15E');
+    expect(screen.queryByText('Type all 8 letters and numbers of your access code.')).toBeNull();
   });
 
   it('can go back from the form', async () => {

@@ -42,11 +42,13 @@ export function claimFailure(error: unknown): ClaimFailure {
     case 'claimed_by_you':
       return { where: 'banner', tone: 'warning', title: 'You already claimed this code', body: 'Your plan is already on your account.' };
     case 'offer_unavailable':
+      // The Hub's sentence says the offer is gone and where to write, so the title says only what happened to the
+      // code and does not repeat it (JOIN-03 round 2, N5).
       return {
         where: 'banner',
         tone: 'danger',
-        title: 'That offer is no longer available',
-        body: error.message || 'Contact support with your code.',
+        title: 'That code cannot be claimed',
+        body: error.message || 'The offer for that code is no longer available. Contact support with your code.',
       };
     default:
       break;

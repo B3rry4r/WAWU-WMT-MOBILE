@@ -53,21 +53,25 @@ describe('the access code as a person types it (JOIN-03)', () => {
 });
 
 describe('what the code gave, from the Hub answer (JOIN-03)', () => {
-  it('lists the plan, when it runs until, the products, the points and when they end, the pass and the Voice Intro', () => {
+  it('lists only the plan, when it runs until and the points with when they end: the products, the pass and the Voice Intro are granted but not in force in the app (round 2, N2)', () => {
     expect(planLines(result(), NOW)).toEqual([
       { label: 'Plan', value: 'Verify' },
       { label: 'Runs until', value: '16 Nov' },
-      { label: 'Products you can publish', value: '3' },
       { label: 'Points added', value: '100' },
       { label: 'Points last until', value: '15 Jan 2027' },
-      { label: 'Event pass', value: 'Watch live, apply' },
-      { label: 'Voice Intro', value: 'First one included' },
     ]);
+    // The Hub did send all three (the result above carries them) and none is drawn.
+    const drawn = JSON.stringify(planLines(result(), NOW));
+    for (const unbuilt of ['Products', 'Event pass', 'Watch live', 'Voice Intro', 'First one']) expect(drawn).not.toContain(unbuilt);
   });
 
   it('leaves a line out when the Hub sent nothing for it', () => {
     const lines = planLines(result({ pointsGranted: 0, pointsExpireAt: null }, { eventPass: null, firstVoiceIntroIncluded: false, productsAllowed: 0 }), NOW);
     expect(lines.map((l) => l.label)).toEqual(['Plan', 'Runs until']);
+    // No points credited: no points lines, whatever the plan includes.
+    expect(planLines(result({ pointsGranted: 0, pointsExpireAt: '2027-01-15T10:00:00.000Z' }), NOW).map((l) => l.label)).toEqual(['Plan', 'Runs until']);
+    // Points credited but no end date sent: the points line only.
+    expect(planLines(result({ pointsExpireAt: null }), NOW).map((l) => l.label)).toEqual(['Plan', 'Runs until', 'Points added']);
   });
 
   it('says the days were added when the person already had a plan', () => {

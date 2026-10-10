@@ -1103,9 +1103,30 @@ here is redrawn.
   one field (shown "XXXX XXXX", upper case), and a "Claim my plan" button. A
   refusal keeps the code and says why in plain words (a note above the field,
   or a line on it for the code itself). On success the same frame shows "Your
-  plan is ready" with the Hub's own list of what the code gave.
+  plan is ready" with the Hub's own list of what the code gave that the app
+  puts to use today: the plan, the day it ends, and the points if they were
+  added. Not listed, though the Hub grants them: the products the plan allows,
+  the event pass and the first Voice Intro (round 2, N2). Their screens are not
+  built and the publishing limit the app enforces is still the flat one, so
+  listing them would promise what the app does not do (R-47). Their lines come
+  back with TIER-02 to TIER-05, the points tools and Voice Intro.
 - **Why:** R-48 and JOIN-03. Every line is the Hub's answer; the phone works
   out nothing.
+
+### Have an access code? (JOIN-03 round 2, no artboard)
+- **Now:** after sign-up the app opens Home; the access code is reachable only
+  from Settings, and nothing leads a person who paid at an event to it.
+- **Instead:** right after sign-up, once per account, one screen in the access
+  code screen's style: a Ticket tile, the title "Have an access code?", the
+  line "Paid for a plan at an event? Enter the code from your registration to
+  claim it. You can also do this later in Settings.", and two buttons: "Enter
+  code" (opens the access code screen) and "Skip" (opens the app). No back
+  arrow: there is nothing behind it. It is shown only to an account that has
+  just signed up, never to someone signing in, and it never holds the app up:
+  if the phone cannot remember whether it was shown, it is not shown. Settings'
+  Access code row stays.
+- **Why:** R-48 and JOIN-03 ("after sign-up"). The lead approved the step
+  (round 2, ruling 7). SHARED-CHANGES JOIN-03 #4.
 
 ### Z6 · Delete account
 - **Now:** "wallet and cards" in what goes.

@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
+import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,6 +33,7 @@ export default function RootLayout() {
   const { status } = useSession();
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
+  const offer = useClaimOfferStep(signedIn);
   const ready = status !== 'restoring' && (!signedIn || gate.phase === 'ready');
 
   useEffect(() => {
@@ -52,7 +54,10 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
+          <Stack.Screen name="claim-offer" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />

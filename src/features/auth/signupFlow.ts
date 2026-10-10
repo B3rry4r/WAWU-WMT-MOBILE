@@ -10,6 +10,8 @@ import {
   type EmailCodeSent,
 } from '@/api/identity';
 import { adoptSession } from '@/api/session';
+import { noteContactProved } from '@/features/claim/freshToken';
+import { markOfferPending } from '@/features/claim/offerStep';
 
 import { wireAccountType, type AccountType } from './accountType';
 import { authed } from './signupApi';
@@ -46,6 +48,8 @@ export async function confirmPhone(code: string, emailCode: string): Promise<voi
     ...(emailCode ? { emailCode } : {}),
   });
   await clearSignup();
+  // JOIN-03: this account is new, so it is asked once whether it has an access code (SHARED-CHANGES JOIN-03 #4).
+  await markOfferPending(tokens.accessToken);
   await adoptSession(tokens);
 }
 
@@ -104,6 +108,8 @@ export function startEmailCode(): Promise<EmailCodeSent> {
 export async function confirmEmailCode(code: string): Promise<void> {
   try {
     setSignupProgress(await authed((token) => signupEmailConfirmRequest(token, code)));
+    // JOIN-03: the access token in hand was issued before this proof; a claim renews it first (SHARED-CHANGES JOIN-03 #6).
+    await noteContactProved();
   } catch (error) {
     if (isApiError(error) && error.status === 409) {
       // Proven already, or no address on the account: the server's progress says where to go.
