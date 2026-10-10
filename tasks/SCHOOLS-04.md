@@ -7,7 +7,7 @@ order: 20
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: [SCHOOLS-02]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -332,6 +332,10 @@ Independent verifier, 8 Oct 2026, narrow final round. Backend `wmt/SCHOOLS-04` `
 No defect open. D4 closed; F1 closed; D1, D2 and D3 stay closed (no production code changed since they were verified). Live probes were not re-run on this build: NOT RUN, because the production files are byte-identical to the round 3 verified head apart from main's merges, and the specs and protected suite above ran on this build.
 
 Status: `review`.
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 

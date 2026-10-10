@@ -3,32 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 110 of 244.**
+**Launch tasks done: 120 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 107 | 0 | 20 | 19 |
-| building | 3 | 0 | 0 | 0 |
+| todo | 146 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 6 | 0 | 0 | 2 |
-| done | 71 | 27 | 11 | 5 |
+| review | 1 | 0 | 0 | 0 |
+| done | 81 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
-- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
-- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
-- [PROS-01](../tasks/PROS-01.md) Find a professional (Developer 3)
-- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
-- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (Developer 3)
-- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being built (or fixing verifier findings)
-
-- [NUV-02](../tasks/NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected (You)
-- [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
-- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 
 ## Done
 
@@ -51,6 +38,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
 - [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
+- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
@@ -62,17 +50,22 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
+- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here (Developer)
+- [PROS-01](../tasks/PROS-01.md) Find a professional (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end (Developer)
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
 - [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
+- [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
@@ -81,7 +74,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-05](../tasks/ME-05.md) Profile fields (Developer)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales (Developer)
+- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (You)
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
 - [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
@@ -141,7 +136,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
 - [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
 - [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
+- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -149,27 +146,27 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
-- **Developer 2:** [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off, [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount, [ADS-01](../tasks/ADS-01.md) TGIF sponsored card
-- **Developer 3:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review, [EVENTS-09](../tasks/EVENTS-09.md) At the door: scan, let in, already used, not valid
+- **Developer 2:** nothing unblocked
+- **Developer 3:** nothing unblocked
 
 ## Latest
 
 From `docs/LOG.md`, newest first.
 
-- 10 Oct 2026 · NUV-02 · Builder report round 3 (status verifying; backend `wmt/NUV-02` `577a35b`, merged with main `046444b`; a builder stopped by a usage limit was taken over, its work committed as found): the verifier's N1 to N10 fixed and each reproduction run before and after on built servers (a BVN Nuvion still holds stays held: a stop with an account and a refusal about documents no longer free it, `p-s9` 2/2 to 4/0 and 6 of 8 races lost by the real owner to 0; an unfinished opening expires after `IDENTITY_HOLD_DAYS` (14) by a sweep, the person is told once, support lets go of one hold at once by `POST /admin/identity-holds/{id}/release`; 10 opening tries an hour per address; a new rejection is judged by the person's last submission, `p-d3` 27/3 to 30/0; the mask takes any separator and any digit script, `p-mask` 10/14 to 24/0; the view says when the tries open; the words null and undefined are refused; one stopped notice), main merged with the contract regenerated and the NUV-04 overlap fixed (NUV-04's own spec keeps an approved person at `on_its_way`), plus found on the way: an expired opening Nuvion then approves is live again, the sweep cannot be clogged or race a correction, IPv6 counts by /64; protected suite 253/253 and lock unchanged, full suite 226 suites 6,078 tests, 43 own mutants (41 killed, 2 an equivalent pair; C03, C04 and O01 killed), contract rebuilt identical, G-494 to G-499 and SHARED-CHANGES #8 to #13 filed; stand-in only, no Nuvion host called; (key) items and the screens NOT RUN.
-- 9 Oct 2026 · NUV-02 · Verifier report round 2 (independent Sonnet session; backend `259e20a`, mobile `f3d77e5`, wawu-id `fb8717e`; backend main had moved to `473b575`): status back to building. Closed by their own reproductions on built servers: D2 (every JSON null a 400), D4 (a correction moves the claim only with the number Nuvion is sent), D6 (one notice per decision, none for replays, no number), D7, U3 (a permanent 409 `step_not_used`; main answered 503). D3 and D5 closed for what the round named (residuals N4, N5). D1 is NOT closed: an opening abandoned at documents-needed holds its BVN for ever (aged 400 days, still held; no admin route clears it) (N3); a document-only rejection hands the real owner's BVN to whoever asks first (squatter won 5 of 8 races) (N2); a BVN is let go when Nuvion fails or suspends an entity that already has its account, so a second entity for one BVN opens (N1). The oracle is closed (five kinds of holder, one body, medians within 1.95 ms); the cap is exact (3 a day rolling 24 hours, held answers counted, double taps not, bursts across two servers never learn more than 3; a person who types one wrong digit three times is locked about 24 hours). Trial merge of main `473b575`: four conflicts, both `view()` changes hold, tsc 0 and 1,579 tests pass, but NUV-04's `onItsWay` tells a person stopped for a taken BVN that an account number is on its way. Fintava sweep 211 of 219 byte-identical (the other 8 carry the new optional fields). Protected suite 253/253; touched modules 67 suites 2,287 tests; full suite 220 suites 5,849 tests, no assertion failure; 23 mutants of mine (19 killed by specs, 3 only by live phases, 1 equivalent). Mobile `npm run check` NOT RUN to exit 0 as one command (EVENTS-01's `eventsScreens` test races under load; passes alone and under `jest --maxWorkers=2`).
-- 9 Oct 2026 · NUV-02 · Builder report round 2 (status verifying; backend `wmt/NUV-02` `259e20a`, merged with main `dc3baa2`): the verifier's D1 to D7 fixed and each reproduction run before and after on built servers (live `p-null` 7 FAIL to 0, `p-odd` E1 and E8 and `p-review` R7b, C3, C4 FAIL to PASS; C2 passes as to the typed number and differs only in the stored form); a BVN is held only while the opening is with Nuvion or approved and a rejected, failed or stopped opening lets go of it at once, one plain `409 identity_has_wallet` that does not say wallet or check, the claim moves only in the step that sends the number (D1, D4); 3 opening tries a day (`BVN_CHECKS_PER_DAY`, `429 identity_checks_exhausted`, held answers counted; U2); a null is a missing field (D2); a second rejection after a correction is seen, told from the correction's own echo by Nuvion's `updated` time (D3, one nullable column in this task's migration); grouped digits masked (D5); one `identity_review` notification per decision (D6); `POST /money/identity/bvn` is a permanent `409 step_not_used` (U3); CONVENTIONS section 9a and the reason table, G-460 corrected (D7); G-490 to G-492 filed. 22 mutants of my own all killed (V4, V14, V19 included); protected suite 253/253, lock unchanged; gates the same 16 FAIL lines; fintava and unset sweep 211 of 219 byte-identical, the 8 the new optional fields. NOT RUN: the (key) sandbox items, the phone-to-BVN match (G-492 says what the sandbox must show).
-- 8 Oct 2026 · NUV-02 · Verifier report (independent session, backend `9184ee0`, mobile `9bfd5ed`, wawu-id `fb8717e`; backend main had moved to `dc3baa2`, trial merge clean): status back to building, 7 defects. Held on the built servers: one entity per person under ten taps and ten corrections, a lost create settled from Nuvion's list before any resend, one NGN account behind a claim for seven deliveries on two servers, a lying delivery opening nothing, Fintava answers byte-identical (211 of 219, the other 8 carry the new fields), protected suite 253/253, touched modules 62 suites and full suite 216 suites with only the two known environment failures passing alone, 17 of 20 own mutants killed. Open: D1 anyone can hold another person's BVN and the owner is told they already have a wallet, D2 an explicit null passes the required fields (gender null is sent as female), D3 a second rejection after a correction is not shown, D4 a correction moves the BVN hash to a BVN Nuvion never got, D5 grouped digits in Nuvion text reach the log and a column, D6 the promise "we will let you know" has no sender, D7 backend docs and G-460 do not match the code. Evidence in the lead's scratchpad `vnuv-02/`.
+- 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
+- 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
+- 10 Oct 2026 · LEGAL-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · LEGAL-02 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · EVENTS-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · PROS-01 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · PROS-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · EVENTS-01 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · SCHOOLS-04 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
+- 10 Oct 2026 · JOIN-01 · Merged (backend #99 9311447): event registration link routes, Flutterwave verify, webhook branch and 5-minute re-check, admin list and CSV; D1-D3 follow in round 3.
+- 10 Oct 2026 · JOIN-01 · Built: event registration link, backend. Four public routes (offer, register, verify, status) under /waitlist, a pending/paid/failed registration table with one paid row per offer and phone or email, the fee in plans.config.json, Flutterwave webhook plus a 5-minute by-reference re-check for payers who never came back, 7-day purge of unpaid rows, team list and CSV; backend wmt/JOIN-01 (contract at 5773fdb); 86 specs, protected suite 253/253, 13 mutants killed; a real payment NOT RUN (owner pays once after deploy); status verifying.
+- 10 Oct 2026 · JOIN-02 · Built: the event registration page `/join` (and `/join/paid`) on the website, against the JOIN-01 routes: form, pay in the Flutterwave window, "Checking your payment" with a retry and never a second charge, "You're registered, <first name>" with the reference, and plain refusals (already registered, closed, none open, cancelled, network); only the reference is kept in sessionStorage; walked in Chromium against the real backend (70 assertions) and pictured at 390 and 1280 px, light and dark; the sign-up page is untouched; status verifying; real payment NOT RUN.
 - 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
-- 9 Oct 2026 · PROS-01 · Built: Find a professional (P1 directory with field chips, paging and P4, P2 and P3 profile) against PROS-02's routes; Explore's Find a professional door opens P1; V5 pictures NOT RUN; status verifying.
-- 9 Oct 2026 · LEGAL-02 · Verifier, round 3: gap ids unique on every branch, the legal.thread cursor mutant is now caught, `npm run check` exit 0; no defect open, status review.
-- 9 Oct 2026 · LEGAL-02 · Builder, round 3: D2 fixed (gaps renumbered G-500 to G-502, clear of every branch) and D3 fixed (a test pins that `legal.thread` never moves the catch-up cursor; fails with the mutant).
-- 9 Oct 2026 · LEGAL-02 · Verifier, round 2: D1 verified live (consultant message on screen in about 60 ms, light and dark, also after a foreground; frame reaches only the matter's client); V4, V5, V6, V9 and the backend checks pass; two defects open, so `building`: D2 gap ids G-470 to G-472 are also used on `wmt/NUV-03`, D3 no test pins that `legal.thread` leaves the catch-up cursor alone.
-- 9 Oct 2026 · LEGAL-02 · Builder, round 2: D1 fixed (the shared live client now passes `legal.thread` frames on; a test over the real client with a fake socket fails on the old code; live run: the consultant's message shows 72 ms after the admin write, no refresh); origin/main merged into both branches.
-- 8 Oct 2026 · LEGAL-02 · Builder: legal assistant chat (S14 to S17) with brief, Send to a consultant and consultant handover, live `legal.thread` frame on backend wmt/LEGAL-02 (PR #95), Legal tile on Home; gaps G-470 to G-472; status verifying.
-- 8 Oct 2026 · EVENTS-03 · Verified (round 4, live against the branch Hub and mock WAWU ID): a failed refetch keeps the list and the ticket with its QR and Try again, first-load failure shows the error screen (D1); rows 72 pitch 84, card 397, nav title equal to the canvas in both themes (D2); "NOV 05" badge (D3); FilterChips 1 px is the shared component's; main merge conflicts in EVENTS-01 Explore files, left to EVENTS-01; status review.
-- 8 Oct 2026 · EVENTS-03 · Fix round 1 built: a failed refetch keeps the shown tickets and QR with an inline retry (D1), borders inside so rows are 72, pitch 84, card 397 and the nav title sits right (D2), EVENTS-01's two-digit badge merged in (D3); back to verifying.
-- 8 Oct 2026 · EVENTS-03 · Verified (round 3, independent decoders read the drawn QR for 344 texts and all 8 masks; live door check-in accepted the decoded code; new routes and 244 protected routes hold): three defects, a failed refetch drops the shown data, row and card 2 px tall, badge day not two digits; status building.
-- 7 Oct 2026 · EVENTS-03 · Built: My tickets (E6), Ticket QR (E7) and Checked in (E12) with two new Hub routes (`/events/tickets/held`), our own QR encoder, brightness waiting on SHARED-CHANGES row 8; status verifying.
+- 9 Oct 2026 · EVENTS-04 · Verified (back to building): V1, V4, V6, V7, V9 and the protected suite pass, 6 of 6 mutants killed, V10 NOT RUN; V5 found D1 to D7 (R-46 entries left out: My events tab and button, Get verified; E14 Starts truncated; E22 top gap; tab line height; shared TextField label line; E14 hint unfiled; G-443 stale) and F1 (NUL is a 500 on POST /events), see the task's Verifier report.
+- 8 Oct 2026 · EVENTS-04 · Built (verifying): the host wizard E13 to E16 with the tick gate E21 and Sent back E22, Host your event on E1, and the backend (`GET /events/options` serves the ticket rules and field limits, `event/banner` upload folder). Backend PR and mobile PR depend on mobile #14 and backend #78.

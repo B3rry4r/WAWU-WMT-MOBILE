@@ -1,19 +1,21 @@
 ---
 id: LEGAL-02
 title: Legal: chat, profiling, brief, consultant joins
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 66
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [LEGAL-01, INBOX-02, UI-02]
 decisions: [R-14, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [S14, S15, S16, S17]
 ---
 # LEGAL-02 · Legal: chat, profiling, brief, consultant joins
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 
@@ -166,6 +168,10 @@ Verifier session, 9 Oct 2026, fresh. Mobile verify branch `verify-legal-02c` fro
 | D3 | passed: with `this.cursor` set on `legal.thread` in `live.ts`, the new case fails and the other 29 pass (1 failed, 29 passed, 30 total); `git restore` after; unmutated, `src/features/inbox` and `src/features/legal` 8 suites, 122 tests pass, `live.test.ts` 30 tests |
 | Diff | passed: `git diff e3c23f1..HEAD` in `src` is the new test and the G-470/1/2 to G-500/1/2 renumbering in comments only; the rest is `BACKEND_GAPS.md`, the task file, LOG and PROGRESS |
 | As it will land | passed: `origin/main` merged (already up to date, no conflict, no markers); `npm run check` exit 0, gates 0 fail, task check pass |
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 

@@ -1,7 +1,7 @@
 ---
 id: SUPPORT-01
 title: Support chat that opens with the payment or piece it is about
-owner: DEV2
+owner: YOU
 area: SUPPORT
 order: 174
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V6, V7, V9]
 artboards: []
 ---
 # SUPPORT-01 · Support chat that opens with the payment or piece it is about
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 
