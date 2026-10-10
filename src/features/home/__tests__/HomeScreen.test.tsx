@@ -289,7 +289,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Schools', 'Shop', 'See all']) {
+    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -411,7 +411,7 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Events' }));
     expect(mockPush).toHaveBeenCalledWith('/events');
     // The other services lead to screens not built yet: their columns stay empty.
-    for (const label of ['Pay bills', 'Schools', 'Shop']) expect(screen.queryByText(label)).toBeNull();
+    for (const label of ['Pay bills', 'Shop']) expect(screen.queryByText(label)).toBeNull();
   });
 
   it('a user with TGIF off still has the Events tile (H36)', async () => {
@@ -428,7 +428,7 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     const column = screen.getByTestId('today-service-events').parent!;
     const grid = column.parent!;
-    expect(grid.children).toHaveLength(2);
+    expect(grid.children).toHaveLength(3);
     expect(grid.children[0]).toBe(column);
   });
 
@@ -439,10 +439,26 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
     expect(mockPush).toHaveBeenCalledWith('/legal');
   });
 
-  it('the loading view draws one tile shape for each of the two tiles present (H11)', async () => {
+  it('a user can tap Schools, the third tile, and land on the schools list (SC1, SCHOOLS-03)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    const grid = screen.getByTestId('today-service-events').parent!.parent!;
+    expect(grid.children[2]).toBe(screen.getByTestId('today-service-schools').parent);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Schools' }));
+    expect(mockPush).toHaveBeenCalledWith('/schools');
+  });
+
+  it('a user with TGIF off still has the Schools tile (H36)', async () => {
+    answers[T.tgif] = [ok({ show: false })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByTestId('today-service-schools')).toBeTruthy();
+  });
+
+  it('the loading view draws one tile shape for each of the three tiles present (H11)', async () => {
     const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
     await rtl.render(<TodayLoading withTgif />);
     const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
-    expect(shapes).toHaveLength(2);
+    expect(shapes).toHaveLength(3);
   });
 });

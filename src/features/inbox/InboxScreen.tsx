@@ -76,6 +76,10 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
 
   const rows = drawableRows(inbox.items, renderers);
   const { refetch, fetchNextPage, hasNextPage, isFetchingNextPage, isStale } = inbox;
+  // Some kind can be drawn but the pages read so far hold none of it: read on until one is found or the pages end.
+  // With no kind drawn at all there is nothing to look for, so nothing is read ahead.
+  const canDraw = Object.values(renderers).some((renderer) => renderer !== undefined);
+  const readingPast = rows.length === 0 && canDraw && hasNextPage && !inbox.isFetchNextPageError;
 
   // Coming back to the tab reads again when what is held has gone stale.
   const wasFocused = useRef(focused);
@@ -93,20 +97,16 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
     }
   }, [refetch]);
 
-  // A page that adds nothing to the screen is not worth a request, unless some kind of row can be drawn at
-  // all: then a later page may hold one, so pages are read until a row appears or the list ends.
-  const canDraw = Object.keys(renderers).length > 0;
-  const pageFailed = inbox.isFetchNextPageError;
-  const onEndReached = useCallback(() => {
-    if ((rows.length > 0 || canDraw) && hasNextPage && !isFetchingNextPage && !pageFailed) void fetchNextPage();
-  }, [rows.length, canDraw, hasNextPage, isFetchingNextPage, pageFailed, fetchNextPage]);
-  const nothingDrawn = rows.length === 0 && inbox.items.length > 0;
-  const wantsMore = canDraw && hasNextPage && !isFetchingNextPage && !pageFailed;
-  // The count of pages read is a dependency so that every page that arrives, and shows nothing, asks for the next.
+  // Runs again for every page that arrives (`pagesRead`), because a page can land with no render in between that shows the read as under way.
   const pagesRead = inbox.data?.pages.length ?? 0;
   useEffect(() => {
-    if (pagesRead > 0 && nothingDrawn && wantsMore) void fetchNextPage();
-  }, [pagesRead, nothingDrawn, wantsMore, fetchNextPage]);
+    if (readingPast && !isFetchingNextPage) void fetchNextPage();
+  }, [readingPast, isFetchingNextPage, pagesRead, fetchNextPage]);
+
+  // Nothing is read ahead unless a row is drawn: a page that adds nothing to the screen is not worth a request.
+  const onEndReached = useCallback(() => {
+    if (rows.length > 0 && hasNextPage && !isFetchingNextPage && !inbox.isFetchNextPageError) void fetchNextPage();
+  }, [rows.length, hasNextPage, isFetchingNextPage, inbox.isFetchNextPageError, fetchNextPage]);
 
   const renderRow = useCallback(({ item }: { item: InboxItem }) => renderers[item.kind]?.(item) ?? null, [renderers]);
 
@@ -125,16 +125,32 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
         onRetry={() => void refetch()}
       />
     );
-  } else if (inbox.items.length === 0) {
-    center = true;
-    body = (
-      <EmptyState
-        testID="inbox-empty"
-        title="No messages yet"
-        message="Message a creator from their profile, or join a community to talk with people like you."
-        action={{ label: 'Browse communities', onPress: onBrowseCommunities }}
-      />
-    );
+  } else if (rows.length === 0) {
+    // No row to draw: the Hub served none, or every row it served is of a kind nobody has built yet (R-47).
+    // The same empty state either way; a blank body would read as a broken screen.
+    if (readingPast) {
+      body = <InboxSkeleton />;
+    } else if (inbox.isFetchNextPageError) {
+      center = true;
+      body = (
+        <ErrorState
+          testID="inbox-error"
+          title="Couldn’t load your inbox"
+          message="Something went wrong. Try again."
+          onRetry={() => void fetchNextPage()}
+        />
+      );
+    } else {
+      center = true;
+      body = (
+        <EmptyState
+          testID="inbox-empty"
+          title="No messages yet"
+          message="Message a creator from their profile, or join a community to talk with people like you."
+          action={{ label: 'Browse communities', onPress: onBrowseCommunities }}
+        />
+      );
+    }
   } else {
     body = null;
   }
@@ -146,8 +162,9 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
       keyExtractor={(item) => item.id}
       renderItem={renderRow}
       ListEmptyComponent={body}
+      // Under no row, the body already says what the next page is doing.
       ListFooterComponent={
-        inbox.isFetchNextPageError ? (
+        rows.length === 0 ? null : inbox.isFetchNextPageError ? (
           <View style={styles.footer}>
             <Text variant="secondary">Couldn’t load more messages.</Text>
             <Button label="Try again" variant="secondary" size="sm" onPress={() => void fetchNextPage()} />
