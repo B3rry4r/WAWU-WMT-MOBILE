@@ -7,7 +7,7 @@ order: 244
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: [FIX-29]
 decisions: [R-47]
 passes: [V1, V5, V6]
@@ -234,6 +234,24 @@ Throwaway tests, 201 of them, written for this report and not committed (`/tmp/c
 - A phone, a live Hub or a browser: the read-on cannot run in the shipped app until a row kind has a renderer (round 1 verifier), and this round was jest only by the brief.
 - A refusal faster than one render over a real network: jest answers in the same tick, so the instant case is shown by a scripted test, not by a measurement on a device.
 - The full backend or any server: this branch changes none.
+
+## Builder report, round 3
+
+Branch `wmt/FIX-30`, built on `6486b00` (the round 2 verifier's head), merged with main `453d170` (one conflict, the generated `docs/PROGRESS.md`, rebuilt with `check_tasks.py --write`; no code conflict). Mobile only, two files under `src`: `src/features/inbox/InboxScreen.tsx` (one dependency and the comment above the effect) and `src/features/inbox/__tests__/InboxScreen.test.tsx` (+85 lines, one helper and one group). No backend, package, fenced or other task file touched.
+
+**The defect (round 2 verifier, finding 1).** A refresh landing during the Inbox read-on cancels the page being read and refetches the pages held. When that refetch is REFUSED in the same instant (a 400, which the app does not retry), it moves `errorUpdatedAt`, not `dataUpdatedAt`, and no render ever showed it under way, so `isFetching` is false before and after. The effect had nothing that changed, and the screen sat on the loading list with nothing in flight. Round 2's comment (and its report) said every ending moves `dataUpdatedAt`; a failed one does not.
+
+**Before** (current code, tests committed first in `6f64075`, then run on it: two runs of the whole file, `before1.log` and `before2.log` in the scratchpad): the six scripted cases fail every time, on both endings (the empty state and a drawn row): the refetch of page 1 refused as page 2 is asked (verifier C1), two pages held and the refetch of page 2 refused as page 3 is asked (C3), and the refetch and the page being read both refused, which must end on the error with one Try again and then read on after Try again (C4). The six timings (refresh at 0, 10, 30, 60, 80, 100 ms, pages of 30 ms, the refetch refused at once) fail 1 or 2 per run, a different set each run (30 and 80 ms in the first run, 80 ms in the second), as the verifier saw for its F and G sweeps. Every failure reads `state: loading, requestsInFlight: 0` where `empty`, `rows` or `error` is expected. 8 and 7 of the 42 tests fail.
+
+**What I changed.** `inbox.errorUpdatedAt` is in the effect's dependency list, as the verifier's patch has it. The comment above the effect now says that a refused refetch moves `errorUpdatedAt` and leaves `dataUpdatedAt` where it was, and why it cannot loop (each run needs a read to have ended; a read-on stops at the last page, at an error with one Try again, or at a drawn row).
+
+**The tests** (`describe('and the refetch it starts is refused')`, inside the round 2 group, 12 tests): the verifier's C1, C3 and C4, each on both endings (6), and the refused-at-once timings (6). C4 also checks that nothing more is asked once the error shows, that there is exactly one Try again, and that pressing it reads on to the end. The harness gained one helper, `refused` (a 400, with an optional delay). The 30 older tests are untouched. C2 (the refetch cut offline and retried) and C5 (a refresh after the page already failed) pass on both versions and are not added.
+
+**After**: the 42 tests of `InboxScreen.test.tsx` (the 13 round 2 tests, the 12 new, the 17 older) pass **10 runs in a row** with two jest workers (`loop10.log`: `RUNS_ALL_PASSED=10 of 10`, every run `42 passed, 42 total`). The verifier's whole throwaway file (201 tests, copied in and removed again, not committed) passes: 201 of 201.
+
+**Checks**: `(npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks; echo "EXIT $?")` as one command, with the tree as pushed (the report, the LOG line and the regenerated `docs/PROGRESS.md` in place): **EXIT 0** on the fifth run (`check5.log` in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/fix30r3/`, last line `EXIT 0`). Typecheck 0; lint 0 errors and 7 warnings (the same 7 as round 2, in `eventsFocus`, `ticketsRefetchFails` and the professionals `screens` tests, none in a file this round touched); jest 120 suites and 2064 tests, all passed (round 2: 2031; this round adds 12 and the rest came in with main); gates 10 run, 473 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`, EVENTS-04's), baseline 0; 273 tasks. The four runs before it did not reach EXIT 0, none on this task's code: run 1 failed `eventsScreens` D8 (the tier-line flake round 1 and 2 recorded) and a 20 s timeout in `LegalChatScreen`'s busy-assistant test; run 2 failed a 20 s timeout in `CreatePinScreen` (P4) and one in `InboxScreen.test.tsx` ("shows the loading list, not the empty state, while it reads on past rows it cannot draw", a test this round did not touch; it passed in all 12 other runs of the file, 10 of them in a row, and the load average was 19 to 22); run 3 passed all of jest and the gates and stopped at `npm run tasks` only because `docs/PROGRESS.md` had not yet been regenerated after the status change (`check_tasks.py --write`, then the run above); run 4 lost a jest worker to SIGKILL (`explore/model.test.ts`, the machine under memory pressure) and failed `eventsScreens` E1 (D13-E1b, a find by text right after the event answers). `eventsScreens` D8 failed 2 of 5 on its own at this load too (`-t D8`, then the whole file), and passed in the runs above. Load average 15 to 22 throughout, other agents running. Secret scan of what is staged (the task file, `docs/LOG.md`, `docs/PROGRESS.md`, the two `src` files): no key-shaped string, token, BVN, NIN or phone number; no em-dash in anything a user reads.
+
+**NOT RUN**: a live run against the Hub or a phone (the read-on cannot run in the shipped app until a row kind has a renderer; this round was jest only by the brief); a refusal faster than one render over a real network (jest answers in the same tick, so the instant case is shown by a scripted test).
 
 ## Owner sign-off
 
