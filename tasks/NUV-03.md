@@ -7,7 +7,7 @@ order: 202
 priority: launch
 repo: wawu-backend
 type: third-party
-status: review
+status: done
 depends_on: [NUV-01, KYC-02]
 decisions: [R-39, R-42]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -439,3 +439,5 @@ Backend `13077fb`: `npx tsc --noEmit` 0; eslint `--no-fix` on the 11 changed fil
 ## Owner sign-off
 
 Merged by the lead, 10 Oct 2026: backend PR #103 (merge `181ee5d`) and mobile main (merge of `52da8df`; the contract regenerated from backend main `181ee5d`). The combined verifier round found no blocker. R4-1, R4-2 and R4-3 follow in NUV-03 round 4 on the same branch.
+
+Round 4 merged by the lead, 10 Oct 2026: backend PR #104 (merge `f1bb814`) and mobile main (merge of `c9225ef`). The round 4 verifier found no defect. Notes left open: N1 (the lifetime's boot check applies under every WALLET_PROVIDER), N2 (mutant C1, a test gap), N4 (a duplicated LOG line).
