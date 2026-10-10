@@ -7105,6 +7105,7 @@ export interface components {
             resetId: string;
             sentTo: string;
             resendAvailableAt: string;
+            resendInSeconds: number;
             expiresAt: string;
         };
         TickState: {
@@ -14393,6 +14394,8 @@ export interface operations {
             header: {
                 /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
                 "X-Transaction-Pin": string;
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
             };
             path?: never;
             cookie?: never;
@@ -14606,7 +14609,10 @@ export interface operations {
     MoneyPinResetController_confirmReset: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
