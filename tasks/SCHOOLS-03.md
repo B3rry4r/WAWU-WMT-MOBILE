@@ -7,7 +7,7 @@ order: 62
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [SCHOOLS-04, UI-02, UI-03]
 decisions: [R-32]
 passes: [V1, V4, V5, V6, V9]
@@ -212,3 +212,5 @@ The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on t
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+Merged by the lead, 10 Oct 2026 (mobile main, merge of `d270bb3`): the verifier's review, no blocker; the trial merge with main was clean and its full check exit 0. F2 (kobo), F3 (Free), F4 (class days), F5 (the phone's day) and the F7 tests follow in round 2 on the same branch.

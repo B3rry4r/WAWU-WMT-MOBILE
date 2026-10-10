@@ -3,19 +3,18 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 122 of 246.**
+**Launch tasks done: 123 of 246.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 145 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
-| done | 83 | 27 | 11 | 5 |
+| review | 1 | 0 | 0 | 0 |
+| done | 84 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [SCHOOLS-03](../tasks/SCHOOLS-03.md) Schools: directory, school page, course page, no results (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
@@ -74,6 +73,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
 - [ME-05](../tasks/ME-05.md) Profile fields (Developer)
+- [SCHOOLS-03](../tasks/SCHOOLS-03.md) Schools: directory, school page, course page, no results (You)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales (Developer)
 - [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (You)
