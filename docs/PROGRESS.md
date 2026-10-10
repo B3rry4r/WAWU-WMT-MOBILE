@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 143 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 85 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 
