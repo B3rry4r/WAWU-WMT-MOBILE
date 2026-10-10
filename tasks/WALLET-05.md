@@ -66,6 +66,7 @@ Top-up at launch is a bank transfer to the account number (`account_funded`). Th
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps Add money and lands on its first screen (this task replaces `unbuilt('WALLET-05')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **W15**: a user can copy and share the account details.
 - [ ] **W17**: a user can enter an amount; Max; Change destination; see ₦40 + ₦25 = ₦65 and "Withdraw ₦50,065" with "Your bank gets ₦50,000" for ₦50,000; Withdraw (then PIN W11).
 - [ ] **W19**: a user can Share receipt through the phone's share sheet; Done.

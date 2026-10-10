@@ -1,7 +1,7 @@
 ---
 id: INBOX-12
 title: Paid message settings, warning, switched off
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 65
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I21, I22, I23]
 ---
 # INBOX-12 · Paid message settings, warning, switched off
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

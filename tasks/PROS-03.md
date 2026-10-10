@@ -7,7 +7,7 @@ order: 40
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [PROS-02, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -301,6 +301,10 @@ Already covered by the partial report above and not repeated: D3 picture (X1, X1
 **Merge-conflict risk.** EVENTS-01 also edits `ExploreScreen.tsx` and `(tabs)/explore.tsx`; this branch adds one prop, one import and one line after Featured creators in the first, and the `onListServices` wiring in the second. Whoever merges second resolves it by taking main in and moving the card after Upcoming events; I edited neither branch.
 
 **Findings across round 3.** No defect open. R3-1 (D9's shared `RowWords` helper) and the P7 system Back deviation (D6) are `differs-for-recorded-reason`, for the lead; U4 and U5 are for the lead. Status `review`.
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 

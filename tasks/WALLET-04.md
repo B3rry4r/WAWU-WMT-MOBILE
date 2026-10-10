@@ -53,6 +53,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps See all and lands on W26, and taps a recent row and lands on W27 (this task replaces `unbuilt('WALLET-04')` in `src/features/wallet/home/`; COMPLETE-05).
 - [ ] **W26**: a user can search transactions; filter by All/Money in/Money out/Bills/Content; tap a row to open W27.
 - [ ] **W27**: a user can see each debit's parts (amount, Fintava's charge, WAWU's fee, total; BRIEF W27) and Share receipt through the phone's share sheet (the receipt's text and reference; the W41 image and PDF come after launch, WALLET-12).
 - [ ] **W28**: a user can Pay a bill.
