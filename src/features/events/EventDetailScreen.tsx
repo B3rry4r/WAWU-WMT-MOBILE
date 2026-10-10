@@ -9,25 +9,13 @@ import { isApiError } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
 import { Button, IconButton } from '@/components/Button';
 import { Icon, VerifiedTick } from '@/components/icon';
-import { Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { detailKey, fetchEvent, fetchTickets, ticketsKey, type EventView, type TicketType } from './api';
-import {
-  basketCount,
-  basketTotal,
-  maxQuantity,
-  quantityOf,
-  ticketCount,
-  tierStatus,
-  venueOf,
-  whenLine,
-  withQuantity,
-  type Basket,
-} from './format';
+import { tierStatus, venueOf, whenLine } from './format';
 import { useGoing } from './going';
 import { DateBadge, GoingButton } from './parts';
 import { TicketRow } from './TicketRow';
@@ -48,9 +36,7 @@ export const detailMetrics = {
   info: 14,
   footTop: 12,
   footBottom: 34,
-  count: 12,
   labelSize: 11,
-  total: 20,
   topInset: 6,
   fadeEnd: 0.4,
   stack: 16,
@@ -62,7 +48,11 @@ export type EventDetailScreenProps = {
   onBack: () => void;
 };
 
-/** E2 · Event, and E9 when every tier has sold: when and where, who hosts it, Going, the tiers with a stepper each, and the running total. */
+/**
+ * E2 · Event, and E9 when every tier has sold: when and where, who hosts it, Going, and the tiers with their prices.
+ * The quantity steppers, the running total and Get tickets are not drawn: nothing here can buy a ticket until
+ * EVENTS-06, and a picker that leads nowhere is not shown (R-47). EVENTS-06 draws all three, as the artboard has them.
+ */
 export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
@@ -73,7 +63,6 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
     enabled: event.data?.ticketed === true,
   });
   const going = useGoing();
-  const [picked, setPicked] = useState<Basket | null>(null);
   const [now] = useState(() => Date.now());
 
   if (event.isPending) return <DetailSkeleton onBack={onBack} />;
@@ -111,9 +100,6 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
   const buyable = rows.filter((r) => r.status.open && !called).map((r) => r.tier);
   const allSold = tiers.length > 0 && tiers.every((t) => t.soldOut || t.remaining <= 0);
   const soldBar = allSold && !called;
-  const basket: Basket = picked ?? (buyable[0] ? { [buyable[0].id]: 1 } : {});
-  const count = basketCount(basket);
-  const total = basketTotal(buyable, basket);
 
   const share = () => {
     const message = [data.name, whenLine(data.startsAt, data), venueOf(data)].filter(Boolean).join('\n');
@@ -124,7 +110,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
     <View testID="event-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: buyable.length > 0 || soldBar ? layout.tabbarH + insets.bottom : insets.bottom + space.s2xl }}
+        contentContainerStyle={{ paddingBottom: soldBar ? layout.tabbarH + insets.bottom : insets.bottom + space.s2xl }}
       >
         <Cover event={data} insetTop={insets.top} onBack={onBack} onShare={share} />
         <View style={styles.body}>
@@ -186,14 +172,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
               ) : (
                 <>
                   {rows.map(({ tier, status }) => (
-                    <TicketRow
-                      key={tier.id}
-                      tier={tier}
-                      status={status}
-                      quantity={status.open ? quantityOf(basket, tier.id) : 0}
-                      max={maxQuantity(tier)}
-                      onChange={(q) => setPicked(withQuantity(basket, tier, q))}
-                    />
+                    <TicketRow key={tier.id} tier={tier} status={status} />
                   ))}
                   {allSold ? (
                     <Text variant="muted" testID="event-sold-out" style={styles.soldNote}>
@@ -219,29 +198,6 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
           ]}
         >
           <Button label="Sold out" full disabled onPress={() => void tickets.refetch()} testID="event-sold-button" />
-        </View>
-      ) : null}
-      {buyable.length > 0 ? (
-        <View
-          testID="event-total"
-          style={[
-            styles.foot,
-            {
-              backgroundColor: colors.surfacePage,
-              paddingBottom: Math.max(insets.bottom, detailMetrics.footBottom),
-            },
-          ]}
-        >
-          <Text variant="body" tone="textMuted" style={{ fontSize: detailMetrics.count }}>
-            {ticketCount(count)}
-          </Text>
-          {total === 0 && count > 0 ? (
-            <Text variant="body" style={[font(600), { fontSize: detailMetrics.total }]}>
-              Free
-            </Text>
-          ) : (
-            <Money minorUnits={total} size={detailMetrics.total} decimals={false} testID="event-total-amount" />
-          )}
         </View>
       ) : null}
     </View>

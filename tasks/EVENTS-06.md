@@ -62,6 +62,7 @@ Native modules: a QR renderer (E5), `expo-calendar` (Add to calendar). They are 
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states E3, E4, E10.
 - [ ] A user gets a ticket to a ₦0 event without a wallet, a pay sheet or a PIN (R-8).
 - [ ] From E2's Get tickets (EVENTS-01), a user reaches E3 (this task adds it, as drawn).
+- [ ] E2 draws the ticket quantity steppers and the running total again, beside Get tickets, as the artboard has them (this task adds them; EVENTS-01 built them and FIX-30 took them out of E2 until a buy button exists, R-47). `src/features/events/TicketStepper.tsx` is built and held for this. The E2 test that pins their absence is rewritten in this task: a user sets a quantity per tier, sees the total, and taps Get tickets.
 - [ ] A user with no wallet who taps Pay lands in Open your wallet (A26).
 
 ## What the backend serves today (from the analysis)

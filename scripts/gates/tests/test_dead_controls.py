@@ -1,8 +1,8 @@
 """The dead_controls gate still fails an empty handler, and an inert entry is not one.
 
-R-46 draws an unbuilt entry with `onPress={unbuilt('<TASK>')}`. That call is
-checked by unbuilt_entries, not here; an empty handler written by hand is still
-a defect.
+An entry drawn with the R-47 helper, `onPress={unbuilt('<TASK>')}` (kept, unused),
+is checked by unbuilt_entries, not here; an empty handler written by hand is
+still a defect.
 
     python3 -m unittest discover -s scripts/gates/tests
 """
