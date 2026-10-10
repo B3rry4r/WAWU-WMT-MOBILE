@@ -78,6 +78,7 @@ const WORDS_BEFORE_TILES = ['FEATURED EVENT', 'All'];
 const WORDS_AFTER_TILES = [
   'More', 'Featured creators', 'Upcoming events', 'See all',
   'Find a professional', 'Accountants, lawyers, designers',
+  'Find a school', 'Courses from schools and academies',
   'List your services', 'Get paid to answer questions',
 ];
 const WORDS_NOTHING_SERVED = [...WORDS_BEFORE_TILES, ...WORDS_AFTER_TILES];
@@ -99,7 +100,7 @@ const noEvents: Answer = {
 
 /** Every destination Explore can open, each a spy; a test names the ones it taps. */
 function entries(over: Partial<ExploreScreenProps> = {}): ExploreScreenProps {
-  return { onOpenCategory: jest.fn(), onOpenEvent: jest.fn(), onSeeAllEvents: jest.fn(), onFindProfessional: jest.fn(), onListServices: jest.fn(), ...over };
+  return { onOpenCategory: jest.fn(), onOpenEvent: jest.fn(), onSeeAllEvents: jest.fn(), onFindProfessional: jest.fn(), onFindSchool: jest.fn(), onListServices: jest.fn(), ...over };
 }
 
 function wrap(children: ReactNode) {
@@ -196,7 +197,7 @@ describe('X1 · Explore', () => {
     expect(rtl.within(rtl.screen.getByTestId('explore-featured-c2')).getByTestId('tick-pro')).toBeTruthy();
   });
 
-  it('a user sees only the entries whose screens are built (R-47): Upcoming events’ See all, the tiles and two doors, and no search pill, bell, Featured creators’ See all, Find a school or Create', async () => {
+  it('a user sees only the entries whose screens are built (R-47): Upcoming events’ See all, the tiles and three doors, and no search pill, bell, Featured creators’ See all or Create', async () => {
     answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[COUNTS] = [ok({ purchases: 0, saved: 0, unreadNotifications: 2 })];
@@ -204,17 +205,17 @@ describe('X1 · Explore', () => {
     await rtl.screen.findByText('Featured creators');
     await settle();
     expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
-    for (const words of ['FEATURED EVENT', 'Featured creators', 'Upcoming events', 'Find a professional', 'List your services']) {
+    for (const words of ['FEATURED EVENT', 'Featured creators', 'Upcoming events', 'Find a professional', 'Find a school', 'List your services']) {
       expect(rtl.screen.getByText(words)).toBeTruthy();
     }
     // What X1 draws for screens that are not built is not drawn: not for a creator account, not with notifications waiting.
-    for (const id of ['explore-search', 'explore-bell', 'explore-bell-dot', 'explore-featured-see-all', 'explore-door-find-school', 'explore-create']) {
+    for (const id of ['explore-search', 'explore-bell', 'explore-bell-dot', 'explore-featured-see-all', 'explore-create']) {
       expect(rtl.screen.queryByTestId(id)).toBeNull();
     }
-    for (const name of ['Search Who Made This', 'Notifications', 'See all creators', 'Find a school, Courses from schools and academies', 'Create']) {
+    for (const name of ['Search Who Made This', 'Notifications', 'See all creators', 'Create']) {
       expect(rtl.screen.queryByRole('button', { name })).toBeNull();
     }
-    expect(rtl.screen.queryByText(/Search|Find a school|Courses from schools/)).toBeNull();
+    expect(rtl.screen.queryByText(/Search/)).toBeNull();
     expect(rtl.screen.queryByText(/WAWU/)).toBeNull();
   });
 
@@ -231,6 +232,7 @@ describe('X1 · Explore', () => {
       'Follow',
       'See all events',
       'Find a professional, Accountants, lawyers, designers',
+      'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
     ]);
     const card1 = rtl.screen.getByTestId('explore-featured-c1');
@@ -242,6 +244,8 @@ describe('X1 · Explore', () => {
     expect(spies.onSeeAllEvents).toHaveBeenCalledTimes(1);
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-professional'));
     expect(spies.onFindProfessional).toHaveBeenCalledTimes(1);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-school'));
+    expect(spies.onFindSchool).toHaveBeenCalledTimes(1);
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services'));
     expect(spies.onListServices).toHaveBeenCalledTimes(1);
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-c1-follow'));
@@ -483,11 +487,13 @@ describe('X1 · Explore', () => {
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'Find a professional, Accountants, lawyers, designers',
+      'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
     ]);
-    expect(rtl.screen.queryByTestId('explore-door-find-school')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-professional'));
     expect(spies.onFindProfessional).toHaveBeenCalledTimes(1);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-school'));
+    expect(spies.onFindSchool).toHaveBeenCalledTimes(1);
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services'));
     expect(spies.onListServices).toHaveBeenCalledTimes(1);
   });
@@ -553,8 +559,7 @@ describe('X1 · Explore', () => {
       expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
       expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
       expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
-      for (const door of ['find-professional', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();
-      expect(rtl.screen.queryByTestId('explore-door-find-school')).toBeNull();
+      for (const door of ['find-professional', 'find-school', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();
       expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
     });
 
@@ -909,9 +914,9 @@ describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'Find a professional, Accountants, lawyers, designers',
+      'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
     ]);
-    expect(rtl.screen.queryByTestId('explore-door-find-school')).toBeNull();
   });
 
   it('a creator with no application lands on P5, one with any (here a hidden one) on P8, a user on P5', async () => {

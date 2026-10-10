@@ -53,6 +53,8 @@ export type ExploreScreenProps = {
   onSeeAllEvents: () => void;
   /** The "Find a professional" door (PROS-01): the directory, P1. */
   onFindProfessional: () => void;
+  /** The "Find a school" door (SCHOOLS-03): the schools list, SC1. */
+  onFindSchool: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
 };
@@ -64,13 +66,13 @@ export type ExploreScreenProps = {
  * everything again.
  *
  * Every entry drawn here opens something: a category tile (X2, X3), the featured event and an event card (E2), Upcoming
- * events' See all (E1), "Find a professional" (PROS-01) and "List your services" (PROS-03). A featured creator's card shows
+ * events' See all (E1), "Find a professional" (PROS-01), "Find a school" (SCHOOLS-03) and "List your services" (PROS-03). A featured creator's card shows
  * the creator and its Follow follows, but the card itself opens nothing, because the profile it leads to is not built. What
  * X1 draws for screens that are not built is not drawn: the search pill and Featured creators' See all (EXPLORE-02), the
- * bell (ME-14), Find a school (SCHOOLS-03) and Create (ME-04). The task that builds each one adds it, as drawn. A section
+ * bell (ME-14) and Create (ME-04). The task that builds each one adds it, as drawn. A section
  * with nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -110,9 +112,10 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
   const failed = (categories.isError && !categories.data) || (featured.isError && !featured.data);
   const failure = categories.error ?? featured.error;
 
-  // The doors whose screens are built, in X1's order: Find a professional, List your services (Find a school is SCHOOLS-03's).
+  // The doors whose screens are built, in X1's order: Find a professional, Find a school, List your services.
   const doors: Door[] = [
     { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional },
+    { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: onFindSchool },
     { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
   ];
 
