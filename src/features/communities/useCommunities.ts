@@ -75,14 +75,20 @@ export function useSuggestedCommunities(enabled: boolean) {
     () => firstSeen(query.data?.pages.flatMap((page) => page.items) ?? []).filter((room) => room.kind === 'open'),
     [query.data],
   );
-  const { hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } = query;
+  const { hasNextPage, isFetchNextPageError, isFetching, dataUpdatedAt, errorUpdatedAt, fetchNextPage } = query;
   const pagesRead = query.data?.pages.length ?? 0;
-  const readOn =
-    items.length < SUGGESTED_READ_ON_ROOMS && pagesRead < SUGGESTED_READ_ON_PAGES && hasNextPage && !isFetchingNextPage && !isFetchNextPageError;
-  // Keyed on the pages held too: a page that arrives and finds `readOn` still true (no render saw the read in between) must ask for the next.
+  const readingOn = items.length < SUGGESTED_READ_ON_ROOMS && pagesRead < SUGGESTED_READ_ON_PAGES && hasNextPage && !isFetchNextPageError;
+  // Reads the next page only when nothing is in flight, and runs again each time a read ends, however it ended: a page landed
+  // (`pagesRead`), or a refresh (a Join, a live event, a return to the screen) cancelled the page being read and refetched the pages held.
+  // Asking for the next page while that refetch runs would cancel the refetch, and the pages held would be a mix of before and after the
+  // refresh (a joined room still listed, the next one lost). That refetch ends with the same pages and the same flags as before it began,
+  // and a render may never have shown it under way, so `dataUpdatedAt` tells this effect it ended; a refetch that is refused moves
+  // `errorUpdatedAt` instead and leaves `dataUpdatedAt` where it was, so that one is watched too (as the Inbox's read-on does, FIX-30).
+  // It cannot loop: each run needs a read to have ended, and a read-on stops at eight rooms, at five pages, at the last page and at an
+  // error (the list's one Try again).
   useEffect(() => {
-    if (readOn) void fetchNextPage();
-  }, [readOn, pagesRead, fetchNextPage]);
+    if (readingOn && !isFetching) void fetchNextPage();
+  }, [readingOn, isFetching, dataUpdatedAt, errorUpdatedAt, pagesRead, fetchNextPage]);
   return { ...query, items };
 }
 

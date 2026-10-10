@@ -584,6 +584,19 @@ describe('Suggested reads on when a refresh or a Join lands during it (defect 30
     }, 10_000);
   });
 
+  // A read that is cancelled from outside ends with no page and no error, so neither `dataUpdatedAt` nor `errorUpdatedAt` moves: only the end
+  // of the read itself (`isFetching`) tells the read-on to ask again.
+  it('asks for the next page again when the read of it is cancelled from outside', async () => {
+    for (let n = 1; n <= 5; n += 1) answers[pageUrl(n)] = n === 2 ? [withDelay(page(2), 1000), page(2)] : [page(n)];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await rtl.waitFor(() => expect(hook.result.current.isFetchingNextPage).toBe(true));
+    await rtl.act(async () => {
+      await queryClient.cancelQueries({ queryKey: suggestedKey });
+    });
+    await expectEight(hook);
+    expect(suggestedRequests().filter((request) => request === pageUrl(2))).toHaveLength(2);
+  }, 10_000);
+
   // The rooms the Hub lists change under the reader: A is joined (it leaves the list), so every room moves up one place. Page 1 is read again
   // after the join; if the read-on's own request for the next page cancels that, the phone holds page 1 as it was before the join and the
   // later pages as they are after it: A is listed still, and C, which moved onto page 1, is lost.
