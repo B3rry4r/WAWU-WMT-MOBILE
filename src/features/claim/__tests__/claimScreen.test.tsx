@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockStore = new Map<string, string>();
@@ -147,8 +147,20 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     expect(claims()).toHaveLength(1);
   });
 
+  it('sends one claim when two sends land in the same frame (Return pressed twice), before the screen has drawn its busy state', async () => {
+    answer = 'hang';
+    await open();
+    await type('5F6C15E4');
+    const press = screen.getByTestId('claim-code').props.onSubmitEditing as () => void;
+    await act(async () => {
+      press();
+      press();
+    });
+    expect(claims()).toHaveLength(1);
+  });
+
   it.each([
-    [404, 'code_not_found', 'We could not match that code to you', 'signed in with the phone number or email you registered with'],
+    [404, 'code_not_found', 'We could not match that code to you', 'signed in with the phone number or email you registered with, and that you have confirmed it'],
     [409, 'contact_not_verified', 'Confirm your phone number or email first', 'Confirm one, then try your code again'],
     [409, 'code_refunded', 'That code cannot be used', 'Use the code from your first payment'],
     [409, 'already_claimed', 'That code has already been used', 'Each code can be used once'],

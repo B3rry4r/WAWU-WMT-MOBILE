@@ -21,7 +21,7 @@ export function claimFailure(error: unknown): ClaimFailure {
         where: 'banner',
         tone: 'danger',
         title: 'We could not match that code to you',
-        body: 'Check the code. Then make sure you are signed in with the phone number or email you registered with.',
+        body: 'Check the code. Then make sure you are signed in with the phone number or email you registered with, and that you have confirmed it.',
       };
     case 'contact_not_verified':
       return {
