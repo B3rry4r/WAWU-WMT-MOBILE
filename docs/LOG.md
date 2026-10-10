@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 10 Oct 2026 · JOIN-02 · Built: the event registration page `/join` (and `/join/paid`) on the website, against the JOIN-01 routes: form, pay in the Flutterwave window, "Checking your payment" with a retry and never a second charge, "You're registered, <first name>" with the reference, and plain refusals (already registered, closed, none open, cancelled, network); only the reference is kept in sessionStorage; walked in Chromium against the real backend (70 assertions) and pictured at 390 and 1280 px, light and dark; the sign-up page is untouched; status verifying; real payment NOT RUN.
 - 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
 - 9 Oct 2026 · PROS-01 · Built: Find a professional (P1 directory with field chips, paging and P4, P2 and P3 profile) against PROS-02's routes; Explore's Find a professional door opens P1; V5 pictures NOT RUN; status verifying.
 - 9 Oct 2026 · LEGAL-02 · Verifier, round 3: gap ids unique on every branch, the legal.thread cursor mutant is now caught, `npm run check` exit 0; no defect open, status review.
