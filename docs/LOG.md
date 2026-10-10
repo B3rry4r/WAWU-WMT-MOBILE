@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 10 Oct 2026 · SCHOOLS-03 · Built (status verifying): Schools list with search and category chips (SC1, SC10 no results), the school page (SC2) and the course page (SC3) against SCHOOLS-04's routes, no rating (R-32), no Enroll or apply link yet (R-47); Explore's Find a school door and Home's Schools tile open SC1; gaps G-624 to G-628, 27 mutants killed, V10 NOT RUN.
 - 10 Oct 2026 · FIX-29 · Merged: unbuilt screens' entries are not drawn (Explore, Wallet tab, Me menu, Events), R-47.
 - 10 Oct 2026 · JOIN-02 · Rounds 4 and 5 merged (website #26 73c14eb, backend #102 7b4ffef): the double charge is closed; the payment window says Who Made This.
 - 10 Oct 2026 · INBOX-03 · Merged (backend #101 12e18e3): phone push notifications (tokens, queue, retries, privacy).

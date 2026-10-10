@@ -13,7 +13,7 @@ import { font, radius, useWawu, type ColorToken } from '@/theme';
  * the words, 16 at the sides, the words 15 (the placeholder in the muted colour). Focused, the ring is the accent's 1.5
  * (`srch`'s focus state).
  */
-export const searchMetrics = { height: 46, gap: 10, padH: 16, icon: 18, text: 15, ring: 1, focusRing: 1.5 } as const;
+export const searchMetrics = { height: 46, iconGap: 10, padH: 16, icon: 18, text: 15, ring: 1, focusRing: 1.5 } as const;
 
 export type SearchPillProps = {
   value: string;
@@ -138,7 +138,7 @@ export function Cover({ height, style, testID }: { height: number; style?: Style
 }
 
 const styles = StyleSheet.create({
-  pill: { height: searchMetrics.height, flexDirection: 'row', alignItems: 'center', gap: searchMetrics.gap, paddingHorizontal: searchMetrics.padH, borderRadius: radius.chip, flexShrink: 0 },
+  pill: { height: searchMetrics.height, flexDirection: 'row', alignItems: 'center', gap: searchMetrics.iconGap, paddingHorizontal: searchMetrics.padH, borderRadius: radius.chip, flexShrink: 0 },
   input: { flex: 1, minWidth: 0, fontSize: searchMetrics.text, paddingVertical: 0, ...font(400) },
   ring: { flexShrink: 0 },
   logo: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

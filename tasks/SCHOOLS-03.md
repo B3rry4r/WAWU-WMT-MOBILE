@@ -7,7 +7,7 @@ order: 62
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [SCHOOLS-04, UI-02, UI-03]
 decisions: [R-32]
 passes: [V1, V4, V5, V6, V9]
@@ -99,7 +99,40 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Builder (Sonnet agent), 10 Oct 2026. Mobile `wmt/SCHOOLS-03`, code at `a6e75c6` (from `origin/main` `ad4eebd`), then `origin/main` `bda7c68` merged in. No backend change: SCHOOLS-04's routes are on backend `origin/main` (`7b4ffef`), which ran locally for every picture below.
+
+**Built (new files under `src/features/schools/` and `src/app/schools/`):** SC1 `/schools` (search "Search schools or courses", chips All/Tech/Business/Creative/Languages/Vocational, a card per school: picture block, logo, name, place and course count, "from" fee; paging by the Hub's cursor; pull to refresh), SC10 as the same screen when a search matches none, SC2 `/schools/<id>` (logo, name, place and year, expertise pills, about, "Courses <count>" and a row per course with length, mode and fee; Back and Share), SC3 `/schools/courses/<id>` (school, title, Length, Classes, Starts, You get, numbered syllabus, the fee at the foot). States: loading shapes, empty (SC10 as drawn; a category nobody is in; no school at all), error and no-connection with Try again, a refresh that fails keeps the rows with a line, a next page that fails keeps the rows with Try again, "not available" for a 404 or a link that is not an id. Android back on all three. No rating anywhere (R-32); no Enroll, no "Or apply on the school's website" (R-47: SCHOOLS-06 and SCHOOLS-08 add them).
+
+**Entries (R-27, R-41):** Explore's "Find a school" door (X1, X15; between Find a professional and List your services) and Home's Schools tile (H1 and H36, third in the row, BRIEF H1) both open SC1. Checked for others: Explore search's Schools tab is EXPLORE-05's, My courses is SCHOOLS-08/09's, SC4 to SC9 and SC11 are SCHOOLS-06/08's; nothing else enters SC1.
+
+**Capability checks:**
+- SC1 search, chip and tap: `schoolsScreen.test.tsx` (31 tests: debounce, the search key, the exact requests `q=`, `category=`, `cursor=`, a NUL or tab or lone half of a character never sent and a request of only controls is no search, 100-character cap, rows stay between searches, a tap passes the id); live against the local Hub in the web export (search "pattern" finds a school by a course title; the request sent for `tech\0 acad\tmy` was `q=tech%20acad%20my`).
+- SC2 read profile and tap a course: `detailScreens.test.tsx`; live.
+- SC3 length, classes, start date, what they get, syllabus: `detailScreens.test.tsx`; live. "Starts" is the soonest class that has not started; none coming means no Starts row.
+- SC10 edit search and pick a chip: tests, and live ("drone piloting" against the real Hub).
+- No figure is a literal: every test gives a second school or course with other values and asserts the other words; no rating test asserts no star, no `4.8`-shaped figure.
+- States by real causes (live, route interception on the real web export for the Hub being down, offline and slow; the real Hub for 404 and 400): pictures below.
+- Routes and entries: `routes.test.tsx` (16 tests), Explore and Home suites updated (`screens.test.tsx`, `HomeScreen.test.tsx`, professionals `routes.test.tsx`).
+
+**Mutants** (each applied, its suites run, the file restored): 27 run, 26 killed at once (control characters not replaced, lone halves kept, no length cap, no debounce, `q`/`category`/`cursor` sent wrong, rows blank between searches, rating drawn, a started class shown, kobo drawn, outcomes row empty, an Enroll button drawn, syllabus numbering, 400 not read as gone, course and school taps wrong, signed-out route drawn, Android back not wired, Explore door removed or wrong, Home tile removed or wrong, page replacing page, duplicate school). One survived the first test set (kobo drawn on the fee); the fee tests now assert no `.00`, and it and its twin on SC1's fee are killed.
+
+**Pictures** (web export at 390 wide against the local Hub, Playwright, light and dark, beside the rendered artboard; the artboard's status bar is cropped off SC1, SC3 and SC10): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/schools03/shots/x/cmp-SC1-{light,dark}.png`, `cmp-SC2-*`, `cmp-SC3-*`, `cmp-SC10-*` (each: artboard left, built right); more in the same folder: `SC1-creative-*`, `SC1-search-*`, `SC1-logo-*` (a school with a picture logo); in `.../shots/y/`: `home-tile-*`, `explore-door-*`, `SC1-loading-*`, `SC1-error-*`, `SC1-offline-*`, `SC1-languages-*`, `SC2-loading-*`, `SC2-gone-*`, `SC3-loading-*`, `SC3-gone-*`. Every request in the runs went to localhost; none to a wawuafrica.com host.
+
+**Decisions (Default (agent), owner may override):**
+1. The pictures at the top of a school card (110), the school page (200) and the course page (170) are quiet blocks: the Hub serves a logo and no cover or course picture (G-624). The logo is the school's picture or its initials on a hue.
+2. "One payment" under the fee is not drawn (nothing serves a payment plan and Enroll is SCHOOLS-06's), so the foot holds the fee alone (G-626). The SC3 Bookmark is not drawn: nothing saves a course (G-627); its slot is kept so the title stays centred.
+3. The Hub serves one `location` string; the card and the profile both draw it as it is, so a card reads "Yaba, Lagos" where the canvas has "Lagos" (G-628).
+4. A course row reads "12 weeks · online" from `weeks` and `mode` (hybrid reads "online + in person"); Classes reads the mode, then the soonest coming class's days and place ("Online, Saturdays in Yaba"). The canvas's "online + weekends" was never a field.
+5. `matchedCourses` (the course titles a search matched) is served and not drawn: SC1 has no place for it. A designer may want it on the card when a search matches a course.
+6. Copy the canvas does not draw, in its tone: "No <Category> schools yet" with "Try another category.", "No schools yet" with "Check back later.", "No courses listed yet.", "This school (course) is not available" with "It may have been taken down or never existed.", "Couldn’t load schools (this school, this course)". An em-dash appears in none.
+7. SC2's Share opens the phone's share sheet with the school's name and place (no link: no public link to a school exists).
+8. `nextIntake` can be null for a course with no shown intake; the generated type says it cannot (G-625), so the app types it as the Hub sends it.
+
+**Gaps and shared changes:** G-624 to G-628 (BACKEND_GAPS; numbers taken above G-623, the highest on origin when written, re-checked before the push); SHARED-CHANGES SCHOOLS-03 #1 (`Avatar` gets a square shape; `SchoolLogo` in `parts.tsx` stands in).
+
+**Checks, before > after:** gates (10 run) 0 fail, 1 warn (the HOST-PICKER provisional, not this task's), 0 accepted, 455 files > 0 fail, 1 warn, 0 accepted, 469 files (the gate failed once on a `gap` key in my metrics object, renamed; no baseline touched); jest 76 suites at the start of the day's main > 118 suites, 2004 tests, all passing at the merge with `origin/main` `bda7c68` (this task adds 4 suites, 103 tests, and edits the Home, Explore and Professionals suites); typecheck and lint 0 errors (no warning in my files). `npm run check` exit 0 on the third run. The first run failed only `src/features/professionals/__tests__/screens.test.tsx` (a load timeout in a suite this task did not touch, 25 of 25 pass alone) and the second only `src/features/events/__tests__/eventsScreens.test.tsx` (the known flake, 47 of 47 pass alone); logs `check1.log` to `check3.log` in the scratch folder.
+
+**NOT RUN:** a phone (V10): needs a tester build against a Hub with the schools routes (they are live on production per the lead) on an Android phone. Native rendering of the logo ring and the share sheet: the pictures are the web export; the unblocking fact is a development build on the same Wi-Fi as a local Hub (`docs/LOCAL.md`). A real production Hub read: never called (rules); V9 ran against the local Hub built from backend `origin/main`. Enroll, "Or apply on the school's website" and the class-full banner (SC11) are SCHOOLS-06 and SCHOOLS-08's, so their checks belong to those tasks.
 
 ## Verifier report
 

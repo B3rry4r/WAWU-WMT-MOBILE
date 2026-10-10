@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 146 | 0 | 0 | 0 |
+| todo | 145 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 83 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [SCHOOLS-03](../tasks/SCHOOLS-03.md) Schools: directory, school page, course page, no results (You)
 
 ## Done
 
@@ -157,6 +161,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · SCHOOLS-03 · Built (status verifying): Schools list with search and category chips (SC1, SC10 no results), the school page (SC2) and the course page (SC3) against SCHOOLS-04's routes, no rating (R-32), no Enroll or apply link yet (R-47); Explore's Find a school door and Home's Schools tile open SC1; gaps G-624 to G-628, 27 mutants killed, V10 NOT RUN.
 - 10 Oct 2026 · FIX-29 · Merged: unbuilt screens' entries are not drawn (Explore, Wallet tab, Me menu, Events), R-47.
 - 10 Oct 2026 · JOIN-02 · Rounds 4 and 5 merged (website #26 73c14eb, backend #102 7b4ffef): the double charge is closed; the payment window says Who Made This.
 - 10 Oct 2026 · INBOX-03 · Merged (backend #101 12e18e3): phone push notifications (tokens, queue, retries, privacy).
@@ -171,4 +176,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-01 · Verifier report, round 4 (independent session; backend `d317094` on main `0694ced`, unmoved; mobile `2186734`): merge after one small step (S1: backend main moved to `12e18e3` with `20261019090000_push_tokens`, so the access-code migration folder must be restamped after it; the deploy works either way, proved; trial merge clean, 137 of 137, contract identical), no blocker, status stays done. The double charge is closed on the built server under my own layouts (reload, start again, pay again: two references, two transactions, rows `paid` and `failed` with the refund's amount and transaction id in the admin list and CSV; second tab and device; webhook for both; 20 starts walked one by one and purged after 7 days; paid phone and email refused before any charge in nine forms; 6 concurrent verifies leave one paid), the access code is unique (collisions redrawn, 503 after exactly 5 with nothing written, code on the page equals `accessCode`, no CSV cell can run as a formula), the migration applies over existing rows, stops on a seeded collision changing nothing, rolls back, and the old app version keeps registering. tsc 0, eslint 0, waitlist and webhook specs 137 of 137, rate-limit 22 of 22, protected 253 of 253, gates the same 16 FAIL lines, contract only the summary and `accessCode`. 20 own mutants: 17 killed, 3 survived as test gaps (C2 and C3 pin only the constant, C5 no non-unique error). Notes: a failed migration leaves a P3009 row (runbook line), more pending rows per person, the refund screen's reference looks like the access code. NOT RUN: the production collision SELECT and the production Postgres version (the repo does not say; 13 or later by its own migrations, generated columns need 12).
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
-- 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
