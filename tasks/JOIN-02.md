@@ -517,4 +517,52 @@ Mobile `npm run check` on this report commit: exit 0 (typecheck, lint, jest 109 
 
 Merged 10 Oct 2026 as website #24 (233d6b1), live on wawuafrica.com/join from 05:13 UTC on the owner's instruction before the round 3 verification ended; round 3 then came back review with no blocker (mobile 948a9d6): D1 to D12, D14, D16, D17 closed; site mode held against about 190 bypass attempts. N1 (Start again after a reload can charge twice) follows in JOIN-02 round 4. D13 (the claim) is JOIN-03.
 
+## Brand change (builder, 10 Oct 2026)
+
+Builder, Sonnet agent. Website branch `wmt/JOIN-02-brand` at `9bee60a` (from `origin/main` 233d6b1, the live page). Backend it was walked against: `origin/main` 0694ced, unchanged (a worktree, stood-in Flutterwave). Nothing under `src/app/(auth)/` changed. Status left as `done`: this is a post-merge change the lead merges, not a new build.
+
+### What changed (owner, 10 Oct 2026, words kept exactly)
+- **Top of `/join`** (every state shows the logo, the form state shows the whole block): the Who Made This horizontal lockup, "PRE-REGISTRATION / WAITLIST", "WHO MADE THIS?", "Get 50% OFF your subscription to WHO MADE THIS? the creator and professional monetization platform.", "LAUNCHING OCTOBER 17, 2026" as a small accent label (the shared Badge), "Register now. Create. Monetize. Grow." Then the form as it was.
+- **Logo files** at the ROOT of `public/` (join-only mode serves only root-level static files): `who-made-this-white.png` and `who-made-this-ink.png`, byte-identical copies of `assets/brand/horizontal-white.png` and `horizontal-ink.png` (the white one on the dark page, the ink one when the page is in its light theme). The old `og-image.png` shows the WAWU smile, so `/join` and `/join/paid` use a new `who-made-this-og.png` (1200 x 630, the white lockup on the site's dark page colour with its purple glow). The rest of the site keeps `og-image.png`.
+- **Page title and tags**: title "WHO MADE THIS? Pre-registration" (also `/join/paid`), description "Get 50% OFF your subscription to WHO MADE THIS?, the creator and professional monetization platform. Launching October 17, 2026.", `og:title`, `og:description`, `og:site_name` ("WHO MADE THIS?"), `og:image` and its alt, `twitter:title`, `twitter:description`, `twitter:image` all the owner's.
+- **Screen after payment** (owner's later words, `/join` and `/join/paid`): logo, success tick, "YOUR WHO MADE THIS? LAUNCH ACCESS CODE", the code large (the short reference "XXXX XXXX"), a "Copy code" button, "Keep your unique ID safe! 🔐", the paragraph, the IMPORTANT line as a warning Callout, "Keep it safe. Don’t lose it. Your code, your discount!" The old "You're registered, <name>" heading, the "Your reference" label and the "Sign up in the ..." line are gone.
+- **Copy code**: `navigator.clipboard.writeText` of the displayed code; the button says "Copied" only once the browser accepted it (back to "Copy code" after 2.5 s) and a status line announces it. If the clipboard is missing or refuses, the code text is selected instead and the button never says Copied.
+- **Unchanged on purpose**: "Pay ₦2,000" (from the API), every payment state and its words, the consent line, support@wawuafrica.com, the Flutterwave line under the button, the sign-up and auth pages.
+
+### Files (website, 12)
+`public/who-made-this-white.png`, `who-made-this-ink.png`, `who-made-this-og.png`; `src/app/join/page.tsx`, `paid/page.tsx`, `components/JoinShell.tsx` (logo), `JoinHeading.tsx` (the block), `JoinFlow.tsx` (registered case, "already registered" app name), `LaunchAccessCode.tsx` (new), `StateCard.tsx` (new `wide` prop, `/join` only); `src/components/ui/Callout.tsx` (new `size` prop, `"sm"` stays the default so every other Callout is unchanged); `docs/03_USER_FLOWS.md` (section E now says what the page says). Tokens and shared UI only, no `style={}`, no hex, no em-dash in the diff.
+
+### Proof
+- `VERCEL_ENV=production` production build served with `next start`: `/join` and `/join/paid` 200; the visible logo image loads (complete, 1009 x 295, no 4xx or 5xx on the origin) at 360, 390 and 1280 px, `who-made-this-white.png` on dark and `who-made-this-ink.png` after `data-theme=light`; no horizontal overflow at any of the three widths; `/who-made-this-og.png` 200 `image/png` 1200 x 630. The lock-down still holds: `/`, `/sign-in`, `/sign-up`, `/wallet`, `/admin`, `/api/hub/waitlist/offers/current` and `/wawu/ada.png` all 307 to `/join`; `/join`, `/join/paid`, `/who-made-this-white.png` 200. Script `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join02brand/prod.mjs`.
+- Registered screen through the real flow (stood-in Flutterwave, real backend and database): callback success on `/join` and redirect return on `/join/paid` both end on the new screen with an `XXXX XXXX` code; the old heading and the sign-up line are not on the page; the five owner lines are on the page word for word (curly apostrophes, emoji, ₦10,000) and in the order top to bottom: heading, code, Copy code, Keep your unique ID safe, paragraph, IMPORTANT, closing line. Script `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join02brand/copytest.mjs`, 17 checks, all pass.
+- **Copy button, Playwright with clipboard permissions granted** (`clipboard-read`, `clipboard-write`): the clipboard held "before", one click on "Copy code", the button said "Copied", `navigator.clipboard.readText()` returned exactly the code shown, and the button went back to "Copy code" after about 3 s. With `writeText` stubbed to reject, and with `navigator.clipboard` removed, the code was selected (`getSelection().toString()` equals the code) and "Copied" never appeared.
+- Head tags read from the served HTML (`curl`): title, description, `og:title`, `og:description`, `og:image` (absolute, `who-made-this-og.png`), `og:image:width` 1200, `og:image:height` 630, `twitter:card` `summary_large_image`, `twitter:title`, `twitter:description`, `twitter:image`.
+
+### Pictures (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join02brand/pics/`)
+- Form: `form-390-dark.png`, `form-1280-dark.png`, `form-390-light.png`, `form-1280-light.png`, `form-360-light.png`.
+- Registered (the new screen): `registered-390-dark.png`, `registered-1280-dark.png`, `registered-390-light.png`, `registered-1280-light.png`, `paid-registered-390-dark.png` (on `/join/paid`), `copied-390-dark.png` (after the click).
+- Checking: `checking-390-dark.png`, `checking-1280-dark.png`, `checking-390-light.png`, `checking-1280-light.png`.
+- Link-preview image: `public/who-made-this-og.png` in the website branch.
+
+### Checks
+Website at `9bee60a`: `npm run typecheck` 0, `npm run lint` 0 (the repo's `<img>` warnings, the same two in `JoinShell.tsx` as before), `npm run build` 0 (`/join` and `/join/paid` static, 164 kB first load, middleware unchanged), `npm run check:copy` 0 ("copy rules: clean"), `npm run check:icons` 0 ("icon set: current (175 icons)"; `Copy` and `Check` were already in the set). Secret scan of the website diff (hex runs of 32 or more, `sk_`, `FLWSECK`, bearer tokens, private-key headers): nothing matched. Backend and mobile app source unchanged. Mobile `npm run check` (this branch changes only the task file, `docs/LOG.md` and the generated `docs/PROGRESS.md`): first run exit 1 with two 20 s test timeouts while the host load average was 34 (`OpenWalletScreen.test.tsx` A26 and `settingsScreens.test.tsx` Z3, neither near this change; the known `eventsScreens.test.tsx` flake did not occur); both files run alone passed (128 of 128, exit 0); the whole check run again: exit 0 (jest 113 suites, 1914 of 1914 passed, gates 10 run, 459 files, 0 fail, 16 warn, task check passes: 271 tasks, 279 artboards). Logs: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join02brand/logs/mobile-check.log`, `mobile-alone.log`, `mobile-check2.log`.
+
+### Decisions (Default (agent), owner or lead may override)
+- The "You are already registered" screen also said "Sign up in the WAWU app". It names the same app as the registered screen, so it now says "the Who Made This app" (R-37). The brief named only the registered screen.
+- Left as WAWU, because they name the company or a payment word the brief keeps: the consent line "I agree to WAWU contacting me about my registration.", "We couldn't reach WAWU", the Flutterwave window's title "WAWU", support@wawuafrica.com, the favicon and apple icon (not in the brief), and the site-wide `og-image.png` for every other page.
+- The code is the short reference the page already showed (the first 8 characters of the random part, two groups of 4). The Copy button copies it as shown, with the space.
+- The ₦10,000 in the IMPORTANT line is a literal in the page: the owner gave it in the copy ("write it as given"). It is not read from the price file, so it will not follow a change there. The Pay button still reads its amount from the API.
+- "Callout" got a `size` prop and the access-code screen's StateCard a `wide` prop rather than a copy of either component (website convention). The warning tone is the design system's highlighted note.
+
+### Findings for the lead
+- The code the page shows is 8 characters (32 bits). JOIN-03's claim has to look a registration up by this short code and refuse a match that is not unique; this page only displays and copies it.
+- `phase.registered` still carries `firstName` (the screen no longer shows it). Removing it needs the status and verify helpers to stop returning it; left alone to keep the change to words and layout.
+
+### NOT RUN
+- A real Flutterwave payment and a real phone: every payment here is the stand-in. Unblocked by one live card payment on the live link from a phone.
+- iPhone Safari and in-app browsers (WhatsApp, Instagram) for the Copy button and the emoji font: only Chromium was driven, with the failure paths stubbed. Unblocked by a phone opening the live link and tapping Copy code.
+- The WhatsApp or X link preview itself: the tags and the 1200 x 630 image are served and checked, the scrapers were not called. Unblocked by pasting the live link into a chat after the deploy.
+- The middleware on Vercel's Edge runtime (JOIN-02 N2 still stands). Unblocked by `curl -sI https://wawuafrica.com/sign-in` (307 to `/join`) and `/who-made-this-white.png` (200) after the deploy.
+- Light theme on a phone's own colour scheme: the page switches only by `data-theme="light"`, so the light pictures set that attribute.
+
 ## Owner sign-off

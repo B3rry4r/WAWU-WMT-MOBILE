@@ -155,6 +155,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
 - 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
 - 10 Oct 2026 · LEGAL-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
@@ -169,4 +170,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-02 · Built: the event registration page `/join` (and `/join/paid`) on the website, against the JOIN-01 routes: form, pay in the Flutterwave window, "Checking your payment" with a retry and never a second charge, "You're registered, <first name>" with the reference, and plain refusals (already registered, closed, none open, cancelled, network); only the reference is kept in sessionStorage; walked in Chromium against the real backend (70 assertions) and pictured at 390 and 1280 px, light and dark; the sign-up page is untouched; status verifying; real payment NOT RUN.
 - 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
 - 9 Oct 2026 · EVENTS-04 · Verified (back to building): V1, V4, V6, V7, V9 and the protected suite pass, 6 of 6 mutants killed, V10 NOT RUN; V5 found D1 to D7 (R-46 entries left out: My events tab and button, Get verified; E14 Starts truncated; E22 top gap; tab line height; shared TextField label line; E14 hint unfiled; G-443 stale) and F1 (NUL is a 500 on POST /events), see the task's Verifier report.
-- 8 Oct 2026 · EVENTS-04 · Built (verifying): the host wizard E13 to E16 with the tick gate E21 and Sent back E22, Host your event on E1, and the backend (`GET /events/options` serves the ticket rules and field limits, `event/banner` upload folder). Backend PR and mobile PR depend on mobile #14 and backend #78.

@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
 - 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
 - 10 Oct 2026 · LEGAL-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
