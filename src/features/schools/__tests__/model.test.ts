@@ -7,6 +7,10 @@ import {
   courseLine,
   dayLabel,
   emptyCopy,
+  feeText,
+  FREE,
+  fromText,
+  hasKobo,
   modeLabel,
   nonEmpty,
   profileLine,
@@ -17,6 +21,8 @@ import {
   weeksLabel,
   youGetLine,
 } from '../model';
+
+const TODAY = '2026-10-10';
 
 const intake = (startDate: string, over: Record<string, unknown> = {}) => ({ id: startDate, startDate, schedule: 'Saturdays', location: 'Yaba', capacity: 20, seatsLeft: 8, full: false, ...over });
 
@@ -83,12 +89,57 @@ describe('the words under a name', () => {
     expect(profileLine({ location: 'Yaba, Lagos', foundedYear: null })).toBe('Yaba, Lagos');
   });
 
-  it('SC2: a course’s length and how it is taught', () => {
-    expect(courseLine({ weeks: 12, mode: 'online' })).toBe('12 weeks · online');
-    expect(courseLine({ weeks: 1, mode: 'in_person' })).toBe('1 week · in person');
-    expect(courseLine({ weeks: 6, mode: 'hybrid' })).toBe('6 weeks · online + in person');
+  it('SC2: a course’s length and how it is taught, with no days when no class is coming', () => {
+    expect(courseLine({ weeks: 12, mode: 'online', nextIntake: null }, TODAY)).toBe('12 weeks · online');
+    expect(courseLine({ weeks: 1, mode: 'in_person', nextIntake: null }, TODAY)).toBe('1 week · in person');
+    expect(courseLine({ weeks: 6, mode: 'hybrid', nextIntake: null }, TODAY)).toBe('6 weeks · online + in person');
     expect(weeksLabel(4)).toBe('4 weeks');
     expect(modeLabel('online')).toBe('online');
+  });
+
+  it('SC2: the days of the soonest coming class join the mode with " + " as the canvas has them, as the school wrote them', () => {
+    expect(courseLine({ weeks: 12, mode: 'online', nextIntake: intake('2026-11-03', { schedule: 'weekends' }) }, TODAY)).toBe('12 weeks · online + weekends');
+    expect(courseLine({ weeks: 4, mode: 'in_person', nextIntake: intake('2026-11-03', { schedule: 'Tuesday evenings' }) }, TODAY)).toBe('4 weeks · in person + Tuesday evenings');
+    expect(courseLine({ weeks: 6, mode: 'online', nextIntake: intake('2026-11-03', { schedule: '  Saturdays  ' }) }, TODAY)).toBe('6 weeks · online + Saturdays');
+  });
+
+  it('SC2: a hybrid course already reads "online + in person", so its days join with " · "', () => {
+    expect(courseLine({ weeks: 16, mode: 'hybrid', nextIntake: intake('2026-11-10', { schedule: 'Weekends' }) }, TODAY)).toBe('16 weeks · online + in person · Weekends');
+  });
+
+  it('SC2: a class that starts today still counts; one that has started, or has no days, adds nothing', () => {
+    expect(courseLine({ weeks: 12, mode: 'online', nextIntake: intake(TODAY) }, TODAY)).toBe('12 weeks · online + Saturdays');
+    expect(courseLine({ weeks: 12, mode: 'online', nextIntake: intake('2026-10-09') }, TODAY)).toBe('12 weeks · online');
+    expect(courseLine({ weeks: 12, mode: 'online', nextIntake: intake('2026-09-01') }, TODAY)).toBe('12 weeks · online');
+    expect(courseLine({ weeks: 12, mode: 'online', nextIntake: intake('2026-11-03', { schedule: '   ' }) }, TODAY)).toBe('12 weeks · online');
+    expect(courseLine({ weeks: 12, mode: 'hybrid', nextIntake: intake('2026-11-03', { schedule: '' }) }, TODAY)).toBe('12 weeks · online + in person');
+  });
+});
+
+describe('a fee: naira with its kobo when it has some, and the word Free for nothing', () => {
+  it('a whole-naira fee drops its .00, a part-naira fee keeps its kobo, and none is floored or rounded', () => {
+    expect(hasKobo(15000000)).toBe(false);
+    expect(hasKobo(4500000)).toBe(false);
+    expect(hasKobo(1234600)).toBe(false);
+    expect(hasKobo(1234500)).toBe(false);
+    expect(hasKobo(1234567)).toBe(true);
+    expect(hasKobo(1)).toBe(true);
+    expect(hasKobo(99)).toBe(true);
+    expect(feeText(15000000)).toBe('₦150,000');
+    expect(feeText(1234567)).toBe('₦12,345.67');
+    expect(feeText(1234500)).toBe('₦12,345');
+    expect(feeText(1234600)).toBe('₦12,346');
+    expect(feeText(1234510)).toBe('₦12,345.10');
+    expect(feeText(5)).toBe('₦0.05');
+    expect(feeText(99)).toBe('₦0.99');
+  });
+
+  it('a fee of 0 reads "Free", on a card as well', () => {
+    expect(FREE).toBe('Free');
+    expect(feeText(0)).toBe('Free');
+    expect(fromText(0)).toBe('Free');
+    expect(fromText(4500000)).toBe('from ₦45,000');
+    expect(fromText(1234567)).toBe('from ₦12,345.67');
   });
 });
 
@@ -107,6 +158,32 @@ describe('days', () => {
   it('writes today as the Hub writes a day, on the phone’s calendar', () => {
     expect(todayOf(new Date(2026, 9, 10, 23, 59))).toBe('2026-10-10');
     expect(todayOf(new Date(2027, 0, 5, 0, 1))).toBe('2027-01-05');
+  });
+
+  it('reads the phone’s own day even where it disagrees with UTC, whatever zone the test runs in', () => {
+    // A Date whose local getters say 10 October while its UTC reading (toISOString and the UTC getters) says 9 October: Lagos
+    // in the first hour after midnight. Nothing in the real clock can make this disagree under TZ=UTC, so it is built by hand.
+    const lagosAfterMidnight = {
+      getFullYear: () => 2026,
+      getMonth: () => 9,
+      getDate: () => 10,
+      getUTCFullYear: () => 2026,
+      getUTCMonth: () => 9,
+      getUTCDate: () => 9,
+      toISOString: () => '2026-10-09T23:30:00.000Z',
+    } as unknown as Date;
+    expect(todayOf(lagosAfterMidnight)).toBe('2026-10-10');
+    // And the other way: Kiritimati (UTC+14) late in its day, where UTC is already the next one.
+    const kiritimatiNight = {
+      getFullYear: () => 2026,
+      getMonth: () => 11,
+      getDate: () => 31,
+      getUTCFullYear: () => 2027,
+      getUTCMonth: () => 0,
+      getUTCDate: () => 1,
+      toISOString: () => '2027-01-01T09:30:00.000Z',
+    } as unknown as Date;
+    expect(todayOf(kiritimatiNight)).toBe('2026-12-31');
   });
 });
 
