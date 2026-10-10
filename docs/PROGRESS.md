@@ -3,19 +3,23 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 120 of 244.**
+**Launch tasks done: 119 of 244.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 146 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 81 | 27 | 11 | 5 |
+| done | 80 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 
 ## Done
 
@@ -138,7 +142,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
-- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)

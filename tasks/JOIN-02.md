@@ -7,7 +7,7 @@ order: 242
 priority: launch
 repo: wawuafrica
 type: web-port
-status: done
+status: verifying
 depends_on: [JOIN-01]
 decisions: [R-48, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V9]
@@ -518,3 +518,52 @@ Mobile `npm run check` on this report commit: exit 0 (typecheck, lint, jest 109 
 Merged 10 Oct 2026 as website #24 (233d6b1), live on wawuafrica.com/join from 05:13 UTC on the owner's instruction before the round 3 verification ended; round 3 then came back review with no blocker (mobile 948a9d6): D1 to D12, D14, D16, D17 closed; site mode held against about 190 bypass attempts. N1 (Start again after a reload can charge twice) follows in JOIN-02 round 4. D13 (the claim) is JOIN-03.
 
 ## Owner sign-off
+
+## Round 4 (builder) (10 Oct 2026)
+
+One payment-safety fix on the live page (N1 of the round 3 verifier report), website only. Website `wmt/JOIN-02-r4` at `4a3f959` (one commit on `main` `233d6b1`: `src/app/join/components/JoinFlow.tsx` and `src/lib/join-session.ts`; nothing under `src/app/(auth)/`, no shared component, no backend or mobile source touched). Backend for the walk: `origin/main` `0694ced`, built locally on :6023 with its own database (`bj02r4_test_join`, dropped), Flutterwave stood in at the DI seams and in the browser with the verifier's strict stand-in (a transaction exists only if the browser stand-in made it). No Flutterwave, Nuvion, Fintava, wawuafrica.com or AI host was called. Scripts, logs, pictures: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join02r4/` (`v/r4.mjs` the new walk, `v/sa.mjs` the verifier's reproduction, `logs/`, `pics/`).
+
+### What the lead ruled, as built
+- The button is not drawn while the page is still checking. It appears only after the five minutes of asking the status route (every 15 s) have ended without a paid answer. Before that the words say "You started a payment on this device. We are checking whether it went through. Check again in a moment." (the old words promised a button that is no longer there).
+- Tapping it asks once more: "Only start again if no money left your account. If it did, email support@wawuafrica.com with your reference XXXX XXXX." with two buttons, "Keep checking" (the main button, focus lands on it) and "Start again". "Keep checking" returns to the checking screen, asks once at once, and asks by itself for another five minutes (the button is gone again until those end; the support line stays).
+- "Start again" asks the status route one last time first. Paid shows "You're registered". A kept duplicate (`failed`) shows the refund screen. An answer it cannot get (network, 429, 5xx) keeps the person on the question with "We could not check just now. Check your connection and try again." Only a plain "not paid" opens the form (the stored reference is cleared).
+- Nothing else on the page changes (the return page, the callback paths, the polling cadence, the support line and every other screen are as in round 3).
+
+### Finding for the lead: the backend does not give a new reference for the same details
+"Starting again begins a new registration (a new reference)" cannot be delivered by the website alone. `WaitlistService.register` reuses the person's own unpaid row for the same offer, phone and email (`mine = findFirst({offerId, phone, email, status: pending})`, then `update`), so a new registration with the SAME details comes back with the SAME reference. That is how N1 happened: `sa.mjs` showed two successful transactions on one reference, the second invisible to the server. What the page does about it: the reference left behind by "Start again" is remembered (sessionStorage, references only, survives a reload) and if a registration comes back with it, NO payment window opens: the page goes to "Checking your payment" on that reference with "A payment you started with these details has not been settled yet, so we have not opened a new one." and the support line with the reference at once (picture `r4-04-held`). The same person with a different email gets a genuinely new reference and a window on it (`S3`). The cost: someone who really did not pay and starts again with the same name, phone and email is held on that screen until their unpaid row is paid or purged (a week) or they email support. The fix that makes "Start again" always a new reference is in the backend (mint a new reference when an unpaid row is reused, keeping the old one findable by the sweep and the webhook, or refuse `initCharge` for a reference that already has a successful transaction); the page's guard compares references, so it needs no change after that. This is JOIN-01 and not changed here. Default (agent), the lead may override: hold rather than open the window.
+
+### N1 before and after (the verifier's `sa.mjs`, same stand-in)
+| | Before (website `233d6b1`, `logs/sa-before.log`) | After (`4a3f959`, `logs/sa-after.log`) |
+|---|---|---|
+| Reload while the window was open, money moved | "Checking your payment ... If you did not pay, you can start again." with Check again AND "I have not paid. Start again" at once | only "Check again"; "You started a payment on this device. We are checking whether it went through." |
+| Start again, then Pay | the form with Pay, same reference, paid again: 2 transactions at Flutterwave against one reference, one orphaned | no way to the form for five minutes; in that time the server's re-check (`/__ctl/sweep`) settles it and the page shows "You're registered" by itself; transactions against the reference: 1 |
+
+### The new walk (`v/r4.mjs`, production build on :6021, page clock faked, 35 checks, 0 failed, `logs/final-r4.log`)
+- S1 (reload, money moved, server re-check at 90 s): no Start again at reload nor at 90 s, registered by itself after the sweep, one transaction.
+- S2 (money moved, server cannot see it for the whole time): no button at 4m45, drawn at 5m05 with the support line; the question's words and short reference exact; two buttons; focus on "Keep checking"; Keep checking removes the button, keeps asking (5 status calls in the next minute), button back after the next five minutes; Start again made one more status call before opening the form, cleared the stored reference; same details then Pay: the server returned the SAME reference, no window opened, still 1 transaction, no form and no Pay on that screen, support address and short reference shown; a reload there resumes checking.
+- S2b: Start again, then a reload of the empty form, same details, Pay: still no window on the old reference, 0 charges by the second attempt.
+- S3: Start again with a different email: new reference, window on it, registered; the old reference has no second transaction.
+- S4: the row turns paid after the button appears but before the tap: Start again shows "You're registered", no form.
+- S5: status route unreachable at the tap: stays on the question with the "could not check" line, both buttons still there; once reachable, a clean "not paid" opens the form.
+- S6: the row turns `failed` before the tap: "You're already registered. This extra payment will be refunded." and no form.
+- Round 3 walks on the new build: `t1` 9 of 9, `t12` 1 of 1, `t3` 15 of 15, `t6` 20 of 20, `t11` 4 of 4, `t15` 2 of 2 pass; `t2` (field audit) unchanged; `t4` steps 1 to 3 pass and step 4 waits for the "Back to registration" button that no longer exists on that screen, on purpose (as the round 3 verifier recorded). The verifier's `t1`, `t4`, `t12` are byte-identical to these.
+
+### Decisions (Default (agent), the lead may override)
+- "Keep checking" is the filled main button and "Start again" the quiet one (the safe answer is the easy one); the lead listed them in the other order.
+- "Keep checking" starts another five minutes of asking and hides the button for them (the rule "not drawn while still checking" applies again); the support line stays once shown.
+- The button appears when the last of the 20 asks has answered, not on a timer (a hung status route never shows it; the support line is on the timer as in round 3).
+- A reload while on "Checking your payment" starts the five minutes again; the time is not stored.
+- A second browser tab (for example the QR opened again) has its own sessionStorage and does not know the reference or the walked-away one: the real fix for that is server side (above), not here.
+
+### Checks
+Website (worktree at `4a3f959`): `npx tsc --noEmit` 0; `npm run lint` exit 0 (the repo's existing warnings only, none new); `npm run build` exit 0 (`/join` and `/join/paid` static, first load 164 kB, was 163 kB); `npm run check:copy` clean; `npm run check:icons` current (175 icons); `check:qr` and `check:tgif` pass; no em-dash in the added text; nothing under `src/app/(auth)/` changed (`git diff origin/main --stat -- "src/app/(auth)"` empty); secret scan of the staged diff (a Flutterwave secret-key prefix, `sk_`, bearer tokens, private-key headers, 40+ hex, 60+ base64 runs): no match.
+Mobile (this report's commit): `npm run check` exit 0 (typecheck, lint, jest 113 suites and 1914 tests passed with the known `eventsScreens.test.tsx` flake not occurring, gates: 10 gates, 459 files, 0 fail, 16 warn, 0 accepted; task check passes, 271 tasks, 279 artboards). Log `join02r4/logs/mobile-check-1.log`. Secret scan of the staged diff: the only match is this paragraph's own sentence naming the patterns (`sk_`); no key-shaped string. The status moved from `done` to `verifying` because the page changed after its last verification; the lead may put it back.
+
+### Pictures
+`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join02r4/pics/<state>-390-<dark|light>.png` (full page, 2x, 390 px, production build against the real backend): `r4-01-checking-no-button` (right after the reload), `r4-02-checking-with-button` (after five minutes, with the support line), `r4-03-confirm`, `r4-04-held` (the registration came back with the walked-away reference), `r4-05-confirm-could-not-check`. No artboard exists for them; I do not say they match anything.
+
+### NOT RUN
+- A real Flutterwave payment, and whether a real bank transfer or USSD lands later than five minutes on a reference (the case the guard exists for). Unblocked by one live bank transfer watched in the Flutterwave dashboard and the page.
+- A phone (iPhone Safari, a bank app returning to the page and reloading it), the page at 1280 px for these new states (390 px only, as ordered).
+- The backend change that would make "Start again" always a new reference (above): not this task's repo; unblocked by the lead filing it against JOIN-01.
+- The second-tab path (a clean form from the QR in another tab): only the server can close it.
