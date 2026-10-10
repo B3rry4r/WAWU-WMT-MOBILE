@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 108 | 0 | 20 | 19 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 6 | 0 | 0 | 2 |
 | done | 71 | 27 | 11 | 5 |
 
@@ -24,10 +24,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
+## Being verified
+
+- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
+
 ## Being built (or fixing verifier findings)
 
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
-- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 
 ## Done
 
