@@ -779,16 +779,24 @@ warn, 0 accepted, baseline clean) and `npm run tasks` (271 tasks, 279 artboards)
 
 ## Verifier report, round 4
 
-Verifier, 10 Oct 2026 (independent session; wrote none of this). Backend `wmt/JOIN-01-r4` `d317094` (detached worktree `vb-JOINr4`) on `origin/main` `0694ced`,
-which did not move during the run (checked at the start and again before the push). Mobile `wmt/JOIN-01-r4` `2186734`. The diff against main is 15 files
+Verifier, 10 Oct 2026 (independent session; wrote none of this). Backend `wmt/JOIN-01-r4` `d317094` (detached worktree `vb-JOINr4`) on `origin/main` `0694ced`.
+Backend main MOVED at the end of the run, to `12e18e3` (INBOX-03, #101, adds the migration `20261019090000_push_tokens`): see S1 and the trial merge below. Mobile `wmt/JOIN-01-r4` `2186734`. The diff against main is 15 files
 (533 added, 61 removed), exactly the builder's list: 8 source files, the migration with its `rollback.sql`, `schema.prisma`, `contract/openapi.json`, the harness and two specs.
 Evidence, scripts and logs: the lead's scratchpad `vjoinr4/` (`out-*.txt`, `be-*.mjs`, `w-*.mjs`, `dw.mjs`, `mut.py`, `mut/`, `mut-run.txt`). The real `AppModule` built from the
 branch (`dist/`), real Postgres (`vjr4_test_*` databases, all dropped), Flutterwave stood in at the two DI seams and strictly (a transaction exists only if my driver or the browser stand-in
 made it), every call over HTTP; the page walks use the website `wmt/JOIN-02-r4` production build. No Flutterwave, Nuvion, Fintava, wawuafrica.com or AI host was called.
 
-**Verdict: merge. No blocker.** The double charge is closed on the built server under my own layouts (44 of 44 money checks, 33 of 33 access-code and admin checks, 49 of 49 browser
-walk checks across both tasks). No should-fix defect in the backend. Five notes (N1 to N5), three surviving mutants (test gaps; the built behaviour is right for all three, proved over HTTP),
+**Verdict: merge, after one small step (S1, restamp the migration folder; not a blocker).** The double charge is closed on the built server under my own layouts (44 of 44 money checks, 33 of 33 access-code and admin checks, 49 of 49 browser
+walk checks across both tasks). One should-fix (S1, a standing rule that main's move broke, deploy proved safe either way). Five notes (N1 to N5), three surviving mutants (test gaps; the built behaviour is right for all three, proved over HTTP),
 and one operational gate that stays with the lead: the production collision SELECT (NOT RUN).
+
+### Defect
+
+| Id | Severity | What | Reproduce |
+|---|---|---|---|
+| S1 | should fix (merge precondition, not a blocker) | The migration folder `20261018140000_waitlist_access_code` no longer sorts after backend main's newest folder: main moved to `12e18e3` with `20261019090000_push_tokens` (INBOX-03 #101) after this branch was built. The standing rule is that a new folder sorts after every folder on main (INBOX-03 itself restamped for this reason). It is not enforced by a gate and it does not break the deploy: with main's folders applied through `push_tokens`, `npx prisma migrate deploy` then applies the older-stamped folder cleanly (column present, history in order of application), and a fresh database applies all of them. Fix: rename the folder to a stamp after `20261019090000` (and the same name in the `rollback.sql` and in the migration's own header text); no SQL changes. Nothing has applied the old name anywhere. | `git ls-tree --name-only origin/main prisma/migrations/ \| sort \| tail -3` against the branch's folder |
+
+**Trial merge of `origin/main` `12e18e3` into the branch** (local, never pushed, deleted): clean (`schema.prisma` and `contract/openapi.json` auto-merge); `npx tsc --noEmit` 0; `src/waitlist` and `src/payment-webhook` 137 of 137; `npm run contract:build` leaves `contract/openapi.json` byte-identical to the auto-merged file; migrations apply on a fresh database and in the production order (main first, then the branch's older-stamped folder). The protected suite, gates and eslint were not re-run on the merge (NOT RUN, below); main's change is the `src/push` module and the push-token migration, nothing in `src/waitlist`.
 
 ### The double charge, end to end (CONFIRMED)
 
@@ -828,7 +836,7 @@ Database at main's 112 migrations with 7 existing rows (3 paid, 3 pending, 1 fai
 - The column refuses a written value (insert and update) and refuses a second row with a taken code (also upper-case against lower-case); an insert that does not name the column gets its code.
 - The old app version (backend `origin/main` built, `dist/`) against the migrated database, over HTTP: register, same-details reuse (its own old behaviour), verify (paid), status, paid phone refused 409, re-check, purge: 7 of 7. Both deploy orders are safe for the page too (`w-oldpage.mjs`, `w-held.mjs`, see JOIN-02).
 - `prisma migrate diff` of the migrated database against `schema.prisma`: nothing for `WaitlistRegistration`. It lists one line on `ContentPiece` (an index on `specializations`), which `origin/main`'s schema produces identically: not from this change.
-- Folder `20261018140000_waitlist_access_code` sorts after main's newest (`20261018100000_event_waitlist`).
+- Folder `20261018140000_waitlist_access_code` sorted after main's newest (`20261018100000_event_waitlist`) when the branch was built and when I started (main `0694ced`); it no longer does against `12e18e3` (S1).
 
 **Production Postgres version.** Not written down anywhere in the repo. What the repo says: production is a DigitalOcean managed Postgres in NYC3 (`deploy/README.md`, "Live as of 31 Aug 2026", `sslmode=verify-full`, `wawu_hub` and `wawu_id`); `deploy.yml` tests on `postgres:16` and `docs/LOCAL.md` asks for Postgres 16. Applied migrations call `gen_random_uuid()` 24 times (for example `20260822120000_credit_host_earnings`) and none runs `CREATE EXTENSION`; that function is built in only from Postgres 13, so production is very likely 13 or later. A stored generated column needs Postgres 12 or later, so it is supported on every version the evidence allows. Exact version: NOT RUN (`SHOW server_version;` on production or the DigitalOcean database page). I ran it on 16.13.
 
@@ -873,6 +881,7 @@ C6 the retry reuses the same random bytes (3); C7 the admin label without its sp
 - The production Postgres version (above): unblocked by `SHOW server_version;`.
 - The full backend suite (229 suites) and `src/plans`, `src/admin`, `src/common`, `src/openapi`: not in the brief's list; `plans.contract.spec.ts` needs a mock WAWU ID on :4001 (35 tests 401 without it, not related to this change). Unblocked by `npm run test:contract` in a private network namespace.
 - A real Flutterwave payment, and how the real `verify_by_reference` answers when one tx_ref has several attempts (a reference now has one checkout, so it matters less): needs one test-mode payment.
+- The protected suite, gates and eslint on the trial merge with main `12e18e3`: not re-run (main moved after those ran on the branch against `0694ced`). Unblocked by the lead's usual merge-time run of `scripts/protected-routes/run.sh --fresh HEAD` and `python3 scripts/gates/run.py` on the merge.
 - Two servers running the cron at once; the migration's table rewrite under production load (a table of a few thousand rows: milliseconds here, an `ACCESS EXCLUSIVE` lock for its length).
 
 ## Owner sign-off
