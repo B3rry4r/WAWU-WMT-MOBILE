@@ -84,6 +84,7 @@ before validation, because the merchant record said `status: "inactive"`.
 | `38-wallet15-fee-quotes.md` | `GET /money/fees/quote` (the route), end to end | | none | no Fintava call: the quote is config only (₦10,000 to a bank quotes ₦65, total ₦10,065; ₦4,999 and ₦5,000 purchases ₦23.25 and ₦15.75); the debit checks are NOT RUN on the payout blocker |
 | `39-wallet18-receipts.md` | the receipt routes (WALLET-18) over a real ledger row, checked against `GET /transaction/reference/{ref}` | | 200 | one ₦10 round trip per run between A and B; the code's public page shows Fintava's amount, status (`SUCCESS` as Completed), reference and time, both sides masked, no full account number; a made-up code is 404; three runs, 20 calls, balances unchanged |
 | `40-wallet27-statements.md` | `GET /money/statements` (WALLET-27) over real ledger rows, and `GET /txn` for A | | 200 | one ₦10 round trip between A and B; A's and B's statements for the day list exactly their two movements; A's send carries the same reference and amount as Fintava's own `GET /txn` record; 9 calls, balances unchanged |
+| `41-money17-pay-from-wallet.md` | `GET /money/payments/quote`, `POST /money/payments` (the routes), end to end | | 200 | a ₦10 payment from A to WAWU's merchant wallet through the route: completed once, the same request again is the stored answer with no second send; the sandbox debited ₦10 with `transaction_fee: 0` against the quoted ₦23.25, so the buyer's ledger row holds the fee disagreement (G-71); ₦10 sent back, A unchanged; 10 calls |
 
 ## Money moved in the re-run
 
