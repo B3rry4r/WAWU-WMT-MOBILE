@@ -1,7 +1,7 @@
 ---
 id: INBOX-19
 title: Chat and send money in a chat
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 142
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [I12, I13, I14, I15]
 ---
 # INBOX-19 · Chat and send money in a chat
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

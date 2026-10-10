@@ -35,6 +35,8 @@ export type CreatorCardProps = {
   creator: ExploreCreator;
   width?: DimensionValue;
   height?: number;
+  /** The card itself: opens the creator's profile (M5, ME-02). Follow stays its own button. */
+  onPress?: () => void;
   /** Absent on the viewer's own card: nobody follows themselves. */
   onToggleFollow?: () => void;
   testID?: string;
@@ -44,7 +46,7 @@ export type CreatorCardProps = {
  * One creator on Explore: their portrait (or their initials on their hue when they have none), handle and tick, what
  * they do, and Follow. Follow and Following are `MediaCard`'s own `action`, drawn as on Home's creator rail.
  */
-export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, height = creatorCardMetrics.railHeight, onToggleFollow, testID }: CreatorCardProps) {
+export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, height = creatorCardMetrics.railHeight, onPress, onToggleFollow, testID }: CreatorCardProps) {
   const tick = tickOf(creator);
   const followTestID = testID ? `${testID}-follow` : undefined;
   const following = Boolean(onToggleFollow) && creator.following;
@@ -60,6 +62,7 @@ export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, hei
       placeholder={<Avatar name={creator.name} hue={hueFor(creator.wawuId)} size={mediaMetrics.placeholderAvatar} decorative />}
       width={width}
       height={height}
+      onPress={onPress}
       action={
         onToggleFollow ? { label: following ? 'Following' : 'Follow', on: following, onPress: onToggleFollow, testID: followTestID } : undefined
       }

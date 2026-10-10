@@ -1,7 +1,7 @@
 ---
 id: INBOX-16
 title: Buy WAWU Credits from the wallet (backend)
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 102
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # INBOX-16 · Buy WAWU Credits from the wallet (backend)
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

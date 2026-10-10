@@ -11,6 +11,8 @@ export type PickedFile = {
   extension: string;
   /** Where the screen can show it before it is saved. */
   previewUri: string;
+  /** Phone builds: deletes the app's own copy once its upload has settled (`PickedImage.discard`). Not set on the web build. */
+  discard?: () => void;
 };
 
 /** What M36 says about the files, before Save: how many a work can carry. */
@@ -20,6 +22,19 @@ export const mediaHint = `Up to ${WORK_LIMITS.media} photos or videos.`;
 export function mediaRoom(have: number): number {
   return Math.max(0, WORK_LIMITS.media - have);
 }
+
+/**
+ * The app's own sentence when chosen files could not be read (a 0-byte or corrupt photo):
+ * how many, named by kind (lead ruling after the verifier, D1).
+ */
+export function mediaUnreadable(kinds: readonly MediaKind[]): string {
+  const count = kinds.length;
+  const noun = kinds.every((kind) => kind === 'image') ? 'photo' : kinds.every((kind) => kind === 'video') ? 'video' : 'file';
+  return count === 1 ? `1 ${noun} couldn't be added. Try it again or choose another.` : `${count} ${noun}s couldn't be added. Try them again or choose others.`;
+}
+
+/** The app's own sentence when the photo library itself could not be opened. */
+export const MEDIA_LIBRARY_FAILED = "We couldn't open your photo library. Try again.";
 
 /** The app's own sentence when a pick is more than a work can carry: how many were left out. */
 export function mediaRefused(refused: number): string {

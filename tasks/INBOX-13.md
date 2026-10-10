@@ -1,7 +1,7 @@
 ---
 id: INBOX-13
 title: Out of credits, buy credits, credits added
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 107
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I27, I28, I29]
 ---
 # INBOX-13 · Out of credits, buy credits, credits added
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

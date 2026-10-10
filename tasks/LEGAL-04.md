@@ -1,7 +1,7 @@
 ---
 id: LEGAL-04
 title: Legal: book and pay a consultation
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 116
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [S18, S19, S20, S25]
 ---
 # LEGAL-04 · Legal: book and pay a consultation
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

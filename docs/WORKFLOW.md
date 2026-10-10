@@ -247,10 +247,11 @@ anything else.
 
 ### Links between screens
 
-No placeholders, no dead buttons, no feature flags (DECISIONS R-27).
+Show only what is built (DECISIONS R-47, restoring R-27). No placeholders, no dead buttons, no feature flags.
 
 - A hub or menu task (a home screen, a menu, a list whose rows open other screens) builds only the rows,
-  tiles, tabs and buttons whose destination screen already exists.
+  tiles, tabs and buttons whose destination screen already exists. A section whose own task is complete
+  stays drawn, with its designed empty state when there is nothing to show.
 - The task that builds a destination screen also adds its entry row or button to the hub, exactly as the
   artboard draws it, and owns the check "a user can reach X from Y". Its task file says so ("this task adds
   it, as drawn") and depends on the hub's task.

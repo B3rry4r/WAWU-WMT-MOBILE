@@ -1134,7 +1134,7 @@ here is redrawn.
 ## Not built at launch
 
 Entries drawn on launch screens whose screens come after launch. Each is added,
-as drawn, by the task that builds its screen (R-27); CHECK-3 allows only these
+as drawn, by the task that builds its screen (R-27, R-47); CHECK-3 allows only these
 to be missing.
 
 | Where | Entry | Added by |

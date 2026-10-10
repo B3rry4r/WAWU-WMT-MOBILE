@@ -1,7 +1,7 @@
 ---
 id: INBOX-21
 title: Turn on phone notifications in the app
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 52
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V6, V7, V9, V10]
 artboards: []
 ---
 # INBOX-21 · Turn on phone notifications in the app
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

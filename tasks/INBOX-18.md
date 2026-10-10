@@ -1,7 +1,7 @@
 ---
 id: INBOX-18
 title: Answer paid questions (creator)
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 171
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I9, I10, I11]
 ---
 # INBOX-18 · Answer paid questions (creator)
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 
