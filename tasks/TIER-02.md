@@ -167,7 +167,9 @@ purchase is TIER-03's; 32 tests; every figure compared is read from the config)
   touches a file this task changed. Control: backend main, `run.sh --fresh origin/main`, same environment: 253 of 253.
 - Mobile: `contract/openapi.json` copied from the backend branch (`SOURCE_COMMIT` `wmt/TIER-02@389ffba`) and
   `python3 scripts/api/sync_contract.py` (without `--backend`, which copies backend main): `ProductDraftView`,
-  `TierGateErrorEnvelope`, `MyTierView.productsUsed` are in `schema.generated.ts`. `npm run check` @@MOBILE_CHECK@@.
+  `TierGateErrorEnvelope`, `MyTierView.productsUsed` are in `schema.generated.ts`. `npm run check` (typecheck, lint,
+  tests, gates, tasks, run as the same steps with two jest workers) exit 0: typecheck 0, lint 0 errors (7 warnings in files this
+  task does not touch), jest 2064 of 2064 in 120 suites, gates 0 fail on 473 files, 273 tasks and 279 artboards.
 
 **Decisions** (each Default (agent), owner may override)
 - What lets a person publish: a running tier, or a verification tick that has not ended; the larger of the two when both.
