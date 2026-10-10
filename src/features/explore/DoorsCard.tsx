@@ -11,8 +11,8 @@ export const doorMetrics = { padV: 13, padH: 14, iconToWords: 12, tile: 40, tile
 export type Door = { id: string; icon: IconName; title: string; sub: string; onPress: () => void };
 
 /**
- * X1 and X15's doors card, one row per door whose screen is built: Find a professional, List your services. Find a school
- * is drawn by the task that builds the schools list (R-47); every door passed here opens something.
+ * X1 and X15's doors card, one row per door whose screen is built: Find a professional, Find a school, List your services.
+ * Every door passed here opens something (R-47).
  */
 export function DoorsCard({ doors }: { doors: readonly Door[] }) {
   const { colors } = useWawu();
