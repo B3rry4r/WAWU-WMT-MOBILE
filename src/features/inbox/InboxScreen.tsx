@@ -68,11 +68,16 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
     }
   }, [refetch]);
 
-  // Runs again for every page that arrives (`pagesRead`), because a page can land with no render in between that shows the read as under way.
+  // Reads the next page when nothing is in flight and no row is drawn yet. It runs again each time a read ends, however it ended: a page
+  // landed (`pagesRead`), or a refresh (a live event, a return to the tab) cancelled the page being read and refetched the pages held.
+  // That refetch ends with the same pages and the same flags as before it began, and a render may never have shown it under way, so
+  // `dataUpdatedAt` tells this effect it ended; without it the screen would sit on the loading list with nothing being read. A refetch
+  // that is refused moves `errorUpdatedAt` instead and leaves `dataUpdatedAt` where it was, so that one is watched too. It cannot loop:
+  // each run needs a read to have ended, and a read-on stops at the last page, at an error (one Try again) or at a drawn row.
   const pagesRead = inbox.data?.pages.length ?? 0;
   useEffect(() => {
-    if (readingPast && !isFetchingNextPage) void fetchNextPage();
-  }, [readingPast, isFetchingNextPage, pagesRead, fetchNextPage]);
+    if (readingPast && !inbox.isFetching) void fetchNextPage();
+  }, [readingPast, inbox.isFetching, inbox.dataUpdatedAt, inbox.errorUpdatedAt, pagesRead, fetchNextPage]);
 
   // Nothing is read ahead unless a row is drawn: a page that adds nothing to the screen is not worth a request.
   const onEndReached = useCallback(() => {
