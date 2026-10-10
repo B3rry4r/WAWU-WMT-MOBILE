@@ -303,15 +303,15 @@ describe('the inbox screen', () => {
       expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/[id]', params: { id: 'r1' } });
     });
 
-    it('a user with chats and no community sees the title and the chips and nothing else: chat rows are drawn by another task', async () => {
+    it('a user with chats and no community sees no chat row (another task draws them) and the same empty state as an empty inbox, never a blank page (FIX-30)', async () => {
       answers[FIRST] = [pageOf([row('chat:1'), row('chat:2')])];
       await renderScreen();
       await rtl.screen.findByRole('header', { name: 'Inbox' });
-      await settle();
+      expect(await rtl.screen.findByText('No messages yet')).toBeTruthy();
       expect(rtl.screen.queryAllByTestId(/^row-/)).toEqual([]);
-      expect(rtl.screen.queryByText('No messages yet')).toBeNull();
       expect(rtl.screen.queryByTestId('inbox-error')).toBeNull();
       expect(rtl.screen.getAllByRole('radio')).toHaveLength(2);
+      expect(rtl.screen.getByRole('button', { name: 'Browse communities' })).toBeTruthy();
     });
 
     it('keeps reading pages until a row it can draw appears, when the first pages hold only rows nobody draws yet', async () => {
