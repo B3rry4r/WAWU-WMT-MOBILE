@@ -7,7 +7,7 @@ order: 239
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [COMPLETE-01]
 decisions: [R-47, R-27, R-41]
 passes: [V1, V5, V6]
@@ -100,7 +100,83 @@ Branch `wmt/FIX-29`, built on main `d1a4a89`. Mobile only, no package change, no
 
 ## Verifier report
 
-_Not started._
+Verifier session (Sonnet), independent of the builder. Mobile `origin/wmt/FIX-29` `325808a` (builder `a349ee7` plus the merge of main `603bd29`), checked in a detached worktree. Origin main is still `603bd29` and is an ancestor of the branch, so the trial merge is a no-op. **Verdict: no blocker, status `review`.** Nothing inert is left and no done entry was removed. Product code was not changed.
+
+How it was checked: a web export of this head (`npx expo export -p web`, private TMPDIR) in Chromium from `/opt/pw-browsers`, against a **stand-in Hub and stand-in WAWU ID** (not the real Hub; ports 5989 to 5992 only): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/mock.js` answers every Hub path from `contract/openapi.json` (schema-shaped sample data, so names and figures are samples) with the builder's state switches kept. The browser refused every other address (0 external requests, all runs). Scripts: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/crawl.py` and `crawl2.py` (presses), `shots2.py` (layout), `mutants.py`, `targeted.py`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 every control does something | passed | 43 screen states, 340 presses at 390 px, each from a fresh load: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/crawl-390-light.log`, `pics/crawl-390-light.json`, `pics2/crawl-390-light.json` |
+| V5 Picture | passed, with recorded differences | layout at 320, 360, 390, 430 px, light and dark, 11 screens, 88 loads: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/sheet-<screen>.png` and `lay/`; artboards X1, W1, Z1 beside the built screens: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/sheet-artboards-light.png` (the only differences are the removed entries, R-47, and the app's own mark, R-37) |
+| V6 States | passed | Explore with data, empty Hub and failed reads; Wallet with data, new account, bank down, loading, no wallet; Me content empty; E21 and E16: `lay/*`, `pics/wallet-none-390.png` |
+
+### Checks
+
+| Check | Result | Evidence |
+|---|---|---|
+| Every press lands on a built screen or does a real action, on every screen reachable from the four tabs, the Inbox tab and the header (not only the builder's 11) | CONFIRMED. 37 routes and states by URL (Home Today, Explore, Inbox, Wallet, Me, categories, events and E2, host and its gate, My tickets, E22, professionals and a profile, listings, apply, Settings and its five screens, About, Terms, Privacy policy, Edit profile, social links, Add work, works, Legal, TGIF, Open your wallet, payout account) plus six pressed-into states (Home Following and For you, the Me menu sheet, Me Services and About): 340 presses, 271 land (URL, request or visible change), 47 skipped (the tab or chip already selected, or covered by the open sheet), 22 changed nothing: 12 are the already-selected tab, chip or radio, and the other 10 are real actions with no visible web effect, driven one by one with `targeted.py`: Copy account number (clipboard holds the number, label reads "Copied"), Share this event (the share call carries the event text), Going (a POST goes out), Contact support (opens `mailto:`), Add a cover picture, Add a profile picture and Add photos or a video (each opens the file chooser). No press ended on an unmatched route. Static: no `Pressable`, `Button`, `IconButton`, `ListRow`, chips or tabs element in `src/` (outside the dev showcase) lacks a handler, and no handler is empty or `undefined` (`dead_controls` also clean) | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/crawl-390-light.log`, `targeted.py` output in this session |
+| Nothing over-removed | CONFIRMED. Every removed entry's destination task is `todo` today: EXPLORE-02, ME-14, SCHOOLS-03, ME-04, ME-02, WALLET-02, -04, -05, -06, -20, -21, -22, BILLS-01, ME-07, SCHOOLS-08, ME-12, EVENTS-08 (checked in `tasks/*.md` front matter). The Me menu's Notifications row opens M31 (the list, ME-14), not Settings, Notifications (Z3, built): `design/_gen/me.js` lines 31 and 115. Still drawn and landing: Find a professional (`/professionals`), List your services (`/professional-apply`), the category tiles (`/categories?category=...`), Upcoming events' See all and the event cards (`/events`, `/events/ev-N`), the featured event, Follow, Open your wallet from the Wallet tab and from Home (`/open-wallet`, and back to the card), Settings from the Me menu (`/settings`), Host event tab and Start, Done on E16 | crawl logs; `pics/wallet-none-390.png` |
+| Data rows whose detail is not built are drawn and not pressable | CONFIRMED. Wallet transaction rows, creator cards (Explore rail, Categories grid, Home rail), Inbox rows, Me content tiles and the paid-messages row are not in the pressable list, have no chevron and no press feedback (`TransactionRow`, `MediaCard`, `ConversationRow`, `ListRow` render a plain view without `onPress`); mutants M11 and M12 below | crawl logs, code |
+| Sections whose task is done keep their designed empty state | CONFIRMED for the screens FIX-29 touched: Explore with an empty Hub (neutral frames, heading and See all, doors), a failed read (banner, sections), Wallet new account ("No transactions yet" card), bank down and loading (W4 shapes without the removed tabs, actions and tiles), Me content ("Nothing published yet"). One blank body found elsewhere, not caused by this task (finding 1) | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/sheet-explore-empty*.png`, `sheet-wallet-*.png` |
+| Builder's decisions against R-47 | CONFIRMED, one for the owner. (a) One button left alone (E16 shows Done full width, the Me menu opens with Settings only): consistent with R-47 and the ticket. (b) E21 keeps its words and the system's price, with Back only (no Get verified): not an entry, consistent with R-47; but the person can read "A creator or professional tick, N a year" and has no way to buy it until ME-12, see finding 3. (c) E22 kept without an entry: a built screen, not an entry; reached only by a link until EVENTS-08. (d) `CreateButton` unused, kept with a required `onPress` and its own test: allowed (no screen draws it; `explore-create` absent in every state, creator or not). (e) Creator cards drawn with Follow and not pressable: right for R-47 | tests and pictures |
+| `unbuilt_entries` reports nothing and still catches a planted call | CONFIRMED. `python3 scripts/gates/run.py --gate unbuilt_entries --json` on the head: no failure, no warning (455 files scanned; 456 with the planted file). With a planted file holding `unbuilt('ME-03')` (todo), `unbuilt('PROS-01')` (done), `unbuilt('NOPE-99')` and `unbuilt(which)`: 3 fail and 1 warn (the done task, the missing task and the non-literal fail; the todo task lists as inert). The planted file was deleted (`git status` clean) | run in this session |
+| Layout after removals, 320, 360, 390, 430 px, light and dark | CONFIRMED. 88 loads (explore data, empty, failed; wallet data, new, bank down, loading; Me menu; events E1; E21; E16): `scrollWidth` equals the viewport on every one and nothing runs off the screen outside a rail that scrolls by design. By eye: no gap where an entry was, no orphaned divider (the doors card holds two rows and one divider; the Me menu sheet holds one row), no heading over nothing, the last Explore row clears the tab bar, E16's Done is full width, the E1 tab row holds two tabs | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/lay/` (88 pictures plus 7 scrolled ones), `lay.log`, contact sheets `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/sheet-*.png` |
+| Tests assert absence for the right reason | CONFIRMED. 24 mutants of my own, one edit each, the named test files run, the file restored and compared (`git status` clean after each): all 24 killed (table below). M16 first survived `BalanceCard.test.tsx` alone (that file does not press the eye) and was killed by `WalletScreen.test.tsx` and `walletTabFlow.test.tsx` | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/mutants.log`, `mutants.py` |
+| Main moved since `603bd29` | No. `git fetch` twice: origin main `603bd29`, the branch contains it | `git rev-parse` |
+
+Mutants (each fails at least one test; failing count of the files named):
+
+| # | Edit | Result |
+|---|---|---|
+| M1 | Find a school put back as an inert door | killed (8 fail) |
+| M2 | Find a professional door dropped (done entry) | killed (9) |
+| M3 | Settings row dropped from the Me menu (done entry) | killed (5) |
+| M4 | inert Saved row put back in the Me menu | killed (2) |
+| M5 | Wallet scan icon put back, inert | killed (18) |
+| M6 | no-wallet card loses Open your wallet (done entry) | killed (3) |
+| M7 | My events tab put back, inert | killed (1) |
+| M8 | Get verified put back on E21, inert | killed (1) |
+| M9 | My events button put back on E16, inert | killed (1) |
+| M10 | Explore bell put back, a button that does nothing | killed (4) |
+| M11 | creator card made pressable to nowhere | killed (1) |
+| M12 | wallet transaction row made pressable to nowhere | killed (6) |
+| M13 | Upcoming events' See all opens nothing (done entry) | killed (1) |
+| M14 | Create button drawn on Explore, inert | killed (8) |
+| M15 | Featured creators' See all put back, inert | killed (5) |
+| M16 | balance eye removed (done entry) | killed by the Wallet tests (8), survived the card's own test file |
+| M17 | inert Dollar tab put back on the Wallet tab | killed (17) |
+| M18 | Settings row opens nothing (done entry) | killed (4) |
+| M19 | List your services door opens nothing (done entry) | killed (4) |
+| M20 | category tile opens nothing (done entry) | killed (3) |
+| M21 | Host event tab does nothing (done entry) | killed (1) |
+| M22 | Done on E16 does nothing (done entry) | killed (1) |
+| M23 | Find a professional opens the List your services target | killed (3) |
+| M24 | W5's empty card removed (nothing renders blank) | killed (6) |
+
+### Findings
+
+None is a blocker.
+
+1. **note (not this task's diff; a follow-up for INBOX-04 or the Inbox row tasks).** The Inbox tab draws a blank body when the Hub serves rows but none has a renderer: `src/features/inbox/InboxScreen.tsx` line 48 filters the rows with `drawableRows` (`rows.tsx`: `inboxRowRenderers` is empty until INBOX-05, -10, -18 and -19) and the empty state at line 85 draws only when the Hub served zero rows. With the stand-in serving three rows the screen shows the title and the All chip, nothing under them, and the tab badge says 3 (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/pics/inbox-390-light.png`). A person with messages sees a blank page. It is the R-47 pattern (a row with nowhere to go is not drawn) without the empty state R-47 keeps for a built section. Suggested default: when `inbox.items.length > 0` and `rows.length === 0`, draw the same "No messages yet" state, or hide the badge count; the lead decides.
+2. **note.** `WalletBar` is 53 px high at 390 (6 above, a 30 px title, 14 below), not the 62 the artboard has with its 42 px icons; the builder report says both bars "keep their 44 high row", which is true of `ExploreBar` (64, test-pinned) but not of `WalletBar` (no `minHeight`). The body sits about 9 px higher than the artboard until WALLET-06 and WALLET-20 add the icons, and moves down when they do. No gap, no overlap. The wallet test that pins layout does not pin the bar's height.
+3. **unclear (owner, low).** E21 ("Hosting needs a verified tick. A creator or professional tick, N a year.") tells the person to buy something the app cannot sell yet and offers Back only. It is not an inert entry and the price is the system's, so it stands under R-47; the owner may prefer the price line to wait for ME-12 as well. Same family: E2 lets a person pick ticket quantities and shows a running total with no Get tickets button (EVENTS-06, `todo`); EVENTS-01 built the steppers and total as a capability check (`tasks/EVENTS-01.md` line 59), so this is not FIX-29's, but it is a picker with no checkout (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/pics/event-ticketed-picked-390.png`).
+4. **note (test gap, no capability broken).** `BalanceCard.test.tsx` alone does not pin the eye (M16 survived that file); the Wallet screen tests do.
+5. **note (docs).** `scripts/gates/checks/unbuilt_entries.py` (its docstring), `scripts/gates/tests/*` and `src/lib/unbuilt.ts` still describe R-46 ("a screen draws its whole artboard"). `scripts/**` is fenced and the ticket keeps the helper and gate, so leaving them is right here; a follow-up can reword them to R-47.
+6. **note.** `src/components/CreateButton.tsx` is under the fenced `src/components/**`; the ticket's scope (the Create entry) required the edit and it only removes the `unbuilt` call and makes `onPress` required, so no SHARED-CHANGES row is needed.
+
+Diff against the report: the 38 files in `git diff --stat origin/main...HEAD` are the ones the report names (Explore, Wallet, Me menu, the three Events removals, `CreateButton`, the rewritten tests and the new `createButton.test.tsx`) plus comment-only edits (`ExploreEvents.tsx`, `CategoryTiles.tsx`, `categories.ts`, `LoadFailedBanner.tsx`, `ExploreSkeleton.tsx`, `explore/__tests__/model.test.ts`, `(tabs)/explore.tsx`) that the report calls "stale R-46 comments", and the five deleted wallet files (`AccountTabs`, `BillTiles`, `WalletActions`, `WalletCardRow`, `useRowRoom`). Nothing missing, nothing extra, no package or fenced-script change, no local copy of a main component.
+
+### Checks I ran
+
+`npm run check` on this branch with the report, status `review` and the regenerated `docs/PROGRESS.md` in place (setting `review` is what makes `unbuilt_entries` fail an entry still inert for this task, so the run is after the flip): typecheck 0; lint 0 errors, 7 warnings (the same seven the builder named, none in a file this task changed); jest 114 suites, 1899 tests, all passed (no load flake this time; `eventsScreens.test.tsx` passed); gates 10 run, 455 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`, EVENTS-04's), baseline 0, `unbuilt_entries` nothing; task check 271 tasks. Every stage of the chain printed its result, so it exited 0 (the log is `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix29/check1.log`). Secret scan of what I staged (the task file, `docs/LOG.md`, `docs/PROGRESS.md`): no key-shaped string, no `sk_`, `FLWSECK`, bearer token or private-key header; no BVN, NIN or phone number written; no em-dash in anything a user reads.
+
+### NOT RUN
+
+- The real Hub, a real WAWU ID and the real Fintava wallet: every picture and press used the stand-in above (schema-shaped sample data). Unblocked by a local backend worktree of main with a seeded account (`docs` OPS-03).
+- A phone or the tester build (taps, the share sheet, the clipboard on a phone, the file picker, `mailto:`): the web build proves the handlers fire; the native modules are not exercised.
+- Presses at 320, 360 and 430 px and in dark mode: the press sweep ran at 390 px light only (layout and overflow ran at all four widths in both themes); the same components render at every width.
+- Every step of the host wizard (E13 to E15) pressed one by one: step one was pressed by the crawl, the whole wizard was driven only by the picture script through to E16, and the wizard's own tests are EVENTS-04's.
+- The inert-entry gate against EVENTS-08, ME-12, EXPLORE-02 and the other tasks when they land: each must add its entry as drawn.
 
 ## Owner sign-off
 
