@@ -12,7 +12,8 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async () => undefined),
 }));
 
-type Answer = { status: number; body: unknown } | 'offline' | 'hold';
+/** `delay`: the answer comes this many ms late. `onSend`: runs at the moment the request reaches the network, before anything answers it. */
+type Answer = { status: number; body: unknown; delay?: number; onSend?: () => void } | 'offline' | 'hold';
 let answers: Record<string, Answer[]> = {};
 let sent: string[] = [];
 
@@ -33,6 +34,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (!answer) throw new Error(`no answer for ${key}${url.search}`);
   if (answer === 'hold') return new Promise<Response>(() => undefined);
   if (answer === 'offline') throw new TypeError('Network request failed');
+  answer.onSend?.();
+  if (answer.delay) await new Promise((resolve) => setTimeout(resolve, answer.delay));
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
@@ -481,6 +484,142 @@ describe('Suggested reads on until it lists enough open rooms (defect 22)', () =
     await settle();
     expect(suggestedRequests()).toEqual([]);
   });
+});
+
+describe('Suggested reads on when a refresh or a Join lands during it (defect 30)', () => {
+  const { useSuggestedCommunities, SUGGESTED_READ_ON_ROOMS } = require('../useCommunities') as typeof import('../useCommunities');
+  const { suggestedKey } = require('../api') as typeof import('../api');
+  const suggestedRequests = () => sent.filter((request) => request.startsWith('GET /communities/suggested'));
+  const pageUrl = (n: number) => `GET /communities/suggested?page=${n}&perPage=20`;
+  const settle = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+  /** What a Join, a live event or a pull to refresh does to the list: every page held is read again. */
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: suggestedKey });
+  /** Five pages of two open rooms each: the read-on stops at eight rooms, after the fourth. */
+  const roomsOf = (n: number) => [suggestion(`o${2 * n - 1}`, `Open room ${2 * n - 1}`), suggestion(`o${2 * n}`, `Open room ${2 * n}`)];
+  const page = (n: number): Answer => paged(roomsOf(n), n < 5 ? n + 1 : null);
+  const withSend = (answer: Answer, onSend: () => void): Answer => ({ ...(answer as object), onSend }) as Answer;
+  const withDelay = (answer: Answer, delay: number): Answer => ({ ...(answer as object), delay }) as Answer;
+  /** A read the Hub refuses (a 400): the app does not retry it, so it ends at once. */
+  const refused = (): Answer => refuse(400, 'Bad request');
+  const names = (rooms: readonly { name: string }[]) => rooms.map((room) => room.name);
+  const EIGHT = Array.from({ length: SUGGESTED_READ_ON_ROOMS }, (_, i) => `Open room ${i + 1}`);
+
+  /** Waits for the read-on to end on eight rooms, then checks it stopped: nothing in flight and nothing more asked. */
+  async function expectEight(hook: Awaited<ReturnType<typeof rtl.renderHook<ReturnType<typeof useSuggestedCommunities>, unknown>>>) {
+    await rtl.waitFor(() => expect({ rooms: names(hook.result.current.items), inFlight: queryClient.isFetching() }).toEqual({ rooms: EIGHT, inFlight: 0 }), { timeout: 4000 });
+    const asked = sent.length;
+    await settle();
+    expect(sent).toHaveLength(asked);
+  }
+
+  // The refresh lands at the moment the named page is asked for, before any render has drawn that the page is being read: it cancels that
+  // read and refetches the pages held, and the refetch ends with the same pages and the same flags as before it began. The page is answered
+  // when it is asked again.
+  it.each([2, 3, 4])('reaches eight rooms, not the ones held, when a refresh lands as page %i is asked for', async (asked) => {
+    for (let n = 1; n <= 5; n += 1) answers[pageUrl(n)] = n === asked ? [withSend(page(n), refresh), page(n)] : [page(n)];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await expectEight(hook);
+    expect(suggestedRequests().filter((request) => request === pageUrl(asked)).length).toBeGreaterThanOrEqual(2);
+  }, 10_000);
+
+  // The same, with pages that take time, so the refresh lands at each of these moments (ms after the list opens, then ms a page takes).
+  it.each([
+    [0, 30],
+    [10, 30],
+    [30, 30],
+    [40, 30],
+    [60, 30],
+    [100, 30],
+    [20, 100],
+    [50, 100],
+    [120, 100],
+    [200, 100],
+  ] as const)('reaches eight rooms: refresh at %i ms, pages of %i ms', async (refreshAt, pageMs) => {
+    for (let n = 1; n <= 5; n += 1) answers[pageUrl(n)] = [withDelay(page(n), pageMs)];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await new Promise((resolve) => setTimeout(resolve, refreshAt));
+    await rtl.act(async () => {
+      refresh();
+    });
+    await expectEight(hook);
+  }, 10_000);
+
+  // The same refresh, but the refetch it starts is REFUSED. A failed read moves `errorUpdatedAt`, not `dataUpdatedAt`, and a refusal that comes
+  // in the same instant as the ask is never drawn as under way, so the read-on has to hear it end by `errorUpdatedAt`.
+  describe('and the refetch it starts is refused', () => {
+    it('reaches eight rooms when the refetch of the first page is refused', async () => {
+      answers[pageUrl(1)] = [page(1), refused(), page(1)];
+      answers[pageUrl(2)] = [withSend(page(2), refresh), page(2)];
+      for (let n = 3; n <= 5; n += 1) answers[pageUrl(n)] = [page(n)];
+      const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+      await expectEight(hook);
+      expect(suggestedRequests().filter((request) => request === pageUrl(2)).length).toBeGreaterThanOrEqual(2);
+    }, 10_000);
+
+    it('reaches eight rooms when two pages are held and the refetch of the second is refused', async () => {
+      answers[pageUrl(1)] = [page(1)];
+      answers[pageUrl(2)] = [page(2), refused(), page(2)];
+      answers[pageUrl(3)] = [withSend(page(3), refresh), page(3)];
+      for (let n = 4; n <= 5; n += 1) answers[pageUrl(n)] = [page(n)];
+      const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+      await expectEight(hook);
+      expect(suggestedRequests().filter((request) => request === pageUrl(3)).length).toBeGreaterThanOrEqual(2);
+    }, 10_000);
+
+    it('stops at the error, without a loop, when the refetch and the page being read are both refused, and goes on when the page is asked for again', async () => {
+      answers[pageUrl(1)] = [page(1), refused(), page(1)];
+      answers[pageUrl(2)] = [withSend(page(2), refresh), refused()];
+      for (let n = 3; n <= 5; n += 1) answers[pageUrl(n)] = [page(n)];
+      const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+      await rtl.waitFor(() => expect({ failed: hook.result.current.isFetchNextPageError, inFlight: queryClient.isFetching() }).toEqual({ failed: true, inFlight: 0 }), { timeout: 4000 });
+      const asked = sent.length;
+      await settle();
+      expect(sent).toHaveLength(asked);
+      expect(names(hook.result.current.items)).toEqual(['Open room 1', 'Open room 2']);
+      answers[pageUrl(2)] = [page(2)];
+      await rtl.act(async () => {
+        await hook.result.current.fetchNextPage();
+      });
+      await expectEight(hook);
+    }, 10_000);
+  });
+
+  // The rooms the Hub lists change under the reader: A is joined (it leaves the list), so every room moves up one place. Page 1 is read again
+  // after the join; if the read-on's own request for the next page cancels that, the phone holds page 1 as it was before the join and the
+  // later pages as they are after it: A is listed still, and C, which moved onto page 1, is lost.
+  it('holds the list as the Hub now has it when a Join lands while the next page is on its way: B C D, not A B D', async () => {
+    const [A, B, C, D] = ['A', 'B', 'C', 'D'].map((id) => suggestion(`o${id}`, `Open room ${id}`));
+    answers[pageUrl(1)] = [paged([A, B], 2), withDelay(paged([B, C], 2), 250)];
+    answers[pageUrl(2)] = [withDelay(paged([C, D]), 1000), paged([D])];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    // The screen has drawn page 2 as being read (a slow network) when the Join lands.
+    await rtl.waitFor(() => expect(hook.result.current.isFetchingNextPage).toBe(true));
+    await rtl.act(async () => {
+      refresh();
+    });
+    await rtl.waitFor(() => expect({ rooms: names(hook.result.current.items), inFlight: queryClient.isFetching() }).toEqual({ rooms: ['Open room B', 'Open room C', 'Open room D'], inFlight: 0 }), { timeout: 4000 });
+    const asked = sent.length;
+    await settle();
+    expect(sent).toHaveLength(asked);
+  }, 10_000);
+
+  it('on the screen, tapping Join on a suggestion while the next page is held leaves the rest of Suggested as the Hub now lists it', async () => {
+    const [A, B, C, D] = ['A', 'B', 'C', 'D'].map((id) => suggestion(`o${id}`, `Open room ${id}`));
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')]), paged([mine('r1', 'Lagos Freelancers'), mine('oA', 'Open room A')])];
+    answers[pageUrl(1)] = [paged([A, B], 2), withDelay(paged([B, C], 2), 150)];
+    answers[pageUrl(2)] = [withDelay(paged([C, D]), 1500), paged([D])];
+    answers['POST /communities/oA/join'] = [ok({ id: 'mem', userWawuId: ME, status: 'joined', requestedAt: '2026-10-07T10:00:00Z', communityId: 'oA', joinedAt: '2026-10-07T10:00:00Z' })];
+    await renderView();
+    const join = await rtl.screen.findByLabelText(/^Join Open room A/);
+    // Page 2 is asked for by the read-on and held; the person taps Join meanwhile.
+    await rtl.waitFor(() => expect(sent).toContain(pageUrl(2)));
+    await rtl.fireEvent.press(join);
+    await rtl.waitFor(() => expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/[id]', params: { id: 'oA' } }));
+    await rtl.waitFor(() => expect(rtl.screen.queryByLabelText(/^Join Open room D/)).toBeTruthy(), { timeout: 4000 });
+    await settle(300);
+    for (const name of ['Open room B', 'Open room C', 'Open room D']) expect(rtl.screen.getByLabelText(new RegExp(`^Join ${name}`))).toBeTruthy();
+    expect(rtl.screen.queryByLabelText(/^Join Open room A/)).toBeNull();
+  }, 15_000);
 });
 
 describe('the balance recovers (verifier defect)', () => {
