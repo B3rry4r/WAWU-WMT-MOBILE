@@ -9,17 +9,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 145 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 81 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [INBOX-03](../tasks/INBOX-03.md) Phone push notifications (You)
+- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Done
 
@@ -159,6 +156,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · INBOX-03 · Verifier report, round 3 (independent session, backend `ec02c97`, trial-merged with main `b5e7877` and `0694ced`): no blocker, status review. Trial merge conflicts only in `.env.example` (both blocks kept); tsc 0; eslint 0 in everything the task wrote (16 problems are main's own in two account files); gates 16 fail as main; protected 253/253 on the branch and the merge; `contract:build` identical; push specs 140/140 three times, all 140 tables unchanged; 18 neighbouring suites and 35 notification-emitting suites pass in a private namespace. Every earlier finding closed by re-running its reproduction (crash loses 0, a block either way and a deleted account push 0, NUL is 400, non-UTC database zones deliver in 47 s, a proxy 403 is retried, the admin reason never leaves); 2 Hubs on one database: 0 duplicates in 2100 messages; 17 of 18 own mutants killed. Should fix: the migration stamp `20261017090000` now sorts before main's `20261018100000_event_waitlist` (restamp at merge), and an uncapped `Retry-After` (100000 parks a push 27 hours, 1e20 aborts the pass). Real Expo, FCM and a phone still NOT RUN.
 - 8 Oct 2026 · INBOX-03 · Merged main 657a152 into the branch: `legal_delivered` ruled (held), push migration restamped `20261017090000_push_tokens`, contract regenerated; real Expo and a phone still NOT RUN.
 - 8 Oct 2026 · INBOX-03 · Built round 2 (status verifying; the lead's agents took it over): a stopped or hung instance loses no push that was never sent (claim, check, then `sending`; reaper puts rows back, a mid-send row once), a block either way or a scheduled deletion stops a push, an admin's rejection reason never reaches a lock screen, one database clock in UTC, NUL answers 400, every invented figure marked; also found and fixed a claim that could take more rows than its limit. Live `kill -9` mid-request: 300 of 300 delivered, the 100 on the wire twice (as ruled).
 - 7 Oct 2026 · FIX-07 · FIX-07 merged (backend PR #85, 965280e): search refuses a NUL with 400, not 500.
@@ -173,4 +171,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · SCHOOLS-04 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
 - 10 Oct 2026 · JOIN-01 · Merged (backend #99 9311447): event registration link routes, Flutterwave verify, webhook branch and 5-minute re-check, admin list and CSV; D1-D3 follow in round 3.
 - 10 Oct 2026 · JOIN-01 · Built: event registration link, backend. Four public routes (offer, register, verify, status) under /waitlist, a pending/paid/failed registration table with one paid row per offer and phone or email, the fee in plans.config.json, Flutterwave webhook plus a 5-minute by-reference re-check for payers who never came back, 7-day purge of unpaid rows, team list and CSV; backend wmt/JOIN-01 (contract at 5773fdb); 86 specs, protected suite 253/253, 13 mutants killed; a real payment NOT RUN (owner pays once after deploy); status verifying.
-- 10 Oct 2026 · JOIN-02 · Built: the event registration page `/join` (and `/join/paid`) on the website, against the JOIN-01 routes: form, pay in the Flutterwave window, "Checking your payment" with a retry and never a second charge, "You're registered, <first name>" with the reference, and plain refusals (already registered, closed, none open, cancelled, network); only the reference is kept in sessionStorage; walked in Chromium against the real backend (70 assertions) and pictured at 390 and 1280 px, light and dark; the sign-up page is untouched; status verifying; real payment NOT RUN.
