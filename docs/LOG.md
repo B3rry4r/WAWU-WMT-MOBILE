@@ -2,6 +2,8 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
+- 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
 - 10 Oct 2026 · EVENTS-04 · Merged (backend #89 0694ced): host an event, basics, when and where, tickets, review.
 - 10 Oct 2026 · LEGAL-03 · Signed off (merged earlier on its verifier's review; sign-off not recorded until now).
