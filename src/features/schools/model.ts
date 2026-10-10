@@ -1,4 +1,5 @@
 import type { ChipItem } from '@/components/FilterChips';
+import { formatNaira } from '@/components/pay-sheet/money';
 
 import type { CourseCard, CourseDetail, IntakeView, SchoolCard, SchoolCategory } from './api';
 
@@ -81,9 +82,23 @@ export function modeLabel(mode: Mode): string {
   return modeWords[mode];
 }
 
-/** SC2's line under a course's name: its length and how it is taught. */
-export function courseLine(course: Pick<CourseCard, 'weeks' | 'mode'>): string {
-  return `${weeksLabel(course.weeks)} · ${modeLabel(course.mode)}`;
+/**
+ * A fee draws its kobo only when it has some, the house rule for prices (`formatNaira` 'auto', pay-sheet/money.ts):
+ * ₦150,000 stays "₦150,000" and ₦12,345.67 keeps its ".67". Money is never floored or rounded.
+ */
+export const hasKobo = (kobo: number): boolean => kobo % 100 !== 0;
+
+/** The word for a fee of nothing, as events word a free price (events/format.ts `priceLine`; R-8 allows free content). */
+export const FREE = 'Free';
+
+/** A course fee as words (for a screen reader and a button's label): "Free", "₦150,000", "₦12,345.67". */
+export function feeText(kobo: number): string {
+  return kobo === 0 ? FREE : formatNaira(kobo);
+}
+
+/** SC1's price words on a card: "from ₦45,000", or "Free" when the school's lowest fee is nothing. */
+export function fromText(lowestKobo: number): string {
+  return lowestKobo === 0 ? FREE : `from ${formatNaira(lowestKobo)}`;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -114,6 +129,19 @@ export function dayLabel(day: string): string | null {
  */
 export function upcomingIntake(intakes: readonly IntakeView[], today: string): IntakeView | null {
   return intakes.find((intake) => intake.startDate >= today) ?? null;
+}
+
+/**
+ * SC2's line under a course's name: its length, how it is taught and, when a class is still to come, its days as the school
+ * wrote them (the canvas's "12 weeks · online + weekends"). The days come from the course's next shown class, only while it
+ * has not started: the same rule SC3's Starts follows. They join the mode with " + " as the canvas does; a hybrid course
+ * already reads "online + in person", so its days join with " · ". No class coming, or none with days: length and mode only.
+ */
+export function courseLine(course: Pick<CourseCard, 'weeks' | 'mode' | 'nextIntake'>, today: string): string {
+  const base = `${weeksLabel(course.weeks)} · ${modeLabel(course.mode)}`;
+  const days = upcomingIntake(course.nextIntake ? [course.nextIntake] : [], today)?.schedule.trim() ?? '';
+  if (days === '') return base;
+  return `${base}${course.mode === 'hybrid' ? ' · ' : ' + '}${days}`;
 }
 
 const capitalised = (text: string): string => (text === '' ? text : `${text.charAt(0).toUpperCase()}${text.slice(1)}`);
