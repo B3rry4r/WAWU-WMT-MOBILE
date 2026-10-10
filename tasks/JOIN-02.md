@@ -7,7 +7,7 @@ order: 242
 priority: launch
 repo: wawuafrica
 type: web-port
-status: verifying
+status: review
 depends_on: [JOIN-01]
 decisions: [R-48, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V9]
@@ -694,3 +694,85 @@ Kept as a guard (it costs nothing). The new backend never triggers it: a start w
 - The middleware on Vercel's Edge runtime (JOIN-02 N2): only `next start`. Unblocked by `curl -sI https://wawuafrica.com/sign-in` (307 to `/join`) and `https://wawuafrica.com/who-made-this-ink.png` (200) after the deploy.
 - The production check of the migration behind the access code (JOIN-01 round 4, not this task): unblocked by the SELECT in that task's report before the backend merges.
 - Pictures at 1280 px for the round 4 states, and a phone: as in round 4.
+
+## Verifier report, rounds 4 and 5
+
+Verifier, 10 Oct 2026 (independent session; wrote none of this). Website `origin/wmt/JOIN-02-r4` `d172f0b` (detached worktree `vw-JOINr4`) against website `origin/main` `b4a2921`
+(the merge `087e242` brings main in; the branch changes 3 files against main: `JoinFlow.tsx`, `join-session.ts`, `flutterwave.ts`, 209 added and 16 removed); backend `origin/wmt/JOIN-01-r4` `d317094` for the
+walks and backend `origin/main` `0694ced` for the deploy-window walk. Mobile `wmt/JOIN-02-r4` `7314b54`. Neither main moved during the run (checked at the start and before the push). Nothing in the website or backend was changed or pushed.
+Evidence, scripts, pictures: the lead's scratchpad `vjoinr4/` (`w-double.mjs`, `w-rules.mjs`, `w-oldpage.mjs`, `w-held.mjs`, `v1.mjs`, `text.mjs`, `out-*.txt`, `text-main.json`, `text-branch.json`, `pics/`).
+Production builds served with `next start` (`NEXT_PUBLIC_API_BASE_URL` set to my backend, as the repo's own guard requires on every branch); real `AppModule` built from the backend branch, real Postgres,
+Flutterwave stood in strictly in the backend and in the browser (a transaction exists only if the stand-in made it). No Flutterwave, Nuvion, Fintava, wawuafrica.com or AI host was called.
+
+**Verdict: merge. No blocker.** Status `review`. One should-fix (S1, stale words in a doc and three comments) and four notes. Every round 4 and round 5 rule held in a real browser under my own walks (49 of 49 walk checks, and V1 31 of 31 and 26 of 26).
+
+| Id | Severity | What | Where | Reproduce |
+|---|---|---|---|---|
+| S1 | should fix (low, words only) | Three places still say what is no longer true. `docs/03_USER_FLOWS.md` line 98: "The Flutterwave window is titled "WAWU"" (V1 made it "WHO MADE THIS?", description "Pre-registration", the Who Made This logo). `JoinFlow.tsx` lines 70 and 564 and `join-session.ts` line 90 say "the server reuses an unpaid registration for the same phone and email" (false once backend r4 merges; the guard they describe stays useful for the deploy window, only the sentence is stale). The website rule is that the docs stop disagreeing with the code | `docs/03_USER_FLOWS.md:98`, `src/app/join/components/JoinFlow.tsx:70,564`, `src/lib/join-session.ts:90` | `grep -n "titled \"WAWU\"\|reuses an unpaid" docs/03_USER_FLOWS.md src/app/join/components/JoinFlow.tsx src/lib/join-session.ts` |
+
+### Round 4: the double charge and the page rules (CONFIRMED)
+
+Backend `d317094`, my walks (`w-double.mjs`, `w-rules.mjs`), the page clock faked, five minutes walked in 15 second steps:
+
+| Rule | Result | Evidence |
+|---|---|---|
+| Reload while a window is open, money moved, start again with the same details, pay again | CONFIRMED | W1: reload shows only "Check again" and "You started a payment on this device. We are checking whether it went through. Check again in a moment."; a new reference on the second start; the second window opens on the new reference (not the first); the registered screen shows the code of the PAID row; two references, two transactions; after the re-check the rows are `paid` and `failed` (the first, with its transaction id and 200000 kobo) |
+| No "Start again" while checking | CONFIRMED | at the reload and at 4 minutes 45 seconds only "Check again" is drawn |
+| It appears only after the 5-minute checking ended with not paid | CONFIRMED | at 5 minutes 25 seconds "I have not paid. Start again" is drawn next to "Check again" |
+| The plain-words question | CONFIRMED | "Start again?" "Only start again if no money left your account. If it did, email support@wawuafrica.com with your reference XXXX XXXX." with "Keep checking" (main, focused) and "Start again" (`pics/v-question-390-light.png`, `-dark.png`) |
+| The last status ask: PAID | CONFIRMED | R1: the server settles the first reference after the polling ended; "Start again" asks once more, shows the registered screen (code equals that row's `accessCode`), no form, one reference |
+| The last status ask: FAILED | CONFIRMED | R2: another device paid first, the re-check made this reference `failed`; the tap shows "This extra payment will be refunded" with the short reference, no form, no Pay |
+| The last status ask: UNREACHABLE | CONFIRMED | R3: request aborted, then a 500, then a 429: each stays on the question with "We could not check just now. Check your connection and try again.", both buttons, no form, the resume record kept; once reachable a plain not-paid answer opens the form and clears the resume record (the old reference is kept only in the walked-away list) |
+| Keep checking | CONFIRMED | R4: back to the checking screen, one ask at once, the button gone, four asks in the next minute, the support line stays, the button returns after another five minutes |
+| A new reference after starting again; storage | CONFIRMED | R5 and W1: a different reference on the second start; storage holds references only (no name, phone or email) |
+| The re-check settles the first payment while the second window is open | CONFIRMED | W2: the second callback ends on "You're already registered. This extra payment will be refunded..." never on "registered" or "not charged"; the second row is `failed` with its id and 200000 kobo |
+| Second tab and second device | CONFIRMED | W3: a second tab has empty storage and a clean form; a second device registers on its own reference; device 1 is told "extra payment will be refunded" by polling its own reference |
+| Deploy order 1: the LIVE page (`main`) with the NEW backend | CONFIRMED | `w-oldpage.mjs`: the live page still offers Start again at once; the second start gets a new reference, the person is registered, rows end `paid` and `failed`; two transactions |
+| Deploy order 2: the NEW page with the OLD backend (`main`, reuses the reference) | CONFIRMED | `w-held.mjs`: the same details come back with the same reference, no second window opens, the held screen with the support line shows, exactly one transaction on that reference, no Pay button; once the server's re-check settles it the page shows the registered screen by itself |
+
+My own walk had one bad assertion (R3's last check asked for the old reference to be absent from all of sessionStorage; the walked-away list holds it on purpose); corrected in the script, the page was right.
+
+### Round 5: words, V1, site mode, auth (CONFIRMED)
+
+- **Owner's words, character for character.** I rendered website `main` `b4a2921` and the branch (production builds, same backend) and compared the visible text of 13 states: the form at 390 and 1280, its field errors at both widths, registered by the window callback, registered by the `/join/paid` redirect return, already registered, after a cancel, after a declined card, checking, and the head tags (`<title>`, description, `og:*`, `twitter:*`) of `/join` and `/join/paid`. All 13 are identical as code points (access codes and references normalised). The static HTML of `/join` and `/join/paid` differs only in hashed chunk file names. (`text.mjs`, `text-main.json`, `text-branch.json`.)
+- **V1.** From `/join` at 390 and 1280, dark and light, the window options are title "WHO MADE THIS?", description "Pre-registration", logo `<own origin>/who-made-this-ink.png` (absolute, 200 `image/png`, the bytes of `public/who-made-this-ink.png`), nothing in the options says WAWU; key, tx_ref, amount 2000, NGN, payment options and redirect are as before. 31 of 31 (full site mode) and 26 of 26 (`VERCEL_ENV=production`). `logo` is an optional label: the only caller that passes it is `JoinFlow.tsx` (`grep "logo:" src`); the other 12 call sites get `${origin}/wawu-logo-white.png` as before. The event ticket checkout (the real page and `TicketPurchasePanel`, API answers stood in in the browser): title is the event's name, description "Regular · 1 ticket", logo `/wawu-logo-white.png` (200), no Who Made This word or file in its options.
+- **Site mode locked with `VERCEL_ENV=production`** (same build): `/`, `/sign-in`, `/sign-up`, `/wallet`, `/admin`, `/home`, `/events/...`, `/tickets`, `/services`, `/wawu/ada.png`, `/api/hub/waitlist/offers/current`, `/api/anything`, `/%2e%2e/sign-in` all 307 to `/join`; `//sign-in` is Next's 308 to `/sign-in` and then 307, as before; `/join`, `/join/paid`, `/terms`, the three Who Made This PNGs and `/wawu-logo-white.png` 200. `src/lib/site-mode.ts` and `src/middleware.ts` are not in the diff.
+- **Nothing under `src/app/(auth)/` changed** (`git diff origin/main..HEAD --stat -- 'src/app/(auth)'` empty; the branch changes 3 files).
+
+### Checks
+
+| Check | Result |
+|---|---|
+| website `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0 (17 warnings, all the repo's own `<img>` and hook warnings; none in the changed files; the two in `JoinShell.tsx` are unchanged) |
+| `npm run build` (with `NEXT_PUBLIC_API_BASE_URL`) | exit 0; `/join` and `/join/paid` static, first load 164 kB |
+| `npm run check:copy` | exit 0, "copy rules: clean" |
+| `npm run check:icons` | exit 0, 175 icons, current |
+| added lines: em-dash, `style={`, hex colour | 0, 0, 0 |
+| backend `d317094` checks (tsc, eslint, 137 of 137, rate-limit 22 of 22, protected 253 of 253, gates, contract) | see JOIN-01's "Verifier report, round 4" |
+| mobile `npm run gates` and `npm run tasks` (this commit is docs only; `npm run check` not run for that reason) | gates: 10 run, 459 files, 0 fail, 16 warn, 0 accepted, run after the status moved to `review` (the `unbuilt_entries` gate passes); task check passes, 271 tasks, 279 artboards |
+| secret scan of my staged diff (hex runs of 32 or more, base64 runs of 60 or more, Flutterwave secret-key prefixes, bearer tokens, private-key headers) | nothing matched; no BVN, NIN or phone number is written here |
+
+### Notes (none stops the merge)
+
+- **N1 · note · V1 was seen only in the stand-in.** The ink lockup is the builder's choice for Flutterwave's light card; what the real window does with the logo (size, crop, background) is not seen (NOT RUN).
+- **N2 · note · the refund screen's reference looks like the launch access code.** "reference 5F6C 15E4" has the shape of "XXXX XXXX", the same as the code on the registered screen; it is the extra payment's reference. JOIN-03's claim must refuse a code whose row is `failed` (see JOIN-01 round 4 N3). When the second payment is the one that wins, the person sees only the registered screen and is not told on it that the first will be refunded (the page cannot know then).
+- **N3 · note · the held screen is unreachable with backend r4.** The backend never hands back a walked-away reference now; the guard stays for the deploy window (proved: `w-held.mjs`) and costs nothing. Its sentence ("A payment you started with these details has not been settled yet...") is still right in that window.
+- **N4 · note · a second tab started from the QR while the first has a window open is not stopped, by design.** It gets its own reference and, if both pay, one is registered and the other is kept for a refund (W3). Nothing on the page can know about the other tab; the backend rule is what protects the money.
+
+### Mutants
+
+Backend mutants (20, 17 killed, 3 survived as test gaps, none breaking built behaviour) are in JOIN-01's report. Website: NOT RUN. The page has no unit spec (the builder's walks and mine are the tests), and a page mutant needs a 2 minute production build plus a walk each; unblocked by a spec file for `JoinFlow` (none exists) or time for four to six builds (start-again button drawn at once, the last ask skipped, an unreachable answer read as not paid, the walked-away guard removed, the logo omitted).
+
+### Pictures
+
+`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vjoinr4/pics/`: `v-checking-no-button-390-{dark,light}.png`, `v-checking-with-button-390-{dark,light}.png`, `v-question-390-{dark,light}.png`, `w1-registered-390.png`, `w2-extra-390.png`, `w3-device1-extra-390.png`. I looked at `v-question-390-light.png` and `w3-device1-extra-390.png`: nothing clipped, the logo and card as in round 3; the other pictures were not opened (the walks assert their text). No artboard exists for these states; I do not say they match one.
+
+### NOT RUN
+
+- A real Flutterwave window and a real card: every payment is the stand-in. Unblocked by one live payment from a phone, looking at the title, description and logo.
+- iPhone Safari and in-app browsers (WhatsApp, Instagram), a bank app returning to the page and reloading it: only Chromium was driven. Unblocked by a phone opening the live link.
+- The middleware on Vercel's Edge runtime (JOIN-02 N2 still stands): only `next start`. Unblocked by `curl -sI https://wawuafrica.com/sign-in` (307 to `/join`) and `https://wawuafrica.com/who-made-this-ink.png` (200) after the deploy.
+- Pictures at 1280 px for the round 4 states, and the light and dark of every refund and held screen: 390 px for the question, the checking screens and the two refund screens, as ordered in round 4.
+- The production collision check for the migration behind the access code (JOIN-01 round 4): unblocked by the SELECT in that report before the backend merges.
+- Website mutants (above).

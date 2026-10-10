@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 146 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 80 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 
 ## Done
@@ -158,6 +155,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Oct 2026 · JOIN-02 · Verifier report, rounds 4 and 5 (independent session; website `d172f0b` on main `b4a2921`, unmoved; backend `d317094`; mobile `7314b54`): merge, no blocker, status review. Round 4 held in a real browser: no Start again while checking, it appears after the 5 minutes end with no paid answer, the plain-words question, the last ask for paid, failed and unreachable, Keep checking, a new reference on starting again, a second tab and a second device, and both deploy orders (live page with the new backend; new page with the old backend shows the held screen, one transaction). Round 5: the owner's words identical to main as code points over 13 rendered states and both head tags; V1 title, description and logo (absolute, same origin, 200) on /join in full and `VERCEL_ENV=production` mode, the ticket checkout keeps WAWU's; site mode still locked; nothing under (auth) changed. typecheck, lint, build, check:copy 0. One should-fix (S1: a doc line and three comments still say the window is titled WAWU and the server reuses an unpaid registration) and four notes. NOT RUN: a real Flutterwave window, phones and in-app browsers, the Edge middleware, website mutants.
 - 10 Oct 2026 · JOIN-02 · Brand change, verifier report (website `9bee60a` on main `233d6b1`, backend `0694ced`): MERGE, no blocker. Every owner word exact (top block and the launch access code screen, curly apostrophes, the lock emoji, ₦10,000), the code equals the first 8 hex of the reference (7 registrations), Copy code copies exactly it and never says Copied when the clipboard refuses (8 cases), lock-down holds with the three new PNGs the only new allowed paths, 18 pictures at 360, 390 and 1280 px dark and light with nothing clipped or overlapping; payment logic untouched, `Callout` and `StateCard` defaults leave other pages identical; typecheck, lint, build, check:copy 0. One should fix: the Flutterwave window still says WAWU (title, "Event registration fee" and the WAWU logo); notes: `/join/paid` link tags are the site's, the "already registered" screen shows no code, a double live region.
 - 10 Oct 2026 · JOIN-02 · Brand change built (website wmt/JOIN-02-brand 9bee60a): the registration page is Who Made This (owner's copy, logo files at the public root, link preview), and the screen after payment is the launch access code with a Copy code button.
 - 10 Oct 2026 · JOIN-02 · Merged (website #24 233d6b1), live: the event registration page and only-the-link site mode; N1 follows in round 4.
@@ -172,4 +170,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-01 · Merged (backend #99 9311447): event registration link routes, Flutterwave verify, webhook branch and 5-minute re-check, admin list and CSV; D1-D3 follow in round 3.
 - 10 Oct 2026 · JOIN-01 · Built: event registration link, backend. Four public routes (offer, register, verify, status) under /waitlist, a pending/paid/failed registration table with one paid row per offer and phone or email, the fee in plans.config.json, Flutterwave webhook plus a 5-minute by-reference re-check for payers who never came back, 7-day purge of unpaid rows, team list and CSV; backend wmt/JOIN-01 (contract at 5773fdb); 86 specs, protected suite 253/253, 13 mutants killed; a real payment NOT RUN (owner pays once after deploy); status verifying.
 - 10 Oct 2026 · JOIN-02 · Built: the event registration page `/join` (and `/join/paid`) on the website, against the JOIN-01 routes: form, pay in the Flutterwave window, "Checking your payment" with a retry and never a second charge, "You're registered, <first name>" with the reference, and plain refusals (already registered, closed, none open, cancelled, network); only the reference is kept in sessionStorage; walked in Chromium against the real backend (70 assertions) and pictured at 390 and 1280 px, light and dark; the sign-up page is untouched; status verifying; real payment NOT RUN.
-- 9 Oct 2026 · Lead: R-47 show only what is built (owner withdrew R-46). COMPLETE-03, -04 and -06 cancelled; FIX-29 removes the inert entries; the website wallet takes agent slots first.
