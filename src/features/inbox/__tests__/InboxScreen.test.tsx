@@ -282,7 +282,7 @@ describe('the inbox screen', () => {
     it('the Communities chip opens the communities view, and All brings the inbox back', async () => {
       answers[FIRST] = [pageOf([community('r1')])];
       answers['GET /communities/mine?page=1&perPage=20'] = [noRooms];
-      answers['GET /communities?page=1&perPage=20'] = [noRooms];
+      answers['GET /communities/suggested?page=1&perPage=20'] = [noRooms];
       answers['GET /credits'] = [ok({ userWawuId: 'me', creditBalance: 48, trialEndsAt: null })];
       answers['GET /users/me'] = [ok({ wawuUserId: 'me', firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null })];
       await renderScreen();
@@ -299,7 +299,7 @@ describe('the inbox screen', () => {
     it('a user with an empty inbox can Browse communities, which opens the Communities chip', async () => {
       answers[FIRST] = [pageOf([])];
       answers['GET /communities/mine?page=1&perPage=20'] = [noRooms];
-      answers['GET /communities?page=1&perPage=20'] = [noRooms];
+      answers['GET /communities/suggested?page=1&perPage=20'] = [noRooms];
       answers['GET /credits'] = [ok({ userWawuId: 'me', creditBalance: 0, trialEndsAt: null })];
       answers['GET /users/me'] = [ok({ wawuUserId: 'me', firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null })];
       await renderScreen();

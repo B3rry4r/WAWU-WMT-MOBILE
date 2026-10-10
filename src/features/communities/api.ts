@@ -7,8 +7,12 @@ import type { components, paths } from '@/api/schema.generated';
  * (INBOX-01 for the rooms, the web's routes for the rest):
  * - `GET /communities/mine`: the rooms the person hosts or has joined, newest activity first, each with
  *   its last message, its unread count and its link;
- * - `GET /communities`: every room the person may see, by name (what the web lists);
- * - `GET /communities/:id`, `GET /communities/:id/membership`, `POST /communities/:id/join`;
+ * - `GET /communities/suggested`: the rooms the person could join (not hosted, joined, asked for or hidden),
+ *   most members first (INBOX-05, closes G-451);
+ * - `GET /communities/:id/room`: one room as the person sees it: counts, link, their `role` there and what one
+ *   message costs them (INBOX-05);
+ * - `GET /communities/message-cost`: what one message costs a member, in WAWU Credits (INBOX-05, closes G-450);
+ * - `POST /communities/:id/join`;
  * - `GET` and `POST /communities/:id/messages`: history, newest first, a page at a time, and a send;
  * - `POST /communities/:id/read`: the room's read mark;
  * - `GET /communities/links/:slug`: what a link `wawu/c/<slug>` names;
@@ -19,6 +23,8 @@ import type { components, paths } from '@/api/schema.generated';
  */
 export type MyCommunity = components['schemas']['MyCommunity'];
 export type Community = components['schemas']['CommunityResponse'];
+export type RoomView = components['schemas']['CommunityRoomView'];
+export type MessageCost = components['schemas']['CommunityMessageCost'];
 export type CommunityRoom = components['schemas']['CommunityRoom'];
 export type CommunityMessage = components['schemas']['CommunityMessage'];
 export type CommunitySender = components['schemas']['CommunityMessageSender'];
@@ -53,8 +59,8 @@ function pageOf<T>(body: unknown, what: string): Paged<T> {
 /** The person's own rooms live under `inbox`, so a live event that refreshes the inbox refreshes them too; the rooms to suggest do not change with a message, so they stay outside it. */
 export const myCommunitiesKey = ['inbox', 'communities', 'mine'] as const;
 export const suggestedKey = ['communities', 'suggested'] as const;
+export const messageCostKey = ['communities', 'message-cost'] as const;
 export const roomKey = (id: string) => ['community', id] as const;
-export const membershipKey = (id: string) => ['community', id, 'membership'] as const;
 export const messagesKey = (id: string) => ['community', id, 'messages'] as const;
 export const creditsKey = ['credits'] as const;
 
@@ -65,26 +71,26 @@ export async function fetchMyCommunities(page: number): Promise<Paged<MyCommunit
   );
 }
 
-export async function fetchCommunities(page: number): Promise<Paged<Community>> {
+/** The rooms the person could join, most members first. The server leaves out rooms they host, are in, asked for or cannot see. */
+export async function fetchSuggested(page: number): Promise<Paged<Community>> {
   return pageOf(
-    await unwrap(api.GET('/api/hub/communities', { params: { query: { page, perPage: PAGE_SIZE } } })),
-    'list of communities',
+    await unwrap(api.GET('/api/hub/communities/suggested', { params: { query: { page, perPage: PAGE_SIZE } } })),
+    'list of suggested communities',
   );
 }
 
-export async function fetchCommunity(id: string): Promise<Community> {
-  const room = dataOf<Community>(await unwrap(api.GET('/api/hub/communities/{id}', { params: { path: { id } } })), 'community');
+/** One room as the person sees it: the room, their `role` in it, and what one message costs them there (0 for the host). */
+export async function fetchRoom(id: string): Promise<RoomView> {
+  const room = dataOf<RoomView>(await unwrap(api.GET('/api/hub/communities/{id}/room', { params: { path: { id } } })), 'community');
   if (typeof room.id !== 'string' || typeof room.name !== 'string') throw unreadable('community');
   return room;
 }
 
-/** The person's own membership, or `null` when there is none. */
-export async function fetchMembership(id: string): Promise<Membership | null> {
-  const body = await unwrap(api.GET('/api/hub/communities/{id}/membership', { params: { path: { id } } }));
-  const data = (body as Envelope<Membership> | null)?.data;
-  if (data === null) return null;
-  if (!data || typeof data !== 'object') throw unreadable('membership');
-  return data;
+/** What one message costs a member, in WAWU Credits. A count, never naira (DECISIONS R-5). */
+export async function fetchMessageCost(): Promise<MessageCost> {
+  const cost = dataOf<MessageCost>(await unwrap(api.GET('/api/hub/communities/message-cost')), 'message price');
+  if (typeof cost.creditsPerMessage !== 'number') throw unreadable('message price');
+  return cost;
 }
 
 /** Joins an open room at once; asks a private one (the answer says `pending`). */

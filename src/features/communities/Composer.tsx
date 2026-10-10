@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { formatCredits } from '@/components/Credits';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
@@ -42,14 +43,20 @@ export type ComposerProps = {
   onSend: (text: string) => boolean;
   /** A message is on its way: Send waits, and a second press does nothing. */
   busy?: boolean;
+  /**
+   * What one message costs the sender, in WAWU Credits, as the server says (`messageCostInCredits` of `GET /communities/:id/room`:
+   * the price for a member, 0 for the host). The field then reads "Message · 1 credit" and the button "Send · 1". With no figure,
+   * or 0, they read "Message" and "Send": nothing is stated that the server did not say.
+   */
+  cost?: number;
   placeholder?: string;
   /** Words to put in the field (a message the person wants to change). A new `id` puts them there again. */
   draft?: { id: number; text: string };
   testID?: string;
 };
 
-/** I25's field and I26's Send: type, then press Send. The cost on the button is left out until the API serves it (BACKEND_GAPS.md). */
-export function Composer({ onSend, busy, placeholder = 'Message', draft, testID = 'composer' }: ComposerProps) {
+/** I25's field and I26's Send: type, then press Send. The price on the field and the button is the server's (G-450). */
+export function Composer({ onSend, busy, cost, placeholder = 'Message', draft, testID = 'composer' }: ComposerProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const insets = useSafeAreaInsets();
@@ -64,6 +71,7 @@ export function Composer({ onSend, busy, placeholder = 'Message', draft, testID 
   }
   const hasWords = value.trim().length > 0;
   const canSend = hasWords && !busy;
+  const price = cost !== undefined && cost > 0 ? Math.floor(cost) : 0;
 
   // In a browser the field is a textarea that does not grow: it takes the height of its text, up to `maxLines`.
   useLayoutEffect(() => {
@@ -93,7 +101,7 @@ export function Composer({ onSend, busy, placeholder = 'Message', draft, testID 
         accessibilityLabel="Message"
         value={value}
         onChangeText={setValue}
-        placeholder={placeholder}
+        placeholder={price > 0 ? `${placeholder} · ${formatCredits(price)}` : placeholder}
         placeholderTextColor={colors.textMuted}
         multiline
         numberOfLines={IS_WEB ? 1 : undefined}
@@ -122,7 +130,7 @@ export function Composer({ onSend, busy, placeholder = 'Message', draft, testID 
       <Pressable
         testID={`${testID}-send`}
         accessibilityRole="button"
-        accessibilityLabel={busy ? 'Sending' : 'Send message'}
+        accessibilityLabel={busy ? 'Sending' : price > 0 ? `Send message, ${formatCredits(price)}` : 'Send message'}
         accessibilityState={{ disabled: !canSend, busy: Boolean(busy) }}
         disabled={!canSend}
         onPress={press}
@@ -137,7 +145,7 @@ export function Composer({ onSend, busy, placeholder = 'Message', draft, testID 
         {hasWords ? (
           <>
             <Text variant="body" tone={busy ? 'accentFg' : 'textOnAccent'} style={[font(700), { fontSize: composerMetrics.sendFont }]}>
-              {busy ? 'Sending' : 'Send'}
+              {busy ? 'Sending' : price > 0 ? `Send · ${price}` : 'Send'}
             </Text>
             <Icon name="Coins" size={composerMetrics.coin} color={busy ? colors.accentFg : colors.textOnAccent} strokeWidth={composerMetrics.coinStroke} />
           </>

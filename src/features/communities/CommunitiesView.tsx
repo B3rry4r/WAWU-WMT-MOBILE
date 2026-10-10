@@ -9,7 +9,7 @@ import { Text } from '@/components/Text';
 import { layout, space, useWawu } from '@/theme';
 import { queryClient } from '@/api/query';
 
-import { creditsKey, myCommunitiesKey, suggestedKey, type Community, type MyCommunity } from './api';
+import { creditsKey, messageCostKey, myCommunitiesKey, suggestedKey, type Community, type MyCommunity } from './api';
 import { CommunitiesSkeleton } from './CommunitiesSkeleton';
 import { CommunityRow } from './CommunityRow';
 import { CreditsStrip } from './CreditsStrip';
@@ -33,29 +33,34 @@ export type CommunitiesViewProps = {
 
 /**
  * I24: the Communities chip's view of the Inbox. The person's WAWU Credits, the rooms they host or have
- * joined with the last message of each, and rooms they could join. An open room joins on one tap and opens;
- * a private room is drawn with its lock and no way in, because asking to join is INBOX-14's (docs/WORKFLOW.md
- * section 7), as Buy is INBOX-13's.
+ * joined with the last message of each, and open rooms they could join, each on one tap that opens the room.
+ * A private room is not listed: asking to join it is INBOX-14's screen, as Buy is INBOX-13's (R-47,
+ * docs/WORKFLOW.md section 7), so neither is drawn until its task builds where it leads.
  */
 export function CommunitiesView({ testID = 'communities-view' }: CommunitiesViewProps) {
   const router = useRouter();
   const { colors } = useWawu();
   const me = useMe();
   const mine = useMyCommunities();
-  const joinedIds = useMemo(() => new Set(mine.items.map((room) => room.id)), [mine.items]);
   const mineDone = mine.isSuccess && !mine.hasNextPage;
-  const suggested = useSuggestedCommunities(mineDone, joinedIds);
+  const suggested = useSuggestedCommunities(mineDone);
   const join = useJoinCommunity();
   const focused = useIsFocused();
 
-  // The balance is read again whenever the person comes back to this view, and whenever they retry the list: a balance that
-  // failed once must not stay failed while everything else recovers.
-  const readBalance = useCallback(() => queryClient.invalidateQueries({ queryKey: creditsKey }), []);
+  // What the strip and the rows lean on besides the lists (the balance, the price of a message, the person's own profile for "You:")
+  // is read again whenever the person comes back to this view and whenever they retry: something that failed once must not stay
+  // failed while everything else recovers. The profile is asked again only when it failed, because it never changes otherwise.
+  const { refetch: refetchMe, isError: meFailed } = me;
+  const recover = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: creditsKey });
+    void queryClient.invalidateQueries({ queryKey: messageCostKey });
+    if (meFailed) void refetchMe();
+  }, [meFailed, refetchMe]);
   const wasFocused = useRef(focused);
   useEffect(() => {
-    if (focused && !wasFocused.current) void readBalance();
+    if (focused && !wasFocused.current) recover();
     wasFocused.current = focused;
-  }, [focused, readBalance]);
+  }, [focused, recover]);
   const [pulled, setPulled] = useState(false);
 
   const joining = join.isPending ? join.variables : undefined;
@@ -79,11 +84,13 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
         queryClient.invalidateQueries({ queryKey: myCommunitiesKey }),
         queryClient.invalidateQueries({ queryKey: suggestedKey }),
         queryClient.invalidateQueries({ queryKey: creditsKey }),
+        queryClient.invalidateQueries({ queryKey: messageCostKey }),
+        meFailed ? refetchMe() : Promise.resolve(),
       ]);
     } finally {
       setPulled(false);
     }
-  }, []);
+  }, [meFailed, refetchMe]);
 
   const { fetchNextPage: fetchMoreMine, isFetchingNextPage: fetchingMine, isFetchNextPageError: mineMoreFailed } = mine;
   const { fetchNextPage: fetchMoreSuggested, isFetchingNextPage: fetchingSuggested, isFetchNextPageError: suggestedMoreFailed } = suggested;
@@ -146,7 +153,6 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
         );
       }
       const room = item.room;
-      const isOpen = room.kind === 'open';
       const busy = joining === room.id;
       const failed = joinFailed === room.id;
       return (
@@ -154,16 +160,12 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
           testID={`suggested-${room.id}`}
           name={room.name}
           imageUrl={room.imageUrl}
-          locked={!isOpen}
+          locked={false}
           line={`${membersShort(room.memberCount)} · ${room.kind}`}
-          meta={isOpen ? (busy ? 'Joining' : failed ? 'Try again' : 'Join') : undefined}
+          meta={busy ? 'Joining' : failed ? 'Try again' : 'Join'}
           problem={failed}
-          accessibilityLabel={
-            isOpen
-              ? `Join ${room.name}, ${membersShort(room.memberCount)}`
-              : `${room.name}, private, ${membersShort(room.memberCount)}`
-          }
-          onPress={isOpen ? () => onJoin(room.id) : undefined}
+          accessibilityLabel={`Join ${room.name}, ${membersShort(room.memberCount)}`}
+          onPress={() => onJoin(room.id)}
         />
       );
     },
@@ -173,7 +175,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
   let state: 'list' | 'loading' | 'error' | 'empty' = 'list';
   if (mine.isPending) state = 'loading';
   else if (mine.isError && !mine.data) state = 'error';
-  else if (mine.items.length === 0 && suggested.isSuccess && suggested.items.length === 0) state = 'empty';
+  else if (mine.items.length === 0 && suggested.isSuccess && !suggested.hasNextPage && suggested.items.length === 0) state = 'empty';
 
   const moreFailed = mineMoreFailed || suggestedMoreFailed;
   const fetchingMore = fetchingMine || fetchingSuggested;
@@ -201,7 +203,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
               message={isApiError(mine.error) ? mine.error.message : 'Something went wrong. Try again.'}
               icon={isApiError(mine.error) && mine.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
               onRetry={() => {
-                void readBalance();
+                recover();
                 void mine.refetch();
               }}
             />
@@ -224,7 +226,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
             <View style={styles.footer} testID="communities-suggested-error">
               <Text variant="secondary">Couldn’t load suggestions.</Text>
               <Button label="Try again" variant="secondary" size="sm" onPress={() => {
-                void readBalance();
+                recover();
                 void suggested.refetch();
               }} />
             </View>

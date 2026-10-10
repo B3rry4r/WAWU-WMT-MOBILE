@@ -22,7 +22,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
-import { fetchCommunity, fetchMembership, membershipKey, roomKey, type Community, type CommunityMessage } from './api';
+import { fetchRoom, roomKey, type CommunityMessage, type RoomView } from './api';
 import { Composer } from './Composer';
 import { dayKey, dayLabel, membersFull } from './format';
 import { GroupTile, tileMetrics } from './GroupTile';
@@ -69,8 +69,9 @@ export type RoomScreenProps = {
 };
 
 /**
- * I25 and I26: a community's room. The header carries the member count and the person's credit balance; the messages are
- * read free, newest at the bottom, live; the host's own messages carry a Host tag; the composer sends one message
+ * I25 and I26: a community's room, read from `GET /communities/:id/room` (the room, the person's role in it and what one
+ * message costs them). The header carries the member count and the person's credit balance; the messages are read free,
+ * newest at the bottom, live; the host's own messages carry a Host tag; the composer states the price and sends one message
  * at a time. A person who is not in the room sees what it is and, for an open one, a Join button.
  */
 export function RoomScreen({ id, onBack }: RoomScreenProps) {
@@ -112,7 +113,7 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
-  const room = useQuery({ queryKey: roomKey(id), queryFn: () => fetchCommunity(id) }, queryClient);
+  const room = useQuery({ queryKey: roomKey(id), queryFn: () => fetchRoom(id) }, queryClient);
   const credits = useCredits();
   const messages = useRoomMessages(id, focused);
   const [draft, setDraft] = useState<{ id: number; text: string } | undefined>(undefined);
@@ -198,14 +199,14 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
     >
       {header}
       <View style={styles.body}>{body}</View>
-      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} cost={room.data?.messageCostInCredits} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
     </KeyboardAvoidingView>
   );
 }
 
 const roomBarBack = 40;
 
-function Thread({ room, messages, onEdit }: { room: Community | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void }) {
+function Thread({ room, messages, onEdit }: { room: RoomView | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void }) {
   const { colors } = useWawu();
   const list = useRef<FlatList<Item>>(null);
   const [atBottom, setAtBottom] = useState(true);
@@ -331,11 +332,10 @@ function Gap() {
   return <View style={styles.gap} />;
 }
 
-/** The person is not in the room: what it is, and a way in when it is open. */
-function NotMemberPanel({ room }: { room: Community }) {
+/** The person is not in the room: what it is, and a way in when it is open. The room view says whether their request is still with the host (`role` pending). */
+function NotMemberPanel({ room }: { room: RoomView }) {
   const join = useJoinCommunity();
-  const membership = useQuery({ queryKey: membershipKey(room.id), queryFn: () => fetchMembership(room.id) }, queryClient);
-  const waiting = membership.data?.status === 'pending';
+  const waiting = room.role === 'pending';
   const isOpen = room.kind === 'open';
   return (
     <View style={styles.notMember} testID="room-not-member">

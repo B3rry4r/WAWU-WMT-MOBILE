@@ -70,7 +70,8 @@ function suggestion(id: string, name: string, over: Record<string, unknown> = {}
 }
 
 const MINE = 'GET /communities/mine?page=1&perPage=20';
-const ALL = 'GET /communities?page=1&perPage=20';
+const SUGGESTED = 'GET /communities/suggested?page=1&perPage=20';
+const SUGGESTED_2 = 'GET /communities/suggested?page=2&perPage=20';
 
 beforeEach(() => {
   mockFocused = true;
@@ -79,6 +80,7 @@ beforeEach(() => {
   queryClient.clear();
   answers = {
     'GET /credits': [ok({ userWawuId: ME, creditBalance: 48, trialEndsAt: null })],
+    'GET /communities/message-cost': [ok({ creditsPerMessage: 1 })],
     'GET /users/me': [ok({ wawuUserId: ME, firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null, verification })],
   };
 });
@@ -92,6 +94,12 @@ afterEach(async () => {
   queryClient.clear();
 });
 
+const wrapView = () => (
+  <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}>
+    <CommunitiesView />
+  </SafeAreaProvider>
+);
+
 async function renderView() {
   return rtl.render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}>
@@ -103,17 +111,47 @@ async function renderView() {
 describe('Communities (I24)', () => {
   it('a user sees their WAWU Credits as a count, and that reading is free', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
-    expect(rtl.screen.getByText('Reading is free')).toBeTruthy();
+    expect(await rtl.screen.findByText('Reading is free · 1 credit per message you send')).toBeTruthy();
     expect(rtl.screen.queryByText(/₦|naira/i)).toBeNull();
+    expect(sent).toContain('GET /communities/message-cost');
   });
+
+  it('the price of a message is the server\'s figure: 2 credits reads "2 credits per message you send"', async () => {
+    answers['GET /communities/message-cost'] = [ok({ creditsPerMessage: 2 })];
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged([])];
+    await renderView();
+    expect(await rtl.screen.findByText('Reading is free · 2 credits per message you send')).toBeTruthy();
+  });
+
+  it('says only that reading is free while the price loads, and when it cannot be read, and states it once it can', async () => {
+    const boom = refuse(500, 'Something went wrong.');
+    answers['GET /communities/message-cost'] = [boom, boom, boom, ok({ creditsPerMessage: 1 })];
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged([])];
+    const view = await renderView();
+    expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
+    expect(rtl.screen.getByText('Reading is free')).toBeTruthy();
+    // The price fails for real (500, retried, still 500): the strip never invents a figure.
+    await rtl.waitFor(() => expect(sent.filter((request) => request === 'GET /communities/message-cost')).toHaveLength(3), { timeout: 8000 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(rtl.screen.getByText('Reading is free')).toBeTruthy();
+    expect(rtl.screen.queryByText(/credit per message|credits per message/)).toBeNull();
+    // Coming back to the view reads it again.
+    mockFocused = false;
+    await view.rerender(wrapView());
+    mockFocused = true;
+    await view.rerender(wrapView());
+    expect(await rtl.screen.findByText('Reading is free · 1 credit per message you send')).toBeTruthy();
+  }, 20_000);
 
   it('shows the balance the server holds, and "1 WAWU Credit" for one', async () => {
     answers['GET /credits'] = [ok({ userWawuId: ME, creditBalance: 1, trialEndsAt: null })];
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('1 WAWU Credit')).toBeTruthy();
   });
@@ -121,7 +159,7 @@ describe('Communities (I24)', () => {
   it('says so when the balance cannot be read, and does not invent one', async () => {
     answers['GET /credits'] = [refuse(500, 'Something went wrong.'), refuse(500, 'Something went wrong.'), refuse(500, 'Something went wrong.')];
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('Your balance could not be read', {}, { timeout: 8000 })).toBeTruthy();
     expect(rtl.screen.queryByText(/WAWU Credits$/, { exact: false })).not.toBeNull();
@@ -135,7 +173,7 @@ describe('Communities (I24)', () => {
         mine('r2', 'Pricing clinic', { kind: 'private', lastMessage: { id: 'x', text: 'office hours at 6pm', imageUrl: null, sentAt: new Date().toISOString(), senderWawuId: 'u3', sender: sender('u3', 'Kemi Okafor') } }),
       ]),
     ];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('Lagos Freelancers')).toBeTruthy();
     expect(rtl.screen.getByText('Tolu: who’s at the meetup Sat?')).toBeTruthy();
@@ -153,7 +191,7 @@ describe('Communities (I24)', () => {
         mine('r3', 'Quiet', { lastMessage: null, lastActivityAt: null }),
       ]),
     ];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('You: on my way')).toBeTruthy();
     expect(rtl.screen.getByText('Tolu: Photo')).toBeTruthy();
@@ -162,7 +200,7 @@ describe('Communities (I24)', () => {
 
   it('shows how many messages are unread in a room, and nothing for a room with none', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers', { unreadCount: 3 }), mine('r2', 'Pricing clinic', { unreadCount: 0 })])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('3')).toBeTruthy();
     expect(rtl.screen.getByLabelText(/Lagos Freelancers.*3 unread/)).toBeTruthy();
@@ -171,32 +209,33 @@ describe('Communities (I24)', () => {
 
   it('a user can open a room they are in', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     await rtl.fireEvent.press(await rtl.screen.findByLabelText(/^Lagos Freelancers/));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/[id]', params: { id: 'r1' } });
   });
 
-  it('offers rooms they are not in, with the member count and whether they are open, and not the ones they are in', async () => {
+  it('offers the open rooms the server suggests, in its order (most members first), each with the member count and Join', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [
-      paged([
-        suggestion('r1', 'Lagos Freelancers'),
-        suggestion('r3', 'Afrobeats producers', { memberCount: 2100 }),
-        suggestion('r4', 'Founders under 30', { kind: 'private', memberCount: 640 }),
-      ]),
+    answers[SUGGESTED] = [
+      paged([suggestion('r3', 'Zebra club', { memberCount: 2100 }), suggestion('r5', 'Afrobeats producers', { memberCount: 12 })]),
     ];
     await renderView();
     expect(await rtl.screen.findByText('Suggested')).toBeTruthy();
     expect(rtl.screen.getByText('2.1K members · open')).toBeTruthy();
-    expect(rtl.screen.getByText('640 members · private')).toBeTruthy();
-    expect(rtl.screen.getAllByText('Lagos Freelancers')).toHaveLength(1);
-    expect(rtl.screen.getAllByText('Join')).toHaveLength(1);
+    expect(rtl.screen.getByText('12 members · open')).toBeTruthy();
+    expect(rtl.screen.getAllByText('Join')).toHaveLength(2);
+    // The server's order stands: the phone does not sort them by name.
+    const order = rtl.screen.getAllByLabelText(/^Join /).map((node) => node.props.accessibilityLabel as string);
+    expect(order).toEqual(['Join Zebra club, 2.1K members', 'Join Afrobeats producers, 12 members']);
+    // The suggestions come from their own route, not from the list of every room.
+    expect(sent).toContain(SUGGESTED);
+    expect(sent.some((request) => request.startsWith('GET /communities?'))).toBe(false);
   });
 
   it('a user can Join an open room: the server joins them, and the room opens', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')]), paged([mine('r1', 'Lagos Freelancers'), mine('r3', 'Afrobeats producers')])];
-    answers[ALL] = [paged([suggestion('r3', 'Afrobeats producers')]), paged([])];
+    answers[SUGGESTED] = [paged([suggestion('r3', 'Afrobeats producers')]), paged([])];
     answers['POST /communities/r3/join'] = [ok({ id: 'mem', userWawuId: ME, status: 'joined', requestedAt: '2026-10-07T10:00:00Z', communityId: 'r3', joinedAt: '2026-10-07T10:00:00Z' })];
     await renderView();
     await rtl.fireEvent.press(await rtl.screen.findByLabelText(/^Join Afrobeats producers/));
@@ -208,7 +247,7 @@ describe('Communities (I24)', () => {
 
   it('a join that fails says so on the row and can be tried again', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([suggestion('r3', 'Afrobeats producers')])];
+    answers[SUGGESTED] = [paged([suggestion('r3', 'Afrobeats producers')])];
     answers['POST /communities/r3/join'] = [refuse(500, 'Something went wrong.'), ok({ id: 'mem', userWawuId: ME, status: 'joined', requestedAt: '2026-10-07T10:00:00Z', communityId: 'r3', joinedAt: '2026-10-07T10:00:00Z' })];
     await renderView();
     await rtl.fireEvent.press(await rtl.screen.findByLabelText(/^Join Afrobeats producers/));
@@ -218,20 +257,54 @@ describe('Communities (I24)', () => {
     await rtl.waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
   });
 
-  it('draws a private room with its lock and no way in: asking is another task\'s', async () => {
+  it('does not list a private room: asking to join it is another task\'s screen (R-47)', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([suggestion('r4', 'Founders under 30', { kind: 'private', memberCount: 640 })])];
+    answers[SUGGESTED] = [paged([suggestion('r4', 'Founders under 30', { kind: 'private', memberCount: 640 }), suggestion('r3', 'Afrobeats producers')])];
     await renderView();
-    const row = await rtl.screen.findByLabelText(/^Founders under 30, private/);
-    expect(row.props.accessibilityRole).not.toBe('button');
+    expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
+    expect(rtl.screen.queryByText('Founders under 30')).toBeNull();
+    expect(rtl.screen.queryByLabelText(/Founders under 30/)).toBeNull();
     expect(rtl.screen.queryByText('Ask')).toBeNull();
     expect(rtl.screen.queryByText('Buy')).toBeNull();
-    expect(rtl.screen.queryByRole('button', { name: /Founders under 30/ })).toBeNull();
+    // Nothing on the screen is a row that does nothing: every suggestion is a button that joins.
+    expect(rtl.screen.getAllByText('Join')).toHaveLength(1);
+  });
+
+  it('a page that holds only private rooms is followed by the next one, until a room that can be joined turns up', async () => {
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged([suggestion('p1', 'Private one', { kind: 'private' }), suggestion('p2', 'Private two', { kind: 'private' })], 2)];
+    answers[SUGGESTED_2] = [paged([suggestion('r3', 'Afrobeats producers')])];
+    await renderView();
+    // Nobody scrolled: the phone itself reads on, and the empty state never shows while more pages exist.
+    expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
+    expect(sent).toContain(SUGGESTED_2);
+    expect(rtl.screen.queryByTestId('communities-empty')).toBeNull();
+    expect(rtl.screen.queryByText('Private one')).toBeNull();
+  });
+
+  it('a person in no room, when every suggestion is private, sees the empty state and no row that does nothing', async () => {
+    answers[MINE] = [paged([])];
+    answers[SUGGESTED] = [paged([suggestion('p1', 'Private one', { kind: 'private' })])];
+    await renderView();
+    expect(await rtl.screen.findByTestId('communities-empty')).toBeTruthy();
+    expect(rtl.screen.queryByText('Private one')).toBeNull();
+    expect(rtl.screen.queryByText('Suggested')).toBeNull();
+  });
+
+  it('does not say there are no communities while the next page of suggestions, which may hold a room to join, is still on its way', async () => {
+    answers[MINE] = [paged([])];
+    answers[SUGGESTED] = [paged([suggestion('p1', 'Private one', { kind: 'private' })], 2)];
+    answers[SUGGESTED_2] = ['hold'];
+    await renderView();
+    await rtl.waitFor(() => expect(sent).toContain(SUGGESTED_2));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(rtl.screen.queryByTestId('communities-empty')).toBeNull();
+    expect(rtl.screen.getByTestId('communities-loading-more')).toBeTruthy();
   });
 
   it('a user who is in no room sees where rooms will be, and the rooms they could join', async () => {
     answers[MINE] = [paged([])];
-    answers[ALL] = [paged([suggestion('r3', 'Afrobeats producers')])];
+    answers[SUGGESTED] = [paged([suggestion('r3', 'Afrobeats producers')])];
     await renderView();
     expect(await rtl.screen.findByTestId('communities-none')).toBeTruthy();
     expect(rtl.screen.getByText('You have not joined a community yet.')).toBeTruthy();
@@ -240,7 +313,7 @@ describe('Communities (I24)', () => {
 
   it('a user with no rooms and none to join sees an empty state', async () => {
     answers[MINE] = [paged([])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByTestId('communities-empty')).toBeTruthy();
     expect(rtl.screen.getByText('No communities yet')).toBeTruthy();
@@ -257,7 +330,7 @@ describe('Communities (I24)', () => {
   it('shows the server\'s sentence when the rooms cannot be read, and a retry reads them', async () => {
     const sentence = 'Something went wrong. Please try again.';
     answers[MINE] = [refuse(500, sentence), refuse(500, sentence), refuse(500, sentence), paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByTestId('communities-error', {}, { timeout: 8000 })).toBeTruthy();
     expect(rtl.screen.getByText(sentence)).toBeTruthy();
@@ -273,7 +346,7 @@ describe('Communities (I24)', () => {
 
   it('keeps the person\'s rooms and says suggestions failed when only the suggestions fail', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [refuse(500, 'Something went wrong.'), refuse(500, 'Something went wrong.'), refuse(500, 'Something went wrong.'), paged([suggestion('r3', 'Afrobeats producers')])];
+    answers[SUGGESTED] = [refuse(500, 'Something went wrong.'), refuse(500, 'Something went wrong.'), refuse(500, 'Something went wrong.'), paged([suggestion('r3', 'Afrobeats producers')])];
     await renderView();
     expect(await rtl.screen.findByTestId('communities-suggested-error', {}, { timeout: 8000 })).toBeTruthy();
     expect(rtl.screen.getByText('Lagos Freelancers')).toBeTruthy();
@@ -284,7 +357,7 @@ describe('Communities (I24)', () => {
   it('reads more rooms at the end of the list, the person\'s own first and suggestions only after them', async () => {
     answers[MINE] = [paged([mine('r0', 'Room 0'), mine('r1', 'Room 1')], 2)];
     answers['GET /communities/mine?page=2&perPage=20'] = [paged([mine('r2', 'Room 2')])];
-    answers[ALL] = [paged([suggestion('s1', 'Afrobeats producers')])];
+    answers[SUGGESTED] = [paged([suggestion('s1', 'Afrobeats producers')])];
     await renderView();
     await rtl.screen.findByText('Room 0');
     // Nothing is suggested while some of the person's own rooms are still to come.
@@ -293,12 +366,12 @@ describe('Communities (I24)', () => {
     await rtl.fireEvent(rtl.screen.getByTestId('communities-list'), 'endReached');
     expect(await rtl.screen.findByText('Room 2')).toBeTruthy();
     expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
-    expect(sent.indexOf('GET /communities/mine?page=2&perPage=20')).toBeLessThan(sent.indexOf(ALL));
+    expect(sent.indexOf('GET /communities/mine?page=2&perPage=20')).toBeLessThan(sent.indexOf(SUGGESTED));
   });
 
   it('draws only a window of a very long list of rooms', async () => {
     answers[MINE] = [paged(Array.from({ length: 800 }, (_, i) => mine(`r${i}`, `Room ${i}`)))];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     await rtl.screen.findByText('Room 0');
     expect(rtl.screen.queryAllByLabelText(/^Room \d+/).length).toBeLessThan(80);
@@ -307,7 +380,7 @@ describe('Communities (I24)', () => {
   it('a very long room name stays on one line', async () => {
     const name = 'The Very Long Named Community Of Lagos Based Freelancers And Friends';
     answers[MINE] = [paged([mine('r1', name)])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     const title = await rtl.screen.findByText(name);
     expect(title.props.numberOfLines).toBe(1);
@@ -323,7 +396,7 @@ describe('the balance recovers (verifier defect)', () => {
   it('a balance that failed is read again when the person comes back to the view', async () => {
     answers['GET /credits'] = [boom, boom, boom, ok({ userWawuId: ME, creditBalance: 48, trialEndsAt: null })];
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     const view = await renderView();
     expect(await rtl.screen.findByText('Your balance could not be read', {}, { timeout: 8000 })).toBeTruthy();
     mockFocused = false;
@@ -336,11 +409,50 @@ describe('the balance recovers (verifier defect)', () => {
   it('a balance that failed is read again when the list\'s Try again succeeds', async () => {
     answers['GET /credits'] = [boom, boom, boom, ok({ userWawuId: ME, creditBalance: 48, trialEndsAt: null })];
     answers[MINE] = [boom, boom, boom, paged([mine('r1', 'Lagos Freelancers')])];
-    answers[ALL] = [paged([])];
+    answers[SUGGESTED] = [paged([])];
     await renderView();
     await rtl.screen.findByTestId('communities-error', {}, { timeout: 8000 });
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
     expect(await rtl.screen.findByText('Lagos Freelancers')).toBeTruthy();
     expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
+  }, 20_000);
+});
+
+describe('the person\'s own name recovers (verifier defect 16)', () => {
+  const boom = refuse(500, 'Something went wrong.');
+  const own = { id: 'x', text: 'on my way', imageUrl: null, sentAt: new Date().toISOString(), senderWawuId: ME, sender: sender(ME, 'Ada Obi') };
+  const profile = ok({ wawuUserId: ME, firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null, verification });
+
+  it('after the Hub was unreachable at first open, Try again shows the person\'s own last message as "You:", not their first name', async () => {
+    answers['GET /users/me'] = ['offline', 'offline', 'offline', profile];
+    answers[MINE] = ['offline', 'offline', 'offline', paged([mine('r1', 'Mine', { lastMessage: own })])];
+    answers[SUGGESTED] = [paged([])];
+    await renderView();
+    await rtl.screen.findByTestId('communities-error', {}, { timeout: 8000 });
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    expect(await rtl.screen.findByText('You: on my way')).toBeTruthy();
+    expect(rtl.screen.queryByText('Ada: on my way')).toBeNull();
+  }, 20_000);
+
+  it('a profile that failed while the list loaded is read again when the person pulls to refresh, and not when it was fine', async () => {
+    answers['GET /users/me'] = [boom, boom, boom, profile];
+    answers[MINE] = [paged([mine('r1', 'Mine', { lastMessage: own })])];
+    answers[SUGGESTED] = [paged([])];
+    await renderView();
+    // The profile fails for real (500, retried twice, still 500) while the list loads: until it is known the row names the person by first name.
+    await rtl.waitFor(() => expect(sent.filter((request) => request === 'GET /users/me')).toHaveLength(3), { timeout: 8000 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await rtl.screen.findByText('Ada: on my way')).toBeTruthy();
+    await rtl.act(async () => {
+      const list = rtl.screen.getByTestId('communities-list');
+      await list.props.refreshControl.props.onRefresh();
+    });
+    expect(await rtl.screen.findByText('You: on my way')).toBeTruthy();
+    expect(sent.filter((request) => request === 'GET /users/me')).toHaveLength(4);
+    // Now it is known: another pull does not ask for it again.
+    await rtl.act(async () => {
+      await rtl.screen.getByTestId('communities-list').props.refreshControl.props.onRefresh();
+    });
+    expect(sent.filter((request) => request === 'GET /users/me')).toHaveLength(4);
   }, 20_000);
 });

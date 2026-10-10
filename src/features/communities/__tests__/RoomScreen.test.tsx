@@ -67,7 +67,6 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 // Loaded after `fetch` is replaced: the API client keeps the fetch it finds when it is created.
 const { adoptSession, resetSessionForTests, signOut } = require('@/api/session') as typeof import('@/api/session');
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
-const { retainLive } = require('@/features/inbox/live') as typeof import('@/features/inbox/live');
 const { RoomScreen, roomItems } = require('../RoomScreen') as typeof import('../RoomScreen');
 
 const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -88,6 +87,10 @@ const room = (over: object = {}) => ({
   hostWawuId: HOST,
   memberCount: 1204,
   messagesToday: 3,
+  slug: 'lagos-freelancers',
+  link: 'wawu/c/lagos-freelancers',
+  role: 'member',
+  messageCostInCredits: 1,
   ...over,
 });
 
@@ -114,7 +117,7 @@ const MESSAGES = `GET /communities/${ROOM}/messages?page=1&perPage=20`;
 
 function serve(extra: Record<string, Answer[]> = {}) {
   answers = {
-    [`GET /communities/${ROOM}`]: [ok(room())],
+    [`GET /communities/${ROOM}/room`]: [ok(room())],
     'GET /credits': [credits(48)],
     'GET /users/me': [me],
     [`POST /communities/${ROOM}/read`]: [ok({ communityId: ROOM, lastReadAt: new Date().toISOString() })],
@@ -153,8 +156,6 @@ async function connect(cursor = 'c0') {
 
 const liveMessage = (m: CommunityMessage, cursor: string, communityId = ROOM) => ({ type: 'community.message', cursor, communityId, message: m });
 
-let release: (() => void) | null = null;
-
 beforeEach(() => {
   sent = [];
   posts = [];
@@ -169,8 +170,6 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  release?.();
-  release = null;
   await queryClient.cancelQueries();
   await rtl.act(async () => {
     await signOut();
@@ -225,7 +224,7 @@ describe('a community room (I25)', () => {
   });
 
   it('a room with no members yet says "0 members"', async () => {
-    answers[`GET /communities/${ROOM}`] = [ok(room({ memberCount: 0 }))];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ memberCount: 0 }))];
     answers[MESSAGES] = [paged([])];
     await renderRoom();
     await rtl.screen.findByTestId('room-empty');
@@ -260,7 +259,7 @@ describe('a community room (I25)', () => {
 
   it('a very long room name stays on one line in the header', async () => {
     const name = 'The Very Long Named Community Of Lagos Based Freelancers And Friends';
-    answers[`GET /communities/${ROOM}`] = [ok(room({ name }))];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ name }))];
     answers[MESSAGES] = [paged([])];
     await renderRoom();
     const title = await rtl.screen.findByTestId('room-name');
@@ -346,7 +345,7 @@ describe('sending (I26)', () => {
     await rtl.screen.findByText('hello');
     await rtl.screen.findByText('48 credits');
     await type('Count me in, bringing the bank logo.');
-    expect(rtl.screen.getByText('Send')).toBeTruthy();
+    expect(rtl.screen.getByText('Send · 1')).toBeTruthy();
     answers[`POST /communities/${ROOM}/messages`] = [created(message('Count me in, bringing the bank logo.', ME, { costInCredits: 1, sender: undefined }))];
     await pressSend();
     expect(await rtl.screen.findByText('Count me in, bringing the bank logo.')).toBeTruthy();
@@ -508,7 +507,7 @@ describe('sending (I26)', () => {
 describe('a person who is not in the room', () => {
   it('sees what an open room is and can Join it, and then reads it', async () => {
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.'), paged([message('welcome in', HOST)])];
-    answers[`GET /communities/${ROOM}/membership`] = [ok(null)];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ role: 'none' })), ok(room({ role: 'member' }))];
     answers[`POST /communities/${ROOM}/join`] = [ok({ id: 'mem', userWawuId: ME, status: 'joined', requestedAt: '2026-10-07T10:00:00Z', communityId: ROOM, joinedAt: '2026-10-07T10:00:00Z' })];
     await renderRoom();
     expect(await rtl.screen.findByTestId('room-not-member')).toBeTruthy();
@@ -522,7 +521,7 @@ describe('a person who is not in the room', () => {
 
   it('is told why when joining fails, and can try again', async () => {
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
-    answers[`GET /communities/${ROOM}/membership`] = [ok(null)];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ role: 'none' }))];
     answers[`POST /communities/${ROOM}/join`] = [refuse(500, 'Something went wrong. Please try again.')];
     await renderRoom();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('room-join'));
@@ -531,9 +530,8 @@ describe('a person who is not in the room', () => {
   });
 
   it('sees a private room as private, with no button to join or to ask (asking is another task\'s)', async () => {
-    answers[`GET /communities/${ROOM}`] = [ok(room({ kind: 'private' }))];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'none' }))];
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
-    answers[`GET /communities/${ROOM}/membership`] = [ok(null)];
     await renderRoom();
     expect(await rtl.screen.findByTestId('room-private-note')).toBeTruthy();
     expect(rtl.screen.getByText('This community is private. Only members can read it.')).toBeTruthy();
@@ -543,16 +541,15 @@ describe('a person who is not in the room', () => {
   });
 
   it('whose request to a private room is still with the host is told so', async () => {
-    answers[`GET /communities/${ROOM}`] = [ok(room({ kind: 'private' }))];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'pending' }))];
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
-    answers[`GET /communities/${ROOM}/membership`] = [ok({ id: 'mem', userWawuId: ME, status: 'pending', requestedAt: '2026-10-07T10:00:00Z', communityId: ROOM, joinedAt: null })];
     await renderRoom();
     expect(await rtl.screen.findByText('Your request is with the host. You can read here once they approve it.')).toBeTruthy();
   });
 
   it('who was removed from a room while reading it, and tries to send, lands on the same page', async () => {
     answers[MESSAGES] = [paged([message('hello', 'u2')]), refuse(403, 'Join this community to read or post in it.')];
-    answers[`GET /communities/${ROOM}/membership`] = [ok(null)];
+    answers[`GET /communities/${ROOM}/room`] = [ok(room()), ok(room({ role: 'none' }))];
     await renderRoom();
     await rtl.screen.findByText('hello');
     await type('am I still in?');
@@ -563,7 +560,7 @@ describe('a person who is not in the room', () => {
   });
 
   it('is told a room is not available when the server hides it (404), and is offered nothing else', async () => {
-    answers[`GET /communities/${ROOM}`] = [refuse(404, 'Community not found')];
+    answers[`GET /communities/${ROOM}/room`] = [refuse(404, 'Community not found')];
     answers[MESSAGES] = [refuse(404, 'Community not found')];
     await renderRoom();
     expect(await rtl.screen.findByTestId('room-unavailable')).toBeTruthy();
@@ -574,7 +571,7 @@ describe('a person who is not in the room', () => {
 
 describe('when something goes wrong', () => {
   it('a room that cannot be read shows the server\'s sentence and a retry that reads it', async () => {
-    answers[`GET /communities/${ROOM}`] = [refuse(500, 'Something went wrong. Please try again.'), refuse(500, 'Something went wrong. Please try again.'), refuse(500, 'Something went wrong. Please try again.'), ok(room())];
+    answers[`GET /communities/${ROOM}/room`] = [refuse(500, 'Something went wrong. Please try again.'), refuse(500, 'Something went wrong. Please try again.'), refuse(500, 'Something went wrong. Please try again.'), ok(room())];
     answers[MESSAGES] = [paged([message('back again', 'u2')])];
     await renderRoom();
     expect(await rtl.screen.findByTestId('room-error', {}, { timeout: 8000 })).toBeTruthy();
@@ -606,7 +603,6 @@ describe('when something goes wrong', () => {
 describe('live messages', () => {
   async function openLive(first: CommunityMessage[]) {
     answers[MESSAGES] = [paged(first)];
-    release = retainLive();
     await renderRoom();
     await rtl.screen.findByTestId('room-messages').catch(() => undefined);
     return connect();
@@ -687,7 +683,7 @@ describe('live messages', () => {
 describe('defects found by the verifier', () => {
   it('one tap on Try again recovers a room that failed to open together with its messages', async () => {
     const boom = refuse(500, 'Something went wrong. Please try again.');
-    answers[`GET /communities/${ROOM}`] = [boom, boom, boom, ok(room())];
+    answers[`GET /communities/${ROOM}/room`] = [boom, boom, boom, ok(room())];
     answers[MESSAGES] = [boom, boom, boom, paged([message('all back', 'u2')])];
     await renderRoom();
     await rtl.screen.findByTestId('room-error', {}, { timeout: 8000 });
@@ -720,5 +716,113 @@ describe('defects found by the verifier', () => {
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Edit' }));
     await rtl.waitFor(() => expect(rtl.screen.getByTestId('composer-input').props.value).toBe('a very long message'));
     expect(rtl.screen.queryByText('Not sent')).toBeNull();
+  });
+});
+
+describe('the price of a message, from the server (G-450)', () => {
+  it('the field says "Message · 1 credit" and the button "Send · 1", from the room view', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    expect(sent).toContain(`GET /communities/${ROOM}/room`);
+    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message · 1 credit');
+    await type('Count me in');
+    expect(rtl.screen.getByText('Send · 1')).toBeTruthy();
+    expect(rtl.screen.getByLabelText('Send message, 1 credit')).toBeTruthy();
+    expect(rtl.screen.queryByText(/₦|naira/i)).toBeNull();
+  });
+
+  it('shows the figure the server sends, not a built-in one: 3 credits reads "Message · 3 credits" and "Send · 3"', async () => {
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ messageCostInCredits: 3 }))];
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message · 3 credits');
+    await type('Count me in');
+    expect(rtl.screen.getByText('Send · 3')).toBeTruthy();
+  });
+
+  it('the host sends free, so the field and the button carry no figure', async () => {
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ role: 'host', messageCostInCredits: 0 }))];
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message');
+    await type('Welcome everyone');
+    expect(rtl.screen.getByText('Send')).toBeTruthy();
+    expect(rtl.screen.queryByText(/^Send ·/)).toBeNull();
+  });
+});
+
+describe('a room opened with no tabs underneath keeps the live connection (verifier defect 13)', () => {
+  it('opens the connection itself, shows a message another account sends, and closes it when the room is left', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    // Nothing else holds the connection: no Inbox, no tab bar, as after a reload on the room, a room link or a push.
+    const view = await renderRoom();
+    await rtl.screen.findByText('hello');
+    const socket = await connect();
+    const incoming = message('from another account', 'u2');
+    await rtl.act(async () => socket.say(liveMessage(incoming, 'c1')));
+    expect(await rtl.screen.findByText('from another account')).toBeTruthy();
+    expect(socket.readyState).toBe(1);
+    await rtl.act(async () => view.unmount());
+    expect(socket.readyState).toBe(3);
+  });
+
+  it('leaving the room does not close a connection the Inbox still holds', async () => {
+    const { retainLive } = require('@/features/inbox/live') as typeof import('@/features/inbox/live');
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    const inbox = retainLive();
+    const view = await renderRoom();
+    await rtl.screen.findByText('hello');
+    const socket = await connect();
+    await rtl.act(async () => view.unmount());
+    expect(socket.readyState).toBe(1);
+    inbox();
+    expect(socket.readyState).toBe(3);
+  });
+});
+
+describe('a send that may have been stored is never sent, or charged, twice (verifier defect 15)', () => {
+  const sendTwice = async () => {
+    await rtl.screen.findByText('hello');
+    await type('ok');
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send again' }));
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
+  };
+  const posted = () => posts.filter((request) => request.path === `/communities/${ROOM}/messages`).length;
+
+  it('an earlier message of the person\'s own with the same words is not taken for the one that did not land', async () => {
+    const earlier = message('ok', ME);
+    const later = message('ok', ME);
+    // The room already holds an "ok" of theirs; the new one never reached the server.
+    answers[MESSAGES] = [paged([earlier, message('hello', 'u2')])];
+    await renderRoom();
+    answers[`POST /communities/${ROOM}/messages`] = ['offline', created(later)];
+    await sendTwice();
+    expect(posted()).toBe(2);
+    expect(rtl.screen.getAllByText('ok')).toHaveLength(2);
+  });
+
+  it('a 5xx may have stored the message: Send again looks for it first and posts nothing twice', async () => {
+    const stored = message('ok', ME);
+    answers[MESSAGES] = [paged([message('hello', 'u2')]), paged([stored, message('hello', 'u2')])];
+    await renderRoom();
+    // The Hub stored the message and then failed to answer.
+    answers[`POST /communities/${ROOM}/messages`] = [refuse(500, 'Something went wrong. Please try again.'), created(message('ok', ME))];
+    await sendTwice();
+    expect(posted()).toBe(1);
+    expect(rtl.screen.getAllByText('ok')).toHaveLength(1);
+  });
+
+  it('a refusal that cannot have stored it (429) is sent again without looking first', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    answers[`POST /communities/${ROOM}/messages`] = [refuse(429, 'Too many messages. Slow down.'), created(message('ok', ME))];
+    await sendTwice();
+    expect(posted()).toBe(2);
+    expect(sent.filter((request) => request === MESSAGES)).toHaveLength(1);
   });
 });

@@ -5,7 +5,7 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { fullName } from '@/features/profile-edit/form';
-import { onLiveEvent, onLiveSynced } from '@/features/inbox/live';
+import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { refreshInbox } from '@/features/inbox/unread';
 
 import {
@@ -107,9 +107,14 @@ export function useRoomMessages(id: string, looking: boolean) {
         .then((page) => take(page.items))
         .catch(() => undefined);
     });
+    // A room keeps the connection up while it is open, whatever is underneath it: opened from a reload, a room link or a push
+    // there are no tabs below it to hold the socket (INBOX-05 defect 13). The connection counts its holders, so under the tabs
+    // this is a second hold, and the socket closes only when the last one lets go.
+    const release = retainLive();
     return () => {
       offEvent();
       offSynced();
+      release();
       // A room left open for a long read holds only its newest page afterwards, so coming back is one request.
       queryClient.setQueryData(messagesKey(id), (data: typeof query.data) =>
         data ? { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) } : data,
