@@ -5,6 +5,8 @@ import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
 import { layout, space } from '@/theme';
 
+import type { SignupChannel } from '@/api/identity';
+
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
 import { Banner } from './Banner';
@@ -20,6 +22,14 @@ const TITLE = { size: 24, tracking: -0.03, leading: 1.15, apart: 6 } as const;
 const BODY_GAP = 14;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** The line under A3's heading, by where the code will go (BRIEF, A3 and A4). */
+const CHANNEL_LINE: Record<SignupChannel, string> = {
+  // MECHANISM: WAWU ID mails the 6-digit code through Resend (EmailSignupService) when its SIGNUP_VERIFY_CHANNEL is email, R-39.
+  email: "We'll email you a code to confirm your address.",
+  // MECHANISM: WAWU ID texts the 6-digit code (PhoneSignupService) while its SIGNUP_VERIFY_CHANNEL is phone, the default.
+  phone: "We'll text a code to your phone.",
+};
+
 export type SignUpValues = { email: string; phone: string; password: string };
 
 export type SignUpScreenProps = {
@@ -28,6 +38,11 @@ export type SignUpScreenProps = {
   onBack?: () => void;
   /** A sign-up is waiting for its code: A3 offers to go back and enter it. */
   onEnterSentCode?: () => void;
+  /**
+   * Which way WAWU ID will send the code (`GET /auth/signup/channel`), so the line under the heading names the channel
+   * A4 will then name. Null or left out while it is not known: the line is not drawn, never guessed.
+   */
+  channel?: SignupChannel | null;
   /** What the fields start with (a preview, never the app). */
   initial?: Partial<SignUpValues>;
   /** A refusal to show at first (a preview, never the app). */
@@ -41,7 +56,7 @@ type Missing = { email?: string; phone?: string; password?: string };
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onBack, onEnterSentCode, channel, initial, initialFailure }: SignUpScreenProps) {
   const [email, setEmail] = useState(initial?.email ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [password, setPassword] = useState(initial?.password ?? '');
@@ -106,8 +121,8 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, ini
           <Text variant="h1" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size }}>
             {"Let's get you started"}
           </Text>
-          {/* MECHANISM: WAWU ID POST /auth/signup mails the 6-digit code to this email through Resend (EmailSignupService, R-39). */}
-          <Text variant="muted">{"We'll email you a code to confirm your address."}</Text>
+          {/* MECHANISM: WAWU ID POST /auth/signup sends the 6-digit code the way its SIGNUP_VERIFY_CHANNEL says (GET /auth/signup/channel): texted by default, mailed through Resend with `email` (EmailSignupService, R-39). */}
+          {channel ? <Text variant="muted">{CHANNEL_LINE[channel]}</Text> : null}
         </View>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="sign-up-banner" /> : null}
         <AuthField

@@ -2,6 +2,16 @@ import { isApiError } from '@/api/errors';
 
 import type { Failure } from './signInFailure';
 
+/**
+ * A4, mailed: the sign-up was made without the number typed, because another account holds it (AUTH-07 round 3: a mailed
+ * code proves no number, so it takes none). Said in plain words under the heading; adding and confirming a number later is
+ * BACKEND_GAPS G-222.
+ */
+export const PHONE_NOT_SAVED = {
+  title: "We couldn't add your phone number",
+  body: 'Another account already has that number. You can add a phone number later.',
+} as const;
+
 /** How long to wait, as `m:ss`, from the server's own seconds. */
 export function clock(seconds: number): string {
   const whole = Math.max(0, Math.ceil(seconds));

@@ -20,6 +20,7 @@ import { apiBaseUrl } from '@/api/env';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { clearAccountType } from '@/features/auth/accountType';
+import { forgetSignupChannel, signupChannel } from '@/features/auth/signupFlow';
 import { resetSignupGate } from '@/features/auth/signupGate';
 import { clearSignup, SIGNUP_ATTEMPT_KEY, SIGNUP_PHONE_KEY } from '@/features/auth/signupStore';
 
@@ -99,6 +100,8 @@ function installServer() {
 }
 
 const callsTo = (path: string) => calls.filter((c) => c.path === path);
+/** What the app has sent to start or finish a sign-up: A3 also reads which way the code will travel (a GET that sends nothing about the person). */
+const sentCalls = () => calls.filter((c) => c.path !== '/auth/signup/channel');
 
 beforeAll(async () => {
   const { unmount } = await renderRouter(routes);
@@ -111,8 +114,11 @@ beforeEach(async () => {
   resetSignupGate();
   clearAccountType();
   await clearSignup();
+  forgetSignupChannel();
   calls = [];
   answers = {
+    // What WAWU ID answers while SIGNUP_VERIFY_CHANNEL is unset or `phone`: the texted sign-up the suites below up to "AUTH-07" run.
+    'GET /auth/signup/channel': ok({ channel: 'phone' }),
     'POST /auth/signup': started(),
     'POST /auth/phone/verify/confirm': session,
     'GET /auth/signup/progress': progress('done'),
@@ -160,7 +166,7 @@ describe('A2 to A3', () => {
     expect(screen.queryByText(/BVN/)).toBeNull();
     expect(screen.queryByText(/NIBSS/)).toBeNull();
     expect(screen.queryByText(/wawu/i)).toBeNull();
-    expect(calls).toEqual([]);
+    expect(sentCalls()).toEqual([]);
   });
 
   it('Continue on A2 waits for a pick', async () => {
@@ -185,7 +191,7 @@ describe('A3: email, phone and password', () => {
     expect(screen.getByText('Enter your email.')).toBeTruthy();
     expect(screen.getByText('Enter your phone number.')).toBeTruthy();
     expect(screen.getByText('Use at least 8 characters.')).toBeTruthy();
-    expect(calls).toEqual([]);
+    expect(sentCalls()).toEqual([]);
   });
 
   it('a user can enter email, phone and password and tap Continue to reach A4; the earn pick is sent to WAWU ID as creator', async () => {
@@ -744,6 +750,10 @@ describe('AUTH-07: the sign-up code is mailed (R-39, SIGNUP_VERIFY_CHANNEL=email
   const MASKED = 'l•••@wawu.africa';
   const confirm = () => callsTo('/auth/signup/email-code/confirm');
 
+  beforeEach(() => {
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+  });
+
   async function toMailedA4(over: Record<string, unknown> = {}) {
     answers['POST /auth/signup'] = mailed(over);
     answers['POST /auth/signup/email-code/confirm'] = session;
@@ -754,7 +764,7 @@ describe('AUTH-07: the sign-up code is mailed (R-39, SIGNUP_VERIFY_CHANNEL=email
 
   it('A3 says the code is emailed, and a user who taps Continue reaches A4 as "Verify your email" with the masked address', async () => {
     await toA3();
-    expect(screen.getByText("We'll email you a code to confirm your address.")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("We'll email you a code to confirm your address.")).toBeTruthy());
     expect(screen.queryByText(/text/i)).toBeNull();
     answers['POST /auth/signup'] = mailed();
     await fillAndContinue();
@@ -956,5 +966,131 @@ describe('AUTH-07: the sign-up code is mailed (R-39, SIGNUP_VERIFY_CHANNEL=email
     await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
     expect(calls.filter((c) => c.path.includes('/phone/verify'))).toEqual([]);
     expect(calls.filter((c) => c.url.startsWith(apiBaseUrl))).toEqual([]);
+  });
+});
+
+describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says when the number was not added (F-A)', () => {
+  const EMAIL_LINE = "We'll email you a code to confirm your address.";
+  const TEXT_LINE = "We'll text a code to your phone.";
+  const MASKED = 'l•••@wawu.africa';
+  const NOTE_TITLE = "We couldn't add your phone number";
+  const NOTE_BODY = 'Another account already has that number. You can add a phone number later.';
+
+  it('with the setting unset or phone, A3 says the code is texted and A4 then says so: the same channel', async () => {
+    await toA3();
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    answers['POST /auth/signup'] = started();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+    expect(screen.getByText('Verify your phone')).toBeTruthy();
+  });
+
+  it('with the setting email, A3 says the code is emailed and A4 then says so: the same channel', async () => {
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    await toA3();
+    await waitFor(() => expect(screen.getByText(EMAIL_LINE)).toBeTruthy());
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+    answers['POST /auth/signup'] = mailed();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+    expect(screen.getByText('Verify your email')).toBeTruthy();
+  });
+
+  it('asks WAWU ID once, sends nothing about the person, and needs no sign-in', async () => {
+    await toA3();
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    await signupChannel();
+    await signupChannel();
+    const asked = callsTo('/auth/signup/channel');
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toMatchObject({ method: 'GET', body: {}, auth: null });
+  });
+
+  it('asks again on a later visit when the first ask failed, and draws the line once it knows', async () => {
+    delete answers['GET /auth/signup/channel'];
+    await toA3();
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    await expect(signupChannel()).resolves.toBe('email');
+    expect(callsTo('/auth/signup/channel')).toHaveLength(2);
+  });
+
+  it('when WAWU ID cannot be asked, A3 draws no line and does not guess, and Continue still works', async () => {
+    delete answers['GET /auth/signup/channel'];
+    await toA3();
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+    answers['POST /auth/signup'] = started();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+  });
+
+  it('draws no line for a channel it does not know', async () => {
+    answers['GET /auth/signup/channel'] = ok({ channel: 'carrier-pigeon' });
+    await toA3();
+    await waitFor(() => expect(callsTo('/auth/signup/channel').length).toBeGreaterThan(0));
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+  });
+
+  async function toMailedA4(over: Record<string, unknown> = {}) {
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    answers['POST /auth/signup'] = mailed(over);
+    await toA3();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+  }
+
+  it('A4 says the number was not added, in plain words, when the mailed sign-up was made without it', async () => {
+    await toMailedA4({ phoneNotSaved: true });
+    expect(screen.getByText(NOTE_TITLE)).toBeTruthy();
+    expect(screen.getByText(NOTE_BODY)).toBeTruthy();
+    expect(screen.getByTestId('phone-code-aside')).toBeTruthy();
+    expect(screen.getByText('Verify your email')).toBeTruthy();
+    expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
+    expect(JSON.stringify(screen.toJSON())).not.toContain('\u2014');
+  });
+
+  it('A4 says nothing about a number when it was added', async () => {
+    await toMailedA4();
+    expect(screen.queryByText(NOTE_TITLE)).toBeNull();
+    expect(screen.queryByTestId('phone-code-aside')).toBeNull();
+  });
+
+  it('A4 says it again when the app was closed on A4 and comes back', async () => {
+    mockVault.set(SIGNUP_PHONE_KEY, '+2348031234412');
+    mockVault.set(SIGNUP_ATTEMPT_KEY, 'secret-attempt-1');
+    answers['POST /auth/signup/resume'] = ok({
+      step: 'phone',
+      phone: '+2348031234412',
+      expiresIn: 500,
+      resendIn: 12,
+      emailCodeRequired: false,
+      accountType: 'creator',
+      channel: 'email',
+      maskedEmail: MASKED,
+      phoneNotSaved: true,
+    });
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+    expect(screen.getByText(NOTE_TITLE)).toBeTruthy();
+  });
+
+  it('a texted A4 never says it', async () => {
+    answers['POST /auth/signup'] = started({ phoneNotSaved: true });
+    await toA3();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+    expect(screen.queryByText(NOTE_TITLE)).toBeNull();
+  });
+
+  it('the right code still signs the person in when the number was not added', async () => {
+    answers['POST /auth/signup/email-code/confirm'] = session;
+    await toMailedA4({ phoneNotSaved: true });
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(callsTo('/auth/signup/email-code/confirm')[0].body).toEqual({ phone: '+2348031234412', attempt: 'secret-attempt-1', code: '481902' });
   });
 });

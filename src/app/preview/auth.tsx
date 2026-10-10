@@ -4,7 +4,7 @@ import { ApiError } from '@/api/errors';
 import { AccountTypeScreen } from '@/features/auth/AccountTypeScreen';
 import type { AccountType } from '@/features/auth/accountType';
 import { CodeScreen } from '@/features/auth/CodeScreen';
-import { emailOutcome, phoneOutcome } from '@/features/auth/signupFailure';
+import { emailOutcome, PHONE_NOT_SAVED, phoneOutcome } from '@/features/auth/signupFailure';
 import { SignUpScreen } from '@/features/auth/SignUpScreen';
 import { ForgotPasswordScreen } from '@/features/auth/ForgotPasswordScreen';
 import { SignInScreen } from '@/features/auth/SignInScreen';
@@ -43,9 +43,11 @@ import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
  *   lockfor=<seconds>                     the retryAfterSeconds on locked, busy
  *
  * AUTH-07 (R-39): screen=phone-code is A4 and A15 with the code MAILED ("Verify your email", "Sent to n•••@example.com"),
- * which is what WAWU ID does by default. channel=sms draws the texted version it replaced ("Verify your phone",
- * "Sent by SMS to 0803 ••• 4412"), what WAWU ID does with SIGNUP_VERIFY_CHANNEL=sms.
+ * which is what WAWU ID does with SIGNUP_VERIFY_CHANNEL=email. channel=sms draws the texted version ("Verify your phone",
+ * "Sent by SMS to 0803 ••• 4412"), what WAWU ID does by default (the value is `phone`).
  *   channel=sms                           A4 and A15 as the text version
+ *                                         (screen=sign-up: channel=phone | email | none picks A3's line; email when left out)
+ *   notsaved=1                            A4 (mailed): the note that the number typed was not added (another account holds it)
  */
 
 type Params = {
@@ -63,6 +65,7 @@ type Params = {
   extra?: string;
   lockfor?: string;
   channel?: string;
+  notsaved?: string;
 };
 
 const never = <T,>() => new Promise<T>(() => undefined);
@@ -124,6 +127,7 @@ export default function AuthPreviewRoute() {
   if (p.screen === 'sign-up') {
     return (
       <SignUpScreen
+        channel={p.channel === 'none' ? null : p.channel === 'phone' || p.channel === 'sms' ? 'phone' : 'email'}
         initial={{ email, phone: p.phone ?? '', password: p.password ?? '' }}
         onContinue={answer}
         onBack={() => router.back()}
@@ -141,6 +145,7 @@ export default function AuthPreviewRoute() {
         resendIn={p.resend === undefined ? 42 : Number(p.resend)}
         initialDigits={p.digits ?? ''}
         initialWrong={p.wrong === '1'}
+        aside={code && !texted && p.notsaved ? PHONE_NOT_SAVED : undefined}
         extra={texted && p.extra ? { label: 'Code from your email', hint: 'We also emailed a code to confirm your email address.' } : undefined}
         onSubmit={answer}
         onResend={() => answer().then(() => (p.resend === undefined ? 42 : Number(p.resend)))}

@@ -13,7 +13,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A3: create the account and send a 6-digit code: texted to the phone by default, mailed to the email when SIGNUP_VERIFY_CHANNEL is email (R-39; the answer then carries `channel: email`). No session yet (R-36). */
+        /** A3: create the account and send a 6-digit code: texted to the phone by default, mailed to the email when SIGNUP_VERIFY_CHANNEL is email (R-39; the answer then carries `channel: email`). No session yet (R-36). A number another account only typed is not taken from it by a sign-up that proves nothing: a mailed sign-up goes ahead without the number (`phoneNotSaved: true`), and a texted one takes it when its code proves it. */
         post: operations["signup"];
         delete?: never;
         options?: never;
@@ -134,6 +134,23 @@ export interface paths {
         put?: never;
         /** A23: ask for a reset. The same answer whether or not an account exists; a link is mailed only to a proven email. */
         post: operations["forgotPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signup/channel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A3: which way the sign-up code will travel, so its line can name it: `phone` (texted, the default) or `email` (mailed, SIGNUP_VERIFY_CHANNEL=email). Needs no sign-in, reads no account and sends nothing. */
+        get: operations["signupChannel"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -278,6 +295,11 @@ export interface components {
             channel?: "email";
             /** @description With `channel: email`: where the code went, written a•••@example.com. Show it on A4. */
             maskedEmail?: string;
+            /**
+             * @description With `channel: email`, present (true) only when the phone number typed was NOT saved to the account because another account holds it. The account is made without a phone; say so on A4 in plain words. The person adds and proves a phone later (BACKEND_GAPS G-222).
+             * @enum {boolean}
+             */
+            phoneNotSaved?: true;
         };
         SignupStartedAnswer: {
             data: components["schemas"]["SignupStartedSchema"];
@@ -407,6 +429,16 @@ export interface components {
         ResetRequestedAnswer: {
             data: components["schemas"]["ResetRequested"];
         };
+        SignupChannelSchema: {
+            /**
+             * @description Where the sign-up code will go: `phone` (texted, the default) or `email` (mailed). It is the SIGNUP_VERIFY_CHANNEL setting as WAWU ID reads it. A3 words its line by it; A4 then names the channel the sign-up answer carries.
+             * @enum {string}
+             */
+            channel: "phone" | "email";
+        };
+        SignupChannelAnswer: {
+            data: components["schemas"]["SignupChannelSchema"];
+        };
         SignupResumeDto: {
             phone: string;
             /** @description The secret `POST /auth/signup` returned for this sign-up. */
@@ -438,6 +470,11 @@ export interface components {
             channel?: "email";
             /** @description With `channel: email`: where the code went, written a•••@example.com. */
             maskedEmail?: string;
+            /**
+             * @description With `channel: email`, present (true) only when the account was made without the phone number typed, because another account holds it. Say so on A4, as the sign-up answer did.
+             * @enum {boolean}
+             */
+            phoneNotSaved?: true;
         };
         SignupResumeAnswer: {
             data: components["schemas"]["SignupResumeSchema"];
@@ -912,6 +949,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    signupChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupChannelAnswer"];
                 };
             };
         };
