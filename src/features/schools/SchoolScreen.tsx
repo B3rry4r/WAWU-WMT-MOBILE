@@ -9,7 +9,6 @@ import { queryClient } from '@/api/query';
 import { IconButton, pressScale } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
-import { formatMoney, Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -17,8 +16,9 @@ import { NavBar } from '@/features/events/chrome';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchSchool, schoolsKeys, type CourseCard } from './api';
-import { courseLine, profileLine } from './model';
-import { Cover, SchoolLogo } from './parts';
+import { courseLine, feeText, profileLine } from './model';
+import { Cover, Fee, SchoolLogo } from './parts';
+import { useToday } from './useToday';
 
 /**
  * design/_gen/schools.js `schTop` and `profile`: a 200 picture to the top edge with a fade from 35% black over its first
@@ -26,8 +26,8 @@ import { Cover, SchoolLogo } from './parts';
  * the parts: the name 24 at 700 (-0.03em, on the canvas's normal line), the line under it 13.5 in the secondary colour (4 below); the expertise as
  * 30 high pills, 12 across, 13 at 600, 6 apart; the about text 14 on a 1.5 line in the secondary colour; the heading
  * "Courses" with the count at its right in the accent (13.5 at 600); and `crs` rows: 12 above and below with a hairline
- * under each, 12 between the words (the name 15 at 600, the line under it 12.5 muted, 2 below), the fee 14.5 without
- * kobo and a 16 chevron. The words sit on the canvas's normal line.
+ * under each, 12 between the words (the name 15 at 600, the line under it 12.5 muted, 2 below), the fee 14.5 (its kobo only
+ * when it has some; "Free" for nothing) and a 16 chevron. The words sit on the canvas's normal line.
  */
 export const schoolMetrics = {
   hero: 200,
@@ -72,6 +72,7 @@ export function SchoolScreen({ id, onBack, onOpenCourse }: SchoolScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const school = useQuery({ queryKey: schoolsKeys.school(id), queryFn: () => fetchSchool(id) }, queryClient);
+  const today = useToday();
 
   if (school.isPending) {
     return (
@@ -158,7 +159,7 @@ export function SchoolScreen({ id, onBack, onOpenCourse }: SchoolScreenProps) {
                 No courses listed yet.
               </Text>
             ) : (
-              data.courses.map((course) => <CourseRow key={course.id} course={course} onPress={() => onOpenCourse(course.id)} />)
+              data.courses.map((course) => <CourseRow key={course.id} course={course} today={today} onPress={() => onOpenCourse(course.id)} />)
             )}
           </View>
         </View>
@@ -182,11 +183,11 @@ function Hero({ insetTop, onBack, onShare }: { insetTop: number; onBack: () => v
   );
 }
 
-/** One course: its name, its length and how it is taught, its fee, and a chevron. */
-export function CourseRow({ course, onPress }: { course: CourseCard; onPress: () => void }) {
+/** One course: its name, its length, how it is taught and its days while a class is coming, its fee, and a chevron. */
+export function CourseRow({ course, today, onPress }: { course: CourseCard; today: string; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const label = `${course.title}, ${courseLine(course)}, ${formatMoney(course.priceKobo, { decimals: false })}`;
+  const label = `${course.title}, ${courseLine(course, today)}, ${feeText(course.priceKobo)}`;
   return (
     <Pressable
       testID={`school-course-${course.id}`}
@@ -209,10 +210,10 @@ export function CourseRow({ course, onPress }: { course: CourseCard; onPress: ()
           {course.title}
         </Text>
         <Text variant="body" tone="textMuted" style={styles.courseLine}>
-          {courseLine(course)}
+          {courseLine(course, today)}
         </Text>
       </View>
-      <Money minorUnits={course.priceKobo} decimals={false} size={schoolMetrics.coursePrice} testID={`school-course-price-${course.id}`} />
+      <Fee kobo={course.priceKobo} size={schoolMetrics.coursePrice} testID={`school-course-price-${course.id}`} />
       <Icon name="ChevronRight" size={schoolMetrics.chevron} color={colors.textMuted} />
     </Pressable>
   );
