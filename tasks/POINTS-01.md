@@ -276,7 +276,7 @@ No defect is open.
 - **U4: the person is everything before the last `:<txid>`:** agree; colon-holding ids purge cleanly and cannot cross to each other (U4b).
 
 #### For the lead (round 3)
-- **D7 can recur by merge order:** INBOX-03's new `20261017090000_push_tokens` (ec02c97, pushed after this branch) sorts after this branch's `20261016200000_points`. Main is fine today. If INBOX-03 merges first, this folder needs another rename past `20261017090000` (content unchanged) before it merges; if this merges first, nothing to do.
+- **D7 can recur by merge order:** INBOX-03's new `20261019090000_push_tokens` (ec02c97, pushed after this branch) sorts after this branch's `20261016200000_points`. Main is fine today. If INBOX-03 merges first, this folder needs another rename past `20261019090000` (content unchanged) before it merges; if this merges first, nothing to do.
 
 #### NOT RUN (round 3)
 - The full suite as `deploy.yml` runs it (one jest process): run as four shards at default timeouts instead (above). Unblocked by CI's test job on this branch, or a machine with load average under about 8.
