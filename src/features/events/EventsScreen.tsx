@@ -9,7 +9,7 @@ import { useFocusRing } from '@/components/focusRing';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { font, layout, radius, space, useWawu } from '@/theme';
+import { layout, radius, space, useWawu } from '@/theme';
 
 import {
   activeFilterCount,
@@ -26,33 +26,26 @@ import {
   type EventFilters,
   type EventView,
 } from './api';
+import { EventsTabs, NavBar } from './chrome';
 import { FilterSheet } from './FilterSheet';
+import { HostBanner } from './host/HostBanner';
 import { startsThisWeek } from './format';
 import { useGoing } from './going';
 import { EventRow, FeaturedCard, rowMetrics } from './parts';
 
-/** design/_gen/kit.js `nav`: a 56 bar, 20 sides, a 42 round button each end, a 17 bold title between. */
-const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } as const;
-/** design/_gen/events.js `evTabs`: 22 between tabs, 15 semi-bold, an underline 2 thick, 11 above it. */
-const tabMetrics = { between: 22, font: 15, underline: 2, padBottom: 11 } as const;
 /** design/_gen/events.js `discover`: 14 above the body, 18 between the hero, the list and the banner; the list's heading line is `SH`. */
 const bodyMetrics = { top: 14, stack: 18, bottom: 40, seeAll: 14, listGap: 4 } as const;
 const SKELETON_ROWS = 3;
 
-/**
- * The tabs under the title. Discover is the screen's own. My events (EVENTS-08)
- * and Host event (EVENTS-04) are added by the task that builds where each
- * leads, as drawn (docs/WORKFLOW.md section 7), so this list grows then.
- */
-const tabs = [{ value: 'discover', label: 'Discover' }] as const;
-
 export type EventsScreenProps = {
   onBack: () => void;
   onOpenEvent: (id: string) => void;
+  /** Host event and the Host your event banner (EVENTS-04): the wizard, or the tick gate (E21) for an account without one. */
+  onHost?: () => void;
 };
 
 /** E1 · Events: the featured event, this week's list with a Going toggle on each row, and the filter sheet (E8). */
-export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
+export function EventsScreen({ onBack, onOpenEvent, onHost }: EventsScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const [filters, setFilters] = useState<EventFilters>(defaultFilters);
@@ -114,19 +107,20 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
 
   return (
     <View testID="events-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <View style={styles.nav}>
-        <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID="events-back" />
-        <Text variant="body" accessibilityRole="header" numberOfLines={1} style={[styles.title, font(700)]}>
-          Events
-        </Text>
-        <IconButton
-          icon="SlidersHorizontal"
-          label={filterCount > 0 ? `Filters, ${filterCount} on` : 'Filters'}
-          onPress={() => setSheetOpen(true)}
-          testID="events-filter"
-        />
-      </View>
-      <TabStrip />
+      <NavBar
+        title="Events"
+        onBack={onBack}
+        backTestID="events-back"
+        right={
+          <IconButton
+            icon="SlidersHorizontal"
+            label={filterCount > 0 ? `Filters, ${filterCount} on` : 'Filters'}
+            onPress={() => setSheetOpen(true)}
+            testID="events-filter"
+          />
+        }
+      />
+      <EventsTabs active="discover" onChange={(tab) => (tab === 'host' ? onHost?.() : undefined)} />
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: bodyMetrics.bottom + insets.bottom }]}
         showsVerticalScrollIndicator={false}
@@ -190,30 +184,11 @@ export function EventsScreen({ onBack, onOpenEvent }: EventsScreenProps) {
                 ) : null}
               </View>
             )}
+            {onHost ? <HostBanner onStart={onHost} /> : null}
           </>
         )}
       </ScrollView>
       <FilterSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} filters={filters} options={options} onApply={apply} />
-    </View>
-  );
-}
-
-function TabStrip() {
-  const { colors } = useWawu();
-  return (
-    <View accessibilityRole="tablist" style={[styles.tabs, { borderBottomColor: colors.borderHairline }]}>
-      {tabs.map((tab) => (
-        <View
-          key={tab.value}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: true }}
-          style={[styles.tab, { borderBottomColor: colors.accent }]}
-        >
-          <Text variant="body" style={[font(600), { fontSize: tabMetrics.font }]}>
-            {tab.label}
-          </Text>
-        </View>
-      ))}
     </View>
   );
 }
@@ -260,17 +235,6 @@ function EventsSkeleton() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  nav: {
-    height: navMetrics.height,
-    paddingHorizontal: layout.gutter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space.md,
-  },
-  title: { flex: 1, textAlign: 'center', fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title },
-  tabs: { flexDirection: 'row', gap: tabMetrics.between, paddingHorizontal: layout.gutter, borderBottomWidth: StyleSheet.hairlineWidth },
-  tab: { paddingBottom: tabMetrics.padBottom, borderBottomWidth: tabMetrics.underline, marginBottom: -StyleSheet.hairlineWidth },
   body: { paddingHorizontal: layout.gutter, paddingTop: bodyMetrics.top, gap: bodyMetrics.stack },
   headingLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   list: { gap: bodyMetrics.listGap },

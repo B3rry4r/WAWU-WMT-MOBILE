@@ -1,7 +1,7 @@
 ---
 id: INBOX-10
 title: Ask a creator a paid question
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 166
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I2, I3, I4, I5]
 ---
 # INBOX-10 · Ask a creator a paid question
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

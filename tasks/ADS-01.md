@@ -1,7 +1,7 @@
 ---
 id: ADS-01
 title: TGIF sponsored card
-owner: DEV2
+owner: YOU
 area: ADS
 order: 178
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H33]
 ---
 # ADS-01 · TGIF sponsored card
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

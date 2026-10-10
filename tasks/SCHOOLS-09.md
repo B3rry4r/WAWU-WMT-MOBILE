@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-09
 title: Enrolment report to the school, and My courses
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 133
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # SCHOOLS-09 · Enrolment report to the school, and My courses
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

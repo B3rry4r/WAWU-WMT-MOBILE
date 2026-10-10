@@ -7,7 +7,7 @@ order: 48
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [EVENTS-01, EVENTS-05, UI-02]
 decisions: [R-8, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -184,6 +184,10 @@ _Verifier session, 8 Oct 2026, narrow round on D1 to D3 (a round 4 attempt befor
 - Not done: V10; the real WAWU ID (mock used); a paid ticket (R-8); the main merge (conflicts in EVENTS-01 files, above).
 
 Status: `review`.
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 

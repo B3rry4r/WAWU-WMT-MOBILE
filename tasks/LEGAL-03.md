@@ -7,7 +7,7 @@ order: 70
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: done
 depends_on: []
 decisions: [R-14]
 passes: [V1, V2, V3, V4, V9]
@@ -377,6 +377,10 @@ NOT RUN: a real bucket (unblocked by a non-production bucket key).
 | P1, F8, U1, U3 | recorded | As before. | |
 
 **NOT RUN.** A real bucket: the stand-in checks expiry, not signatures. Unblocked by a non-production bucket key in a local `.env`. A paid consultation and a paid service end to end (both payments were set in the database): unblocked by Flutterwave sandbox keys for the web path and by LEGAL-05 for the app's. The deployed 6ce2ddf was not called, as instructed. Mobile screens: none (`backend-endpoint`).
+
+## Lead merge note (10 Oct 2026)
+
+Signed off 10 Oct 2026 by the lead: merged earlier on its verifier's review (see its merge commit on main); the sign-off had not been recorded.
 
 ## Owner sign-off
 
