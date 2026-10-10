@@ -74,7 +74,7 @@ is as before. In `waitlist-claim-proof.ts`, for the caller only (their own token
 - a phone that equals the registration's but is neither is refused like any contact that is not the caller's: `code_not_found` (the same words as an
   unknown code, so a holder of a typed number learns nothing), or `contact_not_verified` when the account proves nothing at all.
 
-**FINDING FOR THE LEAD (launch blocker for the EMAIL route and for phones WAWU ID proved, filed as BACKEND_GAPS G-629 and SHARED-CHANGES JOIN-03 #3).**
+**FINDING FOR THE LEAD (launch blocker for the EMAIL route and for phones WAWU ID proved, filed as BACKEND_GAPS G-634 and SHARED-CHANGES JOIN-03 #3).**
 WAWU ID's access token carries `phone` and `email` whether or not either was proven (a web sign-up types both and still gets a token, G-2; a mobile
 sign-up proves one: the phone by SMS today, the email since AUTH-07). So "verified" cannot be read from the token as it is. The Hub reads two flags,
 `emailVerified` and `phoneVerified`, from the verified token; WAWU ID sends neither yet, so in production the email route and the WAWU-ID phone route
@@ -200,7 +200,7 @@ request aborted for "offline", a request held for "busy". I do not say they matc
 - A failed claim keeps the typed code and shows the Hub's words as the app's own plain sentences; only `offer_unavailable` shows the Hub's sentence
   (it names the support address the website already uses).
 
-**Gaps and shared changes filed.** BACKEND_GAPS G-629. SHARED-CHANGES JOIN-03 #1 (migration and contract, made on the branch), #2 (mobile contract
+**Gaps and shared changes filed.** BACKEND_GAPS G-634. SHARED-CHANGES JOIN-03 #1 (migration and contract, made on the branch), #2 (mobile contract
 copy, made on the branch), #3 (WAWU ID's two claims, open, needed for production), #4 (the post-sign-up step, open).
 
 **NOT RUN**
@@ -215,5 +215,34 @@ copy, made on the branch), #3 (WAWU ID's two claims, open, needed for production
 - The full backend suite (229 suites) as one run: the touched modules' suites and the protected suite ran; unblocked by `npm run test:contract` in a
   private namespace.
 - Production Postgres: the new CHECK needs nothing beyond what the table already has.
+
+### Builder report, part 3 (WAWU ID)
+
+Builder, 10 Oct 2026 (Sonnet agent). This is the part the first report called "not pushed: this brief named two repos"; it is now built and pushed
+(SHARED-CHANGES JOIN-03 #3, BACKEND_GAPS G-634; the gap was filed as G-629 and renumbered, because SCHOOLS-03 holds G-629 and WALLET-06 holds G-630 to
+G-633). wawu-id branch `wmt/JOIN-03` `5b132f7`, on `origin/main` `fb8717e`. No server was started and no provider was called.
+
+- **The change.** `src/auth/tokens.service.ts`: the access token carries `emailVerified` (true only when the account has an email AND `email_verified`)
+  and `phoneVerified` (true only when `phone_verified_at` is set). Two additive claims; every other claim is as it was. `AccessTokenPayload` says what
+  they mean. `WAWUAfrica_API_Contracts.md` has a paragraph for them. `contract/openapi.json` does not describe token claims, so it is unchanged:
+  `npm run contract:build` run twice leaves it byte-identical (sha256 `eae61a48...ea11` each time and before).
+- **Spec.** `src/auth/token-contact-proof.spec.ts`, 7 tests (the first report's 6, plus a released phone): a web sign-up with a confirmed email proves the
+  email only; a phone-code sign-up proves the phone and not an email it never confirmed; an email-code sign-up (AUTH-07) proves the email and leaves the phone
+  unproven; typed-only contacts prove nothing; an absent email is never proven whatever the flag says; a released phone (`released:<id>`, never proven) is an
+  empty `phone` and `phoneVerified: false`; the old claims are all still there. On `origin/main`'s `tokens.service.ts` 6 of the 7 fail (the seventh checks
+  claims that already exist); on the branch 7 of 7 pass.
+- **AUTH-07 (wawu-id `origin/wmt/AUTH-07`).** Trial merge into a throwaway copy of the branch: 0 conflicts (git merged `tokens.service.ts` and
+  `WAWUAfrica_API_Contracts.md` on its own; `released-phone.ts` and the sign-up files are not touched by this change). On the merged copy: `tsc` 0,
+  `token-contact-proof` 7 of 7, `unproven-phone` 18, `released-phone` 3, `two-tick-verification` 12, `email-signup.service` 47, `signup-channel.service` 17,
+  `contract` 5, all green. AUTH-07 releases a number by writing `released:<id>` and leaving `phone_verified_at` empty, so the released account's token says
+  `phoneVerified: false` (and an empty `phone`).
+- **Checks (wawu-id).** `npx tsc --noEmit` 0. `eslint --no-fix` on the two changed files: 8 errors, all in lines this change did not touch (prettier and one
+  unnecessary-assertion rule at lines 159 to 181 and 370 of `tokens.service.ts`), the same on `origin/main`; none in the new lines or the spec.
+  `python3 scripts/gates/run.py` 9 run, 0 fail, 20 warn (all `PROVISIONAL`), `check_baseline.py` clean. `jest src/auth`: 12 of 16 suites pass in one loaded
+  run (load average 17 to 35); the other 4 (`phone-signup.service`, `signup-sequence.service`, `pending-signup-no-session`, `refresh-token-lookup`) hit the
+  5 s argon2 timeout; run alone with `--testTimeout=120000`, the first three pass (44, 22, 14 tests). `refresh-token-lookup` passes 19 of 20 and fails the one
+  timing test ("under a second"): it fails the same way on `origin/main` (refresh 1046 ms, sign-out 530 ms there), so it is the machine's load, not this change.
+- **NOT RUN.** A claim against a deployed WAWU ID that sends the flags: it needs the merge and a WAWU ID deploy (until then production refuses every claim
+  with `contact_not_verified`, as above). The first report's live walk already ran the Hub against a real local wawu-id with this same two-line change.
 
 ## Owner sign-off
