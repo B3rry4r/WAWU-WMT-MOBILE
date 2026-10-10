@@ -7,7 +7,7 @@ order: 201
 priority: launch
 repo: wawu-backend
 type: third-party
-status: review
+status: done
 depends_on: [NUV-01, MONEY-12, KYC-01]
 decisions: [R-39, R-42, R-6]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -747,3 +747,5 @@ None. The Fintava and unset sweep differs only as described under V3, and the bu
 - The two numbers (14 days, 10 an hour) are the owner's (G-491, G-498); support finding a holder by BVN (G-496).
 
 ## Owner sign-off
+
+Merged by the lead, 10 Oct 2026: backend PR #103 (merge `181ee5d`, from wmt/NUV-03 which carries NUV-02 `024e592`) and mobile main (merge of `5cbd88a`). The verifier's round 4 found no blocker. Follow-ups go to NUV-03 round 4: R4-1 (an expired opening still takes uploads), R4-2 (ruled: a hold gets an absolute lifetime, Default (lead), owner may override), R4-3 (the ML9 test). Production stays on WALLET_PROVIDER=fintava until the documents and selfie screens exist (G-460) and a Nuvion key works.

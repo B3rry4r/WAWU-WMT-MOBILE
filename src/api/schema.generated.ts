@@ -2611,6 +2611,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/identity/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where the opening's documents stand: both kinds, whether uploads are
+         *     open, what is still needed before the opening is sent for review. When
+         *     the documents are in and the opening is due to be sent (or its sending
+         *     was lost), this sends it, once.
+         */
+        get: operations["NuvionDocumentsController_getDocuments"];
+        put?: never;
+        /**
+         * Sends one document to Nuvion, once: multipart with `kind` (`identity`
+         *     or `proof_of_address`) and `file` (a PDF, JPG or PNG up to 10 MB). An
+         *     ID with a back side sends it as `file_back` in the same request, of
+         *     the same type. The same file sent twice is forwarded once; a different
+         *     file replaces the first while the opening is still taking documents.
+         *     When both documents are in (and the selfie has passed, when in use) the
+         *     opening is sent for review, once. WAWU keeps no copy of any file.
+         *     Answers the documents view.
+         */
+        post: operations["NuvionDocumentsController_uploadDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/identity/liveness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The hosted selfie: whether it is in use, where it stands, and the
+         *     secure page to open or resume while it is pending. Reads the result
+         *     from Nuvion; a pass is saved on the opening, which is then sent for
+         *     review when everything else is in.
+         */
+        get: operations["NuvionDocumentsController_getLiveness"];
+        put?: never;
+        /**
+         * Starts the hosted selfie (or answers the one already running) and
+         *     returns the secure page to open. `redirectUrl` is where that page sends
+         *     the person back: the app's link or the website, https only. When
+         *     Nuvion will not start a selfie for this person, the opening goes on
+         *     without one and this answers `selfie_not_available`.
+         */
+        post: operations["NuvionDocumentsController_startLiveness"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/account": {
         parameters: {
             query?: never;
@@ -6006,6 +6067,17 @@ export interface components {
             /** @description A sentence about the first field that is wrong. */
             message: string;
         };
+        DocumentErrorEnvelope: {
+            /** @example null */
+            data: Record<string, never> | null;
+        };
+        StartLivenessDto: {
+            /**
+             * @description Where the secure selfie page sends the person when it is done: a secure
+             *     (https) web address, the app's link or the website. Optional.
+             */
+            redirectUrl?: string;
+        };
         EventDecisionReasonDto: {
             reason: string;
         };
@@ -7062,6 +7134,34 @@ export interface components {
             licenceLine: string | null;
             lines: components["schemas"]["ReceiptLineView"][];
             issuedAt: string;
+        };
+        IdentityDocumentView: {
+            /** @enum {string} */
+            kind: "identity" | "proof_of_address";
+            /** @enum {string} */
+            state: "missing" | "confirming" | "send_again" | "uploaded" | "not_accepted" | "needs_new";
+            sides: ("front" | "back")[];
+            uploadedAt: string | null;
+        };
+        IdentityDocumentsView: {
+            required: boolean;
+            open: boolean;
+            documents: components["schemas"]["IdentityDocumentView"][];
+            /** @enum {string} */
+            selfie: "not_used" | "needed" | "done";
+            submitted: boolean;
+            submittedAt: string | null;
+            waitingFor: ("identity" | "proof_of_address" | "selfie")[];
+            maxBytes: number;
+            acceptedTypes: string[];
+        };
+        IdentityLivenessView: {
+            enabled: boolean;
+            /** @enum {string} */
+            state: "pending" | "expired" | "not_in_use" | "not_started" | "passed" | "not_passed";
+            url: string | null;
+            startedAt: string | null;
+            canStart: boolean;
         };
         AdminUserView: {
             id: string;
@@ -15740,6 +15840,196 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    NuvionDocumentsController_getDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityDocumentsView"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+        };
+    };
+    NuvionDocumentsController_uploadDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @enum {string} */
+                    kind: "identity" | "proof_of_address";
+                    /** Format: binary */
+                    file: string;
+                    /** Format: binary */
+                    file_back?: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityDocumentsView"];
+                };
+            };
+            /** @description reason.code: document_request_invalid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: documents_closed, document_in_progress, identity_under_review */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: document_file_invalid, document_not_accepted */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: document_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: document_busy, provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+        };
+    };
+    NuvionDocumentsController_getLiveness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityLivenessView"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+        };
+    };
+    NuvionDocumentsController_startLiveness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartLivenessDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityLivenessView"];
+                };
+            };
+            /** @description reason.code: document_request_invalid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: documents_closed, document_in_progress, selfie_not_available */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: document_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentErrorEnvelope"];
                 };
             };
         };
