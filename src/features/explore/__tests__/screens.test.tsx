@@ -74,10 +74,10 @@ function card(wawuId: string, handle: string, field: string, over: Record<string
  * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. A neutral frame
  * carries none of its own, so a name, date or figure on one is a word that is not in this list.
  */
-const WORDS_BEFORE_TILES = ['Search Who Made This', 'FEATURED EVENT', 'All'];
+const WORDS_BEFORE_TILES = ['FEATURED EVENT', 'All'];
 const WORDS_AFTER_TILES = [
-  'More', 'Featured creators', 'See all', 'Upcoming events', 'See all',
-  'Find a professional', 'Accountants, lawyers, designers', 'Find a school', 'Courses from schools and academies',
+  'More', 'Featured creators', 'Upcoming events', 'See all',
+  'Find a professional', 'Accountants, lawyers, designers',
   'List your services', 'Get paid to answer questions',
 ];
 const WORDS_NOTHING_SERVED = [...WORDS_BEFORE_TILES, ...WORDS_AFTER_TILES];
@@ -196,50 +196,58 @@ describe('X1 · Explore', () => {
     expect(rtl.within(rtl.screen.getByTestId('explore-featured-c2')).getByTestId('tick-pro')).toBeTruthy();
   });
 
-  it('a user sees every entry X1 draws, built or not (R-46): the search pill, the bell, both See alls, the doors and, for a creator, Create', async () => {
-    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
-    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    await rtl.screen.findByText('Featured creators');
-    expect(await rtl.screen.findByTestId('explore-create')).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'Search Who Made This' })).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'Notifications' })).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'See all creators' })).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
-    for (const words of ['FEATURED EVENT', 'Featured creators', 'Upcoming events', 'Find a professional', 'Find a school', 'List your services']) {
-      expect(rtl.screen.getByText(words)).toBeTruthy();
-    }
-    expect(rtl.screen.getByRole('button', { name: 'Create' })).toBeTruthy();
-    // The search pill carries the app's name (R-37), never WAWU.
-    expect(rtl.screen.queryByText(/WAWU/)).toBeNull();
-  });
-
-  it('a user who taps an entry whose screen is not built opens nothing and changes nothing (R-46, each names its task)', async () => {
+  it('a user sees only the entries whose screens are built (R-47): Upcoming events’ See all, the tiles and two doors, and no search pill, bell, Featured creators’ See all, Find a school or Create', async () => {
     answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[COUNTS] = [ok({ purchases: 0, saved: 0, unreadNotifications: 2 })];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    await rtl.screen.findByText('Featured creators');
+    await settle();
+    expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
+    for (const words of ['FEATURED EVENT', 'Featured creators', 'Upcoming events', 'Find a professional', 'List your services']) {
+      expect(rtl.screen.getByText(words)).toBeTruthy();
+    }
+    // What X1 draws for screens that are not built is not drawn: not for a creator account, not with notifications waiting.
+    for (const id of ['explore-search', 'explore-bell', 'explore-bell-dot', 'explore-featured-see-all', 'explore-door-find-school', 'explore-create']) {
+      expect(rtl.screen.queryByTestId(id)).toBeNull();
+    }
+    for (const name of ['Search Who Made This', 'Notifications', 'See all creators', 'Find a school, Courses from schools and academies', 'Create']) {
+      expect(rtl.screen.queryByRole('button', { name })).toBeNull();
+    }
+    expect(rtl.screen.queryByText(/Search|Find a school|Courses from schools/)).toBeNull();
+    expect(rtl.screen.queryByText(/WAWU/)).toBeNull();
+  });
+
+  it('every button on Explore does something: each press opens a built screen or follows, and a creator card is not one of them (R-47)', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers['POST /creators/c1/follow'] = [ok({ following: true }, 201)];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
-    await rtl.screen.findByTestId('explore-create');
-    await rtl.screen.findByTestId('explore-bell-dot');
+    await rtl.screen.findByText('@adaeze');
     await settle();
-    const before = outline();
-    const requests = sent.length;
-    const inert = [
-      'explore-search', // X5, EXPLORE-02
-      'explore-bell', // M31, ME-14
-      'explore-featured-see-all', // X4, EXPLORE-02
-      'explore-featured-c1', // M5, ME-02
-      'explore-door-find-school', // SC1, SCHOOLS-03
-      'explore-create', // M19, ME-04
-    ];
-    for (const id of inert) {
-      await rtl.fireEvent.press(rtl.screen.getByTestId(id));
-      await settle();
-      expect(outline()).toBe(before);
-    }
-    expect(sent).toHaveLength(requests);
-    for (const spy of Object.values(spies)) expect(spy).not.toHaveBeenCalled();
+    const names = rtl.screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(names).toEqual([
+      'All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More categories',
+      'Follow',
+      'See all events',
+      'Find a professional, Accountants, lawyers, designers',
+      'List your services, Get paid to answer questions',
+    ]);
+    const card1 = rtl.screen.getByTestId('explore-featured-c1');
+    expect(card1.props.accessibilityRole).toBeUndefined();
+    expect(card1.props.onPress).toBeUndefined();
+    for (const id of ['explore-tile-all', 'explore-tile-photography', 'explore-tile-more']) await rtl.fireEvent.press(rtl.screen.getByTestId(id));
+    expect(spies.onOpenCategory).toHaveBeenCalledTimes(3);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-events-see-all'));
+    expect(spies.onSeeAllEvents).toHaveBeenCalledTimes(1);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-professional'));
+    expect(spies.onFindProfessional).toHaveBeenCalledTimes(1);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services'));
+    expect(spies.onListServices).toHaveBeenCalledTimes(1);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-c1-follow'));
+    expect(await rtl.screen.findByRole('button', { name: 'Following' })).toBeTruthy();
+    expect(sent).toContain('POST /creators/c1/follow');
+    expect(spies.onOpenEvent).not.toHaveBeenCalled();
   });
 
   it('a creator card opens nothing yet, and its Follow still follows', async () => {
@@ -247,61 +255,34 @@ describe('X1 · Explore', () => {
     answers['POST /creators/c1/follow'] = [ok({ following: true }, 201)];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
-    await rtl.fireEvent.press(await rtl.screen.findByTestId('explore-featured-c1'));
+    const creatorCard = await rtl.screen.findByTestId('explore-featured-c1');
+    expect(creatorCard.props.accessibilityRole).toBeUndefined();
+    await rtl.fireEvent.press(creatorCard);
     expect(sent).not.toContain('POST /creators/c1/follow');
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-c1-follow'));
     expect(await rtl.screen.findByRole('button', { name: 'Following' })).toBeTruthy();
     for (const spy of Object.values(spies)) expect(spy).not.toHaveBeenCalled();
   });
 
-  it('the search pill and the bell are drawn as the canvas draws them: the pill takes the room the mark and bell leave, the bell is 44 round', async () => {
-    answers[featured] = [ok({ items: [] })];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    await rtl.screen.findByTestId('explore-tiles');
-    const flat = (node: { props: Record<string, unknown> }) => Object.assign({}, ...[node.props.style].flat(Infinity).filter(Boolean));
-    expect(flat(rtl.screen.getByTestId('explore-search'))).toMatchObject({ flex: 1, height: 44, borderRadius: 999 });
-    expect(flat(rtl.screen.getByTestId('explore-bell'))).toMatchObject({ width: 44, height: 44 });
-    expect(rtl.screen.getByText('Search Who Made This')).toBeTruthy();
-  });
-
-  it('the bell shows its dot only when something is unread, and says how many to a screen reader', async () => {
+  it('the bar is the mark alone while search (EXPLORE-02) and notifications (ME-14) are not built, and keeps its 44 high row (R-47)', async () => {
     answers[featured] = [ok({ items: [] })];
     answers[COUNTS] = [ok({ purchases: 0, saved: 0, unreadNotifications: 3 })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    expect(await rtl.screen.findByTestId('explore-bell-dot')).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'Notifications, 3 unread' })).toBeTruthy();
-  });
-
-  it('with nothing unread, the bell has no dot', async () => {
-    answers[featured] = [ok({ items: [] })];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByTestId('explore-tiles');
     await settle();
+    const flat = (node: { props: Record<string, unknown> }) => Object.assign({}, ...[node.props.style].flat(Infinity).filter(Boolean));
+    expect(rtl.screen.getByTestId('explore-mark', { includeHiddenElements: true })).toBeTruthy();
+    expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-search')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-bell')).toBeNull();
     expect(rtl.screen.queryByTestId('explore-bell-dot')).toBeNull();
-    expect(rtl.screen.getByRole('button', { name: 'Notifications' })).toBeTruthy();
+    expect(flat(rtl.screen.getByTestId('explore-bar'))).toMatchObject({ minHeight: 6 + 44 + 14 });
+    // With no bell, nothing reads the unread count.
+    expect(sent).not.toContain(COUNTS);
   });
 
-  it('with the unread count unreadable, the bell has no dot and Explore still draws, with no error', async () => {
-    answers[featured] = [ok({ items: [] })];
-    answers[COUNTS] = [refused(500, 'Down')];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    await rtl.screen.findByTestId('explore-tiles');
-    await settle();
-    expect(rtl.screen.queryByTestId('explore-bell-dot')).toBeNull();
-    expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
-  });
-
-  it('the Create button is for creator accounts, and sits 18 from the right and 16 above the tab bar as the canvas has it', async () => {
-    answers[featured] = [ok({ items: [] })];
-    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    const button = await rtl.screen.findByTestId('explore-create');
-    const flat = Object.assign({}, ...[button.props.style].flat(Infinity).filter(Boolean));
-    expect(flat).toMatchObject({ position: 'absolute', right: 18, bottom: 106 - 90, width: 58, height: 58, borderRadius: 29 });
-  });
-
-  it.each([['a user', 'user'], ['a professional', 'professional'], ['someone who has not chosen a type', null]])(
-    'the Create button is not drawn for %s',
+  it.each([['a creator', 'creator'], ['a user', 'user'], ['a professional', 'professional']])(
+    'no Create button is drawn for %s (ME-04 is not built), and the scroll keeps the canvas’s 30 below the last row',
     async (_who, accountType) => {
       answers[featured] = [ok({ items: [] })];
       answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType })];
@@ -309,15 +290,18 @@ describe('X1 · Explore', () => {
       await rtl.screen.findByTestId('explore-tiles');
       await settle();
       expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
+      expect(rtl.screen.queryByRole('button', { name: 'Create' })).toBeNull();
+      const flat = Object.assign({}, ...[rtl.screen.getByTestId('explore-scroll').props.contentContainerStyle].flat(Infinity).filter(Boolean));
+      expect(flat.paddingBottom).toBe(120 - 90);
     },
   );
 
-  it('with nobody featured, a user sees Featured creators with its See all and three neutral cards, and no invented creator', async () => {
+  it('with nobody featured, a user sees Featured creators with three neutral cards, no See all (EXPLORE-02) and no invented creator', async () => {
     answers[featured] = [ok({ items: [] })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByTestId('explore-tiles');
     expect(rtl.screen.getByText('Featured creators')).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'See all creators' })).toBeTruthy();
+    expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
     const empty = rtl.screen.getByTestId('explore-featured-empty');
     expect(empty.props.accessibilityLabel).toBe('Featured creators, none to show');
     expect(rtl.within(empty).queryByText(/@/)).toBeNull();
@@ -490,7 +474,7 @@ describe('X1 · Explore', () => {
     expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
   }, 15000);
 
-  it('with nobody featured, a user still sees the doors: Find a professional, Find a school and List your services', async () => {
+  it('with nobody featured, a user still sees the doors whose screens are built: Find a professional and List your services', async () => {
     answers[featured] = [ok({ items: [] })];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
@@ -499,9 +483,11 @@ describe('X1 · Explore', () => {
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'Find a professional, Accountants, lawyers, designers',
-      'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
     ]);
+    expect(rtl.screen.queryByTestId('explore-door-find-school')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-find-professional'));
+    expect(spies.onFindProfessional).toHaveBeenCalledTimes(1);
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services'));
     expect(spies.onListServices).toHaveBeenCalledTimes(1);
   });
@@ -523,59 +509,20 @@ describe('X1 · Explore', () => {
     expect(words()).toEqual(WORDS_CATEGORIES_ONLY);
   });
 
-  it.each([
-    ['held', 'hold' as const],
-    ['unreadable', refused(500, 'Down')],
-  ])('the Create button is not drawn while the account type is %s', async (_state, answer) => {
-    answers[featured] = [ok({ items: [] })];
-    answers['GET /users/me'] = [answer];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    await rtl.screen.findByTestId('explore-tiles');
-    await settle();
-    expect(sent.filter((r) => r === 'GET /users/me').length).toBeGreaterThan(0);
-    expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
-    expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
-  });
-
-  it('the bar and the Create button of a creator are drawn while Explore loads (X14)', async () => {
+  it('the bar is drawn while Explore loads (X14), and no Create or bell with it', async () => {
     answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
     answers[featured] = ['hold'];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     expect(await rtl.screen.findByTestId('explore-loading')).toBeTruthy();
-    expect(await rtl.screen.findByTestId('explore-create')).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'Search Who Made This' })).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'Notifications' })).toBeTruthy();
+    await settle();
+    expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'Search Who Made This' })).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'Notifications' })).toBeNull();
+    expect(rtl.screen.queryAllByRole('button')).toHaveLength(0);
   });
 
-  describe('the scroll ends above the Create button', () => {
-    const bottomOf = () => {
-      const flat = Object.assign({}, ...[rtl.screen.getByTestId('explore-scroll').props.contentContainerStyle].flat(Infinity).filter(Boolean));
-      return flat.paddingBottom as number;
-    };
-
-    it('a creator has 90 below the last row: the button’s 16 offset, its 58 and 16 more, so the last row’s chevron is clear', async () => {
-      const { createButtonMetrics } = require('@/components/CreateButton') as typeof import('@/components/CreateButton');
-      answers[featured] = [ok({ items: [] })];
-      answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
-      await rtl.render(wrap(<ExploreScreen {...entries()} />));
-      await rtl.screen.findByTestId('explore-create');
-      expect(bottomOf()).toBe(16 + 58 + 16);
-      // The button covers the bottom 74 of the scroll's view, so the last row ends above it.
-      expect(bottomOf()).toBeGreaterThan(createButtonMetrics.bottom + createButtonMetrics.size);
-    });
-
-    it('anyone else keeps the canvas’s 30 below the last row', async () => {
-      answers[featured] = [ok({ items: [] })];
-      answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'user' })];
-      await rtl.render(wrap(<ExploreScreen {...entries()} />));
-      await rtl.screen.findByTestId('explore-tiles');
-      await settle();
-      expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
-      expect(bottomOf()).toBe(120 - 90);
-    });
-  });
-
-  describe('a read that fails keeps every section drawn (R-46), under one banner with Try again', () => {
+  describe('a read that fails keeps every section drawn (R-47), under one banner with Try again', () => {
     beforeEach(() => {
       failAtOnce();
       answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
@@ -584,7 +531,7 @@ describe('X1 · Explore', () => {
     it.each([
       ['the categories', 'GET /explore/categories'],
       ['the featured creators', featured],
-    ])('when %s cannot be read, a user still sees the bar, the hero, the tiles, both rails, the doors and Create, and the one banner', async (_what, failing) => {
+    ])('when %s cannot be read, a user still sees the bar, the hero, the tiles, both rails and the doors, and the one banner', async (_what, failing) => {
       answers['GET /explore/categories'] = [ok({ items: categories })];
       answers[featured] = [ok({ items: [] })];
       answers[failing] = [refused(500, 'Something went wrong on our side')];
@@ -598,18 +545,17 @@ describe('X1 · Explore', () => {
       expect(rtl.screen.queryByTestId('explore-loading')).toBeNull();
       // The bar.
       expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
-      expect(rtl.screen.getByRole('button', { name: 'Search Who Made This' })).toBeTruthy();
-      expect(rtl.screen.getByRole('button', { name: 'Notifications' })).toBeTruthy();
       // The sections, as when nothing is served.
       expect(rtl.screen.getByTestId('explore-featured-event-empty')).toBeTruthy();
       expect(rtl.within(rtl.screen.getByTestId('explore-tiles')).getAllByRole('button').length).toBeGreaterThanOrEqual(2);
       expect(rtl.screen.getByText('Featured creators')).toBeTruthy();
-      expect(rtl.screen.getByRole('button', { name: 'See all creators' })).toBeTruthy();
+      expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
       expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
       expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
       expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
-      for (const door of ['find-professional', 'find-school', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();
-      expect(await rtl.screen.findByTestId('explore-create')).toBeTruthy();
+      for (const door of ['find-professional', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();
+      expect(rtl.screen.queryByTestId('explore-door-find-school')).toBeNull();
+      expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
     });
 
     it('the banner sits above the hero, and the doors still open List your services', async () => {
@@ -624,25 +570,19 @@ describe('X1 · Explore', () => {
       expect(spies.onListServices).toHaveBeenCalledTimes(1);
     });
 
-    it('Try again reads the categories, the featured creators, the unread count and the account type again, and the screen fills in', async () => {
-      answers['GET /users/me'] = [refused(403, 'No'), refused(403, 'No'), ok({ wawuUserId: ME, accountType: 'creator' })];
+    it('Try again reads the categories and the featured creators again, and the screen fills in', async () => {
       answers['GET /explore/categories'] = [refused(500, 'Down'), ok({ items: categories })];
       answers[featured] = [refused(500, 'Down'), ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
-      answers[COUNTS] = [ok({ purchases: 0, saved: 0, unreadNotifications: 0 }), ok({ purchases: 0, saved: 0, unreadNotifications: 2 })];
       await rtl.render(wrap(<ExploreScreen {...entries()} />));
       await rtl.screen.findByTestId('explore-error');
       await settle();
-      expect(rtl.screen.queryByTestId('explore-bell-dot')).toBeNull();
-      expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
       await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
       expect(await rtl.screen.findByText('@adaeze')).toBeTruthy();
-      expect(await rtl.screen.findByTestId('explore-bell-dot')).toBeTruthy();
-      expect(await rtl.screen.findByTestId('explore-create')).toBeTruthy();
       expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
       expect(rtl.screen.getByRole('button', { name: 'Photography' })).toBeTruthy();
-      expect(sent.filter((r) => r === COUNTS)).toHaveLength(2);
       expect(sent.filter((r) => r === 'GET /explore/categories')).toHaveLength(2);
       expect(sent.filter((r) => r === 'GET /explore/featured-creators?limit=10')).toHaveLength(2);
+      expect(sent).not.toContain(COUNTS);
     });
 
     it('when only the featured creators fail, Try again reads them again and the categories already shown stay', async () => {
@@ -656,48 +596,11 @@ describe('X1 · Explore', () => {
     });
   });
 
-  describe('the bell’s dot and Create are read again, as the other reads are', () => {
-    const unreadTwice = [ok({ purchases: 0, saved: 0, unreadNotifications: 0 }), ok({ purchases: 0, saved: 0, unreadNotifications: 2 })];
-    const mineFailsOnce = () => [refused(403, 'No'), refused(403, 'No'), ok({ wawuUserId: ME, accountType: 'creator' })];
-
-    it('a pull to refresh reads the unread count and the account type again, so the dot and Create come back', async () => {
+  describe('coming back to the tab', () => {
+    it('reads again what went stale when a read failed once, and asks for nothing again when everything is fresh', async () => {
       answers[featured] = [ok({ items: [] })];
-      answers[COUNTS] = unreadTwice;
-      answers['GET /users/me'] = mineFailsOnce();
-      await rtl.render(wrap(<ExploreScreen {...entries()} />));
-      await rtl.screen.findByTestId('explore-tiles');
-      await settle();
-      expect(rtl.screen.queryByTestId('explore-bell-dot')).toBeNull();
-      expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
-      const pull = rtl.screen.getByTestId('explore-scroll').props.refreshControl.props.onRefresh as () => void;
-      await rtl.act(async () => {
-        pull();
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      });
-      expect(await rtl.screen.findByTestId('explore-bell-dot')).toBeTruthy();
-      expect(await rtl.screen.findByTestId('explore-create')).toBeTruthy();
-    });
-
-    it('coming back to the tab reads the account type again when the first read failed, so Create comes back', async () => {
-      answers[featured] = [ok({ items: [] })];
-      answers['GET /users/me'] = mineFailsOnce();
       const view = await rtl.render(wrap(<ExploreScreen {...entries()} />));
       await rtl.screen.findByTestId('explore-tiles');
-      await settle();
-      expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
-      mockFocused = false;
-      await view.rerender(wrap(<ExploreScreen {...entries()} />));
-      await settle();
-      mockFocused = true;
-      await view.rerender(wrap(<ExploreScreen {...entries()} />));
-      expect(await rtl.screen.findByTestId('explore-create')).toBeTruthy();
-    });
-
-    it('coming back to the tab with everything read and fresh asks for nothing again', async () => {
-      answers[featured] = [ok({ items: [] })];
-      answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
-      const view = await rtl.render(wrap(<ExploreScreen {...entries()} />));
-      await rtl.screen.findByTestId('explore-create');
       await settle();
       const before = sent.length;
       mockFocused = false;
@@ -733,11 +636,12 @@ describe('X2, X3, X13 · Categories', () => {
     expect(sent).not.toContain(ALL_PAGE_1);
   });
 
-  it('a user who taps a creator card in a category opens nothing yet (M5 is ME-02), and its Follow still follows', async () => {
+  it('a creator card in a category is not pressable yet (M5 is ME-02), and its Follow still follows', async () => {
     answers[PHOTO_PAGE_1] = [page([card('p1', 'amaka', 'Photographer')], 1, 1)];
     answers['POST /creators/p1/follow'] = [ok({ following: true }, 201)];
     await rtl.render(wrap(<CategoriesScreen initial="photography" onBack={jest.fn()} />));
     const creatorCard = await rtl.screen.findByTestId('categories-creator-p1');
+    expect(creatorCard.props.accessibilityRole).toBeUndefined();
     const before = outline();
     await rtl.fireEvent.press(creatorCard);
     await settle();
@@ -1000,14 +904,14 @@ describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
     await rtl.screen.findByText('Featured creators');
   };
 
-  it('the card has the canvas’s three doors in its order, with its words', async () => {
+  it('the card has the doors whose screens are built, in the canvas’s order, with its words (R-47)', async () => {
     await open(jest.fn());
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'Find a professional, Accountants, lawyers, designers',
-      'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
     ]);
+    expect(rtl.screen.queryByTestId('explore-door-find-school')).toBeNull();
   });
 
   it('a creator with no application lands on P5, one with any (here a hidden one) on P8, a user on P5', async () => {

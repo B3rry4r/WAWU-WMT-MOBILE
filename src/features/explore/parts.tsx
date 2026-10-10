@@ -5,7 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
 import { SeeAll } from '@/features/events/EventsScreen';
-import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, layout, radius, useWawu } from '@/theme';
 
 import { creatorCardMetrics } from './CreatorCard';
 

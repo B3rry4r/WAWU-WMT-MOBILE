@@ -560,20 +560,18 @@ describe('no wallet yet (R-6)', () => {
 describe('W1 · the recent rows while their read is out (round 2, defect 2)', () => {
   const during = (app: Awaited<ReturnType<typeof boot>>) => {
     // Everything the balance read decides is drawn ...
-    for (const id of ['wallet-bar', 'wallet-tabs', 'wallet-balance-card', 'wallet-actions', 'wallet-bills']) expect(app.screen.getByTestId(id)).toBeTruthy();
-    // ... and W4's shapes stand where the card row, the heading, See all and the rows will, as if there were none of them.
+    for (const id of ['wallet-bar', 'wallet-balance-card']) expect(app.screen.getByTestId(id)).toBeTruthy();
+    // ... and W4's shapes stand where the heading and the rows will, as if there were none of them.
     expect(app.screen.getByTestId('wallet-transactions-loading')).toBeTruthy();
     const shapes = app.screen.getByTestId('wallet-transactions-loading').children[0];
     expect(typeof shapes === 'string' ? [] : shapes.children).toHaveLength(3);
-    expect(app.screen.queryByTestId('wallet-card-row')).toBeNull();
-    expect(app.screen.queryByRole('button', { name: 'WAWU card' })).toBeNull();
     expect(app.screen.queryByTestId('wallet-transactions')).toBeNull();
     expect(app.screen.queryByText('Transactions')).toBeNull();
-    expect(app.screen.queryByText('See all')).toBeNull();
     expect(app.screen.queryByTestId('wallet-no-transactions')).toBeNull();
+    expectNothingUnbuilt(app);
   };
 
-  it('a new account whose rows are slow sees W4’s shapes, then W5, and the card row, the heading and See all never appear', async () => {
+  it('a new account whose rows are slow sees W4’s shapes, then W5, and the heading never appears', async () => {
     fallback['GET /money/wallet/balance'] = balance(0);
     const slow = later(page([]));
     routes['GET /money/transactions'] = [slow.answer];
@@ -589,12 +587,10 @@ describe('W1 · the recent rows while their read is out (round 2, defect 2)', ()
     await app.act(async () => slow.release());
     expect(await app.screen.findByTestId('wallet-no-transactions')).toBeTruthy();
     expect(app.screen.queryByTestId('wallet-transactions-loading')).toBeNull();
-    expect(app.screen.queryByTestId('wallet-card-row')).toBeNull();
     expect(app.screen.queryByText('Transactions')).toBeNull();
-    expect(app.screen.queryByText('See all')).toBeNull();
   });
 
-  it('an account with transactions and slow rows sees W4’s shapes, then W1 with the card row, the heading, See all and the rows', async () => {
+  it('an account with transactions and slow rows sees W4’s shapes, then W1 with the heading and the rows', async () => {
     const slow = later(page(ROWS));
     routes['GET /money/transactions'] = [slow.answer];
     const app = await boot();
@@ -604,11 +600,12 @@ describe('W1 · the recent rows while their read is out (round 2, defect 2)', ()
     await app.act(async () => slow.release());
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
     expect(app.screen.queryByTestId('wallet-transactions-loading')).toBeNull();
-    const stands = ['wallet-balance-card', 'wallet-actions', 'wallet-bills', 'wallet-card-row', 'wallet-transactions', 'wallet-see-all', 'wallet-row-r1'];
+    const stands = ['wallet-balance-card', 'wallet-transactions', 'wallet-row-r1'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
+    expectNothingUnbuilt(app);
   });
 
-  it('a refresh keeps the rows and the card row on screen while it asks again, and never goes back to the shapes', async () => {
+  it('a refresh keeps the rows on screen while it asks again, and never goes back to the shapes', async () => {
     const app = await boot();
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
     const slow = later(page(ROWS));
@@ -617,7 +614,6 @@ describe('W1 · the recent rows while their read is out (round 2, defect 2)', ()
     await app.act(async () => setFocused(false));
     await app.act(async () => setFocused(true));
     await app.waitFor(() => expect(asked('/money/transactions')).toBe(before + 1));
-    expect(app.screen.getByTestId('wallet-card-row')).toBeTruthy();
     expect(app.screen.getByText('Amaka Nwosu')).toBeTruthy();
     expect(app.screen.queryByTestId('wallet-transactions-loading')).toBeNull();
     await app.act(async () => {
@@ -625,61 +621,25 @@ describe('W1 · the recent rows while their read is out (round 2, defect 2)', ()
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     expect(app.screen.getByText('Amaka Nwosu')).toBeTruthy();
-    expect(app.screen.getByTestId('wallet-card-row')).toBeTruthy();
   });
 });
 
-describe('a narrow phone (round 2, defect 1): nothing on the tab runs past the screen between 320 and 430', () => {
-  const WIDTHS = [320, 340, 360, 375, 390, 412, 430];
+describe('a narrow phone: nothing on the tab runs past the screen between 320 and 430', () => {
   const narrow = (width: number) => Dimensions.set({ window: { width, height: 740, scale: 2, fontScale: 1 } });
 
-  it('the tiles are the canvas’s 54 squares from 390 up and shrink by the kit’s own rule below, and five columns always fit', () => {
-    const { billTileSize, billGlyph, BILL_TILE } = require('../home/BillTiles') as typeof import('../home/BillTiles');
-    expect(WIDTHS.map((w) => billTileSize(w - 40))).toEqual([40, 44, 48, 51, 54, 54, 54]);
-    expect(billGlyph(54)).toBe(23);
-    expect(billGlyph(40)).toBe(17);
-    for (let width = 280; width <= 480; width += 1) {
-      const room = width - 40;
-      const size = billTileSize(room);
-      expect(5 * (size + BILL_TILE.extra)).toBeLessThanOrEqual(room);
-      if (width >= 390) expect(size).toBe(54);
-    }
-  });
-
-  it('the action labels use the kit’s 16 from 350 up, 14.5 from 335 and 13.5 below', () => {
-    const { actionSize, ACTION_ROOM } = require('../home/WalletActions') as typeof import('../home/WalletActions');
-    expect(WIDTHS.map((w) => actionSize(w - 40))).toEqual(['sm', 'md', 'lg', 'lg', 'lg', 'lg', 'lg']);
-    expect(actionSize(ACTION_ROOM.lg)).toBe('lg');
-    expect(actionSize(ACTION_ROOM.lg - 1)).toBe('md');
-    expect(actionSize(ACTION_ROOM.md)).toBe('md');
-    expect(actionSize(ACTION_ROOM.md - 1)).toBe('sm');
-  });
-
-  it.each([320, 360, 390])('at %i the bills take the row’s width, never a fixed column, and the pills keep their words whole', async (width) => {
+  it.each([320, 360, 390, 430])('at %i the bar, the card and the rows stand and no tile, tab or action is drawn', async (width) => {
     narrow(width);
-    const { billTileSize } = require('../home/BillTiles') as typeof import('../home/BillTiles');
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
-    const size = billTileSize(width - 40);
-    let total = 0;
-    for (const key of ['airtime', 'data', 'power', 'tv', 'more']) {
-      const tile = app.screen.getByTestId(`wallet-bill-${key}`);
-      expect(tile).toHaveStyle({ width: size + 16 });
-      total += size + 16;
-    }
-    expect(total).toBeLessThanOrEqual(width - 40);
-    // No pill has a fixed width, and none can be pushed past the row: it shrinks as well as grows.
-    for (const id of ['wallet-send', 'wallet-add-money']) {
-      expect(app.screen.getByTestId(id)).toHaveStyle({ flexGrow: 1, flexShrink: 1, height: 54 });
-    }
-    // The words stay whole: one line, and a size from the kit.
-    const font = width >= 350 ? 16 : width >= 335 ? 14.5 : 13.5;
-    for (const label of ['Send', 'Add money']) expect(app.screen.getByText(label)).toHaveStyle({ fontSize: font });
-    expect(app.screen.getByText('Add money').props.numberOfLines).toBe(1);
+    const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-transactions', 'wallet-row-r1', 'wallet-row-r2'];
+    expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
+    expectNothingUnbuilt(app);
+    // Only the card's own two buttons are pressable.
+    expect(buttonNames(app).sort()).toEqual(['Copy account number', 'Hide balance']);
   });
 
-  it('the loading shapes use the same tile size, so nothing jumps when the wallet loads', async () => {
+  it('the loading shapes are the bar, the card and three rows at 320, and nothing else', async () => {
     narrow(320);
     routes['GET /money/wallet/balance'] = ['hold'];
     const app = await boot();
@@ -689,8 +649,7 @@ describe('a narrow phone (round 2, defect 1): nothing on the tab runs past the s
     await app.act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 30));
     });
-    const tiles = app.screen.getByTestId('wallet-loading-bills').children;
-    expect(tiles).toHaveLength(5);
-    for (const tile of tiles) expect(typeof tile === 'string' ? tile : tile.children[0]).toHaveStyle({ width: 40, height: 40 });
+    expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
+    expectNothingUnbuilt(app);
   });
 });

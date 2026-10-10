@@ -21,7 +21,7 @@ export const barMetrics = {
  */
 export function ExploreBar() {
   return (
-    <View style={styles.bar}>
+    <View testID="explore-bar" style={styles.bar}>
       <View accessible accessibilityRole="header" accessibilityLabel="Explore">
         <BrandMark width={barMetrics.mark} decorative testID="explore-mark" />
       </View>
