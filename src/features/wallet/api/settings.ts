@@ -164,7 +164,7 @@ export async function startPinReset(): Promise<PinResetStarted> {
 /**
  * POST /money/pin/reset/confirm: the code and the new PIN with its second entry. Clears the lock and turns off fingerprint
  * or face approval. `key` is the attempt's Idempotency-Key: sent again unchanged when no answer came (a code works once, so
- * without it the repeat of a reset that landed would be refused as a dead code).
+ * without it the repeat of a reset that landed would be refused as a code already used).
  */
 export async function confirmPinReset(input: { resetId: string; code: string; newPin: string; newPinConfirmation: string; key: string }): Promise<PinSummary> {
   const { key, ...request } = input;

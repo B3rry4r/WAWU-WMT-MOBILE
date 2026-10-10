@@ -58,7 +58,7 @@ export type ResetPinScreenProps = {
  *
  * One attempt is one Idempotency-Key (WALLET-06 round 2, D1): a reset that got no answer is sent again, once at once and
  * then by Try again, with the same key and entries. If the first landed the server answers it again (a code works once,
- * so without the key it would be refused as a dead code); if it did not the repeat is the request. The screen never
+ * so without the key it would be refused as a code already used); if it did not the repeat is the request. The screen never
  * judges by the PIN's `changedAt`, which moves for a change by anyone.
  */
 export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPinScreenProps) {
