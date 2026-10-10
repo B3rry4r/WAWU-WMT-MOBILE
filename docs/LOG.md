@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 10 Oct 2026 · INBOX-05 · Verifier report, round 3 (mobile 9f7bab1, backend 715807d, trial-merged with main): D12 fixed by its real cause (20 of 20 alone, 3 of 3 in the full suite at load 21 to 26) and defects 1 to 5 stay closed; merged checks green (mobile check exit 0 on the second run, backend specs, protected 253 of 253, gates same 16 FAIL); new defects 13 (a room opened without the tabs gets no live messages), 14 (contract:build drifts one line after merging main), 15, 16; 17 and 18 for the lead; 19 of 26 mutants killed (6 survived, 1 equivalent); status building.
 - 8 Oct 2026 · INBOX-05 · Builder: Communities chip (I24), room (I25) and sending (I26) built on INBOX-04's inbox and live client; community rows, the chip and Browse communities wired; 9 gaps filed (G-450 to G-458); verifying.
 - 8 Oct 2026 · FIX-25 · Lead filed the browser side of the photo location ruling (SHARED-04): website and app web uploads re-encode images so no Exif or GPS reaches the bucket. CHECK-2 and later move down by 1.
 - 8 Oct 2026 · FIX-24 · Lead filed LEGAL-03 post-merge verifier defect N2 (security): support could deliver one client's own legal document to another client. Ruling: a delivered key must have an upload record whose uploader is the request owner or a listed legal-team account (LEGAL_DELIVERY_UPLOADER_IDS); the same rule at signing. CHECK-2 and later move down by 1.
