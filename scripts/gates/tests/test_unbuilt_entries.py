@@ -1,6 +1,8 @@
-"""Planted entries for the unbuilt_entries gate (DECISIONS R-46).
+"""Planted entries for the unbuilt_entries gate (DECISIONS R-47).
 
-An inert entry is `onPress={unbuilt('<TASK-ID>')}`. The gate must fail one whose
+No screen draws an inert entry under R-47; the helper and the gate stay, unused,
+and this suite keeps the gate honest for the day a call appears. An inert entry
+is `onPress={unbuilt('<TASK-ID>')}`. The gate must fail one whose
 task does not exist, one whose task is built (review or done), and one whose
 argument is not a single string literal; it must pass the rest, and list what
 is still inert by task. Each case writes throwaway task files and sources into
