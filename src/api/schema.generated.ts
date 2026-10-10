@@ -2688,6 +2688,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/push-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register this phone for the signed-in person. Idempotent: call it on every
+         *     start. `registered` is false, and nothing is stored, when the account's
+         *     deletion has been asked for.
+         */
+        post: operations["PushTokenController_register"];
+        /** Remove this phone (sign-out). Removing a token twice, or one that is not yours, is a 200 with `removed: false`. */
+        delete: operations["PushTokenController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content/{id}/comments": {
         parameters: {
             query?: never;
@@ -6085,6 +6107,19 @@ export interface components {
             audience: "everyone" | "creators" | "buyers" | "unverified_creators" | "professionals" | "unverified_professionals";
         };
         DeleteAccountDto: Record<string, never>;
+        RegisterPushTokenDto: {
+            /** @description The phone's Expo push token, `ExponentPushToken[...]` or `ExpoPushToken[...]`, exactly as the app got it. */
+            expoPushToken: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            /** @description The phone's own id, if the app has one. */
+            deviceId?: string;
+            /** @description A name for the phone ("Pixel 8"), if the app has one. */
+            deviceLabel?: string;
+        };
+        RemovePushTokenDto: {
+            expoPushToken: string;
+        };
         CreateCommentDto: {
             text: string;
             /** Format: uuid */
@@ -9064,6 +9099,12 @@ export interface components {
         };
         AccountDeletionResponse: {
             deletionScheduledAt: string;
+        };
+        PushTokenRegistered: {
+            registered: boolean;
+        };
+        PushTokenRemoved: {
+            removed: boolean;
         };
         CommentAuthor: {
             wawuId: string;
@@ -16010,6 +16051,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountDeletionResponse"];
+                };
+            };
+        };
+    };
+    PushTokenController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPushTokenDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushTokenRegistered"];
+                };
+            };
+        };
+    };
+    PushTokenController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemovePushTokenDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushTokenRemoved"];
                 };
             };
         };
