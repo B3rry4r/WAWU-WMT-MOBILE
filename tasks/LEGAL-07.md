@@ -1,7 +1,7 @@
 ---
 id: LEGAL-07
 title: Admin screens: legal prices
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 73
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V6, V7, V9]
 artboards: []
 ---
 # LEGAL-07 · Admin screens: legal prices
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

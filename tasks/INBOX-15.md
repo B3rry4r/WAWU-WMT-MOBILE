@@ -1,7 +1,7 @@
 ---
 id: INBOX-15
 title: Money requests in chat
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 139
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # INBOX-15 · Money requests in chat
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

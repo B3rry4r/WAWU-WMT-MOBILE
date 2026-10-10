@@ -33,14 +33,21 @@ function creator(wawuId: string, over: Partial<ExploreCreator> = {}): ExploreCre
 describe('X1 category tiles', () => {
   it('a user sees All, the first six categories in the order the server lists them, then More', () => {
     const tiles = categoryTiles(twelve);
-    expect(tiles.map((t) => t.label)).toEqual(['All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More']);
+    expect(tiles.map((t) => ('label' in t ? t.label : null))).toEqual(['All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More']);
     expect(tiles[0]).toMatchObject({ kind: 'all', icon: 'LayoutGrid' });
     expect(tiles[7]).toMatchObject({ kind: 'more', icon: 'Ellipsis' });
   });
 
-  it('has no More tile when every category already fits', () => {
-    expect(categoryTiles(twelve.slice(0, 6)).map((t) => t.kind)).toEqual(['all', 'category', 'category', 'category', 'category', 'category', 'category']);
-    expect(categoryTiles([]).map((t) => t.kind)).toEqual(['all']);
+  it('draws More even when every category already fits (R-46: X1 draws the whole row)', () => {
+    expect(categoryTiles(twelve.slice(0, 6)).map((t) => t.kind)).toEqual(['all', 'category', 'category', 'category', 'category', 'category', 'category', 'more']);
+    expect(categoryTiles(twelve.slice(0, 2)).map((t) => t.kind)).toEqual(['all', 'category', 'category', 'more']);
+  });
+
+  it('with no category served, holds six places with neutral frames between All and More, and names none', () => {
+    const tiles = categoryTiles([]);
+    expect(tiles.map((t) => t.kind)).toEqual(['all', 'blank', 'blank', 'blank', 'blank', 'blank', 'blank', 'more']);
+    expect(tiles.filter((t) => t.kind === 'blank').map((t) => ('slot' in t ? t.slot : -1))).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(tiles.filter((t) => 'label' in t).map((t) => ('label' in t ? t.label : ''))).toEqual(['All', 'More']);
   });
 
   it('draws each category with the icon the canvas gives it, and a category it does not know with the grid', () => {

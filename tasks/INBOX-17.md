@@ -1,7 +1,7 @@
 ---
 id: INBOX-17
 title: Paid questions: pay, hold, pay out and refund through the wallet (backend)
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 111
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # INBOX-17 · Paid questions: pay, hold, pay out and refund through the wallet (backend)
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

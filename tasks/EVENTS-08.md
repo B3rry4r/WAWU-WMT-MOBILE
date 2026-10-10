@@ -1,7 +1,7 @@
 ---
 id: EVENTS-08
 title: My events, organiser dashboard, call it off, called off
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 152
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [E17, E18, E25, E11]
 ---
 # EVENTS-08 · My events, organiser dashboard, call it off, called off
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

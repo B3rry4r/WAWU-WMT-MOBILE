@@ -1,7 +1,7 @@
 ---
 id: INBOX-14
 title: Private communities, hosting, join requests
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 176
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [I30, I31, I37, I32, I33, I34]
 ---
 # INBOX-14 · Private communities, hosting, join requests
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first
 

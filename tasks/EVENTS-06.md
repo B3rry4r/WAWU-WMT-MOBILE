@@ -1,7 +1,7 @@
 ---
 id: EVENTS-06
 title: Buy a ticket: pay, PIN, ticket, still confirming
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 108
 priority: launch
@@ -14,6 +14,8 @@ passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [E3, E4, E5, E10]
 ---
 # EVENTS-06 · Buy a ticket: pay, PIN, ticket, still confirming
+
+Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
 
 ## Read first
 

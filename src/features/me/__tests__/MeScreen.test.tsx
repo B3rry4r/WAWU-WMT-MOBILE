@@ -108,8 +108,9 @@ async function boot() {
   const onEditProfile = jest.fn();
   const onAddWork = jest.fn();
   const onOpenWork = jest.fn();
-  await render(frame(<MeScreen onEditProfile={onEditProfile} onAddWork={onAddWork} onOpenWork={onOpenWork} />));
-  return { onEditProfile, onAddWork, onOpenWork };
+  const onOpenSettings = jest.fn();
+  await render(frame(<MeScreen onEditProfile={onEditProfile} onAddWork={onAddWork} onOpenWork={onOpenWork} onOpenSettings={onOpenSettings} />));
+  return { onEditProfile, onAddWork, onOpenWork, onOpenSettings };
 }
 
 beforeEach(() => {
@@ -145,13 +146,13 @@ describe('M1 · Me', () => {
     expect(screen.queryByText('Shop')).toBeNull();
   });
 
-  it('draws no entry that leads to a screen not built yet: QR, Menu, the tick prompt and Create are added by their tasks', async () => {
+  it('does not yet draw QR, the tick prompt or Create (COMPLETE-04 draws them, inert); the Menu button is drawn (BRAND-01)', async () => {
     answers = header();
     await boot();
     await screen.findByTestId('me-name');
     expect(screen.queryByText('Get your professional tick')).toBeNull();
     expect(screen.queryByLabelText(/qr/i)).toBeNull();
-    expect(screen.queryByLabelText(/menu/i)).toBeNull();
+    expect(screen.getByLabelText('Menu')).toBeTruthy();
     expect(screen.queryByLabelText(/create/i)).toBeNull();
     // The tick is shown, but it is not a button until ME-12 adds Verification.
     expect(screen.getByLabelText('Creator tick').props.accessibilityRole).toBe('image');
@@ -250,6 +251,81 @@ describe('M1 · Me', () => {
   });
 });
 
+const MENU_TITLES = ['Creator dashboard', 'My content', 'My purchases', 'My courses', 'Saved', 'Notifications', 'Verification', 'Settings'];
+
+describe('Z1 · the Me menu (BRAND-01)', () => {
+  it('a signed-in user can tap Menu, see the eight rows Z1 draws in its order, and tap Settings to open Z2', async () => {
+    answers = header();
+    const { onOpenSettings } = await boot();
+    await screen.findByTestId('me-name');
+    expect(screen.queryByTestId('me-menu')).toBeNull();
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    expect(await screen.findByTestId('me-menu')).toBeTruthy();
+    const ids = ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification', 'settings'];
+    MENU_TITLES.forEach((title, i) => expect(screen.getByTestId(`me-menu-${ids[i]}`)).toHaveTextContent(title));
+    await fireEvent.press(screen.getByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
+  });
+
+  it('every other row is drawn with its chevron, is not a button, and opens nothing when tapped (R-46)', async () => {
+    answers = header();
+    const { onOpenSettings, onEditProfile } = await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await screen.findByTestId('me-menu');
+    for (const id of ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification']) {
+      const row = screen.getByTestId(`me-menu-${id}`);
+      expect(row.props.accessibilityRole).not.toBe('button');
+      await fireEvent.press(row);
+    }
+    expect(onOpenSettings).not.toHaveBeenCalled();
+    expect(onEditProfile).not.toHaveBeenCalled();
+    // The sheet is still up: nothing was opened, nothing was closed.
+    expect(screen.getByTestId('me-menu')).toBeTruthy();
+    expect(screen.getByTestId('me-menu-settings').props.accessibilityRole).toBe('button');
+  });
+
+  it('draws no figure the Hub has not served: no naira amount, count or tick state under the rows', async () => {
+    answers = header();
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    const list = await screen.findByTestId('me-menu-list');
+    expect(list).toHaveTextContent(new RegExp(`^${MENU_TITLES.join('')}$`));
+  });
+
+  it('a person can reach Settings while the profile is still loading', async () => {
+    answers = { [`GET ${ME}`]: 'hang', [`GET ${FIELDS}`]: 'hang', [`GET ${STATS}`]: 'hang' };
+    const { onOpenSettings } = await boot();
+    expect(await screen.findByTestId('me-loading')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('a person can reach Settings when the profile did not load (the page error is showing)', async () => {
+    answers = { ...header(), [`GET ${STATS}`]: refusal(500, 'Internal server error') };
+    const { onOpenSettings } = await boot();
+    expect(await screen.findByTestId('me-error')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('the sheet closes from its grabber and Menu opens it again', async () => {
+    answers = header();
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await screen.findByTestId('me-menu');
+    await fireEvent.press(screen.getByTestId('me-menu-close'));
+    await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    expect(await screen.findByTestId('me-menu')).toBeTruthy();
+  });
+});
+
 describe('M1 · states', () => {
   it('shows a loading view while the profile is on its way', async () => {
     answers = { ...header(), [`GET ${ME}`]: 'hang' };
@@ -318,7 +394,7 @@ describe('M1 · round 2', () => {
     await render(
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
         <QueryClientProvider client={client}>
-          <MeScreen onEditProfile={jest.fn()} onAddWork={jest.fn()} onOpenWork={jest.fn()} />
+          <MeScreen onEditProfile={jest.fn()} onAddWork={jest.fn()} onOpenWork={jest.fn()} onOpenSettings={jest.fn()} />
         </QueryClientProvider>
       </SafeAreaProvider>,
     );
