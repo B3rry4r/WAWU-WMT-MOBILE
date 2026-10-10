@@ -7,7 +7,7 @@ order: 244
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: [FIX-29]
 decisions: [R-47]
 passes: [V1, V5, V6]
@@ -174,6 +174,66 @@ Branch `wmt/FIX-30`, built on `2491202` (the verifier's head), merged with main 
 **Checks**: `npm run check` EXIT 0 as one command, first run, no flake (log `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/fix30r2-check1.log`, last line `EXIT 0`): typecheck 0; lint 0 errors and 7 warnings (the same 7 as round 1, none in a file this round touched); jest 120 suites and 2031 tests, all passed (round 1: 2018; this round adds the 13); gates 10 run, 472 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`, EVENTS-04's), baseline 0; 273 tasks. The 5 inbox suites alone: 76 of 76. Secret scan of the diff: none; no em-dash in anything a user reads.
 
 **NOT RUN**: a live run against the Hub (the read-on cannot run in the shipped app until a row kind has a renderer, as the verifier found); a phone (V10).
+
+## Verifier report, round 2
+
+Verifier session (Sonnet), independent of both builders and of the round 1 verifier. Mobile `origin/wmt/FIX-30` `ca3db8d` in a detached worktree. Jest only, no server, nothing left the machine. Origin main has moved to `90bdbfc` (NUV-02 and NUV-03 merged since the branch took `aff0e96`): a trial merge of main into the branch stops in one file, the generated `docs/PROGRESS.md` (`check_tasks.py --write` rebuilds it), with no code conflict. **Verdict: the fix does what it says for a refresh that succeeds, and every scenario the brief names passes except one. When the refetch that the refresh starts is REFUSED in the same instant, the read-on still stalls on the loading list (finding 1, defect, low and latent, a one-dependency fix tried in a throwaway). Status `building`.** Product code was not changed.
+
+### What was checked
+
+| Check | Result | Evidence |
+|---|---|---|
+| The diff under `src` | CONFIRMED | `git diff aff0e96..origin/wmt/FIX-30 -- src` lists two files: `InboxScreen.tsx` (9 lines, the effect and its comment) and `__tests__/InboxScreen.test.tsx` (+82). Outside `src`: `docs/LOG.md` (+1), `docs/PROGRESS.md` (generated), `tasks/EVENTS-06.md` (+1 capability line, and its text is right), `tasks/FIX-30.md`. In the test file only the `Answer` type (two optional fields, `delay` and `onSend`) and two lines of the fetch stand-in changed; the 17 older tests are untouched |
+| The new tests fail on round 1's `InboxScreen.tsx` | CONFIRMED, with a correction to the builder's count | a throwaway worktree with `InboxScreen.tsx` from `aff0e96` and the branch's tests: six runs, 4, 5, 4, 5, 5 and 6 of the 13 fail. The four scripted cases fail every time. The nine timings are load dependent: 0 to 2 of them fail per run (60/30, 120/100, 200/100 in turn), not the 2 or 3 the builder saw, and the round 1 verifier's own repro failed in 1 of 3 runs on the old code. The builder's "6 or 7 of 13" is the top of that range; nothing else is off |
+| The new tests pass on the branch, 20 runs in a row | CONFIRMED, with one cold-start note | second series, warm cache: **20 of 20**, each run the 13 new tests and the round 1 verifier's 9-timing repro (`reproStall.test.tsx`, 22 tests a run, all passed). In the first series (`-t` filter, new worktree) run 1 failed one test and runs 2 to 20 passed. Cause: a cold Jest transform cache. The first scripted test then takes 11.3 s and 14.5 s against its own 10 s limit (twice with `--no-cache`); a whole-file cold run fails the file's older first test instead (21.7 s). It is machine load and cold start, not behaviour (finding 3) |
+| The round 1 verifier's original repro on the branch | CONFIRMED | `reproStall.test.tsx`: 9 of 9 on the branch in 23 runs (3 alone, 20 in the loop) |
+
+### Trying to stall it another way
+
+Throwaway tests, 201 of them, written for this report and not committed (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix30r2/stallExtra.test.tsx`, drop it in `src/features/inbox/__tests__/`). Each ends the same way: nothing in flight, no request sent for 250 ms, and the screen on the empty state, a drawn row or (where a page was refused) the error with one Try again; a loading list with nothing in flight is a stall. Pages are three communities, then either nothing drawn (empty state) or a drawn chat row. On round 1's file 63 of the 201 fail (A3 4, B 19, C 8, D7 2, G 9, F 6, 15 fuzz seeds); on the branch 8 fail, all in the failed-refresh group.
+
+| Scenario | Result on the branch |
+|---|---|
+| A. A refresh lands on page 1: as page 1 is asked; while it is in flight; at 55, 62, 65, 70, 90 ms around its answer (pages 60 ms) | passed, both endings |
+| B. Two refreshes in a row: both at once as page 2 or page 3 is asked; a second lands during the refetch the first started; a cascade of six (every request refreshes again); eight pairs of timings with 40 ms pages | passed, both endings |
+| C. A failed refresh during the read-on: the refetch of page 1 refused (400); the refetch of page 2 refused with two pages held; the refetch cut offline (retried twice, about 3 s); the refetch and the read-on page both refused | **stalls** when the refusal is immediate (finding 1); passes when the refetch is cut and retried (C2), and when the read-on page is refused first and a refresh follows (C5: it resumes, no loop) |
+| D. The screen leaves and comes back: unmounted as page 2 is asked and mounted again later, while it is in flight, after the cache was marked stale, and as the page-1 refetch is asked; tab loses focus and regains it stale while page 2 is in flight; tab stays away while the read-on ends, then returns stale; pull to refresh at 0, 20, 45, 70, 95 ms | passed, both endings |
+| E. Fuzz: 60 seeded runs (2 to 5 pages, 1 to 3 refreshes by invalidation or pull to refresh, random page delays, refused pages in 40% of them) | passed, 60 of 60 |
+| F and G. A refresh at 0 to 120 ms (30 ms pages) with the page-1 refetch refused after 0, 2, 5, 10, 15, 20 or 40 ms | stalls only when the refusal takes 0 ms (the stand-in answers in the same tick) (1 to 3 of the 9 refresh times per run, a different set each run); no stall at 2 ms or more in three sweeps of 45 |
+
+### Finding
+
+1. **defect (low, latent: no row kind has a renderer yet, and it needs a refusal faster than one render).** The effect runs again when a read ends, but only through `inbox.isFetching` and `inbox.dataUpdatedAt`. A refetch that FAILS moves neither: `dataUpdatedAt` stays, and if no render showed the read as under way, `isFetching` is `false` before and after. The new comment (and the builder report, "a refetch always moves it") says every ending moves `dataUpdatedAt`; a failed one moves `errorUpdatedAt` instead. Entered by the same instant the builder used: the refresh fires as the second page is asked, the refetch of page 1 is refused (a 400, which the app does not retry), and the screen sits on the loading list with nothing in flight (`stallExtra.test.tsx` C1, C3 and C4, 6 of 6 fail every run; the requests end `first, c:cur2, first`, or `first, c:cur2, c:cur3, first, c:cur2` with two pages held). A refusal that takes a few ms or more does not stall it (the render sees the refetch under way and `isFetching` changes), nor does a cut connection (it retries for about 3 s), so in the shipped app it needs a refresh and a 4xx to land inside one render of each other. Fix, tried in a throwaway copy and not applied: add `inbox.errorUpdatedAt` to the dependency list (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix30r2/suggested-fix.patch`). With it the 30 `InboxScreen` tests and all 201 throwaway tests pass, three runs in a row (231 of 231), and it cannot loop: a failed read-on page ends on the error with one Try again. Then correct the comment and add one test where the refresh's refetch is refused (C1 of the throwaway file is 12 lines). None of the 13 shipped tests refuses anything, which is why two mutants below survive
+2. **note.** X3 and X7 below behave the same as the branch in everything but finding 1, so they are not test gaps: X7's `pagesRead` always moves together with `dataUpdatedAt` (an equivalent mutant), and X3 only changes whether the read-on may ask while a refetch is in flight
+3. **note (test robustness, not a product defect).** The first scripted test in the new group has a 10 s limit and carries the cold-start cost when the group is run alone on a cold cache (finding 3). The whole file under `npm test` is fine because older tests go first. Raising its limit is the builder's choice
+
+### Mutants of my own (one edit each on the effect's guard or dependencies or on `readingPast`, the 30 `InboxScreen` tests run, file restored and `git diff` empty after each; `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix30r2/mutants.log`, and `mutants_extra.log` beside it for the same edits run against the 201 throwaway tests)
+
+| # | Edit | Result |
+|---|---|---|
+| X1 | `inbox.dataUpdatedAt` out of the dependencies | killed (4: the four scripted cases) |
+| X2 | `inbox.isFetching` out of the dependencies | SURVIVED the shipped tests; killed by my failed-refresh sweeps (50) |
+| X3 | guard back to `!isFetchingNextPage`, dependencies kept | SURVIVED; equal to the branch in my 201 tests apart from finding 1's cases (note 2) |
+| X4 | guard loses `readingPast` (reads ahead always) | killed (5) |
+| X5 | guard loses the in-flight check | killed (1) |
+| X6 | guard inverted (reads only while something is fetching) | killed (17) |
+| X7 | `pagesRead` out of the dependencies | SURVIVED; equivalent (note 2) |
+| X8 | `dataUpdatedAt` swapped for `errorUpdatedAt` | killed (4) |
+| X9 | `readingPast` goes on after a failed read | killed (1) |
+| X10 | `readingPast` ignores the end of the pages | killed (14) |
+| X11 | guard also waits while the query is in an error state | SURVIVED the shipped tests; killed by my failed-refresh sweeps (54) |
+
+11 mutants, 7 killed by the shipped tests, 4 survived: two equivalent (X3, X7) and two (X2, X11) that only a test with a failed refresh kills, the gap behind finding 1.
+
+### Checks I ran
+
+`npm run check` as the same steps in one command with two jest workers (typecheck, lint, `npm test -- --maxWorkers=2`, gates, tasks; load average 15 to 25 from other agents), on the branch with this report, the LOG line and the regenerated `docs/PROGRESS.md` in place: **EXIT 0** on the first run, no flake (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix30r2/check1.log`, last line `EXIT 0`), and again once the report, the LOG line and `docs/PROGRESS.md` had their final text (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix30r2/check2.log`, last line `EXIT 0`, the same counts). Typecheck 0; lint 0 errors and 7 warnings (the same 7 as round 1, in `eventsFocus`, `ticketsRefetchFails` and the professionals `screens` tests, none in a file this round touched); jest 120 suites and 2031 tests, all passed (the builder's count); gates 10 run, 472 files, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`, EVENTS-04's), baseline 0; 273 tasks. Secret scan of what I staged (the task file, `docs/LOG.md`, `docs/PROGRESS.md`): no key-shaped string, no token, no phone or identity number; no em-dash in anything a user reads. After the run only the text of this paragraph and the LOG line changed (`check_tasks.py --write` is run again to confirm `INDEX.md` and `PROGRESS.md` stay as they were).
+
+### NOT RUN
+
+- A phone, a live Hub or a browser: the read-on cannot run in the shipped app until a row kind has a renderer (round 1 verifier), and this round was jest only by the brief.
+- A refusal faster than one render over a real network: jest answers in the same tick, so the instant case is shown by a scripted test, not by a measurement on a device.
+- The full backend or any server: this branch changes none.
 
 ## Owner sign-off
 
