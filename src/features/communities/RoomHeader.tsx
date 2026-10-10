@@ -12,8 +12,13 @@ import { GroupTile, tileMetrics } from './GroupTile';
  * design/_gen/inbox.js lines 17 (`chatHead`) and 69 (`credPill`): a 64 bar with 12 on the left and 16 on the right,
  * 10 between its parts and a hairline under it; the back button is 40; the name is 16 / 700 over a 12.5 line;
  * the credit pill is 32 high, 12 across, 13 / 700, with a 15 coin 6 before the words.
+ *
+ * The artboard's name and count carry no `nowrap` and no ellipsis (line 17: `white-space: normal`, `text-overflow: clip`), so on a
+ * phone narrower than the artboard they wrap onto more lines (measured: at 360 the name takes two lines and the count two, at 320
+ * the count takes three) and the pill keeps its width. The bar here does the same, growing past 64 instead of cutting the name or
+ * the count (INBOX-05 round 5, verifier note 26). Only a name past `nameLines` lines is cut, so one very long name cannot take the screen.
  */
-const headMetrics = { height: 64, padLeft: 12, padRight: 16, between: 10, back: 40, name: 16, sub: 12.5, subGap: 1, pillHeight: 32, pillPadH: 12, pillGap: 6, pillFont: 13, coin: 15, coinStroke: 2.2 } as const;
+const headMetrics = { height: 64, padLeft: 12, padRight: 16, between: 10, back: 40, name: 16, sub: 12.5, subGap: 1, nameLines: 3, pillHeight: 32, pillPadH: 12, pillGap: 6, pillFont: 13, coin: 15, coinStroke: 2.2 } as const;
 
 export type RoomHeaderProps = {
   name: string;
@@ -34,10 +39,10 @@ export function RoomHeader({ name, imageUrl, sub, credits, onBack }: RoomHeaderP
       <IconButton icon="ChevronLeft" label="Back" onPress={onBack} size={headMetrics.back} testID="room-back" />
       <GroupTile uri={imageUrl} size={tileMetrics.header} testID="room-tile" />
       <View style={styles.words}>
-        <Text variant="body" numberOfLines={1} accessibilityRole="header" style={[font(700), { fontSize: headMetrics.name }]} testID="room-name">
+        <Text variant="body" numberOfLines={headMetrics.nameLines} accessibilityRole="header" style={[font(700), { fontSize: headMetrics.name }]} testID="room-name">
           {name}
         </Text>
-        <Text variant="caption" tone="textMuted" numberOfLines={1} style={[{ fontSize: headMetrics.sub }, styles.sub]} testID="room-sub">
+        <Text variant="caption" tone="textMuted" style={[{ fontSize: headMetrics.sub }, styles.sub]} testID="room-sub">
           {sub}
         </Text>
       </View>

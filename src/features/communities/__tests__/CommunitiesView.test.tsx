@@ -282,6 +282,40 @@ describe('Communities (I24)', () => {
     expect(rtl.screen.queryByText('Private one')).toBeNull();
   });
 
+  it('a first page with only a few open rooms is followed by the next one without the person scrolling (defect 22)', async () => {
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged([suggestion('o1', 'Zeta open', { memberCount: 5000 }), suggestion('o2', 'Mid open', { memberCount: 3000 })], 2)];
+    answers[SUGGESTED_2] = [paged([suggestion('o3', 'Afrobeats producers'), suggestion('o4', 'Alpha open')])];
+    await renderView();
+    // Nobody scrolled and the list never reported its end: the phone read page 2 itself.
+    expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
+    for (const name of ['Zeta open', 'Mid open', 'Afrobeats producers', 'Alpha open']) expect(rtl.screen.getByText(name)).toBeTruthy();
+    expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toEqual([SUGGESTED, SUGGESTED_2]);
+  });
+
+  it('lists every open room when private rooms fill the pages between them: two open, 45 private, two open', async () => {
+    const privates = (from: number, to: number) =>
+      Array.from({ length: to - from + 1 }, (_, i) => suggestion(`p${from + i}`, `Private room ${from + i}`, { kind: 'private', memberCount: 3000 }));
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged([suggestion('o1', 'Zeta open', { memberCount: 5000 }), suggestion('o2', 'Mid open', { memberCount: 3000 }), ...privates(1, 18)], 2)];
+    answers[SUGGESTED_2] = [paged(privates(19, 38), 3)];
+    answers['GET /communities/suggested?page=3&perPage=20'] = [paged([...privates(39, 45), suggestion('o3', 'Afrobeats producers'), suggestion('o4', 'Alpha open')])];
+    await renderView();
+    expect(await rtl.screen.findByText('Alpha open', {}, { timeout: 5000 })).toBeTruthy();
+    for (const name of ['Zeta open', 'Mid open', 'Afrobeats producers', 'Alpha open']) expect(rtl.screen.getByText(name)).toBeTruthy();
+    expect(rtl.screen.queryByText(/^Private room/)).toBeNull();
+    expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toHaveLength(3);
+  });
+
+  it('does not read on when the Hub has no next page', async () => {
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged([suggestion('o1', 'Zeta open'), suggestion('o2', 'Mid open')])];
+    await renderView();
+    expect(await rtl.screen.findByText('Mid open')).toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toEqual([SUGGESTED]);
+  });
+
   it('a person in no room, when every suggestion is private, sees the empty state and no row that does nothing', async () => {
     answers[MINE] = [paged([])];
     answers[SUGGESTED] = [paged([suggestion('p1', 'Private one', { kind: 'private' })])];
@@ -384,6 +418,68 @@ describe('Communities (I24)', () => {
     await renderView();
     const title = await rtl.screen.findByText(name);
     expect(title.props.numberOfLines).toBe(1);
+  });
+});
+
+describe('Suggested reads on until it lists enough open rooms (defect 22)', () => {
+  const { useSuggestedCommunities, SUGGESTED_READ_ON_ROOMS, SUGGESTED_READ_ON_PAGES } = require('../useCommunities') as typeof import('../useCommunities');
+  const suggestedRequests = () => sent.filter((request) => request.startsWith('GET /communities/suggested'));
+  const pageUrl = (n: number) => `GET /communities/suggested?page=${n}&perPage=20`;
+  const settle = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it('reads on while fewer than eight open rooms are listed and the Hub has a next page, and stops at eight', async () => {
+    const open = (from: number) => Array.from({ length: 4 }, (_, i) => suggestion(`o${from + i}`, `Open room ${from + i}`));
+    answers[pageUrl(1)] = [paged(open(1), 2)];
+    answers[pageUrl(2)] = [paged(open(5), 3)];
+    answers[pageUrl(3)] = [paged(open(9))];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await rtl.waitFor(() => expect(hook.result.current.items).toHaveLength(SUGGESTED_READ_ON_ROOMS));
+    await settle();
+    // Eight open rooms are listed: the phone does not read the third page by itself.
+    expect(suggestedRequests()).toEqual([pageUrl(1), pageUrl(2)]);
+    expect(hook.result.current.items.map((room) => room.name)).toEqual(Array.from({ length: 8 }, (_, i) => `Open room ${i + 1}`));
+    // The list reaching its end is the normal paging, and it still asks for the next page.
+    await rtl.act(async () => {
+      await hook.result.current.fetchNextPage();
+    });
+    await rtl.waitFor(() => expect(hook.result.current.items).toHaveLength(12));
+    expect(suggestedRequests()).toEqual([pageUrl(1), pageUrl(2), pageUrl(3)]);
+  });
+
+  it('reads on by itself for at most five pages in a pass, and the end of the list carries on after that', async () => {
+    const page = (n: number) => paged([suggestion(`o${n}`, `Open room ${n}`)], n < 7 ? n + 1 : null);
+    for (let n = 1; n <= 7; n += 1) answers[pageUrl(n)] = [page(n)];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await rtl.waitFor(() => expect(hook.result.current.items).toHaveLength(SUGGESTED_READ_ON_PAGES));
+    await settle(250);
+    expect(suggestedRequests()).toHaveLength(SUGGESTED_READ_ON_PAGES);
+    expect(hook.result.current.hasNextPage).toBe(true);
+    await rtl.act(async () => {
+      await hook.result.current.fetchNextPage();
+    });
+    await rtl.waitFor(() => expect(hook.result.current.items).toHaveLength(SUGGESTED_READ_ON_PAGES + 1));
+    await settle();
+    // The sixth page was asked for by the end of the list, and the phone does not go on by itself from there.
+    expect(suggestedRequests()).toHaveLength(SUGGESTED_READ_ON_PAGES + 1);
+  });
+
+  it('reads on past pages of private rooms, which count as pages read', async () => {
+    const privatePage = (n: number) => paged([suggestion(`p${n}`, `Private ${n}`, { kind: 'private' })], n + 1);
+    for (let n = 1; n <= 4; n += 1) answers[pageUrl(n)] = [privatePage(n)];
+    answers[pageUrl(5)] = [paged([suggestion('o5', 'Open room 5')], 6)];
+    answers[pageUrl(6)] = [paged([suggestion('o6', 'Open room 6')])];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await rtl.waitFor(() => expect(hook.result.current.items.map((room) => room.name)).toEqual(['Open room 5']));
+    await settle(250);
+    // Five pages in the pass, the last one the first with a room to join; the sixth is for the end of the list.
+    expect(suggestedRequests()).toHaveLength(5);
+  });
+
+  it('does not start before it is enabled', async () => {
+    answers[pageUrl(1)] = [paged([suggestion('o1', 'Open room 1')])];
+    await rtl.renderHook(() => useSuggestedCommunities(false));
+    await settle();
+    expect(suggestedRequests()).toEqual([]);
   });
 });
 

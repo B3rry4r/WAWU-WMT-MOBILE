@@ -13,6 +13,7 @@ import {
   fetchMessages,
   markRoomRead,
   messagesKey,
+  newMessageKey,
   roomKey,
   sendMessage,
   type CommunityMessage,
@@ -23,6 +24,8 @@ import {
 export type OutgoingMessage = {
   localId: string;
   text: string;
+  /** The Hub's `Idempotency-Key` for this one message: made when it is composed, sent again unchanged on every retry, never used for another. */
+  key: string;
   status: 'sending' | 'failed';
   /** The server's own sentence when it refused, or the phone's when no answer came. */
   error?: string;
@@ -70,8 +73,10 @@ const nextLocalId = () => `local-${(localCount += 1)}`;
  *   A message arriving while a page is being read is kept apart from the pages until the pages hold it,
  *   so a read that started before it cannot erase it.
  * - What the person sends is held here as `outgoing` until the server answers; the server's answer
- *   replaces it. One send runs at a time and a second press while it runs does nothing, because the route
- *   takes no idempotency key (BACKEND_GAPS.md): a message could be charged twice.
+ *   replaces it. Every message gets one `Idempotency-Key` when it is composed, sent with every try of that
+ *   message and with no other: per sender and key the Hub stores and charges once and answers a repeat with
+ *   the first message, so a send whose answer was lost is safe to send again (INBOX-05 defect 21). One send
+ *   still runs at a time and a second press while it runs does nothing.
  * - The room is marked read while the person is looking at it, and the Inbox is read again after.
  */
 export function useRoomMessages(id: string, looking: boolean) {
@@ -171,7 +176,11 @@ export function useRoomMessages(id: string, looking: boolean) {
     [take, meSender],
   );
 
-  /** Whether a message the phone could not confirm was stored after all, found by reading the newest page. */
+  /**
+   * Whether a message the phone could not confirm was stored after all, found by reading the newest page. Only a shortcut: it
+   * saves a request when the message did land. The key is what makes sending again safe, so when this read cannot be made the
+   * message is sent again with the same key (see `run`).
+   */
   const landed = useCallback(
     async (entry: OutgoingMessage): Promise<CommunityMessage | null> => {
       const own = me.data ?? (await fetchMe());
@@ -193,8 +202,9 @@ export function useRoomMessages(id: string, looking: boolean) {
         held.map((candidate) => (candidate.localId === entry.localId ? { ...candidate, status: 'sending', error: undefined } : candidate)),
       );
       try {
+        // A look-up that cannot be read is no answer: the message is sent again under its own key, and the Hub stores it once.
         const stored = entry.uncertain ? await landed(entry).catch(() => null) : null;
-        confirm(entry.localId, stored ?? (await sendMessage(id, entry.text)));
+        confirm(entry.localId, stored ?? (await sendMessage(id, entry.text, entry.key)));
       } catch (error) {
         const refused = isApiError(error) ? error : null;
         const outOfCredits = refused?.status === OUT_OF_CREDITS;
@@ -232,6 +242,7 @@ export function useRoomMessages(id: string, looking: boolean) {
       const entry: OutgoingMessage = {
         localId: nextLocalId(),
         text,
+        key: newMessageKey(),
         status: 'sending',
         heldIds: new Set(itemsRef.current.map((message) => message.id)),
       };

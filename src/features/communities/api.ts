@@ -105,10 +105,30 @@ export async function fetchMessages(id: string, page: number): Promise<Paged<Com
   );
 }
 
-/** Sends one text message. The answer is the stored message; its `costInCredits` is what the server charged. */
-export async function sendMessage(id: string, text: string): Promise<CommunityMessage> {
+let keyCount = 0;
+
+/**
+ * The `Idempotency-Key` for one message the person composes: made once when they press Send, kept with that message across
+ * every retry of it, and never used for another (INBOX-05 round 5, verifier defect 21). Per sender and key the Hub stores and
+ * charges the message once and answers a repeat with the first one, so sending it again after an answer was lost can never post
+ * it, or charge for it, twice. 8 to 128 letters, digits, hyphens and underscores, as the Hub accepts; the time, a count for this
+ * run of the app and two random parts keep two messages apart even when pressed in the same millisecond.
+ */
+export function newMessageKey(): string {
+  keyCount += 1;
+  const part = () => Math.random().toString(36).slice(2, 12).padEnd(10, '0');
+  return `msg-${Date.now().toString(36)}-${keyCount.toString(36)}-${part()}${part()}`;
+}
+
+/**
+ * Sends one text message under the key made for it. The answer is the stored message; its `costInCredits` is what the server
+ * charged. A repeat of the same key answers with the first message, so the caller may send it again until it hears an answer.
+ */
+export async function sendMessage(id: string, text: string, key: string): Promise<CommunityMessage> {
   const message = dataOf<CommunityMessage>(
-    await unwrap(api.POST('/api/hub/communities/{id}/messages', { params: { path: { id } }, body: { text } })),
+    await unwrap(
+      api.POST('/api/hub/communities/{id}/messages', { params: { path: { id }, header: { 'Idempotency-Key': key } }, body: { text } }),
+    ),
     'message',
   );
   if (typeof message.id !== 'string') throw unreadable('message');
