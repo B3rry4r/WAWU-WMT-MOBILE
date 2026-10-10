@@ -23,8 +23,8 @@ const two = (n: number) => String(n).padStart(2, '0');
 const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 /**
- * "at 09:52" (E23): when the ticket was let in, on this phone's clock, which is the clock at the door. A ticket
- * let in on another day names the day first ("Fri 9 Oct at 09:52"), so an old check-in is never read as today's.
+ * The time of E23's "Checked in at 09:52 by Door 1", on this phone's clock, which is the clock at the door. When the
+ * ticket went in on another day the day comes first, as in Fri 9 Oct at 09:52, so an old check-in cannot pass for today's.
  */
 export function checkedInWhen(iso: string, now: number = Date.now()): string {
   const at = new Date(iso);

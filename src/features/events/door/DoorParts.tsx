@@ -35,7 +35,7 @@ export const panelMetrics = {
   corner: 36,
   top: 24,
   bottom: 40,
-  gap: 8,
+  lineGap: space.sm,
   icon: 40,
   iconStroke: 2.4,
   title: 26,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     paddingTop: panelMetrics.top,
     paddingHorizontal: layout.gutter,
     alignItems: 'center',
-    gap: panelMetrics.gap,
+    gap: panelMetrics.lineGap,
   },
   title: {
     ...font(800),
