@@ -7,7 +7,7 @@ order: 113
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-15, UI-02, BILLS-01]
 decisions: [R-10, R-33]
 passes: [V1, V4, V5, V6, V9]
@@ -86,7 +86,30 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+**Builder report, 11 Oct 2026 (Sonnet builder, one session).** Mobile `wmt/WALLET-04` from main 610cc57, with main 4743a40 (NUV-05) merged in (one conflict, `BACKEND_GAPS.md`, both sides kept). **Backend: not changed, no backend branch.** MONEY-15's routes already serve everything these screens read (`GET /money/transactions` with `filter`, `q`, `group`, `cursor`; `/summary?month=`; `/{id}` with the fee parts), and `contract/` is the one on backend main f2b6bf6, unchanged, so no contract regeneration and no backend gates.
+
+**Files.** New: `src/features/wallet/api/history.ts` (the three reads and their keys); `src/features/wallet/history/` `lagosTime.ts`, `model.ts` (pure), `TxRow.tsx`, `HistoryParts.tsx` (search, month card, load-failed), `HistoryScreen.tsx` (W26, W28), `DetailScreen.tsx` (W27); routes `src/app/transactions/index.tsx` and `[id].tsx`; tests `historyModel` (28), `historyScreens` (38), `historyFlow` (6, the real router). Changed: `home/RecentTransactions.tsx` (See all, rows open W27), `home/WalletScreen.tsx` (the two pushes), `home/model.ts` (rows and times now come from `history/`; `rowTime` re-exported), `api/home.ts` (three exports), `WalletScreen.test.tsx` (below). Docs: BACKEND_GAPS G-720, G-721; SHARED-CHANGES WALLET-04 #1 and R1; LOG.
+
+**Capability checks.** Evidence in the builder's scratch `w04/` (`pairs/` artboard left and build right at 390 px, `shots/`, `logs/shoot.log`, `logs/check*.log`): wawu-id's real login (:6431), the Hub built from backend main f2b6bf6 (:6432) with 49 seeded ledger rows (money in and out, bills, content unlocks, a pending, a failed, a reversed), a Fintava balance stand-in (:6433, W1 needs a balance), the web export (:6434) made with its own Metro cache (the bundle holds only `localhost:6431` and `localhost:6432`), signed in through the app's own sign-in screen, no injected token (V9).
+- [x] **From W1:** See all opens W26 (`url after See all` = `/transactions`), a recent row opens W27 (`url row->W27`), in the browser and in jest on the real router (`historyFlow`). The two entries are drawn as the canvas draws them (`W1-*.png`).
+- [x] **W26:** search ("Chidinma" finds her transfer; one character asks nothing; "zzzzz" says No results), each chip asks the Hub (`filter=money_in`, `money_out`, `bills`, `content`), a row opens W27, three pages with a day continuing under one label, In and Out are the Hub's sums for the month (`W26-*.png`).
+- [x] **W27:** the tip (`W27`), the debit with its parts, ₦25,000.00 + ₦40.00 + ₦25.00 = ₦25,065.00 (`W27-debit`), a pending one (`W27-pending`), copy the reference, Share receipt (jest: the phone's `Share.share` gets the text with the reference; the browser has no share sheet, so the screen says so, `W27-share-unavailable`).
+- [x] **W28:** an account with a wallet and no bills: the Bills chip draws the card, Pay a bill opens S2 (`W28-*.png`, `S2-from-W28-*.png`).
+- [x] **Pictures, light and dark, each beside its artboard** (`pairs/W1`, `W26`, `W27`, `W28`; V5 is the verifier's). They differ in data (names, times, the month's name), the status bar (a browser has none), the two things not drawn (below), "yet" for "in September" and a name for "@amaka" (defaults 1 and 4).
+- [x] **States by their real cause (V6):** loading (the real Hub's answer held: `W26-loading`, `W27-loading`), error (the browser cannot reach the Hub: `W26-offline`), the totals failing alone (`W26-summary-error`), no wallet (creator-basic, `W26-no-wallet`, `W27-no-wallet`), not found (`W27-missing`), empty (`W26-search-none`, `W28`); the first-use empty is in jest.
+- [x] **V4 field trace:** every field is one ledger row (written by the money core and the paying features into `FintavaLedgerEntry`) read by `GET /money/transactions`: amount and total (W1 row, W26 row, W27 figure and parts), the fee parts (W27), counterparty name and avatar (W1, W26, W27), link title (W26's grouped title, W27's On), note and reference (W27, the share text), status (W1 and W26 word, W27 pill), time (Lagos: W1, W26 label and clock, W27 date). The seeded GTBank row reads −₦25,065.00 on W26 and W27.
+
+**Checks.** CHECKLINE
+
+**An edit to a test I did not write.** WALLET-01's `WalletScreen.test.tsx` asserted that See all is not drawn and a row is not pressable until WALLET-04, which this task makes untrue. `expectNothingUnbuilt` no longer lists See all (it still refuses it where there are no rows: W4, W5, W6 and the states without a balance); the two button lists on W1 gain See all and the two row buttons; "a transaction row ... is not pressable because its detail is not built" became "... a user can tap it to open that transaction (W27)", with two new tests for See all. Nothing else in the file changed.
+
+**Defaults (agent), owner may override.** (1) The list is the whole history and the summary is this month (Lagos): W28 says "No bill payments yet" where the canvas says "in September" (the Hub's `month` filter is not used: no month picker is drawn, and a list cut at the month would hide older rows). (2) A grouped row ("Unlock · piece", "3 buyers") opens the unlocks it stands for, the same list without search, chips or totals (`/transactions?group=<key>`); the canvas draws no such screen, the alternative is a row that opens nothing. (3) A debit's parts sit in their own card under the canvas's card; the labels are the brief's, "Fintava's charge" and "WAWU's fee" (G-721: R-45 makes the provider Nuvion), one constant, `FEE_LABELS`; WAWU's fee is left out when it is 0, the provider's charge is kept at ₦0.00. (4) W27's From and To show a person's name, not "@handle" (G-720). (5) The Type line is the first part of the Hub's description, as the Hub's own receipt reads it. (6) Copy the canvas does not draw: "No results", "Nothing matches “…”. Try a name, a reference or what it was for.", "No money in yet", "No money out yet", "No content payments yet", "No transactions yet / Money you send, receive and pay shows up here.", "Couldn’t load your transactions", "Couldn’t load this month’s totals.", "Sharing isn’t available on this device.", "We couldn’t find that transaction", and the share text ("Who Made This receipt", the headline, the status, each line, the parts, the date, the reference). (7) Search waits 350 ms after the last key (the schools' wait), asks from two characters (the Hub's minimum), and the search key asks at once. (8) A row shows its amount whatever its status, with "Pending", "Failed" or "Reversed" before its time; the month's totals leave those out (the Hub's rule).
+
+**Not drawn (R-47):** the export icon beside the title (statements, WALLET-35), Report a problem (SUPPORT-01 adds it, as drawn), a bill's glyph per kind and its units (G-311).
+
+**NOT RUN, and what unblocks each.** (a) A phone or simulator: the real share sheet, pulling the list down with a finger (jest pins `onRefresh`; the web export has no pull), the keyboard; unblocked by a development build on the same Wi-Fi as a local Hub or a tester build (V10, RELEASE-03). (b) Against the real wallet provider: the history reads the ledger only (no provider call), but these rows were written by SQL to the ledger's columns, not by a real delivery, and W1's balance came from a stand-in; unblocked by recorded deliveries (OPS-10, or Nuvion's sandbox once its deliveries are recorded). (c) The statements icon and Report a problem: WALLET-35 and SUPPORT-01.
+
+No server of mine is left running: the Hub, wawu-id, the Fintava stand-in and the static server were stopped by PID (checked with `lsof` on 6431 to 6434), and the worktrees are removed.
 
 ## Verifier report
 
