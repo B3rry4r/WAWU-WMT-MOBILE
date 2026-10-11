@@ -45,6 +45,8 @@ export type CodeScreenProps = {
   onBack?: () => void;
   /** A second code to enter beside the first (the email code, when sign-up asked for it). */
   extra?: { label: string; hint: string };
+  /** A plain note under the heading that has nothing to do with the code: the number that was not added (AUTH-07 round 3). */
+  aside?: { title: string; body: string };
   /** Under the Resend line: "Later" on the email step. */
   later?: { label: string; onPress: () => Promise<void> };
   /** What the screen starts in (a preview, never the app). */
@@ -72,6 +74,7 @@ export function CodeScreen({
   onRestart,
   onBack,
   extra,
+  aside,
   later,
   initialDigits = '',
   initialWrong = false,
@@ -228,6 +231,7 @@ export function CodeScreen({
           </Text>
           <Text variant="muted">{subtitle}</Text>
         </View>
+        {aside ? <Banner tone="warning" title={aside.title} body={aside.body} testID={`${testID}-aside`} /> : null}
         {phase.kind === 'dead' ? (
           <Banner tone="warning" title="This sign-up has ended" body="Start again to get a new code." testID={`${testID}-dead`} />
         ) : null}

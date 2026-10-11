@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Icon } from '@/components/icon';
+import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { radius, space, useWawu } from '@/theme';
 
@@ -8,24 +8,27 @@ import { radius, space, useWawu } from '@/theme';
 const bannerMetrics = { padV: 14, icon: 19, iconToText: 12, inner: 3, iconNudge: 1 } as const;
 
 export type BannerProps = {
-  tone: 'danger' | 'warning';
+  /** `info` is the kit's neutral note (S13): the info tint, and a Clock where the others have an alert mark. */
+  tone: 'danger' | 'warning' | 'info';
   title: string;
   body: string;
   testID?: string;
 };
 
+const looks = {
+  danger: { tint: 'dangerTint', ink: 'danger', icon: 'CircleAlert' },
+  warning: { tint: 'warningTint', ink: 'warning', icon: 'CircleAlert' },
+  info: { tint: 'infoTint', ink: 'info', icon: 'Clock' },
+} as const satisfies Record<BannerProps['tone'], { tint: 'dangerTint' | 'warningTint' | 'infoTint'; ink: 'danger' | 'warning' | 'info'; icon: IconName }>;
+
 /** The tinted note above a form: what went wrong and what to do. Read out as an alert the moment it appears. */
 export function Banner({ tone, title, body, testID }: BannerProps) {
   const { colors } = useWawu();
+  const look = looks[tone];
   return (
-    <View
-      testID={testID}
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-      style={[styles.root, { backgroundColor: tone === 'danger' ? colors.dangerTint : colors.warningTint }]}
-    >
+    <View testID={testID} accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.root, { backgroundColor: colors[look.tint] }]}>
       <View style={styles.icon}>
-        <Icon name="CircleAlert" size={bannerMetrics.icon} color={tone === 'danger' ? colors.danger : colors.warning} strokeWidth={2.2} />
+        <Icon name={look.icon} size={bannerMetrics.icon} color={colors[look.ink]} strokeWidth={2.2} />
       </View>
       <View style={styles.text}>
         <Text variant="kvValue">{title}</Text>
