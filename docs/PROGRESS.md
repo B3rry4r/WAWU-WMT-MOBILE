@@ -3,19 +3,23 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 136 of 248.**
+**Launch tasks done: 135 of 248.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 134 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 97 | 27 | 11 | 5 |
+| done | 96 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [JOIN-03](../tasks/JOIN-03.md) Event registration: claim the paid plan in the app with the access code (You)
 
 ## Done
 
@@ -151,7 +155,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
-- [JOIN-03](../tasks/JOIN-03.md) Event registration: claim the paid plan in the app with the access code (You)
 - [FIX-30](../tasks/FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording (You)
 - [AUTH-07](../tasks/AUTH-07.md) Sign-up verifies by email code; no SMS (You)
 - [FIX-31](../tasks/FIX-31.md) The app's tests that fail only under load: make them deterministic (You)

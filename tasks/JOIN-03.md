@@ -7,7 +7,7 @@ order: 243
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: money-path
-status: done
+status: verifying
 depends_on: [JOIN-01, TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -1007,6 +1007,111 @@ Verifier, 11 Oct 2026 (Sonnet agent, an independent session that wrote none of t
 - The OTP route with WhatsApp configured (no provider host may be called: the odd-spelling rows were written by SQL); a deployed wawu-id with the Hub's real deletion flow (mark-deletion, 48 hours, anonymise) and the app; the whole wawu-id suite as one run (`src/auth` and `src/contract` ran) and the backend (unchanged).
 - A natural (unforced) deadlock: 0 of 145 phone-channel rounds (the email-channel rounds of the natural run queued on the counters and say nothing); D8 is reproduced with a lock held open. The mark-deletion route racing a confirm (only the anonymise was raced). A rolling deploy with an old and a new wawu-id.
 - Pictures: no screen changed this round; the D4f glyph is checked by the test's icon ids and seven mutants, not by a rendered picture.
+
+## Builder report, round 5
+
+Builder, 11 Oct 2026 (Sonnet agent, round 5 of JOIN-03; the lead's rulings of the same day, each Default (lead), owner may override). Heads: wawu-id `wmt/JOIN-03` `2919259`
+(wawu-id main `65935d0`, the round 4 merge, is the parent), mobile `wmt/JOIN-03` (this commit; mobile main `5ed7ce6` is inside it, the merge was a fast-forward), backend unchanged
+(`5926f5c`, no backend change this round; no migration, no contract change). Evidence: the lead's scratchpad `join03r5/` (`harness/` the live scripts `d10.mjs`, `detr.mjs`, `detr2.mjs`,
+`detr3.mjs`, `d9.mjs`, `race.mjs`, `race3.mjs`, `n16.mjs`, `n16b.mjs`, `n16c.mjs`, `n30.mjs` and the mutant driver `mutate_id.py`; `logs/` every before and after log and check log; `mut/`
+the mutant logs). The REAL built wawu-id ran as two processes on ONE database (6161 texting the sign-up code, 6162 mailing it) with a stand-in for Resend and the SMS provider on 6163, on
+the database `bj03r5_id_test`; the BEFORE control is a build of main `65935d0` run by the same scripts. No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called. Phone
+numbers and addresses are masked everywhere below.
+
+**The lead's rulings, as built (before, then after; same script, same database)**
+
+1. **D10: refresh refuses a closed account.** *Before* (`d10.mjs`, `logs/d10-before.log`; a BEFORE INSERT trigger on `refresh_tokens`, in the test database only, holds the token's insert 1.5 s, which is
+   the window the natural race has for ~100 ms): the confirm commits, the Hub anonymises the account (200, banned, marker), then the token is stored: 1 refresh row on the closed account, and
+   `POST /auth/refresh` with it answers **200 with new tokens** (and the row count stays 1), on the phone channel and on the mailed one. *After* (`logs/d10-after.log`): the same sequence, the refresh
+   answers **401** `Invalid refresh token` (the answer an unknown token gets), no token, and the account's refresh rows go from 1 to **0**. Built in `TokensService.rotateRefreshToken`: after the
+   token is found, the account is read; `isClosedAccount` (the test the sign-up routes use) refuses it and revokes every refresh token of the account under its lock (`revokeAllRefreshTokens`: the
+   account lock, then the tokens, the order the anonymise takes); the account is read AGAIN under the lock in the rotation's transaction, so a close that lands between the first read and the lock is
+   refused too (a spec forces exactly that) and nothing new is stored. The anonymise already deleted every refresh token of the account inside its own transaction (`tx.refreshToken.deleteMany({ userId })`
+   after the account update): a spec now says so (by account, after the update, in `tx`). **Natural race** (`race3.mjs`, 100 rounds, the anonymise 150 to 450 ms after the confirm began): the confirm won
+   25 times and left 25 refresh rows on closed accounts; **0** refreshes answered 200 (the verifier's 5 of 5 did, on `28de1b8`). **Open accounts unchanged** (AUTH-08, SETTINGS-03): `d10.mjs` control
+   (rotate 200, the used token 401, the new one rotates again); `refresh-token-lookup.spec` and `session-security.spec` pass; the repo's live seam tests `test:refresh-local` (AUTH-08, "all passed",
+   including 200 stored tokens refreshing under 1 s) and `test:session-local` (SETTINGS-03, "all passed", including 24 refreshes racing a password change with zero surviving stale sessions) pass on
+   the branch against a real database. A suspended account still refreshes (not closed). A closed account with a sign-up code row left answers 401, not the 403 of an unconfirmed sign-up.
+2. **D8: one lock order, code row before account, on every path that removes a pending sign-up.** Picked "same order" over "retry on 40P01": a retry still loses when Postgres picks the other
+   request as the victim, and the replacing request would still answer 500. *Before* (`detr.mjs` phone and email, `detr2.mjs`; a lock this script holds on an OTP row the anonymise needs after its
+   code-row delete): the anonymise answers 200 and **the newer sign-up answers 500 `deadlock detected` (40P01)**, on the phone channel, on the mailed channel, and **a confirm that proves a number a
+   pending account holds answers 500**. *After* (`logs/detr-*-after.log`, `logs/detr2-after.log`): the anonymise 200 and the newer sign-up **201**, on both channels, and the confirm **200 with a
+   token**; no deadlock and no error in either process's log. *The other order* (`detr3.mjs`, a lock held on the pending account's row pauses the REPLACER right after it took the code row, the
+   anonymise queues behind it): the newer sign-up 201 and the confirm 200, the anonymise answers **404** `User not found` (the account was replaced; what the anonymise had deleted is rolled back),
+   never 500; 17 of 17 checks. **Natural race** (`race.mjs`, 120 rounds, a new sign-up each, the right code to one process and the anonymise to the other, the order swept over plus or minus 120 ms):
+   confirm 400 in 42, 409 in 78, 200 in 0; anonymise 200 in 120; **0 deadlocks, 0 5xx, 0 tokens issued, 0 code rows left, 120 of 120 rows scrubbed**. Built: `removePendingSignup` in
+   `unproven-phone.ts` (the code row first, then the account) is the one removal `applyClashPlan` (a newer sign-up) and `takeProvenNumber` (a confirm that proves the number) both use, and the mailed
+   service's `discard` (a refused mail) takes the same two steps in a transaction. The anonymise deletes the code row as its FIRST statement, as before, and now updates the account with
+   `updateMany` and answers 404 (rolling back) when the account is already gone. **A consequence, on purpose:** the removal deletes the account only if it deleted the code row (the code row is what
+   makes it an unconfirmed sign-up). An account whose code row went meanwhile (anonymised, or its person confirmed it) is left as it is; before, a newer sign-up could delete an account that had just
+   been confirmed. That sign-up is then refused by the unique keys, the usual 409.
+3. **D9: a confirm that loses to the anonymise writes nothing back.** *Before* (`d9.mjs`, `logs/d9-before.log`; two forced interleavings, A: the confirm's guess claim is held while the whole anonymise
+   runs, B: the anonymise is held at its last statement while the confirm claims; both channels, a right and a wrong code, 8 runs): **a wrong-code budget row on the deleted person's number
+   (`phone_guess_budgets`, the address under `signup-email:` for the mailed channel) was left in 8 of 8**, so the whole-database search found it (the verifier saw the right code only: 409, 26 of
+   128 rounds; the wrong-code confirm (400) leaks the same way, which the verifier did not run). *After* (`logs/d9-after.log`): **0 of 8**, 32 of 32 checks, and the answers are what they were (409
+   for the right code, 400 for a wrong one, no token, no 5xx). **Natural race** (`race.mjs` above): `numberLeft` 0 in 120 rounds (the number or address in no table). Built:
+   `signupStillThere` (`signup-still-there.ts`) asks, right after the guess is taken, whether the sign-up's code row is still there with `SELECT ... FOR SHARE`, which waits for an anonymise that has
+   deleted the code row and not yet committed (it deletes the code row first, so that is its whole run); if the row is gone the guess just taken is cleared (`clearGuesses`). Either the anonymise has
+   not reached the code row, and it deletes the budget itself afterwards, or it has, and this clears it: never left behind. Both confirm services; the double-tap's second confirm now clears the
+   guess it took on a number whose sign-up was already finished (it could leave one before). The claim stays its own transaction (a wrong code's guess must persist), so "claim inside the confirm's
+   transaction" was not taken.
+4. **D11: the clean-up removes only the deleted account's own rows.** Built in `AuthService.deleteUser` + `erased-identifiers.ts`: the keys are the number the account HOLDS (`phone`) or PROVED
+   (`phone_verified_for`) and the address it holds (`email`), and `otherHolders` (inside the transaction, before anything is removed) reads which OTHER accounts hold them (a number in every spelling
+   `phoneVariants` knows, plus compared as a number; an address in any case); a number or address another account holds is not touched. Not read at all any more: the typed number of a pending
+   sign-up, the typed number of a pending phone change, the claimed address. *Before* (`n16b.mjs`, `logs/n16b-before.log`): **H** (a pending sign-up that typed a number a mailed sign-up holds): the
+   holder's OTP session 1 to 0, counters 2 to 0, wrong-code budget 1 to 0; **C** (a pending sign-up claiming an address another account holds): mail counters 1 to 0, budget 1 to 0; **T** (a live twin
+   holds the same number in another spelling): counters 2 to 0, OTP row 1 to 0. *After* (`logs/n16b-after.log`): H 1, 2, 1 kept; C 1, 1 kept; T counters 2 and OTP 1 kept, the twin's row byte for
+   byte; 6 of 6. `n16c.mjs` (9 of 9): **R** the holder is deleted while a pending sign-up only typed the number: the holder's own OTP rows (stored and spaced), counters and budget go, the typer's
+   sign-up row stays; **S** a twin holds the number: its odd-spelled OTP rows stay, a different number's odd-spelled row stays, and when the last holder is deleted they go. `n16.mjs` (the verifier's
+   oracle over 14 tables, five deleted people and K2, six bystanders, ten kept keys): 51 checks pass; its one FAIL is the harness's own (D: the address D only claimed is held by P in its own row, as it must
+   be; the verifier said the same).
+5. **N24: every spelling the OTP route can store.** *Before* (`n16.mjs` A, `logs/n16-before.log`): the five odd-spelling OTP rows (`0803 123 4567`, `+234 803 ...`, `00234...`, `(0803) ...`,
+   `+234-803-...`) survived. *After*: A passes (nothing in any table). Built: the OTP rows are matched on their digits, `regexp_replace(phone, '[^0-9]', '', 'g') = ANY(...)`, against the number's
+   digit forms (`8031234567`, `08031234567`, `2348031234567`, `002348031234567`, the stray-0 forms; `14155550100` and `0014155550100` for a number that is not Nigerian); the exact-spelling delete stays for
+   rate counters and for text the digits cannot name. Run against a real Postgres (array parameter, the regexp): `n16.mjs` A, `n16c.mjs`, and `test:g16-local` (which calls the real `deleteUser`).
+6. **N26: the repo's G-16 test restores a row that had proved its number.** `test/g16-duplicate-phones.local.mjs`: set two's released account now PROVED its number (it is the one `revert`
+   restores), and a new check reads `phone` and `phone_verified_for` back after the revert. 28 of 28 (was 27). The verifier's survivors, re-run with their own mutant script: **G3b** (restore writes
+   `phone_verified_for` as NULL) now fails 2 checks, **G8** (the proof not in the UPDATE) fails 2; both were SURVIVED on `28de1b8`.
+7. **N22, N23, N25, N27, N28: recorded, no change.** N22 (a deletion buys one more allowance on the number's counters) and N23 (the post-sign-up email step keeps a plain sha256 of the address) stand;
+   N25 (the hard `DELETE /internal/users/:id` leaves the OTP session, the budget and the counters) stands; N27 (the two G-16 tables hold the old numbers until `revert` drops them) stands; N28: the
+   AUTH-08 timing test alone, one worker, at a load average of 12 to 14: **main `65935d0` 20 of 20, the branch 20 of 20** (in the full run it also passed; it failed for the verifier at a load of 21 to 25).
+
+**Notes found while building (not in the rulings, no change made)**
+- N30 · low · a RESEND in flight when the anonymise commits is the same race as D9 on another route (`n30.mjs`, `logs/n30-after.log`, the anonymise held at its last statement): `POST /auth/phone/verify/start`
+  (and the mailed `.../email-code/start`) writes its three counters on the number (or address) after the anonymise deleted them, then its update of the code row finds no row and answers **500**:
+  both channels, 2 counter rows left on the number or address, the anonymise 200. The same check as D9 (`signupStillThere` after the counters, then give the counters back) closes it; `release` would leave
+  count-0 rows keyed on the number, so a `forget` is needed, and `forget` wipes counters a newer sign-up on the same number shares: a ruling for the lead.
+- N31 · low · three other paths delete the ACCOUNT first (the cascade then takes the code row), the lock order D8 retired for the two named paths: the expired-sign-up sweep in `POST /auth/register`
+  (`releaseExpiredSignups`, a web route, protected), `deleteSafUser` (provisioning) and the hard `DELETE /internal/users/:id`. Each can meet an anonymise of the same pending account in the same few
+  milliseconds. Not reproduced, not changed.
+- N32 · note · "no other account holds it" is read inside the anonymise's transaction without a lock: an account that takes the number in the same instant is the next holder and starts clean anyway. A
+  pending sign-up that only typed a number the deleted account held loses the number's counters and wrong-code budget with it (the key is shared; this is N22's policy, not a new one).
+
+**Checks**
+- wawu-id (`2919259`): `npx tsc --noEmit` 0. `eslint --no-fix` on the 15 changed `.ts` files: 8 errors, all in `tokens.service.ts` at lines this round did not write (the same 8 as main: seven prettier, one unnecessary
+  type assertion); the 14 other files print nothing. `jest src/auth src/contract` (two workers, `--testTimeout=300000`, load average 18 to 20 on 4 CPUs): 26 suites, 25 pass, **447 of 448; the one failure is the AUTH-08 timing test** (refresh 2,830 ms, limit 1,000: the machine, N28); that test **alone, one worker: the branch 20 of 20, main 20 of 20**; the same two folders run once before at `c0adf3e` (without the last test added) passed 26 of 26, 443 of 443 (the timing test passed there). This round's new and changed specs: `refresh-closed-account` (new, 17 tests), `anonymise-phone-proof` (25), `erased-identifiers`, `unproven-phone` and the two sign-up services' specs. `npm run test:g16-local` 28 of 28.
+  `python3 scripts/gates/run.py` 9 run, 124 files, 0 fail, 20 warn (the same 20); `check_baseline.py` 0 entries. `npm run contract:build` twice: `contract/openapi.json` sha256 `93309591...` both times, equal to the
+  committed file (tree clean), to main's and to mobile's `contract/identity/openapi.json`: nothing changed, nothing to sync. No migration.
+- wawu-id live seam tests on my ports and databases (`bj03r5_*_id_test`): `test:refresh-local` all passed; `test:session-local` all passed; `test:phone-hold-local` EXIT 0 (the number changes hands only when
+  proven); `test:signup-email-local` 48 PASS, EXIT 0; `test:phone-local` (a copy with its ports moved to 6161 and 6162, a throwaway `.env` for keys): 101 PASS, and its two F-3 timing medians
+  (within 40 ms) fail under the load on **main** (spread 101 and 348 ms) and on the branch (179 and 166 ms) alike.
+- wawu-id mutants of my own (one at a time on a throwaway worktree, the specs that should catch it run, the file restored from a copy, tree clean after; `mut/`, `logs/mut-id.log`, `logs/mut-id2.log`):
+  **36 mutants: 34 killed on the first pass; 1 survived (`O02`: the held number compared as raw text, a number stored in another spelling than the holder's), one test added, then killed; 1 did not apply (`O07`: a pattern prettier had reflowed), fixed, then killed.** D10: no
+  first-read check, no re-check under the lock, nothing revoked at either check, the revocation without the lock, by the wrong key (6). D8: account before code row, no skip when the code row is gone,
+  the two paths and `discard` deleting the account directly, no 404, the code row not first, everyone's code rows (8). D9: no take-back in either service, the take-back on the wrong key in either,
+  the check always true, the budget always cleared (6). D11: holders not consulted, number compared raw, address case-sensitive, held numbers ignored, held addresses ignored, the account itself counted
+  as a holder, no spellings and no case in `otherHolders`, the proved number not read, the address not read (10). N24: no digit delete, two digit forms dropped, the international `00` form dropped,
+  the 234 form dropped, the delete always run (6). Plus the verifier's G-16 mutants G3b and G8 above.
+- Mobile: no app code changed (`docs/LOG.md`, `docs/PROGRESS.md`, this task file only), so `npm run gates && npm run tasks` is the check: `npm run gates` 10 run, 568 files, 0 fail, 5 warn, 0 accepted (`check_baseline.py`: 0 entries), `npm run tasks` ok (275 tasks, 279 artboards); both
+  last lines **EXIT 0** (`logs/m-gates.log`, `logs/m-tasks.log`). The full check was not repeated: nothing in `src/` changed. 
+
+**NOT RUN**
+- The OTP route with WhatsApp configured (no provider host may be called): the odd-spelling OTP rows were written by SQL, as the verifier's were; the digit match itself ran against a real Postgres.
+- A deployed wawu-id with the Hub's real deletion flow (mark-deletion, 48 hours, anonymise) and the app; a rolling deploy with an old and a new wawu-id side by side (the new removal order and the old can
+  deadlock against each other only for the length of a deploy, as before this round).
+- The whole wawu-id suite as one run (`src/auth` and `src/contract` ran) and the backend (unchanged); `test:signup-local` (AUTH-05: fixed ports 3492 and 3493 and a Hub database, outside the ports I may use).
+- A natural (unforced) deadlock: the window is a few milliseconds; D8 is reproduced with a lock held open, both orders, and the 120 natural rounds saw none. The mark-deletion route racing a confirm.
+- Pictures: no screen changed.
 
 ## Owner sign-off
 
