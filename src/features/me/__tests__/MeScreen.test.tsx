@@ -117,6 +117,14 @@ beforeEach(() => {
   answers = {};
   asked = [];
   clearProfileSaved();
+  // The grid is asked for only once the profile has landed (two answers in a row), and a `findBy` waits one second of wall time for the
+  // second. On the test's clock that wait is a fixed number of turns, so a stall in a loaded run cannot spend it. `queueMicrotask` stays
+  // real: React's `act` queues its "was it awaited?" check on it.
+  jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 describe('M1 · Me', () => {
@@ -400,9 +408,11 @@ describe('M1 · round 2', () => {
     expect(await screen.findByTestId('me-count-followers')).toHaveTextContent('12.5K followers');
     // What a save on M8 does: every profile query reads again; this time the counts fail.
     await act(async () => {
-      await client.invalidateQueries({ queryKey: ['profile'] });
+      void client.invalidateQueries({ queryKey: ['profile'] });
     });
     await waitFor(() => expect(asked.filter((line) => line === `GET ${STATS}`)).toHaveLength(2));
+    // The reads are on the test's clock, so the test waits for them to end the same way (an `await` on the invalidation would not move it).
+    await waitFor(() => expect(client.isFetching()).toBe(0));
     expect(screen.queryByTestId('me-error')).toBeNull();
     expect(screen.getByTestId('me-name')).toHaveTextContent('Lennox Emmanuel');
     expect(screen.getByTestId('me-count-followers')).toHaveTextContent('12.5K followers');

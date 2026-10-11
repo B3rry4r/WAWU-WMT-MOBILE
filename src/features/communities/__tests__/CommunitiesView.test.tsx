@@ -406,6 +406,21 @@ describe('Communities (I24)', () => {
     expect(sent.indexOf('GET /communities/mine?page=2&perPage=20')).toBeLessThan(sent.indexOf(SUGGESTED));
   });
 
+  it('a next page of suggestions the Hub refuses is asked for once, then the list says so and its Try again asks again', async () => {
+    const open = (from: number) => Array.from({ length: 4 }, (_, i) => suggestion(`o${from + i}`, `Open room ${from + i}`));
+    answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
+    answers[SUGGESTED] = [paged(open(1), 2)];
+    answers[SUGGESTED_2] = [refuse(400, 'Bad request'), paged(open(5))];
+    await renderView();
+    expect(await rtl.screen.findByText('Couldn’t load more communities.')).toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(sent.filter((request) => request === SUGGESTED_2)).toHaveLength(1);
+    expect(rtl.screen.queryByText('Open room 5')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    expect(await rtl.screen.findByText('Open room 5')).toBeTruthy();
+    expect(sent.filter((request) => request === SUGGESTED_2)).toHaveLength(2);
+  });
+
   it('draws only a window of a very long list of rooms', async () => {
     answers[MINE] = [paged(Array.from({ length: 800 }, (_, i) => mine(`r${i}`, `Room ${i}`)))];
     answers[SUGGESTED] = [paged([])];
@@ -483,6 +498,24 @@ describe('Suggested reads on until it lists enough open rooms (defect 22)', () =
     await rtl.renderHook(() => useSuggestedCommunities(false));
     await settle();
     expect(suggestedRequests()).toEqual([]);
+  });
+
+  // INBOX-05 note 37. The read-on stops at an error: a page the Hub refuses is asked for once, and asking again is the list's Try again.
+  it('asks once for a next page the Hub refuses, and asks again only when the list\'s Try again does', async () => {
+    const open = (from: number) => Array.from({ length: 4 }, (_, i) => suggestion(`o${from + i}`, `Open room ${from + i}`));
+    answers[pageUrl(1)] = [paged(open(1), 2)];
+    // The second answer is there to be read if the phone asked a second time by itself.
+    answers[pageUrl(2)] = [refuse(400, 'Bad request'), paged(open(5))];
+    const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
+    await rtl.waitFor(() => expect({ failed: hook.result.current.isFetchNextPageError, inFlight: queryClient.isFetching() }).toEqual({ failed: true, inFlight: 0 }));
+    await settle(250);
+    expect(suggestedRequests()).toEqual([pageUrl(1), pageUrl(2)]);
+    expect(hook.result.current.items.map((room) => room.name)).toEqual(['Open room 1', 'Open room 2', 'Open room 3', 'Open room 4']);
+    await rtl.act(async () => {
+      await hook.result.current.fetchNextPage();
+    });
+    await rtl.waitFor(() => expect(hook.result.current.items).toHaveLength(SUGGESTED_READ_ON_ROOMS));
+    expect(suggestedRequests()).toEqual([pageUrl(1), pageUrl(2), pageUrl(2)]);
   });
 });
 
