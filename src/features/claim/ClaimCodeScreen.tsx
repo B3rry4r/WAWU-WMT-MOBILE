@@ -42,7 +42,8 @@ export type ClaimCodeScreenProps = {
 export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScreenProps) {
   const [shown, setShown] = useState('');
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<ClaimResult | null>(initialResult ?? null);
+  /** The Hub's answer and the moment it was shown: the words are told against that moment, fixed when it arrives (round 3, D4). */
+  const [result, setResult] = useState<{ answer: ClaimResult; at: number } | null>(() => (initialResult ? { answer: initialResult, at: Date.now() } : null));
   const [failure, setFailure] = useState<ClaimFailure | null>(null);
   const [missing, setMissing] = useState<string | undefined>();
   /** Set before the first await, so a second tap in the same frame is ignored whatever React has rendered. */
@@ -66,7 +67,8 @@ export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScre
     setBusy(true);
     setFailure(null);
     try {
-      setResult(await claimCode(compactCode(shown)));
+      const answer = await claimCode(compactCode(shown));
+      setResult({ answer, at: Date.now() });
     } catch (error) {
       setFailure(claimFailure(error));
     } finally {
@@ -76,7 +78,7 @@ export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScre
   };
 
   if (result) {
-    const now = Date.now();
+    const { answer, at: now } = result;
     return (
       <AuthFrame
         testID="claim-done"
@@ -85,16 +87,16 @@ export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScre
       >
         <View style={styles.body}>
           <View style={styles.doneHead}>
-            <IconTile icon={claimStanding(result, now) === 'ended' ? 'CalendarX' : 'CircleCheck'} size={DONE_ICON} />
+            <IconTile icon={claimStanding(answer, now) === 'ended' ? 'CalendarX' : 'CircleCheck'} size={DONE_ICON} />
             <Text variant="h1" testID="claim-heading" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size, ...font(700) }}>
-              {claimHeading(result, now)}
+              {claimHeading(answer, now)}
             </Text>
             <Text variant="muted" testID="claim-ready-line">
-              {readyLine(result, now)}
+              {readyLine(answer, now)}
             </Text>
           </View>
           <GroupedList testID="claim-lines">
-            {planLines(result, now).map((line) => (
+            {planLines(answer, now).map((line) => (
               <KeyValueRow key={line.label} label={line.label} value={line.value} testID={`claim-line-${line.label.toLowerCase().replace(/\W+/g, '-')}`} />
             ))}
           </GroupedList>

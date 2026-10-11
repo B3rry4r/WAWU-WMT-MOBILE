@@ -1,10 +1,12 @@
-import { confirmEmailCode, confirmPhone } from '@/features/auth/signupFlow';
+import { confirmEmailCode, confirmSignupCode } from '@/features/auth/signupFlow';
+import { setStarted } from '@/features/auth/signupStore';
 
 const order: string[] = [];
 let mockEmailConfirm: () => Promise<unknown> = async () => ({ inSequence: true, step: 'creator_setup' });
 jest.mock('@/api/identity', () => ({
   ...jest.requireActual('@/api/identity'),
   phoneVerifyConfirmRequest: jest.fn(async () => ({ accessToken: 'new-access', refreshToken: 'new-refresh' })),
+  signupEmailCodeConfirmRequest: jest.fn(async () => ({ accessToken: 'mailed-access', refreshToken: 'mailed-refresh' })),
   signupEmailConfirmRequest: jest.fn(() => mockEmailConfirm()),
 }));
 jest.mock('@/api/session', () => ({
@@ -42,9 +44,19 @@ beforeEach(() => {
 });
 
 describe('sign-up hands the new account to the "Have an access code?" step (JOIN-03 round 2)', () => {
+  const started = (channel: 'sms' | 'email') =>
+    setStarted({ channel, maskedEmail: null, phoneNotSaved: false, emailCodeRequired: false, resendIn: 0, expiresIn: 600 });
+
   it('marks the account from its first token before the session is adopted, so the first signed-in screen is the step', async () => {
-    await confirmPhone('123456', '');
+    started('sms');
+    await confirmSignupCode('123456', '');
     expect(order).toEqual(['clear', 'mark:new-access', 'adopt']);
+  });
+
+  it('does the same for a sign-up whose code was mailed (AUTH-07): the one place the sign-up adopts its first session', async () => {
+    started('email');
+    await confirmSignupCode('123456', '');
+    expect(order).toEqual(['clear', 'mark:mailed-access', 'adopt']);
   });
 });
 
