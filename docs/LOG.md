@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 11 Oct 2026 · BILLS-01 · Builder report, round 3 (mobile `6bea802`, backend `b2f9793`; status stays `done`): the lead's seven rulings built. A meter check that finds the service off now holds S13 (the Hub holds "off" for its cache window without asking Fintava, and the app keeps S13 until S2 is pulled to refresh); no green meter from a placeholder name, a name of invisible characters or a body that flags a failure (23 of the round 2 verifier's 117 bodies changed answer, the other 94 did not); the amount box keeps the caret after its commas and refuses a paste that holds anything but digits, commas and one point; S3 skips a company whose limits fit no amount; the 200 character cap cuts at a grapheme. 62 backend and 33 mobile mutants, all killed; protected suite 253 of 253; no contract change. SHARED-CHANGES BILLS-01 #4.
 - 11 Oct 2026 · FIX-31 · Merged by the lead (cold start and answers-before-they-land fixed in 13 test files; the one remaining race, H1, fails on main too): round 2 takes H1 and AUTH-07's two racy sign-up tests.
 - 11 Oct 2026 · INBOX-05 · Merged by the lead: backend PR #111 (`6976aad`; migration renamed to sort after main) and mobile main. Defect 38 and note 37 (tests only) follow on the same branch.
 - 11 Oct 2026 · BILLS-01 · Hotfix merged by the lead: backend PR #110 (`39e9377`, deployed with BILLS-01, MONEY-18 and WALLET-06) and mobile main; electricity presets are `presets: [{ amountKobo }]`.
