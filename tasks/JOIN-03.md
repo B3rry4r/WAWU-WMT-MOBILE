@@ -1011,7 +1011,7 @@ Verifier, 11 Oct 2026 (Sonnet agent, an independent session that wrote none of t
 ## Builder report, round 5
 
 Builder, 11 Oct 2026 (Sonnet agent, round 5 of JOIN-03; the lead's rulings of the same day, each Default (lead), owner may override). Heads: wawu-id `wmt/JOIN-03` `2919259`
-(wawu-id main `65935d0`, the round 4 merge, is the parent), mobile `wmt/JOIN-03` (this commit; mobile main `5ed7ce6` is inside it, the merge was a fast-forward), backend unchanged
+(wawu-id main `65935d0`, the round 4 merge, is the parent), mobile `wmt/JOIN-03` (this commit; mobile main `3b35731` is inside it, merged with no conflict), backend unchanged
 (`5926f5c`, no backend change this round; no migration, no contract change). Evidence: the lead's scratchpad `join03r5/` (`harness/` the live scripts `d10.mjs`, `detr.mjs`, `detr2.mjs`,
 `detr3.mjs`, `d9.mjs`, `race.mjs`, `race3.mjs`, `n16.mjs`, `n16b.mjs`, `n16c.mjs`, `n30.mjs` and the mutant driver `mutate_id.py`; `logs/` every before and after log and check log; `mut/`
 the mutant logs). The REAL built wawu-id ran as two processes on ONE database (6161 texting the sign-up code, 6162 mailing it) with a stand-in for Resend and the SMS provider on 6163, on
@@ -1102,7 +1102,7 @@ numbers and addresses are masked everywhere below.
   the check always true, the budget always cleared (6). D11: holders not consulted, number compared raw, address case-sensitive, held numbers ignored, held addresses ignored, the account itself counted
   as a holder, no spellings and no case in `otherHolders`, the proved number not read, the address not read (10). N24: no digit delete, two digit forms dropped, the international `00` form dropped,
   the 234 form dropped, the delete always run (6). Plus the verifier's G-16 mutants G3b and G8 above.
-- Mobile: no app code changed (`docs/LOG.md`, `docs/PROGRESS.md`, this task file only), so `npm run gates && npm run tasks` is the check: `npm run gates` 10 run, 568 files, 0 fail, 5 warn, 0 accepted (`check_baseline.py`: 0 entries), `npm run tasks` ok (275 tasks, 279 artboards); both
+- Mobile: no app code changed (`docs/LOG.md`, `docs/PROGRESS.md`, this task file only), so `npm run gates && npm run tasks` is the check: `npm run gates` 10 run, 569 files (after merging mobile main `3b35731`), 0 fail, 5 warn, 0 accepted (`check_baseline.py`: 0 entries), `npm run tasks` ok (275 tasks, 279 artboards); both
   last lines **EXIT 0** (`logs/m-gates.log`, `logs/m-tasks.log`). The full check was not repeated: nothing in `src/` changed. 
 
 **NOT RUN**
