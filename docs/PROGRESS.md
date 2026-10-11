@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 133 | 0 | 0 | 0 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 97 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [MONEY-16](../tasks/MONEY-16.md) Nightly check against Fintava (You)
 
@@ -175,6 +175,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · MONEY-16 · Verified (building, one blocker): every planted difference is found on the built Hub (a movement on one side only, a wrong amount, a missing merchant charge, held money short, a payment in review, a hold waiting, money owed to a deleted payee), one run a night holds with five processes and a run killed three times ends `incomplete` and mailed, and nothing outside its own table changes; but the balance check calls a wallet clean when Fintava's available figure is off and the booked one agrees (VF-1). Four smaller defects, three test gaps, the G-680 clash with TIER-03 and the lack of any email route in WAWU ID are in the task file.
 - 11 Oct 2026 · MONEY-16 · Built (verifying): the nightly check against Fintava. Once a night it compares every wallet's debits and balance, WAWU's account, the held money and WAWU's charge on each send with the ledger, lists what a person must look at, and has the report emailed through WAWU ID (the route is G-680). One run a night on any number of Hub processes; a night is never reported as clean unless every comparison was made. Backend `wmt/MONEY-16` `b96f5b9`, one migration, contract unchanged.
 - 11 Oct 2026 · MONEY-18 · Rounds 2 to 4 merged by the lead: backend PR #117 (`020f055`) and mobile main. The hold sweep reaches every due hold; an untrusted charge stops completion; a request is resent only when it provably never left; two servers never tell a feature twice; `npm run test:netns` runs in the deploy.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
@@ -189,4 +190,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · MONEY-19 · Merged by the lead: backend PR #114 (`f11d307`) and mobile main. Not enough money answers the exact shortfall; the payment poll is served. Lead notes added to WALLET-07 and WALLET-09 (G-481).
 - 11 Oct 2026 · JOIN-03 · Merged by the lead: WAWU ID PR #10, backend PR #113 (migrations renamed to sort after main) and mobile main. The app claims the event access code; a deleted person's number is not kept. D6, D7 and N16 follow in round 4.
 - 11 Oct 2026 · EVENTS-09 · Verifier report, round 3 (independent session; mobile `cb72563`, app only; status review, no defect, no blocker): D5 closed in the web export against a local stand-in Hub, light and dark (the verifier's case: no button at 0.7 s, the verdict seen 3,021 ms; round 2's build: never seen), a verdict under the open sheet waits and its hold starts at the close (gone 3,032 ms after the tap), "Checking the ticket" does not move (470 px in both builds; the room removed moves it 51 px); the four changed tests still test what they did except the in-order queue test, which is retired and unreachable now; the code typed over an unseen verdict (or problem) waiting is ruled right; the 422 rule is right and the Hub cannot send a 422 on this route. 6 mutants of mine (2 test gaps noted, both with the code right). Six notes, none to fix now.
-- 11 Oct 2026 · EVENTS-09 · Builder report, round 3 (mobile `wmt/EVENTS-09`, hash in the hand-back, on main `a8d6383`; backend untouched; status verifying): D5 closed. "Type the code instead" is not drawn while a check is on its way (the room it took stays, so the words do not move), and a verdict that lands under the open typing sheet waits there, its 3 s hold beginning when the sheet closes (the verifier's case reproduced first: never seen; after: seen 3,003 ms dark and 3,007 ms light); a code typed over an unseen verdict waits instead of replacing it; a 422 reads "We couldn't confirm" (the contract lists only 201 on this route, and the Hub's validator answers 400). 8 new jest tests (7 fail on round 2's code), 4 queue tests reworked, 6 mutants killed; pictures at 390 px, light and dark.
