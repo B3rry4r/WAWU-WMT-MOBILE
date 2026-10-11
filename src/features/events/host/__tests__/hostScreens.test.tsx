@@ -204,10 +204,18 @@ describe('E21 · Needs a tick', () => {
 
 describe('loading and error', () => {
   it('shows a skeleton while the Hub answers, then the form', async () => {
-    serve(true);
+    // Both answers are held until the skeleton has been looked at, so a fast answer cannot beat the look; the test then releases them.
+    handler = (c) => (c.path === '/verification/me' || c.path === '/events/options' ? { hold: true } : undefined);
     await bootHost();
+    await rtl.waitFor(() => expect(held).toHaveLength(2));
     expect(rtl.screen.getByTestId('host-loading')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-name')).toBeNull();
+    const answerTo = (path: string) => (path === '/verification/me' ? ok(tick(true)) : ok(options)).body;
+    await rtl.act(async () => {
+      held.forEach((release, i) => release(new Response(JSON.stringify(answerTo(calls[i]?.path ?? '')), { status: 200, headers: { 'content-type': 'application/json' } })));
+    });
     expect(await rtl.screen.findByTestId('host-name')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-loading')).toBeNull();
   });
 
   it('shows an error offline and recovers on Retry', async () => {
