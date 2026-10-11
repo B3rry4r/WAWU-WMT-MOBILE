@@ -2676,6 +2676,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Earned all time and in a month, by kind of sale, with what is still waiting to reach the wallet. */
+        get: operations["MoneyEarningsController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/earnings/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One month's earnings piece by piece, largest first. */
+        get: operations["MoneyEarningsController_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/transactions/{id}/receipt": {
         parameters: {
             query?: never;
@@ -7289,6 +7323,43 @@ export interface components {
         };
         HoldPage: {
             items: components["schemas"]["HoldView"][];
+            nextCursor: string | null;
+        };
+        EarningStreamView: {
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            earnedKobo: number;
+            sales: number;
+        };
+        EarningsPeriodView: {
+            earnedKobo: number;
+            sales: number;
+            streams: components["schemas"]["EarningStreamView"][];
+        };
+        EarningsWaitingView: {
+            count: number;
+            amountKobo: number;
+        };
+        EarningsView: {
+            allTime: components["schemas"]["EarningsPeriodView"];
+            month: string;
+            thisMonth: components["schemas"]["EarningsPeriodView"];
+            waiting: components["schemas"]["EarningsWaitingView"];
+            held: components["schemas"]["EarningsWaitingView"];
+            walletOpen: boolean;
+        };
+        EarningContentView: {
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            targetId: string;
+            title: string;
+            earnedKobo: number;
+            sales: number;
+            lastAt: string;
+        };
+        EarningContentPage: {
+            month: string;
+            items: components["schemas"]["EarningContentView"][];
             nextCursor: string | null;
         };
         PaymentQuoteView: {
@@ -16181,6 +16252,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyEarningsController_summary: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The month `thisMonth` is about, YYYY-MM in Africa/Lagos time. The current
+                 *     month when absent.
+                 */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarningsView"];
+                };
+            };
+            /** @description month is not YYYY-MM. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyPlainErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyEarningsController_content: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /**
+                 * @description The month the pieces earned in, YYYY-MM in Africa/Lagos time. The
+                 *     current month when absent. A cursor is good only for the month it was
+                 *     given for.
+                 */
+                month?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarningContentPage"];
+                };
+            };
+            /** @description month is not YYYY-MM, or the cursor is not one this list gave. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyPlainErrorEnvelope"];
                 };
             };
         };

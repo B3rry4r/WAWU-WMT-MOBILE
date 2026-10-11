@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 134 | 0 | 0 | 0 |
+| todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
 
 ## Done
 
@@ -171,6 +175,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · WALLET-16 · Builder report (backend `wmt/WALLET-16` `18ea4fb` with main `51b02c5` merged, one migration `20261021180000_earning_settlements`; this branch docs and the regenerated contract only; status `verifying`): a finished ordinary sale's 85% moves from WAWU's account into the payee's wallet by itself, once, under `wawu-earn-<payment id>`, and a creator with no wallet keeps earning and is paid the minute the wallet opens; `GET /money/earnings` and `/money/earnings/content` read what was earned (not behind the wallet gate, never a balance). Proved on the Fintava double, the Nuvion seam stand-in, the real Nuvion adapter with NUV-05's book transfers, and the built Hub twice over (24 of 24 sales landed once across two Hub processes; killed between the provider's answer and our write, found again by its reference with one send). Protected suite 253/253; gates 16 fail before and after; G-700 to G-704 filed.
 - 11 Oct 2026 · BILLS-01 · Round 4 merged by the lead: backend PR #118 (`f2b6bf6`) and mobile main. The meter owner is read by a rule, not a list; provider text is bounded before the cut; the caret stays put after a refused key.
 - 11 Oct 2026 · MONEY-18 · Rounds 2 to 4 merged by the lead: backend PR #117 (`020f055`) and mobile main. The hold sweep reaches every due hold; an untrusted charge stops completion; a request is resent only when it provably never left; two servers never tell a feature twice; `npm run test:netns` runs in the deploy.
 - 11 Oct 2026 · BILLS-01 · Verifier report, round 4 (mobile `cfdb337`, backend `ccf96da`; status stays `done`, verdict review, no blocker): all seven rulings confirmed (0 of my 125 spellings and 0 of my 48 failure flags give a green meter on the Ikeja code, 18 real owners found on 7 codes, "Ikeja Ada", "Electric Okafor", names in other scripts and "50 Cent" found; the amount box keeps its caret after every refused or no-op key in a real Chromium on the real app, 61 checks, light and dark; S13 holds against a list that arrives after the check, live; rows with 0 and 0 skipped; the byte bound holds for a 5 MB name in 0.14 s and 200,000 fuzz cases never break a character); seven low or info findings (more "n/a" spellings, failure keys the reader does not list, a success sentence or code that would refuse every real owner, a name behind 2,000 invisible characters, Backspace beside a comma is a dead key in a browser: low now, medium when the web follows); 98 mutants of my own (91 killed, 7 equivalent or a defensive gap); trial merges: backend main `020f055` 0 conflicts, mobile main `3b35731` 1 generated file (`docs/PROGRESS.md`); merged checks green.
@@ -185,4 +190,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · MONEY-18 · Builder report, round 2 (status verifying; backend `wmt/MONEY-18` `bcf38d7` = round 1 as merged in main #107 `40b1970` plus this round plus main `39e9377` merged with 0 conflicts; mobile `wmt/MONEY-18`; no screen, contract unchanged): the verifier's follow-ups, each reproduced first. F4: a wallet wait rests (a minute to an hour by the hold's age) and is woken the moment the wallet exists, and the sweep walks every due hold by a keyset cursor with a time budget and a place kept between passes; the verifier's B12 went from 1,000, 1,000, 1,000 checked and the hold behind never reached to 514, 489, 1,002 and released in the second pass. F1: a report of an untrusted charge marks the payment inside the ledger's own transaction and `complete()` is conditional on the mark; the verifier's race probe went from 0, 23 and 25 of 25 completed and delivered to 0, 0, 0. O3: delivery reads the payment at the moment it delivers (the late-report probe delivered before, does not now). O1: a request that provably never reached the provider (refused connection, no such host, blocked port) is marked `requestNotSent` and the sweep sends the release or refund again under the same reference; B8b went from 0 sends in six passes and in 72 hours to 1 send, everything that may have reached the provider stays asked about. F2: a spec for the refund's ledger category. F3: the CHECK closes the NULL hole (migration `20261020190000`). O2 and O4 recorded with their numbers (G-461, G-462), G-463 for a delivery stored and not yet applied. 48 new tests, 21 mutants killed (2 survived the first pass and led to 2 tests), 40 suites 790 tests, protected suite 253 of 253, 16 gate FAIL lines identical to main, contract byte-equal twice and to main's. Shared changes MONEY-18 #7 to #9.
 - 11 Oct 2026 · BILLS-01 · Round 3 merged by the lead: backend PR #115 (`b71c551`) and mobile main. A service-off check holds S13; no green meter from a failure-shaped answer. Round 4 (the owner-name rule and four small fixes) follows.
 - 11 Oct 2026 · FIX-31 · Round 2 merged by the lead: HomeScreen H1 and AUTH-07's sign-up races pass at every delay seed; AUTH-07's D5 and N-1 tests added; the act warning gone.
-- 11 Oct 2026 · EVENTS-09 · Round 3 merged by the lead (app only): a verdict that lands under the typing sheet is seen for its full hold; a 422 reads "We couldn't confirm".
