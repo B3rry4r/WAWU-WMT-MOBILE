@@ -5222,6 +5222,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/plans/purchases/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The pay sheet (VF6) before the PIN: the purchase priced in the caller's
+         *     billing currency (an upgrade is the difference of the two prices), the
+         *     wallet provider's charge on top, the total, the wallet's balance and the
+         *     shortfall, and the signed quote `POST /plans/purchases` sends back.
+         *     Nothing is reserved. A purchase that does not fit what the caller holds
+         *     is `target_not_payable` with the reason in words; a plan payment still
+         *     going through is `payment_in_progress`.
+         */
+        get: operations["PlanPurchasesController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/plans/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pays for a tier from the wallet, once: the tier and its dates, the bonus
+         *     points as one lot with its expiry, the event pass and the first Voice
+         *     Intro are granted when the payment is confirmed, and the checkout bump's
+         *     points with them when it was bought. Answers 201 with the purchase:
+         *     `paid`, `pending` while the provider has not confirmed the debit yet
+         *     (poll `GET /plans/purchases/{id}`; it is never sent again), or `failed`
+         *     when the provider refused it and nothing moved. The same Idempotency-Key
+         *     and body answer the first result again (`Idempotent-Replayed: true`)
+         *     without checking the PIN. Not enough money is `402 insufficient_funds`
+         *     with the shortfall; no wallet is `409 wallet_not_open`.
+         */
+        post: operations["PlanPurchasesController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/plans/purchases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One purchase as it stands now: what the app polls after `pending`.
+         *     Only the buyer reads it; another person's purchase and an id nobody
+         *     holds are the same `404 not_found`. It reads our own records only.
+         */
+        get: operations["PlanPurchasesController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/offers/current": {
         parameters: {
             query?: never;
@@ -6211,7 +6285,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -6911,6 +6985,22 @@ export interface components {
              */
             kind?: "amen";
         };
+        PlanPurchaseDto: {
+            /** @enum {string} */
+            kind: "tier" | "renew" | "upgrade";
+            tierId: string;
+            /** @description Buy the checkout bump's extra points with it. Default: no. */
+            bump?: boolean;
+            /**
+             * @description How it is paid: from the wallet.
+             * @enum {string}
+             */
+            method: "wallet";
+            /** @description `payment.totalKobo` from the purchase quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this purchase, and not past its end. */
+            quoteToken: string;
+        };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
             offerId: string;
@@ -7042,7 +7132,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
             targetId: string;
             title: string;
         };
@@ -7275,12 +7365,12 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
             /** @enum {string} */
-            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
+            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered" | "plan_granted";
             payer: components["schemas"]["MoneyPartyView"];
             payee: components["schemas"]["MoneyPartyView"] | null;
             heldAt: string;
@@ -7293,7 +7383,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -7311,7 +7401,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -9488,13 +9578,13 @@ export interface components {
             achieved: boolean;
             currentTier: boolean;
             submission: {
+                /** @enum {string} */
+                tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                 id: string;
                 /** @enum {string} */
                 status: "pending" | "approved" | "rejected";
                 /** Format: date-time */
                 reviewedAt: string | null;
-                /** @enum {string} */
-                tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                 documents: string[];
                 wawuUserId: string;
                 /** Format: date-time */
@@ -10507,6 +10597,53 @@ export interface components {
             checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
             actions: components["schemas"]["PlanActionView"][];
             caps: components["schemas"]["PlanCapsView"];
+        };
+        PlanPurchaseQuoteView: {
+            /** @enum {string} */
+            kind: "tier" | "renew" | "upgrade";
+            tierId: string;
+            fromTierId: string | null;
+            bump: boolean;
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            planMinor: number;
+            bumpMinor: number;
+            bumpPoints: number;
+            /** @enum {string} */
+            paymentKind: "tier" | "tier_bump";
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        PlanPurchaseGrantView: {
+            tier: components["schemas"]["MyTierSummaryView"];
+            activeFrom: string;
+            activeUntil: string;
+            productsAllowed: number;
+            bonusPoints: number;
+            bonusPointsExpireAt: string | null;
+            bumpPoints: number;
+            bumpPointsExpireAt: string | null;
+            eventPass: components["schemas"]["PlanEventPassView"] | null;
+            firstVoiceIntroIncluded: boolean;
+        };
+        PlanPurchaseView: {
+            id: string;
+            /** @enum {string} */
+            kind: "tier" | "renew" | "upgrade";
+            tierId: string;
+            fromTierId: string | null;
+            bump: boolean;
+            /** @enum {string} */
+            method: "wallet";
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            amountMinor: number;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
+            statusMessage: string | null;
+            payment: components["schemas"]["PaymentView"];
+            grant: components["schemas"]["PlanPurchaseGrantView"] | null;
+            createdAt: string;
+            paidAt: string | null;
         };
         AdminWaitlistRegistrationView: {
             id: string;
@@ -15881,7 +16018,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -17630,13 +17767,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         id: string;
                         /** @enum {string} */
                         status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
-                        /** @enum {string} */
-                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         documents: string[];
                         wawuUserId: string;
                         /** Format: date-time */
@@ -17644,13 +17781,13 @@ export interface operations {
                         rejectionReason: string | null;
                     }[] | {
                         items: {
+                            /** @enum {string} */
+                            tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                             id: string;
                             /** @enum {string} */
                             status: "pending" | "approved" | "rejected";
                             /** Format: date-time */
                             reviewedAt: string | null;
-                            /** @enum {string} */
-                            tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                             documents: string[];
                             wawuUserId: string;
                             /** Format: date-time */
@@ -17684,13 +17821,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         id: string;
                         /** @enum {string} */
                         status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
-                        /** @enum {string} */
-                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         documents: string[];
                         wawuUserId: string;
                         /** Format: date-time */
@@ -17722,13 +17859,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         id: string;
                         /** @enum {string} */
                         status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
-                        /** @enum {string} */
-                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         documents: string[];
                         wawuUserId: string;
                         /** Format: date-time */
@@ -17760,13 +17897,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         id: string;
                         /** @enum {string} */
                         status: "pending" | "approved" | "rejected";
                         /** Format: date-time */
                         reviewedAt: string | null;
-                        /** @enum {string} */
-                        tier: "basic" | "verified_user" | "verified_business" | "certified_professional" | "trusted_partner";
                         documents: string[];
                         wawuUserId: string;
                         /** Format: date-time */
@@ -21009,6 +21146,200 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyTierView"];
+                };
+            };
+        };
+    };
+    PlanPurchasesController_quote: {
+        parameters: {
+            query: {
+                /** @description `tier` (a first purchase, or after the last ended), `renew` (the tier held) or `upgrade` (to a bigger tier). */
+                kind: "tier" | "renew" | "upgrade";
+                /** @description A tier in the plans file (`GET /plans`). */
+                tierId: string;
+                /** @description Buy the checkout bump's extra points with it (VF6). */
+                bump?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanPurchaseQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PlanPurchasesController_buy: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanPurchaseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanPurchaseView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PlanPurchasesController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanPurchaseView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
         };
