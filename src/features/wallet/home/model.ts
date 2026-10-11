@@ -1,11 +1,12 @@
-import type { AvatarHue } from '@/components/Avatar';
-import type { IconName } from '@/components/icon';
-import type { IconTileTone } from '@/components/IconTile';
 import { isApiError } from '@/api/errors';
 import { balanceProblem } from '@/api/money';
-import { hueFor } from '@/features/feed/model';
 
 import type { WalletHome, WalletTransaction } from '../api/home';
+import { rowTime } from '../history/lagosTime';
+import { rowFace, type RowLead } from '../history/model';
+
+/** W1's row times. They live with the history's Lagos clock since WALLET-04, so W1 and W26 never disagree about the day. */
+export { rowTime };
 
 /**
  * What the Wallet tab shows, decided from its reads alone (pure, for the tests):
@@ -114,41 +115,6 @@ export function fundingLine(groupedNumber: string): string {
   return `Send to ${groupedNumber} from any Nigerian bank.`;
 }
 
-/** Africa/Lagos is UTC+1 all year (no daylight saving): the zone the history's months are counted in (MONEY-15). */
-const LAGOS_OFFSET_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
-/** A row from the last six days shows its weekday ("Mon"); older ones show the date. */
-const WEEKDAY_DAYS = 6;
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
-
-const lagos = (at: Date) => new Date(at.getTime() + LAGOS_OFFSET_MS);
-const lagosDay = (at: Date) => Math.floor(lagos(at).getTime() / DAY_MS);
-const twoDigits = (n: number) => String(n).padStart(2, '0');
-
-/**
- * When a row happened, as W1 writes it: "10:24" today, "Yesterday", "Mon"
- * within the week, then "22 Sep" (with the year when it is not this one).
- * Lagos time. Default (agent), owner may override.
- */
-export function rowTime(createdAt: string, now: Date): string {
-  const at = new Date(createdAt);
-  if (Number.isNaN(at.getTime())) return '';
-  const local = lagos(at);
-  const days = lagosDay(now) - lagosDay(at);
-  if (days <= 0) return `${twoDigits(local.getUTCHours())}:${twoDigits(local.getUTCMinutes())}`;
-  if (days === 1) return 'Yesterday';
-  if (days <= WEEKDAY_DAYS) return WEEKDAYS[local.getUTCDay()];
-  const date = `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]}`;
-  return local.getUTCFullYear() === lagos(now).getUTCFullYear() ? date : `${date} ${local.getUTCFullYear()}`;
-}
-
-const statusWords: Partial<Record<WalletTransaction['status'], string>> = {
-  pending: 'Pending',
-  failed: 'Failed',
-  reversed: 'Reversed',
-};
-
 /** One recent row as W1 draws it: who or what, the line under it, the signed total and when. */
 export type RecentRow = {
   id: string;
@@ -157,29 +123,20 @@ export type RecentRow = {
   /** Kobo, negative when money left: a debit is the total that left the wallet, fees included (BRIEF W1, rule 5). */
   amountKobo: number;
   meta: string;
-  lead: { kind: 'avatar'; name: string; hue: AvatarHue; source?: string } | { kind: 'icon'; icon: IconName; tone: IconTileTone };
+  lead: RowLead;
 };
 
-function rowIcon(row: WalletTransaction): IconName {
-  if (row.category === 'bill' || row.link?.kind === 'bill') return 'Receipt';
-  if (row.link?.kind === 'content_unlock') return 'LockOpen';
-  if (row.category === 'refund' || row.category === 'reversal') return 'RotateCcw';
-  return row.direction === 'in' ? 'ArrowDownLeft' : 'ArrowUpRight';
-}
-
 export function recentRow(row: WalletTransaction, now: Date): RecentRow {
-  const name = row.counterparty?.name?.trim();
-  const title = name || row.description;
-  const subtitle = name && row.description ? row.description : undefined;
-  const signed = row.direction === 'out' ? -row.totalKobo : row.totalKobo;
+  const face = rowFace(row);
   const time = rowTime(row.createdAt, now);
-  const status = statusWords[row.status];
-  const meta = status ? [status, time].filter(Boolean).join(' · ') : time;
-  const person = row.counterparty?.kind === 'wawu_user' && name;
-  const lead: RecentRow['lead'] = person
-    ? { kind: 'avatar', name, hue: hueFor(row.counterparty?.wawuUserId ?? row.id), source: row.counterparty?.avatarUrl ?? undefined }
-    : { kind: 'icon', icon: rowIcon(row), tone: row.direction === 'in' ? 'in' : 'neutral' };
-  return { id: row.id, title, subtitle, amountKobo: signed, meta, lead };
+  return {
+    id: face.id,
+    title: face.title,
+    subtitle: face.subtitle,
+    amountKobo: face.amountKobo,
+    meta: face.status ? [face.status, time].filter(Boolean).join(' \u00b7 ') : time,
+    lead: face.lead,
+  };
 }
 
 /**
