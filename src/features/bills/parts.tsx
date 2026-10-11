@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
 import { formatMoney, Money } from '@/components/Money';
@@ -8,6 +8,8 @@ import { IconTile } from '@/components/IconTile';
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu, type ColorToken } from '@/theme';
+
+import { useKeepCaret } from './useKeepCaret';
 
 /**
  * design/_gen/services.js (S2 to S4), the pieces the three screens share, each at the canvas's own size:
@@ -197,6 +199,8 @@ type FieldProps = {
   /** The red outline: a meter that was not found, an amount outside the limits. */
   invalid?: boolean;
   maxLength?: number;
+  /** The box redraws its words as the person types (the amount's commas): keep the caret after the key just typed (browsers; R2-2). */
+  keepCaret?: boolean;
   children?: ReactNode;
   testID?: string;
 };
@@ -206,8 +210,10 @@ type FieldProps = {
  * (SHARED-CHANGES.md BILLS-01 #1 asks for them; this is its look, from the same `fieldMetrics`, and it goes when that lands).
  * The line under the field is the screen's own, passed as children.
  */
-export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, prefix, prefixTestID, invalid, maxLength, children, testID }: FieldProps) {
+export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, prefix, prefixTestID, invalid, maxLength, keepCaret, children, testID }: FieldProps) {
   const { colors } = useWawu();
+  const inputRef = useRef<TextInput | null>(null);
+  const onTyped = useKeepCaret(inputRef, value, keepCaret === true);
   const [focused, setFocused] = useState(false);
   const border = invalid ? colors.danger : focused ? colors.accent : colors.borderHairline;
   return (
@@ -235,10 +241,14 @@ export function BillField({ label, value, onChangeText, placeholder, keyboardTyp
           </Text>
         ) : null}
         <TextInput
+          ref={inputRef}
           testID={testID}
           accessibilityLabel={label}
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={(typed) => {
+            onTyped(typed);
+            onChangeText(typed);
+          }}
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
           keyboardType={keyboardType}
