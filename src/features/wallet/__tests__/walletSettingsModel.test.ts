@@ -96,9 +96,14 @@ describe('the PIN flow rules', () => {
     expect(refuse(400, 'reset_code_invalid').kind).toBe('bad_code');
     expect(refuse(409, 'pin_not_set').kind).toBe('no_pin');
     // The same request still running on the server is not a refusal and not "no answer": its answer will come.
-    expect(refuse(409, 'idempotency_in_progress', 'This request is still going through. Check again in a moment.')).toEqual({
+    expect(refuse(409, 'idempotency_in_progress', 'Your PIN change is still going through. Check again in a moment.')).toEqual({
       kind: 'in_progress',
-      line: 'This request is still going through. Check again in a moment.',
+      line: 'Your PIN change is still going through. Check again in a moment.',
+    });
+    // The request landed and the PIN was changed again before its repeat came (N4): a refusal, never a success.
+    expect(refuse(409, 'pin_changed_again', 'Your PIN was changed again since. Check it in Wallet settings.')).toEqual({
+      kind: 'changed_again',
+      line: 'Your PIN was changed again since. Check it in Wallet settings.',
     });
     expect(refuse(409, 'wallet_not_open').kind).toBe('no_wallet');
     expect(refuse(409, 'wallet_opening').kind).toBe('no_wallet');
