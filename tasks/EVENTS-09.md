@@ -7,7 +7,7 @@ order: 58
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [EVENTS-05, EVENTS-03, UI-02]
 decisions: []
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -375,6 +375,79 @@ _Builder session, 11 Oct 2026 (Sonnet), on the lead's round 3 rulings (Default (
 **Checks.** `npm run check` as the same steps with two jest workers, one command: EXIT 0 in its log (`logs/full-check.log`): typecheck 0, lint 0 errors (5 warnings, none in files this round touched), 141 suites and 2565 tests passed (375 s), gates 544 files, 0 fail, 5 warn (the three PROVISIONAL markers of this task, DOOR-HOLD, DOOR-QUIET and DOOR-WAIT, unchanged, and two that are not this task's), baseline 0 entries, 275 tasks. The door's own folder: 5 suites, 101 tests, passing alone as well (`logs/green2.log`).
 
 **NOT RUN.** V10 on an Android phone (the sheet's keyboard, the real hold at a real door, whether a reported camera frame can really reach the screen after the sheet opens: the browser build cannot show that frame, so that path is covered in jest only). The full backend suite (nothing there changed). The other eight artboard states were not re-pictured: only the checking line, the verdict and the sheet moved, and E19, E20, E23 and E24 look the same as in round 2.
+
+## Verifier report, round 3
+
+Verifier (Sonnet agent, independent: wrote none of this), 11 Oct 2026. Mobile `origin/wmt/EVENTS-09` `cb72563` (main is now `492615d`; a trial merge of the branch into it conflicts only in the generated `docs/PROGRESS.md`, which `check_tasks.py --write` rebuilds; the door files merge clean). App only, as briefed. Ports 6171 (my stand-in for the Hub's door route, own code: the Hub decides at request time, then holds the answer for a set time) and 6173 (web export, 390 wide, Playwright); 6174 is only the identity address inside the bundle, nothing listening; no database, no wawu-id, no provider, no wawuafrica.com host. The exports (round 3 branch, round 2 `a8d6383`, and one mutant) used my own Metro cache; each bundle names only `localhost:6171` and `localhost:6174`; the browser guard recorded no outside request (the one `.wasm` expo-camera's web scanner fetches was served from `node_modules`). Evidence root `VE` = `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/ve09r3` (`logs/`, `shots/`, `mut/`, `hub.cjs`, `drive.py`).
+
+**Verdict: `review`. D5 is closed and the 422 rule is right. No defect, no blocker. Six notes, none for this round to fix (N1 to N6).**
+
+| Item | Result |
+|------|--------|
+| Diff scope | CONFIRMED: `DoorScreen.tsx`, `doorScreen.test.tsx`, `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/EVENTS-09.md`; no gate, baseline, contract, theme, shared component or backend file |
+| D5, the verifier's case, live | CONFIRMED closed (A below) |
+| D5, sheet open with a verdict under it, live | CONFIRMED (B below), one note (N3) |
+| "Checking the ticket" does not move | CONFIRMED, measured (0 px; the room removed moves it 51 px) |
+| The four changed tests | each still tests its own thing; one retired a test (rulings below) |
+| The builder's extra decision (a code typed over an unseen verdict waits) | ruled RIGHT, both halves |
+| 422 | CONFIRMED: only a 400 reads "not checked in"; the Hub cannot send a 422 here |
+| Mutants | 6 of mine: 1 killed by the builder's tests, 2 more by my own specs, 1 live, 1 equivalent, 1 unreachable (two test gaps, N2, N4) |
+| Full check | below |
+
+### D5 live (`drive.py`, web export, 390 wide, light and dark; `shots/after-*`, `before-*`, `strip-A.png`)
+
+- **A, the verifier's case** (a typed code answered 3 s late, tapped at 0.7 s). Round 3 build: at 0.7 s `door-type` is not in the page and a tap on the spot where the button was opens nothing; the verdict ("LET THEM IN | Regular, Lennox Emmanuel") is seen for **3,021 ms light, 3,022 ms dark** (the page's own 25 ms sampler, the verdict in the page and nothing over it). Round 2 build, same script: the button is there, the tap opens the sheet, the verdict is in the page for 3,025 ms behind it and **was never seen** (seen intervals: none).
+- **"Checking the ticket" does not move.** The block's top is 470 px (48 high) in every sample of every run on the round 3 build, and 470 on the round 2 build, where the button row was drawn; the ready-state aim line (top 484, 20 high) and the checking block share one centre, 494. With the room removed (my mutant M3, exported and driven) it moves to 521, 51 px down. So the kept room does what it is for.
+- **B, the sheet already open with a verdict under it.** The sheet is opened, then a camera frame the screen had already been given is reported (I took the screen's own `onBarcodeScanned` from the React fiber before opening the sheet and called it after: the same stale-handler call the jest helper `checkUnderOpenSheet` makes; the browser cannot show a real late frame). The check runs with the sheet up (`door-type` 0), the verdict lands at about 1.85 s under it; **7 s later it is still in the page with the sheet up**; after the tap on the sheet's close, it is gone **3,032 ms later (light; 3,013 dark)**, so the hold starts at the close. Round 2 build: gone from the page after 3,000 ms behind the sheet, never seen.
+- **C, a code typed over that unseen verdict.** One request so far; the sheet shuts; the first verdict is seen (2,774 ms, see N3); the second request goes out 3,044 ms after the Check tap, and its answer (ALREADY USED, the same code again) is seen 3,022 ms. Round 2 build: the second request went at once and replaced the first verdict.
+- **D, the refusals** (stand-in answers 422, 400, 403): 422 "We couldn't confirm" with Try again; 400 "We couldn't check that ticket / This code could not be checked. The ticket was not checked in." with no Try again; 403 "You can't check tickets in here" with Back.
+
+### The four changed tests, old file (`a8d6383`) on the new code, new file on round 2's code
+
+Old file on `cb72563`'s `DoorScreen.tsx`: **4 failed, 46 passed**, exactly the four, each at `getByText('Type the code instead')` during a check (the button is gone, as ruled). New file on round 2's code: 8 failed (the builder's 7 and "a second code cannot be typed meanwhile"), 50 passed.
+
+| Test | Old | New | Still tests what it tested? |
+|------|-----|-----|-----|
+| waits for it | scan, then the button during the check, type, sheet shuts, "Then the code you typed.", nothing sent, sent after the result clears | the sheet is open first, the frame starts the check, then the same type, same assertions | YES: same body, only the way to the state changed; the frame race is the one way left |
+| several typed meanwhile, in the order typed | three codes, one after another, keys all different | replaced by "a second code cannot be typed meanwhile" (no button, no sheet, until the check is done) | NO, it is a different test. The in-order test is retired (see ruling) |
+| waits through a check that gave up | same setup, "We couldn't confirm", dismiss, sent | same, through the frame race | YES |
+| is dropped with the screen | the X leaves, nothing sent after | same, through the frame race | YES |
+
+**Ruling on "a second code cannot be typed meanwhile".** It replaces nothing the canvas wants: E19 to E24 draw no checking state and no button beside a result, and D5's own expected options were "the hold starts when the sheet closes, or Type the code instead is not offered while a check is on its way"; round 3 took the second. What it retires is round 2's "typed codes queue in order" for two or more: with the button gone a person can type at most one code over a check (the sheet cannot be opened again until the queue is empty), so the queue holds one and the in-order test and the "Then the 2 codes you typed." line are unreachable. My mutant M5 (`shift` to `pop`) survives for that reason and cannot be killed in jest or live. Keep the code (it is harmless); if a later task offers the button during a check again, the retired test (in git at `a8d6383`) comes back with it (N1). The cost to a person is real but small and follows the ruling: for the up to 10 s a check may take, they cannot start typing the next code (the X still leaves).
+
+**Ruling on the builder's extra decision (a code typed over an unseen verdict waits): RIGHT, keep it.** Sent at once, its answer replaces a verdict nobody read, which is D1's family again (live case C, round 2 build, shows exactly that). Waiting costs one 3 s hold and loses nothing. The condition is `kind !== 'ready'`, so it also covers a problem panel; that half is right too: a problem is a check that may have gone in ("We couldn't confirm") and its Try again must not be replaced unread. My own specs (scratch `mut/zzVerifierR3.test.tsx`, 3 tests, passing on the branch): the typed code waits behind a problem and goes when Cancel is tapped; Try again sends the first scan on its own key and the typed code follows after that verdict on a new key; under a 403 the typed code waits and Back leaves with nothing sent. No path leaves a queued code stuck (the sheet shuts at the Check tap, so the hold can always start).
+
+### The 422 rule
+
+Only a status of 400 reads "not checked in"; any other `validation` status (400 and 422 are one kind in `src/api/errors.ts`) reads "We couldn't confirm" with Try again on the same key (live D above; the builder's jest test). **The Hub cannot send a 422 on this route:** backend main `f11d307`: the contract lists only `201` for `POST /events/{id}/door/check-in`; `main.ts` runs one global `ValidationPipe` with no `errorHttpStatusCode` (so 400); `EventRunningService.checkIn` throws only `BadRequest` (a malformed key), `NotFound`, `Forbidden`; the global filter maps Prisma `P2002` to 409 and `P2025` to 404 and body-parser refusals to 413, 415, 400; every 422 in `src` is in bills, money, Nuvion or Fintava code. A 413, 415 or 409 never was `validation` here and still reads "We couldn't confirm". So the change costs nothing and removes a wrong "not checked in" from an answer the app cannot be sure of.
+
+### Mutants of my own (door folder, 5 suites, 101 tests, two workers; `mut/*.log`)
+
+| Mutant | Builder's tests | Result |
+|--------|-----------------|--------|
+| M1 the hold ignores the sheet | 3 fail | killed |
+| M2 a code typed over a problem is sent at once (`=== 'result'` for `!== 'ready'`) | all pass | survives: the problem half of the extra decision has no test (N2); my 3 specs kill it (3 of 4 fail) |
+| M3 the room is not kept (`checking ? null`) | all pass | survives in jest (no layout there); killed live (+51 px, `drive.py A`) |
+| M4 no `clearTimeout` on the hold | all pass | survives: a tap-dismissed verdict then a new scan within 3 s would be cut short by the first timer; the code is right, nothing pins it (N2); my spec V1 kills it |
+| M5 queue `pop` for `shift` | all pass | survives, unreachable (above) |
+| M6 the timer runs under the sheet but does nothing then | all pass | equivalent (the effect re-runs when the sheet closes) |
+
+### Notes (no change needed)
+
+- **N1.** The queue of two or more typed codes is unreachable and untested now (above). Low.
+- **N2.** Two gaps in the builder's file, both with the real code right (my specs pass on it): a code typed over an unseen problem, and a tap-dismissed verdict followed by a new scan inside 3 s (stale hold timer). Worth adding when someone is in the file; not this task's.
+- **N3.** In case B the verdict is seen for about 2.75 s, not 3 s: the hold starts at the close tap, and the sheet takes about 0.26 s to slide out over it (seen 2,774 light, 2,749 dark against a hold of 3,032 and 3,013). The ruling says the hold starts when the sheet closes, and it does. A typed code (case A) has no such loss: the sheet is long gone. Not worth a change.
+- **N4.** The builder's test title "the aim words stay where they were" asserts only that the button is gone; the words' place is not tested in jest (no layout). The live run above pins it (0 px).
+- **N5.** A 422 reads "We didn't hear back, so we can't say if this ticket went in", though an answer did come: it is the one sentence every unreadable answer gets, and a 422 cannot happen here. Not worth a second sentence.
+- **N6.** The frame race itself (a real camera reporting a frame after the sheet opens) was driven only through the screen's own handler; see NOT RUN.
+
+### Checks, the branch's own tree (this commit)
+
+`npm run check` in the common-rules form (the same steps, two jest workers, one command), run on this tree with this report in it, **EXIT 0** in its log (`VE/logs/full-check.log`): typecheck 0, lint 0 errors and 5 warnings (none in a door file), jest **141 suites, 2565 tests** passed (378 s), gates 544 files, 0 fail, 5 warn (HOST-PICKER and the three door markers DOOR-HOLD, DOOR-QUIET, DOOR-WAIT, all unchanged, and one that is not this task's), baseline 0 entries, tasks 275. The door's folder alone: 5 suites, 101 tests, passing (it ran 6 times under my mutants, the real code restored and compared byte for byte each time). Product code untouched: `DoorScreen.tsx` is identical to `cb72563`'s, and my scratch spec and mutant exports stay in `VE`, not in the commit.
+
+### NOT RUN
+
+V10 on an Android phone (the sheet's keyboard, a real camera frame arriving after the sheet opens, the hold at a real door). The backend suite (nothing there changed, and the Hub's 422 question is answered from its source and contract). The artboards were not re-pictured side by side (only the checking line, the verdict and the sheet moved; `shots/` and `strip-A.png` show the round 3 build against round 2's).
 
 ## Owner sign-off
 
