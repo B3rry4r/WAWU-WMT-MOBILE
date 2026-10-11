@@ -75,9 +75,13 @@ export const electricityBillersQuery = {
 /**
  * A meter check found Fintava's bills service off while its company list still answers: S2 draws S13 and keeps drawing it
  * until the person pulls to refresh (R2-U1). The Hub holds "off" for its own cache window, so the app does not ask the
- * list again at once either.
+ * list again at once either. A fetch of the list that is already out is cancelled, so its late answer cannot undo the hold
+ * (R3-4).
  */
 export function holdBillsOff(): void {
+  // A list fetch already out must not undo the hold when it answers (R3-4): the fetch is cancelled first, so a late
+  // `available: true` is dropped and the hold is what the cache keeps.
+  void queryClient.cancelQueries({ queryKey: billsKeys.electricity });
   queryClient.setQueryData<ElectricityBillersState>(billsKeys.electricity, { available: false, billers: [], held: true });
 }
 
