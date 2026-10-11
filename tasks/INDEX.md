@@ -219,8 +219,9 @@ Builder and verifier are always different sessions.
 201. [FIX-30](FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording
 202. [AUTH-07](AUTH-07.md) Sign-up verifies by email code; no SMS · needs AUTH-03, AUTH-04, AUTH-05 from Developer first
 203. [FIX-31](FIX-31.md) The app's tests that fail only under load: make them deterministic
-204. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-205. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+204. [FIX-32](FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock
+205. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+206. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
