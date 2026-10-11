@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { pickedAccountType } from '@/features/auth/accountType';
 import { SignUpScreen } from '@/features/auth/SignUpScreen';
@@ -15,19 +15,19 @@ export default function SignUpRoute() {
   const router = useRouter();
   const [held, setHeld] = useState(() => heldSignup() !== null);
   const [channel, setChannel] = useState(knownSignupChannel);
-  useEffect(() => {
-    let current = true;
-    void signupChannel().then((answer) => {
-      if (current) setChannel(answer);
-    });
-    return () => {
-      current = false;
-    };
-  }, []);
-  // Coming back from A4 after Start again: the secret is gone, and so is the link.
+  // Each time A3 comes into focus (a first visit, and a return from A4): the setting can change while the app is open,
+  // so A3 names the channel A4 will name. The last answer stays on screen until the new one arrives.
   useFocusEffect(
     useCallback(() => {
+      let current = true;
+      void signupChannel().then((answer) => {
+        if (current) setChannel(answer);
+      });
+      // Coming back from A4 after Start again: the secret is gone, and so is the link.
       setHeld(heldSignup() !== null);
+      return () => {
+        current = false;
+      };
     }, []),
   );
   return (
