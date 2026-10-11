@@ -997,14 +997,47 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     expect(screen.getByText('Verify your email')).toBeTruthy();
   });
 
-  it('asks WAWU ID once, sends nothing about the person, and needs no sign-in', async () => {
+  it('asks WAWU ID each time, sends nothing about the person, and needs no sign-in', async () => {
     await toA3();
     await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
-    await signupChannel();
+    expect(callsTo('/auth/signup/channel')).toHaveLength(1);
     await signupChannel();
     const asked = callsTo('/auth/signup/channel');
-    expect(asked).toHaveLength(1);
-    expect(asked[0]).toMatchObject({ method: 'GET', body: {}, auth: null });
+    expect(asked).toHaveLength(2);
+    for (const call of asked) expect(call).toMatchObject({ method: 'GET', body: {}, auth: null });
+  });
+
+  it('F-G: asks again each time A3 comes into focus, so A3 and A4 agree when the setting is switched between two visits', async () => {
+    // visit 1: the code is texted
+    await toA3();
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    expect(callsTo('/auth/signup/channel')).toHaveLength(1);
+    answers['POST /auth/signup'] = started();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText('Verify your phone')).toBeTruthy());
+
+    // WAWU ID's setting is switched to email while the app stays open; the person goes back to A3: visit 2
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(EMAIL_LINE)).toBeTruthy());
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+    expect(callsTo('/auth/signup/channel')).toHaveLength(2);
+    // ... and A4 then names the channel A3 named
+    answers['POST /auth/signup'] = mailed();
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+    expect(screen.getByText('Verify your email')).toBeTruthy();
+
+    // switched back: visit 3 names the text again, and A4 follows
+    answers['GET /auth/signup/channel'] = ok({ channel: 'phone' });
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    expect(callsTo('/auth/signup/channel')).toHaveLength(3);
+    answers['POST /auth/signup'] = started();
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+    expect(screen.getByText('Verify your phone')).toBeTruthy();
   });
 
   it('asks again on a later visit when the first ask failed, and draws the line once it knows', async () => {
