@@ -53,11 +53,12 @@ let knownChannel: SignupChannel | null = null;
 
 /**
  * A3: which way the code will travel, so the line under the heading names the channel A4 will then name (the
- * words follow WAWU ID's SIGNUP_VERIFY_CHANNEL, AUTH-07 round 3). Asked once per run of the app. Null when WAWU ID could
- * not be asked: the line is then left out, never guessed.
+ * words follow WAWU ID's SIGNUP_VERIFY_CHANNEL, AUTH-07 round 3). Asked again each time A3 comes into focus (round 4,
+ * the verifier's F-G): the setting can change while the app stays open, and an answer kept for the whole run
+ * would leave A3 naming the old channel while A4 names the new one. Null when WAWU ID could not be asked: the line is
+ * then left out, never guessed.
  */
 export async function signupChannel(): Promise<SignupChannel | null> {
-  if (knownChannel) return knownChannel;
   try {
     knownChannel = await signupChannelRequest();
   } catch {
@@ -66,7 +67,7 @@ export async function signupChannel(): Promise<SignupChannel | null> {
   return knownChannel;
 }
 
-/** What `signupChannel` already learned this run (null before it has). */
+/** What the last ask of `signupChannel` learned (null before it has, or when it failed). */
 export function knownSignupChannel(): SignupChannel | null {
   return knownChannel;
 }
