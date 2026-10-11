@@ -12,9 +12,9 @@ import { space, useWawu } from '@/theme';
 import { changePin, fetchPinState, newRequestKey, verifyPin } from '../api/settings';
 import { PinDots, PinFrame, PinHead, StatusLine } from './PinFrame';
 import { CONFIRM_TITLE, CURRENT_LINE, CURRENT_TITLE, lockLeftMs, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, type Refusal, stepLabel, UNKNOWN_CHANGE } from './pinFlow';
+import { useMonotonicCountdown } from './useMonotonicCountdown';
 
-/** How often the lock's countdown refreshes. */
-const TICK_MS = 1000;
+const MS_PER_SECOND = 1000;
 /** A change with no answer is sent this many times in a row (the same request, the same key) before the person is asked to tap Try again. */
 const REPEATS = 2;
 
@@ -91,15 +91,17 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     if (read && !read.isSet) onNoPin();
   }, [read, onNoPin]);
 
-  // The lock: from the read at the start, and again after a refusal that says locked.
-  const [now, setNow] = useState(() => Date.now());
-  const lockLeft = lockLeftMs(read?.lockedUntil ?? null, now);
-  const locked = lockLeft > 0;
+  // The lock: from the read at the start, and again after a refusal that says locked. The server sends the instant the lock
+  // ends, not seconds; it is read against the phone's clock once, here, as the answer arrives, and from then on the lock
+  // counts down on the monotonic clock, so a phone clock changed while it runs moves nothing (round 3, N2).
+  const lockClock = useMonotonicCountdown();
+  const startLock = lockClock.start;
+  const lockedUntil = read?.lockedUntil ?? null;
   useEffect(() => {
-    if (!locked) return undefined;
-    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => clearInterval(timer);
-  }, [locked]);
+    startLock(Math.ceil(lockLeftMs(lockedUntil, Date.now()) / MS_PER_SECOND));
+  }, [lockedUntil, startLock]);
+  const lockLeft = lockClock.seconds * MS_PER_SECOND;
+  const locked = lockClock.seconds > 0;
 
   const say = (text: string, wrongPin = false) => {
     setLine({ text, wrongPin });
@@ -107,7 +109,6 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
   };
 
   const learnLock = async () => {
-    setNow(Date.now());
     await pin.refetch();
   };
 
@@ -219,6 +220,13 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
         startAgainAt('current', null);
         await learnLock();
         say(refusal.line);
+        break;
+      case 'changed_again':
+        // The change landed, and the PIN was changed again before this repeat came (N4): the PIN typed here is not the PIN
+        // now, and neither is the one in use, so nothing is claimed and nothing is sent with the old one.
+        current.current = null;
+        void queryClient.invalidateQueries({ queryKey: ['money'] });
+        startAgainAt('current', refusal.line);
         break;
       case 'no_pin':
         onNoPin();

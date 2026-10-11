@@ -6,12 +6,12 @@ import { Button } from '@/components/Button';
 import { waitClock } from '@/components/pin-sheet/format';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { useCountdown } from '@/features/auth/useCountdown';
 import { layout, useWawu } from '@/theme';
 
 import { confirmPinReset, newRequestKey, startPinReset, type PinResetStarted } from '../api/settings';
 import { BELOW, CodeBoxes, CodeMiddle, PinDots, PinFrame, PinHead, StatusLine } from './PinFrame';
 import { CODE_LENGTH, CONFIRM_TITLE, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, RESET_NAV, RESET_TITLE, sentToLine, stepLabel, UNKNOWN_RESET, type Refusal } from './pinFlow';
+import { useMonotonicCountdown } from './useMonotonicCountdown';
 
 const MS_PER_SECOND = 1000;
 /** A reset with no answer is sent this many times in a row (the same request, the same key) before the person is asked to tap Try again. */
@@ -52,8 +52,9 @@ export type ResetPinScreenProps = {
  * The code and both PINs live in this screen's memory only and are dropped when the request is answered, whatever the
  * answer, and on leaving.
  *
- * Resend counts down the server's own seconds (`resendInSeconds`, taken as it answered) on the phone's timer, never
- * `resendAvailableAt` against the phone's clock, and says "We sent a new code." only when the server's answer to it is a
+ * Resend counts down the server's own seconds (`resendInSeconds`, taken as it answered) on the phone's monotonic clock
+ * (`useMonotonicCountdown`), never `resendAvailableAt` against the phone's clock and never `Date.now()`: a clock changed
+ * while the count runs moves nothing (round 3, N2). It says "We sent a new code." only when the server's answer to it is a
  * different reset: asked before the gap has passed, the server answers the same reset and sends nothing (D3).
  *
  * One attempt is one Idempotency-Key (WALLET-06 round 2, D1): a reset that got no answer is sent again, once at once and
@@ -77,7 +78,7 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
   const inFlight = useRef(false);
   const alive = useRef(true);
   const began = useRef(false);
-  const resend = useCountdown(null);
+  const resend = useMonotonicCountdown();
 
   useEffect(
     () => () => {
@@ -228,6 +229,12 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
         break;
       case 'mismatch':
         startAgainAt('new', refusal.line, true);
+        break;
+      case 'changed_again':
+        // The reset landed (its code is used), and the PIN was changed again before this repeat came (N4): nothing is
+        // claimed. A new code is the way to a reset, so the person is back at the boxes.
+        void queryClient.invalidateQueries({ queryKey: ['money'] });
+        startAgainAt('code', refusal.line);
         break;
       case 'no_pin':
         onNoPin();
