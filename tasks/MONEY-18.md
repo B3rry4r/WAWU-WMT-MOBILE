@@ -339,7 +339,7 @@ Builder, round 3, 11 Oct 2026 (Sonnet agent; the lead's brief for MONEY-18 round
 - Gates `python3 scripts/gates/run.py`: main `5926f5c` 1,140 files, 16 fail / 95 warn / 76 accepted; branch `fd2696c` 1,144 files, **16 fail** / 95 warn / 76 accepted. The FAIL lines are identical (`diff` empty, `g-main.fail`, `g-branch.fail`) and no warning was added. `check_baseline.py`: 108 entries, every accepted violation has an owner and a reason, EXIT 0. No em-dash in the branch's added lines.
 - `npm run contract:build` twice on the merged tip: `contract/openapi.json` byte for byte the same twice (`846ca1bd...`) and equal to the committed file and to backend main's; `git status` clean (`contract-run-1.sha`, `contract-run-2.sha`, `contract-main.sha`). This round adds no route, field or schema, so **nothing is synced to this repo** (SHARED-CHANGES MONEY-18 #6 stands).
 - Trial merges: backend `origin/main` merged into the branch three times as it moved (`6976aad`, `0d5836e`, `5926f5c`), **0 conflicts**; mobile `origin/main` twice (`15a5b6b` with 3 conflicts in `SHARED-CHANGES.md`, `docs/PROGRESS.md` and `tasks/MONEY-18.md`, resolved as described above; `a8d6383` with none).
-@@MOBILECHECKS@@
+- Mobile (this repo, after this file, BACKEND_GAPS, SHARED-CHANGES and LOG were edited and `python3 scripts/tasks/check_tasks.py --write` regenerated INDEX and PROGRESS, with main `21085a2` merged): `npm run gates` **EXIT 0**, `npm run tasks` **EXIT 0** (`mobile-gates.txt`, `mobile-tasks.txt`). The mobile `npm run check` was not run: this branch changes no app code and the contract is unchanged.
 
 #### Mutants of my own
 
