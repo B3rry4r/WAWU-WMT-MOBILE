@@ -129,6 +129,8 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     expect(claims()[0].body).toEqual({ code: '5F6C15E4' });
     expect(screen.getByText('Your plan is ready')).toBeTruthy();
     expect(screen.getByTestId('claim-ready-line').props.children).toBe('Verify for 30 days, starting today.');
+    expect(screen.getByTestId('icon-CircleCheck', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('icon-CalendarX', { includeHiddenElements: true })).toBeNull();
     // What is in force in the app today: the plan, its end and the points. The Hub also granted three products, a pass and
     // a Voice Intro; their screens are not built, so they are not listed (round 2, N2).
     for (const text of ['Verify', '16 Nov', '100', '15 Jan 2027']) {
@@ -160,11 +162,15 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     const heading = () => screen.getByTestId('claim-heading').props.children;
     const line = () => screen.getByTestId('claim-ready-line').props.children;
     const rows = () => ['Plan', 'Runs until', 'Now runs until', 'Ended', 'Points added', 'Points last until', 'Points ended'].filter((label) => screen.queryByText(label));
+    // The glyph over the heading (round 4, D4f): a calendar with a cross once the plan is over, a check mark otherwise.
+    // It is decorative, so it is found by the icon's own test id, hidden elements included.
+    const glyph = () => ['CalendarX', 'CircleCheck'].filter((name) => screen.queryByTestId(`icon-${name}`, { includeHiddenElements: true }));
 
     it('the day it was claimed: "Your plan is ready", starting today', async () => {
       await claimTyped();
       expect(heading()).toBe('Your plan is ready');
       expect(line()).toBe('Verify for 30 days, starting today.');
+      expect(glyph()).toEqual(['CircleCheck']);
     });
 
     it('ten days later, the plan still running: it says when the plan started, never "starting today"', async () => {
@@ -177,6 +183,7 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
       // The same lines as N2 ruled: the plan, when it ends, the points and when they end.
       expect(rows()).toEqual(['Plan', 'Runs until', 'Points added', 'Points last until']);
       for (const text of ['Verify', '6 Nov', '100', '15 Jan 2027']) expect(screen.getByText(text)).toBeTruthy();
+      expect(glyph()).toEqual(['CircleCheck']);
     });
 
     it('a repeat that added days to a plan they already had says when', async () => {
@@ -185,6 +192,7 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
       expect(heading()).toBe('Your plan is active');
       expect(line()).toBe('30 days were added to your plan on 14 Oct.');
       expect(screen.getByText('Now runs until')).toBeTruthy();
+      expect(glyph()).toEqual(['CircleCheck']);
     });
 
     it('after the plan ended: it says the plan ended and shows no "Runs until" with a past date', async () => {
@@ -205,6 +213,8 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
       expect(JSON.stringify(screen.toJSON())).not.toContain('starting today');
       expect(rows()).toEqual(['Plan', 'Ended', 'Points added', 'Points ended']);
       for (const text of ['Verify', '1 Sep', '100', '1 Oct']) expect(screen.getByText(text)).toBeTruthy();
+      // an ended plan is never drawn with the check mark of a plan that is ready
+      expect(glyph()).toEqual(['CalendarX']);
     });
 
     it('an account that holds no plan now, with no end to name, says the day it claimed the code', async () => {
@@ -213,6 +223,7 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
       expect(heading()).toBe('Your plan has ended');
       expect(line()).toBe('You claimed this code on 7 Sep.');
       expect(rows()).toEqual([]);
+      expect(glyph()).toEqual(['CalendarX']);
     });
 
     it('an answer with no readable time of claim is the unreadable-answer note, not a plan', async () => {

@@ -375,3 +375,5 @@ _Owner: date, and "screenshots and evidence pack reviewed"._
 Merged by the lead, 10 Oct 2026: backend PR #106 (merge `e1d436f`) and mobile main (merge of `f1bc738`; the contract regenerated from backend main). The round 2 verifier found no blocker. R2-U1, R2-1 to R2-5 and the mutant gaps V9, V10, T5 follow in round 3 on the same branch.
 
 Hotfix merged by the lead, 11 Oct 2026: backend PR #110 (merge `39e9377`, deployed: run 38097863996, health and offer 200) and mobile main (merge of `66bb085`, the contract regenerated from backend main `39e9377`). Round 3 (R2-U1, R2-1 to R2-5, V9, V10, T5) follows on the same branch.
+
+Round 3 merged by the lead, 11 Oct 2026: backend PR #115 (merge `b71c551`) and mobile main (merge of `c1fb8c3`). The verifier found no blocker. Lead ruling on N2: the `AuthFrame` edit stays (SHARED-CHANGES BILLS-01 #4 applied). R3-1 to R3-6 and M20 follow in round 4 on the same branch, before BILLS-02 pays a bill.
