@@ -5274,6 +5274,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/waitlist/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim a paid registration with its launch access code. The caller must
+         *     hold the registration's phone or email, proven to WAWU ID; the code alone
+         *     is never enough. Gives what the registration's plan gives, its days
+         *     counted from now, once. The account that made the claim and sends the
+         *     same code again is answered with the same plan (a 200, nothing granted
+         *     twice), so an answer that was lost on the way can be asked for again.
+         */
+        post: operations["WaitlistClaimController_claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/admin/waitlist/registrations": {
         parameters: {
             query?: never;
@@ -6904,6 +6928,14 @@ export interface components {
             reference: string;
             /** @description The transaction id the payment modal handed back (digits). */
             transactionId: string;
+        };
+        ClaimWaitlistRegistrationDto: {
+            /**
+             * @description The launch access code from the registration page: 8 letters and numbers
+             *     (0 to 9, A to F), written "XXXX XXXX". Spaces, dashes and lower case are
+             *     accepted; the server reads it without them.
+             */
+            code: string;
         };
         CreateAdCreativeDto: {
             headline: string;
@@ -10483,6 +10515,7 @@ export interface components {
             reference: string;
             accessCode: string;
             flutterwaveTransactionId: string | null;
+            claimed: boolean;
             claimedByWawuId: string | null;
             claimedAt: string | null;
             createdAt: string;
@@ -10493,6 +10526,15 @@ export interface components {
             rowCount: number;
             content: string;
             generatedAt: string;
+        };
+        WaitlistClaimView: {
+            offerName: string;
+            days: number;
+            extended: boolean;
+            pointsGranted: number;
+            pointsExpireAt: string | null;
+            claimedAt: string;
+            tier: components["schemas"]["MyTierView"];
         };
         WaitlistOfferView: {
             id: string;
@@ -21063,6 +21105,50 @@ export interface operations {
             };
             /** @description `reason.code` `not_found`: the same answer for a reference that does not exist and one that was never issued. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WaitlistClaimController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimWaitlistRegistrationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistClaimView"];
+                };
+            };
+            /** @description `reason.code` `code_invalid`: not 8 letters and numbers. A malformed body has no `reason`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `code_not_found`: the same answer for a code that does not exist, is not paid, or is not tied to a phone or email the caller has proven. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `contact_not_verified` (the account has no proven phone or email), `code_refunded` (an extra payment being refunded), `already_claimed` (by another account), `offer_unavailable`, or `claimed_by_you` (only for a claim made before its answer was kept; the same account asking again is otherwise answered 200). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
