@@ -542,18 +542,20 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     expect(rtl.screen.queryByText(/couldn't find/)).toBeNull();
   });
 
-  it('goes to S2 (S13) and asks the list again when the check says bills are not switched on', async () => {
+  it('goes to S2 (S13) when the check says bills are not switched on, and does not ask the list again at once (R2-U1)', async () => {
     const onUnavailable = jest.fn();
     await ready(undefined, { onUnavailable });
     answers[PREVIEW_PATH] = [refusal(503, 'bills_unavailable', "Bill payments aren't switched on yet.")];
     await type('meter-number', '04123456789');
     await rtl.waitFor(() => expect(onUnavailable).toHaveBeenCalledTimes(1), LATER);
-    await rtl.waitFor(() => expect(asked(BILLERS_PATH)).toBe(2));
+    await settle(300);
+    // The Hub holds "off" for its cache window; the app does not ask its list again until the person pulls to refresh.
+    expect(asked(BILLERS_PATH)).toBe(1);
   });
 
-  it('D6: S2 is S13 at once: the kept list is replaced by "not available" before S2 is drawn, not after the next read', async () => {
+  it('D6: S2 is S13 at once: the kept list is replaced by "not available", held, before S2 is drawn', async () => {
     const seen: unknown[] = [];
-    // The list is asked again after the check; this answer is the Hub still holding a list that looks fine (the old behaviour).
+    // The Hub's list still answers "available" (the verifier's 04183456789 case): it must not be what S2 draws.
     answers[BILLERS_PATH] = [LIST];
     answers[PREVIEW_PATH] = [refusal(503, 'bills_unavailable', "Bill payments aren't switched on yet.")];
     await ready(undefined, {
@@ -561,8 +563,8 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     });
     await type('meter-number', '04123456789');
     await rtl.waitFor(() => expect(seen).toHaveLength(1), LATER);
-    // At the moment S4 hands over to S2 the list S2 will draw already says S13.
-    expect(seen[0]).toEqual({ available: false, billers: [] });
+    // At the moment S4 hands over to S2 the list S2 will draw already says S13, and says it is held.
+    expect(seen[0]).toEqual({ available: false, billers: [], held: true });
   });
 
   it('offers the Hub’s quick amounts for this company, in order, and a tap fills the amount box', async () => {
@@ -587,7 +589,12 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     await ready();
     await type('amount', '12500');
     expect(rtl.screen.getByTestId('amount').props.value).toBe('12,500');
+    // A paste with a naira sign and a letter is refused whole (R2-3); one key typed that is not a digit is ignored.
     await type('amount', '₦12,500x9');
+    expect(rtl.screen.getByTestId('amount').props.value).toBe('12,500');
+    await type('amount', '12,500x');
+    expect(rtl.screen.getByTestId('amount').props.value).toBe('12,500');
+    await type('amount', '12,5009');
     expect(rtl.screen.getByTestId('amount').props.value).toBe('125,009');
     await type('amount', '000');
     expect(rtl.screen.getByTestId('amount').props.value).toBe('');
@@ -680,6 +687,36 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     expect(rtl.screen.getByText('The most you can pay is ₦500,000.')).toBeTruthy();
   });
 
+  it('the amount box is outlined in red below the minimum and above the maximum, and in neither colour of trouble within them (round 2 survivor T17)', async () => {
+    await ready('Eko_Prepaid');
+    const border = () => StyleSheet.flatten(rtl.screen.getByTestId('amount').parent!.props.style);
+    const red = [lightColors.danger, darkColors.danger];
+    await type('amount', '999');
+    expect(red).toContain(border().borderColor);
+    expect(border().borderWidth).toBe(1.5);
+    await type('amount', '1000');
+    expect(red).not.toContain(border().borderColor);
+    await type('amount', '500000');
+    expect(red).not.toContain(border().borderColor);
+    await type('amount', '500001');
+    expect(red).toContain(border().borderColor);
+    expect(border().borderWidth).toBe(1.5);
+    await type('amount', '');
+    expect(red).not.toContain(border().borderColor);
+  });
+
+  it('a pasted amount that holds a letter, a naira sign or another script’s digits is refused whole and the box keeps what it held (R2-3)', async () => {
+    await ready();
+    await type('amount', '2500');
+    for (const pasted of ['1e3', '10k', '₦1,500', '1 500', '\u0661\u0660\u0660\u0660']) {
+      await type('amount', pasted);
+      expect(rtl.screen.getByTestId('amount').props.value).toBe('2,500');
+    }
+    // A valid paste over it replaces it.
+    await type('amount', '1,500.50');
+    expect(rtl.screen.getByTestId('amount').props.value).toBe('1,500.50');
+  });
+
   it('the limits are each company’s own: Port Harcourt stops at ₦100,000', async () => {
     await ready('PhED_Electricity');
     await type('amount', '100001');
@@ -731,5 +768,138 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     await ready(undefined, { onBack });
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' })));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('R2-U1: S13 reached from a meter check is held until the person pulls to refresh', () => {
+  const KEY = ['bills', 'electricity', 'billers'];
+  const OFF_CHECK = refusal(503, 'bills_unavailable', "Bill payments aren't switched on yet.");
+  /** S2 and S4 mounted together, as the stack holds them: S4 sits above S2, whose observer of the list stays alive. */
+  const stack = (onUnavailable = jest.fn()) =>
+    rtl.render(
+      wrap(
+        <>
+          <BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />
+          <MeterAmountScreen
+            code="Ikeja_Electric_Bill_Payment"
+            onBack={jest.fn()}
+            onChangeCategory={jest.fn()}
+            onChangeBiller={jest.fn()}
+            onMissing={jest.fn()}
+            onUnavailable={onUnavailable}
+          />
+        </>,
+      ),
+    );
+  /** The verifier's case: the company list still answers "available"; the check for 04183456789 says the service is off. */
+  const checkFindsBillsOff = async () => {
+    answers[BILLERS_PATH] = [LIST];
+    answers[PREVIEW_PATH] = [OFF_CHECK];
+    const view = await stack();
+    await rtl.screen.findByTestId('meter-amount');
+    await type('meter-number', '04183456789');
+    await rtl.screen.findByTestId('bills-not-live', undefined, LATER);
+    return view;
+  };
+  /** The person pulls S2 down. */
+  const pullControl = () => rtl.screen.getByTestId('bills-home-scroll').props.refreshControl as { props: { onRefresh: () => void; refreshing: boolean } } | undefined;
+  const pull = () =>
+    rtl.act(async () => {
+      pullControl()!.props.onRefresh();
+    });
+  /** The cached list as it was an hour ago, so that nothing in the app counts it fresh. */
+  const ageTheList = () => queryClient.setQueryData(KEY, queryClient.getQueryData(KEY), { updatedAt: Date.now() - 3_600_000 });
+
+  it('reproduces the verifier’s case: S2 draws S13 and keeps drawing it while the list still answers "available"', async () => {
+    await checkFindsBillsOff();
+    expect(rtl.screen.queryByRole('button', { name: 'Electricity' })).toBeNull();
+    // Sampled over a second, as the verifier sampled: it never flips to the normal screen.
+    for (let i = 0; i < 4; i += 1) {
+      await settle(250);
+      expect(rtl.screen.getByTestId('bills-not-live')).toBeTruthy();
+      expect(rtl.screen.queryByRole('button', { name: 'Electricity' })).toBeNull();
+    }
+    // The list was asked once (S2 and S4 opening together), not again after the check.
+    expect(asked(BILLERS_PATH)).toBe(1);
+    expect(asked(PREVIEW_PATH)).toBe(1);
+  });
+
+  it('holds the answer in the cache as held, so no screen’s mount refreshes it', async () => {
+    await checkFindsBillsOff();
+    expect(queryClient.getQueryData(KEY)).toEqual({ available: false, billers: [], held: true });
+  });
+
+  it('stays S13 when S2 is opened again later, with the held list an hour old, and asks nothing', async () => {
+    const first = await checkFindsBillsOff();
+    await first.unmount();
+    ageTheList();
+    const before = asked(BILLERS_PATH);
+    await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />));
+    expect(await rtl.screen.findByTestId('bills-not-live')).toBeTruthy();
+    await settle(200);
+    expect(asked(BILLERS_PATH)).toBe(before);
+    expect(rtl.screen.getByTestId('bills-not-live')).toBeTruthy();
+  });
+
+  it('S3 and S4 opened on the held list ask nothing either', async () => {
+    const first = await checkFindsBillsOff();
+    await first.unmount();
+    ageTheList();
+    const before = asked(BILLERS_PATH);
+    const onUnavailable = jest.fn();
+    await rtl.render(
+      wrap(<ElectricityBillersScreen onBack={jest.fn()} onChangeCategory={jest.fn()} onPick={jest.fn()} onUnavailable={onUnavailable} />),
+    );
+    await rtl.waitFor(() => expect(onUnavailable).toHaveBeenCalled());
+    await settle(200);
+    expect(asked(BILLERS_PATH)).toBe(before);
+  });
+
+  it('a list that is "not available" because the Hub said so (not held) is asked again once it is old, as before', async () => {
+    answers[BILLERS_PATH] = [NOT_ON, LIST];
+    const first = await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />));
+    expect(await rtl.screen.findByTestId('bills-not-live')).toBeTruthy();
+    expect((queryClient.getQueryData(KEY) as { held?: true }).held).toBeUndefined();
+    await first.unmount();
+    ageTheList();
+    await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />));
+    expect(await rtl.screen.findByRole('button', { name: 'Electricity' })).toBeTruthy();
+    expect(asked(BILLERS_PATH)).toBe(2);
+  });
+
+  it('S2 can be pulled to refresh, on S13 and on the normal screen', async () => {
+    answers[BILLERS_PATH] = [LIST];
+    await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />));
+    await rtl.screen.findByRole('button', { name: 'Electricity' });
+    expect(pullControl()).toBeTruthy();
+    await pull();
+    await rtl.waitFor(() => expect(asked(BILLERS_PATH)).toBe(2));
+  });
+
+  it('a pull asks the Hub: while the Hub still says off, S13 stays, but is no longer held', async () => {
+    await checkFindsBillsOff();
+    answers[BILLERS_PATH] = [NOT_ON];
+    await pull();
+    await rtl.waitFor(() => expect(asked(BILLERS_PATH)).toBe(2));
+    expect(await rtl.screen.findByTestId('bills-not-live')).toBeTruthy();
+    expect((queryClient.getQueryData(KEY) as { held?: true }).held).toBeUndefined();
+  });
+
+  it('a pull after the Hub’s window draws the normal screen again: the tile opens and S13 is gone', async () => {
+    await checkFindsBillsOff();
+    answers[BILLERS_PATH] = [LIST];
+    await pull();
+    expect(await rtl.screen.findByRole('button', { name: 'Electricity' })).toBeTruthy();
+    expect(rtl.screen.queryByTestId('bills-not-live')).toBeNull();
+    expect(asked(BILLERS_PATH)).toBe(2);
+  });
+
+  it('shows the pull as in progress while the Hub is asked, and ends it when the answer comes', async () => {
+    await checkFindsBillsOff();
+    answers[BILLERS_PATH] = ['hold'];
+    await pull();
+    await rtl.waitFor(() => expect(pullControl()!.props.refreshing).toBe(true));
+    await rtl.act(async () => held.splice(0).forEach((release) => release()));
+    await rtl.waitFor(() => expect(pullControl()!.props.refreshing).toBe(false));
   });
 });

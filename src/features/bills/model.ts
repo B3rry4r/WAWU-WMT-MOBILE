@@ -37,7 +37,8 @@ export function groupMeter(digits: string): string {
  * most one decimal point and at most two kobo digits ("1,500.50" is ₦1,500.50, "10,000.00" is ₦10,000). The held text is
  * plain: digits, and a point once there is one ("1500.50", "1500.", "0.5").
  *
- * Anything that is not a digit or a point is ignored (the commas it draws, a ₦, a stray letter). What the rule does not take
+ * Anything that is not a digit or a point is ignored (the commas it draws, a ₦, a stray letter); a paste that holds such a
+ * thing is refused before it gets here (`takeAmountChange`). What the rule does not take
  * is not cut to fit: a second point, a third kobo digit or an eleventh naira digit leaves the box as it was, so nothing the
  * person typed or pasted is ever floored, rounded or shortened into a different amount (D1: a point read as digits made
  * "10,000.00" a million).
@@ -51,6 +52,56 @@ export function takeAmount(typed: string, previous: string): string {
   const whole = naira.replace(/^0+/, '');
   if (kobo === undefined) return whole;
   return `${whole === '' ? '0' : whole}.${kobo}`;
+}
+
+/** What a pasted amount may hold: ASCII digits, commas and points (a second point is refused by `takeAmount`). */
+const PASTED_AMOUNT = /^[0-9,.]+$/;
+
+/** What `typed` added to `before`: the text between what the two share at the start and at the end ("" when it only took some away). */
+export function insertedText(before: string, typed: string): string {
+  let start = 0;
+  while (start < before.length && start < typed.length && before[start] === typed[start]) start += 1;
+  let endBefore = before.length;
+  let endTyped = typed.length;
+  while (endBefore > start && endTyped > start && before[endBefore - 1] === typed[endTyped - 1]) {
+    endBefore -= 1;
+    endTyped -= 1;
+  }
+  return typed.slice(start, endTyped);
+}
+
+/**
+ * What the amount box holds after the person changed it from `boxWords` (the words it showed) to `typed`. One key is read by
+ * `takeAmount` as it always was: a letter or a ₦ typed is ignored. A paste (more than one character added at once) must hold
+ * only ASCII digits, commas and at most one point, or it is refused whole and the box keeps what it held: a pasted `1e3` is
+ * not ₦13, `10k` is not ₦10, `١٠٠٠` is not nothing (R2-3; D1 refuses a second point the same way).
+ */
+export function takeAmountChange(boxWords: string, typed: string, previous: string): string {
+  const added = insertedText(boxWords, typed);
+  if (added.length > 1 && !PASTED_AMOUNT.test(added)) return previous;
+  return takeAmount(typed, previous);
+}
+
+const isSignificant = (char: string): boolean => char === '.' || (char >= '0' && char <= '9');
+
+/** How many digits and points `text` holds (the commas the box draws do not count). */
+export function countSignificant(text: string): number {
+  let count = 0;
+  for (const char of text) if (isSignificant(char)) count += 1;
+  return count;
+}
+
+/** Where the caret goes in the box's `words` so that it sits after the same `count` digits and points: just after the key the person typed. */
+export function caretAfter(words: string, count: number): number {
+  if (count <= 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < words.length; i += 1) {
+    if (isSignificant(words[i])) {
+      seen += 1;
+      if (seen === count) return i + 1;
+    }
+  }
+  return words.length;
 }
 
 /** The amount box's words: the naira with commas and the kobo as typed ("1,500.50"), or nothing before the first digit. The ₦ is drawn beside it. */
