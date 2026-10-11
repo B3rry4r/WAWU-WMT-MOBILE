@@ -3,19 +3,23 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 137 of 248.**
+**Launch tasks done: 136 of 248.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 98 | 27 | 11 | 5 |
+| done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [JOIN-03](../tasks/JOIN-03.md) Event registration: claim the paid plan in the app with the access code (You)
 
 ## Done
 
@@ -152,7 +156,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
 - [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
-- [JOIN-03](../tasks/JOIN-03.md) Event registration: claim the paid plan in the app with the access code (You)
 - [FIX-30](../tasks/FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording (You)
 - [AUTH-07](../tasks/AUTH-07.md) Sign-up verifies by email code; no SMS (You)
 - [FIX-31](../tasks/FIX-31.md) The app's tests that fail only under load: make them deterministic (You)
@@ -172,6 +175,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · JOIN-03 · Builder report, round 6 (Sonnet agent; wawu-id `3f30eec` on main `bda1aa6`, mobile on main `39c472b`, backend unchanged, no app code, no contract change, no migration), status verifying: D12 (the anonymise deletes the sign-up code row, reads the account's own row under its lock, takes a lock per number and address it held, then asks who else holds them; before: a confirm landing in the same few milliseconds left 2 counter rows in 5 of 5 runs and 11 of 14 pairs of twin accounts closed together left 4 rows on a number nobody held, after: 0 rows in 5 of 5 and 14 of 14, then 40 of 40; another holder's rows still stay), N30 (a resend that meets the anonymise answers 200 as a resend after it does, no extra counter rows; before: 500 and 2 rows on both channels), N31 (the hard delete, the SAF delete and the expired sign-up sweep take the code row before the account; before: 500 with a deadlock in 2 of 2 each and the anonymise against a hard or SAF delete 500, after: 200 and 0 deadlock lines), a spec and a real-Postgres script (`npm run test:erase-local`, 27 checks) that fail when `FOR SHARE` is dropped from `signupStillThere`; N33 and the two scans recorded, no change; 26 mutants all killed; gates and tasks exit 0.
 - 11 Oct 2026 · JOIN-03 · Round 5 merged by the lead: WAWU ID PR #12 (`bda1aa6`) and mobile main. A closed account gets no working refresh; the anonymise, sign-up and confirm take one lock order; a losing confirm writes nothing back. D12, N30, N31 and a test gap are recorded for a later round.
 - 11 Oct 2026 · NUV-05 · Merged by the lead: backend PR #120 (`51b02c5`) and mobile main. Payments, releases and refunds move as Nuvion book transfers, logged before they leave and never sent twice. Follow-ups N1 to N3 and N6; decision 6 is the owner's.
 - 11 Oct 2026 · BILLS-01 · Round 4 hotfix merged by the lead: backend PR #121 (merge `1ad7c6c`), mobile main (merge of `97c0179`); a flood of invisible characters answers `meter_unconfirmed` instead of throwing, and backend deploys are unblocked.
@@ -186,4 +190,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
 - 11 Oct 2026 · JOIN-03 · Round 4 merged by the lead: WAWU ID PR #11 and mobile main. A closed account has no sign-up to finish; a deletion clears the person's number from counters and pending rows. Round 5 (D8 to D11, refresh on a closed account) follows.
 - 11 Oct 2026 · MONEY-18 · Verifier report, round 3 (independent session; backend `wmt/MONEY-18` `fd2696c`, a trial merge of main `f11d307` (MONEY-19) into it with 0 conflicts (local, not pushed); mobile `fdda674`, main `492615d` has 1 conflict in the generated `docs/PROGRESS.md`): status building, no blocker. The one medium defect is the ruled skip (R3-2: `LAUNCHER ? it : it.skip` is invisible to the deferrals gate; with `iptables` off the PATH jest says 1 skipped and exits 0; the fix I would choose is the rig as `npm run test:netns` and a deploy.yml step that fails when no namespace can be made, with the unprivileged real-socket cases kept in jest). R2-1 holds: my 46-row probe 0 violations, the builder's rig 16 rows 0 wrong, the three `read` shapes never marked, TLS after the write, a proxy in between, wrapped errors and 1,008 code and syscall pairs all clean, and through the hold one reference is one send. R2-2: the table-lock reproduction 0 deliveries while marked and 0 of 120 rounds each of `paid_dm` and `bill`; a dead server's lease lets the delivery happen once after its rest; but the claim is not exclusive between two servers (R3-1, low: the feature is told twice in 32 of 40 rounds with two server processes, inside the at-least-once contract; a one-line compare-and-set on the lease made it 120 of 120 told once in my copy). R2-3, R2-5, R2-7 and G-463 to G-465 hold; the migration folder sorts before main's `20261021100000` and `20261021110000` (a merge item). 30 mutants of my own: 27 killed, 3 redundant or equivalent. Full run on the trial merge 3,226 of 3,230 (the 4 are `receipt-units` and fail on main), protected 253 of 253, gates 16 FAIL as main, contract build twice equal.
-- 11 Oct 2026 · MONEY-18 · Builder report, round 3 (status verifying; backend `wmt/MONEY-18` `fd2696c` = round 2 `bcf38d7` plus this round plus main `5926f5c` merged with 0 conflicts; mobile `wmt/MONEY-18`; no screen, contract unchanged): the round 2 verifier's blocker and small findings, each reproduced first. R2-1: `requestNotSent` read the error code only, so `read EHOSTUNREACH` (and `read ENETUNREACH`, `read ECONNREFUSED`) on an established connection, after the provider read the whole request, was called never sent and the hold sent the reference again (6 of 6 on real sockets, both clients; 2 requests per reference through the hold, 3 of 3). Now `ECONNREFUSED`, `ENETUNREACH`, `EHOSTUNREACH` count only from the `connect` syscall, `ENOTFOUND` and `EAI_AGAIN` only from `getaddrinfo`, undici's connect timeout as before: 0 of 6 (the verifier's 46-row probe 0 violations; 1 request through the hold), closed port, connect timeout, name and no route still marked; a private-namespace rig and a spec that runs it. R2-2: `fulfil()` claims the payment with one conditional update taken last (it also leases the delivery) instead of reading it: the table-lock reproduction closed, a delivery started with the mark committed in 3 of 120 `paid_dm` and 2 of 120 `bill` rounds before, 0 of 120 each after. R2-3: the outcome CHECK migration is one transaction and renamed `20261021080000_wallet_hold_outcome_check` (a violating row left no CHECK and a stuck deploy before; the old CHECK stays and a second deploy works after). R2-5: the spec that kills M03. R2-7: the stale comment fixed; R2-6 and R2-4 recorded (G-465, G-464); G-463 carries the measurement, not built. 14 mutants, all killed. Checks: tsc 0, eslint 0, 3,184 of 3,189 specs (the 5 are `receipt-units`, 4 identical on main), protected suite 253 of 253, gates the same 16 FAIL lines, contract equal to main's. Main has since added two migration stamps after `20261021080000`.
