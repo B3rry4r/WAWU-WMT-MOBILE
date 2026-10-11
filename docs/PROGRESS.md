@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 132 | 0 | 0 | 0 |
+| todo | 131 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 100 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [FIX-20](../tasks/FIX-20.md) Provider webhook deliveries are not kept forever (You)
 
 ## Done
 
@@ -174,6 +178,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · FIX-20 · Builder report (status verifying; backend `wmt/FIX-20` `bb9bbd1`, migration `20261021230000`): a daily job at 02:40 clears the raw body and parsed copy of a finished Fintava or Nuvion delivery after 90 days (`WEBHOOK_RETENTION_DAYS`, PROVISIONAL); pending, failed and unrecognised deliveries keep their body, and the row keeps its hash and ids, so a delivery sent again is still `200 duplicate` (both providers, through the routes and on two built Hubs). Batches of 200 under `SKIP LOCKED`, safe on two servers at once and while deliveries arrive. Rule in CONVENTIONS section 21, the purge map and the export list. Protected 253/253, the same 16 gate FAIL lines as main, nine mutants killed; G-750 to G-752 filed.
 - 11 Oct 2026 · TIER-03 · Merged by the lead: backend PR #123 (`2a4b9a4`) and mobile main. A person buys, renews or upgrades a tier from the wallet; a payment that can no longer be granted is refunded once, and the purchase says how much comes back.
 - 11 Oct 2026 · TIER-03 · Builder report, round 3 (Sonnet agent; backend `wmt/TIER-03` `9197a36` on main `51b02c5`, mobile `wmt/TIER-03` on main `15a8c2c`; status verifying): the lead's rulings. R2-D1: a new spec makes the grant and the refund fail with ordinary errors (a plain error, a `P2034`, a points conflict, the bump's lot, a refund that throws), so only a refusal pays money back and a failing refund is never swallowed (X01 and X13 killed). R2-D2: the refunded sentences name the price in naira and say the first payment's charge is not returned (R-10), read from the hold. R2-D3: the points-last spec sees raw SQL (X22 and X27 killed). The stale comment at `schema.prisma` 4693 is in MONEY-18's model, left and recorded. 12 of 12 mutants killed; purchases 98 of 98, areas 2929 of 2933 (the 4 are the Unicode table, as on main), protected suite 253/253, gates the same 16 FAIL lines as main, `contract:build` twice equal, `test:netns` EXIT 0.
 - 11 Oct 2026 · TIER-03 · Verifier report, round 2 (independent session; backend `wmt/TIER-03` `564a93c` in a detached worktree, a trial merge of main `51b02c5` (NUV-05) into it with 0 conflicts (local, not pushed), TIER-02 `3a8b57d` merged into it in a second copy with 1 conflict (the generated `contract/openapi.json`); mobile `ea84e0a`, main `39c472b` conflicts in the generated `docs/PROGRESS.md` and in `BACKEND_GAPS.md` (an add/add beside G-680); status building, no money defect): D1 as built holds under attack on two built Hubs over one database, the grant against the refund over 15 payments (4 granted, 11 refunded, never both, never neither, one send of exactly the price each), kill -9 at six points, 12 injected database failures that must not refund (24 of 24, none did), replayed and forged reports, a lost refund answer, a lagging record, a failed first try (one new try under -2) and a missing wallet; D2/D4 (extras), D3 (points last) and N7 (the CHECK refuses the raw insert; no CHECK on a future `activeFrom` is acceptable) confirmed; the contract change is two enum values; TIER-02 + TIER-03 15 of 15 live; protected suite 253 of 253, gates the same 16 FAIL lines, `contract:build` twice equal, `test:netns` EXIT 0. Three small defects: R2-D1 (mutants X01 and X13 survive: nothing pins that only a refusal refunds or that a failing refund call throws), R2-D2 (the purchase's sentences say "your money" and the original charge does not come back), R2-D3 (the points-last spec cannot see a raw SQL write); 28 mutants of my own, 23 killed.
@@ -188,4 +193,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · NUV-05 · Merged by the lead: backend PR #120 (`51b02c5`) and mobile main. Payments, releases and refunds move as Nuvion book transfers, logged before they leave and never sent twice. Follow-ups N1 to N3 and N6; decision 6 is the owner's.
 - 11 Oct 2026 · BILLS-01 · Round 4 hotfix merged by the lead: backend PR #121 (merge `1ad7c6c`), mobile main (merge of `97c0179`); a flood of invisible characters answers `meter_unconfirmed` instead of throwing, and backend deploys are unblocked.
 - 11 Oct 2026 · BILLS-01 · Round 4 merged by the lead: backend PR #118 (`f2b6bf6`) and mobile main. The meter owner is read by a rule, not a list; provider text is bounded before the cut; the caret stays put after a refused key.
-- 11 Oct 2026 · NUV-05 · Verifier report (independent session; backend `wmt/NUV-05` `3b6ebe5`, mobile `wmt/NUV-05` `c9573e7`; status review, no blocker, no defect): two built Hubs over one database against the stand-in, 54 of 54 checks, and the real WAWU ID, 15 of 15: a payment, a release and a refund each move once however often and at once, a lost answer is found by the history walk and never sent again (a Hub killed with kill -9 between the log write and the send, and between the send and the answer, four windows), every outflow event reaches the ledger once in any order and on replay, the ledger's operational figure equals the stand-in's `available` to the kobo, a payer short by one kobo gets MONEY-19's shortfall and nothing is sent; `requestNotSent` follows the code-and-syscall rule exactly (15 shapes, 2 real sockets, `test:netns` 16 rows); the walk past its 2,000-transfer bound is `history_incomplete`, never `absent`. Seven notes (seven mutants survive the builder's specs and my probes kill all seven; a latent false `absent` when a caller passes a `since` later than the send; the shape of a book transfer's `outflows.refunded` is unknown). 37 mutants of my own (30 killed by the specs, 7 by my probes). Trial merges: backend main `f2b6bf6` 0 conflicts, mobile main `610cc57` 1 generated file (`docs/PROGRESS.md`); merged checks green, protected 253 of 253, contract build twice equal.
