@@ -151,7 +151,7 @@ function Receipt({ row }: { row: Transaction }) {
             key={line.key}
             testID={`detail-${line.key}`}
             label={line.label}
-            value={line.copy ? <Reference value={line.value} /> : line.value}
+            value={line.copy ? <Reference value={line.value} /> : line.wrap ? <Text variant="kvValue" style={styles.wrapped}>{line.value}</Text> : line.value}
           />
         ))}
       </GroupedList>
@@ -233,6 +233,7 @@ const styles = StyleSheet.create({
   line: { marginTop: DETAIL.lineTop, fontSize: DETAIL.line, textAlign: 'center' },
   pill: { marginTop: DETAIL.pillTop },
   reference: { flexShrink: 1 },
+  wrapped: { flexShrink: 1, textAlign: 'right' },
   notice: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   skeleton: { gap: DETAIL.parts },
 });

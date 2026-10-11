@@ -191,7 +191,7 @@ const STATUS_LOOK: Record<Transaction['status'], StatusLook> = {
 };
 
 /** One labelled line of the receipt card. `copy` marks the one the person can put on the clipboard. */
-export type ReceiptLine = { key: string; label: string; value: string; copy?: boolean };
+export type ReceiptLine = { key: string; label: string; value: string; copy?: boolean; /** Words a person wrote or a title, which may be long: they wrap instead of being cut. */ wrap?: boolean };
 
 /** One part of what a debit cost, in kobo as the Hub sent it. */
 export type CostLine = { key: string; label: string; kobo: number; strong?: boolean };
@@ -226,7 +226,7 @@ export function receiptOf(row: Transaction): Receipt {
   const cp = row.counterparty;
   const name = cp?.name?.trim() || undefined;
   const lines: ReceiptLine[] = [{ key: 'type', label: 'Type', value: typeLabel(row) }];
-  if (row.link?.title) lines.push({ key: 'on', label: 'On', value: row.link.title });
+  if (row.link?.title) lines.push({ key: 'on', label: 'On', value: row.link.title, wrap: true });
   const own = OWN_WALLET;
   if (row.direction === 'in') {
     if (name) lines.push({ key: 'from', label: 'From', value: name });
@@ -237,7 +237,7 @@ export function receiptOf(row: Transaction): Receipt {
   }
   const account = cp ? accountLine(cp) : null;
   if (account) lines.push({ key: 'account', label: 'Account', value: account });
-  if (row.note?.trim()) lines.push({ key: 'note', label: 'Note', value: row.note.trim() });
+  if (row.note?.trim()) lines.push({ key: 'note', label: 'Note', value: row.note.trim(), wrap: true });
   lines.push({ key: 'date', label: 'Date', value: longDateTime(row.createdAt) });
   lines.push({ key: 'reference', label: 'Reference', value: row.reference, copy: true });
 

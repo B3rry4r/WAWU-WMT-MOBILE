@@ -11,7 +11,7 @@ import { Money } from '@/components/Money';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
-import { radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, radius, space, useWawu } from '@/theme';
 
 import { serverSentence, stateWords } from '../home/model';
 
@@ -80,9 +80,10 @@ export function HistorySearch({ value, maxLength, onChange, onSubmit, testID }: 
 /**
  * design/_gen/wallet.js line 118, the summary card: padded 14 by 16, two halves 14 apart split by a 1 hairline rule, each
  * a 12.5 muted label and, 4 under it, a figure at 18 (In in the positive colour, Out in the text colour); the right half
- * is padded 4 at its start.
+ * is padded 4 at its start. The figure stands in a line box 20 high (`figureLine`): the canvas puts it in a div on the page's
+ * 16 px type, whose line box, not the figure's 18, sets the height (the card measures 68 in the render).
  */
-export const summaryMetrics = { padV: 14, padH: 16, between: 14, label: 12.5, figureTop: 4, figure: 18, rightPad: 4, rule: 1 } as const;
+export const summaryMetrics = { padV: 14, padH: 16, between: 14, label: 12.5, figureTop: 4, figure: 18, figureLine: 20, rightPad: 4, rule: 1 } as const;
 
 export type MonthCardProps = {
   /** "September": the month the totals are for, in Lagos time. */
@@ -149,8 +150,8 @@ const styles = StyleSheet.create({
   half: { flex: 1 },
   right: { paddingLeft: summaryMetrics.rightPad },
   rule: { width: summaryMetrics.rule },
-  label: { fontSize: summaryMetrics.label },
-  figure: { marginTop: summaryMetrics.figureTop },
+  label: { fontSize: summaryMetrics.label, lineHeight: canvasNormalLineHeight(summaryMetrics.label) },
+  figure: { marginTop: summaryMetrics.figureTop, minHeight: summaryMetrics.figureLine },
   failed: { alignItems: 'flex-start', gap: space.sm },
   failedText: { alignSelf: 'stretch' },
 });

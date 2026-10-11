@@ -237,6 +237,8 @@ describe('W27: the receipt of one movement', () => {
       ['reference', 'Reference', 'REF-TIP-0001'],
     ]);
     expect(receipt.lines.find((l) => l.key === 'reference')?.copy).toBe(true);
+    // What a person wrote, and a title, wrap when long instead of being cut.
+    expect(receipt.lines.filter((l) => l.wrap).map((l) => l.key)).toEqual(['on', 'note']);
     expect(receipt.amountKobo).toBe(200_000);
     expect(receipt.status).toEqual({ label: 'Completed', tone: 'positive', icon: 'Check' });
     expect(receipt.cost).toBeNull();
