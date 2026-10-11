@@ -21,13 +21,14 @@ const caretOf = (node: CaretNode | null): Caret | null => {
 
 /**
  * Whether a key down with the caret at `pre` can be the one that turned the box's `words` into `typed`: it put text in over
- * the stretch it selected (or at the caret), or it was a Backspace or a Delete that took the one character before or after the
- * caret. A key down that changed nothing (an arrow, a Shift) is left behind by the next change that has no key down of its own
- * (a paste from a menu, a drop), and is not that change's.
+ * the stretch it selected (or at the caret), or it was a Delete that took the one character after the caret. (A Backspace needs
+ * no key down: the caret was just after what it took out, which is what the change itself says.) A key down that changed
+ * nothing (an arrow, a Shift) is left behind by the next change that has no key down of its own (a paste from a menu, a drop),
+ * and is not that change's.
  */
 function fits(words: string, typed: string, pre: Caret): boolean {
   const shapes: [from: number, to: number, takesText: boolean][] = [[pre.start, pre.end, true]];
-  if (pre.start === pre.end) shapes.push([pre.start - 1, pre.end, false], [pre.start, pre.end + 1, false]);
+  if (pre.start === pre.end) shapes.push([pre.start, pre.end + 1, false]);
   return shapes.some(
     ([from, to, takesText]) =>
       from >= 0 &&
@@ -39,8 +40,11 @@ function fits(words: string, typed: string, pre: Caret): boolean {
 }
 
 export type KeepCaret = {
-  /** The box's `onKeyPress` (a browser's key down): notes where the caret stood before the key changed anything. */
-  onKeyPress: () => void;
+  /**
+   * The box's `onKeyPress` (a browser's key down): notes where the caret stood before the key changed anything. It is
+   * `undefined` when the box keeps no caret or this is not a browser, so a phone's box is handed no handler it has no use for.
+   */
+  onKeyPress: (() => void) | undefined;
   /** Called with every change, before the new text is stored. */
   onTyped: (typed: string) => void;
 };
@@ -108,5 +112,5 @@ export function useKeepCaret(ref: RefObject<TextInput | null>, words: string, en
     node.setSelectionRange(to, to);
   }, [words, keep, ref]);
 
-  return { onKeyPress, onTyped };
+  return { onKeyPress: keep ? onKeyPress : undefined, onTyped };
 }

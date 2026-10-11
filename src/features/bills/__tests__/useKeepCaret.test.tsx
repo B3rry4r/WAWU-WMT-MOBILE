@@ -54,7 +54,7 @@ async function change(box: FakeNode, { from, typed, at, words }: Key) {
     if (from) {
       box.selectionStart = from[0];
       box.selectionEnd = from[1];
-      handle!.onKeyPress();
+      handle!.onKeyPress?.();
     }
     box.selectionStart = at;
     box.selectionEnd = at;
@@ -156,7 +156,7 @@ describe('useKeepCaret', () => {
       act(() => {
         box.selectionStart = 1;
         box.selectionEnd = 1;
-        handle!.onKeyPress();
+        handle!.onKeyPress?.();
         box.selectionStart = 2;
         box.selectionEnd = 2;
         handle!.onTyped('17,23,456');
@@ -261,7 +261,7 @@ describe('useKeepCaret', () => {
       act(() => {
         box.selectionStart = 1;
         box.selectionEnd = 1;
-        handle!.onKeyPress();
+        handle!.onKeyPress?.();
       });
       await change(box, { typed: '1,1e3234', at: 5, words: '1,234' });
       expect(box.setSelectionRange).toHaveBeenCalledTimes(1);
@@ -274,10 +274,21 @@ describe('useKeepCaret', () => {
       act(() => {
         box.selectionStart = 4;
         box.selectionEnd = 5;
-        handle!.onKeyPress();
+        handle!.onKeyPress?.();
       });
       await change(box, { typed: '1,2abc', at: 6, words: '1,234' });
       expect(box.setSelectionRange).toHaveBeenCalledWith(5, 5);
+    });
+
+    it('the key down noted for one key is not used for the next change when that has none of its own', async () => {
+      const box = node(1);
+      await rtl.render(<Harness start="1,234" node={box} />);
+      // A Delete before the comma, which the box draws again: the caret stays before the comma.
+      await change(box, { from: [1, 1], typed: '1234', at: 1, words: '1,234' });
+      expect(box.setSelectionRange).toHaveBeenLastCalledWith(1, 1);
+      // The same text taken out again with no key down (a cut from a menu): placed from the change, after the stretch.
+      await change(box, { typed: '1234', at: 1, words: '1,234' });
+      expect(box.setSelectionRange).toHaveBeenLastCalledWith(2, 2);
     });
 
     it.each([
@@ -288,7 +299,7 @@ describe('useKeepCaret', () => {
       ['a cut', [1, 4], '14', 1],
       ['a paste over a selection', [1, 4], '1abc4', 4],
     ] as [string, [number, number], string, number][])(
-      'takes the key down of %s for the change it made',
+      'puts the caret back after %s',
       async (_k, from, typed, at) => {
         const box = node(from[0], from[1]);
         await rtl.render(<Harness start="1,234" node={box} />);
@@ -303,6 +314,17 @@ describe('useKeepCaret', () => {
       await change(box, { typed: 'x12', at: null, words: '12' });
       expect(box.setSelectionRange).not.toHaveBeenCalled();
     });
+  });
+
+  it('hands the box a key down handler only when it keeps the caret in a browser', async () => {
+    await rtl.render(<Harness start="1" node={node(0)} />);
+    expect(handle!.onKeyPress).toEqual(expect.any(Function));
+    await rtl.render(<Harness start="1" node={node(0)} enabled={false} />);
+    expect(handle!.onKeyPress).toBeUndefined();
+    platform.restore();
+    platform = jest.replaceProperty(Platform, 'OS', 'ios');
+    await rtl.render(<Harness start="1" node={node(0)} />);
+    expect(handle!.onKeyPress).toBeUndefined();
   });
 
   it('does nothing when the box does not keep the caret', async () => {
