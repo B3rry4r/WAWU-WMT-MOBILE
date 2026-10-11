@@ -7,7 +7,7 @@ order: 247
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: building
+status: verifying
 depends_on: [FIX-31]
 decisions: [R-49]
 passes: [V1, V5, V6]
@@ -57,6 +57,19 @@ Branch `wmt/FIX-32` from main `3b35731`, main `610cc57` merged (no conflict). Te
 **Checks.** Every changed file alone, 10 runs in a row, warm cache, `--maxWorkers=1`, load 8 to 14: RoomScreen, CommunitiesView, MeScreen, hostScreens, Explore screens, LegalChatScreen **60 of 60**. **Full check, the common-rules form, EXIT 0** on the tree with main `610cc57` merged (load 13 at the start, 11 GB available): typecheck 0, lint 0 errors (5 warnings, none in a line this task wrote), **152 suites, 2756 tests passed in 640 s**, gates 10 run, 569 files, 0 fail, 5 warn (all `PROVISIONAL(...)` of other tasks), baseline 0, tasks check clean (`fix32/check1.log`). Old and new files were run in two worktrees; the stall and delay runs are the files `fix32/out/*.out`.
 
 **For the lead.** (1) The delay harness cannot show the stall class (items 1, 5a, 5b): a delay is a timer, a stall is wall time with the thread stopped; the stall harness reproduces the exact messages of the failed full checks and is the "before". (2) The Explore and Me files now run every wait on the fake clock; a new test there that awaits a fetch answer directly (not through `findBy`, `waitFor` or `settle`) hangs under the delay harness. (3) Left, not on the list: explicit raised limits remain in tests this task did not touch and they wait the app's real 1 s and 2 s retry waits: LegalChatScreen "offline: says so" (`timeout: 8000`, 20 s), and in CommunitiesView "keeps the person's rooms and says suggestions failed" (8 s, 20 s), "lists every open room when private rooms fill the pages" (5 s) and the `expectEight` waits (4 s); FIX-31 moved the same kind in Explore and Legal S17 to the fake clock, and the same move would take these. (4) LegalChatScreen and hostScreens did not need the fake clock: a 1.3 s stall at `/legal/intake/mine` or `/legal/assistant` (old Legal file, 43 of 43) and at either read of the host form (whole file, 24 of 24) breaks none of their tests. (5) RoomScreen prints a VirtualizedList "not wrapped in act" error in ordinary runs; it did before this task.
+
+**NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
+
+## Builder report, round 2
+
+Branch `wmt/FIX-32` from `d901bc1`, main `39c472b` merged (one conflict in the generated `docs/PROGRESS.md`, rebuilt by `check_tasks.py --write`). Tests only: two files, `me/__tests__/MeScreen.test.tsx` and `explore/__tests__/screens.test.tsx`. No product file, gate, baseline, jest config or package file; no other test's meaning changed.
+
+| Item | Before | Fix | After |
+|---|---|---|---|
+| Finding 1 (medium): MeScreen D2 "a refresh that fails keeps the profile on screen ..." | the test waited for the cache only (`client.isFetching()` at 0), so `me-error` was read before React drew the failed refresh. Mutant PM6 (`MeScreen.tsx` line 96, `(stats.isError && !stats.data)` to `stats.isError`, in a throwaway worktree): round 1 test **passes 30 of 30, three runs** | after the cache wait, `await act(async () => { jest.advanceTimersByTime(100); })` moves the test's clock so React draws the failure, then `me-error` is asserted absent; a comment says why | PM6: **fails (1 of 30), three runs** (this test only, 120 to 146 ms); unmutated: **30 of 30, three runs**; the mutated product file restored and `cmp`ed byte for byte against the saved original and against the branch's; unmutated also 30 of 30 at delay seeds 0, 1, 21 (250 ms harness) |
+| Ruling 2: two-line comment at the top of the fake-clock `beforeEach` | none | Explore: "every wait goes through `findBy`, `waitFor` or `settle`; a bare `await` of a fetch answer hangs behind a timer" and a second line saying a wait on the cache alone does not move the clock (use `settle`). Me: the same first line (the Me file has no `settle`, so it names `findBy` or `waitFor`) and the second line that after a cache wait that should show on screen the clock is moved too | comment only |
+
+**Checks.** The two changed files alone, 10 runs each in a row on the merged tree, one worker, load 17 to 24: MeScreen 30 of 30 x10, Explore screens 55 of 55 x10, **20 of 20 runs**. **Full check, the common-rules form, EXIT 0** with main `39c472b` merged (7 GB available at the start, load 21): typecheck 0, lint 0 errors (5 warnings, none in a line this round wrote), **152 suites, 2756 tests passed in 582 s**, gates 10 run, 569 files, 0 fail, 5 warn (all `PROVISIONAL(...)` of other tasks), baseline 0, tasks check clean (`fix32r2/check1.log`). Finding 2 (the host skeleton stall is intermittent), finding 3 (LegalChat seed 4) and finding 4 (leftover `timeout: 8000` in Explore) are recorded notes and not changed, as ruled. No server was started.
 
 **NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
 

@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 133 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 98 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being built (or fixing verifier findings)
+## Being verified
 
 - [FIX-32](../tasks/FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock (You)
 
@@ -176,6 +176,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · FIX-32 · Builder report, round 2 (status verifying; mobile `wmt/FIX-32`, main `39c472b` merged; tests only, two test files): the MeScreen D2 test now moves the test's clock after its cache wait, so it reads the screen after React has drawn the failed refresh (the verifier's mutant PM6, a failed refresh drawn as the page error, passed the round 1 test 30 of 30 and fails this one, unmutated 30 of 30); a two-line comment at the top of the fake-clock `beforeEach` in the Explore and Me files says every wait goes through `findBy`, `waitFor` or `settle` and a bare await of a fetch answer hangs behind a timer. Full check EXIT 0 (152 suites, 2756 tests); both files 10 of 10 alone.
 - 11 Oct 2026 · FIX-32 · Verifier report (mobile `wmt/FIX-32` `0664baa`, main `5b9851b` merged; status `building`, one defect): the causes are real and the fixes hold (Explore, MeScreen and the host skeleton under a 1.3 s stall; LegalChat at 9 delay seeds; RoomScreen at 00:05 and 00:16:30; note 37 mutant killed by exactly the two new tests; 60 of 60 repeat runs; full check EXIT 0 twice, 152 suites 2756 tests). Defect: the new MeScreen D2 test passes without drawing the failed refresh, so a mutant the old test kills survives it (add a clock advance after the `isFetching` wait). Notes: the host skeleton failure under a stall is intermittent, LegalChat old seed 4 did not fail, a bare await in the fake-clock files is a trap only under the delay harness.
 - 11 Oct 2026 · FIX-32 · Builder report (status verifying; mobile `wmt/FIX-32`, main `610cc57` merged; tests only, six test files): a stalled worker spent the one second a `findBy` has for two answers in a row (reproduced with a thread-blocking stall: 8 Explore Categories tests and 4 MeScreen tests fail before, none after), so Explore and MeScreen run their waits on the fake clock; the host form's skeleton is asserted while the answers are held; LegalChat's three racing tests were victims of two earlier tests that ended with a message still on its way (43 of 43 at 13 delay seeds); RoomScreen pins the date (INBOX-05 defect 38); a refused next page of suggestions is asked for once (note 37, mutant Dc killed by both new tests); hostScreens E13 to E15 recorded as load only. Full check EXIT 0 (152 suites, 2756 tests).
 - 11 Oct 2026 · JOIN-03 · Round 5 merged by the lead: WAWU ID PR #12 (`bda1aa6`) and mobile main. A closed account gets no working refresh; the anonymise, sign-up and confirm take one lock order; a losing confirm writes nothing back. D12, N30, N31 and a test gap are recorded for a later round.
@@ -190,4 +191,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · BILLS-01 · Verifier report, round 3 (mobile `d105b9c`, backend `b2f9793`; status stays `done`, verdict review, no blocker): all seven rulings confirmed (S13 held at the API, with two Hubs, and in the browser, 28 of 28 samples; no green meter from the 22 bodies or from any of the 117 but the 20 real or by-design ones; caret, paste, bad rows, the grapheme cut with the segmenter off and on); six low defects (a company name with a suffix, closed placeholder lists, the caret after a refused key, a list in flight overwrites the hold, a row with limits 0 and 0, the cap is no size bound and a cut can leave a blank name), one process note for the lead (`AuthFrame` edited, SHARED-CHANGES BILLS-01 #4 still open), 67 mutants of my own (61 killed, 5 equivalent, 1 test gap); trial merges: backend main `f11d307` 0 conflicts, mobile main `cdb528c` 1 generated file (`docs/PROGRESS.md`); merged checks green.
 - 11 Oct 2026 · BILLS-01 · Builder report, round 3 (mobile `6bea802`, backend `b2f9793`; status stays `done`): the lead's seven rulings built. A meter check that finds the service off now holds S13 (the Hub holds "off" for its cache window without asking Fintava, and the app keeps S13 until S2 is pulled to refresh); no green meter from a placeholder name, a name of invisible characters or a body that flags a failure (23 of the round 2 verifier's 117 bodies changed answer, the other 94 did not); the amount box keeps the caret after its commas and refuses a paste that holds anything but digits, commas and one point; S3 skips a company whose limits fit no amount; the 200 character cap cuts at a grapheme. 62 backend and 33 mobile mutants, all killed; protected suite 253 of 253; no contract change. SHARED-CHANGES BILLS-01 #4.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
-- 11 Oct 2026 · JOIN-03 · Round 4 merged by the lead: WAWU ID PR #11 and mobile main. A closed account has no sign-up to finish; a deletion clears the person's number from counters and pending rows. Round 5 (D8 to D11, refresh on a closed account) follows.
