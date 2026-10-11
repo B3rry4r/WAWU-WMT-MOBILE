@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 134 | 0 | 0 | 0 |
+| todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [TIER-03](../tasks/TIER-03.md) Buy, renew or upgrade a tier from the wallet (You)
 
 ## Done
 
@@ -171,6 +175,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · TIER-03 · Builder report (status verifying; backend `wmt/TIER-03` `3b14aa7` on main `f11d307`, mobile `wmt/TIER-03`): a tier is bought, renewed or upgraded from the wallet. `POST /plans/purchases` pays through MONEY-17 as `tier` or `tier_bump` into WAWU's own account (no split, not held, one debit with the bump); an upgrade pays the difference of the two config prices and starts today; the tier, dates, bonus lot, event pass, Voice Intro and the bump's points are granted once per payment in one transaction, with the billing currency fixed by the first. Two Hub processes on stand-ins: one debit, twice and at once, the upgrade difference, the shortfall, a still-confirming and a failed payment, no wallet, five wrong PINs; 21 mutants killed (two needed new specs). Dollar wallet path NOT RUN (NUV-09). G-680 filed; G-421 (badge number) left open.
 - 11 Oct 2026 · FIX-31 · Round 2 merged by the lead: HomeScreen H1 and AUTH-07's sign-up races pass at every delay seed; AUTH-07's D5 and N-1 tests added; the act warning gone.
 - 11 Oct 2026 · EVENTS-09 · Round 3 merged by the lead (app only): a verdict that lands under the typing sheet is seen for its full hold; a 422 reads "We couldn't confirm".
 - 11 Oct 2026 · MONEY-19 · Merged by the lead: backend PR #114 (`f11d307`) and mobile main. Not enough money answers the exact shortfall; the payment poll is served. Lead notes added to WALLET-07 and WALLET-09 (G-481).
@@ -185,4 +190,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · AUTH-07 · Builder report, round 4 (status verifying; wawu-id `wmt/AUTH-07` `01215b7`, mobile `wmt/AUTH-07` hash in the hand-back; the first builder was stopped by a container restart and its work finished): D3 and D4 closed by specs only (mutant Y26, the release write's number guard, and Y19, the refused-mail discard, each shown failing a named spec and passing on the code); F-G: A3 asks for the sign-up channel each time it comes into focus (a jest test switches the channel between visits and A3 and A4 agree); the doubled JSDoc in `signupStore.ts` is one. wawu-id: tsc 0, gates 0 fail, jest 351 of 352 (AUTH-08's timing check fails alone on main too), contract unchanged; mobile main `15a5b6b` merged, full check EXIT 0 (136 suites, 2464 tests).
 - 11 Oct 2026 · JOIN-03 · Round 3 built (status verifying): a deleted account keeps no proved number (D3) and a marker proves nothing (D5, wawu-id `a530aab`); the claim answer carries `claimedAt` and the replay says started or ended (D4, backend `6c30122`); a signed-out `/claim-code` signs in and comes back (N14); migrations restamped `20261021050000` and `20261021060000`; the four test survivors killed (N13).
 - 10 Oct 2026 · JOIN-03 · Verifier report, round 2 (independent session; backend `800dee6`, wawu-id `1d8b54e`, mobile `82e25e8`; real wawu-id and Hub (two Hubs on one database for N3), real app at 390 px, own Metro cache, ports 6161 to 6164): status building for one blocker the lead can lower. D3 (medium): the new `wawu_users.phone_verified_for` holds the real phone number and `DELETE /internal/users/:id?mode=anonymize` (the Hub's finalised account deletion) does not clear it, so a deleted account keeps its number (reproduced: row reads `deleted:<id>` and `+234...`); one-line fix plus a spec. D4 (low): a replay says "starting today" days later, and "Your plan is ready" with a past end date after the plan ended; D5 (low): the backfill copies marker phones, so an account anonymised before the migration says `phoneVerified: true` with a `deleted:<id>` phone (no exposure at the Hub). CONFIRMED: D1 (round 1 `s3` and `s5` now 409 `contact_not_verified`; spellings both ways; the backfill only where `phone_verified_at` is set; rollback and re-apply; 720 structured and 400,000 random phone spellings, no way to read a different number as the proven one), N3 (same bytes on the other Hub, 30 taps on two Hubs one body, one tier, loser only 409, a row claimed before the column still `claimed_by_you`), N1 (one renewal then one claim; 409, one renewal, one claim, 200; nothing proven: 2 claims and 1 renewal, no loop), N2, N4, N5, D2, H4, V5, V7, V8, V11, the post-sign-up step (once, only after sign-up, Skip, closing on it, a failing store), the root layout change ruled minimal. AUTH-07 into wawu-id: 0 conflicts, taker `phoneVerified: true`, released `false` (live). Main into mobile: 2 generated conflicts, full check on the merged copy EXIT 0 (127 suites, 2120 tests). Backend: tsc 0, 328 of 328, protected 253 of 253, gates the same 16, `contract:build` twice equal. 29 own mutants: 23 killed, 6 survived (2 equivalent, 4 test gaps). NOT RUN: a deployed WAWU ID, a phone (V10).
-- 10 Oct 2026 · JOIN-03 · Builder report, round 2 (status verifying; backend `800dee6` on main `8e57981`, wawu-id `1d8b54e`, mobile `wmt/JOIN-03`): the lead's eight rulings built. D1 `phoneVerified` stays true only while the number WAWU ID proved is the account's phone (additive `phone_verified_for`, backfilled; a changed phone gives 409 `contact_not_verified`, reproduced first as 200; AUTH-07 round 3 trial merge 0 conflicts); D2 G-634; N1 a claim renews a token older than a proof, and once on `contact_not_verified`; N2 "Your plan is ready" lists plan, end and points only; N3 a repeat by the same account answers 200 with the first result (`claimResult`, migration `20261020140000`); N4 the CSV row built from its header, N5 plain words for a body without a code; the post-sign-up step "Have an access code?" (once, never blocking); tests that kill H4, V5, V7, V8, V11. Mutants 10 + 6 + 22 killed. Protected 253 of 253.

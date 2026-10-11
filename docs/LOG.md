@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 11 Oct 2026 · TIER-03 · Builder report (status verifying; backend `wmt/TIER-03` `3b14aa7` on main `f11d307`, mobile `wmt/TIER-03`): a tier is bought, renewed or upgraded from the wallet. `POST /plans/purchases` pays through MONEY-17 as `tier` or `tier_bump` into WAWU's own account (no split, not held, one debit with the bump); an upgrade pays the difference of the two config prices and starts today; the tier, dates, bonus lot, event pass, Voice Intro and the bump's points are granted once per payment in one transaction, with the billing currency fixed by the first. Two Hub processes on stand-ins: one debit, twice and at once, the upgrade difference, the shortfall, a still-confirming and a failed payment, no wallet, five wrong PINs; 21 mutants killed (two needed new specs). Dollar wallet path NOT RUN (NUV-09). G-680 filed; G-421 (badge number) left open.
 - 11 Oct 2026 · FIX-31 · Round 2 merged by the lead: HomeScreen H1 and AUTH-07's sign-up races pass at every delay seed; AUTH-07's D5 and N-1 tests added; the act warning gone.
 - 11 Oct 2026 · EVENTS-09 · Round 3 merged by the lead (app only): a verdict that lands under the typing sheet is seen for its full hold; a 422 reads "We couldn't confirm".
 - 11 Oct 2026 · MONEY-19 · Merged by the lead: backend PR #114 (`f11d307`) and mobile main. Not enough money answers the exact shortfall; the payment poll is served. Lead notes added to WALLET-07 and WALLET-09 (G-481).
