@@ -7,7 +7,7 @@ order: 246
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: [R-49]
 passes: [V1, V5, V6]
@@ -207,3 +207,66 @@ Branch `wmt/FIX-31`, continued from `1c2decc` (merged into main by the lead); mo
 
 **NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
 
+## Verifier report, round 2
+
+Verifier session (Sonnet), independent of the builder; I wrote none of this. Mobile `origin/wmt/FIX-31` `ad451c7` in a detached worktree, compared with `origin/main` `a8d6383` (the merge base; main has since moved to `492615d` and the branch has not). Jest only, no server, nothing left the machine. **Verdict: no blocker. Everything the lead ruled for round 2 holds. Status `review`.** Product code and the branch's tests were not changed; mutants ran in a throwaway worktree and were restored byte for byte (sha1 checked). Scratch, logs and scripts: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix31r2/` (the delay harness is round 1's `v31/slowfetch.js`, never committed).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 | passed for this task | `git diff origin/main...origin/wmt/FIX-31`: four test files plus `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/FIX-31.md`; nothing else (no product file, gate, baseline, jest config or package file) |
+| V5 Picture | NOT RUN | tests only, no screen changed |
+| V6 States | NOT RUN | tests only |
+
+### What was checked
+
+| Check | Result | Evidence |
+|---|---|---|
+| Diff scope | CONFIRMED | `auth-signup.test.tsx` (+101, -3), Explore `screens.test.tsx` (+3, -1), `HomeScreen.test.tsx` (+3), `LegalChatScreen.test.tsx` (+3, -1), and the three docs |
+| Nothing weakened | CONFIRMED | all removed lines are 5: the import line (widened), two `signupChannel()` reads (now `askChannel()`, same `toBe('email')` and the same two-ask count), and two `jest.useFakeTimers()` (now with `doNotFake`). Test counts: auth-signup 71 to 73 (the two added), the other three equal. `expect(` counts: 278 to 296, 201 to 201, 120 to 121, 134 to 134: none fell. No `skip`, `only`, `todo`, retry, `setTimeout` or raised limit in the diff (grep) |
+| `doNotFake: ['queueMicrotask']` changes only when React's act check runs | CONFIRMED | nothing in `src/` calls `queueMicrotask` (grep), TanStack Query's scheduler is `setTimeout` by default, and `billsScreens.test.tsx` already uses the same option. Main prints "You called act(async () => ...) without await" once for each of the two tests (run alone); the branch printed 0 in the 20 repeat runs of the two files. Mutants of the product, run against the branch's two tests: Q (`failures < RETRY_LIMIT + 1`, a fourth try) kills both ("when creators cannot load" and S17 "a failed refresh keeps the conversation"); E (Explore's `onRetry` does nothing) kills the Explore test; L (the stale note's "Try again" does nothing) kills the S17 test. Unmutated, both pass. No test passes now that fails for a real reason |
+| A15 wait is a real wait | CONFIRMED | `CodeScreen.onDigit` sets the phase to `entering` (the wrong-code line goes) and keys are off while busy, so "That code isn't right" is back only when the Hub's answer has been applied: the new `waitFor` waits for the answer, it cannot pass early |
+| "asks again on a later visit": `requestsAnswered()` never reads an empty list | CONFIRMED | a throwaway probe made `requestsAnswered()` throw if no request had been sent yet; the test passed with the probe plain and at seeds 0 to 5 and 21 to 23 (10 of 10), so the first ask is always sent by then |
+
+### The four tests: main, then the branch (delay harness, every fetch answer delayed 0 to 249 ms by path, one jest per file)
+
+| Test | main `a8d6383` | branch `ad451c7` |
+|---|---|---|
+| H1 "creators to discover, never themselves" | fails at seed 22 (passes at 21 and 23) | passes at seeds 0 to 5 and 21 to 23 (HomeScreen 34 of 34, 9 of 9 runs) |
+| A15 "... mailed code ... fourth wrong 400" | fails at 21, 22 and 23 | passes at all 9 seeds (auth-signup 97 of 97, 9 of 9 runs) |
+| "asks again on a later visit when the first ask failed" | fails at 21, 22 and 23 | passes at all 9 seeds |
+| "asks WAWU ID each time ..." | fails at 21, 22 and 23 | passes at all 9 seeds |
+
+Main's auth-signup runs: `3 failed, 92 passed, 95 total` at all three seeds, exactly these three tests.
+
+### D5 and N-1: the mutants of the AUTH-07 round 4 verifier, put back (product files of the branch, whole `auth-signup.test.tsx`, 97 tests)
+
+| Mutant | Seeds run | Result |
+|---|---|---|
+| M3a `signupChannel` keeps the last answer when the ask fails | none, 21, 3 | KILLED each time: 1 failing, **D5** by name (the "no line" `waitFor` after Back) |
+| M3b `sign-up.tsx` ignores a null answer (`current && answer`) | none, 21, 3 | KILLED each time: 1 failing, **D5** by name |
+| M5 the `current` stale-answer guard removed | none, 0, 21, 22 | KILLED each time: 1 failing, **N-1** by name, at the last assertion (after the held answer is released, A3 no longer says email) |
+| unmutated | none | 97 of 97 |
+
+N-1 is independent of timing: visit 1's answer is held behind a gate the test opens itself (`holdNextChannelAnswer`), after visit 2 has drawn its own line, so the late arrival happens in the same order on every machine; the mutant is killed with no harness and at three delay seeds, and the unmutated test passes at all 9 seeds. The `held` flag takes the first channel ask; that it is visit 1's is shown by M5 failing at the last assertion (an earlier or later ask held instead would not let the stale answer overwrite A3's line).
+
+### Repeat runs and the other changed files
+
+| Check | Result |
+|---|---|
+| Each changed file alone, 10 times, warm cache, `--maxWorkers=1`, no `--forceExit` | **40 of 40 passed**: HomeScreen 34 of 34, Explore screens 55 of 55, LegalChatScreen 43 of 43, auth-signup 97 of 97, 0 act warnings in every run; load average 11 to 22, two of my jests at a time at most |
+| Explore and LegalChat under the harness (extra, not asked) | LegalChat: seed 3 clean, seeds 0 and 21 fail (finding 1). Explore: seed 3 clean, seeds 0 and 21 fail only "the refusal line stays up for 4 seconds" (finding 2) |
+
+### Findings (none counted against this task)
+
+1. **not this task's, test, low: LegalChatScreen has racy tests that read before an answer lands** (LEGAL-02's, as the builder reported): seed 0 fails "a consultant's message arrives without a refresh ..." and "a conversation whose matter has moved past 'awaiting a quote' is not reopened"; seed 21 fails the first. Clean alone and in full runs. They need the same wait for the answers, in a round 3 or LEGAL-02. Recorded, not counted.
+2. **not this task's, harness: Explore "the refusal line stays up for 4 seconds" fails under the delay harness** at seeds 0 and 21 (the harness's delay is a timer on the clock the test drives) and prints the act warning there; it fails the same on main, passes in every ordinary run. Round 1 named it already.
+3. **note, low: `requestsAnswered()` does not itself check that a request was sent.** It holds today (the probe above: 10 of 10 settings). If the screen is changed to ask later than its first render, that test could read an empty list and pass early; a one-line `expect(sent.length).toBeGreaterThan(0)` in the helper would close it. Not asked for.
+4. **carried, as ruled: the creator rail draws the viewer's own card until `GET /users/me` answers** (product, owning task) and SHARED-CHANGES `FIX-31 #1`.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Full check, the common-rules form (`typecheck && lint && npm test -- --maxWorkers=2 && gates && tasks`), on the tree with this report | **EXIT 0**: typecheck 0, lint 0 errors and 5 warnings (none in a line this task wrote), 141 suites and 2559 tests passed in 350 s (2 workers, load average 12 to 15, 5 to 8 GB available), gates 10 run, 544 files, 0 fail, 5 warn (all `PROVISIONAL(...)` of other tasks), baseline clean, tasks check clean. A first run of the same command was ended from outside with SIGTERM ("Terminated", EXIT 143) after 32 suites passed and none failed; it is not counted, the run above is the whole check. Log: `vfix31r2/check2.log` |
+
+**NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
