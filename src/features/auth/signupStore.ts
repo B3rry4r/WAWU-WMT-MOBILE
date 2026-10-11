@@ -62,8 +62,10 @@ export async function clearSignup(): Promise<void> {
 
 let memory: HeldSignup | null = null;
 
-/** Where the sign-up's code went (WAWU ID's `channel`): an email address (SIGNUP_VERIFY_CHANNEL=email) or a text message (the default). */
-/** `sms` is the texted code: WAWU ID's answer then carries no `channel` field. */
+/**
+ * Where the sign-up's code went (WAWU ID's `channel`): an email address (SIGNUP_VERIFY_CHANNEL=email) or a text message
+ * (the default). `sms` is the texted code: WAWU ID's answer then carries no `channel` field.
+ */
 export type CodeChannel = 'email' | 'sms';
 
 /** What the code screen needs besides the secret: the server's figures at the moment it answered, and where the code went (`maskedEmail` is WAWU ID's own mask, n•••@example.com). */
