@@ -7,7 +7,7 @@ order: 208
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: verifying
 depends_on: [TIER-01, ME-17]
 decisions: [R-43, R-7, R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -842,14 +842,57 @@ Of the builder's named mutants and the variants of them (33): 33 killed, 2 survi
 - A real purchase: TIER-03 sells tiers, so "once bought" is the row a grant writes, as in rounds 2 and 3.
 - The `relock-approved` label and the relock decision: the owner's.
 
+## Builder report, round 5
+
+Builder (Sonnet agent), 11 Oct 2026. wawu-backend `wmt/TIER-02` `3a8b57d` (round 5 code; the merge of main is `c425fd0`); mobile `wmt/TIER-02` (this branch, this file). Backend main `020f055` merged with 0 conflicts. Its newest migration folder is `20261021115000_wallet_hold_outcome_check`, which sorts before `20261021120000_product_drafts` (`LC_ALL=C sort`), so nothing was renamed; a fresh database takes all 124 folders. Mobile main `3b35731` merged with three conflicts: `contract/SOURCE_COMMIT` (kept the branch's, now `wmt/TIER-02@3a8b57d`), `docs/PROGRESS.md` (regenerated) and `BACKEND_GAPS.md` (both sides' rows kept: this task's G-660 to G-664 and main's G-461 to G-465).
+
+**Each ruling as built** (the lead's rulings for round 5, Default (lead), owner may override)
+1. **D8 ("Renew it" when the ended tier is not on offer).** Reproduced first, on the merged tree before any change, as a new HTTP spec on the real database and the real modules (supertest, the real interceptor, a tier row written as a purchase writes it): an ended Verify (3) with 5 up answered 402 `tier_required` with Plus and Founding offered and the sentence "Your tier has ended. Renew it to publish or upload files. Everything you published stays up." Verify is not among the tiers offered (3 is not more than 5), and renewing it is still refused (402; the verifier saw `product_limit_reached`, "You have 5 products and your plan allows 3..."), while Plus bought instead answers 201 (both asserted in the same spec). A second spec over every tier and 0, 3, 6, 10 and 12 up failed at the first situation where the ended tier is not on offer (ended Verify with 3 up). *After:* the sentence says "Renew it" only when the ended tier is among the offered `tiers`. Otherwise: "Your Verify plan has ended. You have 5 products up, and a bigger plan has room for them." (the tier's name from the plan, the number from `productsUsed`, "1 product ... for it" in the singular, no dash). The offers, the body and the status are unchanged. Built as: `PublishingAllowance` gains `endedTierId` (null unless the stored tier has ended); the route's interceptor names that tier from the plan and passes it to `TierGateError.withOffers(offers, endedTier)`; `tierRequiredMessage(tierState, used, offers, endedTier)` decides. The ended tier is used for the wording only and is not in the body, so the contract is unchanged. Where the tier cannot be judged the old sentence stays: the bare refusal before the offers are added (or when they cannot be built), and a call with no ended tier. A tier the config no longer names reads "Your plan has ended. You have 5 products up, and another plan has room for them." (or "Pick a plan to carry on." with nothing up). With no tier on offer and products up, the round 4 sentence ("... no plan has room for another. Remove some to publish.") stands. `docs/contract/PLANS.md` section 6 says the rule. *Matrix* (HTTP spec, real database): 3 ended tiers x 0, 3, 6, 10 and 12 up = 15 situations; "Renew it" appears in exactly the 6 where the ended tier is on offer, and in those 6 renewing it lets the next publish through (201); in the 9 where it does not, renewing is refused (402) and the sentence is the new one (3 of them: Verify at 3 and at 6 up, Plus at 6 up) or the round 4 "remove some" one (6: no tier leaves a place at 10 or 12 up); the presign answers in the same words in all 15.
+2. **T13 (six file words not pinned).** `publishing-gate-coverage.spec.ts` gains one test per word for `cover`, `poster`, `banner`, `avatar`, `icon` and `blob`, each bare and at the end of a longer name (`sectionCover`, `videoPoster`, `eventBanner`, `userAvatar`, `appIcon`, `rawBlob`). Taking any one word out of FILE_WORDS fails the test of that word and no other (all 6 killed, each by its own test; the verifier's mutant I, `poster`, `banner` and `icon` together, is covered by three of them). No product code changed for this.
+3. **D9, D10, N14, N15: recorded, no change.** D9 (a tier plus the pack together) is an owner question: it is item 7 under "For the owner". D10 (the file-edit entrance, `PATCH /content/:id` with `previewAsset` or `fullAsset`, asks only whether the person may publish at all, so with 12 up and no tier it answers `tier_required` with `tiers: []` though any tier would let that edit through): info, nobody loses anything because a new file needs a presign that does ask for room; closing it means the refusal carrying whether the entrance asks for room. N14 (an ended tier's `extraProducts` stay on its row, the offers ignore them, the safe side): TIER-03's grant and this rule must agree on whether a re-grant keeps or clears them. N15 (the app does not read the 402 yet): TIER-03, TIER-04 and WEBPAY-04 must treat `tiers: []` on `tier_required` as "show `message`", never open a picker with all three tiers.
+4. **Nothing else changed.** The offers, the counting, the gate, the grant and the contract text are as round 4 left them.
+
+**Mutants of this round** (each applied to the final tree one at a time, the specs that hold the rule run, the file restored from memory; the tree was clean after each; script `tier02r5/mutate5.py` in the lead's scratchpad)
+
+| Mutant | Result |
+|---|---|
+| T13 FILE_WORDS loses `cover`; `poster`; `banner`; `avatar`; `icon`; `blob` (each alone) | all 6 KILLED, each by the test of its own word |
+| D8 the interceptor never passes the ended tier | KILLED (2) |
+| D8 the "is it on offer" test inverted | KILLED (7) |
+| D8 the tier's name always empty; a constant name | KILLED (2), KILLED (2) |
+| D8 `endedTierId` always null | KILLED (2) |
+| D8 the number up replaced by a constant | KILLED (2) |
+| D8 "it" and "them" swapped | KILLED (6) |
+| D8 an em-dash in the new sentence | KILLED (7) |
+| D8 the new sentence decided before the round 4 "remove some" one | KILLED (1) |
+| D8 a person with no tier gets the ended wording | KILLED (3) |
+| D8 the new sentence never used (the round 4 behaviour back) | KILLED (3) |
+
+**Checks.** On backend `3a8b57d`.
+- `npx tsc --noEmit` 0. eslint (no `--fix`) 0 problems on the 6 changed `.ts` files. Prettier clean.
+- Specs in a private network namespace (`unshare -n`, its own Postgres 16, a fresh database migrated with all 124 folders and seeded, the stand-in WAWU ID inside it addressed as 127.0.0.1, one jest worker): `src/content-piece`, `src/creator-state`, `src/storage`, `src/plans`, all of `src/admin`, `src/account-purge`, `src/data-export-request`: **48 suites, 1297 of 1297 tests, EXIT 0** (round 4 had 1281; this round adds 16: 2 HTTP, 8 message, 6 coverage).
+- Protected suite, `run.sh --fresh HEAD` with the branch's own suite and lock (`PROTECTED_LOCK_REF=HEAD`), same namespace: **253 of 253, "all 244 required tests passed", EXIT 0, 0 `MakerTier` rows left**.
+- Gates: 16 FAIL, the same 16 FAIL lines as main `020f055` (one line number moved, `content-piece.service.ts:46` to `:48`, as in rounds 2 to 4), warnings 96 against 95 (the one new is `PROVISIONAL(PRODUCT-DRAFTS-MAX)`), 76 accepted; `check_baseline` ok, 108 entries.
+- `npm run contract:build` twice: byte-identical (sha256 `efc4fcd1...`), equal to the committed file (the tree stays clean) and to mobile `contract/openapi.json`. This round changes no contract text (the sentence is a string; the ended tier is not in the body). `SOURCE_COMMIT` is `wmt/TIER-02@3a8b57d`; `python3 scripts/api/sync_contract.py` regenerates the client with no change.
+- Mobile: `npm run gates` EXIT 0 (0 fail, 5 warn, 569 files, baseline 0); `npm run tasks` EXIT 0 (below). No app code changed by this task, so the full check was not run.
+
+**NOT RUN**
+- A live Hub process: the verifier's `d7r.js` was not run on a built Hub. The HTTP spec (real modules, real database, the route's real interceptor) is the before and after.
+- The real wawu-id for the live seam (the stand-in was used), and the website (R-49).
+- The whole backend suite (the 48 suites of the areas this task touches and the protected suite were run).
+- The verifier's live matrices (`d1b.js`, `d5.js`, `d6m.js`, `d7v.js`): the counting did not change; `d7v.js` judges the sentence against one the verifier writes from the numbers, so it would report the new ended-tier wording.
+- The mobile full check (typecheck, lint, jest): no app code changed.
+- The relock label: the owner's.
+
 ## For the owner
 
-Six questions the verifier raised. Each says what is built (Default (agent), owner may override).
+Seven questions the verifier raised (the seventh, D9, in round 4). Each says what is built (Default (agent), owner may override).
 1. **Perpetual ticks (U1).** Any tick `holdsTick` accepts keeps 25 products, including a perpetual one (`verifiedUntil` empty, given to accounts moved off the old ladder, or granted by an admin). PAYMENTS-PLAN question 3 says people who paid keep publishing until the tick ends; a perpetual tick never ends, so those accounts publish 25 products for ever with no tier. The code cannot tell a bought tick from a granted one. How many accounts is a read-only query on production before launch.
 2. **Featured video (U2).** Featured works (`profile/work`) take photos and `video/mp4` up to 100 MB on any signed-in account with no tier, are not counted in content storage, and show publicly on the profile. R-43 says "uploading any file"; built as "build a profile free". Does a showreel video need a tier?
 3. **Media frames (U3).** `PUT /content/:id/media` accepts links to files the person already uploaded (the earlier gated presign), on a waiting or live piece, with no tier. It only re-orders files already paid for; documented in `PLANS.md` section 6. Keep it free?
 4. **The `slotsUsed` audit (U4).** `productsUsed` is a counter, not a count of pieces. Pieces removed or turned down before the decrements existed may have left it too high, so a creator could be told "3 of 3" with fewer live pieces. Run before launch (read-only): `SELECT cs."wawuUserId", cs."slotsUsed", count(cp.id) FILTER (WHERE cp.status NOT IN ('rejected','removed')) FROM "CreatorState" cs LEFT JOIN "ContentPiece" cp ON cp."creatorWawuId"=cs."wawuUserId" GROUP BY 1,2 HAVING cs."slotsUsed" <> count(cp.id) FILTER (WHERE cp.status NOT IN ('rejected','removed'));` (no rows on the test database).
 5. **Extras across an upgrade (U5).** At the limit the offers list every tier with more products than the one held, extras ignored, so a person on Verify with 5 extras (8 products) is offered Plus (6). That is right only if extras carry over an upgrade; TIER-03 and TIER-04 must keep them.
 6. **`GET /me/tier` `productsAllowed` for a tick holder (N1).** It is the tier's figure (plus extras) while `productsUsed` is the gate's count, so a tick holder with no tier reads "6 of 0" there while `GET /creator/state` says 25. The meter on VF12 and VF14 should read `slotsTotal`, or `productsAllowed` should become the gate's figure.
+7. **A tier and the pack together (D9, round 4 verifier).** A person with no tier and 12 products up is told "You have 12 products up and no plan has room for another. Remove some to publish." with no tier offered, because each offer is judged as ONE purchase and the pack can only be bought on a running tier. Founding (10 places) plus one pack (5 more) is 15 places, so two purchases would let them publish, and the sentence points only to removing products: someone may take down up to 3 products they could have kept. With one pack 15 places is the most, so at 16 up and more "remove some" is the whole truth. Built: one purchase at a time (the lead's round 5 ruling: record, no change). If the owner wants "a tier plus the pack" judged, the offers filter counts a tier with the pack on top and the sentence gains ", or add more places"; the pack stays off `tier_required` until a tier is bought, so the answer to the second purchase is the limit answer that already names the pack.
 
 ## Owner sign-off
