@@ -459,15 +459,27 @@ describe('S17 · a consultant joins', () => {
     answers[GET] = ['offline', 'offline', 'offline', ok(withConsultant())];
     await renderScreen();
     await rtl.screen.findByText("I've sent your brief to a consultant.");
-    await rtl.act(async () => {
-      mockSynced.forEach((listener) => listener());
-    });
-    expect(await rtl.screen.findByTestId('legal-stale', {}, { timeout: 8000 })).toBeTruthy();
-    expect(rtl.screen.getByText("I've sent your brief to a consultant.")).toBeTruthy();
-    await press('legal-stale-action');
-    expect(await rtl.screen.findByText('Adaora joined. The assistant has stopped replying.')).toBeTruthy();
-    expect(rtl.screen.queryByTestId('legal-stale')).toBeNull();
-  }, 20000);
+    // The app waits 1 s and 2 s between its tries; from here the clock is the test's, so a slow machine does not stretch those 3 s.
+    jest.useFakeTimers();
+    try {
+      await rtl.act(async () => {
+        mockSynced.forEach((listener) => listener());
+      });
+      for (let i = 0; i < 80 && !rtl.screen.queryByTestId('legal-stale'); i += 1) {
+        await rtl.act(async () => {
+          await Promise.resolve();
+          jest.advanceTimersByTime(100);
+        });
+      }
+      expect(rtl.screen.getByTestId('legal-stale')).toBeTruthy();
+      expect(rtl.screen.getByText("I've sent your brief to a consultant.")).toBeTruthy();
+      await press('legal-stale-action');
+      expect(await rtl.screen.findByText('Adaora joined. The assistant has stopped replying.')).toBeTruthy();
+      expect(rtl.screen.queryByTestId('legal-stale')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 
   it('when the Hub holds no name the header says "Consultant" and the box says "Message your consultant"', async () => {
     answers[OPEN] = [ok(withConsultant({ consultant: { name: null, joinedAt: AT }, messages: [line('k1', 'consultant', 'Hello', null)] }))];

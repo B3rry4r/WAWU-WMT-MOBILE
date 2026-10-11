@@ -594,6 +594,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/bills/electricity/billers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * S2 and S3. Every company Fintava lists as available, one row per company and plan, each with its own minimum and
+         *     maximum in kobo and the quick amounts that fit them. `available: false` is S13: Fintava lists none, or its bills
+         *     service cannot be used. Fintava not answering at all is `503 provider_unreachable`, with `retryAfterSeconds`.
+         */
+        get: operations["BillsCatalogueController_billers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/bills/electricity/meter-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * S4 and S10. The name and address Fintava holds for a meter, found only when Fintava names an owner. 422
+         *     `meter_not_found` is S10. 502 `meter_unconfirmed` is an answer that is neither a name nor "no such meter" (S4 says the
+         *     meter could not be confirmed). 404 `biller_not_found` is a `code` that is not on the list now. 503 `bills_unavailable`
+         *     is S13. 429 `bills_rate_limited` carries `retryAfterSeconds` (and `Retry-After`). Answers are `no-store`: they name
+         *     someone else.
+         */
+        post: operations["BillsCatalogueController_meterPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/care/plans": {
         parameters: {
             query?: never;
@@ -4152,6 +4196,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/suggested": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. Rooms the caller could join (I24, Suggested): none they host,
+         *     are in or have asked to join, none hosted by somebody hidden from them.
+         *     Most members first, then by name.
+         */
+        get: operations["CommunityRoomsController_suggested"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/message-cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. What one message in a community costs a member, in WAWU
+         *     Credits (I24: "1 credit per message you send"). Reading is free.
+         */
+        get: operations["CommunityRoomsController_messageCost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/room": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. One room as the caller sees it (I25): its counts and link,
+         *     `role` (host, member, pending or none) and `messageCostInCredits`, what
+         *     one message costs the caller there (0 for the host).
+         */
+        get: operations["CommunityRoomsController_room"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/rooms": {
         parameters: {
             query?: never;
@@ -5438,6 +5544,10 @@ export interface components {
         };
         AdminRefreshDto: {
             refreshToken: string;
+        };
+        MeterPreviewDto: {
+            code: string;
+            meterNumber: string;
         };
         InitHealthSubscriptionDto: {
             planCode: string;
@@ -7057,6 +7167,7 @@ export interface components {
             resetId: string;
             sentTo: string;
             resendAvailableAt: string;
+            resendInSeconds: number;
             expiresAt: string;
         };
         TickState: {
@@ -8074,6 +8185,30 @@ export interface components {
             /** Format: date-time */
             certificateExpectedBy: string | null;
             latestUpdateLabel: string | null;
+        };
+        ElectricityPresetView: {
+            amountKobo: number;
+        };
+        ElectricityBillerView: {
+            code: string;
+            name: string;
+            /** @enum {string} */
+            plan: "prepaid" | "postpaid";
+            minimumKobo: number;
+            maximumKobo: number;
+            presets: components["schemas"]["ElectricityPresetView"][];
+        };
+        ElectricityBillersView: {
+            available: boolean;
+            billers: components["schemas"]["ElectricityBillerView"][];
+        };
+        MeterPreviewView: {
+            meterNumber: string;
+            code: string;
+            /** @enum {string} */
+            plan: "prepaid" | "postpaid";
+            name: string;
+            address: string | null;
         };
         BillCategory: {
             id: number;
@@ -9758,6 +9893,25 @@ export interface components {
             unreadCount: number;
             /** Format: date-time */
             lastActivityAt: string | null;
+        };
+        CommunityMessageCost: {
+            creditsPerMessage: number;
+        };
+        CommunityRoomView: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+            /** @enum {string} */
+            role: "host" | "member" | "pending" | "none";
+            messageCostInCredits: number;
         };
         CommunityRoom: {
             name: string;
@@ -11487,6 +11641,90 @@ export interface operations {
                         total: number;
                     };
                 };
+            };
+        };
+    };
+    BillsCatalogueController_billers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElectricityBillersView"];
+                };
+            };
+            /** @description reason.code provider_unreachable: Fintava did not answer. Try again after retryAfterSeconds. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BillsCatalogueController_meterPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeterPreviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeterPreviewView"];
+                };
+            };
+            /** @description reason.code biller_not_found: the code is not on the list now. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code meter_not_found: Fintava does not know this meter for this company. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code bills_rate_limited, with retryAfterSeconds and the same number of seconds in the Retry-After header. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code meter_unconfirmed: Fintava answered, but with neither a name nor a plain "no such meter". The meter is neither found nor refused: try again. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description reason.code bills_unavailable (bills are not switched on) or provider_unreachable (Fintava did not answer). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -14240,6 +14478,8 @@ export interface operations {
             header: {
                 /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
                 "X-Transaction-Pin": string;
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
             };
             path?: never;
             cookie?: never;
@@ -14453,7 +14693,10 @@ export interface operations {
     MoneyPinResetController_confirmReset: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19120,6 +19363,68 @@ export interface operations {
             };
         };
     };
+    CommunityRoomsController_suggested: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"][];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_messageCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityMessageCost"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_room: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoomView"];
+                };
+            };
+        };
+    };
     CommunityRoomsController_createRoom: {
         parameters: {
             query?: never;
@@ -19513,7 +19818,10 @@ export interface operations {
     CommunityMessageController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per message, made by the app when the person first sends it and sent again unchanged on every retry of that same message (never reused for another). Per sender and key the message is stored and charged once; a repeat answers with the first message as stored (the same status and body) and the header `Idempotent-Replayed: true`. The same key for other words or another room is `409` with `reason: idempotency_key_reused`. Without it the send behaves as it always has. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };

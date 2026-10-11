@@ -132,6 +132,17 @@ beforeAll(async () => {
   answers = Object.fromEntries(Object.values(T).map((k) => [k, ['hold' as const]]));
   const screen = await boot();
   await screen.unmount();
+  // The first screen drawn from answers also pays for parsing them and for drawing the balance, the rail and the verse
+  // for the first time: on a cold transform cache that took longer than the one second a `waitFor` allows, so it is
+  // drawn once here, until Today has left its loading view, under the hook's own budget.
+  answers = everyAnswer();
+  const loaded = await boot();
+  while (loaded.queryByTestId('today-loading')) {
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+  }
+  await loaded.unmount();
 }, 120_000);
 
 beforeEach(() => {
@@ -234,6 +245,8 @@ describe('H1 · Today', () => {
     await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Following'));
     expect(sent).toContain(`POST /creators/${ADA}/follow`);
+    // The button turns at once and is busy, ignoring presses, until the Hub has answered: Unfollow is for after that.
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`).props.accessibilityState).toMatchObject({ busy: false }));
     await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
     await rtl.waitFor(() => expect(sent).toContain(`DELETE /creators/${ADA}/follow`));
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Follow'));
@@ -289,7 +302,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Bills', 'Scan', 'Pay bills', 'Shop', 'See all']) {
+    for (const label of ['Send', 'Add', 'Scan', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -403,6 +416,23 @@ describe('Today empty and in error', () => {
   });
 });
 
+describe('H1 · the Bills action on the balance card (BILLS-01, R-41)', () => {
+  it('a user can tap Bills on the balance card and land on Pay a bill (S2)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByText('Bills')).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByTestId('today-action-bills'));
+    expect(mockPush).toHaveBeenCalledWith('/bills');
+  });
+
+  it('draws Bills and only Bills among the card actions: Send, Add and Scan have no screen yet', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
+    for (const label of ['Send', 'Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+  });
+});
+
 describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
   it('a user can tap Events under "What would you like to do today?" and land on Events (E1)', async () => {
     const screen = await boot();
@@ -410,8 +440,8 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
     expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Events' }));
     expect(mockPush).toHaveBeenCalledWith('/events');
-    // The other services lead to screens not built yet: their columns stay empty.
-    for (const label of ['Pay bills', 'Shop']) expect(screen.queryByText(label)).toBeNull();
+    // The canvas's fourth, Shop, is retired (R-2): Schools takes its place and nothing else is drawn.
+    expect(screen.queryByText('Shop')).toBeNull();
   });
 
   it('a user with TGIF off still has the Events tile (H36)', async () => {
@@ -423,27 +453,42 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
 });
 
 describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11)', () => {
-  it('a user sees the Events tile first in the row, with no empty slot before it', async () => {
+  it('a user sees Pay bills first in the row, then Events, Legal and Schools, with no empty slot (BILLS-01)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    const column = screen.getByTestId('today-service-events').parent!;
+    const column = screen.getByTestId('today-service-bills').parent!;
     const grid = column.parent!;
-    expect(grid.children).toHaveLength(3);
+    expect(grid.children).toHaveLength(4);
     expect(grid.children[0]).toBe(column);
+    expect(grid.children[1]).toBe(screen.getByTestId('today-service-events').parent);
   });
 
-  it('a user can tap Legal, the second tile, and land on the legal chat (S14, LEGAL-02)', async () => {
+  it('a user can tap Pay bills, the first tile, and land on Pay a bill (S2, BILLS-01)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Pay bills' }));
+    expect(mockPush).toHaveBeenCalledWith('/bills');
+  });
+
+  it('a user with TGIF off still has the Pay bills tile (H36)', async () => {
+    answers[T.tgif] = [ok({ show: false })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByTestId('today-service-bills')).toBeTruthy();
+  });
+
+  it('a user can tap Legal, the third tile, and land on the legal chat (S14, LEGAL-02)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Legal' }));
     expect(mockPush).toHaveBeenCalledWith('/legal');
   });
 
-  it('a user can tap Schools, the third tile, and land on the schools list (SC1, SCHOOLS-03)', async () => {
+  it('a user can tap Schools, the fourth tile, and land on the schools list (SC1, SCHOOLS-03)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     const grid = screen.getByTestId('today-service-events').parent!.parent!;
-    expect(grid.children[2]).toBe(screen.getByTestId('today-service-schools').parent);
+    expect(grid.children[3]).toBe(screen.getByTestId('today-service-schools').parent);
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Schools' }));
     expect(mockPush).toHaveBeenCalledWith('/schools');
   });
@@ -455,10 +500,10 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
     expect(screen.getByTestId('today-service-schools')).toBeTruthy();
   });
 
-  it('the loading view draws one tile shape for each of the three tiles present (H11)', async () => {
+  it('the loading view draws one tile shape for each of the four tiles present (H11)', async () => {
     const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
     await rtl.render(<TodayLoading withTgif />);
     const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
-    expect(shapes).toHaveLength(3);
+    expect(shapes).toHaveLength(4);
   });
 });

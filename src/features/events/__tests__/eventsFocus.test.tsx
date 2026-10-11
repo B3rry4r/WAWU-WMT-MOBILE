@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
+import { Image, Pressable, ScrollView, Text as NativeText, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { EventView } from '../api';
@@ -53,9 +55,21 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   throw new Error(`no answer for ${path}`);
 }) as typeof fetch;
 
+// Loaded here, once the fetch above is in place, and not inside the test: on a cold transform cache under load the
+// first load of the screen's module tree takes longer than one test may (20 s), and a load at the top of the file is not timed.
+const { EventDetailScreen } = require('../EventDetailScreen') as typeof import('../EventDetailScreen');
+const { useRefetchTiersOnFocus } = require('../useRefetchTiersOnFocus') as typeof import('../useRefetchTiersOnFocus');
+// React Native's components load on first use (babel-preset-expo's lazy imports), so the first render used to pay for
+// transforming them too. Touching them here moves that cost to file load, and the first render of anything (the
+// renderer's own start) is paid in a hook with a budget of its own, so the test times only what it asserts.
+void [Image, Pressable, ScrollView, NativeText, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
+
 it('asks for the tiers again when the screen is shown again, and not on the first showing', async () => {
-  const { EventDetailScreen } = require('../EventDetailScreen') as typeof import('../EventDetailScreen');
-  const { useRefetchTiersOnFocus } = require('../useRefetchTiersOnFocus') as typeof import('../useRefetchTiersOnFocus');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   const Route = () => {
     useRefetchTiersOnFocus('e-1');

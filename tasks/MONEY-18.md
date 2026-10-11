@@ -311,3 +311,5 @@ Trial merge `a659f4b`: `tsc --noEmit` EXIT 0; eslint on the 16 changed `.ts` fil
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+Merged by the lead, 10 Oct 2026: backend PR #107 (merge `40b1970`) and mobile main (merge of `f49f955`). The verifier found no blocker. Round 2 (F1 to F4, O1, O3; O2 and O4 recorded for the owner) is being built on the same branch before any feature registers a held kind.
