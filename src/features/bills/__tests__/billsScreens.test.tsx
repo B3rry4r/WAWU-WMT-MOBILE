@@ -951,7 +951,7 @@ describe('R2-U1: S13 reached from a meter check is held until the person pulls t
       await rtl.screen.findByTestId('meter-amount');
       // A slow refetch of the list starts (a remount of another screen, a pull, the stale timer) ...
       answers[BILLERS_PATH] = ['late'];
-      lateBody = LIST.status === 200 ? (LIST.body as unknown) : null;
+      lateBody = (LIST as { body: unknown }).body;
       await rtl.act(async () => {
         void queryClient.refetchQueries({ queryKey: KEY });
       });
