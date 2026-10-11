@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 11 Oct 2026 · MONEY-16 · Built (verifying): the nightly check against Fintava. Once a night it compares every wallet's debits and balance, WAWU's account, the held money and WAWU's charge on each send with the ledger, lists what a person must look at, and has the report emailed through WAWU ID (the route is G-680). One run a night on any number of Hub processes; a night is never reported as clean unless every comparison was made. Backend `wmt/MONEY-16` `b96f5b9`, one migration, contract unchanged.
 - 11 Oct 2026 · MONEY-18 · Rounds 2 to 4 merged by the lead: backend PR #117 (`020f055`) and mobile main. The hold sweep reaches every due hold; an untrusted charge stops completion; a request is resent only when it provably never left; two servers never tell a feature twice; `npm run test:netns` runs in the deploy.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
 - 11 Oct 2026 · JOIN-03 · Round 4 merged by the lead: WAWU ID PR #11 and mobile main. A closed account has no sign-up to finish; a deletion clears the person's number from counters and pending rows. Round 5 (D8 to D11, refresh on a closed account) follows.
