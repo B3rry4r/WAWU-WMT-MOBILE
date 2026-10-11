@@ -9,4 +9,10 @@ import type { InboxKind } from './api';
  */
 export type InboxChip = ChipItem<string> & { kind: InboxKind | 'all' };
 
-export const inboxChips: readonly InboxChip[] = [{ value: 'all', label: 'All', kind: 'all' }];
+export const inboxChips: readonly InboxChip[] = [
+  { value: 'all', label: 'All', kind: 'all' },
+  { value: 'communities', label: 'Communities', kind: 'community' },
+];
+
+/** The chip that opens I24, the communities view (INBOX-05). */
+export const communitiesChip = 'communities';
