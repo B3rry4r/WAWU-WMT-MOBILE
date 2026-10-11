@@ -447,4 +447,34 @@ Lead ruling, 11 Oct 2026 (Default (lead), owner may override): the round 3 verif
 
 ## Builder report, round 4 (11 Oct 2026)
 
-DRAFT: filled in below once the full check has run.
+Branches `wmt/AUTH-07`, continued (never restarted). A container restart stopped the first builder of this round at about 02:05 UTC; its work was reviewed as my own and finished (its wawu-id commit was already pushed, its mobile work was uncommitted). wawu-id `01215b7` on `d5b264d` (origin/main is `d5b264d`: already inside, no merge). Mobile: the round 4 code, then origin/main `15a5b6b` merged in (it carries the AUTH-07 merge and FIX-31; one conflict, the generated `docs/PROGRESS.md`, regenerated). The Hub was not touched and not started: no money code, no migration, no schema change, no product change in wawu-id. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/auth07r4/` (`mut-out/`, `mutate.py`, `mutants-r4.json`, the logs named below).
+
+### The rulings as built
+
+1. **D3 (wawu-id, spec only).** `src/auth/unproven-phone.spec.ts`, "D3: refuses as taken, and leaves the holder its NEW number, when the holder's number changed between the read and the write": the holder moves to another number in the moment between `takeProvenNumber`'s lookup and its guarded `updateMany`; the taker's code is a 409 (`ConflictException`) and the holder keeps the number it moved to, never `released:<id>`. *Mutant Y26* (the `phone: { in: [...variants] }` half of the release guard removed, file `src/auth/unproven-phone.ts`): **KILLED**, 1 failing of 24 (this spec, by name); *on the code* the same file and `email-signup.service.spec.ts` pass, 82 of 82 (`id-specs-on-code.txt`, EXIT 0).
+2. **D4 (wawu-id, spec only).** `src/auth/email-signup.service.spec.ts`, "D4: when Resend refuses a sign-up, the other unconfirmed sign-ups waiting for their code stay, and one of them still confirms": two unconfirmed sign-ups are waiting, a third is refused (503 `EMAIL_SEND_FAILED`); only the third is gone (users and code rows are the first two), and both of the others still confirm with their own code. *Mutant Y19* (`discard` without the sign-up's own id, so every unconfirmed sign-up goes): **KILLED**, 1 failing of 58 (this spec, by name); on the code, 82 of 82. Both mutants were run by `mutate.py` (one textual change in a throwaway copy, the named specs, the file restored; the sha1 of both product files is the same as before and after: `unproven-phone.ts` `fceef1e6`, `email-signup.service.ts` `c58ab041`).
+3. **F-G (mobile).** `src/app/sign-up.tsx` asks `signupChannel()` in a `useFocusEffect`, so each time A3 comes into focus (a first visit and every return from A4) the app asks WAWU ID which channel the code will travel; `signupFlow.ts` no longer returns a cached answer (`knownSignupChannel()` still holds the last answer for A3's first draw, and a failed ask clears it: the line is then not drawn, never guessed). The new test "F-G: asks again each time A3 comes into focus, so A3 and A4 agree when the setting is switched between two visits" runs A3 (text) to A4 (text), switches the answer to `email`, goes back (A3 now says the email line, the text line gone, 2 asks), Continue (A4 says "Verify your email" and "Sent to ..."), switches back to `phone`, goes back (3 asks, text line), Continue (A4 "Sent by SMS to ...", "Verify your phone"). The round 3 test "asks WAWU ID once" is now "asks WAWU ID each time" (1 ask on arrival, 2 after a second ask, each a GET with no body and no sign-in). *Before* (the two tests on round 3's code, `mobile-FG-on-old-code.txt`): both FAIL; *after*: `auth-signup.test.tsx` 95 of 95 on the merged tree (`mobile-authsignup-merged.txt`). BRIEF A3's entry says "each time A3 comes into focus". The two tests FIX-31 round 2 owns (A15's "mailed code" and "asks again on a later visit when the first ask failed") were not touched.
+4. **The doubled JSDoc (mobile).** `signupStore.ts` lines 65 and 66 are one block above `CodeChannel`.
+
+Nothing else changed. O-1 to O-3 stay recorded for the owner.
+
+### Numbers
+
+- **wawu-id** (`01215b7`, 2 files, +49 lines, specs only; logs `id-*.txt`): `tsc` 0. eslint (no `--fix`) on the 2 changed files: 0 problems (no source file changed, so the project's older errors on main are untouched). Jest full (`--testTimeout=300000 -w 2`, heavy load): 24 suites, 352 tests (350 before, +2): **351 passed, 1 failed**, the failure AUTH-08's own timing check in `refresh-token-lookup.spec.ts` (refresh 2,561 ms against its 1 s). The same file **alone**: 19 of 20, the same check failing at 1,700 ms and 1,826 ms on this branch and at 1,206 ms on origin/main `d5b264d` (alone, same load): it fails on main too and is not this task's code. Gates 9 run, 114 files, 0 fail, 20 warn (the same 20); `check_baseline` 0 entries. `contract:build` twice, sha1 `5d718f43` both times, equal to the committed file and to mobile's `contract/identity/openapi.json`: unchanged, so nothing to sync.
+- **Mobile** (merged tree, two jest workers, log `mobile-check-final.txt`): **EXIT 0**. typecheck 0, lint 0 errors (5 warnings, none in a file this round touched), jest **136 suites, 2464 tests** all passing, gates 10 run, 531 files, 0 fail, 2 warn, `check_baseline` 0 entries, tasks 275 OK. Two earlier full runs by the first builder ended 1 on `eventsFocus` (a timing race that passes alone) and on three suites under a load average of 20 to 30; the run above, on the merged tree, is green.
+
+### Decisions (Default (agent), owner may override)
+
+1. A failed ask on a later visit clears A3's line rather than keeping the last answer: a kept answer could name a channel A4 then contradicts, and a missing line is the rule already (never guessed).
+2. The D3 spec moves the holder's number by wrapping the fake's `updateMany` for one call, so the move happens exactly between the lookup and the guarded write; no fake or product code changed.
+
+### Pre-existing findings
+
+- AUTH-08's timing check in `refresh-token-lookup.spec.ts` fails alone under load on origin/main as well (1,206 ms against 1 s); not this task's.
+- `contract/identity/SOURCE_COMMIT` still names `90f507c`; the contract file is byte-identical to wawu-id main's, so it was left.
+
+### NOT RUN
+
+- The two AUTH-07 sign-up tests that race under delayed answers (FIX-31 round 2 owns them).
+- A browser walk of A3 across a switch of the setting (round 3's verifier reproduced F-G there, `shots/run-stale.json`; this round's proof is the jest test above); a real send through Resend and a real mailbox (G-213); an Android or iPhone walk (V10); the Hub (not touched).
+- The wawu-id live scripts (`test:phone-hold-local`, `test:signup-email-local`): no product code changed, so they were not re-run.

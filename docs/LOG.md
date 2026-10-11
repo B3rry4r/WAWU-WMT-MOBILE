@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 11 Oct 2026 · AUTH-07 · Builder report, round 4 (status verifying; wawu-id `wmt/AUTH-07` `01215b7`, mobile `wmt/AUTH-07` hash in the hand-back; the first builder was stopped by a container restart and its work finished): D3 and D4 closed by specs only (mutant Y26, the release write's number guard, and Y19, the refused-mail discard, each shown failing a named spec and passing on the code); F-G: A3 asks for the sign-up channel each time it comes into focus (a jest test switches the channel between visits and A3 and A4 agree); the doubled JSDoc in `signupStore.ts` is one. wawu-id: tsc 0, gates 0 fail, jest 351 of 352 (AUTH-08's timing check fails alone on main too), contract unchanged; mobile main `15a5b6b` merged, full check EXIT 0 (136 suites, 2464 tests).
 - 11 Oct 2026 · FIX-31 · Merged by the lead (cold start and answers-before-they-land fixed in 13 test files; the one remaining race, H1, fails on main too): round 2 takes H1 and AUTH-07's two racy sign-up tests.
 - 11 Oct 2026 · INBOX-05 · Merged by the lead: backend PR #111 (`6976aad`; migration renamed to sort after main) and mobile main. Defect 38 and note 37 (tests only) follow on the same branch.
 - 11 Oct 2026 · BILLS-01 · Hotfix merged by the lead: backend PR #110 (`39e9377`, deployed with BILLS-01, MONEY-18 and WALLET-06) and mobile main; electricity presets are `presets: [{ amountKobo }]`.
