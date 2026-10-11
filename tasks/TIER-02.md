@@ -7,7 +7,7 @@ order: 208
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: [TIER-01, ME-17]
 decisions: [R-43, R-7, R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -86,7 +86,7 @@ no way to buy a tier while web work is paused (R-49; BACKEND_GAPS G-663).
 - Routes that ask the gate (listed and held to the code by `publishing-gate-coverage.spec.ts`): `POST /content`,
   `POST /content/:id/resubmit`, `PATCH /content/:id` (only when it carries `previewAsset` or `fullAsset`),
   `POST /uploads/presign` (only `content/preview` and `content/full`), `POST /product-drafts/:id/publish`.
-- Drafts (new, free, no tier asked): `ProductDraft` table (migration `20261020170000_product_drafts`, additive, rollback
+- Drafts (new, free, no tier asked): `ProductDraft` table (migration `20261021030000_product_drafts`, additive, rollback
   in its header) and `POST/GET /product-drafts`, `GET/PATCH/DELETE /product-drafts/:id`,
   `POST /product-drafts/:id/publish` (`src/content-piece/product-draft.*`). A draft is a title and optional details with
   no file; it holds no place and is shown to nobody else. `missing` lists what publishing still needs. Publishing asks
@@ -303,7 +303,7 @@ live products and keep going (D1).
    (MONEY-18 "Hold, release and refund" and TIER-02 "Publishing needs a tier"). Resolution that I built and checked: keep
    both, renumber TIER-02's to `## 19.` (nothing in `src/` or `docs/` cites the number 18 for it); then `tsc` 0,
    gates and baseline as above, auto-merged contract equals a fresh build, 668 of 668 specs. `prisma/schema.prisma` and
-   `src/account-purge/account-data-map.ts` auto-merge; the migration folder `20261020170000_product_drafts` sorts after
+   `src/account-purge/account-data-map.ts` auto-merge; the migration folder (then `20261020170000_product_drafts`) sorts after
    main's newest, `20261020160000_wallet_holds`, and applies on top of it. The merge commit is for the lead; I changed no product file.
 
 **Defects**
@@ -413,5 +413,74 @@ freeing the place (V31). Survivors: V05, V08, V10, V11, V13, V23 (equivalent), V
   legal-delivery-uploaders, profile-works, account-purge and data-export maps) plus the protected suite.
 - eslint (killed for memory). The real wawu-id for the live seam (the Hub repo's stand-in was used). The website (R-49).
 - The relock itself and the `relock-approved` label: the owner's. I changed no product code, test, lock or harness.
+
+## Builder report, round 2
+
+Builder, 11 Oct 2026. wawu-backend `wmt/TIER-02` `0d9d3df`; mobile `wmt/TIER-02` (this branch, this file). Backend main `6976aad` merged in (MONEY-18, WALLET-06, the BILLS-01 hotfix, INBOX-05): one conflict, `docs/contract/CONVENTIONS.md`, both sections kept, TIER-02's is now `## 19.` (ruling 7). Mobile main `2d5f648` merged in: conflicts only in `BACKEND_GAPS.md` and `SHARED-CHANGES.md` (both sides kept), the generated `docs/PROGRESS.md` (regenerated) and `contract/SOURCE_COMMIT`.
+**Migration renamed (lead, 11 Oct):** `20261020170000_product_drafts` is now `20261021030000_product_drafts` (backend `b133beb`), because main gained `20261021010000_community_message_key` (INBOX-05). Contents unchanged except the rollback line, which names the new folder; nothing was deployed under the old name. It applies on a fresh database after main's newest folder. No other migration.
+
+Before and after below were run on two Hub processes (:6182 and :6183) on one database, with the Hub repo's stand-in WAWU ID on :6181: the "before" on a build of `2c2543d` plus main, the "after" on a build of the final head. Scripts and transcripts are in the lead's scratchpad `tier02r2/` (`r2.js`, `live.js`, `before.txt`, `after.txt`, `live-after.txt`).
+
+**Each ruling as built**
+1. **D1 (a double delete freed more than one place).** `DELETE /content/:id` now reads the piece inside the transaction and flips it with a conditional `updateMany` on the status it read (never `removed`, so a removed piece never matches). Only the request whose write changed a row gives a place back, and only when the status it changed from was not `rejected`. A request that changed nothing reads again (at most 3 times, then `409 "This piece changed while you removed it. Try again."`), so an admin reject landing between the read and the write is counted once. A loser answers `404`, as a repeat delete always did. *Why not just "status not removed":* with only that, a delete that read `pending` just before an admin reject still decrements for the stale status (the reject already gave the place back); a test that makes that happen fails on that variant (D1b below). *Before:* the verifier's case reproduced, 6 concurrent deletes of one piece, `slotsUsed` 2 to 0 (statuses 204 x3, 404 x3), then 4 live pieces on a 3-product tier; three more runs: `slotsUsed` 3 to 1, 3 to 0, 3 to 0 with 2, 5 and 6 answers of 204, and 4 or 5 live pieces. *After:* three runs, each one 204 and five 404, `slotsUsed` 3 to 2, never more than 3 live products, and a later repeat delete 404 (the code today's suite pins).
+2. **D2 (a first publish answered 409 under a race).** `create` and `resubmit` make the `CreatorState` row with `createMany` and `skipDuplicates` (insert-or-nothing) before the conditional claim, in one private method, `ensureCreatorState`. *Before:* two concurrent first publishes, 8 of 12 runs and 11 of 12 runs had a `409 "That record already exists."`. *After:* 0 of 12 refused, `slotsUsed` 2 in each.
+3. **D3 (the draft cap passed 20).** `ProductDraftService.create` counts and inserts in one transaction under `pg_advisory_xact_lock(hashtextextended('product-drafts:<person>', 0))`, the pattern WALLET-06 and the beneficiaries use. *Before:* 30 concurrent drafts left 25 rows (and 24 on a second run); the verifier saw 22. *After:* exactly 20 (201 x20, 409 x10) over two Hubs, and `GET /product-drafts` lists all 20.
+4. **D4 (copy).** `reason.message` of `product_limit_reached` is written from the offers the answer carries (`TierGateError.withOffers`). With no tiers and no extras (a tick holder at 25): "You've used all 25 of your product places." (the number is the allowance; a unit test with 7 and 40 proves it is not a constant). I applied the same rule to the two other cases that promised a way the body does not carry: only extras ("You have used 10 of 10 products. Add more products to publish another.", the top tier) and only a higher tier ("... Move up a tier to publish another."). Both ways offered keeps the old sentence. No em-dash. *Before:* the tick holder was told "Add more products or move up a tier" with `tiers: []` and `extraProducts: null`.
+5. **T1 to T5.** One test for each surviving mutant (V23 left, equivalent): see the table. The coverage spec now reads file-shaped properties by pattern (a body property named `folder`, or ending `Asset`, `Url` or `Key`) and not three names. That found 21 mounted routes with such a property; each is in `NOT_GATED` with its reason (profile pictures and links, the identity document, community and event pictures, staff and admin routes, and three that are not files: a device key and two return addresses), and a new test fails if a listed route stops having one.
+6. **The protected suite's tier grant (SHARED-CHANGES TIER-02 #4, rewritten to the verifier's recipe).** `grantVerifyTier` in `test/protected-routes/harness.ts`, called from `beforeAll` in `src/protected-routes/protected-routes.regression.spec.ts` after `takeSnapshot` and the registration of the identities, before the setup steps. It inserts a real Verify `MakerTier` row (the plan config's 3 products, 30 days, running) for `creator` and `creator2`. No lock re-record. **This is why the PR waits:** the change is under `test/protected-routes` and `src/protected-routes`, so `lock-diff.py` counts it as a relock and the PR needs the owner's `relock-approved` label, applied after its last push; the lead carries it to the owner. Row #4 now names the entries (0-based: 23 `POST /uploads/presign`, 24 `POST /content`, 11 and 26 `GET /creator/state`, 25 `PATCH /creator/dm-settings`), the admin screens' `slotsTotal` 0, the order (the gate and the grant in one PR, because `deploy.yml` runs the suite from `src/`) and the evidence.
+7. **CONVENTIONS.md.** Both sections kept; TIER-02's is `## 19.`.
+8. **Not this round:** the six owner questions stay open under "For the owner" below.
+
+**Mutants** (each applied to the final tree, the 9 gate and allowance specs run, the file restored; all killed)
+
+| Mutant | Killed by |
+|---|---|
+| D1a `delete` as it was (unconditional flip) | six concurrent deletes; the stale-read test |
+| D1b conditional on "not removed" with the decrement from an earlier read | the stale-read test (a DELETE that read the piece before an admin turned it down) |
+| D1c flip not conditional on the status read | six concurrent deletes; the stale-read test |
+| D1d a rejected piece gives a place back | "a piece turned down already gave its place back" |
+| D2 `upsert` again | twelve first publishes at once; 10 of the content-piece unit tests |
+| D3 no lock | thirty drafts at once; ten drafts with one place left (fills 19, sends 10) |
+| D4a message not rewritten from the offers; D4b always both ways; D4c "25" hard-coded | the three D4 HTTP tests and the `tier-gate-message` unit spec |
+| V05 professional tick ignored (T1) | "a professional tick alone keeps publishing" |
+| V08 resubmit claim one too generous (T2) | two resends at 2 of 3; a resend against a publish at 2 of 3 |
+| V10 `PATCH` with a file asks for room (T3) | "at the limit, a waiting piece can still have its file swapped" |
+| V11 draft completeness before the gate (T4) | "with no tier, an unfinished draft is told tier_required" |
+| V13 draft cap counts everyone (T5) | the crowd tests; "another person's full drafts" |
+| V26 a lost claim always says limit (T5) | "a publish that loses its place because the tier ended meanwhile" |
+| V27 a free draft keeps its stale price (T5) | "a free draft publishes at nothing" |
+| R4 a body with `assetUrl` (T5) | the coverage spec, by pattern |
+
+One of my own tests was flaky at first (six taps on Send again at the limit, asserting all 200): a tap that read the piece as turned down just before the first one committed can be told `product_limit_reached` afterwards. It now asserts the real rule (the piece goes once, one place, no tap told anything else). See the observations.
+
+**Checks.** All on the head named above, in a fresh migrated and seeded database `bt02r2_fresh_test`, unless said.
+- `npx tsc --noEmit` 0; eslint (no `--fix`) EXIT 0 on the 9 files round 2 changed; prettier clean. Over all 54 `.ts` files the branch changes against main, eslint reports 524 problems, every one in 11 older files that already had them (525 on main for the same files, none new; the 15 files this task adds have 0).
+- Specs: content-piece, creator-state, storage and plans: 25 suites, 523 tests passed; admin creators, KYC review, content review and the account purge map: 5 suites, 88 passed. The gate contract spec alone is 51 tests (32 from round 1, 19 new), run 7 times with no failure.
+- Protected suite, `run.sh --fresh HEAD` with the branch's own suite and lock (`PROTECTED_LOCK_REF=HEAD`) in a private network namespace (`unshare -n`, its own Postgres 16 on 127.0.0.1:5432 inside it): **253 of 253, "all 244 required tests passed", EXIT 0, 0 `MakerTier` rows left** (done twice: before and after the migration rename and the main merge). Without the grant, against the main lock, round 1 and the verifier showed 9 of 253 (the setup step `POST /content as creator2` 402).
+- Gates: 16 FAIL, the same 16 FAIL lines as main `6976aad` (one line number moved, `content-piece.service.ts:46` to `:48`, the `FlutterwaveConfigResponse` fork finding), warnings 96 against 95 (the one new is `PROVISIONAL(PRODUCT-DRAFTS-MAX)`), 76 accepted; `check_baseline` ok, 108 entries.
+- `npm run contract:build` twice: byte-identical (sha256 `b78232fd...`), and equal to the committed auto-merged file (git shows no change). Synced to mobile: `contract/openapi.json` copied from the backend branch (`SOURCE_COMMIT` `wmt/TIER-02@0d9d3df`) and `python3 scripts/api/sync_contract.py`, because `npm run api -- --backend <worktree>` copies `origin/main` of that repo (backend main), not the branch; the result is main's contract plus this task's.
+- Whole backend suite the way `deploy.yml` runs it (`npx jest --runInBand --forceExit` on a fresh `wawu_hub_test`, migrated and seeded, the stand-in WAWU ID on :4001, in a private network namespace on a UTF8 cluster; six serial shards of that one run to stay inside memory), on `0d9d3df`: 265 suites, 7454 tests, 263 suites and 7433 tests green in the run, 4 pending. Two suites were red in the run, neither from this task and neither a file it touches (`git diff origin/main` is empty for `src/money` and `src/tests`): (1) `src/tests/hub-rate-limits.contract.spec.ts`, 11 tests, needs a non-loopback IPv4 interface and the private namespace has only loopback; run alone outside it, 22 of 22 pass. (2) `src/money/receipts/tests/receipt-units.spec.ts`, 6 tests: 2 are timing bounds that failed at load 20 and pass alone, 4 are the Unicode digit table (this machine's Node 22.22.0 has Unicode 16 data, the spec expects the Unicode 17 digits); the same 4 fail on main `6976aad` run on its own checkout (4 failed, 39 passed), so `deploy.yml` on a newer Node 22 is the answer for those. An earlier try on a SQL_ASCII cluster failed the ADS-03 blank-text spec for the cluster's encoding alone; I threw it away and ran the whole suite again on UTF8, the encoding the CI Postgres has. Logs: `tier02r2/whole3-shard1..6.json`, `whole-alone-2.log`, `main-receipt-units.log` in the lead's scratchpad.
+- Live seam: the verifier's `live.js` (63 checks) on the after build: 62 passed; the one failure is the verifier's own N2 check ("no tier offered that holds fewer than 8"), which U5 below explains. D1 to D4 checks in `r2.js`: 14 of 14.
+- Mobile (after main `2d5f648` was merged in): `npm run gates` EXIT 0 (0 fail, 2 warn, 531 files, baseline 0), `npm run tasks` EXIT 0; `python3 scripts/api/sync_contract.py` changes nothing. No app code changed, so the full check was not run.
+
+**NOT RUN**
+- The real wawu-id for the live seam (the Hub repo's stand-in was used), and the website (R-49).
+- The relock label: the owner's.
+- The mobile full check (typecheck, lint, jest): no app code changed.
+
+**Observations (not changed, for the lead)**
+- Admin take-down (`AdminContentReviewService`) reads the piece's status before its transaction and decrements by that read, as `DELETE` did: a take-down racing an admin reject on the same piece could return the place twice. Two admins at the same millisecond on one piece; the same compare-and-swap would close it.
+- A second tap on "Send again" that arrives while the first is committing, at the limit, can be told `product_limit_reached` although the piece was sent. One place is taken, nothing breaks; the app shows the offers sheet for a moment. Fix if wanted: on a gate refusal, read the piece again and return it if it is now `pending`.
+- `npm run api -- --backend` always copies the backend's `origin/main` contract, so a task branch is synced by copying the file and running the script without `--backend` (as round 1 did).
+
+## For the owner
+
+Six questions the verifier raised. Each says what is built (Default (agent), owner may override).
+1. **Perpetual ticks (U1).** Any tick `holdsTick` accepts keeps 25 products, including a perpetual one (`verifiedUntil` empty, given to accounts moved off the old ladder, or granted by an admin). PAYMENTS-PLAN question 3 says people who paid keep publishing until the tick ends; a perpetual tick never ends, so those accounts publish 25 products for ever with no tier. The code cannot tell a bought tick from a granted one. How many accounts is a read-only query on production before launch.
+2. **Featured video (U2).** Featured works (`profile/work`) take photos and `video/mp4` up to 100 MB on any signed-in account with no tier, are not counted in content storage, and show publicly on the profile. R-43 says "uploading any file"; built as "build a profile free". Does a showreel video need a tier?
+3. **Media frames (U3).** `PUT /content/:id/media` accepts links to files the person already uploaded (the earlier gated presign), on a waiting or live piece, with no tier. It only re-orders files already paid for; documented in `PLANS.md` section 6. Keep it free?
+4. **The `slotsUsed` audit (U4).** `productsUsed` is a counter, not a count of pieces. Pieces removed or turned down before the decrements existed may have left it too high, so a creator could be told "3 of 3" with fewer live pieces. Run before launch (read-only): `SELECT cs."wawuUserId", cs."slotsUsed", count(cp.id) FILTER (WHERE cp.status NOT IN ('rejected','removed')) FROM "CreatorState" cs LEFT JOIN "ContentPiece" cp ON cp."creatorWawuId"=cs."wawuUserId" GROUP BY 1,2 HAVING cs."slotsUsed" <> count(cp.id) FILTER (WHERE cp.status NOT IN ('rejected','removed'));` (no rows on the test database).
+5. **Extras across an upgrade (U5).** At the limit the offers list every tier with more products than the one held, extras ignored, so a person on Verify with 5 extras (8 products) is offered Plus (6). That is right only if extras carry over an upgrade; TIER-03 and TIER-04 must keep them.
+6. **`GET /me/tier` `productsAllowed` for a tick holder (N1).** It is the tier's figure (plus extras) while `productsUsed` is the gate's count, so a tick holder with no tier reads "6 of 0" there while `GET /creator/state` says 25. The meter on VF12 and VF14 should read `slotsTotal`, or `productsAllowed` should become the gate's figure.
 
 ## Owner sign-off
