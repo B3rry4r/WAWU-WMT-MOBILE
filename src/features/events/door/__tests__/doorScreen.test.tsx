@@ -120,6 +120,29 @@ const wait = (ms: number) =>
     jest.advanceTimersByTime(ms);
   });
 
+/** What the person at the door does: opens the sheet, types a code, presses Check ticket. */
+const typeCode = async (code: string) => {
+  await rtl.fireEvent.press(rtl.screen.getByText('Type the code instead'));
+  await rtl.fireEvent.changeText(await rtl.screen.findByTestId('door-code-input'), code);
+  await rtl.fireEvent.press(rtl.screen.getByTestId('door-code-check'));
+};
+
+/**
+ * A check on its way with the typing sheet open. The button is not offered during a check (round 3), so the one
+ * way to have both is a frame the camera had already reported when the sheet opened, reaching the screen after it.
+ */
+const checkUnderOpenSheet = async (data: string) => {
+  const reported = mockCamera.props?.onBarcodeScanned as (r: { type: string; data: string }) => void;
+  await rtl.fireEvent.press(rtl.screen.getByText('Type the code instead'));
+  await rtl.screen.findByTestId('door-code-input');
+  await rtl.act(async () => {
+    reported({ type: 'qr', data });
+  });
+};
+
+/** A check whose answer is held until `release()`. */
+const later = (data: DoorResult): Reply => ({ later: true, status: 201, body: { statusCode: 201, message: 'Created', data } });
+
 const noDashes = () => expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/—|Flutterwave/);
 
 // The first load of the screen compiles every component under it; on a cold cache that outlasts a test's own limit.
@@ -615,18 +638,20 @@ describe('a check nobody answers (D3)', () => {
 });
 
 describe('a code typed while a check is on its way', () => {
-  const typeCode = async (code: string) => {
-    await rtl.fireEvent.press(rtl.screen.getByText('Type the code instead'));
-    await rtl.fireEvent.changeText(await rtl.screen.findByTestId('door-code-input'), code);
+  // Round 3: the button is not offered during a check, so a person cannot open the sheet then. What is left is a
+  // sheet that was already open when a check began (a frame the camera had already reported), and these tests
+  // start from there.
+  const typeUnderOpenSheet = async (code: string) => {
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('door-code-input'), code);
     await rtl.fireEvent.press(rtl.screen.getByTestId('door-code-check'));
   };
 
   it('waits for it: the sheet closes, the screen says so, nothing is sent yet, and it is sent when the result has cleared', async () => {
-    answers = [{ later: true, status: 201, body: { statusCode: 201, message: 'Created', data: { outcome: 'valid', ticket: ticket(), totals } } }, notValid];
+    answers = [later({ outcome: 'valid', ticket: ticket(), totals }), notValid];
     await boot();
-    await see(SENT_CODE);
+    await checkUnderOpenSheet(SENT_CODE);
     expect(await rtl.screen.findByText('Checking the ticket')).toBeTruthy();
-    await typeCode(OTHER_CODE);
+    await typeUnderOpenSheet(OTHER_CODE);
     expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
     expect(rtl.screen.getByText('Then the code you typed.')).toBeTruthy();
     expect(calls).toHaveLength(1);
@@ -648,33 +673,32 @@ describe('a code typed while a check is on its way', () => {
     expect(calls).toHaveLength(2);
   });
 
-  it('several typed meanwhile all wait, and are sent in the order typed, one after another', async () => {
-    const third = 'AAAA-BBBB-CCCC-DDDD';
-    answers = [{ later: true, status: 201, body: { statusCode: 201, message: 'Created', data: { outcome: 'valid', ticket: ticket(), totals } } }, notValid, notValid];
+  it('a second code cannot be typed meanwhile: the sheet is shut and the button to open it is not offered until the check is done', async () => {
+    answers = [later({ outcome: 'valid', ticket: ticket(), totals }), notValid];
     await boot();
-    await see(SENT_CODE);
-    await typeCode(OTHER_CODE);
+    await checkUnderOpenSheet(SENT_CODE);
+    await typeUnderOpenSheet(OTHER_CODE);
     expect(rtl.screen.getByText('Then the code you typed.')).toBeTruthy();
-    await typeCode(third);
-    expect(rtl.screen.getByText('Then the 2 codes you typed.')).toBeTruthy();
-    expect(calls).toHaveLength(1);
+    expect(rtl.screen.queryByTestId('door-type')).toBeNull();
+    expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
     await rtl.act(async () => {
       release?.();
     });
+    expect(await rtl.screen.findByText('LET THEM IN')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('door-type')).toBeNull();
     await wait(3000);
     expect(calls.map((c) => c.body.code)).toEqual([SENT_CODE, OTHER_CODE]);
+    expect(rtl.screen.queryByTestId('door-type')).toBeNull();
     await wait(3000);
-    expect(calls.map((c) => c.body.code)).toEqual([SENT_CODE, OTHER_CODE, third]);
-    await wait(3000);
-    expect(calls).toHaveLength(3);
-    expect(new Set(calls.map((c) => c.key)).size).toBe(3);
+    expect(calls).toHaveLength(2);
+    expect(rtl.screen.getByTestId('door-type')).toBeTruthy();
   });
 
   it('waits through a check that gave up: it is sent when the problem is dismissed, and never lost', async () => {
     answers = [{ hold: true }, notValid];
     await boot();
-    await see(SENT_CODE);
-    await typeCode(OTHER_CODE);
+    await checkUnderOpenSheet(SENT_CODE);
+    await typeUnderOpenSheet(OTHER_CODE);
     expect(calls).toHaveLength(1);
     await wait(10_000);
     expect(await rtl.screen.findByText("We couldn't confirm")).toBeTruthy();
@@ -687,8 +711,8 @@ describe('a code typed while a check is on its way', () => {
   it('is dropped with the screen: the X leaves, and nothing is sent after', async () => {
     answers = [{ hold: true }];
     const { onClose } = await boot();
-    await see(SENT_CODE);
-    await typeCode(OTHER_CODE);
+    await checkUnderOpenSheet(SENT_CODE);
+    await typeUnderOpenSheet(OTHER_CODE);
     await rtl.fireEvent.press(rtl.screen.getByTestId('door-close'));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(calls).toHaveLength(1);
@@ -799,5 +823,138 @@ describe('the camera, before it is on', () => {
     await rtl.fireEvent.press(rtl.screen.getByText('Type the code instead'));
     await rtl.screen.findByTestId('door-code-input');
     expect(mockCamera.props?.onBarcodeScanned).toBeUndefined();
+  });
+});
+
+describe('D5 · a verdict that arrives while the typing sheet is open is never lost (round 3)', () => {
+  it("the verifier's case: a typed code answered after 3 seconds, and nothing to tap at 0.7 seconds that could hide the answer; the verdict is then seen for its full 3 seconds", async () => {
+    answers = [later({ outcome: 'valid', ticket: ticket(), totals })];
+    await boot();
+    await typeCode(SENT_CODE);
+    expect(await rtl.screen.findByText('Checking the ticket')).toBeTruthy();
+    await wait(700);
+    // Round 2 still drew "Type the code instead" here; a tap on it opened the sheet over the coming verdict.
+    expect(rtl.screen.queryByText('Type the code instead')).toBeNull();
+    expect(rtl.screen.queryByTestId('door-type')).toBeNull();
+    await wait(2300);
+    await rtl.act(async () => {
+      release?.();
+    });
+    expect(await rtl.screen.findByText('LET THEM IN')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
+    await wait(2999);
+    expect(rtl.screen.getByText('LET THEM IN')).toBeTruthy();
+    await wait(1);
+    expect(rtl.screen.queryByTestId('door-result')).toBeNull();
+    expect(rtl.screen.getByTestId('door-type')).toBeTruthy();
+  });
+
+  it('a check has no button row beside it, as a result has none, and the aim words stay where they were', async () => {
+    answers = [later({ outcome: 'valid', ticket: ticket(), totals })];
+    await boot();
+    expect(rtl.screen.getByTestId('door-type')).toBeTruthy();
+    await see(SENT_CODE);
+    expect(await rtl.screen.findByTestId('door-checking')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('door-type')).toBeNull();
+    await rtl.act(async () => {
+      release?.();
+    });
+    expect(await rtl.screen.findByTestId('door-result')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('door-type')).toBeNull();
+    await wait(RESULT_HOLD_MS);
+    expect(rtl.screen.getByTestId('door-type')).toBeTruthy();
+  });
+
+  it('a verdict that lands under the open sheet waits there: it is still up long after 3 seconds, and its 3 seconds begin when the sheet is closed', async () => {
+    answers = [later({ outcome: 'valid', ticket: ticket(), totals })];
+    await boot();
+    await checkUnderOpenSheet(SENT_CODE);
+    expect(rtl.screen.getByTestId('door-checking')).toBeTruthy();
+    await wait(1000);
+    await rtl.act(async () => {
+      release?.();
+    });
+    expect(await rtl.screen.findByText('LET THEM IN')).toBeTruthy();
+    // Round 2: the hold ran out behind the sheet at 3 s and the verdict was gone before anyone saw it.
+    await wait(RESULT_HOLD_MS + 4000);
+    expect(rtl.screen.getByTestId('door-code-input')).toBeTruthy();
+    expect(rtl.screen.getByText('LET THEM IN')).toBeTruthy();
+    // The sheet closes: now it is seen, and it stays for its full hold.
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-type-sheet-close'));
+    expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
+    expect(rtl.screen.getByText('LET THEM IN')).toBeTruthy();
+    await wait(RESULT_HOLD_MS - 1);
+    expect(rtl.screen.getByText('LET THEM IN')).toBeTruthy();
+    await wait(1);
+    expect(rtl.screen.queryByTestId('door-result')).toBeNull();
+    expect(rtl.screen.getByTestId('door-type')).toBeTruthy();
+  });
+
+  it.each([
+    ['ALREADY USED', { outcome: 'already_used', ticket: ticket(), totals } as DoorResult],
+    ['NOT A VALID TICKET', { outcome: 'invalid', ticket: null, totals } as DoorResult],
+  ])('%s is held that way too', async (title, data) => {
+    answers = [later(data)];
+    await boot();
+    await checkUnderOpenSheet(SENT_CODE);
+    await rtl.act(async () => {
+      release?.();
+    });
+    expect(await rtl.screen.findByText(title)).toBeTruthy();
+    await wait(RESULT_HOLD_MS * 2);
+    expect(rtl.screen.getByText(title)).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-type-sheet-close'));
+    await wait(RESULT_HOLD_MS - 1);
+    expect(rtl.screen.getByText(title)).toBeTruthy();
+    await wait(1);
+    expect(rtl.screen.queryByTestId('door-result')).toBeNull();
+  });
+
+  it('a code typed over a verdict nobody has seen does not replace it: it waits, the verdict is seen for its hold, then the code is checked', async () => {
+    answers = [later({ outcome: 'valid', ticket: ticket(), totals }), notValid];
+    await boot();
+    await checkUnderOpenSheet(SENT_CODE);
+    await rtl.act(async () => {
+      release?.();
+    });
+    expect(await rtl.screen.findByText('LET THEM IN')).toBeTruthy();
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('door-code-input'), OTHER_CODE);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-code-check'));
+    // Round 2 sent it at once and drew its answer over the first verdict, which nobody had read.
+    expect(calls).toHaveLength(1);
+    expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
+    expect(rtl.screen.getByText('LET THEM IN')).toBeTruthy();
+    await wait(RESULT_HOLD_MS - 1);
+    expect(calls).toHaveLength(1);
+    expect(rtl.screen.getByText('LET THEM IN')).toBeTruthy();
+    await wait(1);
+    expect(calls.map((c) => c.body.code)).toEqual([SENT_CODE, OTHER_CODE]);
+    expect(calls[1].key).not.toBe(calls[0].key);
+    expect(await rtl.screen.findByText('NOT A VALID TICKET')).toBeTruthy();
+  });
+
+  it('a problem that lands under the open sheet is there, with Try again, when the sheet closes', async () => {
+    answers = [{ lost: true }];
+    await boot();
+    await checkUnderOpenSheet(SENT_CODE);
+    expect(await rtl.screen.findByText("We couldn't confirm")).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-type-sheet-close'));
+    expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
+    expect(rtl.screen.getByTestId('door-problem-retry')).toBeTruthy();
+  });
+});
+
+describe('a 422 on this route (round 3)', () => {
+  it('reads "We couldn\'t confirm" with Try again, like any answer the app cannot be sure about; only a 400 says the ticket was not checked in', async () => {
+    answers = [fail(422, 'Unprocessable Entity'), letIn];
+    await boot();
+    await see(SENT_CODE);
+    expect(await rtl.screen.findByText("We couldn't confirm")).toBeTruthy();
+    expect(rtl.screen.queryByText(/not checked in/i)).toBeNull();
+    expect(rtl.screen.queryByText(/Unprocessable/)).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-problem-retry'));
+    expect(await rtl.screen.findByText('LET THEM IN')).toBeTruthy();
+    expect(calls[1].key).toBe(calls[0].key);
+    noDashes();
   });
 });

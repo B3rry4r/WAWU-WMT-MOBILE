@@ -34,6 +34,8 @@ const NAV = { height: 56, button: 42, title: 17, tracking: -0.02 } as const;
 const AIM = { size: 230, between: 20, lift: 60, liftWithPanel: 280, line: 15 } as const;
 const FOOT = { bottom: 48 } as const;
 
+const HTTP_BAD_REQUEST = 400;
+
 const NAV_TITLE = 'At the door';
 const AIM_LINE = 'Point at the ticket QR';
 
@@ -84,6 +86,8 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
 
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState('');
+  /** How tall the button row was when it was last drawn, kept as empty room while a check is on its way. */
+  const [footRoom, setFootRoom] = useState(0);
   /** The codes typed while a check was on its way, in the order typed (each waits for the check before it), and how many the screen says are waiting. */
   const queued = useRef<string[]>([]);
   const [waiting, setWaiting] = useState(0);
@@ -127,12 +131,15 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
     [check, go, known],
   );
 
-  // A result stays over the camera for a few seconds, then the scanner is ready for the next ticket.
+  // A result stays over the camera for a few seconds, then the scanner is ready for the next ticket. The hold
+  // runs only while the result can be seen: a result that lands under the typing sheet waits there, and its
+  // seconds begin when the sheet closes (D5).
+  const sheetOpen = typing && known;
   useEffect(() => {
-    if (phase.kind !== 'result') return;
+    if (phase.kind !== 'result' || sheetOpen) return;
     const timer = setTimeout(() => go({ kind: 'ready' }), RESULT_HOLD_MS);
     return () => clearTimeout(timer);
-  }, [phase, go]);
+  }, [phase, sheetOpen, go]);
 
   // A code typed while a check was on its way waits for it, and is checked the moment the scanner is ready. Several wait in the order typed, one at a time.
   useEffect(() => {
@@ -158,8 +165,9 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
     const text = typed;
     setTyping(false);
     setTyped('');
-    if (inFlight.current) {
-      // The one before it has not been answered. This one is kept and sent when that one is done.
+    if (inFlight.current || current.current.kind !== 'ready') {
+      // The one before it has not been answered, or its answer is up and not yet seen (it landed under this
+      // sheet). This one is kept and sent when the scanner is ready, so no verdict is replaced unread.
       queued.current.push(text);
       setWaiting(queued.current.length);
       return;
@@ -168,9 +176,10 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
   };
 
   const scanning = camera.kind === 'ready' && focused && !typing && known;
-  const sheetOpen = typing && known;
   /** A result or a problem is up: the canvas draws no button row then, and lifts the aim line to clear the panel. */
   const panelUp = phase.kind === 'result' || phase.kind === 'problem';
+  /** A check is on its way: no button row either (a sheet opened now would hide the verdict that is coming), but the room it took stays, so the words do not move. */
+  const checking = phase.kind === 'checking';
 
   return (
     <View testID="door-screen" style={[styles.page, { paddingTop: insets.top }]}>
@@ -202,8 +211,13 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
         <Words camera={camera} phase={phase} waiting={waiting} />
       </View>
 
-      {panelUp ? null : (
-        <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, FOOT.bottom) }]}>
+      {panelUp ? null : checking ? (
+        <View testID="door-foot-room" pointerEvents="none" style={{ height: footRoom }} />
+      ) : (
+        <View
+          onLayout={(event) => setFootRoom(event.nativeEvent.layout.height)}
+          style={[styles.foot, { paddingBottom: Math.max(insets.bottom, FOOT.bottom) }]}
+        >
           <CameraActions camera={camera} />
           <Button label="Type the code instead" variant="glass" full onPress={() => setTyping(true)} disabled={!known} testID="door-type" />
         </View>
@@ -297,6 +311,10 @@ function problemOf(error: unknown, retry: () => void): ProblemView {
       case 'not_found':
         return gone();
       case 'validation':
+        // Only a 400 is the Hub refusing the text before it does anything (its validator answers 400, and the
+        // contract lists no other answer for this route). A 422 is not something this route sends, so the app
+        // cannot be sure the ticket was untouched: it says it could not confirm, like any answer it cannot read.
+        if (error.status !== HTTP_BAD_REQUEST) return couldNotConfirm('CircleAlert', retry);
         return { icon: 'CircleAlert', title: "We couldn't check that ticket", line: 'This code could not be checked. The ticket was not checked in.', retry: null, leave: false };
       case 'network':
         return couldNotConfirm('WifiOff', retry);
