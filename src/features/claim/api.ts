@@ -22,6 +22,8 @@ async function send(code: string): Promise<ClaimResult> {
   const body = (await unwrap(api.POST('/api/hub/waitlist/claims', { body: { code } }))) as unknown as Envelope<ClaimResult>;
   const result = body?.data;
   if (!result || typeof result !== 'object' || typeof result.tier !== 'object' || result.tier === null) throw unreadable();
+  // The words of a repeat are told from when the code was claimed (round 3, D4): an answer without a readable time is not one the screen can tell truthfully.
+  if (typeof result.claimedAt !== 'string' || Number.isNaN(Date.parse(result.claimedAt))) throw unreadable();
   return result;
 }
 

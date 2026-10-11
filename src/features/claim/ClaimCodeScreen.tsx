@@ -13,7 +13,7 @@ import { font, space } from '@/theme';
 
 import { claimCode, type ClaimResult } from './api';
 import { claimFailure, type ClaimFailure } from './claimFailure';
-import { CODE_PROBLEM_WORDS, codeProblem, compactCode, formatCode, planLines, readyLine } from './model';
+import { CODE_PROBLEM_WORDS, claimHeading, claimStanding, codeProblem, compactCode, formatCode, planLines, readyLine } from './model';
 
 /** The title block of an A22-style form screen: `h1` at 28, 10 down, 6 between the title and the line. */
 const TITLE = { size: 28, tracking: -0.03, leading: 1.15 } as const;
@@ -34,7 +34,9 @@ export type ClaimCodeScreenProps = {
  * Claim the plan an event registration paid for (JOIN-03, R-48). The person types the launch access code the
  * registration page showed ("XXXX XXXX"); the Hub checks that it is theirs (a phone or email their account has
  * confirmed, never the code alone), gives what the plan gives, and the screen then lists exactly what the Hub
- * says they have. A refusal keeps what was typed and says why in plain words, on the field when it is the code
+ * says they have. The same answer comes back when the code is sent again, so its words are told from when the code
+ * was claimed and where the plan stands now: "ready" and "starting today" only on the day, "started on" later, "ended"
+ * once the plan is over (round 3, D4). A refusal keeps what was typed and says why in plain words, on the field when it is the code
  * itself, in a note above it otherwise. One tap sends one claim: a second tap while one is on its way is ignored.
  */
 export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScreenProps) {
@@ -74,6 +76,7 @@ export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScre
   };
 
   if (result) {
+    const now = Date.now();
     return (
       <AuthFrame
         testID="claim-done"
@@ -82,16 +85,16 @@ export function ClaimCodeScreen({ onBack, onDone, initialResult }: ClaimCodeScre
       >
         <View style={styles.body}>
           <View style={styles.doneHead}>
-            <IconTile icon="CircleCheck" size={DONE_ICON} />
-            <Text variant="h1" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size, ...font(700) }}>
-              Your plan is ready
+            <IconTile icon={claimStanding(result, now) === 'ended' ? 'CalendarX' : 'CircleCheck'} size={DONE_ICON} />
+            <Text variant="h1" testID="claim-heading" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size, ...font(700) }}>
+              {claimHeading(result, now)}
             </Text>
             <Text variant="muted" testID="claim-ready-line">
-              {readyLine(result)}
+              {readyLine(result, now)}
             </Text>
           </View>
           <GroupedList testID="claim-lines">
-            {planLines(result).map((line) => (
+            {planLines(result, now).map((line) => (
               <KeyValueRow key={line.label} label={line.label} value={line.value} testID={`claim-line-${line.label.toLowerCase().replace(/\W+/g, '-')}`} />
             ))}
           </GroupedList>

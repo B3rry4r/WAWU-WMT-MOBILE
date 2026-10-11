@@ -47,12 +47,33 @@ const { ClaimCodeScreen } = require('../ClaimCodeScreen') as typeof import('../C
 
 const CLAIM = '/api/hub/waitlist/claims';
 
+/**
+ * The phone's clock for these tests: 17 Oct 2026, 12:00 Lagos, then running at the real rate. Every date in the Hub's
+ * answers below is written against it, so what the screen says ("starting today", "started on", "ended") never depends on
+ * the day the tests run, and `waitFor` still sees time pass.
+ */
+const CLOCK_START = Date.parse('2026-10-17T11:00:00.000Z');
+const DAY = 24 * 60 * 60 * 1000;
+const iso = (offsetDays: number) => new Date(CLOCK_START + offsetDays * DAY).toISOString();
+let realNow: () => number;
+let started = 0;
+
+beforeAll(() => {
+  realNow = Date.now;
+  started = realNow();
+  jest.spyOn(Date, 'now').mockImplementation(() => CLOCK_START + (realNow() - started));
+});
+afterAll(() => {
+  jest.restoreAllMocks();
+});
+
 const view = (over: Record<string, unknown> = {}) => ({
   offerName: 'Event registration',
   days: 30,
   extended: false,
   pointsGranted: 100,
   pointsExpireAt: '2027-01-15T10:00:00.000Z',
+  claimedAt: '2026-10-17T10:00:00.000Z',
   tier: {
     state: 'active',
     tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } },
@@ -127,6 +148,96 @@ describe('a user claims the plan an event registration paid for (JOIN-03)', () =
     await submit();
     await waitFor(() => expect(screen.getByTestId('claim-ready-line').props.children).toBe('30 days were added to the plan you already have.'));
     expect(screen.getByText('Now runs until')).toBeTruthy();
+  });
+
+  describe('the same code sent again shows the plan as it is (round 3, D4)', () => {
+    const claimTyped = async () => {
+      await open();
+      await type('5F6C15E4');
+      await submit();
+      await waitFor(() => expect(screen.getByTestId('claim-done')).toBeTruthy());
+    };
+    const heading = () => screen.getByTestId('claim-heading').props.children;
+    const line = () => screen.getByTestId('claim-ready-line').props.children;
+    const rows = () => ['Plan', 'Runs until', 'Now runs until', 'Ended', 'Points added', 'Points last until', 'Points ended'].filter((label) => screen.queryByText(label));
+
+    it('the day it was claimed: "Your plan is ready", starting today', async () => {
+      await claimTyped();
+      expect(heading()).toBe('Your plan is ready');
+      expect(line()).toBe('Verify for 30 days, starting today.');
+    });
+
+    it('ten days later, the plan still running: it says when the plan started, never "starting today"', async () => {
+      answer = ok(view({ claimedAt: iso(-10), tier: { ...view().tier, activeFrom: iso(-10), activeUntil: iso(20) } }));
+      await claimTyped();
+      expect(heading()).toBe('Your plan is active');
+      expect(line()).toBe('Verify started on 7 Oct.');
+      expect(screen.queryByText('Your plan is ready')).toBeNull();
+      expect(JSON.stringify(screen.toJSON())).not.toContain('starting today');
+      // The same lines as N2 ruled: the plan, when it ends, the points and when they end.
+      expect(rows()).toEqual(['Plan', 'Runs until', 'Points added', 'Points last until']);
+      for (const text of ['Verify', '6 Nov', '100', '15 Jan 2027']) expect(screen.getByText(text)).toBeTruthy();
+    });
+
+    it('a repeat that added days to a plan they already had says when', async () => {
+      answer = ok(view({ extended: true, claimedAt: iso(-3), tier: { ...view().tier, activeUntil: iso(40) } }));
+      await claimTyped();
+      expect(heading()).toBe('Your plan is active');
+      expect(line()).toBe('30 days were added to your plan on 14 Oct.');
+      expect(screen.getByText('Now runs until')).toBeTruthy();
+    });
+
+    it('after the plan ended: it says the plan ended and shows no "Runs until" with a past date', async () => {
+      answer = ok(
+        view({
+          claimedAt: '2026-08-02T10:00:00.000Z',
+          pointsExpireAt: '2026-10-01T10:00:00.000Z',
+          tier: { ...view().tier, state: 'ended', activeFrom: '2026-08-02T10:00:00.000Z', activeUntil: '2026-09-01T10:00:00.000Z' },
+        }),
+      );
+      await claimTyped();
+      expect(heading()).toBe('Your plan has ended');
+      expect(line()).toBe('Verify ended on 1 Sep.');
+      expect(screen.queryByText('Your plan is ready')).toBeNull();
+      expect(screen.queryByText('Runs until')).toBeNull();
+      expect(screen.queryByText('Now runs until')).toBeNull();
+      expect(screen.queryByText('Points last until')).toBeNull();
+      expect(JSON.stringify(screen.toJSON())).not.toContain('starting today');
+      expect(rows()).toEqual(['Plan', 'Ended', 'Points added', 'Points ended']);
+      for (const text of ['Verify', '1 Sep', '100', '1 Oct']) expect(screen.getByText(text)).toBeTruthy();
+    });
+
+    it('an account that holds no plan now, with no end to name, says the day it claimed the code', async () => {
+      answer = ok(view({ claimedAt: iso(-40), pointsGranted: 0, pointsExpireAt: null, tier: { ...view().tier, state: 'none', tier: null, activeFrom: null, activeUntil: null } }));
+      await claimTyped();
+      expect(heading()).toBe('Your plan has ended');
+      expect(line()).toBe('You claimed this code on 7 Sep.');
+      expect(rows()).toEqual([]);
+    });
+
+    it('an answer with no readable time of claim is the unreadable-answer note, not a plan', async () => {
+      await open();
+      await type('5F6C15E4');
+      for (const claimedAt of [undefined, null, 'yesterday', 12, '']) {
+        answer = ok(view({ claimedAt }));
+        await submit();
+        await waitFor(() => expect(screen.getByText('Your code was accepted')).toBeTruthy());
+        expect(screen.queryByTestId('claim-done')).toBeNull();
+      }
+    });
+
+    it('writes no em-dash in any of the three states', async () => {
+      for (const body of [view(), view({ claimedAt: iso(-10) }), view({ claimedAt: iso(-50), tier: { ...view().tier, state: 'ended', activeUntil: iso(-20) } })]) {
+        answer = ok(body);
+        const { unmount } = await render(
+          <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+            <ClaimCodeScreen onBack={jest.fn()} onDone={jest.fn()} initialResult={body as never} />
+          </SafeAreaProvider>,
+        );
+        expect(JSON.stringify(screen.toJSON())).not.toContain('—');
+        await unmount();
+      }
+    });
   });
 
   it('sends nothing for a code that is empty, short, or has a letter after F, and says why on the field', async () => {

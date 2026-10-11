@@ -1,5 +1,5 @@
 import type { ClaimResult } from '../api';
-import { CODE_PROBLEM_WORDS, codeProblem, compactCode, formatCode, planLines, readyLine } from '../model';
+import { CODE_PROBLEM_WORDS, claimHeading, claimStanding, codeProblem, compactCode, formatCode, planLines, readyLine } from '../model';
 
 const NOW = new Date('2026-10-17T10:00:00.000Z').getTime();
 
@@ -9,6 +9,7 @@ const result = (over: Partial<ClaimResult> = {}, tier: Partial<ClaimResult['tier
   extended: false,
   pointsGranted: 100,
   pointsExpireAt: '2027-01-15T10:00:00.000Z',
+  claimedAt: '2026-10-17T10:00:00.000Z',
   tier: {
     state: 'active',
     tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } },
@@ -75,9 +76,71 @@ describe('what the code gave, from the Hub answer (JOIN-03)', () => {
   });
 
   it('says the days were added when the person already had a plan', () => {
-    expect(readyLine(result())).toBe('Verify for 30 days, starting today.');
-    expect(readyLine(result({ extended: true }))).toBe('30 days were added to the plan you already have.');
-    expect(readyLine(result({ days: 1 }))).toBe('Verify for 1 day, starting today.');
+    expect(readyLine(result(), NOW)).toBe('Verify for 30 days, starting today.');
+    expect(readyLine(result({ extended: true }), NOW)).toBe('30 days were added to the plan you already have.');
+    expect(readyLine(result({ days: 1 }), NOW)).toBe('Verify for 1 day, starting today.');
     expect(planLines(result({ extended: true }), NOW)[1].label).toBe('Now runs until');
+  });
+});
+
+describe('the same answer shown again after the day it was claimed (JOIN-03 round 3, D4)', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const later = (days: number) => NOW + days * DAY;
+  const ended = (over: Partial<ClaimResult['tier']> = {}) => ({ state: 'ended' as const, activeUntil: '2026-11-16T10:00:00.000Z', ...over });
+
+  it('is "ready", starting today, only on the day it was claimed (read in the zone the dates are drawn in)', () => {
+    expect(claimStanding(result(), NOW)).toBe('fresh');
+    expect(claimHeading(result(), NOW)).toBe('Your plan is ready');
+    // 23:30 Lagos the evening before is still "yesterday" at 00:30 Lagos the next morning.
+    expect(claimStanding(result({ claimedAt: '2026-10-16T22:30:00.000Z' }), new Date('2026-10-16T23:30:00.000Z').getTime())).toBe('running');
+    expect(claimStanding(result({ claimedAt: '2026-10-16T21:30:00.000Z' }), new Date('2026-10-16T22:30:00.000Z').getTime())).toBe('fresh');
+  });
+
+  it('says when the plan started once the day has passed, and never says "starting today"', () => {
+    for (const days of [1, 10, 29]) {
+      const at = later(days);
+      expect(claimStanding(result(), at)).toBe('running');
+      expect(claimHeading(result(), at)).toBe('Your plan is active');
+      expect(readyLine(result(), at)).toBe('Verify started on 17 Oct.');
+      expect(readyLine(result({ extended: true }), at)).toBe('30 days were added to your plan on 17 Oct.');
+      expect(readyLine(result({ days: 1 }), at)).toBe('Verify started on 17 Oct.');
+    }
+    // A plan whose name the Hub did not send is still told without a name.
+    expect(readyLine(result({}, { tier: null }), later(2))).toBe('Your plan started on 17 Oct.');
+  });
+
+  it('says the plan ended when the Hub says so, with the date it ended, and lists the end as "Ended"', () => {
+    const gone = result({}, ended());
+    expect(claimStanding(gone, later(60))).toBe('ended');
+    expect(claimHeading(gone, later(60))).toBe('Your plan has ended');
+    expect(readyLine(gone, later(60))).toBe('Verify ended on 16 Nov.');
+    expect(planLines(gone, later(60)).slice(0, 2)).toEqual([
+      { label: 'Plan', value: 'Verify' },
+      { label: 'Ended', value: '16 Nov' },
+    ]);
+    // Even on the day of the claim: a plan the Hub reports as over is over.
+    expect(claimHeading(gone, NOW)).toBe('Your plan has ended');
+    // An extended plan that ended too.
+    expect(planLines(result({ extended: true }, ended()), later(60))[1].label).toBe('Ended');
+  });
+
+  it('an account with no plan now says the day the code was claimed, and lists no end', () => {
+    const none = result({ pointsGranted: 0, pointsExpireAt: null }, { state: 'none', tier: null, activeFrom: null, activeUntil: null });
+    expect(claimHeading(none, later(5))).toBe('Your plan has ended');
+    expect(readyLine(none, later(5))).toBe('You claimed this code on 17 Oct.');
+    expect(planLines(none, later(5))).toEqual([]);
+  });
+
+  it('labels points whose end has passed as ended, not as lasting until a past date', () => {
+    expect(planLines(result({ pointsExpireAt: '2026-11-01T10:00:00.000Z' }), later(30)).map((l) => l.label)).toEqual(['Plan', 'Runs until', 'Points added', 'Points ended']);
+    expect(planLines(result({ pointsExpireAt: '2026-11-01T10:00:00.000Z' }), later(10)).map((l) => l.label)).toEqual(['Plan', 'Runs until', 'Points added', 'Points last until']);
+  });
+
+  it('writes no em-dash in any state', () => {
+    for (const at of [NOW, later(10), later(60)]) {
+      for (const r of [result(), result({ extended: true }), result({}, ended()), result({}, { state: 'none', tier: null, activeUntil: null })]) {
+        expect(`${claimHeading(r, at)} ${readyLine(r, at)} ${JSON.stringify(planLines(r, at))}`).not.toContain('—');
+      }
+    }
   });
 });
