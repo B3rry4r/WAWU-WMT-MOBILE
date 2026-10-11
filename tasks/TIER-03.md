@@ -7,7 +7,7 @@ order: 209
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: verifying
 depends_on: [TIER-01, POINTS-01, MONEY-17, MONEY-19]
 decisions: [R-43, R-44, R-6, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -405,5 +405,45 @@ Survivors: **X01** and **X13** are R2-D1 (defects: the refund trigger and the re
 - A refund above `MERCHANT_MAX_PER_TXN_KOBO` (goes to review, never split), a refund to a deleted payer (review), and the account-deletion route end to end with a refund in flight.
 - The whole backend suite as `deploy.yml` runs it (the areas listed under Checks ran, not all ~280 files); the admin dashboard reading the new `tier`/`tier_bump` payment kinds and the `plan_granted` hold.
 - Screens (`artboards: []`; the app draws no refunded state yet, G-680).
+
+## Builder report, round 3
+
+Builder, round 3, 11 Oct 2026 (Sonnet agent; the lead's brief for TIER-03 round 3: R2-D1 to R2-D3, the stale comment, five records, the merges; nothing else). wawu-backend `wmt/TIER-03` at `9197a36` (round 2's tip `564a93c`; backend main `51b02c5` merged with 0 conflicts as `977e0ca`, whose message is git's default and has no trailers; the work commit carries them). This repo `wmt/TIER-03`: mobile main `39c472b` merged (the conflicts were `BACKEND_GAPS.md`, kept both sides' rows (G-680 beside G-482 to G-485), and the generated `docs/PROGRESS.md`, regenerated), then main `15a8c2c` (hash of this branch in the hand-back). The migration `20261021140000_maker_purchase` sorts before main's newest (`20261021160000_nuvion_book_transfers`); not renamed (the lead renames at merge, ruling 5). No provider host was called (every test is in process on the repo's stand-ins; ports 6201 to 6204 were not needed); databases `bt03r3_*` (dropped afterwards). Evidence is in the lead's scratchpad `tier03r3/` (`logs/`, `mut/`, `ns/`).
+
+#### Each ruling as built, before and after
+
+1. **R2-D1 (X01 and X13 survived): specs that make the delivery fail with an ordinary error.**
+   - *Before.* Nothing in `src/plans/purchases/tests` made a grant or a refund fail with an ordinary error, so a grant `catch` that turned any error into a refusal (X01) and a refund call whose error was swallowed (X13) both passed 89 of 89.
+   - *As built.* New `plan-purchase-failures.contract.spec.ts` (9 tests; no code change, the code was right). Through the routes and the payment sweep (a lost answer, then the sweep delivers), with `PointsService.grant` or `WalletHoldService.refund` spied to fail and every other call let through: the plan's points lot fails with a plain `Error`, a Prisma `P2034` and a `PointsError` `points_grant_conflict` (each: no hold, no refund send, no purchase row, no tier, no billing row, no pass, no lot, the payment claimed and undelivered, the purchase reads `pending` "finishing", then once the fault clears the next sweep grants once and pays nothing back, and a third sweep changes nothing); the bump's lot fails after the plan was written (the whole grant rolls back, then both lots once); an upgrade's lot fails; the delivery called directly rejects once then grants once with no hold; a refund that rejects is NOT swallowed (the delivery fails, the hold keeps no action, the payment stays claimed and undelivered, no send; once the provider is back the retry sends the price once, `refundedKobo` exact, the payment is delivered, a third sweep and the hold sweep change nothing), and called directly a refund that rejects once makes the delivery throw and the next call sends once. A fault stays on for the whole first sweep because one sweep tries a delivery twice (at the completion, then when it is due on the sweep's clock).
+   - *After.* X01 killed (6 tests), X13 killed (2 tests), and my own Y03 (only a `PointsError` counts as a refusal) and Y04 (a `P2034` counts as a refusal), each killed by 1 test. The files were put back byte for byte after every run (`git status` clean).
+2. **R2-D2 (the sentences over-promised): they say what comes back.**
+   - *Before.* "We could not give you this plan, so we are paying your money back to your wallet." and "... so we paid your money back to your wallet." (constants, no figure, no mention of the first payment's charge).
+   - *As built.* `refundingMessage(kobo)` and `refundedMessage(kobo)` replace the two constants, read from the hold's own amount (`WalletHold.amountKobo`, the price the refund moves), formatted by the money module's `nairaText` (integer kobo, two decimals): "We could not give you this plan, so ₦4,000.00 is on its way back to your wallet. The charge on your first payment is not returned." and, once the provider confirmed it, "We could not give you this plan, so ₦4,000.00 is back in your wallet. The charge on your first payment is not returned." (R-10: a refund returns the price, never the charge on the original payment; WAWU pays the charge on the refund, R-31). No em-dash. `docs/contract/PLANS.md` section 8 and G-680 give the new words.
+   - *After.* The refund spec pins both sentences as literals with the amount worked out in the spec and not by the code under test (₦4,000.00 for the verifier's upgrade difference), no em-dash in either; the delivery spec reads the real figure of a whole-plan refund. Mutants Y05 (no mention of the charge), Y06 (the amount a hundred times too large), Y07 (no amount in the on-its-way sentence) and Y08 (an em-dash) each killed by the refund spec.
+3. **R2-D3 (X22 and X27 survived): the points-last spec sees a raw SQL write.**
+   - *Before.* `WRITE` matched only `INSERT INTO "public"."T"`, `UPDATE "public"."T"` and `DELETE FROM "public"."T"` at the start of a statement (how Prisma writes), so a `tx.$executeRaw` `UPDATE "MakerTier"` after the points was invisible.
+   - *As built.* The schema prefix is optional (quoted or not), `ONLY` is allowed, a write is found anywhere in the statement (so one hidden in a `WITH` clause counts), `TRUNCATE` counts, and `FOR UPDATE` and `DO UPDATE SET` match nothing (they are not followed by a quoted table). The purchase row's insert is found with or without the schema too. Spec only.
+   - *After.* X22 (raw write after the bump's points in the purchase transaction) and X27 (the same inside `TierGrantService.grant`) killed, and my own Y01 (the write hidden in a `WITH` clause) and Y02 (a schema-qualified raw write) killed, all by "the points are written last".
+4. **The stale comment at `prisma/schema.prisma` line 4693** ("dm_answered, event_took_place or bill_delivered", on `WalletHold.releaseCondition`) is in MONEY-18's `WalletHold` model, outside this task's migration blocks (`PersonBilling`, `MakerTier`, `MakerPurchase`): left as it is and recorded here. `plan_granted` is the fourth value; a one-line comment change for whoever next touches that model (or for the lead at merge).
+5. **Recorded, no change** (also in G-680): the generic `GET /money/payments/{id}` shows a refunded plan payment as `completed` and `delivered` (the payment did complete; the refund is its own movement), so the app must read `PlanPurchaseView.status`; a refund hold in review has no tool (G-448) and the purchase keeps saying "on its way"; the migration folder now sorts before main's newest (`20261021160000_nuvion_book_transfers`), the lead renames at merge.
+6. **Merges.** Backend main `51b02c5` into this branch (0 conflicts; `contract/openapi.json` is byte-identical to the one this branch had and to a fresh `contract:build`). Mobile main `39c472b`, then `15a8c2c`; `BACKEND_GAPS.md` keeps both sides' rows; `docs/PROGRESS.md` regenerated (`check_tasks.py --write`). The mobile contract is that file, `SOURCE_COMMIT` `wmt/TIER-03@9197a36`; regenerating `contract/openapi.mobile.json` and `src/api/schema.generated.ts` changed nothing (the contract did not change this round).
+
+**Mutants (12, each alone, in a throwaway copy of the branch at `9197a36`, the 8 purchase spec files with `--bail`, the file put back byte for byte, `git status` clean after each): 12 of 12 killed.** X01 (6 tests), X13 (2), X22 (1), X27 (1), Y01 (1), Y02 (1), Y03 (1), Y04 (1), Y05 to Y08 (1 each). `mut/mut.py`, `logs/mutants.out`.
+
+#### Checks
+
+- Backend `9197a36`: `npx tsc --noEmit` 0. eslint (no `--fix`) on the 28 `.ts` files this branch changes against main: EXIT 0. No em-dash added in anything a user reads.
+- This task's specs, `src/plans/purchases/tests`: **8 suites, 98 of 98** on a fresh migrated and seeded database in a private network namespace (the stand-in WAWU ID alone on :4001), `--testTimeout=120000` (round 2 had 7 suites, 89).
+- The areas, one jest process, `--runInBand`, a fresh migrated and seeded `bt03r3_sub_test`, a private network namespace: `src/plans`, `src/points`, `src/money`, `src/account-purge`, `src/data-export-request`, `src/nuvion`: **92 suites, 91 passed, 2929 of 2933 tests.** The one failing file is not this task's: `money/receipts/tests/receipt-units.spec.ts` (4 tests, the Unicode digit table against this runtime, Node 22 with Unicode 16); `git diff origin/main -- src/money/receipts` is empty and the same 4 failed in round 2 on main.
+- Protected suite `run.sh --fresh HEAD`: **253 passed, 244 of 244 required**, EXIT 0.
+- Gates: branch 1169 files, 16 fail / 97 warn / 76 accepted; main `51b02c5` 1154 files, 16 / 97 / 76; the output is identical but the file count (`diff` of the two logs). `check_baseline.py` ok (108 entries, EXIT 0).
+- `npm run contract:build` twice on the merged tree: byte-identical, and equal to the committed `contract/openapi.json` (no change this round).
+- `npm run test:netns`: EXIT 0 (16 rows, none wrong).
+- This repo: `npm run gates`, `npm run typecheck` and `npm run tasks` EXIT 0 (see the hand-back; the line is in `docs/LOG.md`).
+
+#### NOT RUN
+
+- A real Fintava or Nuvion refund, a dollar-billed purchase, `WALLET_PROVIDER=nuvion` on a built Hub, the whole backend suite as `deploy.yml` runs it, a built Hub for this round (the round is copy and specs only; the code path the sentences use is the one round 2 drove live), and the admin dashboard reading the `plan_granted` hold: round 2's NOT RUN stands.
+- The app's words for `refunded` (VF7 draws only the success): G-680.
 
 ## Owner sign-off
