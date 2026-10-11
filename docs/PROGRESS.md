@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 134 | 0 | 0 | 0 |
+| todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [NUV-06](../tasks/NUV-06.md) Send to a bank and pay out, with the account name check (You)
 
 ## Done
 
@@ -171,6 +175,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · NUV-06 · Builder report (Sonnet agent; backend `wmt/NUV-06` `df853dd` on main `020f055`, mobile on main `3b35731`), status verifying: the payouts area (Nuvion's bank list; the account name check with a plain answer for each way it does not confirm; NIP sends from a person and from WAWU's operational account, the payee made once and reused), the bank outflow events (`completed`, `failed`, `cancelled`, `refunded`) read back from Nuvion and written to the ledger once, a lost answer found again by its reference and never sent under a new one, and a Fintava-era saved account matched to Nuvion's list and checked by name before its first send; one additive migration, no route, contract byte-identical. 24 of 24 mutants killed; two built Hubs 38 of 38; protected suite 253/253; the (key) lookup check NOT RUN (G-662).
 - 11 Oct 2026 · MONEY-18 · Rounds 2 to 4 merged by the lead: backend PR #117 (`020f055`) and mobile main. The hold sweep reaches every due hold; an untrusted charge stops completion; a request is resent only when it provably never left; two servers never tell a feature twice; `npm run test:netns` runs in the deploy.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
 - 11 Oct 2026 · JOIN-03 · Round 4 merged by the lead: WAWU ID PR #11 and mobile main. A closed account has no sign-up to finish; a deletion clears the person's number from counters and pending rows. Round 5 (D8 to D11, refresh on a closed account) follows.
@@ -185,4 +190,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · JOIN-03 · Merged by the lead: WAWU ID PR #10, backend PR #113 (migrations renamed to sort after main) and mobile main. The app claims the event access code; a deleted person's number is not kept. D6, D7 and N16 follow in round 4.
 - 11 Oct 2026 · EVENTS-09 · Verifier report, round 3 (independent session; mobile `cb72563`, app only; status review, no defect, no blocker): D5 closed in the web export against a local stand-in Hub, light and dark (the verifier's case: no button at 0.7 s, the verdict seen 3,021 ms; round 2's build: never seen), a verdict under the open sheet waits and its hold starts at the close (gone 3,032 ms after the tap), "Checking the ticket" does not move (470 px in both builds; the room removed moves it 51 px); the four changed tests still test what they did except the in-order queue test, which is retired and unreachable now; the code typed over an unseen verdict (or problem) waiting is ruled right; the 422 rule is right and the Hub cannot send a 422 on this route. 6 mutants of mine (2 test gaps noted, both with the code right). Six notes, none to fix now.
 - 11 Oct 2026 · EVENTS-09 · Builder report, round 3 (mobile `wmt/EVENTS-09`, hash in the hand-back, on main `a8d6383`; backend untouched; status verifying): D5 closed. "Type the code instead" is not drawn while a check is on its way (the room it took stays, so the words do not move), and a verdict that lands under the open typing sheet waits there, its 3 s hold beginning when the sheet closes (the verifier's case reproduced first: never seen; after: seen 3,003 ms dark and 3,007 ms light); a code typed over an unseen verdict waits instead of replacing it; a 422 reads "We couldn't confirm" (the contract lists only 201 on this route, and the Hub's validator answers 400). 8 new jest tests (7 fail on round 2's code), 4 queue tests reworked, 6 mutants killed; pictures at 390 px, light and dark.
-- 11 Oct 2026 · FIX-31 · Verifier report, round 2 (independent session; mobile `wmt/FIX-31` `ad451c7`, jest only; no product file or branch test changed; status review): the diff is four test files and docs, nothing weakened (no assertion removed, no skip, retry or raised limit; `doNotFake: ['queueMicrotask']` only moves React's act check, and the product mutants Q, E and L still kill the two fake-clock tests). H1, A15, "asks again on a later visit" and "asks WAWU ID each time" fail on main at the seeds the builder named (H1 at 22; the three sign-up tests at 21, 22 and 23) and pass on the branch at seeds 0 to 5 and 21 to 23 (HomeScreen 34 of 34, auth-signup 97 of 97). D5 and N-1: mutants M3a and M3b each fail D5 by name, M5 fails N-1 by name, at no-harness and delay seeds (M5 at 0, 21, 22 and none); the N-1 gate opens only when the test says. Each changed file alone 10 times, warm cache: 40 of 40, 0 act warnings. Full check EXIT 0 (141 suites, 2559 tests, gates 0 fail, tasks clean). Recorded, not counted: three racy LegalChatScreen tests (seeds 0 and 21), Explore's refusal-line test under the harness, a one-line guard note on `requestsAnswered()`.
