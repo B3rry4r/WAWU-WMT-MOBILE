@@ -20,7 +20,7 @@ import { apiBaseUrl } from '@/api/env';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { clearAccountType } from '@/features/auth/accountType';
-import { forgetSignupChannel, signupChannel } from '@/features/auth/signupFlow';
+import { forgetSignupChannel, knownSignupChannel, signupChannel } from '@/features/auth/signupFlow';
 import { resetSignupGate } from '@/features/auth/signupGate';
 import { clearSignup, SIGNUP_ATTEMPT_KEY, SIGNUP_PHONE_KEY } from '@/features/auth/signupStore';
 
@@ -100,6 +100,39 @@ function installServer() {
 }
 
 const callsTo = (path: string) => calls.filter((c) => c.path === path);
+/**
+ * The app's own ask for the sign-up channel, awaited the way the screens wait: on the test's clock. `renderRouter` puts the
+ * clock on fake timers, so an answer that arrives a turn late only lands while `waitFor` moves it; a bare `await` would wait forever.
+ */
+async function askChannel() {
+  const got: { answered: boolean; channel: Awaited<ReturnType<typeof signupChannel>> } = { answered: false, channel: null };
+  void signupChannel().then((channel) => {
+    got.answered = true;
+    got.channel = channel;
+  });
+  await waitFor(() => expect(got.answered).toBe(true));
+  return got.channel;
+}
+/**
+ * Holds back the answer to the next ask for the sign-up channel (the Hub has answered; it reaches the app only when the
+ * test lets it go), so an answer to an earlier visit can land after a later visit's. Returns the way to let it go.
+ */
+function holdNextChannelAnswer() {
+  const real = globalThis.fetch;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let held = false;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const mine = !held && String(input instanceof Request ? input.url : input).includes('/auth/signup/channel');
+    if (mine) held = true;
+    const response = await real(input, init);
+    if (mine) await gate;
+    return response;
+  }) as typeof fetch;
+  return release;
+}
 /** Waits until every request the app has sent so far has been answered or has failed (an answer lands a turn after its call is made). */
 async function requestsAnswered() {
   const sent = (globalThis.fetch as jest.Mock).mock.results.map((result) => result.value as Promise<unknown>);
@@ -1037,7 +1070,7 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     await toA3();
     await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
     expect(callsTo('/auth/signup/channel')).toHaveLength(1);
-    await signupChannel();
+    await askChannel();
     const asked = callsTo('/auth/signup/channel');
     expect(asked).toHaveLength(2);
     for (const call of asked) expect(call).toMatchObject({ method: 'GET', body: {}, auth: null });
@@ -1076,6 +1109,51 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     expect(screen.getByText('Verify your phone')).toBeTruthy();
   });
 
+  it('D5: a failed ask on a later visit clears the line the earlier visit drew, and the next good ask draws it again', async () => {
+    await toA3();
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+
+    // WAWU ID cannot be asked on the way back: the old answer is not kept, so A3 names nothing rather than a channel it no longer knows
+    delete answers['GET /auth/signup/channel'];
+    await press('Back');
+    await waitFor(() => expect(callsTo('/auth/signup/channel')).toHaveLength(2));
+    await waitFor(() => expect(screen.queryByText(TEXT_LINE)).toBeNull());
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    expect(knownSignupChannel()).toBeNull();
+
+    // ... and the next visit that can ask draws the line again, and A4 names the same channel
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    answers['POST /auth/signup'] = mailed();
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText('Verify your email')).toBeTruthy());
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(EMAIL_LINE)).toBeTruthy());
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+  });
+
+  it('N-1: an answer to an earlier visit that lands after a later visit has drawn its own is not drawn over it', async () => {
+    const release = holdNextChannelAnswer(); // visit 1 is answered "phone", but the answer reaches the app late
+    await toA3();
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+
+    // the setting is switched, and the person goes back to A3: visit 2 is answered "email" at once
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(EMAIL_LINE)).toBeTruthy());
+
+    // visit 1's answer now lands; the app has taken it in (it is what the flow last learned) and A3 still says email
+    await act(async () => {
+      release();
+    });
+    await waitFor(() => expect(knownSignupChannel()).toBe('phone'));
+    expect(screen.getByText(EMAIL_LINE)).toBeTruthy();
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+  });
+
   it('asks again on a later visit when the first ask failed, and draws the line once it knows', async () => {
     delete answers['GET /auth/signup/channel'];
     await toA3();
@@ -1084,11 +1162,7 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     expect(screen.queryByText(TEXT_LINE)).toBeNull();
     expect(screen.queryByText(EMAIL_LINE)).toBeNull();
     answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
-    let learned: string | null | undefined;
-    void signupChannel().then((channel) => {
-      learned = channel;
-    });
-    await waitFor(() => expect(learned).toBe('email'));
+    expect(await askChannel()).toBe('email');
     expect(callsTo('/auth/signup/channel')).toHaveLength(2);
   });
 
