@@ -130,6 +130,8 @@ function outline(): string {
 const settle = () => rtl.act(async () => {
   await new Promise((resolve) => setTimeout(resolve, 50));
 });
+/** Every follow or unfollow the screen sent has been answered and taken in. */
+const followsAnswered = () => rtl.waitFor(() => expect(queryClient.isMutating()).toBe(0));
 
 /** The app's reads wait 1 s and 2 s between tries; a test about what a failure draws makes the first failure final. */
 const appDefaults = queryClient.getDefaultOptions();
@@ -375,7 +377,8 @@ describe('X1 · Explore', () => {
     await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Follow' }));
     expect(await rtl.screen.findByRole('button', { name: 'Following' })).toBeTruthy();
     expect(sent).toContain('POST /creators/c1/follow');
-    await settle();
+    // The button turns at once; the Hub's answer is what frees it for another press, so the next press waits for that.
+    await followsAnswered();
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Following' }));
     expect(await rtl.screen.findByRole('button', { name: 'Follow' })).toBeTruthy();
     expect(sent).toContain('DELETE /creators/c1/follow');
@@ -712,12 +715,24 @@ describe('X2, X3, X13 · Categories', () => {
 
   it('when creators cannot load, a user sees why and can try again', async () => {
     answers[PHOTO_PAGE_1] = ['offline', 'offline', 'offline', page([card('p1', 'amaka', 'Photographer')], 1, 1)];
-    await rtl.render(wrap(<CategoriesScreen initial="photography" onBack={jest.fn()} />));
-    expect(await rtl.screen.findByTestId('categories-error', {}, { timeout: 8000 })).toBeTruthy();
-    expect(rtl.screen.getByText('Couldn’t load creators')).toBeTruthy();
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
-    expect(await rtl.screen.findByText('@amaka')).toBeTruthy();
-  }, 15000);
+    // The app waits 1 s and 2 s between its tries; the clock is the test's, so a slow machine does not stretch those 3 s.
+    jest.useFakeTimers();
+    try {
+      await rtl.render(wrap(<CategoriesScreen initial="photography" onBack={jest.fn()} />));
+      for (let i = 0; i < 80 && !rtl.screen.queryByTestId('categories-error'); i += 1) {
+        await rtl.act(async () => {
+          await Promise.resolve();
+          jest.advanceTimersByTime(100);
+        });
+      }
+      expect(rtl.screen.getByTestId('categories-error')).toBeTruthy();
+      expect(rtl.screen.getByText('Couldn’t load creators')).toBeTruthy();
+      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+      expect(await rtl.screen.findByText('@amaka')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 
   it('a user can Follow in a category, and the same creator reads Following on Explore', async () => {
     answers[PHOTO_PAGE_1] = [page([card('p1', 'amaka', 'Photographer')], 1, 1)];
