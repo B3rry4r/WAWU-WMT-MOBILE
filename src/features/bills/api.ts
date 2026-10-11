@@ -1,5 +1,8 @@
+import type { Query } from '@tanstack/react-query';
+
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import type { components } from '@/api/schema.generated';
 
 /**
@@ -49,6 +52,33 @@ export async function fetchElectricityBillers(): Promise<ElectricityBillers> {
   const billers = data.billers.map(readBiller);
   if (billers.some((b) => b === null)) throw unreadable('electricity companies');
   return { available: data.available, billers: billers as ElectricityBiller[] };
+}
+
+/** What the list's cache holds: the Hub's answer, or "not available" with `held` once a meter check found bills off. */
+export type ElectricityBillersState = ElectricityBillers & { held?: true };
+
+/**
+ * How every screen reads the electricity list (S2, S3 and S4 share one cache entry). A list a meter check held as "not
+ * available" is never stale: no screen's mount, reconnect or focus refreshes it, so S13 stays until the person pulls to
+ * refresh on S2 (R2-U1). Any other list is stale after the app's usual time.
+ */
+export const electricityBillersQuery = {
+  queryKey: billsKeys.electricity,
+  queryFn: (): Promise<ElectricityBillersState> => fetchElectricityBillers(),
+  staleTime: (query: Query<ElectricityBillersState>): number => {
+    if (query.state.data?.held) return Infinity;
+    const usual = queryClient.getDefaultOptions().queries?.staleTime;
+    return typeof usual === 'number' ? usual : 0;
+  },
+};
+
+/**
+ * A meter check found Fintava's bills service off while its company list still answers: S2 draws S13 and keeps drawing it
+ * until the person pulls to refresh (R2-U1). The Hub holds "off" for its own cache window, so the app does not ask the
+ * list again at once either.
+ */
+export function holdBillsOff(): void {
+  queryClient.setQueryData<ElectricityBillersState>(billsKeys.electricity, { available: false, billers: [], held: true });
 }
 
 /** The name and address on a meter, for S4. A meter Fintava does not know rejects with code `meter_not_found` (S10). */

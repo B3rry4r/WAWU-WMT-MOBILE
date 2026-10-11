@@ -1,5 +1,5 @@
-import type { ReactNode, RefObject } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import type { ReactElement, ReactNode, RefObject } from 'react';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -22,6 +22,8 @@ export type AuthFrameProps = {
   bare?: boolean;
   /** Pinned under the content, above the keyboard: the screen's buttons. A screen with none (A2 until the sign-up screens exist) leaves it out. */
   footer?: ReactNode;
+  /** A pull-to-refresh for the content (BILLS-01 round 3, SHARED-CHANGES BILLS-01 #4). Left out, the content does not pull. */
+  refreshControl?: ReactElement<RefreshControlProps>;
   children: ReactNode;
   /** Space above the content, where a screen sits lower than the form screens (A24). */
   contentTop?: number;
@@ -39,7 +41,7 @@ export type AuthFrameProps = {
  * case). Where the window is resized anyway nothing overlaps and it adds
  * nothing; the web has no keyboard events, the browser shrinks the viewport.
  */
-export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop, scrollRef, testID }: AuthFrameProps) {
+export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, testID }: AuthFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
@@ -59,8 +61,10 @@ export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop
       )}
       <ScrollView
         ref={scrollRef}
+        testID={testID ? `${testID}-scroll` : undefined}
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        refreshControl={refreshControl}
         contentContainerStyle={[styles.content, contentTop !== undefined && { paddingTop: contentTop }]}
       >
         {children}
