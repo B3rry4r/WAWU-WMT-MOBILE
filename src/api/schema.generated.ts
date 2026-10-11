@@ -2614,6 +2614,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One payment as it stands now: what the app polls after `pending` (H18,
+         *     E10) or after `payment_in_progress` (`reason.paymentId`). `pending`
+         *     becomes `completed`, `failed` or `reversed` once the provider says
+         *     which; `delivered` is true once what was paid for has reached the buyer
+         *     (a `completed` payment with `delivered` false is "paid, still opening").
+         *     Only the payer reads it: another person's payment is the same `404
+         *     not_found` as one nobody holds. It reads our record only, never the
+         *     provider, and moves nothing, so it is not behind the fee settings, the
+         *     key or the PIN. Declared after the quote so `payments/quote` is never
+         *     read as an id.
+         */
+        get: operations["MoneyPaymentsController_payment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/holds": {
         parameters: {
             query?: never;
@@ -5466,26 +5494,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/payments/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One payment, as it stands now. Only the payer can read it.
-         * @description Declared by MONEY-04, not served yet: MONEY-19 serves it.
-         */
-        get: operations["MoneyPaymentController_payment"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6019,7 +6027,7 @@ export interface components {
         MoneyErrorReason: {
             /** @enum {string} */
             code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
-            /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
+            /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
             totalKobo?: number;
@@ -7314,6 +7322,7 @@ export interface components {
             reference: string;
             hold: components["schemas"]["HoldView"] | null;
             failureReason: string | null;
+            delivered: boolean;
             statusMessage: string | null;
             createdAt: string;
             completedAt: string | null;
@@ -16036,6 +16045,54 @@ export interface operations {
             };
         };
     };
+    MoneyPaymentsController_payment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     MoneyHoldsController_list: {
         parameters: {
             query: {
@@ -21499,54 +21556,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransferView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_payment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentView"];
                 };
             };
             /** @description reason.code: not_found */
