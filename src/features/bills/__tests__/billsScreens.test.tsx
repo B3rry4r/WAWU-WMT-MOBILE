@@ -55,13 +55,14 @@ queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().qu
 
 const BILLERS_PATH = 'GET /bills/electricity/billers';
 const PREVIEW_PATH = 'POST /bills/electricity/meter-preview';
-const PRESETS = [200000, 500000, 1000000, 2000000];
-const biller = (over: Record<string, unknown>) => ({ code: 'X', name: 'X', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presetsKobo: PRESETS, ...over });
+const presetsOf = (...kobo: number[]) => kobo.map((amountKobo) => ({ amountKobo }));
+const PRESETS = presetsOf(200000, 500000, 1000000, 2000000);
+const biller = (over: Record<string, unknown>) => ({ code: 'X', name: 'X', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presets: PRESETS, ...over });
 const IKEJA = biller({ code: 'Ikeja_Electric_Bill_Payment', name: 'Ikeja Electric' });
-const EKO_PRE = biller({ code: 'Eko_Prepaid', name: 'Eko Electricity', minimumKobo: 100000, maximumKobo: 50000000, presetsKobo: [200000, 500000, 1000000, 2000000] });
+const EKO_PRE = biller({ code: 'Eko_Prepaid', name: 'Eko Electricity', minimumKobo: 100000, maximumKobo: 50000000, presets: presetsOf(200000, 500000, 1000000, 2000000) });
 const EKO_POST = biller({ code: 'Eko_Postpaid', name: 'Eko Electricity', plan: 'postpaid', minimumKobo: 90000, maximumKobo: 30000000000 });
-const IBADAN = biller({ code: 'Ibadan_Disco_Prepaid', name: 'Ibadan Electric', minimumKobo: 0, maximumKobo: 100000000, presetsKobo: [200000, 500000] });
-const PH = biller({ code: 'PhED_Electricity', name: 'Port Harcourt Electric', maximumKobo: 10000000, presetsKobo: PRESETS });
+const IBADAN = biller({ code: 'Ibadan_Disco_Prepaid', name: 'Ibadan Electric', minimumKobo: 0, maximumKobo: 100000000, presets: presetsOf(200000, 500000) });
+const PH = biller({ code: 'PhED_Electricity', name: 'Port Harcourt Electric', maximumKobo: 10000000, presets: PRESETS });
 const LIST = ok({ available: true, billers: [IKEJA, EKO_PRE, EKO_POST, IBADAN, PH] });
 const NOT_ON = ok({ available: false, billers: [] });
 const found = (over: Record<string, unknown> = {}) =>
@@ -180,6 +181,18 @@ describe('S2 · Pay a bill', () => {
 
   it('an answer it cannot read is an error, never an empty or switched-off screen', async () => {
     answers[BILLERS_PATH] = [ok({ available: true, billers: [{ code: 'x' }] })];
+    await open();
+    expect(await rtl.screen.findByTestId('bills-error')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('bills-not-live')).toBeNull();
+  });
+
+  it.each([
+    ['bare numbers (the old presetsKobo shape) in presets', [200000, 500000]],
+    ['an amountKobo that is not whole', [{ amountKobo: 2000.5 }]],
+    ['a preset with no amountKobo', [{}]],
+    ['no presets list at all', undefined],
+  ])('a company whose presets are %s is an unreadable answer, not a screen with a quick amount missing', async (_name, presets) => {
+    answers[BILLERS_PATH] = [ok({ available: true, billers: [biller({ presets })] })];
     await open();
     expect(await rtl.screen.findByTestId('bills-error')).toBeTruthy();
     expect(rtl.screen.queryByTestId('bills-not-live')).toBeNull();
@@ -564,7 +577,7 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
   });
 
   it('draws no quick amount when the Hub sends none', async () => {
-    answers[BILLERS_PATH] = [ok({ available: true, billers: [biller({ code: 'A', name: 'Alpha Power', presetsKobo: [] })] })];
+    answers[BILLERS_PATH] = [ok({ available: true, billers: [biller({ code: 'A', name: 'Alpha Power', presets: [] })] })];
     await open('A');
     await rtl.screen.findByTestId('meter-amount');
     expect(rtl.screen.queryByTestId('amount-presets')).toBeNull();
@@ -629,7 +642,7 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     });
 
     it('words a limit that has kobo with its kobo', async () => {
-      answers[BILLERS_PATH] = [ok({ available: true, billers: [biller({ code: 'K', name: 'Kobo Power', minimumKobo: 100050, maximumKobo: 10000005, presetsKobo: [] })] })];
+      answers[BILLERS_PATH] = [ok({ available: true, billers: [biller({ code: 'K', name: 'Kobo Power', minimumKobo: 100050, maximumKobo: 10000005, presets: [] })] })];
       await open('K');
       await rtl.screen.findByTestId('meter-amount');
       await type('amount', '1000');

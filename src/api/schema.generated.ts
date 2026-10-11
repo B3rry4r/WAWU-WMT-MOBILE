@@ -2609,6 +2609,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Holds the caller paid (role=payer) or is owed (role=payee), newest first. */
+        get: operations["MoneyHoldsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/holds/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One hold. Its payer and its payee can read it; nobody else. */
+        get: operations["MoneyHoldsController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/transactions/{id}/receipt": {
         parameters: {
             query?: never;
@@ -5361,46 +5395,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/holds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Holds the caller paid (role=payer) or is owed (role=payee), newest first.
-         * @description Declared by MONEY-04, not served yet: MONEY-18 serves it.
-         */
-        get: operations["MoneyPaymentController_holds"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/holds/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One hold. Its payer and its payee can read it; nobody else.
-         * @description Declared by MONEY-04, not served yet: MONEY-18 serves it.
-         */
-        get: operations["MoneyPaymentController_hold"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7111,6 +7105,7 @@ export interface components {
             resetId: string;
             sentTo: string;
             resendAvailableAt: string;
+            resendInSeconds: number;
             expiresAt: string;
         };
         TickState: {
@@ -7166,6 +7161,26 @@ export interface components {
             matchesBvnName: boolean | null;
             updatedAt: string;
         };
+        HoldView: {
+            id: string;
+            paymentId: string;
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
+            /** @enum {string} */
+            status: "held" | "released" | "refunded";
+            amountKobo: number;
+            /** @enum {string} */
+            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
+            payer: components["schemas"]["MoneyPartyView"];
+            payee: components["schemas"]["MoneyPartyView"] | null;
+            heldAt: string;
+            settledAt: string | null;
+            refundedKobo: number | null;
+        };
+        HoldPage: {
+            items: components["schemas"]["HoldView"][];
+            nextCursor: string | null;
+        };
         PaymentQuoteView: {
             /** @enum {string} */
             kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
@@ -7182,22 +7197,6 @@ export interface components {
             remainingTodayKobo: number | null;
             quoteToken: string;
             expiresAt: string;
-        };
-        HoldView: {
-            id: string;
-            paymentId: string;
-            /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket";
-            /** @enum {string} */
-            status: "held" | "released" | "refunded";
-            amountKobo: number;
-            /** @enum {string} */
-            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
-            payer: components["schemas"]["MoneyPartyView"];
-            payee: components["schemas"]["MoneyPartyView"] | null;
-            heldAt: string;
-            settledAt: string | null;
-            refundedKobo: number | null;
         };
         PaymentView: {
             id: string;
@@ -8125,6 +8124,9 @@ export interface components {
             certificateExpectedBy: string | null;
             latestUpdateLabel: string | null;
         };
+        ElectricityPresetView: {
+            amountKobo: number;
+        };
         ElectricityBillerView: {
             code: string;
             name: string;
@@ -8132,7 +8134,7 @@ export interface components {
             plan: "prepaid" | "postpaid";
             minimumKobo: number;
             maximumKobo: number;
-            presetsKobo: number[];
+            presets: components["schemas"]["ElectricityPresetView"][];
         };
         ElectricityBillersView: {
             available: boolean;
@@ -10629,10 +10631,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        HoldPage: {
-            items: components["schemas"]["HoldView"][];
-            nextCursor: string | null;
         };
         BankView: {
             code: string;
@@ -14399,6 +14397,8 @@ export interface operations {
             header: {
                 /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
                 "X-Transaction-Pin": string;
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
             };
             path?: never;
             cookie?: never;
@@ -14612,7 +14612,10 @@ export interface operations {
     MoneyPinResetController_confirmReset: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -15888,6 +15891,98 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHoldsController_list: {
+        parameters: {
+            query: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /** @description payer: money I paid that is held. payee: money held for me. */
+                role: "payer" | "payee";
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldPage"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyHoldsController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21207,98 +21302,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_holds: {
-        parameters: {
-            query: {
-                /** @description Rows per page, 1 to 100. */
-                limit?: number;
-                /** @description payer: money I paid that is held. payee: money held for me. */
-                role: "payer" | "payee";
-                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
-                cursor?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HoldPage"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_hold: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HoldView"];
                 };
             };
             /** @description reason.code: not_found */
