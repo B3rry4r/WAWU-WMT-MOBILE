@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 132 | 0 | 0 | 0 |
-| building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 98 | 27 | 11 | 5 |
 
@@ -17,7 +17,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
-## Being verified
+## Being built (or fixing verifier findings)
 
 - [WALLET-07](../tasks/WALLET-07.md) Send money to a WAWU user (You)
 
@@ -176,6 +176,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · WALLET-07 · Verifier report (backend `wmt/WALLET-07` `4644a4c`, trial merge with main `2a4b9a4`; mobile `8f8b95b`; status `building`): the send holds under attack on two built Hubs with the real WAWU ID, the Fintava and Nuvion stand-ins: one transfer per key under 25 to 30 taps over two Hubs, three kill -9 windows, a lost answer found by its reference and never resent, 253/253 protected, 33 mutants of my own (29 killed). Three low defects: two spec gaps (the pending-only completion guard; the sweep backoff and the 72 hour lower bound, probes kill the survivors) and the unsent-request answer says "still confirming this payment". Findings: G-712 can lock a person who cancelled a deletion out of receiving, the data export lists no money table.
 - 11 Oct 2026 · WALLET-07 · Builder report (backend `wmt/WALLET-07` `4644a4c`, mobile `wmt/WALLET-07` work `c3daade`; status `verifying`): the send to a WAWU user is served (`POST /money/transfers/wawu`, `GET /money/transfers/{id}`): one wallet-to-wallet transfer through the provider seam (Fintava, or Nuvion's book transfer), once per Idempotency-Key (a retry, two Hubs at once and a Hub killed between the provider's answer and our write each move the money once), who the money goes to checked before the PIN, the quote and the real balance checked (`402` with the shortfall), a lost answer found by our reference and never sent again. ₦10,000 sending ₦2,000 falls by ₦2,033.25 and she gains exactly ₦2,000; a blocked user is refused. No screen (WALLET-02 and INBOX-19 draw them).
 - 11 Oct 2026 · JOIN-03 · Round 5 merged by the lead: WAWU ID PR #12 (`bda1aa6`) and mobile main. A closed account gets no working refresh; the anonymise, sign-up and confirm take one lock order; a losing confirm writes nothing back. D12, N30, N31 and a test gap are recorded for a later round.
 - 11 Oct 2026 · NUV-05 · Merged by the lead: backend PR #120 (`51b02c5`) and mobile main. Payments, releases and refunds move as Nuvion book transfers, logged before they leave and never sent twice. Follow-ups N1 to N3 and N6; decision 6 is the owner's.
@@ -190,4 +191,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · BILLS-01 · Builder report, round 3 (mobile `6bea802`, backend `b2f9793`; status stays `done`): the lead's seven rulings built. A meter check that finds the service off now holds S13 (the Hub holds "off" for its cache window without asking Fintava, and the app keeps S13 until S2 is pulled to refresh); no green meter from a placeholder name, a name of invisible characters or a body that flags a failure (23 of the round 2 verifier's 117 bodies changed answer, the other 94 did not); the amount box keeps the caret after its commas and refuses a paste that holds anything but digits, commas and one point; S3 skips a company whose limits fit no amount; the 200 character cap cuts at a grapheme. 62 backend and 33 mobile mutants, all killed; protected suite 253 of 253; no contract change. SHARED-CHANGES BILLS-01 #4.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
 - 11 Oct 2026 · JOIN-03 · Round 4 merged by the lead: WAWU ID PR #11 and mobile main. A closed account has no sign-up to finish; a deletion clears the person's number from counters and pending rows. Round 5 (D8 to D11, refresh on a closed account) follows.
-- 11 Oct 2026 · MONEY-18 · Verifier report, round 3 (independent session; backend `wmt/MONEY-18` `fd2696c`, a trial merge of main `f11d307` (MONEY-19) into it with 0 conflicts (local, not pushed); mobile `fdda674`, main `492615d` has 1 conflict in the generated `docs/PROGRESS.md`): status building, no blocker. The one medium defect is the ruled skip (R3-2: `LAUNCHER ? it : it.skip` is invisible to the deferrals gate; with `iptables` off the PATH jest says 1 skipped and exits 0; the fix I would choose is the rig as `npm run test:netns` and a deploy.yml step that fails when no namespace can be made, with the unprivileged real-socket cases kept in jest). R2-1 holds: my 46-row probe 0 violations, the builder's rig 16 rows 0 wrong, the three `read` shapes never marked, TLS after the write, a proxy in between, wrapped errors and 1,008 code and syscall pairs all clean, and through the hold one reference is one send. R2-2: the table-lock reproduction 0 deliveries while marked and 0 of 120 rounds each of `paid_dm` and `bill`; a dead server's lease lets the delivery happen once after its rest; but the claim is not exclusive between two servers (R3-1, low: the feature is told twice in 32 of 40 rounds with two server processes, inside the at-least-once contract; a one-line compare-and-set on the lease made it 120 of 120 told once in my copy). R2-3, R2-5, R2-7 and G-463 to G-465 hold; the migration folder sorts before main's `20261021100000` and `20261021110000` (a merge item). 30 mutants of my own: 27 killed, 3 redundant or equivalent. Full run on the trial merge 3,226 of 3,230 (the 4 are `receipt-units` and fail on main), protected 253 of 253, gates 16 FAIL as main, contract build twice equal.
