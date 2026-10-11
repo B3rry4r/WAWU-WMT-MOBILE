@@ -716,7 +716,9 @@ describe('X2, X3, X13 · Categories', () => {
   it('when creators cannot load, a user sees why and can try again', async () => {
     answers[PHOTO_PAGE_1] = ['offline', 'offline', 'offline', page([card('p1', 'amaka', 'Photographer')], 1, 1)];
     // The app waits 1 s and 2 s between its tries; the clock is the test's, so a slow machine does not stretch those 3 s.
-    jest.useFakeTimers();
+    // `queueMicrotask` stays real: React's `act` queues its "was it awaited?" check on it, and a faked one runs that check
+    // inside the next `advanceTimersByTime`, before the `await` has reached the act, and prints a warning that is not true.
+    jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
     try {
       await rtl.render(wrap(<CategoriesScreen initial="photography" onBack={jest.fn()} />));
       for (let i = 0; i < 80 && !rtl.screen.queryByTestId('categories-error'); i += 1) {

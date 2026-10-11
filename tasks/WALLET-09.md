@@ -15,6 +15,10 @@ artboards: []
 ---
 # WALLET-09 · Send money to a bank
 
+## Lead note (11 Oct 2026): from MONEY-19's verification
+
+- A send this task builds that the wallet cannot cover must answer MONEY-19's `402 insufficient_funds` with `balanceKobo`, `totalKobo` and `shortfallKobo` (G-481); today `walletProviderErrorToHttp('insufficient_funds')` builds a 402 with no figures.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

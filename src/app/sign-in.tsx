@@ -5,6 +5,7 @@ import { useSession } from '@/api/session';
 import { clearAccountType } from '@/features/auth/accountType';
 import { resumeSignup } from '@/features/auth/signupFlow';
 import { SignInScreen } from '@/features/auth/SignInScreen';
+import { takeClaimVisit } from '@/features/claim/signInReturn';
 
 /** WAWU ID's codes for a password that was right on an account whose phone or email was never confirmed. */
 const UNCONFIRMED_CODES = ['PHONE_NOT_CONFIRMED', 'EMAIL_NOT_VERIFIED'];
@@ -12,7 +13,8 @@ const UNCONFIRMED_CODES = ['PHONE_NOT_CONFIRMED', 'EMAIL_NOT_VERIFIED'];
 /**
  * A22 and A25. Only reachable signed out (the root layout's guard). A sign-in that succeeds forgets any A2 pick.
  * A sign-in refused as "not confirmed" while this phone still holds a sign-up waiting for its code opens
- * that code screen instead (SHARED-CHANGES AUTH-05 F1).
+ * that code screen instead (SHARED-CHANGES AUTH-05 F1). A sign-in that was asked for by the access code screen goes
+ * back to it (SHARED-CHANGES JOIN-03 #10).
  */
 export default function SignInRoute() {
   const router = useRouter();
@@ -30,6 +32,8 @@ export default function SignInRoute() {
           throw error;
         }
         clearAccountType();
+        // A signed-out visit to the claim screen sent this person here: back to it (JOIN-03 round 3, N14).
+        if (takeClaimVisit()) router.replace('/claim-code');
       }}
       onForgot={(email) => router.push({ pathname: '/forgot-password', params: email ? { email } : {} })}
       onCreateAccount={() => router.push('/account-type')}

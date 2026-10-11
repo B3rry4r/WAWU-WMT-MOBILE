@@ -16135,6 +16135,73 @@
         "x-wawu-built-by": "MONEY-17"
       }
     },
+    "/api/hub/money/payments/{id}": {
+      "get": {
+        "operationId": "MoneyPaymentsController_payment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "reason.code: not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "reason.code: wallet_not_open, wallet_opening",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "reason.code: wallet_frozen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "One payment as it stands now: what the app polls after `pending` (H18,\nE10) or after `payment_in_progress` (`reason.paymentId`). `pending`\nbecomes `completed`, `failed` or `reversed` once the provider says\nwhich; `delivered` is true once what was paid for has reached the buyer\n(a `completed` payment with `delivered` false is \"paid, still opening\").\nOnly the payer reads it: another person's payment is the same `404\nnot_found` as one nobody holds. It reads our record only, never the\nprovider, and moves nothing, so it is not behind the fee settings, the\nkey or the PIN. Declared after the quote so `payments/quote` is never\nread as an id.",
+        "tags": [
+          "MoneyPayments"
+        ],
+        "x-wawu-built-by": "MONEY-19"
+      }
+    },
     "/api/hub/money/holds": {
       "get": {
         "operationId": "MoneyHoldsController_list",
@@ -27784,6 +27851,47 @@
         ]
       }
     },
+    "/api/hub/waitlist/claims": {
+      "post": {
+        "operationId": "WaitlistClaimController_claim",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimWaitlistRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistClaimView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`reason.code` `code_invalid`: not 8 letters and numbers. A malformed body has no `reason`."
+          },
+          "404": {
+            "description": "`reason.code` `code_not_found`: the same answer for a code that does not exist, is not paid, or is not tied to a phone or email the caller has proven."
+          },
+          "409": {
+            "description": "`reason.code` `contact_not_verified` (the account has no proven phone or email), `code_refunded` (an extra payment being refunded), `already_claimed` (by another account), `offer_unavailable`, or `claimed_by_you` (only for a claim made before its answer was kept; the same account asking again is otherwise answered 200)."
+          }
+        },
+        "summary": "Claim a paid registration with its launch access code. The caller must\nhold the registration's phone or email, proven to WAWU ID; the code alone\nis never enough. Gives what the registration's plan gives, its days\ncounted from now, once. The account that made the claim and sends the\nsame code again is answered with the same plan (a 200, nothing granted\ntwice), so an answer that was lost on the way can be asked for again.",
+        "tags": [
+          "WaitlistClaim"
+        ]
+      }
+    },
     "/api/hub/admin/waitlist/registrations": {
       "get": {
         "operationId": "WaitlistAdminController_list",
@@ -28923,75 +29031,6 @@
         ],
         "x-wawu-built-by": "WALLET-07",
         "description": "Declared by MONEY-04, not served yet: WALLET-07 serves it.",
-        "x-wawu-served": false
-      }
-    },
-    "/api/hub/money/payments/{id}": {
-      "get": {
-        "operationId": "MoneyPaymentController_payment",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentView"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "reason.code: not_found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "reason.code: wallet_not_open, wallet_opening",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "423": {
-            "description": "reason.code: wallet_frozen",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "wawu-id": []
-          }
-        ],
-        "summary": "One payment, as it stands now. Only the payer can read it.",
-        "tags": [
-          "MoneyPayment"
-        ],
-        "x-wawu-built-by": "MONEY-19",
-        "description": "Declared by MONEY-04, not served yet: MONEY-19 serves it.",
         "x-wawu-served": false
       }
     }
@@ -30696,7 +30735,7 @@
           },
           "balanceKobo": {
             "type": "integer",
-            "description": "insufficient_funds: Fintava's available balance when the payment was refused."
+            "description": "insufficient_funds: the wallet provider's available balance when the movement was refused."
           },
           "totalKobo": {
             "type": "integer",
@@ -33163,6 +33202,20 @@
           "transactionId"
         ]
       },
+      "ClaimWaitlistRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The launch access code from the registration page: 8 letters and numbers\n(0 to 9, A to F), written \"XXXX XXXX\". Spaces, dashes and lower case are\naccepted; the server reads it without them.",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
       "CreateAdCreativeDto": {
         "type": "object",
         "properties": {
@@ -34738,6 +34791,9 @@
             "type": "string",
             "nullable": true
           },
+          "delivered": {
+            "type": "boolean"
+          },
           "statusMessage": {
             "type": "string",
             "nullable": true
@@ -34762,6 +34818,7 @@
           "reference",
           "hold",
           "failureReason",
+          "delivered",
           "statusMessage",
           "createdAt",
           "completedAt"
@@ -48529,6 +48586,9 @@
             "type": "string",
             "nullable": true
           },
+          "claimed": {
+            "type": "boolean"
+          },
           "claimedByWawuId": {
             "type": "string",
             "nullable": true
@@ -48556,6 +48616,7 @@
           "reference",
           "accessCode",
           "flutterwaveTransactionId",
+          "claimed",
           "claimedByWawuId",
           "claimedAt",
           "createdAt"
@@ -48586,6 +48647,42 @@
           "rowCount",
           "content",
           "generatedAt"
+        ]
+      },
+      "WaitlistClaimView": {
+        "type": "object",
+        "properties": {
+          "offerName": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "extended": {
+            "type": "boolean"
+          },
+          "pointsGranted": {
+            "type": "number"
+          },
+          "pointsExpireAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "claimedAt": {
+            "type": "string"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/MyTierView"
+          }
+        },
+        "required": [
+          "offerName",
+          "days",
+          "extended",
+          "pointsGranted",
+          "pointsExpireAt",
+          "claimedAt",
+          "tier"
         ]
       },
       "WaitlistOfferView": {
