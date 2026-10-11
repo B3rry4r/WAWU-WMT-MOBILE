@@ -36,7 +36,8 @@ function readBiller(raw: unknown): ElectricityBiller | null {
   const b = raw as Partial<ElectricityBiller> | null;
   if (!b || typeof b !== 'object' || !isText(b.code) || !isText(b.name)) return null;
   if (b.plan !== 'prepaid' && b.plan !== 'postpaid') return null;
-  if (!isWhole(b.minimumKobo) || !isWhole(b.maximumKobo) || !Array.isArray(b.presetsKobo) || !b.presetsKobo.every(isWhole)) return null;
+  if (!isWhole(b.minimumKobo) || !isWhole(b.maximumKobo) || !Array.isArray(b.presets)) return null;
+  if (!b.presets.every((p) => !!p && typeof p === 'object' && isWhole((p as { amountKobo?: unknown }).amountKobo))) return null;
   return b as ElectricityBiller;
 }
 

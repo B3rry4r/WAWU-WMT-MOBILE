@@ -8124,6 +8124,9 @@ export interface components {
             certificateExpectedBy: string | null;
             latestUpdateLabel: string | null;
         };
+        ElectricityPresetView: {
+            amountKobo: number;
+        };
         ElectricityBillerView: {
             code: string;
             name: string;
@@ -8131,7 +8134,7 @@ export interface components {
             plan: "prepaid" | "postpaid";
             minimumKobo: number;
             maximumKobo: number;
-            presetsKobo: number[];
+            presets: components["schemas"]["ElectricityPresetView"][];
         };
         ElectricityBillersView: {
             available: boolean;

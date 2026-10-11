@@ -174,7 +174,7 @@ function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onU
         >
           {problem ? <HintLine testID="amount-line" tone="danger" icon="CircleAlert" words={amountProblemWords(problem)} /> : null}
         </BillField>
-        <AmountPresets testID="amount-presets" presetsKobo={biller.presetsKobo} chosenKobo={kobo} onPick={(picked) => setAmount(presetText(picked))} />
+        <AmountPresets testID="amount-presets" presetsKobo={biller.presets.map((p) => p.amountKobo)} chosenKobo={kobo} onPick={(picked) => setAmount(presetText(picked))} />
       </View>
     </AuthFrame>
   );

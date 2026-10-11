@@ -31,7 +31,7 @@ jest.mock('expo-router', () => ({
 }));
 
 const ok = (data: unknown) => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
-const IKEJA = { code: 'Ikeja_Electric_Bill_Payment', name: 'Ikeja Electric', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presetsKobo: [200000] };
+const IKEJA = { code: 'Ikeja_Electric_Bill_Payment', name: 'Ikeja Electric', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presets: [{ amountKobo: 200000 }] };
 let billers = ok({ available: true, billers: [IKEJA] });
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);

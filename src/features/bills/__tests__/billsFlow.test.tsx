@@ -27,7 +27,7 @@ const ME = '00000000-0000-4000-8000-0000000000f3';
 const ACCOUNT = { accountNumber: '8100000528', accountName: 'Ada Eze', bankName: 'Loma Bank', bankCode: '090620', licenceLine: null, depositInsuranceLine: null, openedAt: '2026-10-07T09:00:00.000Z' };
 const ok = (data: unknown, pagination?: unknown) =>
   new Response(JSON.stringify({ statusCode: 200, message: 'OK', data, ...(pagination ? { pagination } : {}) }), { status: 200, headers: { 'content-type': 'application/json' } });
-const IKEJA = { code: 'Ikeja_Electric_Bill_Payment', name: 'Ikeja Electric', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presetsKobo: [200000, 500000] };
+const IKEJA = { code: 'Ikeja_Electric_Bill_Payment', name: 'Ikeja Electric', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presets: [{ amountKobo: 200000 }, { amountKobo: 500000 }] };
 const DAY = localDay();
 const asked: string[] = [];
 
