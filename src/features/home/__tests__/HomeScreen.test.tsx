@@ -132,6 +132,17 @@ beforeAll(async () => {
   answers = Object.fromEntries(Object.values(T).map((k) => [k, ['hold' as const]]));
   const screen = await boot();
   await screen.unmount();
+  // The first screen drawn from answers also pays for parsing them and for drawing the balance, the rail and the verse
+  // for the first time: on a cold transform cache that took longer than the one second a `waitFor` allows, so it is
+  // drawn once here, until Today has left its loading view, under the hook's own budget.
+  answers = everyAnswer();
+  const loaded = await boot();
+  while (loaded.queryByTestId('today-loading')) {
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+  }
+  await loaded.unmount();
 }, 120_000);
 
 beforeEach(() => {
@@ -234,6 +245,8 @@ describe('H1 · Today', () => {
     await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Following'));
     expect(sent).toContain(`POST /creators/${ADA}/follow`);
+    // The button turns at once and is busy, ignoring presses, until the Hub has answered: Unfollow is for after that.
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`).props.accessibilityState).toMatchObject({ busy: false }));
     await rtl.fireEvent.press(screen.getByTestId(`today-follow-${ADA}`));
     await rtl.waitFor(() => expect(sent).toContain(`DELETE /creators/${ADA}/follow`));
     await rtl.waitFor(() => expect(screen.getByTestId(`today-follow-${ADA}`)).toHaveTextContent('Follow'));
