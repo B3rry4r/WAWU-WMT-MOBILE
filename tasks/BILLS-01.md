@@ -7,7 +7,7 @@ order: 69
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: review
+status: done
 depends_on: [SHELL-02, UI-02, MONEY-06]
 decisions: [R-20]
 passes: [V1, V4, V5, V6, V9]
@@ -281,3 +281,7 @@ The HOME-01 and WALLET-01 hubs were built before this task, so the entries on th
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+Merged by the lead, 10 Oct 2026: backend PR #106 (merge `e1d436f`) and mobile main (merge of `f1bc738`; the contract regenerated from backend main). The round 2 verifier found no blocker. R2-U1, R2-1 to R2-5 and the mutant gaps V9, V10, T5 follow in round 3 on the same branch.
+
+Hotfix merged by the lead, 11 Oct 2026: backend PR #110 (merge `39e9377`, deployed: run 38097863996, health and offer 200) and mobile main (merge of `66bb085`, the contract regenerated from backend main `39e9377`). Round 3 (R2-U1, R2-1 to R2-5, V9, V10, T5) follows on the same branch.

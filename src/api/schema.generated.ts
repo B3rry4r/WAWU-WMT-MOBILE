@@ -4196,6 +4196,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/suggested": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. Rooms the caller could join (I24, Suggested): none they host,
+         *     are in or have asked to join, none hosted by somebody hidden from them.
+         *     Most members first, then by name.
+         */
+        get: operations["CommunityRoomsController_suggested"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/message-cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. What one message in a community costs a member, in WAWU
+         *     Credits (I24: "1 credit per message you send"). Reading is free.
+         */
+        get: operations["CommunityRoomsController_messageCost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/room": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * INBOX-05. One room as the caller sees it (I25): its counts and link,
+         *     `role` (host, member, pending or none) and `messageCostInCredits`, what
+         *     one message costs the caller there (0 for the host).
+         */
+        get: operations["CommunityRoomsController_room"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/rooms": {
         parameters: {
             query?: never;
@@ -9831,6 +9893,25 @@ export interface components {
             unreadCount: number;
             /** Format: date-time */
             lastActivityAt: string | null;
+        };
+        CommunityMessageCost: {
+            creditsPerMessage: number;
+        };
+        CommunityRoomView: {
+            name: string;
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            imageUrl: string | null;
+            description: string;
+            hostWawuId: string;
+            memberCount: number;
+            messagesToday: number;
+            slug: string;
+            link: string;
+            /** @enum {string} */
+            role: "host" | "member" | "pending" | "none";
+            messageCostInCredits: number;
         };
         CommunityRoom: {
             name: string;
@@ -19282,6 +19363,68 @@ export interface operations {
             };
         };
     };
+    CommunityRoomsController_suggested: {
+        parameters: {
+            query: {
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"][];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_messageCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityMessageCost"];
+                };
+            };
+        };
+    };
+    CommunityRoomsController_room: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityRoomView"];
+                };
+            };
+        };
+    };
     CommunityRoomsController_createRoom: {
         parameters: {
             query?: never;
@@ -19675,7 +19818,10 @@ export interface operations {
     CommunityMessageController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per message, made by the app when the person first sends it and sent again unchanged on every retry of that same message (never reused for another). Per sender and key the message is stored and charged once; a repeat answers with the first message as stored (the same status and body) and the header `Idempotent-Replayed: true`. The same key for other words or another room is `409` with `reason: idempotency_key_reused`. Without it the send behaves as it always has. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };

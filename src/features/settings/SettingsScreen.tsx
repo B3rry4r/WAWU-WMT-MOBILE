@@ -44,6 +44,8 @@ export type SettingsScreenProps = {
   onOpenNotifications: () => void;
   onOpenPrivacy: () => void;
   onOpenPassword: () => void;
+  /** Wallet and PIN: W35 (WALLET-06). The row is drawn only when the screen has somewhere to open it (the route gives it). */
+  onOpenWallet?: () => void;
   onOpenAbout: () => void;
   onOpenTerms: () => void;
   onOpenPolicy: () => void;
@@ -54,8 +56,8 @@ export type SettingsScreenProps = {
 /**
  * Z2 · Settings. The header card is read from `GET /users/me`; TGIF is `GET` and `PATCH /settings/tgif`
  * (the Hub holds it, so it follows the person to another phone); Sound and Theme are this phone's own
- * choices and are kept on it. Wallet and PIN is added by WALLET-06 and Delete account by SETTINGS-05, each
- * where Z2 draws it.
+ * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account is added by SETTINGS-05,
+ * each where Z2 draws it.
  */
 export function SettingsScreen(props: SettingsScreenProps) {
   const signedIn = useSignedIn();
@@ -100,6 +102,15 @@ export function SettingsScreen(props: SettingsScreenProps) {
         <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
         <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
         <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
+        {props.onOpenWallet ? (
+          <ListRow
+            testID="settings-wallet"
+            lead={<IconTile icon="Wallet" size={ROW_TILE} />}
+            title="Wallet and PIN"
+            subtitle="PIN and account details"
+            onPress={props.onOpenWallet}
+          />
+        ) : null}
       </GroupedList>
       <GroupedList testID="settings-preferences">
         {tgif.query.data ? (
