@@ -8,10 +8,11 @@ import { FilterChips } from '@/components/FilterChips';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { isApiError } from '@/api/errors';
+import { CommunitiesView } from '@/features/communities/CommunitiesView';
 import { layout, space, useWawu } from '@/theme';
 
-import type { InboxItem } from './api';
-import { inboxChips } from './chips';
+import type { InboxItem, InboxKind } from './api';
+import { communitiesChip, inboxChips } from './chips';
 import { InboxSkeleton } from './InboxSkeleton';
 import { drawableRows, inboxRowRenderers, type InboxRowRenderers } from './rows';
 import { useInbox } from './useInbox';
@@ -33,15 +34,43 @@ export type InboxScreenProps = {
 
 /**
  * I1, I35 and I36: the inbox, its chips, and the empty and loading states, with a real error state
- * (the request failed, with a retry). It reads `GET /inbox` a page at a time, refreshes when the
- * live connection says something changed (see `unread.ts`), and when pulled down.
+ * (the request failed, with a retry). The list reads `GET /inbox` a page at a time, refreshes when the
+ * live connection says something changed (see `unread.ts`), and when pulled down. The Communities chip
+ * swaps the list for I24 (`CommunitiesView`), which reads its own rooms.
  */
 export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
-  const focused = useIsFocused();
   const [chip, setChip] = useState(inboxChips[0]?.value ?? 'all');
   const kind = inboxChips.find((c) => c.value === chip)?.kind ?? 'all';
+
+  return (
+    <View testID="inbox-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+      <View style={styles.title}>
+        <Text variant="title">Inbox</Text>
+      </View>
+      <View style={styles.chips}>
+        <FilterChips items={inboxChips} value={chip} onChange={setChip} label="Filter your inbox" testID="inbox-chips" />
+      </View>
+      {chip === communitiesChip ? (
+        <CommunitiesView />
+      ) : (
+        <InboxList kind={kind} renderers={renderers} onBrowseCommunities={() => setChip(communitiesChip)} />
+      )}
+    </View>
+  );
+}
+
+type InboxListProps = {
+  kind: InboxKind | 'all';
+  renderers: InboxRowRenderers;
+  /** The empty state's way on: the Communities chip. */
+  onBrowseCommunities: () => void;
+};
+
+function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
+  const { colors } = useWawu();
+  const focused = useIsFocused();
   const inbox = useInbox(kind);
   const [pulled, setPulled] = useState(false);
 
@@ -123,6 +152,7 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
           testID="inbox-empty"
           title="No messages yet"
           message="Message a creator from their profile, or join a community to talk with people like you."
+          action={{ label: 'Browse communities', onPress: onBrowseCommunities }}
         />
       );
     }
@@ -131,37 +161,29 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
   }
 
   return (
-    <View testID="inbox-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <View style={styles.title}>
-        <Text variant="title">Inbox</Text>
-      </View>
-      <View style={styles.chips}>
-        <FilterChips items={inboxChips} value={chip} onChange={setChip} label="Filter your inbox" testID="inbox-chips" />
-      </View>
-      <FlatList
-        testID="inbox-list"
-        data={body ? [] : rows}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRow}
-        ListEmptyComponent={body}
-        // Under no row, the body already says what the next page is doing.
-        ListFooterComponent={
-          rows.length === 0 ? null : inbox.isFetchNextPageError ? (
-            <View style={styles.footer}>
-              <Text variant="secondary">Couldn’t load more messages.</Text>
-              <Button label="Try again" variant="secondary" size="sm" onPress={() => void fetchNextPage()} />
-            </View>
-          ) : isFetchingNextPage ? (
-            <InboxSkeleton testID="inbox-loading-more" />
-          ) : null
-        }
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.5}
-        refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
-        contentContainerStyle={[styles.content, center && styles.centered]}
-        style={styles.list}
-      />
-    </View>
+    <FlatList
+      testID="inbox-list"
+      data={body ? [] : rows}
+      keyExtractor={(item) => item.id}
+      renderItem={renderRow}
+      ListEmptyComponent={body}
+      // Under no row, the body already says what the next page is doing.
+      ListFooterComponent={
+        rows.length === 0 ? null : inbox.isFetchNextPageError ? (
+          <View style={styles.footer}>
+            <Text variant="secondary">Couldn’t load more messages.</Text>
+            <Button label="Try again" variant="secondary" size="sm" onPress={() => void fetchNextPage()} />
+          </View>
+        ) : isFetchingNextPage ? (
+          <InboxSkeleton testID="inbox-loading-more" />
+        ) : null
+      }
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.5}
+      refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
+      contentContainerStyle={[styles.content, center && styles.centered]}
+      style={styles.list}
+    />
   );
 }
 

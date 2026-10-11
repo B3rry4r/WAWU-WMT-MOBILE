@@ -80,7 +80,10 @@ async function connect(cursor = 'c0') {
 }
 
 /** The badge counts the kinds of row the Inbox draws (R-47); each test says which, so none depends on what the app draws today. */
+const appDraws = { community: inboxRowRenderers.community };
 const drawChats = () => {
+  // The app draws community rows (INBOX-05); these tests are about the counting rule, so only chats are drawn here.
+  delete inboxRowRenderers.community;
   inboxRowRenderers.chat = () => <Text>chat row</Text>;
 };
 
@@ -99,6 +102,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   delete inboxRowRenderers.chat;
+  if (appDraws.community) inboxRowRenderers.community = appDraws.community;
   await rtl.act(async () => signOut());
   rtl.cleanup();
   queryClient.clear();
