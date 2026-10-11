@@ -7,7 +7,7 @@ order: 94
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: verifying
 depends_on: [MONEY-17]
 decisions: [R-19, R-10, R-31, R-5, R-11, R-39, R-42, R-44]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -419,6 +419,46 @@ Trial merge `9a6bf3a`: `tsc --noEmit` EXIT 0; eslint on the 18 changed `.ts` fil
 4. **HTTP/2** (Node 22's `fetch` is HTTP/1.1), a TLS session aborted by a server alert after the request beyond the shapes above, and a real proxy with its own connection pool (only Node's env proxy against my own proxy).
 5. **A Nuvion hold:** `walletToWallet` is not supported by the Nuvion adapter yet (`src/nuvion/areas/book.ts`), so `requestNotSent` through a hold is Fintava-only today; the Nuvion client's classifier is covered by the rig and by my rows.
 6. **The whole backend suite as `deploy.yml` runs it** (about 140 other files): the areas above and the protected suite, not the rest. V4, V6, V7, V9 and the real wawu-id (no screen, R-47).
+
+## Builder report, round 4
+
+Builder, round 4, 11 Oct 2026 (Sonnet agent; the lead's brief for MONEY-18 round 4: the verifier's R3-1 and R3-2, two rulings, nothing else). wawu-backend `wmt/MONEY-18` at `9ed7bf2` (round 3's tip `fd2696c`, backend main `f11d307` then `b71c551` merged, 0 conflicts, then this round's `b506ac1`); this repo `wmt/MONEY-18` at its tip (main `cdb528c` then `3df3b0a` merged; the one conflict both times was the generated `docs/PROGRESS.md`, regenerated). Worktrees `bb-MONEY-18r4`, `b-MONEY-18r4`, `bbm-MONEY-18r4` (main, for the comparisons); databases `bm18r4_*test` (dropped afterwards). Evidence and scripts: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/money18r4/` (`zz-driver/two-servers.ts` the two-process driver, `procs-before.log`, `procs-fixed.log`, `netns-*.log`).
+
+#### Each ruling as built, before and after
+
+1. **R3-2 (the hidden skip): no skip anywhere; the rig is a script that cannot pass without running.**
+   - *Before* (the verifier's `skip-demo.txt`): `const itPrivateNamespace = LAUNCHER ? it : it.skip;` and `findLauncher()` ran up to three `spawnSync` calls when the file was loaded. With `iptables` and `sudo` off the PATH: `Test Suites: 1 skipped`, jest exit 0, and the deferrals gate saw nothing.
+   - *As built.* `src/wallet-provider/tests/connection-never-opened-sockets.spec.ts` is **deleted** (the rig test was all it held). `npm run test:netns` runs the new `test/netns/run.sh`: it tries `unshare -n`, `sudo -n unshare -n`, `unshare -rn` in turn with a probe (loopback up, `tcp_retries2`, `iptables`), runs `test/netns/connection-never-opened-rig.ts` in the first namespace that works, and **exits 3 with "CANNOT RUN" when none does**, 1 on a wrong row, a dead rig, a missing `DONE rows=16 wrong=0 problems=0` line or a timeout (170 s), 2 when the rig refuses a namespace with other interfaces. The checks the spec made now live in the rig (`verify()`: the nine scenarios, 16 rows, every row marked exactly when the scenario says, the six after-the-write rows read the whole request and are `outcome_unknown`, what is marked read 0 bytes, only the five never-sent scenarios are marked, our own deadline is not marked). The unprivileged real-socket cases stay in jest: `connection-never-opened.spec.ts`, "both clients over real sockets" (a closed port marked; a reset after the request, a FIN, a reset on connect, a 503 and a silent server not marked; both clients). Comments that named the old spec now name the script. `deploy.yml`, Test job, after the jest step: one step, "Route failures on real sockets (npm run test:netns, with sudo)", `sudo env "PATH=$PATH" npm run test:netns`.
+   - *After.* Here, as root: **`npm run test:netns` EXIT 0, 16 rows, 0 wrong** (`netns-1.log`, again on the merged tip `netns-final.log`). Mutant: the classifier accepting `read` beside the phase: **EXIT 1, 19 PROBLEM lines**, 6 rows wrong (`netns-mutant.log`; file restored byte for byte). No `iptables` and no `sudo` on the PATH: "CANNOT RUN", **EXIT 3** (`netns-cannot.log`; with `sudo` left on the PATH, `sudo`'s own secure path finds `iptables` and the rig runs, which is the fallback working).
+2. **R3-1 (the claim is not exclusive between servers): one condition in the claim's WHERE.**
+   - *Before.* Two real server processes (the real `MoneyModule`, each a Nest app listening on :6061 and :6062, one database, the feature logging every call), 40 rounds, both told to sweep one due delivery at the same instant (20 rounds with an instant feature, 20 with a 300 ms one, a held and a not held kind alternating), with the claim as in round 3: **the feature was told twice in 38 of 40 rounds** (`procs-before.log`; the verifier measured 32 of 40).
+   - *As built* (`wallet-payment.service.ts`, `fulfil()`): the claim's WHERE carries `nextDeliveryAt: p.nextDeliveryAt`, the lease as the caller read it (`null` matches an unleased row). Of two servers that read the same due payment exactly one update matches. The column is `TIMESTAMP(3)` and only this code writes it, so a Date read back equals the value in the row. CONVENTIONS now says so: two servers tell the feature once, a server that dies holding the lease delivers once after the rest, a feature slower than its lease may still be told again, and the sentence "can be called twice (two servers ...)" was corrected to say what is still true.
+   - *After* (`procs-fixed.log`, the same driver): **40 of 40 rounds told once, completed once, `fulfilledAt` set, lease cleared** (`delay=0ms` 20, `delay=300ms` 20). **A server killed holding the lease** (SIGKILL by PID with its feature call open, the lease written as sweep clock + 60 s): a sweep by the other server 5 s before the lease ends delivers nothing (1 call so far, the dead one's, 0 finished); 5 s after it delivers once (2 calls, 1 finished, `fulfilledAt` set, lease cleared); an hour later nothing more. Specs (`payment-follow-ups.contract.spec.ts`, 22 to 24 tests): "two servers read the same due delivery and both try to take it" (6 rounds, a held and a not held kind: both read the row before either claims, the feature held open, 300 ms for the other claim to happen, then exactly one `fulfil` answers true and the feature was told once) and "a server that dies holding the lease" (nothing before the lease ends, one delivery after, then none). **Mutant**: the claim without the new condition fails the first (`feature.started` is one too many); the second passes either way, it pins the lease, which round 3 already had.
+3. **The migration folder** `20261021080000_wallet_hold_outcome_check`: name left; the lead renames it at merge, as ruled.
+
+#### Checks run
+
+- Backend `npx tsc --noEmit` **EXIT 0** on the merged tip (`tsc.txt`); eslint (no `--fix`) on the `.ts` files changed from main: **EXIT 0** (`eslint.txt`).
+- **Specs** on a fresh migrated and seeded `bm18r4_full_test`, one jest process in a private network namespace with the stand-in WAWU ID on :4001: `src/money src/wallet-provider src/fintava` without `fintava-stall` (`full-1.txt`, 1,206 s at load average 15 to 20): **71 suites, 2,257 tests: 2,242 passed, 15 failed in three suites, none this round's.** `receipt-units.spec.ts`: 4 Unicode-digit failures of Node 22.22.0's tables (the same 4 fail on backend main `b71c551` alone, `receipt-main.txt`) and 2 timing ones that pass alone; `identity-production-boot` and `selfie-production-boot`: hook timeouts at jest's 5 s under load (R2-8). Those suites alone with `--testTimeout=120000` (`prodboot.txt`): the four production-boot suites pass, `receipt-units` 4 failed, 43 passed, the same 4. `fintava-stall.spec.ts` alone: **120 of 120** (`stall.txt`). The new and changed specs pass inside the run: `payment-follow-ups` (24), `wallet-payment.contract`, `connection-never-opened` (the real-socket block).
+- **`npm run test:netns` EXIT 0** (above).
+- **Protected route suite** `scripts/protected-routes/run.sh --fresh HEAD` (code `9ed7bf2`, lock `origin/main` `b71c551`), private namespace, fresh migrated and seeded database: **253 passed of 253, all 244 required, EXIT 0** (`protected.txt`).
+- Gates `python3 scripts/gates/run.py`: main `b71c551` 1,145 files, branch 1,148 files, **16 fail, 95 warn, 76 accepted on both; the 16 FAIL lines identical** (`diff` empty, `g-main.fail`, `g-branch.fail`) and the warn and accepted lines identical. **The deferrals gate (4 fail, 0 warn) sees nothing new**: it reports the same four lines as main, none in a file this round touches, and it did not need to (the skip is gone, nothing was baselined). `check_baseline.py`: 108 entries, every accepted violation has an owner and a reason, EXIT 0.
+- `npm run contract:build` twice on the merged tip: `contract/openapi.json` `fc3bb6d5...` both times, equal to the committed file and to backend main's, `git status` clean. This round adds no route, field or schema, so nothing is synced to this repo.
+- Mobile, after this file, LOG and SHARED-CHANGES #12 were edited and `python3 scripts/tasks/check_tasks.py --write` regenerated INDEX and PROGRESS: `npm run gates` EXIT 0, `npm run tasks` EXIT 0. `npm run check` not run: no app code changed.
+- No em-dash in the lines this round adds.
+
+#### Decisions (Default (agent), owner may override)
+
+1. **The spec file is deleted, not emptied.** The rig test was the whole file; a spec with no test fails jest, and keeping an empty shell would hide the move. Its assertions are in the rig's `verify()` and run in the namespace.
+2. **The script is `bash test/netns/run.sh`, run under sudo as a whole in CI** (`sudo env "PATH=$PATH" npm run test:netns`), so the first launcher (`unshare -n`) works as root; the `sudo -n` and `unshare -rn` launchers are for a developer machine.
+3. **The two-process driver is evidence, not a spec.** It boots the real `MoneyModule` twice and kills a server with SIGKILL; it needs two Nest apps and a namespace, and the in-repo spec above (two reads of one row, one claim) is what kills the mutant on every machine. The driver is not committed (it sits in the scratch folder above).
+
+#### NOT RUN
+
+1. **The new `deploy.yml` step on a real GitHub runner.** It uses passwordless `sudo`, `unshare`, `iptables`, `sysctl` and `ip`, all on the Ubuntu image, but that was not tried; if a namespace cannot be made there the step fails the job (exit 3), which is the point.
+2. **The real Fintava sandbox** (R-20, no key, the host forbidden): that Fintava refuses a repeated `CustomerReference`.
+3. **A Hub killed by a signal in the middle of a real payment** (the killed server held the lease on a seeded due delivery with a stand-in feature, not on a payment made through the API); no built `dist` Hub (the production build registers no held kind, G-445).
+4. **The whole backend suite as `deploy.yml` runs it** (about 140 other files), `src/nuvion` and `src/account-purge` (this round's change does not touch them; round 3 ran them), and V4, V6, V7, V9 and the real wawu-id (no screen, R-47).
 
 ## Owner sign-off
 
