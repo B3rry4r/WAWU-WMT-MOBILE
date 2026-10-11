@@ -100,6 +100,22 @@ function installServer() {
 }
 
 const callsTo = (path: string) => calls.filter((c) => c.path === path);
+/** Waits until every request the app has sent so far has been answered or has failed (an answer lands a turn after its call is made). */
+async function requestsAnswered() {
+  const sent = (globalThis.fetch as jest.Mock).mock.results.map((result) => result.value as Promise<unknown>);
+  let open = sent.length;
+  for (const request of sent) {
+    request.then(
+      () => {
+        open -= 1;
+      },
+      () => {
+        open -= 1;
+      },
+    );
+  }
+  await waitFor(() => expect(open).toBe(0));
+}
 /** What the app has sent to start or finish a sign-up: A3 also reads which way the code will travel (a GET that sends nothing about the person). */
 const sentCalls = () => calls.filter((c) => c.path !== '/auth/signup/channel');
 
@@ -888,6 +904,8 @@ describe('AUTH-07: the sign-up code is mailed (R-39, SIGNUP_VERIFY_CHANNEL=email
       await typeDigits('1');
       await typeDigits('11111');
       await waitFor(() => expect(confirm().length).toBe(round + 2));
+      // The keys are not read while a check is on its way: the next code waits until the screen has taken the Hub's answer.
+      if (round < 2) await waitFor(() => expect(screen.getByText("That code isn't right")).toBeTruthy());
     }
     await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Start again' })).toBeTruthy();
@@ -1028,10 +1046,16 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
   it('asks again on a later visit when the first ask failed, and draws the line once it knows', async () => {
     delete answers['GET /auth/signup/channel'];
     await toA3();
+    // "No line" only means the ask failed once the ask has been answered: until then there is nothing to draw either way.
+    await requestsAnswered();
     expect(screen.queryByText(TEXT_LINE)).toBeNull();
     expect(screen.queryByText(EMAIL_LINE)).toBeNull();
     answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
-    await expect(signupChannel()).resolves.toBe('email');
+    let learned: string | null | undefined;
+    void signupChannel().then((channel) => {
+      learned = channel;
+    });
+    await waitFor(() => expect(learned).toBe('email'));
     expect(callsTo('/auth/signup/channel')).toHaveLength(2);
   });
 
