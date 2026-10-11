@@ -3,19 +3,23 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 134 of 248.**
+**Launch tasks done: 133 of 248.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 136 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 95 | 27 | 11 | 5 |
+| done | 94 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [EVENTS-09](../tasks/EVENTS-09.md) At the door: scan, let in, already used, not valid (You)
 
 ## Done
 
@@ -71,7 +75,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
 - [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
-- [EVENTS-09](../tasks/EVENTS-09.md) At the door: scan, let in, already used, not valid (You)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
 - [ME-05](../tasks/ME-05.md) Profile fields (Developer)
 - [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending (You)
@@ -169,6 +172,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · EVENTS-09 · Builder report, round 3 (mobile `wmt/EVENTS-09`, hash in the hand-back, on main `a8d6383`; backend untouched; status verifying): D5 closed. "Type the code instead" is not drawn while a check is on its way (the room it took stays, so the words do not move), and a verdict that lands under the open typing sheet waits there, its 3 s hold beginning when the sheet closes (the verifier's case reproduced first: never seen; after: seen 3,003 ms dark and 3,007 ms light); a code typed over an unseen verdict waits instead of replacing it; a 422 reads "We couldn't confirm" (the contract lists only 201 on this route, and the Hub's validator answers 400). 8 new jest tests (7 fail on round 2's code), 4 queue tests reworked, 6 mutants killed; pictures at 390 px, light and dark.
 - 11 Oct 2026 · EVENTS-09 · Merged by the lead: backend PR #112 (`0d5836e`; migration renamed to sort after main) and mobile main. A ticket is let in once; a lost answer reads "We couldn't confirm". D5 (a verdict behind the typing sheet) follows in round 3.
 - 11 Oct 2026 · AUTH-07 · Round 4 merged by the lead: WAWU ID PR #9 (specs for D3 and D4) and mobile main (A3 asks the channel on every visit, F-G). D5 and N-1 (test gaps) carried.
 - 11 Oct 2026 · AUTH-07 · Verifier report, round 4 (independent session; wawu-id `01215b7`, mobile `d572b91`, both already on their mains): status review, no blocker. D3 and D4 closed (mutants Y26 and Y19 each fail their new spec by name, 82 of 82 on the code, each spec races the guarded write or refusal and fails with the guard removed); F-G closed in jest and in the built app against a local wawu-id with the setting switched between visits (A3's line and A4's title agree light and dark, one ask per focus: 1, 1 on A4, then 2, 3, 4, 5); the builder's decision that a failed later ask clears A3's line is ruled right. One low defect carried, D5: that decision is held by no spec (my mutants that keep the last answer survive all 95 auth-signup tests, killed by a 10-line test of mine), plus a low note (the stale-answer guard is untested too); 7 mutants of mine, 4 killed by the branch's tests. wawu-id tsc 0, eslint 0, jest src/auth 308 of 308; AUTH-08's timing check alone: branch 20 of 20, main 19 of 20 (1,167 ms, load).
@@ -183,4 +187,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · WALLET-06 · Verifier report, round 2 (independent session, mobile `1e84445`, backend `ed1a4e4`; both mains already inside the branches, 0 conflicts): status review, no blocker. D1 to D7 and B13 each confirmed closed: live, the round 1 false-success case, a change and a reset landed, never sent and still running under one key on W36 and W37, a real `kill -9` at both windows of the stale claim, two Hub processes on one database, the phone clock +10 and -10 min, A10 after a reset; no deadlock in 86 change-and-confirm pairs on two processes (the 500s seen were overload, not the lock); no PIN, code or phone in 4,574 log lines or 43 key rows. Found: N1 (the payments' words "This payment is still going through" on the PIN screens), N2 (Resend's countdown still reads the phone's clock if it changes mid-way), N3 (each key row is a second brute-forceable copy of its PIN for the retention window), N4 (by reading), 3 test gaps. 30 mutants of mine, 27 killed by the branch's own tests. Backend: pin 156 and payments 170 specs, protected 253/253, gates the same 16 FAIL lines as main, baseline ok, contract built twice equal and synced. Mobile full check EXIT 0 on the branch's code; on the report's own tree typecheck, lint, gates, tasks and the wallet-area jest suites EXIT 0, and the full jest lost one unrelated suite to a 20 s load timeout in each of four runs.
 - 10 Oct 2026 · WALLET-06 · Builder report, round 2 (mobile code `aba0456`, backend `ed1a4e4`; mains merged: mobile `b04cbe6`, backend `8e57981` with MONEY-17): status verifying. D1: `PUT /money/pin` and `POST /money/pin/reset/confirm` take an optional `Idempotency-Key` in MONEY-17's store (no table, no migration); the app sends one key per attempt, again with the same key when no answer came, and never judges by `changedAt` (live before: W35 "Changed just now" while the typed PIN verified 403; after: the Hub's "Wrong PIN. 4 tries left.", and a landed change replayed with `Idempotent-Replayed`). D2: change and confirm take the per-person lock first (80 pairs, no 500). D3: `resendInSeconds`, Resend claims a code only for a different reset (clock +10 min: no early link, no false claim). D4 Back frees the keypad, D5 A10's end names the new PIN. D6, D7, B13: tests; 29 of 29 mutants killed. SHARED-CHANGES WALLET-06 #4 (contract) and #5 (30 s request timeout) filed.
 - 10 Oct 2026 · WALLET-06 · Verifier report (independent session, mobile `7e3182a`, backend `469ce08`; mains moved to mobile `90bdbfc` and backend `181ee5d`, trial merges: backend clean, mobile 3 conflicts in generated files and the gaps table, all resolved): status back to building, 5 defects and 2 test-gap defects. D1 a change or reset with no answer is judged by `changedAt` moving, so another change of the PIN reads as success (reproduced live: W35 says "Changed just now" while the typed PIN does not verify); D2 the G-50 transaction deadlocks against `/reset/confirm` (9 of 80 simultaneous pairs answered 500, fails safe); D3 Resend says "We sent a new code." with a fast phone clock though nothing was sent; D4 a dead keypad after Back from the unchecked state; D5 A10's end still says the earlier PIN approves after a reset made from it; D6 and D7 two mutants survive all 85 tests (A10's Forgot PIN route, W36's second entry). G-50 itself holds: a stale code is refused after a change (live and spec), the three new specs kill their mutants, no PIN, code or phone in any log line. Ruled: the fingerprint row (unmet, not a blocker for merging what is built, needs SHARED-CHANGES WALLET-06 #1), G-630 (accepted), the WALLET-01 test changes (follow the task). Merged backend: tsc, 120 of 120 pin specs, protected suite 253 of 253, gates the same 16 FAIL, baseline ok, contract:build byte-identical twice; 37 mutants of mine, 32 killed.
-- 10 Oct 2026 · WALLET-06 · Built (mobile `wmt/WALLET-06`, backend `wmt/WALLET-06` 469ce08, status verifying): Wallet settings (W35: the PIN's age, the beneficiaries' count, Account details with Copy, a limits row only when the server sends a limit), change the PIN (W36: the PIN in use first, then the new PIN twice) and reset it with a code (W37: six boxes, Resend on the server's clock, the code held until the new PIN is chosen); entries added as drawn on W1, Z2 and A10 (G-116 closed); a PIN change now ends every open reset (G-50 closed, backend). `npm run check` EXIT 0 (124 suites, 2089 tests); backend protected suite 253 of 253, contract unchanged. Live against a local Hub and wawu-id, light and dark. Not built: the fingerprint or face switch (needs a signer and an amount-free PIN sheet, SHARED-CHANGES WALLET-06 #1, G-43); W37 by email under Nuvion is jest only (G-400).
