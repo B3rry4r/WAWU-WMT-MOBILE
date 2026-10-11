@@ -425,6 +425,20 @@ describe('W26 · Transaction history', () => {
     expect(await app.screen.findByText('Kemi Test')).toBeTruthy();
   });
 
+  it('a user can pull the list down to ask the Hub again for the rows and the totals', async () => {
+    const app = await history();
+    expect(await app.screen.findByText('Bayo Test')).toBeTruthy();
+    const lists = asked('/money/transactions').length;
+    const totals = asked('/money/transactions/summary').length;
+    hubWith([{ ...TIP, id: 'tip-9', counterparty: { ...TIP.counterparty, name: 'Newest Test' } }, TIP]);
+    await app.act(async () => {
+      await app.screen.getByTestId('history-list').props.refreshControl.props.onRefresh();
+    });
+    expect(await app.screen.findByText('Newest Test')).toBeTruthy();
+    expect(asked('/money/transactions').length).toBeGreaterThan(lists);
+    expect(asked('/money/transactions/summary').length).toBeGreaterThan(totals);
+  });
+
   it('shows W4-style shapes while the Hub answers, with no heading made of nothing', async () => {
     hubWith([TIP], { list: () => 'hold' });
     const app = await history();
@@ -606,6 +620,19 @@ describe('W27 · Transaction detail', () => {
     const app = await detail('send-1');
     expect(await app.screen.findByText('Pending')).toBeTruthy();
     expect(app.screen.queryByText('Completed')).toBeNull();
+  });
+
+  it('a user can pull the receipt down to read it again, and sees what the bank has settled since', async () => {
+    hubWith([{ ...SEND, status: 'pending' }]);
+    const app = await detail('send-1');
+    expect(await app.screen.findByText('Pending')).toBeTruthy();
+    hubWith([SEND]);
+    await app.act(async () => {
+      await app.screen.getByTestId('detail-screen-scroll').props.refreshControl.props.onRefresh();
+    });
+    expect(await app.screen.findByText('Completed')).toBeTruthy();
+    expect(app.screen.queryByText('Pending')).toBeNull();
+    expect(asked('/money/transactions/send-1').length).toBeGreaterThanOrEqual(2);
   });
 
   it('says a transaction was not found in the server’s words, with nothing to share', async () => {
