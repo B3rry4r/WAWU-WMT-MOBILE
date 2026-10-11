@@ -7,7 +7,7 @@ order: 208
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: verifying
 depends_on: [TIER-01, ME-17]
 decisions: [R-43, R-7, R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -701,6 +701,58 @@ Of my 34 (24 N and 10 V): 21 killed by the specs, 13 survived them (N6, N7, N8, 
 - The mobile full check (typecheck, lint, jest): the mobile branch changes only the generated contract types and docs; `npm run gates` and `npm run tasks` are below.
 - The `relock-approved` label and the relock decision: the owner's.
 - A fix for D7: the verifier changes no product code.
+
+## Builder report, round 4
+
+Builder, 11 Oct 2026. wawu-backend `wmt/TIER-02` `8c90db5`; mobile `wmt/TIER-02` (this branch, this file). Backend main merged twice, no conflict: `b71c551` (BILLS-01 round 3) and then `74b501b` (WALLET-06 round 3, which moved while I worked and changed `contract/openapi.json` by descriptions). Newest migration folder on main is still `20261021110000_waitlist_claim_result`, so `20261021120000_product_drafts` still sorts after it and was not renamed. Mobile main `3df3b0a` merged: conflicts only in `SHARED-CHANGES.md` (both rows kept), `contract/SOURCE_COMMIT` and the generated `docs/PROGRESS.md` (regenerated).
+
+Before and after on two Hub processes on one database (:6182 the merged tree before any round 4 change, :6184 the final tree) with a stand-in WAWU ID of my own on :6183 (:6181 is held by a leftover stand-in from the round 3 verifier, pid 1089, whose folder is deleted; I did not touch it). Scripts: the verifier's `d7.js` and `lib.js`, plus my `d7m.js` (the D7 matrix). Transcripts in the lead's scratchpad `tier02r4/`: `d7-before.txt`, `d7-after.txt`, `d7m-before.txt`, `d7m-after.txt`.
+
+**Each ruling as built**
+1. **D7 (`tier_required` offered tiers that would not let the person publish).** `tier_required` now offers only the tiers that, once bought, leave more places than the person has products published (the extras they would carry over count; a person with no running tier has none). New `tierRequiredOffers` in `src/plans/limit-offers.ts` shares one filter with `limitOffers`, and the route's interceptor uses it. When no tier would, the list is empty and the sentence (written again in `TierGateError.withOffers`, as the limit's already is) says what to do: "You have 12 products up and no plan has room for another. Remove some to publish." ("Your tier has ended. " in front when it has, "1 product" in the singular, no em-dash). With nothing published, or while a tier would leave a place, the sentences are exactly what they were. The pack is never offered with `tier_required` (it needs a running tier). The contract description of `reason.tiers` and `docs/contract/PLANS.md` section 6 say the rule instead of "every tier". *Before* (`d7.js`, the verifier's cases, real pieces, tick ended, no tier): 9 up: offers Verify, Plus, Founding; buying Verify or Plus is refused ("remove some or add more places"), Founding lets the 10th through; 12 up: all three refused; 25 up: all three refused. *After:* 9 up: "Publishing and uploading files need a tier. Pick one to carry on. Drafts stay free." with Founding only, and buying it answers 201; 12 up and 25 up: the "no plan has room" sentence above and `tiers: []`. *Matrix* (`d7m.js`: tick none or ended, an ended tier of none, Verify, Plus or Founding, and 0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12 or 25 up = 104 situations; every tier is then bought, by writing the row a purchase writes, and the next publish tried): before, 248 mismatches (every tier offered, and 168 of the 312 tiers bought were then refused); after, **0 mismatches: 144 offered tiers all let the next publish through, 168 omitted tiers none would**, the sentence compared with one computed from the numbers in all 104, no dash in any body, `reason.message` equal to `message`.
+2. **T9 (the take-down's give-up path was untested).** `take-down.spec.ts` gains three tests on the unit double, which can now lose the take-down's write a told number of times (a lost write moves the piece to the other of pending and rejected and changes no row): three lost writes answer a `ConflictException`, status 409, the exact sentence, no dash, exactly 3 reads and 3 writes, no audit row, the counter untouched, the piece not removed; two lost writes still succeed on the third pass (audit row names the status the winning pass changed, one place back); one lost write that leaves the piece rejected returns no place.
+3. **T10 (`extraProducts` not pinned through the real allowance service).** `publishing-allowance.spec.ts` gains a block on the REAL `PublishingAllowanceService`: the allowance reports the running tier's extras (also while ending) and 0 for none, an ended tier and a tick alone; Verify with 5 extras at 8 of 8 is offered Plus, Founding and the pack by `limitOffers` fed from that allowance; and the D7 cases through it. `publishing-gate.contract.spec.ts` adds the same over HTTP on the real database (Verify with the pack bought, all places used: the tiers that count only WITH the extras are offered, and the test fails if they are not more than without them). N23 (extras always 0) is killed by both.
+4. **T12 (two overstated `NOT_GATED` reasons).** `PUT content/:id/media` now says what the code allows: links to the person's own earlier `content/` uploads set as the frames of one of their own pieces that is not removed (waiting, live or turned down), creator accounts only, no tier asked. The two `verification/submissions` entries say they are the verification tick's documents, any signed-in account may send them for staff to review (one pending at a time), the verification levels are not maker tiers, and nothing is published. (No longer "needed before a tier can be bought".)
+5. **T11 (the coverage spec was a name and type guard).** Done, in a few lines: the suffix test is case-insensitive and gains `uri`, `src` and `link` (so the bare `url`, `key`, `src` and `mediaUri` are seen), FILE_WORDS gains `thumb(s)`, `cover`, `poster`, `banner`, `avatar`, `icon`, `blob` and `data`, and a multipart route (an `@UploadedFile(s)` parameter or `multipart/form-data` on the handler) is found from the handler and listed in `MULTIPART_NOT_GATED` (today one: `POST money/identity/documents`, an identity document forwarded to the wallet provider, no copy kept). Four routes' lists gained a property under the wider names, each read in the code first: the featured works' `link` (two routes), a chat message's `attachment.key`, a legal deliverable's `files.url`. A new block holds the rules themselves on made-up bodies (bare names, suffixes, the file words, a file in a class nested in an array, two classes down, and the plain fields of a product left alone), so a weakened rule fails there and not only when a real route needs it. `sections[].thumb` is the same gap as any unlisted name inside a nested class; `thumb` is now a listed word and the nested array is read.
+6. **Nothing else changed.** The protected suite grant is as round 2 built it.
+
+**Mutants of this round** (each applied to the final tree, the specs that hold the rule run, the file restored from a copy; the tree was clean after each)
+
+| Mutant | Result |
+|---|---|
+| T9 N6 giving up answers 400 | KILLED |
+| T9 N7 an em-dash in the 409 sentence | KILLED |
+| T9 N8 100 passes instead of 3 | KILLED |
+| T9 one pass, two passes | KILLED, KILLED |
+| T10 N23 allowance extras always 0 | KILLED by the unit spec (2) and by the HTTP spec (1), each alone |
+| D7 N18 `tier_required` offers every tier again (the old behaviour) | KILLED (3) |
+| D7 the filter uses `>=`; the filter ignores the extras; the pack offered with `tier_required` | KILLED, KILLED, KILLED |
+| D7 the "remove some" sentence also when nothing is up | KILLED |
+| D7 `withOffers` keeps the old sentence; the sentence loses "Your tier has ended."; an em-dash in the sentence | KILLED, KILLED, KILLED |
+| T11 suffix test case-sensitive again; `thumb` words dropped; `data` dropped; nested arrays not read | KILLED x4 |
+| T11 multipart: neither detection | KILLED |
+| T11 multipart: the parameter test alone removed; the swagger test alone removed | SURVIVED, SURVIVED: equivalent, the only multipart route has both, so either alone sees it |
+| Verifier's V2 `url`, V3 `key`, V4 `mediaUri`, V5 `src`, V9 `data`, each added to a profile body | all KILLED |
+
+**Checks.** On backend `8c90db5` unless said.
+- `npx tsc --noEmit` 0. eslint (no `--fix`) 0 problems on the 19 `.ts` files changed this round (my 10 and main's merged files). Prettier clean on the files I wrote.
+- Specs in a private network namespace (`unshare -n`, its own Postgres 16, UTF8), a fresh database migrated with all 123 folders and seeded, the stand-in inside it, one jest worker: `src/content-piece`, `src/creator-state`, `src/storage`, `src/plans`, **all of `src/admin`** (wider than the verifier's three admin folders), `src/account-purge`, `src/data-export-request`: **48 suites, 1281 tests; 1255 passed in the first run and the other 26 are one suite, `src/admin/payments/tests/admin-payments.contract.spec.ts`**, which failed in the namespace only because Node's `fetch` could not reach `localhost` there (`fetch failed` at its login helper). The same suite in the same kind of namespace with the stand-in addressed as `127.0.0.1`: 26 of 26; and outside the namespace on a shared database: 26 of 26. So 1281 of 1281 with that one address difference.
+- Protected suite, `run.sh --fresh HEAD` with the branch's own suite and lock (`PROTECTED_LOCK_REF=HEAD`), same namespace: **253 of 253, "all 244 required tests passed", EXIT 0, 0 `MakerTier` rows left**.
+- Gates: 16 FAIL, the same 16 FAIL lines as main `74b501b` (one line number moved, `content-piece.service.ts:46` to `:48`, as in rounds 2 and 3), warnings 96 against 95 (the same one new warning as in round 3, `PROVISIONAL(PRODUCT-DRAFTS-MAX)`), 76 accepted; `check_baseline` ok, 108 entries.
+- `npm run contract:build` twice after the last merge: byte-identical (sha256 `efc4fcd1...`) and equal to the committed file. Only descriptions differ from main: this task's `reason.tiers` text, and main's WALLET-06 text. Synced to mobile: file copied from the backend branch, `SOURCE_COMMIT` `wmt/TIER-02@8c90db5`, `python3 scripts/api/sync_contract.py` (the generated client changes by those descriptions only).
+- Mobile: `npm run gates` EXIT 0 (0 fail, 5 warn, 568 files, baseline 0); `npm run tasks` EXIT 0 (below). No app code changed by this task, so the full check was not run.
+
+**NOT RUN**
+- The real wawu-id for the live seam (the stand-in was used), and the website (R-49).
+- The whole backend suite (48 suites of the areas this task touches and the protected suite were run).
+- The verifier's D5 and D6 live matrices (`d1b.js`, `d5.js`, `d6m.js`): the code they exercise did not change this round, only the take-down's spec; `d6m.js` also asserts the old `tier_required` offers, so it would now report them.
+- The relock label: the owner's.
+- The mobile full check (typecheck, lint, jest): no app code changed.
+
+**Observations (not changed, for the lead)**
+- The `tier_required` sentence for an ended tier still says "Renew it" while the tier that ended may not be on offer: an ended Verify (3) with 5 up is offered Plus and Founding but not Verify. The ruling kept the sentence while any tier is on offer, so I left it; a shorter "Pick a plan" would always be true.
+- Tiers are judged one purchase at a time, as in round 3: a person with no tier and 12 up is told to remove some, though Founding plus the pack (15 places) would let a publish through. The pack can only be bought on a running tier, and the rule is the lead's.
+- A leftover stand-in WAWU ID of the round 3 verifier (pid 1089, folder deleted) still listens on :6181.
 
 ## For the owner
 

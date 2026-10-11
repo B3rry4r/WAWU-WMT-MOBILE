@@ -14357,7 +14357,7 @@
           {
             "name": "Idempotency-Key",
             "in": "header",
-            "description": "Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back.",
+            "description": "Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. A repeat that comes more than a minute after the first, when the first landed but its answer was never stored, is answered from the PIN: 200 if the PIN is still the one that request set, otherwise 409 pin_changed_again.",
             "required": false,
             "schema": {
               "type": "string",
@@ -14407,7 +14407,7 @@
             }
           },
           "409": {
-            "description": "reason.code: wallet_not_open, wallet_opening, pin_not_set",
+            "description": "reason.code: wallet_not_open, wallet_opening, pin_not_set, pin_changed_again",
             "content": {
               "application/json": {
                 "schema": {
@@ -14583,7 +14583,7 @@
           {
             "name": "Idempotency-Key",
             "in": "header",
-            "description": "Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back.",
+            "description": "Optional. One value per attempt to change the PIN, made by the app when the person first confirms (a UUID) and sent again unchanged when the answer was lost. If the first request landed, its answer comes back with the header Idempotent-Replayed: true and the PIN is not checked again. The same key with another body is 409 idempotency_key_reused; while the first is still running, 409 idempotency_in_progress with retryAfterSeconds; a value that is not 8 to 128 of [A-Za-z0-9_-] is 400 idempotency_key_required. A refused request gives the key back. A repeat that comes more than a minute after the first, when the first landed but its answer was never stored, is answered from the PIN: 200 if the PIN is still the one that request set, otherwise 409 pin_changed_again.",
             "required": false,
             "schema": {
               "type": "string",
@@ -14623,7 +14623,7 @@
             }
           },
           "409": {
-            "description": "reason.code: wallet_not_open, wallet_opening, pin_not_set",
+            "description": "reason.code: wallet_not_open, wallet_opening, pin_not_set, pin_changed_again",
             "content": {
               "application/json": {
                 "schema": {
@@ -29482,7 +29482,7 @@
           },
           "tiers": {
             "type": "array",
-            "description": "`tier_required`: every tier. `product_limit_reached`: the tiers that\nwould let the person publish another, that is, allow more products than\nthey have published now (none when no tier does, including when they have\nmore published than any tier allows).",
+            "description": "The tiers that would let the person publish another, in both refusals:\nonce bought they leave more places than the person has products\npublished now (the extras they hold carry over). For `tier_required`\nthat is every tier for someone with nothing published, and only the big\nenough ones for someone who still has products up after a tick or tier\nended. For `product_limit_reached` it is the tiers above the one they\nhold. The list is empty when no tier does (they hold the top one, or they\nhave more published than any tier allows); `message` then says products\nmust come down first.",
             "items": {
               "$ref": "#/components/schemas/PlanTierView"
             }
@@ -31204,6 +31204,7 @@
               "pin_incorrect",
               "pin_locked",
               "pin_mismatch",
+              "pin_changed_again",
               "reset_code_invalid",
               "insufficient_funds",
               "daily_limit_exceeded",
