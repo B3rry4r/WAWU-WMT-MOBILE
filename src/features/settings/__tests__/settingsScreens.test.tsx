@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { Appearance } from 'react-native';
+import { ActivityIndicator, Animated, Appearance, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockStore = new Map<string, string>();
@@ -104,9 +104,32 @@ function frame(child: ReactElement) {
 }
 
 const mod = <T,>(path: string) => require(path) as T;
+
+/*
+ * The first test in this file used to pay for loading the screens' modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 18 s of a test's 20 s on a cold
+ * transform cache, which is what a fresh checkout has. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+void [
+  mod('../BlockedScreen'),
+  mod('../ChangePasswordScreen'),
+  mod('../NotificationsScreen'),
+  mod('../PrivacyScreen'),
+  mod('../SettingsScreen'),
+  mod('../devicePrefs'),
+];
+void [ActivityIndicator, Animated, Image, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await render(<View />);
+  warm.unmount();
+});
 const checked = (testID: string) => Boolean(screen.getByTestId(testID).props.accessibilityState?.checked);
 const bodiesOf = (method: string, path: string) => sent.filter((s) => s.method === method && s.path === path).map((s) => s.body);
 const tap = (testID: string) => act(async () => fireEvent.press(screen.getByTestId(testID)));
+/** A switch flips at once and is busy, ignoring presses, until the Hub has answered: a second tap is for after that. */
+const idle = (testID: string) => waitFor(() => expect(screen.getByTestId(testID).props.accessibilityState?.busy).toBe(false));
 
 beforeEach(() => {
   answers = {};
@@ -511,8 +534,10 @@ describe('Z2 · Settings', () => {
     expect(checked('settings-tgif')).toBe(true);
     await tap('settings-tgif');
     await waitFor(() => expect(checked('settings-tgif')).toBe(false));
+    await idle('settings-tgif');
     await tap('settings-tgif');
     await waitFor(() => expect(checked('settings-tgif')).toBe(true));
+    await idle('settings-tgif');
     expect(bodiesOf('PATCH', '/api/hub/settings/tgif')).toEqual([{ show: false }, { show: true }]);
   });
 

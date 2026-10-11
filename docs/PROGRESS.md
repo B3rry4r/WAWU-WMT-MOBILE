@@ -3,7 +3,7 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 132 of 247.**
+**Launch tasks done: 133 of 248.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 93 | 27 | 11 | 5 |
+| done | 94 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -151,6 +151,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
 - [FIX-30](../tasks/FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording (You)
 - [AUTH-07](../tasks/AUTH-07.md) Sign-up verifies by email code; no SMS (You)
+- [FIX-31](../tasks/FIX-31.md) The app's tests that fail only under load: make them deterministic (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -167,6 +168,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · FIX-31 · Merged by the lead (cold start and answers-before-they-land fixed in 13 test files; the one remaining race, H1, fails on main too): round 2 takes H1 and AUTH-07's two racy sign-up tests.
 - 11 Oct 2026 · INBOX-05 · Merged by the lead: backend PR #111 (`6976aad`; migration renamed to sort after main) and mobile main. Defect 38 and note 37 (tests only) follow on the same branch.
 - 11 Oct 2026 · BILLS-01 · Hotfix merged by the lead: backend PR #110 (`39e9377`, deployed with BILLS-01, MONEY-18 and WALLET-06) and mobile main; electricity presets are `presets: [{ amountKobo }]`.
 - 11 Oct 2026 · AUTH-07 · Merged by the lead on round 3 (no behaviour defect; D3 and D4 are low test gaps, carried to round 4 with F-G): WAWU ID PR #8 and mobile main.
@@ -181,4 +183,3 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · BILLS-01 · Verifier report, round 2 (independent session; mobile `e735786` (code `4b63839`), backend `13c946c`; mobile main `ac0a5e6` and backend main `8e57981` trial-merged in throwaway copies): no blocker, status review. D1 to D3, D5 to D9, U1 and U3 CONFIRMED by their own reproductions (D1: 300,000 random strings against an independent reference, 43 forms typed and pasted live, limits with kobo to the kobo; D2: 117 meter bodies through the Hub, found only for a named owner, the failure styles are S13, S10 or the new `meter_unconfirmed`; D3 and U3: fake timers and live, the delay mutants die in the screen tests alone; U1: Power and More only). Open: R2-U1 (a check answering a 2xx "service not currently available" while the disco list is fine ends on the normal S2, not S13: the lead to rule), R2-1 (22 invented bodies still draw a green found meter: a failure word or a flag beside a name; depends on the unseen success body, G-641), four more low items (caret after the comma redraw, letters and other digit scripts dropped in a paste, negative or inverted limit rows kept, a cut inside an emoji). Mutants of mine: backend 18 (10 killed, 1 equivalent, 7 test gaps), mobile 32 (28 killed, 2 equivalent, 2 gaps). Trial merges: backend 0 conflicts; mobile 2 conflicts, both generated files (`contract/SOURCE_COMMIT`, `docs/PROGRESS.md`). Merged backend: tsc 0, 19 suites 922 tests, protected suite 253 of 253, gates the same 16 FAIL lines as main, `contract:build` byte-identical twice and equal to the merged mobile copy (+188 lines, none removed). NOT RUN: Fintava's real bodies, a phone.
 - 10 Oct 2026 · BILLS-01 · Builder report, round 2 (status verifying; mobile `wmt/BILLS-01` `4b63839` on main `453d170`, backend `13c946c`): the verifier's D1 to D9 and U1 to U3 answered by the lead's rulings. The amount box takes kobo (`1,500.50` is ₦1,500.50, `10,000.00` is ₦10,000; a second point or a third kobo digit is not taken, nothing floored); the Hub answers a meter as found only for a named owner that is not the company's own name, and a 2xx failure style or an unreadable body is `422 meter_not_found`, `503 bills_unavailable` or the new `502 meter_unconfirmed` (S4: "We couldn't confirm this meter." with Try again, never green; the 24 bodies are specs); the 600 ms wait is pinned by fake-timer tests with literals (M1 killed) and a check starts at ten digits; the Wallet tab draws Power and More only until BILLS-03 (R-47); the 429 sends Retry-After, a check that finds bills off drops the Hub's kept list and S2 opens as S13 at once, a malformed disco row is skipped and logged, the amount's ₦ is drawn in the phone's face, provider text is capped at 200 characters and wraps. 20 backend and 25 app mutants killed; protected suite 253 of 253; gates as main; contract +188 lines, none removed. NOT RUN: Fintava's real success body (G-641), a phone.
 - 10 Oct 2026 · BILLS-01 · Verified by an independent verifier (status back to `building`): backend routes, protected suite 253 of 253, contract +186 and gates as main all confirmed; blockers are the amount box reading a decimal point as extra digits (₦1,500.50 becomes ₦150,050), a green "Meter found" for an answer that names no one (G-641), the 600 ms wait pinned by no test, and the local `BillField` stand-in; 13 of 13 backend and 18 of 20 mobile mutants killed; real Fintava NOT RUN.
-- 10 Oct 2026 · BILLS-01 · Built (status verifying; backend `wmt/BILLS-01` adds `GET /bills/electricity/billers` and `POST /bills/electricity/meter-preview` on Fintava): Pay a bill (S2), the electricity companies (S3), meter and amount (S4), meter not found (S10) and not live yet (S13, only from what Fintava's bills service says); the bills tiles on the Wallet tab, Bills on Home's balance card and Pay bills in its services row; no Recent, reminders, Airtime, Data, Cable TV or Continue yet (R-47). Real Fintava, the preview's success body and repeating a recent bill NOT RUN (G-640, G-641).
