@@ -14,6 +14,8 @@ import {
   type SignupChannel,
 } from '@/api/identity';
 import { adoptSession } from '@/api/session';
+import { noteContactProved } from '@/features/claim/freshToken';
+import { markOfferPending } from '@/features/claim/offerStep';
 
 import { wireAccountType, type AccountType } from './accountType';
 import { authed } from './signupApi';
@@ -53,11 +55,12 @@ let knownChannel: SignupChannel | null = null;
 
 /**
  * A3: which way the code will travel, so the line under the heading names the channel A4 will then name (the
- * words follow WAWU ID's SIGNUP_VERIFY_CHANNEL, AUTH-07 round 3). Asked once per run of the app. Null when WAWU ID could
- * not be asked: the line is then left out, never guessed.
+ * words follow WAWU ID's SIGNUP_VERIFY_CHANNEL, AUTH-07 round 3). Asked again each time A3 comes into focus (round 4,
+ * the verifier's F-G): the setting can change while the app stays open, and an answer kept for the whole run
+ * would leave A3 naming the old channel while A4 names the new one. Null when WAWU ID could not be asked: the line is
+ * then left out, never guessed.
  */
 export async function signupChannel(): Promise<SignupChannel | null> {
-  if (knownChannel) return knownChannel;
   try {
     knownChannel = await signupChannelRequest();
   } catch {
@@ -66,7 +69,7 @@ export async function signupChannel(): Promise<SignupChannel | null> {
   return knownChannel;
 }
 
-/** What `signupChannel` already learned this run (null before it has). */
+/** What the last ask of `signupChannel` learned (null before it has, or when it failed). */
 export function knownSignupChannel(): SignupChannel | null {
   return knownChannel;
 }
@@ -93,6 +96,8 @@ export async function confirmSignupCode(code: string, emailCode: string): Promis
           ...(emailCode ? { emailCode } : {}),
         });
   await clearSignup();
+  // JOIN-03: this account is new, so it is asked once whether it has an access code (SHARED-CHANGES JOIN-03 #4).
+  await markOfferPending(tokens.accessToken);
   await adoptSession(tokens);
 }
 
@@ -157,6 +162,8 @@ export function startEmailCode(): Promise<EmailCodeSent> {
 export async function confirmEmailCode(code: string): Promise<void> {
   try {
     setSignupProgress(await authed((token) => signupEmailConfirmRequest(token, code)));
+    // JOIN-03: the access token in hand was issued before this proof; a claim renews it first (SHARED-CHANGES JOIN-03 #6).
+    await noteContactProved();
   } catch (error) {
     if (isApiError(error) && error.status === 409) {
       // Proven already, or no address on the account: the server's progress says where to go.

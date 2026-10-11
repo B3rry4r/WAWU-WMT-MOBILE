@@ -522,6 +522,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balance, live lots with their end dates, the next end, the last 20 movements. */
+        get: operations["PointsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/bills/categories": {
         parameters: {
             query?: never;
@@ -2135,6 +2152,11 @@ export interface paths {
          * Scan at the door, as the host or their door staff. Let them in (E20)
          *     with the holder's name, already used (E23) with when and by whom, or
          *     not valid (E24), with the live counts.
+         *
+         *     `Idempotency-Key` (optional): the phone makes one per scan and sends it
+         *     again unchanged when it asks again after an answer was lost. A repeat is
+         *     answered with the first verdict (header `Idempotent-Replayed: true`),
+         *     never "already used" by the scanner's own door.
          */
         post: operations["EventRunningController_checkIn"];
         delete?: never;
@@ -2711,6 +2733,34 @@ export interface paths {
          *     limit or the provider's) before anything is sent.
          */
         post: operations["MoneyPaymentsController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One payment as it stands now: what the app polls after `pending` (H18,
+         *     E10) or after `payment_in_progress` (`reason.paymentId`). `pending`
+         *     becomes `completed`, `failed` or `reversed` once the provider says
+         *     which; `delivered` is true once what was paid for has reached the buyer
+         *     (a `completed` payment with `delivered` false is "paid, still opening").
+         *     Only the payer reads it: another person's payment is the same `404
+         *     not_found` as one nobody holds. It reads our record only, never the
+         *     provider, and moves nothing, so it is not behind the fee settings, the
+         *     key or the PIN. Declared after the quote so `payments/quote` is never
+         *     read as an id.
+         */
+        get: operations["MoneyPaymentsController_payment"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5239,23 +5289,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/me/points": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Balance, live lots with their end dates, the next end, the last 20 movements. */
-        get: operations["PointsController_mine"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/waitlist/offers/current": {
         parameters: {
             query?: never;
@@ -5330,6 +5363,30 @@ export interface paths {
         get: operations["WaitlistPublicController_status"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/waitlist/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim a paid registration with its launch access code. The caller must
+         *     hold the registration's phone or email, proven to WAWU ID; the code alone
+         *     is never enough. Gives what the registration's plan gives, its days
+         *     counted from now, once. The account that made the claim and sends the
+         *     same code again is answered with the same plan (a 200, nothing granted
+         *     twice), so an answer that was lost on the way can be asked for again.
+         */
+        post: operations["WaitlistClaimController_claim"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5504,26 +5561,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/payments/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One payment, as it stands now. Only the payer can read it.
-         * @description Declared by MONEY-04, not served yet: MONEY-19 serves it.
-         */
-        get: operations["MoneyPaymentController_payment"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5596,11 +5633,16 @@ export interface components {
             currency?: "NGN" | "USD";
             /**
              * @description `tier_required`: every tier. `product_limit_reached`: the tiers that
-             *     allow more products than the one the person holds (none when there is
-             *     no way up).
+             *     would let the person publish another, that is, allow more products than
+             *     they have published now (none when no tier does, including when they have
+             *     more published than any tier allows).
              */
             tiers?: components["schemas"]["PlanTierView"][];
-            /** @description The extra products they can buy now, or null when they cannot. */
+            /**
+             * @description The extra products they can buy now, or null when they cannot: no running
+             *     tier, or buying them would still leave fewer places than products
+             *     published.
+             */
             extraProducts?: components["schemas"]["PlanExtraProductsView"] | null;
             /** @description A sentence the app may show as it is. No em-dash. */
             message: string;
@@ -6132,10 +6174,13 @@ export interface components {
             handle?: string;
             label?: string;
         };
+        DoorScanDto: {
+            code: string;
+        };
         MoneyErrorReason: {
             /** @enum {string} */
             code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
-            /** @description insufficient_funds: Fintava's available balance when the payment was refused. */
+            /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
             totalKobo?: number;
@@ -7045,6 +7090,14 @@ export interface components {
             /** @description The transaction id the payment modal handed back (digits). */
             transactionId: string;
         };
+        ClaimWaitlistRegistrationDto: {
+            /**
+             * @description The launch access code from the registration page: 8 letters and numbers
+             *     (0 to 9, A to F), written "XXXX XXXX". Spaces, dashes and lower case are
+             *     accepted; the server reads it without them.
+             */
+            code: string;
+        };
         CreateAdCreativeDto: {
             headline: string;
             /** @description Place, date and price as the team types them. Leave it out for no second line. */
@@ -7422,6 +7475,7 @@ export interface components {
             reference: string;
             hold: components["schemas"]["HoldView"] | null;
             failureReason: string | null;
+            delivered: boolean;
             statusMessage: string | null;
             createdAt: string;
             completedAt: string | null;
@@ -7536,6 +7590,35 @@ export interface components {
                 }[];
                 pagination: components["schemas"]["PaginationMeta"];
             };
+        };
+        PointNextExpiryView: {
+            points: number;
+            expiresAt: string;
+        };
+        PointLotView: {
+            id: string;
+            points: number;
+            granted: number;
+            /** @enum {string} */
+            source: "tier_bonus" | "pack" | "bump" | "referral" | "shortfall" | "returned";
+            label: string;
+            expiresAt: string;
+        };
+        PointMovementView: {
+            id: string;
+            points: number;
+            label: string;
+            /** @enum {string} */
+            reason: "hold" | "grant" | "release" | "expire";
+            pending: boolean;
+            createdAt: string;
+        };
+        MyPointsView: {
+            balance: number;
+            nextExpiry: components["schemas"]["PointNextExpiryView"] | null;
+            lots: components["schemas"]["PointLotView"][];
+            lotCount: number;
+            movements: components["schemas"]["PointMovementView"][];
         };
         PlanBadgeView: {
             id: string;
@@ -8651,6 +8734,8 @@ export interface components {
         DoorCheckInResult: {
             /** @enum {string} */
             outcome: "valid" | "already_used" | "invalid";
+            /** @enum {string|null} */
+            reason?: "cancelled" | null;
             ticket: {
                 code: string;
                 tierName: string;
@@ -10464,35 +10549,6 @@ export interface components {
             paidDms: number;
             communities: number;
         };
-        PointNextExpiryView: {
-            points: number;
-            expiresAt: string;
-        };
-        PointLotView: {
-            id: string;
-            points: number;
-            granted: number;
-            /** @enum {string} */
-            source: "tier_bonus" | "pack" | "bump" | "referral" | "shortfall" | "returned";
-            label: string;
-            expiresAt: string;
-        };
-        PointMovementView: {
-            id: string;
-            points: number;
-            label: string;
-            /** @enum {string} */
-            reason: "hold" | "grant" | "release" | "expire";
-            pending: boolean;
-            createdAt: string;
-        };
-        MyPointsView: {
-            balance: number;
-            nextExpiry: components["schemas"]["PointNextExpiryView"] | null;
-            lots: components["schemas"]["PointLotView"][];
-            lotCount: number;
-            movements: components["schemas"]["PointMovementView"][];
-        };
         MeCountsView: {
             purchases: number;
             saved: number;
@@ -10638,6 +10694,7 @@ export interface components {
             reference: string;
             accessCode: string;
             flutterwaveTransactionId: string | null;
+            claimed: boolean;
             claimedByWawuId: string | null;
             claimedAt: string | null;
             createdAt: string;
@@ -10648,6 +10705,15 @@ export interface components {
             rowCount: number;
             content: string;
             generatedAt: string;
+        };
+        WaitlistClaimView: {
+            offerName: string;
+            days: number;
+            extended: boolean;
+            pointsGranted: number;
+            pointsExpireAt: string | null;
+            claimedAt: string;
+            tier: components["schemas"]["MyTierView"];
         };
         WaitlistOfferView: {
             id: string;
@@ -11650,6 +11716,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyTierView"];
+                };
+            };
+        };
+    };
+    PointsController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyPointsView"];
                 };
             };
         };
@@ -14730,7 +14815,10 @@ export interface operations {
     EventRunningController_checkIn: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description One value per scan, made by the app when a ticket is first read and sent again unchanged when it asks again about that scan. A repeat is answered with the first verdict. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -14738,7 +14826,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScanTicketDto"];
+                "application/json": components["schemas"]["DoorScanDto"];
             };
         };
         responses: {
@@ -16352,6 +16440,54 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyPaymentsController_payment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21224,25 +21360,6 @@ export interface operations {
             };
         };
     };
-    PointsController_mine: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MyPointsView"];
-                };
-            };
-        };
-    };
     WaitlistPublicController_currentOffer: {
         parameters: {
             query?: never;
@@ -21392,6 +21509,50 @@ export interface operations {
             };
             /** @description `reason.code` `not_found`: the same answer for a reference that does not exist and one that was never issued. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WaitlistClaimController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimWaitlistRegistrationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistClaimView"];
+                };
+            };
+            /** @description `reason.code` `code_invalid`: not 8 letters and numbers. A malformed body has no `reason`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `code_not_found`: the same answer for a code that does not exist, is not paid, or is not tied to a phone or email the caller has proven. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `contact_not_verified` (the account has no proven phone or email), `code_refunded` (an extra payment being refunded), `already_claimed` (by another account), `offer_unavailable`, or `claimed_by_you` (only for a claim made before its answer was kept; the same account asking again is otherwise answered 200). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21742,54 +21903,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransferView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyPaymentController_payment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentView"];
                 };
             };
             /** @description reason.code: not_found */

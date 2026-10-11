@@ -1021,12 +1021,13 @@ here is redrawn.
   `SIGNUP_VERIFY_CHANNEL` is `phone` until the release steps switch it to `email` (task
   AUTH-07, "Release steps"). Under `phone` WAWU ID answers without a channel and the app draws
   the old words above ("Verify your phone", "Sent by SMS to 0803 ••• 4412"); under `email` it
-  draws the mailed ones. **A3's line follows the same setting**: on arrival the app asks
-  WAWU ID which channel the code will travel (`GET /auth/signup/channel`), so A3 and A4 name
-  the same channel. Under `phone` the line under A3's heading is **"We'll text a code to your
-  phone."** (the canvas's own words); under `email` it is **"We'll email you a code to confirm
-  your address."** While the app has no answer (offline, or an answer it does not know) the
-  line is not drawn: it is never guessed.
+  draws the mailed ones. **A3's line follows the same setting**: each time A3 comes into
+  focus (a first visit, and every return from A4) the app asks WAWU ID which channel the
+  code will travel (`GET /auth/signup/channel`), so A3 and A4 name the same channel. Under
+  `phone` the line under A3's heading is **"We'll text a code to your phone."** (the canvas's
+  own words); under `email` it is **"We'll email you a code to confirm your address."** While
+  the app has no answer (offline, or an answer it does not know) the line is not drawn: it is
+  never guessed.
 - **A mailed sign-up made without the number typed (Default (lead), 10 Oct 2026, round 3; owner
   may override):** a mailed code proves no number, so it never takes one from an account that
   only typed it. When the number typed on A3 is held that way, the sign-up goes ahead without
@@ -1115,6 +1116,57 @@ here is redrawn.
 - **Instead:** Password opens a change-password screen in A22's field style
   (current password, new password, Save).
 - **Why:** the row is drawn; its screen is built in the canvas's own style.
+
+### Z2 · Settings, one added row (JOIN-03, no artboard)
+- **Now:** Notifications, Privacy and Password in the first group.
+- **Instead:** a fourth row, "Access code" with the line "Claim a plan you paid
+  for at an event" (Ticket icon, the same tile as its neighbours), opening the
+  access code screen. It is drawn only because that screen is built (R-47).
+- **Why:** R-48. The plan screen where the claim also belongs is not built, so
+  Settings is the one place a signed-in person can reach it from.
+
+### Access code screen (JOIN-03, no artboard)
+- **Now:** nothing is drawn: the registration page (JOIN-02) hands a person a
+  code, and no screen takes it.
+- **Instead:** one screen in A22's field style: the title "Your access code",
+  one field (shown "XXXX XXXX", upper case), and a "Claim my plan" button. A
+  refusal keeps the code and says why in plain words (a note above the field,
+  or a line on it for the code itself). On success the same frame shows "Your
+  plan is ready" with the Hub's own list of what the code gave that the app
+  puts to use today: the plan, the day it ends, and the points if they were
+  added. Not listed, though the Hub grants them: the products the plan allows,
+  the event pass and the first Voice Intro (round 2, N2). Their screens are not
+  built and the publishing limit the app enforces is still the flat one, so
+  listing them would promise what the app does not do (R-47). Their lines come
+  back with TIER-02 to TIER-05, the points tools and Voice Intro.
+  Seen again (round 3, D4): a code that is sent a second time gets the first
+  answer back, and the words follow the day it was first claimed and the plan
+  as it stands. Claimed today, the plan in force: "Your plan is ready" and
+  "Verify for 30 days, starting today." An earlier day, the plan in force:
+  "Your plan is active" and "Verify started on 1 Oct." (a plan that was
+  extended: "30 days were added to your plan on 8 Oct."). The plan over:
+  "Your plan has ended" and "Verify ended on 1 Sep.", with "Ended" where "Runs
+  until" was, and a calendar glyph in the place of the check. The lines are
+  the same four.
+- **Signed out (round 3, N14):** a visit to the screen with no one signed in
+  opens sign-in, and the sign-in that follows comes back to it.
+- **Why:** R-48 and JOIN-03. Every line is the Hub's answer; the phone works
+  out nothing.
+
+### Have an access code? (JOIN-03 round 2, no artboard)
+- **Now:** after sign-up the app opens Home; the access code is reachable only
+  from Settings, and nothing leads a person who paid at an event to it.
+- **Instead:** right after sign-up, once per account, one screen in the access
+  code screen's style: a Ticket tile, the title "Have an access code?", the
+  line "Paid for a plan at an event? Enter the code from your registration to
+  claim it. You can also do this later in Settings.", and two buttons: "Enter
+  code" (opens the access code screen) and "Skip" (opens the app). No back
+  arrow: there is nothing behind it. It is shown only to an account that has
+  just signed up, never to someone signing in, and it never holds the app up:
+  if the phone cannot remember whether it was shown, it is not shown. Settings'
+  Access code row stays.
+- **Why:** R-48 and JOIN-03 ("after sign-up"). The lead approved the step
+  (round 2, ruling 7). SHARED-CHANGES JOIN-03 #4.
 
 ### Z6 · Delete account
 - **Now:** "wallet and cards" in what goes.

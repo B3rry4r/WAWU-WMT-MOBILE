@@ -7,7 +7,7 @@ order: 208
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: review
+status: verifying
 depends_on: [TIER-01, ME-17]
 decisions: [R-43, R-7, R-8]
 passes: [V1, V2, V3, V4, V9]
@@ -86,7 +86,7 @@ no way to buy a tier while web work is paused (R-49; BACKEND_GAPS G-663).
 - Routes that ask the gate (listed and held to the code by `publishing-gate-coverage.spec.ts`): `POST /content`,
   `POST /content/:id/resubmit`, `PATCH /content/:id` (only when it carries `previewAsset` or `fullAsset`),
   `POST /uploads/presign` (only `content/preview` and `content/full`), `POST /product-drafts/:id/publish`.
-- Drafts (new, free, no tier asked): `ProductDraft` table (migration `20261021030000_product_drafts`, additive, rollback
+- Drafts (new, free, no tier asked): `ProductDraft` table (migration `20261021120000_product_drafts`, additive, rollback
   in its header) and `POST/GET /product-drafts`, `GET/PATCH/DELETE /product-drafts/:id`,
   `POST /product-drafts/:id/publish` (`src/content-piece/product-draft.*`). A draft is a title and optional details with
   no file; it holds no place and is shown to nobody else. `missing` lists what publishing still needs. Publishing asks
@@ -555,6 +555,62 @@ Live scripts against a build with M01, M08 and M11 together: D1 failed in 9 of 9
 - The mobile full check (typecheck, lint, jest): the mobile branch changes only the generated contract types and docs; `npm run gates` and `npm run tasks` are below.
 - The `relock-approved` label and the relock decision: the owner's.
 - A fix for D5 or D6: the verifier changes no product code.
+
+## Builder report, round 3
+
+Builder, 11 Oct 2026. wawu-backend `wmt/TIER-02` `5047cad`; mobile `wmt/TIER-02` (this branch, this file). Backend main merged in twice: `5926f5c` (JOIN-03; the two add/add conflicts the verifier named, `src/plans/plans.module.ts` and `docs/contract/PLANS.md`, kept both sides: the module's doc comment is one paragraph again and main's section is now `## 7. Granting a tier (JOIN-03)` beside TIER-02's `## 6.`) and then `f11d307` (MONEY-19; no conflict). Mobile main `492615d` (which contains `21085a2`): conflicts only in `BACKEND_GAPS.md` (both kept), `contract/SOURCE_COMMIT` and the generated `docs/PROGRESS.md` (regenerated).
+**Migration renamed again (brief, 11 Oct):** `20261021030000_product_drafts` is now `20261021120000_product_drafts`, because main's newest folder is `20261021110000_waitlist_claim_result`. Contents unchanged except the rollback line, which names the new folder; nothing was deployed under any earlier name. A fresh database takes all 123 folders in order. SHARED-CHANGES TIER-02 #1 says so.
+
+Before and after were run on two Hub processes (:6182 and :6183) on one database, with the Hub repo's stand-in WAWU ID on :6181: the "before" on a build of the merged tree before any round 3 change, the "after" on a build of the final tree. The scripts are the verifier's own (`d1b.js`, `d234.js`, `lib.js`), plus `d6.js` for D6. Transcripts are in the lead's scratchpad `tier02r3/` (`before-d5.txt`, `after-d5.txt`, `after-d5-20.txt`, `before-d6.txt`, `after-d6.txt`, `after-d4.txt`).
+
+**Each ruling as built**
+1. **D5 (admin take-down and reject could return a place twice or never).** `AdminContentReviewService.takeDown` now reads the piece INSIDE its transaction and flips it with `updateMany where { id, status: <the status read> }` (that status is never `removed`, so a removed piece never matches), the compare-and-swap `DELETE` has. A place goes back only when its write changed the row and the status it changed from was not `rejected`; a write that changed nothing reads again (3 passes, then `409 "This piece changed while you were taking it down. Try again."`). The audit row's `previousStatus` is the status it really changed from. `reject` and `approve` (`decide`) read inside the transaction too; their flip was already conditional on `pending`, so they could not return a place twice, and `approve` never touches the count, so the only unconditional read that moved `slotsUsed` was take-down's. *Before* (the verifier's `d1b.js`, build of the merged tree): reject then take-down on one waiting piece, `slotsUsed` 3 to 1 with 2 live (a place returned twice): 2 of 2 ordered runs, 5 of 6 at once; take-down then reject at once, 1 of 6; take-down racing a resubmit (a place lost, 2 to 3 with 2 live): 2 of 6 at once; resubmit then take-down, 2 of 2 ordered and 4 of 6 at once. *After* (final tree): all 16 pair cases of `d1b.js`, each both ways round (2 ordered runs and 6 at once): **32 of 32 checks, 0 drift**; the four cases that failed, 20 rounds each at once: **0 drift in 80 runs**, and both orders really happened (reject against take-down answered 200/200 15 times and 400/200 5 times). A new real-database spec, `src/admin/content-review/tests/status-race.contract.spec.ts` (9 tests), makes each interleaving on purpose: a second transaction holds the piece's row lock, the admin request starts and the spec waits until the database says it is blocked on that lock (so it has already read the piece), and only then the competing change is written and committed. Cases: take-down against a reject, against a creator's resubmit, against an approve, against the creator's own removal; reject and approve against a take-down and a removal; six take-downs at once (one wins, one audit row, one place); two rejects at once; a reject and a take-down at once, 20 rounds, `slotsUsed` equal to the held pieces every time. The existing take-down unit double gained a transaction read (its four tests are unchanged).
+2. **D6 (a person above their allowance was told "25 of 3" and offered what would not help).** `product_limit_reached` now carries only offers that would let another product go up: a new pure function, `limitOffers` (`src/plans/limit-offers.ts`), counts a tier when its products plus the extras already bought are MORE than the products published, and the extras pack when the person has a running tier and tier plus extras plus the pack is more than published. At the limit that is what it was (the tiers above the one held, extras carried over, and the pack); above the allowance it is only what is big enough for everything published, often nothing. The sentence (`productLimitMessage`) for published > allowed is "You have 25 products and your plan allows 3. To publish another, remove some." and adds " or add more places" only while an offer in the body would really help (numbers from the data, "1 product" in the singular, no em-dash). Exactly at the limit nothing changed. `tier_required` is untouched. *Before:* `GET /me/tier` read 25 of 3 and publishing answered "You have used 25 of 3 products. Add more products or move up a tier to publish another." with Plus, Founding and the 5-pack; 9 up on Verify the same; a tick holder at 27 of 25 "You've used all 25 of your product places." *After* (`d6.js`, 10 of 10): tick ended, 25 up, Verify bought: the sentence above, `tiers: []`, `extraProducts: null`, and the same sentence from a content presign; 9 up on Verify: only Founding (10), no pack (3 + 5 = 8 would not help), "remove some or add more places."; 5 up: Plus, Founding and the pack; 3 of 3 (control): the round 2 sentence and offers; a tick holder at 27 of 25: "You have 27 products and your plan allows 25. To publish another, remove some."; and "remove some" is true: removing pieces down to the allowance lets the next publish go up (204s then 201). `d234.js D4` (the round 2 sentences): 8 of 8 still pass. Specs: the tick-ended-then-Verify case and two more in `publishing-gate.contract.spec.ts` (HTTP, real database), `limit-offers.spec.ts` (every case of the rule), `tier-gate-message.spec.ts`. **I changed one assertion I did not write:** `tier-gate-message.spec.ts` pinned "You've used all 25 of your product places." for 27 used of 25 allowed with no offers; ruling 2 replaces that sentence, so it now pins the two-number one (the same file also pins the unchanged "used all" sentence at exactly the limit). The contract text of `reason.tiers` and `reason.extraProducts` changed (descriptions only; no field added or retyped).
+3. **T8 (a new `images` property slipped past the coverage spec).** `publishing-gate-coverage.spec.ts` finds file-carrying body properties three ways: by name (`folder`; names ending `Asset`, `Url` or `Key`, also plural; and a word list, `image(s)`, `file(s)`, `media`, `attachment(s)`, `document(s)`, `frame(s)`, `photo(s)`, `picture(s)`, `video(s)`, `audio`, `gallery`, `thumbnail(s)`, `logo`, `upload(s)`, as a whole name or the end of one), by type (a property whose type, also as the item type of an array, is a class named for a Presign, Upload, Asset or Attachment) and inside nested classes (reported with a path, `attachment.key`). That sees 44 mounted routes: 4 gated and 40 listed in `NOT_GATED` (21 before), 19 of them new (the application and request documents, the featured works' `media`, the photo set's `frames`, chat attachments, the identity selfie, admin shop and ads, school logos, staff file lists), each with a reason. Each entry now also lists its file properties and the spec holds the list EXACTLY, so a route that gains one fails until someone says what it is (this is what kills the verifier's X1: `frames` was already on that route). *Mutants, all KILLED:* X1 an `images` array on `PUT /content/:id/media` (the verifier's); X2 `fileKey` there; X3 `files` and X4 `attachments` on `PUT /content/:id/preview`; X6 a nested class holding a `document`; X7 a property under a plain name whose type is an upload class; X8 `frames` renamed (a listed property no longer found).
+4. **T6 and T7: recorded, no change.** T6 (resubmit alone put back to `upsert` survives: unreachable, since a turned-down piece means an earlier publish made the row) and T7 (one advisory lock for everyone instead of one per person: same outcomes, only throughput differs; per person was shown live in round 2, D3).
+5. **The PR and the label: not this round.** The protected suite grant is as round 2 built it (253 of 253 below).
+
+**Mutants of this round** (each applied to the final tree, the five specs that hold the rules run in order, the file restored; the tree was clean after each)
+
+| Mutant | Result |
+|---|---|
+| D5-0 `takeDown` as it was (read before the transaction, flip on "not removed") | KILLED, 4 of 9 race tests |
+| D5-1 flip on "not removed" again (read inside) | KILLED |
+| D5-2 a rejected piece also gives a place back | KILLED |
+| D5-3 take-down never gives a place back | KILLED |
+| D5-4 one attempt only (no read again) | KILLED |
+| D5-5 a write that changed no row still returns the place | KILLED |
+| D5-6 reject and approve flip no longer conditional on waiting | KILLED |
+| D5-7 the audit row names the wrong previous status | KILLED |
+| D6-1 every tier above the one held (the old rule) | KILLED |
+| D6-2 a tier that leaves exactly as many places as products counts | KILLED |
+| D6-3 the pack offered to any running tier | KILLED |
+| D6-4 the pack judged without the extras bought | KILLED |
+| D6-5 the pack offered without a running tier | KILLED |
+| D6-6 extras dropped when judging a higher tier | KILLED |
+| D6-7 above the allowance, the old "used all" sentence | KILLED |
+| D6-8 "add more places" said even when nothing is on offer | KILLED |
+| D6-9 the two numbers swapped | KILLED |
+| D6-10 the route stops using `limitOffers` | KILLED |
+
+One mutant survived and is gone: ignoring a held tick's cap inside `limitOffers` changed nothing, because the rule only runs for a person who has used every place they have, so they have at least as many published as the tick allows and the cap can never decide an offer. It was an equivalent mutant; I took the term out (and its comment says why) instead of keeping dead code.
+
+**Checks.** On the head named above unless said.
+- `npx tsc --noEmit` 0. eslint (no `--fix`) 0 problems on every file round 3 changed or added (12 `.ts` files); over all 57 `.ts` files the branch changes against main it reports 524 problems, every one in the same 11 older files (525 on main; none new). Prettier clean on the files I wrote.
+- Specs in a private network namespace (`unshare -n`, its own Postgres 16, UTF8, on 127.0.0.1:5432), a fresh database migrated with all 123 folders and seeded, the stand-in WAWU ID inside it, one jest worker: `src/content-piece`, `src/creator-state`, `src/storage`, `src/plans`, `src/admin/content-review`, `src/admin/creators`, `src/admin/kyc-review`, `src/account-purge`, `src/data-export-request`: **36 suites, 671 tests passed, EXIT 0**.
+- Protected suite, `run.sh --fresh HEAD` with the branch's own suite and lock (`PROTECTED_LOCK_REF=HEAD`), same namespace: **253 of 253, "all 244 required tests passed", EXIT 0, 0 `MakerTier` rows left**.
+- Gates: 16 FAIL, the same 16 FAIL lines as main `f11d307` (one line number moved, `content-piece.service.ts:46` to `:48`, as in round 2), warnings 96 against 95 (the one new is `PROVISIONAL(PRODUCT-DRAFTS-MAX)`), 76 accepted; `check_baseline` ok, 108 entries.
+- `npm run contract:build` twice: byte-identical (sha256 `2c17a636...`). The merge had put the `/me/points` block in a different place than the build writes it, so the file changed by position (the same text moved) and by the two description edits; committed as `5047cad`. Synced to mobile: the file copied from the backend branch, `SOURCE_COMMIT` `wmt/TIER-02@5047cad`, `python3 scripts/api/sync_contract.py` (against the merged index the generated client changes by the moved block and the two descriptions only).
+- Mobile (after main `492615d` was merged in): `npm run gates` EXIT 0 (0 fail, 5 warn, 565 files, baseline 0), `npm run tasks` EXIT 0 (275 tasks, 279 artboards); `python3 scripts/api/sync_contract.py` run again changes nothing. No app code changed by this task, so the full check was not run (the app files in the merge are main's).
+
+**NOT RUN**
+- The real wawu-id for the live seam (the stand-in was used), and the website (R-49).
+- The whole backend suite (the 36 suites above and the protected suite were run; the whole suite was run in round 2 and this round changes only the files named).
+- The relock label: the owner's.
+- The mobile full check (typecheck, lint, jest): no app code changed.
+
+**Observations (not changed, for the lead)**
+- `tier_required` still offers every tier. A person whose tick ended with 25 pieces up and who has bought nothing is told "Pick one to carry on" with Verify (3) among the offers, which would then say "You have 25 products and your plan allows 3". The ruling is about a person who holds a plan; I left `tier_required` alone because its contract says "every tier" and the app's picker reads it. Filtering it the same way is a small change if wanted.
 
 ## For the owner
 

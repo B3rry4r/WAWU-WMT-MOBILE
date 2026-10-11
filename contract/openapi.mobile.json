@@ -1186,6 +1186,28 @@
     ]
    }
   },
+  "/api/hub/me/points": {
+   "get": {
+    "operationId": "PointsController_mine",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MyPointsView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Balance, live lots with their end dates, the next end, the last 20 movements.",
+    "tags": [
+     "Points"
+    ]
+   }
+  },
   "/api/hub/bills/categories": {
    "get": {
     "operationId": "BillPaymentController_categories",
@@ -8452,6 +8474,16 @@
       "schema": {
        "type": "string"
       }
+     },
+     {
+      "name": "Idempotency-Key",
+      "in": "header",
+      "description": "One value per scan, made by the app when a ticket is first read and sent again unchanged when it asks again about that scan. A repeat is answered with the first verdict.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
      }
     ],
     "requestBody": {
@@ -8459,7 +8491,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/ScanTicketDto"
+        "$ref": "#/components/schemas/DoorScanDto"
        }
       }
      }
@@ -8476,7 +8508,7 @@
       }
      }
     },
-    "summary": "Scan at the door, as the host or their door staff. Let them in (E20)\nwith the holder's name, already used (E23) with when and by whom, or\nnot valid (E24), with the live counts.",
+    "summary": "Scan at the door, as the host or their door staff. Let them in (E20)\nwith the holder's name, already used (E23) with when and by whom, or\nnot valid (E24), with the live counts.\n\n`Idempotency-Key` (optional): the phone makes one per scan and sends it\nagain unchanged when it asks again after an answer was lost. A repeat is\nanswered with the first verdict (header `Idempotent-Replayed: true`),\nnever \"already used\" by the scanner's own door.",
     "tags": [
      "EventRunning"
     ]
@@ -10802,6 +10834,73 @@
      "MoneyPayments"
     ],
     "x-wawu-built-by": "MONEY-17"
+   }
+  },
+  "/api/hub/money/payments/{id}": {
+   "get": {
+    "operationId": "MoneyPaymentsController_payment",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PaymentView"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "reason.code: not_found",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MoneyErrorEnvelope"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "reason.code: wallet_not_open, wallet_opening",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MoneyErrorEnvelope"
+        }
+       }
+      }
+     },
+     "423": {
+      "description": "reason.code: wallet_frozen",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MoneyErrorEnvelope"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "One payment as it stands now: what the app polls after `pending` (H18,\nE10) or after `payment_in_progress` (`reason.paymentId`). `pending`\nbecomes `completed`, `failed` or `reversed` once the provider says\nwhich; `delivered` is true once what was paid for has reached the buyer\n(a `completed` payment with `delivered` false is \"paid, still opening\").\nOnly the payer reads it: another person's payment is the same `404\nnot_found` as one nobody holds. It reads our record only, never the\nprovider, and moves nothing, so it is not behind the fee settings, the\nkey or the PIN. Declared after the quote so `payments/quote` is never\nread as an id.",
+    "tags": [
+     "MoneyPayments"
+    ],
+    "x-wawu-built-by": "MONEY-19"
    }
   },
   "/api/hub/money/holds": {
@@ -20790,28 +20889,6 @@
     ]
    }
   },
-  "/api/hub/me/points": {
-   "get": {
-    "operationId": "PointsController_mine",
-    "parameters": [],
-    "responses": {
-     "200": {
-      "description": "",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/MyPointsView"
-        }
-       }
-      }
-     }
-    },
-    "summary": "Balance, live lots with their end dates, the next end, the last 20 movements.",
-    "tags": [
-     "Points"
-    ]
-   }
-  },
   "/api/hub/waitlist/offers/current": {
    "get": {
     "operationId": "WaitlistPublicController_currentOffer",
@@ -20956,6 +21033,47 @@
     "summary": "Where a registration stands: status and first name only, never a phone or email.",
     "tags": [
      "WaitlistPublic"
+    ]
+   }
+  },
+  "/api/hub/waitlist/claims": {
+   "post": {
+    "operationId": "WaitlistClaimController_claim",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ClaimWaitlistRegistrationDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WaitlistClaimView"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "`reason.code` `code_invalid`: not 8 letters and numbers. A malformed body has no `reason`."
+     },
+     "404": {
+      "description": "`reason.code` `code_not_found`: the same answer for a code that does not exist, is not paid, or is not tied to a phone or email the caller has proven."
+     },
+     "409": {
+      "description": "`reason.code` `contact_not_verified` (the account has no proven phone or email), `code_refunded` (an extra payment being refunded), `already_claimed` (by another account), `offer_unavailable`, or `claimed_by_you` (only for a claim made before its answer was kept; the same account asking again is otherwise answered 200)."
+     }
+    },
+    "summary": "Claim a paid registration with its launch access code. The caller must\nhold the registration's phone or email, proven to WAWU ID; the code alone\nis never enough. Gives what the registration's plan gives, its days\ncounted from now, once. The account that made the claim and sends the\nsame code again is answered with the same plan (a 200, nothing granted\ntwice), so an answer that was lost on the way can be asked for again.",
+    "tags": [
+     "WaitlistClaim"
     ]
    }
   },
@@ -21558,75 +21676,6 @@
     "description": "Declared by MONEY-04, not served yet: WALLET-07 serves it.",
     "x-wawu-served": false
    }
-  },
-  "/api/hub/money/payments/{id}": {
-   "get": {
-    "operationId": "MoneyPaymentController_payment",
-    "parameters": [
-     {
-      "name": "id",
-      "required": true,
-      "in": "path",
-      "schema": {
-       "type": "string"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/PaymentView"
-        }
-       }
-      }
-     },
-     "404": {
-      "description": "reason.code: not_found",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/MoneyErrorEnvelope"
-        }
-       }
-      }
-     },
-     "409": {
-      "description": "reason.code: wallet_not_open, wallet_opening",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/MoneyErrorEnvelope"
-        }
-       }
-      }
-     },
-     "423": {
-      "description": "reason.code: wallet_frozen",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/MoneyErrorEnvelope"
-        }
-       }
-      }
-     }
-    },
-    "security": [
-     {
-      "wawu-id": []
-     }
-    ],
-    "summary": "One payment, as it stands now. Only the payer can read it.",
-    "tags": [
-     "MoneyPayment"
-    ],
-    "x-wawu-built-by": "MONEY-19",
-    "description": "Declared by MONEY-04, not served yet: MONEY-19 serves it.",
-    "x-wawu-served": false
-   }
   }
  },
  "info": {
@@ -21840,13 +21889,13 @@
      },
      "tiers": {
       "type": "array",
-      "description": "`tier_required`: every tier. `product_limit_reached`: the tiers that\nallow more products than the one the person holds (none when there is\nno way up).",
+      "description": "`tier_required`: every tier. `product_limit_reached`: the tiers that\nwould let the person publish another, that is, allow more products than\nthey have published now (none when no tier does, including when they have\nmore published than any tier allows).",
       "items": {
        "$ref": "#/components/schemas/PlanTierView"
       }
      },
      "extraProducts": {
-      "description": "The extra products they can buy now, or null when they cannot.",
+      "description": "The extra products they can buy now, or null when they cannot: no running\ntier, or buying them would still leave fewer places than products\npublished.",
       "nullable": true,
       "allOf": [
        {
@@ -23531,6 +23580,19 @@
      }
     }
    },
+   "DoorScanDto": {
+    "type": "object",
+    "properties": {
+     "code": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 500
+     }
+    },
+    "required": [
+     "code"
+    ]
+   },
    "MoneyErrorReason": {
     "type": "object",
     "properties": {
@@ -23594,7 +23656,7 @@
      },
      "balanceKobo": {
       "type": "integer",
-      "description": "insufficient_funds: Fintava's available balance when the payment was refused."
+      "description": "insufficient_funds: the wallet provider's available balance when the movement was refused."
      },
      "totalKobo": {
       "type": "integer",
@@ -26061,6 +26123,20 @@
      "transactionId"
     ]
    },
+   "ClaimWaitlistRegistrationDto": {
+    "type": "object",
+    "properties": {
+     "code": {
+      "type": "string",
+      "description": "The launch access code from the registration page: 8 letters and numbers\n(0 to 9, A to F), written \"XXXX XXXX\". Spaces, dashes and lower case are\naccepted; the server reads it without them.",
+      "minLength": 1,
+      "maxLength": 40
+     }
+    },
+    "required": [
+     "code"
+    ]
+   },
    "CreateAdCreativeDto": {
     "type": "object",
     "properties": {
@@ -27636,6 +27712,9 @@
       "type": "string",
       "nullable": true
      },
+     "delivered": {
+      "type": "boolean"
+     },
      "statusMessage": {
       "type": "string",
       "nullable": true
@@ -27660,6 +27739,7 @@
      "reference",
      "hold",
      "failureReason",
+     "delivered",
      "statusMessage",
      "createdAt",
      "completedAt"
@@ -28154,6 +28234,135 @@
     "required": [
      "unreadCount",
      "items"
+    ]
+   },
+   "PointNextExpiryView": {
+    "type": "object",
+    "properties": {
+     "points": {
+      "type": "number"
+     },
+     "expiresAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "points",
+     "expiresAt"
+    ]
+   },
+   "PointLotView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "points": {
+      "type": "number"
+     },
+     "granted": {
+      "type": "number"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "tier_bonus",
+       "pack",
+       "bump",
+       "referral",
+       "shortfall",
+       "returned"
+      ]
+     },
+     "label": {
+      "type": "string"
+     },
+     "expiresAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "points",
+     "granted",
+     "source",
+     "label",
+     "expiresAt"
+    ]
+   },
+   "PointMovementView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "points": {
+      "type": "number"
+     },
+     "label": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string",
+      "enum": [
+       "hold",
+       "grant",
+       "release",
+       "expire"
+      ]
+     },
+     "pending": {
+      "type": "boolean"
+     },
+     "createdAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "points",
+     "label",
+     "reason",
+     "pending",
+     "createdAt"
+    ]
+   },
+   "MyPointsView": {
+    "type": "object",
+    "properties": {
+     "balance": {
+      "type": "number"
+     },
+     "nextExpiry": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/PointNextExpiryView"
+       }
+      ],
+      "nullable": true
+     },
+     "lots": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PointLotView"
+      }
+     },
+     "lotCount": {
+      "type": "number"
+     },
+     "movements": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PointMovementView"
+      }
+     }
+    },
+    "required": [
+     "balance",
+     "nextExpiry",
+     "lots",
+     "lotCount",
+     "movements"
     ]
    },
    "PlanBadgeView": {
@@ -32907,6 +33116,13 @@
        "already_used",
        "invalid"
       ]
+     },
+     "reason": {
+      "type": "string",
+      "enum": [
+       "cancelled"
+      ],
+      "nullable": true
      },
      "ticket": {
       "type": "object",
@@ -40744,135 +40960,6 @@
      "communities"
     ]
    },
-   "PointNextExpiryView": {
-    "type": "object",
-    "properties": {
-     "points": {
-      "type": "number"
-     },
-     "expiresAt": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "points",
-     "expiresAt"
-    ]
-   },
-   "PointLotView": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string"
-     },
-     "points": {
-      "type": "number"
-     },
-     "granted": {
-      "type": "number"
-     },
-     "source": {
-      "type": "string",
-      "enum": [
-       "tier_bonus",
-       "pack",
-       "bump",
-       "referral",
-       "shortfall",
-       "returned"
-      ]
-     },
-     "label": {
-      "type": "string"
-     },
-     "expiresAt": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "id",
-     "points",
-     "granted",
-     "source",
-     "label",
-     "expiresAt"
-    ]
-   },
-   "PointMovementView": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string"
-     },
-     "points": {
-      "type": "number"
-     },
-     "label": {
-      "type": "string"
-     },
-     "reason": {
-      "type": "string",
-      "enum": [
-       "hold",
-       "grant",
-       "release",
-       "expire"
-      ]
-     },
-     "pending": {
-      "type": "boolean"
-     },
-     "createdAt": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "id",
-     "points",
-     "label",
-     "reason",
-     "pending",
-     "createdAt"
-    ]
-   },
-   "MyPointsView": {
-    "type": "object",
-    "properties": {
-     "balance": {
-      "type": "number"
-     },
-     "nextExpiry": {
-      "allOf": [
-       {
-        "$ref": "#/components/schemas/PointNextExpiryView"
-       }
-      ],
-      "nullable": true
-     },
-     "lots": {
-      "type": "array",
-      "items": {
-       "$ref": "#/components/schemas/PointLotView"
-      }
-     },
-     "lotCount": {
-      "type": "number"
-     },
-     "movements": {
-      "type": "array",
-      "items": {
-       "$ref": "#/components/schemas/PointMovementView"
-      }
-     }
-    },
-    "required": [
-     "balance",
-     "nextExpiry",
-     "lots",
-     "lotCount",
-     "movements"
-    ]
-   },
    "MeCountsView": {
     "type": "object",
     "properties": {
@@ -41505,6 +41592,9 @@
       "type": "string",
       "nullable": true
      },
+     "claimed": {
+      "type": "boolean"
+     },
      "claimedByWawuId": {
       "type": "string",
       "nullable": true
@@ -41532,6 +41622,7 @@
      "reference",
      "accessCode",
      "flutterwaveTransactionId",
+     "claimed",
      "claimedByWawuId",
      "claimedAt",
      "createdAt"
@@ -41562,6 +41653,42 @@
      "rowCount",
      "content",
      "generatedAt"
+    ]
+   },
+   "WaitlistClaimView": {
+    "type": "object",
+    "properties": {
+     "offerName": {
+      "type": "string"
+     },
+     "days": {
+      "type": "number"
+     },
+     "extended": {
+      "type": "boolean"
+     },
+     "pointsGranted": {
+      "type": "number"
+     },
+     "pointsExpireAt": {
+      "type": "string",
+      "nullable": true
+     },
+     "claimedAt": {
+      "type": "string"
+     },
+     "tier": {
+      "$ref": "#/components/schemas/MyTierView"
+     }
+    },
+    "required": [
+     "offerName",
+     "days",
+     "extended",
+     "pointsGranted",
+     "pointsExpireAt",
+     "claimedAt",
+     "tier"
     ]
    },
    "WaitlistOfferView": {
