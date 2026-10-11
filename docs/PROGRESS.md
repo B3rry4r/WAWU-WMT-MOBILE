@@ -9,16 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-
-## Being verified
-
 - [NUV-05](../tasks/NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account (You)
 
 ## Done
@@ -175,6 +172,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · NUV-05 · Verifier report (independent session; backend `wmt/NUV-05` `3b6ebe5`, mobile `wmt/NUV-05` `c9573e7`; status review, no blocker, no defect): two built Hubs over one database against the stand-in, 54 of 54 checks, and the real WAWU ID, 15 of 15: a payment, a release and a refund each move once however often and at once, a lost answer is found by the history walk and never sent again (a Hub killed with kill -9 between the log write and the send, and between the send and the answer, four windows), every outflow event reaches the ledger once in any order and on replay, the ledger's operational figure equals the stand-in's `available` to the kobo, a payer short by one kobo gets MONEY-19's shortfall and nothing is sent; `requestNotSent` follows the code-and-syscall rule exactly (15 shapes, 2 real sockets, `test:netns` 16 rows); the walk past its 2,000-transfer bound is `history_incomplete`, never `absent`. Seven notes (seven mutants survive the builder's specs and my probes kill all seven; a latent false `absent` when a caller passes a `since` later than the send; the shape of a book transfer's `outflows.refunded` is unknown). 37 mutants of my own (30 killed by the specs, 7 by my probes). Trial merges: backend main `f2b6bf6` 0 conflicts, mobile main `610cc57` 1 generated file (`docs/PROGRESS.md`); merged checks green, protected 253 of 253, contract build twice equal.
 - 11 Oct 2026 · NUV-05 · Builder report (status verifying; backend `wmt/NUV-05` `3b6ebe5`, mobile `wmt/NUV-05`): a payment from a wallet, a release and a refund move as Nuvion book transfers through WAWU's operational account, once, however often and however many times at once they are sent; a lost answer is found again from the log of sends, never sent under a new reference; Nuvion's `outflows.*` events are read back and merged into the ledger once, in any order. One additive table. Stand-in only; the sandbox book transfer is NOT RUN (key).
 - 11 Oct 2026 · MONEY-18 · Rounds 2 to 4 merged by the lead: backend PR #117 (`020f055`) and mobile main. The hold sweep reaches every due hold; an untrusted charge stops completion; a request is resent only when it provably never left; two servers never tell a feature twice; `npm run test:netns` runs in the deploy.
 - 11 Oct 2026 · WALLET-06 · Round 3 merged by the lead: backend PR #116 (`74b501b`) and mobile main. The PIN screens have their own words, countdowns ignore the phone's clock, a key row reveals no PIN without the server secret, and a lost answer can no longer claim a PIN that does not verify.
@@ -189,4 +187,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · MONEY-19 · Merged by the lead: backend PR #114 (`f11d307`) and mobile main. Not enough money answers the exact shortfall; the payment poll is served. Lead notes added to WALLET-07 and WALLET-09 (G-481).
 - 11 Oct 2026 · JOIN-03 · Merged by the lead: WAWU ID PR #10, backend PR #113 (migrations renamed to sort after main) and mobile main. The app claims the event access code; a deleted person's number is not kept. D6, D7 and N16 follow in round 4.
 - 11 Oct 2026 · EVENTS-09 · Verifier report, round 3 (independent session; mobile `cb72563`, app only; status review, no defect, no blocker): D5 closed in the web export against a local stand-in Hub, light and dark (the verifier's case: no button at 0.7 s, the verdict seen 3,021 ms; round 2's build: never seen), a verdict under the open sheet waits and its hold starts at the close (gone 3,032 ms after the tap), "Checking the ticket" does not move (470 px in both builds; the room removed moves it 51 px); the four changed tests still test what they did except the in-order queue test, which is retired and unreachable now; the code typed over an unseen verdict (or problem) waiting is ruled right; the 422 rule is right and the Hub cannot send a 422 on this route. 6 mutants of mine (2 test gaps noted, both with the code right). Six notes, none to fix now.
-- 11 Oct 2026 · EVENTS-09 · Builder report, round 3 (mobile `wmt/EVENTS-09`, hash in the hand-back, on main `a8d6383`; backend untouched; status verifying): D5 closed. "Type the code instead" is not drawn while a check is on its way (the room it took stays, so the words do not move), and a verdict that lands under the open typing sheet waits there, its 3 s hold beginning when the sheet closes (the verifier's case reproduced first: never seen; after: seen 3,003 ms dark and 3,007 ms light); a code typed over an unseen verdict waits instead of replacing it; a 422 reads "We couldn't confirm" (the contract lists only 201 on this route, and the Hub's validator answers 400). 8 new jest tests (7 fail on round 2's code), 4 queue tests reworked, 6 mutants killed; pictures at 390 px, light and dark.
