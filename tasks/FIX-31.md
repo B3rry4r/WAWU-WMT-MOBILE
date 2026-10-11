@@ -7,7 +7,7 @@ order: 246
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: []
 decisions: [R-49]
 passes: [V1, V5, V6]
@@ -76,5 +76,99 @@ Branch `wmt/FIX-31`, main `9426060` merged (docs only, `docs/PROGRESS.md` regene
 - **Cold runs of the new files** (fresh cache dir each): all pass, first-test times above.
 
 **Left**: (1) the tests that were stopped at 20 s above are victims of a stalled worker; only less work per test (fewer renders, `act` warnings that print thousands of stack traces) could shorten them, and no test was changed for that; (2) the first screen drawn from answers in eventsScreens, settingsScreens, hostScreens, proListing and TgifReader still pays its first data render inside a test (0.9 s for E1 cold, against a 1 s `findBy`): HomeScreen's hook shows the fix (draw it once in the hook), and an attempt to do the same in eventsScreens broke the file (overlapping `act`), so it was backed out; (3) the shared jest setup in SHARED-CHANGES `FIX-31 #1`.
+
+## Verifier report
+
+Verifier session (Sonnet), independent of the builder. Mobile `origin/wmt/FIX-31` `066906d` in a detached worktree; main when I started `9426060` (already inside the branch). Jest only, no server, nothing left the machine. **Verdict: the two causes are real and the fixes hold almost everywhere; one defect (finding 1): HomeScreen H1 "never themselves" still reads before an answer lands and fails under delayed answers on the branch exactly as on main. Status `building` for that one test.** Product code and the branch's tests were not changed. Scratch, logs and scripts: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/v31/`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 | passed for this task | the diff is tests and docs only; no control, screen or product file |
+| V5 Picture | NOT RUN | tests only, no screen changed |
+| V6 States | NOT RUN | tests only, no state drawn differently; the states the tests assert are unchanged (below) |
+
+### What was checked
+
+| Check | Result | Evidence |
+|---|---|---|
+| Diff scope (`git diff origin/main...origin/wmt/FIX-31 --stat`) | CONFIRMED | 17 files: 12 test files, `tasks/FIX-31.md`, `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/INDEX.md`, `SHARED-CHANGES.md` (one new row). No product file, gate, baseline, jest config or package file (`git diff` on `package.json`, `package-lock.json`: empty) |
+| Nothing weakened | CONFIRMED, with the meaning changes named below | all 12 test diffs read line by line (the builder's report says eleven; LegalChatScreen was added later and is the twelfth). No assertion removed (test counts equal in every file; `expect(` counts equal or higher: auth-signup 168 to 169, eventsScreens 148 to 151, Explore 200 to 201, HomeScreen 108 to 109, professionals 82 to 84, settings 176 to 177, the rest equal). No `skip`, `only`, `todo`, retry, `jest.resetModules` or raised timeout (grep on the diff). Removed: `jest.setTimeout(20000)` in OpenWalletScreen (the config sets the same 20000), `{ timeout: 8000 }` in Explore and LegalChat, the `15000` and `20000` test limits |
+| Cause 1, cold start (fresh `--cacheDirectory` per run, one file at a time) | CONFIRMED | table below |
+| Cause 2, answers read before they land (delay harness, 3 seeds) | CONFIRMED for 12 of 13 files; finding 1 for HomeScreen | table below |
+| Repeat runs, each named file alone on the branch, warm cache | CONFIRMED: **10 of 10, 13 files, 130 of 130 passed** | load 19 to 31 while three of my jobs ran; wall 10 to 60 s a run; `rep.A.log`, `rep.B.log` |
+| TgifReader `mutations.gcTime` | CONFIRMED test-only | the change is in the test's own `new QueryClient(...)`; no product file. Alone with no `--forceExit`: main hangs ("Jest did not exit", killed at 100 s by `timeout`), branch exits in 17 s |
+| Main has moved | note | `origin/main` is `0dd7ac8`, 45 commits past `9426060`. It changed `auth-signup.test.tsx` and `HomeScreen.test.tsx`, which this branch also changed: a trial merge auto-merges both test files and conflicts only in docs: `SHARED-CHANGES.md` (both sides added rows at the end of the table) and the generated `docs/PROGRESS.md` and `tasks/INDEX.md` (`check_tasks.py --write` rebuilds them) |
+
+### Cause 1: first-test time on a cold cache (seconds; main, then branch)
+
+| File and first test | main | branch |
+|---|---|---|
+| eventsScreens E1 | 30.9 (timeout, fails) | 0.34 |
+| eventsFocus | 52.9 (timeout, fails) | 0.27 |
+| OpenWalletScreen A26 | 21.8 (timeout, fails) | 0.76 |
+| hostScreens, first test | 9.2 | 0.39 |
+| proListing P5 | 17.2 | 2.7 |
+| settingsScreens, first test | 18.2 | 0.54 |
+| TgifReader, first two | 13.9 and 9.9 | 0.22 and 2.2 |
+
+These match the builder's figures (31.5, 46.5, 24.9, 19.1, 17.9, 13.7). Main at the same time also failed eventsScreens D8 (175 ms, a cause 2 failure in a natural run). The branch passed all seven files, with one stall: hostScreens "writes the ticket note ..." took 30.0 s in the first cold run (load 24.5, 1 GB free; 1.5 s on main, 2.5 s on the branch) and the same cold run again passed 24 of 24 (`cold.br.hostScreens.rerun.out`). That is the machine, not a wait (finding 3).
+
+### Cause 2: delay harness
+
+My own copy of the builder's idea (`slowfetch.js`): every `globalThis.fetch = jest.fn(impl)` a test installs answers after a path-dependent 0 to 249 ms, a different mapping per seed; it counts the calls it delayed (3 to 413 a file, shown in each `SLOWFETCH` line). Seeds 21, 22, 23 at 250 ms, new files on the branch, old files on main:
+
+| File | main (old), failed runs of 3 | branch (new), failed runs of 3 |
+|---|---|---|
+| eventsScreens | 3 (9, 7, 7 tests, among them E1, D13-E1, See all, open by tapping, Going on a row, E2 Going, P1 and D8) | 0 |
+| settingsScreens | 3 (Z2 TGIF switch) | 0 |
+| auth-signup | 3 (A15, F1, F2: the four wrong codes) | 0 |
+| Explore screens | 3 (X1 Follow a featured creator, and "the refusal line stays up for 4 seconds") | 3, only "the refusal line ..." |
+| professionals screens | 1 (P1 paging, seed 22) | 0 |
+| HomeScreen | 2 (seed 21: the follow switch; seed 22: "never themselves") | **1 (seed 22: "never themselves")** |
+| eventsFocus, OpenWalletScreen, hostScreens, proListing, TgifReader, MeScreen, schoolsScreen | not run on main (cold start causes, or no failure) | 0 |
+
+The Explore refusal test is a harness artifact, as the builder said: the test fakes the clock, the harness's delay is a `setTimeout` on that same fake clock, and the test advances it 1 ms at a time for 40 turns; with the real mock (promises only, no timers) there is nothing for load to reorder. It fails the same on main and on the branch, at every seed. Not counted.
+
+### Mutants of my own (one wait put back the old way, in a throwaway worktree, run under the harness)
+
+| Mutant | Seeds run | Result |
+|---|---|---|
+| M1: D8 `findByText('Ended 6 Oct')` back to `getByText` | 21 | killed: the D8 test |
+| M2: both `await idle('settings-tgif')` removed | 21 | killed: Z2 TGIF switch |
+| M3: professionals P1 wait back to `await settle()` (50 ms) | 21, 22, 23 | killed on seed 23 only: P1 paging (weak catch: 1 of 3) |
+| M4: Explore follow `followsAnswered()` back to `settle()` | 23, 21 | killed on both: "Follow a featured creator" |
+| M5: auth-signup `fourWrongCodes()` back to the typed-back-to-back loop | 21 | killed: A15, F1, F2 |
+| M6: HomeScreen follow, the busy wait before the second press removed | 21, 22, 23, 24, 25, 26 | killed on seed 22 only (weak catch: 1 of 6) |
+| M7: eventsScreens `goingSettled` removed from the row toggle | 21, 22 | killed on both: "toggle Going on a row" |
+| Product mutant P1: `useGoing`'s in-flight guard and the row's `busy` both removed, run against main's test and the branch's | none | "a double tap sends one request" fails in both: the `findBy`/`waitFor` change did not weaken it. (With only the in-flight guard removed it passes in both, because the button's busy flag also stops the second press; unchanged by this task) |
+
+### Meaning changes (no assertion lost; named as asked)
+
+| Test | Old | New |
+|---|---|---|
+| eventsScreens E1 "shows the featured event" | the name anywhere on the screen | the name inside the featured card (`events-featured`): stricter; the "from" and "Free" lines are awaited |
+| eventsScreens "a double tap sends one request" | `toHaveLength(1)` at once | `waitFor` the same length: same strength (P1 above) |
+| eventsScreens P1 "does not retry", T3 | a fixed 50 or 200 ms window | wait for the prices call first, then the same window for "not again" |
+| professionals P1 paging | `settle()` (50 ms) | wait for the cache to stop fetching and the skeleton to go, then the same `queryByTestId(...)` null assertion |
+| Explore "when creators cannot load" and LegalChat S17 "a failed refresh keeps the conversation" | the app's real 1 s and 2 s retry waits under an 8 s `findBy` and a 15 or 20 s limit | the same steps on the fake clock; the same assertions (error shown, text, Try again, the row comes back). They no longer prove that the waits are 1 s and 2 s in wall time; they prove the three tries and the recovery |
+| auth-signup `fourWrongCodes()` | typed four codes back to back | waits for each answer, and asserts "That code isn't right" after each of the first three (extra). The line goes when the next digit is typed (`CodeScreen.onDigit`), so it is a real wait for the answer |
+| HomeScreen / eventsScreens / settingsScreens / Explore switches | pressed the second time at once | waits for the busy flag or `isMutating()` to clear first, then the same call-list assertions |
+| `beforeAll` warm-ups (seven files; auth-signup's and HomeScreen's hooks widened) | none | require the screens, touch the React Native components, render `<View />` once; no assertion |
+
+### Findings
+
+1. **defect (medium, this task): HomeScreen H1 "a user sees creators to discover, never themselves, with the tick each has" still fails when the answers are delayed.** Seed 22, 250 ms: the branch fails it (`slow.br-250-s22.home_HomeScreen.out`) and so does main (`slow.mn-250-s22.HomeScreen.out`), the same assertion at line 233 (`queryByTestId(today-creator-<ME>)` is not null). The test waits for the first other creator and then asserts the viewer's own card is absent, but the viewer's id comes from `GET /users/me`, a separate answer that can land after `GET /creators`. The builder's HomeScreen fix covered the follow switch and the hook, not this test, and its own seeds (0, 3, 5 at 120; 1, 2 at 250) did not hit it. A one-line fix, tried in a throwaway and passing at seeds 21, 22 and 23: before that assertion, `await rtl.waitFor(() => expect(clients.every((c) => c.isFetching() === 0)).toBe(true));` (the assertion keeps its meaning for the settled screen). The mutant M6 also fails this test at seed 22, which is the same race.
+2. **not this task's, product, low: Today's creator rail draws the viewer's own card until `GET /users/me` answers.** `TodayScreen` passes `me.data` to `discoverable(items, myId)` in `model.ts`, which keeps every item when the id is `undefined`. On a slow link a viewer briefly sees themselves under "creators to discover" (the rule the test names). Report only; a fix is to draw the rail after the id is known, in a later task.
+3. **not this task's, machine: stalls of otherwise short tests.** One hostScreens test took 30 s at load 24.5 with 1 GB free, then 2.5 s; the builder records the same class of stall in other files. No test change helps; a full check under load can still stop on one.
+4. **test-gap note: M3 and M6 are caught on one seed in three or six.** The harness is a timing tool, so a wait put back in the professionals P1 paging test or HomeScreen's follow test is not always caught. A deterministic version would hold the answer (a promise the test releases) instead of delaying it.
+5. **test-quality note, low: a new `console.error`.** Explore's fake-clock retry test prints "You called act(async () => ...) without await" (`check1.log` line 14141, pointing at its `jest.advanceTimersByTime(100)` inside `act`). It does not fail, and it is the only such print the task added; it is the kind of output that can turn into a flake if the loop is changed.
+6. **note: SHARED-CHANGES `FIX-31 #1`** (a shared jest setup) is an optional row for the lead; the eleven repeated warm-up blocks are the cost of not having it.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Full check, the common-rules form (`typecheck && lint && npm test -- --maxWorkers=2 && gates && tasks`), run 1 on the builder's head `066906d` | **EXIT 0**: typecheck 0, lint 0 errors and 5 warnings (none in a line this task wrote), 120 suites and 2064 tests passed in 579 s (load average 27 at the start, 2 workers), gates 10 run, 473 files scanned, 0 fail, 1 warn (`PROVISIONAL(HOST-PICKER)`), tasks check clean (`check1.log`) |
+| Full check, the same command, run 2 on the tree with this report (status `building`, before the commit) | **EXIT 0**: 120 suites and 2064 tests passed in 500 s (load average 31 to 33 at the start, 2 workers), gates 10 run, 473 files scanned, 0 fail, 1 warn, tasks check clean (`check2.log`). Two EXIT 0 runs in a row at load 27 and 31 |
 
 ## Owner sign-off
