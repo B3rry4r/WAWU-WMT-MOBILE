@@ -7,7 +7,7 @@ order: 243
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: money-path
-status: done
+status: verifying
 depends_on: [JOIN-01, TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -882,6 +882,79 @@ Verifier, 11 Oct 2026 (Sonnet agent, an independent session that wrote none of t
 - The builder's 30-tap and 40-tap bursts: the Hub's per-address limit (20 a second, apparently shared by both Hubs) refuses them with 429, so my bursts are 14 taps; no error came from the claim path.
 - A trial merge that changes anything: all three mains are already inside the branches. A phone-sized run of the claim screen at a Lagos midnight (the model's zone test and mutant `D4b` cover it).
 - Mailed and texted codes were the stand-in's on 127.0.0.1: Resend and the SMS provider were not called.
+
+## Builder report, round 4
+
+Builder, 11 Oct 2026 (Sonnet agent, round 4 of JOIN-03; the lead's rulings of the same day, each Default (lead), owner may override). Heads: wawu-id `wmt/JOIN-03` `28de1b8`
+(wawu-id main `71cbbb6`, the JOIN-03 merge, is the parent), mobile `wmt/JOIN-03` (this commit; mobile main `21085a2` is inside it, the merge was a fast-forward), backend
+unchanged (`5926f5c`, no backend change this round). Evidence: the lead's scratchpad `join03r4/` (`harness/` the live scripts `repro.mjs`, `repro-email.mjs`, `g16b.sh` and the
+mutant driver `mutate_id.py`; `logs/` every before and after log and check log; `mut/` the mutant logs). The REAL built wawu-id ran on 6161 with a stand-in for Resend and the SMS
+provider on 6163 (it records what was mailed and texted), on the database `bj03r4_id_test`; the G-16 test used `bj03r4_g16_id_test`. No Flutterwave, Fintava, Nuvion,
+wawuafrica.com or AI host was called. Phone numbers and addresses are masked everywhere below.
+
+**The lead's rulings, as built (before, then after; same script, same database, the code before and after)**
+
+1. **D6: the G-16 `revert` restores a row only while it still reads `released:<id>`.** *Before* (`g16b.sh`, `logs/g16b-before.log`): `apply` releases account R; the Hub
+   anonymises R (`deleted:<id>`, banned); `revert` prints "restored 1 row(s)" and R reads `phone = <the number>`, `phone_verified_for = <the number>` again; the whole row text holds
+   the number. *After* (`logs/g16b-after.log`): "restored 0 row(s)" and "left 1 row(s) as they are (no longer released: deleted or given another number since apply): <id>"; R reads
+   `deleted:<id>`, `phone_verified_for` NULL, banned, email NULL; the row text holds no digits of the number. Built in two layers: `stillReleased()` in `src/auth/g16-revert.ts` (a row is a
+   candidate only while its phone is its own `released:<id>`; the clash test then runs over the candidates only, so a number an anonymised account once held and a newcomer holds now does
+   not stop the others), and the same test in the `UPDATE`'s WHERE (`phone` and `phone_verified_for` are one statement), so a deletion finalised between revert's read and its write is
+   skipped too. Both tables are dropped by revert as before, so the old numbers do not stay. **The test (N17's gap):** `test/g16-duplicate-phones.local.mjs`, `npm run test:g16-local` (the
+   repo's pattern for database checks): the REAL script and the REAL built `AuthService.deleteUser` against a real Postgres: apply, anonymise one released account, give another a new
+   number, a newcomer takes the anonymised account's old number, revert; then a lock held open so the deletion lands between revert's read and its write. 27 checks pass; the original
+   script fails 8 of them, a script with the WHERE clause removed fails the race (2), a script that ignores `stillReleased` fails 6; and `g16-revert.spec` adds 5 tests for
+   `stillReleased`.
+2. **D7: confirming a sign-up code for a closed account is refused.** *Before* (`repro.mjs B`, `logs/repro-before-B.log`, the phone channel): a sign-up waiting for its code is anonymised
+   (`deleted:<id>`, banned, no email, the code row still there); a resend TEXTS the deleted person's number ("texts sent: 1"); the right code answers 200 with an access token and the row
+   reads `phone_verified_at` set, `phone_verified_for` the number and `phone` the number again. The mailed channel (`repro-email.mjs`, `logs/repro-email-before.log`): the right mailed code answers
+   200 with a token and `email_verified` true again. *After* (`logs/repro-after.log`, `logs/repro-email-after.log`): the anonymise removes the code row ("code rows 1" to 0); a resend sends 0
+   texts; the right code answers 400 `PHONE_CODE_INVALID` (mailed: `EMAIL_CODE_INVALID`), the answer any unknown sign-up gets, no token, and the row is unchanged. Built: `isClosedAccount()`
+   (`src/auth/closed-account.ts`: status `banned` or `pending_deletion`, a `deletedAt`, or the `deleted:` marker, each alone enough) in both sign-up services' `findByAttempt`, so
+   `start`, `confirm` and `resume` all treat a closed account as no sign-up (the same work and the same answer as a wrong secret); and the anonymise deletes the account's code row FIRST in its
+   transaction, the order the confirm routes lock in (the code row, then the account), so a confirm racing the deletion loses with a 409 and never deadlocks. A suspended account is not
+   "closed" here (unchanged).
+3. **N16: the rows outside the account's own row go with it.** *Before* (`logs/repro-before.log`, the whole database searched for the ten digits): `rate_counters` 2, `otp_sessions` 1 (the
+   legacy phone OTP), `phone_change_requests` 1 (the typed number of a pending change); for a pending sign-up also `phone_verifications` 1 and `phone_guess_budgets` 1; for the mailed channel the
+   ADDRESS stayed in `rate_counters` 2 and `phone_guess_budgets` 1 and the typed number in `phone_verifications` 1. *After*: every one of those is NONE (A: "number 1 held in NONE | typed number 2
+   held in NONE", B and the mailed run the same). **Which and why:** the rows go (they are deleted, not blanked) because three of the tables are KEYED on the number or address
+   (`rate_counters.key`, `phone_guess_budgets.phone`, `otp_sessions.phone`), so a row cannot stay without the key staying; they are counters and one-time codes, not history, the account is
+   closed so nothing can confirm a code against it, and whoever holds the number next starts clean. `phone_change_requests` and `phone_verifications` are the account's own pending rows
+   (a typed number, the number a code was sent to, a claimed address). Every spelling is cleared (`+234`, `234`, `0` and the one as stored) and the number the account PROVED as well as the
+   phone it holds now (they differ after an internal phone change); a stranger's rows are untouched. Built in `AuthService.deleteUser` with `src/auth/erased-identifiers.ts`. **The spec**
+   (`anonymise-phone-proof.spec.ts`, now with in-memory tables that apply the `where` they are given) reads each table back after the request: the rows of the number, its spellings, the
+   address and the claimed address are gone, a stranger's number, address and an IP counter stay, the whole store and row hold no copy of the number or addresses, the code row goes before the
+   account update, a second request changes nothing, a request refused for its key removes nothing, a hard delete touches none of it.
+4. **M12 and D4f.** M12: `src/auth/phone-proof.spec.ts` (new, 4 tests): two DIFFERENT texts that are not numbers (`12345` and `67890`, `abc` and `xyz`, `0000` and `1111`, `+1234` and `+5678`) are not
+   one number, and a text that is not a number never equals a number either way round; with the `proven !== null` guard removed 1 test fails (mutant M12 killed). D4f:
+   `claimScreen.test.tsx` now reads the glyph over the heading by the icon's own test id: `CalendarX` and not `CircleCheck` for an ended plan and for an account that holds no plan, `CircleCheck`
+   and not `CalendarX` for a plan that is ready, running or extended; the glyph forced to the check mark fails 2 tests (mutant D4f killed), the glyph always the calendar fails 4.
+5. **N18 to N20: recorded, no change.** N18 (a tab-only phone, `' deleted:<id>'` and `DELETED:<id>` read as numbers): nothing writes any of them, so no account is in these states. N19 (deploy
+   order): Hub first, as with the identity deploy (G-634). N20: round 2's N9, N10 and N12 stand as the builder left them for the owner.
+
+**Notes found while building (not in the rulings, no change made)**
+- N21 · low · the two G-16 tables (`g16_phone_releases`, `g16_phone_members`) hold the old numbers of released accounts until `revert` drops them (that is how revert knows what to restore). If
+  the owner keeps the release for good and never runs `revert`, an account anonymised later leaves its old number in them. Drop both tables once the release is final (or run `revert`, which now
+  leaves a deleted account deleted and drops them). The service does not reach into a one-off owner script's tables.
+- N22 · note · clearing a number's counters resets its text and wrong-code limits for whoever holds the number next. That is the point of removing the key; the closed account itself can request nothing.
+- N23 · note · `signup_email_codes` (the post-sign-up email step) keeps a sha256 of an anonymised account's address, not the address, until the code's expiry; not touched.
+
+**Checks**
+- wawu-id (`28de1b8`): `tsc` 0. `eslint --no-fix` on the 13 changed `.ts` files: exit 0, no error. `python3 scripts/gates/run.py` 9 run, 122 files, 0 fail, 20 warn; `check_baseline.py` clean
+  (0 entries). `npm run contract:build` twice: `contract/openapi.json` sha256 `93309591...` both times, equal to main's and to mobile's `contract/identity/openapi.json`: nothing changed, nothing to sync.
+  `jest src/auth src/contract` (two workers, `--testTimeout=300000`): 25 suites, 24 pass, **386 of 387**; the one failure is the AUTH-08 timing test. **That test alone, one run each:** main `71cbbb6`
+  FAILS (refresh 1071 ms, limit 1000), the branch PASSES (20 of 20): the machine's load (a load average of 13 to 22 on 4 CPUs), not this change, which does not touch refresh. The seven suites this round
+  touches (the two sign-up services, the anonymise spec, `closed-account`, `erased-identifiers`, `phone-proof`, `g16-revert`): 167 of 167. `npm run test:g16-local`: 27 of 27.
+- wawu-id mutants of my own (one at a time, the specs that should catch it run, source restored from a copy, tree clean after; `mut/`, `logs/mut-id.log`): **18 applied, 18 killed.** M12; the anonymise
+  not deleting the code row, the phone change, the counters, the OTP rows, the budgets, the proved number (survived the first pass: the pending-sign-up row hid it; one test added, then killed),
+  one spelling only, no email budget, the code row deleted after the account update; each of the four marks of `isClosedAccount` removed; the guard removed from the phone and from the mailed service
+  (10 tests fail in each); `stillReleased` returning everything, and matching any `released:` marker.
+- Mobile: `npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks` as one command: last line **EXIT 0** (the first run, no retry): typecheck 0, lint 0 errors and 5 warnings (all in two other tasks' test files), jest **150 suites, 2636 of 2636**, gates 10 run, 565 files, 0 fail, 5 warn, 0 accepted, tasks ok (275 tasks, 279 artboards); log `logs/m-check1.log`. The only mobile source change is `claimScreen.test.tsx` (the glyph assertions); `contract/` is unchanged.
+
+**NOT RUN**
+- The owner's G-16 script against a real database of real accounts (a populated test database only); a rolling deploy with an old and a new wawu-id side by side.
+- Resend and the SMS provider (the stand-in on 127.0.0.1 recorded what was mailed and texted); a phone or a store build: no screen changed this round, so no picture was taken.
+- The whole wawu-id suite as one run (`src/auth` and `src/contract` ran) and the backend (unchanged).
 
 ## Owner sign-off
 
