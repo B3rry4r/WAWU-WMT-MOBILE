@@ -217,8 +217,9 @@ Builder and verifier are always different sessions.
 199. [JOIN-02](JOIN-02.md) Event registration link: the website page (wawuafrica.com/join)
 200. [JOIN-03](JOIN-03.md) Event registration: claim the paid plan in the app with the access code
 201. [FIX-30](FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording
-202. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-203. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+202. [AUTH-07](AUTH-07.md) Sign-up verifies by email code; no SMS · needs AUTH-03, AUTH-04, AUTH-05 from Developer first
+203. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+204. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 

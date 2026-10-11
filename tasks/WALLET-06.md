@@ -357,3 +357,5 @@ The WALLET-01 hub was built before this task, so the entries on it that lead to 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+Merged by the lead, 10 Oct 2026: backend PR #109 (merge `1693bc2`) and mobile main (merge of `73919a5`, resolved as the union of both sides: the settings icon from this task and the Power and More tiles from BILLS-01 are both drawn, and the tests assert both; the contract regenerated from backend main). The round 2 verifier found no blocker. N1 to N4 and the test gaps T1 to T3 follow in round 3 on the same branch; the fingerprint row (SHARED-CHANGES WALLET-06 #1) later.

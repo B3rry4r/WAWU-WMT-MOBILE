@@ -1,6 +1,6 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { font, space } from '@/theme';
+import { canvasNormalLineHeight, font, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
 /**
@@ -31,6 +31,20 @@ const metricsBase = {
   chipGap: 6,
   flag: 22,
   chipWords: 13,
+  /**
+   * `balanceCard`'s action row (Send, Add, Bills, Scan): the figure's `margin:14px 0 18px` leaves 18 under it, then each
+   * action is a 64 column holding a 48 circle (the glass colour; the first, Send, is the accent), a 20 icon at 2.2, 6, and
+   * the word at 12 semi-bold at 85%. Only Bills is built (BILLS-01); the others are added by their tasks (R-41), and the
+   * present actions pack from the left as the services row's tiles do (U-H1).
+   */
+  actionsTop: 18,
+  actionWidth: 64,
+  action: 48,
+  actionIcon: 20,
+  actionStroke: 2.2,
+  actionGap: 6,
+  actionWord: 12,
+  actionWordFaint: 0.85,
   /** A wallet answer in place of the figure: words 15, then the button 14 under them. */
   noticeTop: 12,
   noticeGap: 14,
@@ -73,8 +87,17 @@ const metricsBase = {
 
 export const todayMetrics = {
   ...metricsBase,
-  /** The built money card's height with a figure: its padding, the chip row and the figure. */
-  skeletonMoney: metricsBase.moneyPadTop + metricsBase.chipHeight + metricsBase.figureTop + metricsBase.figure + metricsBase.moneyPadBottom,
+  /** The built money card's height with a figure: its padding, the chip row, the figure and the action row. */
+  skeletonMoney:
+    metricsBase.moneyPadTop +
+    metricsBase.chipHeight +
+    metricsBase.figureTop +
+    metricsBase.figure +
+    metricsBase.actionsTop +
+    metricsBase.action +
+    metricsBase.actionGap +
+    canvasNormalLineHeight(metricsBase.actionWord) +
+    metricsBase.moneyPadBottom,
 } as const;
 
 /** White at a strength: the canvas's Naira chip (12%) over the money card. */
@@ -104,6 +127,7 @@ export const todayWords = StyleSheet.create({
   tgifTitle: type(todayMetrics.tgifTitle, 700, { letterSpacing: todayMetrics.tgifTitle * todayMetrics.tgifTitleTracking }),
   tgifMeta: type(todayMetrics.tgifMeta, 400, { opacity: todayMetrics.tgifMetaFaint }),
   tgifProblem: type(todayMetrics.tgifMeta, 600),
+  action: type(todayMetrics.actionWord, 600, { lineHeight: canvasNormalLineHeight(todayMetrics.actionWord), opacity: todayMetrics.actionWordFaint }),
 });
 
 /** The page's side gutter, as every body on the canvas has it. */

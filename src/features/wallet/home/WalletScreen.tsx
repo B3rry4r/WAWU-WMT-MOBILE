@@ -14,6 +14,7 @@ import { layout, useWawu } from '@/theme';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
 import { BalanceCard, ACCT } from './BalanceCard';
+import { BillTiles } from './BillTiles';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
 import { WalletBar } from './WalletBar';
@@ -32,7 +33,7 @@ const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, stat
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where
  * it leads, as drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap
- * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the bills tiles (BILLS-01); the WAWU card row (WALLET-22);
+ * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the WAWU card row (WALLET-22);
  * See all and a row's detail (WALLET-04). The settings icon is built (WALLET-06, W35). Nothing here reads, charges or moves money beyond the three reads above.
  *
  * W6's card with its words also holds every other state that has no balance to show (no wallet, opening, frozen, a
@@ -196,15 +197,21 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
             hidden={hidden}
             onToggleHidden={onToggleHidden}
           />
+          <BillTiles />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );
   }
 }
 
-/** W6 (wallet.js line 67): a card padded 10 by 16 with a 28 corner holding the kit's `empty` block. */
+/** W6 (wallet.js line 67): a card padded 10 by 16 with a 28 corner holding the kit's `empty` block, then the bills tiles. */
 function StateCard({ children }: { children: ReactNode }) {
-  return <Card style={styles.state}>{children}</Card>;
+  return (
+    <>
+      <Card style={styles.state}>{children}</Card>
+      <BillTiles />
+    </>
+  );
 }
 
 /**
