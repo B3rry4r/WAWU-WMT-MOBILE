@@ -66,6 +66,8 @@ export type Refusal =
   | { kind: 'unanswered'; line: string }
   /** `idempotency_in_progress`: the same request is still running on the server; its answer will be this request's. */
   | { kind: 'in_progress'; line: string }
+  /** `pin_changed_again`: the request did land, and the PIN was changed again before its repeat came (N4). Nothing here is the PIN now. */
+  | { kind: 'changed_again'; line: string }
   /** Anything else the server refused, in its own sentence. */
   | { kind: 'other'; line: string };
 
@@ -90,6 +92,8 @@ export function refusalOf(error: unknown): Refusal {
       return { kind: 'no_pin', line };
     case 'idempotency_in_progress':
       return { kind: 'in_progress', line };
+    case 'pin_changed_again':
+      return { kind: 'changed_again', line };
     case 'wallet_not_open':
     case 'wallet_opening':
       return { kind: 'no_wallet', line };
