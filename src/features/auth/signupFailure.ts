@@ -2,6 +2,16 @@ import { isApiError } from '@/api/errors';
 
 import type { Failure } from './signInFailure';
 
+/**
+ * A4, mailed: the sign-up was made without the number typed, because another account holds it (AUTH-07 round 3: a mailed
+ * code proves no number, so it takes none). Said in plain words under the heading; adding and confirming a number later is
+ * BACKEND_GAPS G-222.
+ */
+export const PHONE_NOT_SAVED = {
+  title: "We couldn't add your phone number",
+  body: 'Another account already has that number. You can add a phone number later.',
+} as const;
+
 /** How long to wait, as `m:ss`, from the server's own seconds. */
 export function clock(seconds: number): string {
   const whole = Math.max(0, Math.ceil(seconds));
@@ -25,6 +35,8 @@ const notice = (title: string, body: string, tone: Failure['tone'] = 'danger'): 
 const offline = () => notice('No connection', 'Check your internet and try again.');
 const broken = () => notice('Something went wrong on our side', 'Try again in a moment.');
 const unsent = () => notice("We couldn't send the code", 'Try again in a moment.', 'warning');
+/** WAWU ID changed the way it sends codes while this sign-up waited: the old one cannot finish, a new one can. */
+const changed = () => notice('This sign-up needs to start again', 'Go back and tap Continue to get a new code.', 'warning');
 
 /** Seconds the server asked for. A 429 that names none is treated as the shortest wait the screen can show. */
 const waitOf = (retry: number | undefined) => (typeof retry === 'number' && retry > 0 ? retry : 1);
@@ -52,6 +64,8 @@ export function phoneOutcome(error: unknown): Outcome {
     case 'SMS_NOT_CONFIGURED':
     case 'SMS_SEND_FAILED':
       return unsent();
+    case 'SIGNUP_CHANNEL_DISABLED':
+      return changed();
     default:
       break;
   }
@@ -60,7 +74,11 @@ export function phoneOutcome(error: unknown): Outcome {
   return broken();
 }
 
-/** The same for the email step: EMAIL_CODE_INVALID, EMAIL_CODE_LOCKED, EMAIL_CODE_RESEND_TOO_SOON. */
+/**
+ * The same for a code that was mailed, on A4 and A15 (the sign-up's own code, R-39) and on the later email step:
+ * EMAIL_CODE_INVALID, EMAIL_CODE_LOCKED, EMAIL_CODE_RESEND_TOO_SOON, and, for the sign-up's code only,
+ * EMAIL_ALREADY_CONFIRMED, EMAIL_NOT_CONFIGURED, EMAIL_SEND_FAILED and SIGNUP_CHANNEL_DISABLED.
+ */
 export function emailOutcome(error: unknown): Outcome {
   if (!isApiError(error)) return broken();
   if (error.kind === 'network') return offline();
@@ -73,9 +91,17 @@ export function emailOutcome(error: unknown): Outcome {
       return { kind: 'wait', seconds: waitOf(error.retryAfterSeconds) };
     case 'RATE_LIMITED':
       return { kind: 'locked', seconds: waitOf(error.retryAfterSeconds) };
+    case 'EMAIL_ALREADY_CONFIRMED':
+      return notice('This sign-up is already confirmed', 'Sign in with your email and password.', 'warning');
+    case 'EMAIL_NOT_CONFIGURED':
+    case 'EMAIL_SEND_FAILED':
+      return unsent();
+    case 'SIGNUP_CHANNEL_DISABLED':
+      return changed();
     default:
       break;
   }
+  if (error.kind === 'conflict') return notice('That email or phone number is already in use', 'Sign in, or start again with different details.');
   if (error.kind === 'rate_limited') return { kind: 'locked', seconds: waitOf(error.retryAfterSeconds) };
   return broken();
 }
@@ -91,11 +117,14 @@ export function signupFailure(error: unknown): SignupFailure {
     case 'PHONE_INVALID':
       return { ...plain('That phone number is not valid', 'Check it and try again.'), field: 'phone' };
     case 'PHONE_NOT_SUPPORTED':
-      return { ...plain("We can't text that number yet", 'Use a Nigerian number that starts with 0 or +234.'), field: 'phone' };
+      return { ...plain("We can't use that number yet", 'Use a Nigerian number that starts with 0 or +234.'), field: 'phone' };
     case 'SMS_NOT_CONFIGURED':
     case 'SMS_SEND_FAILED':
+    case 'EMAIL_NOT_CONFIGURED':
+    case 'EMAIL_SEND_FAILED':
       return plain("We couldn't send the code", 'Try again in a moment.', 'warning');
-    case 'PHONE_CODE_RESEND_TOO_SOON': {
+    case 'PHONE_CODE_RESEND_TOO_SOON':
+    case 'EMAIL_CODE_RESEND_TOO_SOON': {
       const left = typeof error.retryAfterSeconds === 'number' && error.retryAfterSeconds > 0 ? ` Wait ${clock(error.retryAfterSeconds)} before sending another, or` : ' Wait a moment, or';
       return plain('A code was just sent', `${left} enter the one we sent.`.trim(), 'warning');
     }
