@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 11 Oct 2026 · NUV-05 · Builder report (status verifying; backend `wmt/NUV-05` `3b6ebe5`, mobile `wmt/NUV-05`): a payment from a wallet, a release and a refund move as Nuvion book transfers through WAWU's operational account, once, however often and however many times at once they are sent; a lost answer is found again from the log of sends, never sent under a new reference; Nuvion's `outflows.*` events are read back and merged into the ledger once, in any order. One additive table. Stand-in only; the sandbox book transfer is NOT RUN (key).
 - 11 Oct 2026 · BILLS-01 · Round 3 merged by the lead: backend PR #115 (`b71c551`) and mobile main. A service-off check holds S13; no green meter from a failure-shaped answer. Round 4 (the owner-name rule and four small fixes) follows.
 - 11 Oct 2026 · FIX-31 · Round 2 merged by the lead: HomeScreen H1 and AUTH-07's sign-up races pass at every delay seed; AUTH-07's D5 and N-1 tests added; the act warning gone.
 - 11 Oct 2026 · EVENTS-09 · Round 3 merged by the lead (app only): a verdict that lands under the typing sheet is seen for its full hold; a 422 reads "We couldn't confirm".

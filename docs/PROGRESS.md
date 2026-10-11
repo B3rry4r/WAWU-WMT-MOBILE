@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 134 | 0 | 0 | 0 |
+| todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [NUV-05](../tasks/NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account (You)
 
 ## Done
 
@@ -171,6 +175,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · NUV-05 · Builder report (status verifying; backend `wmt/NUV-05` @@BE@@, mobile `wmt/NUV-05`): a payment from a wallet, a release and a refund move as Nuvion book transfers through WAWU's operational account, once, however often and however many times at once they are sent; a lost answer is found again from the log of sends, never sent under a new reference; Nuvion's `outflows.*` events are read back and merged into the ledger once, in any order. One additive table. Stand-in only; the sandbox book transfer is NOT RUN (key).
 - 11 Oct 2026 · BILLS-01 · Round 3 merged by the lead: backend PR #115 (`b71c551`) and mobile main. A service-off check holds S13; no green meter from a failure-shaped answer. Round 4 (the owner-name rule and four small fixes) follows.
 - 11 Oct 2026 · FIX-31 · Round 2 merged by the lead: HomeScreen H1 and AUTH-07's sign-up races pass at every delay seed; AUTH-07's D5 and N-1 tests added; the act warning gone.
 - 11 Oct 2026 · EVENTS-09 · Round 3 merged by the lead (app only): a verdict that lands under the typing sheet is seen for its full hold; a 422 reads "We couldn't confirm".
@@ -185,4 +190,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · EVENTS-09 · Merged by the lead: backend PR #112 (`0d5836e`; migration renamed to sort after main) and mobile main. A ticket is let in once; a lost answer reads "We couldn't confirm". D5 (a verdict behind the typing sheet) follows in round 3.
 - 11 Oct 2026 · AUTH-07 · Round 4 merged by the lead: WAWU ID PR #9 (specs for D3 and D4) and mobile main (A3 asks the channel on every visit, F-G). D5 and N-1 (test gaps) carried.
 - 11 Oct 2026 · AUTH-07 · Verifier report, round 4 (independent session; wawu-id `01215b7`, mobile `d572b91`, both already on their mains): status review, no blocker. D3 and D4 closed (mutants Y26 and Y19 each fail their new spec by name, 82 of 82 on the code, each spec races the guarded write or refusal and fails with the guard removed); F-G closed in jest and in the built app against a local wawu-id with the setting switched between visits (A3's line and A4's title agree light and dark, one ask per focus: 1, 1 on A4, then 2, 3, 4, 5); the builder's decision that a failed later ask clears A3's line is ruled right. One low defect carried, D5: that decision is held by no spec (my mutants that keep the last answer survive all 95 auth-signup tests, killed by a 10-line test of mine), plus a low note (the stale-answer guard is untested too); 7 mutants of mine, 4 killed by the branch's tests. wawu-id tsc 0, eslint 0, jest src/auth 308 of 308; AUTH-08's timing check alone: branch 20 of 20, main 19 of 20 (1,167 ms, load).
-- 11 Oct 2026 · AUTH-07 · Builder report, round 4 (status verifying; wawu-id `wmt/AUTH-07` `01215b7`, mobile `wmt/AUTH-07` hash in the hand-back; the first builder was stopped by a container restart and its work finished): D3 and D4 closed by specs only (mutant Y26, the release write's number guard, and Y19, the refused-mail discard, each shown failing a named spec and passing on the code); F-G: A3 asks for the sign-up channel each time it comes into focus (a jest test switches the channel between visits and A3 and A4 agree); the doubled JSDoc in `signupStore.ts` is one. wawu-id: tsc 0, gates 0 fail, jest 351 of 352 (AUTH-08's timing check fails alone on main too), contract unchanged; mobile main `15a5b6b` merged, full check EXIT 0 (136 suites, 2464 tests).
