@@ -177,6 +177,36 @@ describe('W36 · Change the transaction PIN', () => {
     expect(rtl.screen.getByRole('button', { name: 'Forgot PIN?' })).toBeTruthy();
   });
 
+  describe('the lock counts on a monotonic clock: a phone clock changed while it runs moves nothing (WALLET-06 round 3, N2)', () => {
+    const realNow = Date.now.bind(Date);
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+    const clockMoves = (ms: number) => jest.spyOn(Date, 'now').mockImplementation(() => realNow() + ms);
+    const wait = (ms: number) => rtl.act(async () => new Promise((resolve) => setTimeout(resolve, ms)));
+
+    it('a clock jumping ten minutes ahead does not end a lock that has seconds to run', async () => {
+      fallback['GET /money/pin'] = state({ triesLeft: 0, lockedUntil: new Date(Date.now() + 4_000).toISOString() });
+      await boot();
+      expect(await rtl.screen.findByTestId('change-pin-locked')).toBeTruthy();
+      clockMoves(10 * 60_000);
+      await wait(1_300);
+      // One tick later the wall clock says the lock ended nine minutes ago. It has not: about three seconds are left.
+      expect(rtl.screen.getByTestId('change-pin-locked')).toBeTruthy();
+      expect(rtl.screen.getByText(/Try again in 0:0[1-3]\./)).toBeTruthy();
+      expect(rtl.screen.getByRole('button', { name: '1' }).props.accessibilityState.disabled).toBe(true);
+    });
+
+    it('a clock jumping ten minutes behind does not hold a lock shut once its seconds have run', async () => {
+      fallback['GET /money/pin'] = state({ triesLeft: 0, lockedUntil: new Date(Date.now() + 2_000).toISOString() });
+      await boot();
+      expect(await rtl.screen.findByTestId('change-pin-locked')).toBeTruthy();
+      clockMoves(-10 * 60_000);
+      await rtl.waitFor(() => expect(rtl.screen.queryByTestId('change-pin-locked')).toBeNull(), { timeout: 5_000 });
+      expect(rtl.screen.getByRole('button', { name: '1' }).props.accessibilityState.disabled).toBeFalsy();
+    });
+  });
+
   it('a lock seen on an earlier visit is not drawn again once a reset has cleared it: the PIN’s state is read fresh each time the screen opens', async () => {
     const { queryClient } = require('@/api/query') as typeof import('@/api/query');
     // A cache that would keep the earlier answer for a minute, if the screen let it.
@@ -339,18 +369,56 @@ describe('W36 · Change the transaction PIN', () => {
     });
 
     it('the Hub saying the first request is still running is shown in its own words with Try again, and no third send is made on its own', async () => {
-      routes['PUT /money/pin'] = ['offline', refusal(409, 'idempotency_in_progress', 'This request is still going through. Check again in a moment.')];
+      routes['PUT /money/pin'] = ['offline', refusal(409, 'idempotency_in_progress', 'Your PIN change is still going through. Check again in a moment.')];
       const props = await boot();
       await type('1234');
       await type('4821');
       await type('4821');
-      expect(await rtl.screen.findByText('This request is still going through. Check again in a moment.')).toBeTruthy();
+      expect(await rtl.screen.findByText('Your PIN change is still going through. Check again in a moment.')).toBeTruthy();
       expect(asked('PUT', '/money/pin')).toHaveLength(2);
       await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
       await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
       const keys = asked('PUT', '/money/pin').map((c) => c.key);
       expect(keys).toHaveLength(3);
       expect(new Set(keys).size).toBe(1);
+    });
+
+    it('T3: the very first send answered "still going through" (not offline) is not sent again on its own; Try again sends it, under the same key', async () => {
+      routes['PUT /money/pin'] = [refusal(409, 'idempotency_in_progress', 'Your PIN change is still going through. Check again in a moment.')];
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText('Your PIN change is still going through. Check again in a moment.')).toBeTruthy();
+      await idle();
+      // The Hub is on the first one: a second send of our own would be a second question about the same request.
+      expect(asked('PUT', '/money/pin')).toHaveLength(1);
+      expect(props.onChanged).not.toHaveBeenCalled();
+      expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBe(true);
+      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+      await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+      const keys = asked('PUT', '/money/pin').map((c) => c.key);
+      expect(keys).toHaveLength(2);
+      expect(new Set(keys).size).toBe(1);
+    });
+
+    it('N4: the repeat is told the PIN was changed again since: nothing is claimed, the PIN in use is asked for afresh, and the Hub is read again', async () => {
+      routes['PUT /money/pin'] = ['offline', refusal(409, 'pin_changed_again', 'Your PIN was changed again since. Check it in Wallet settings.')];
+      const props = await boot();
+      await type('1234');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText('Your PIN was changed again since. Check it in Wallet settings.')).toBeTruthy();
+      expect(props.onChanged).not.toHaveBeenCalled();
+      expect(asked('PUT', '/money/pin')).toHaveLength(2);
+      // Back at the PIN in use: the one typed before is no longer the PIN, so it is not sent again behind the person's back.
+      expect(rtl.screen.getByTestId('change-pin-current')).toBeTruthy();
+      expect(rtl.screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+      expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBeFalsy();
+      await type('7777');
+      await rtl.waitFor(() => expect(asked('POST', '/money/pin/verify')).toHaveLength(2));
+      expect(asked('POST', '/money/pin/verify')[1].pin).toBe('7777');
+      expect(asked('PUT', '/money/pin')).toHaveLength(2);
     });
 
     it('Back from the unanswered change gives that attempt up and the keypad works again (D4)', async () => {
