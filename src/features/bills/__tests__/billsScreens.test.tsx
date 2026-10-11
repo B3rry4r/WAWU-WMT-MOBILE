@@ -26,10 +26,13 @@ jest.mock('../useKeepCaret', () => {
   };
 });
 
-type Answer = { status: number; body: unknown } | 'offline' | 'hold';
+type Answer = { status: number; body: unknown } | 'offline' | 'hold' | 'late';
 let answers: Record<string, Answer[]> = {};
 let sent: { key: string; body: unknown }[] = [];
 let held: (() => void)[] = [];
+/** Reads that answer only when the test lets them, with `lateBody` (a slow list that arrives after the check, R3-4). */
+let late: (() => void)[] = [];
+let lateBody: unknown = null;
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const refusal = (status: number, code: string, message: string, extra: Record<string, unknown> = {}): Answer => ({
@@ -50,6 +53,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (answer === 'hold') {
     return new Promise<Response>((resolve) =>
       held.push(() => resolve(new Response(JSON.stringify({ statusCode: 500, message: 'Released.' }), { status: 500, headers: { 'content-type': 'application/json' } }))),
+    );
+  }
+  if (answer === 'late') {
+    return new Promise<Response>((resolve) =>
+      late.push(() => resolve(new Response(JSON.stringify(lateBody), { status: 200, headers: { 'content-type': 'application/json' } }))),
     );
   }
   if (answer === 'offline') throw new TypeError('Network request failed');
@@ -105,12 +113,14 @@ const LATER = { timeout: METER_CHECK_DELAY_MS + 2500 };
 beforeEach(() => {
   answers = {};
   sent = [];
+  late = [];
   mockKeepCaretCalls.length = 0;
   queryClient.clear();
 });
 
 afterEach(async () => {
   held.splice(0).forEach((release) => release());
+  late.splice(0).forEach((release) => release());
   await queryClient.cancelQueries();
   await settle(10);
   rtl.cleanup();
@@ -930,6 +940,53 @@ describe('R2-U1: S13 reached from a meter check is held until the person pulls t
     expect(await rtl.screen.findByRole('button', { name: 'Electricity' })).toBeTruthy();
     expect(rtl.screen.queryByTestId('bills-not-live')).toBeNull();
     expect(asked(BILLERS_PATH)).toBe(2);
+  });
+
+  describe('R3-4: a list fetch already out when the check finds bills off does not undo the hold', () => {
+    /** The verifier's case: a slow refetch of the list is out, then the check says off, then the slow list answers "available". */
+    const slowListThenOffCheck = async () => {
+      answers[BILLERS_PATH] = [LIST];
+      answers[PREVIEW_PATH] = [OFF_CHECK];
+      await stack();
+      await rtl.screen.findByTestId('meter-amount');
+      // A slow refetch of the list starts (a remount of another screen, a pull, the stale timer) ...
+      answers[BILLERS_PATH] = ['late'];
+      lateBody = (LIST as { body: unknown }).body;
+      await rtl.act(async () => {
+        void queryClient.refetchQueries({ queryKey: KEY });
+      });
+      await settle(20);
+      expect(late).toHaveLength(1);
+      // ... and while it is out, the person types the number whose check says the service is off.
+      await type('meter-number', '04183456789');
+      await rtl.screen.findByTestId('bills-not-live', undefined, LATER);
+      expect((queryClient.getQueryData(KEY) as { held?: true }).held).toBe(true);
+    };
+
+    it('the slow list answering "available" afterwards leaves the cache held and S13 drawn', async () => {
+      await slowListThenOffCheck();
+      await rtl.act(async () => late.splice(0).forEach((release) => release()));
+      await settle(100);
+      expect(queryClient.getQueryData(KEY)).toEqual({ available: false, billers: [], held: true });
+      expect(rtl.screen.getByTestId('bills-not-live')).toBeTruthy();
+      expect(rtl.screen.queryByRole('button', { name: 'Electricity' })).toBeNull();
+      // Nothing asked the list again on the way.
+      expect(asked(BILLERS_PATH)).toBe(2);
+    });
+
+    it('the list is no longer fetching once the hold is made', async () => {
+      await slowListThenOffCheck();
+      expect(queryClient.getQueryState(KEY)?.fetchStatus).toBe('idle');
+    });
+
+    it('a pull after it still asks the Hub and draws what it says', async () => {
+      await slowListThenOffCheck();
+      await rtl.act(async () => late.splice(0).forEach((release) => release()));
+      answers[BILLERS_PATH] = [LIST];
+      await pull();
+      expect(await rtl.screen.findByRole('button', { name: 'Electricity' })).toBeTruthy();
+      expect(rtl.screen.queryByTestId('bills-not-live')).toBeNull();
+    });
   });
 
   it('shows the pull as in progress while the Hub is asked, and ends it when the answer comes', async () => {
