@@ -1008,6 +1008,34 @@ here is redrawn.
 - **Now:** "Sent by SMS to 0803 ••• 4412, the number on your BVN".
 - **Instead:** "Sent by SMS to 0803 ••• 4412". No BVN at sign-up.
 - **Why:** R-6.
+- **Owner-ruled deviation (R-39, 6 Oct 2026, AUTH-07), replaces the line above, when WAWU ID
+  mails the code:** the code is mailed, not texted. The nav title is **"Verify your email"**
+  (was "Verify your phone") and the line under "Enter the 6-digit code" is **"Sent to
+  n•••@example.com"** (the address typed on A3, written by WAWU ID with the first letter and
+  the domain; was "Sent by SMS to 0803 ••• 4412"). The six boxes, the keypad, "Resend in
+  0:42" and "Resend code" are as drawn. The same on A15: the wrong-code state keeps "That
+  code isn't right" and everything else of A4. A3 still asks for the phone number and
+  verifies nothing about it. No separate "Check your email" step follows A4: the email is
+  proven here. Layout, spacing and type are unchanged: only the channel words move.
+- **Which words show (lead, 10 Oct 2026; A3 corrected in round 3):** WAWU ID's
+  `SIGNUP_VERIFY_CHANNEL` is `phone` until the release steps switch it to `email` (task
+  AUTH-07, "Release steps"). Under `phone` WAWU ID answers without a channel and the app draws
+  the old words above ("Verify your phone", "Sent by SMS to 0803 ••• 4412"); under `email` it
+  draws the mailed ones. **A3's line follows the same setting**: on arrival the app asks
+  WAWU ID which channel the code will travel (`GET /auth/signup/channel`), so A3 and A4 name
+  the same channel. Under `phone` the line under A3's heading is **"We'll text a code to your
+  phone."** (the canvas's own words); under `email` it is **"We'll email you a code to confirm
+  your address."** While the app has no answer (offline, or an answer it does not know) the
+  line is not drawn: it is never guessed.
+- **A mailed sign-up made without the number typed (Default (lead), 10 Oct 2026, round 3; owner
+  may override):** a mailed code proves no number, so it never takes one from an account that
+  only typed it. When the number typed on A3 is held that way, the sign-up goes ahead without
+  it and A4 says so with the warning note under the heading, **"We couldn't add your phone
+  number"** over **"Another account already has that number. You can add a phone number
+  later."** (the shared `Banner`, warning tone, as A3 uses for its own refusals; no artboard
+  draws it). The note is shown again when the app is reopened on A4. The texted A4 never shows
+  it: a texted sign-up takes the number when its code proves it. Adding and proving a phone
+  later is BACKEND_GAPS G-222, which the switch to `email` waits for.
 
 ### A10 · Confirm PIN
 - **Now:** no mismatch state drawn.
