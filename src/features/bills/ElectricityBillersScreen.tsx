@@ -9,7 +9,7 @@ import { ErrorState } from '@/components/StateViews';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { space } from '@/theme';
 
-import { billsKeys, fetchElectricityBillers } from './api';
+import { electricityBillersQuery } from './api';
 import { BILLS_TITLE } from './BillsScreen';
 import { billerInitials, planWord } from './model';
 import { BillerRow, SectionLabel, StepChip, billMetrics } from './parts';
@@ -34,7 +34,7 @@ export type ElectricityBillersScreenProps = {
  * it is. A company whose code Fintava lists as not available is not here. The row's code goes on to S4.
  */
 export function ElectricityBillersScreen({ onBack, onChangeCategory, onPick, onUnavailable }: ElectricityBillersScreenProps) {
-  const billers = useQuery({ queryKey: billsKeys.electricity, queryFn: fetchElectricityBillers }, queryClient);
+  const billers = useQuery(electricityBillersQuery, queryClient);
   const unavailable = billers.isSuccess && !billers.data.available;
   useEffect(() => {
     if (unavailable) onUnavailable();

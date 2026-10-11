@@ -10,7 +10,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { fieldMetrics } from '@/components/TextField';
 import { space } from '@/theme';
 
-import { billsCodes, billsKeys, fetchElectricityBillers, previewMeter, type ElectricityBiller, type ElectricityBillers } from './api';
+import { billsCodes, billsKeys, electricityBillersQuery, holdBillsOff, previewMeter, type ElectricityBiller } from './api';
 import { BILLS_TITLE } from './BillsScreen';
 import {
   amountBoxText,
@@ -26,7 +26,7 @@ import {
   METER_MAX_DIGITS,
   NAIRA_SIGN,
   presetText,
-  takeAmount,
+  takeAmountChange,
 } from './model';
 import { AmountPresets, BillField, HintLine, StepChip, billMetrics } from './parts';
 import { useSettled } from './useSettled';
@@ -57,7 +57,7 @@ export type MeterAmountScreenProps = {
  * Continue will need (BILLS-02 adds Continue, which opens S5; R-47: it is not drawn here).
  */
 export function MeterAmountScreen({ code, onBack, onChangeCategory, onChangeBiller, onMissing, onUnavailable }: MeterAmountScreenProps) {
-  const billers = useQuery({ queryKey: billsKeys.electricity, queryFn: fetchElectricityBillers }, queryClient);
+  const billers = useQuery(electricityBillersQuery, queryClient);
   const biller = billers.data?.billers.find((b) => b.code === code);
   const gone = billers.isSuccess && billers.data.available && biller === undefined;
   const unavailable = billers.isSuccess && !billers.data.available;
@@ -95,12 +95,12 @@ export function MeterAmountScreen({ code, onBack, onChangeCategory, onChangeBill
     );
   }
 
-  return <MeterAmountForm biller={biller} onBack={onBack} onChangeCategory={onChangeCategory} onChangeBiller={onChangeBiller} onUnavailable={onUnavailable} />;
+  return <MeterAmountForm biller={biller} onBack={onBack} onChangeCategory={onChangeCategory} onChangeBiller={onChangeBiller} />;
 }
 
-type FormProps = Pick<MeterAmountScreenProps, 'onBack' | 'onChangeCategory' | 'onChangeBiller' | 'onUnavailable'> & { biller: ElectricityBiller };
+type FormProps = Pick<MeterAmountScreenProps, 'onBack' | 'onChangeCategory' | 'onChangeBiller'> & { biller: ElectricityBiller };
 
-function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onUnavailable }: FormProps) {
+function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller }: FormProps) {
   const [meter, setMeter] = useState('');
   const [amount, setAmount] = useState('');
   const settled = useSettled(meter, METER_CHECK_DELAY_MS);
@@ -118,19 +118,19 @@ function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onU
   );
   const line = meterLine(meter, settled, { isFetching: check.isFetching, isError: check.isError, error: check.error, data: check.data });
 
-  // The bills service stopped being usable while the person was on this screen: S2 is told at once (the list it will draw is
-  // replaced by "not available" before it is shown, so it opens as S13 and never as the normal screen for a moment), and the
-  // list is asked again so S2 then says what the Hub says (D6).
+  // The bills service stopped being usable while the person was on this screen: the list S2 will draw is replaced by "not
+  // available" at once, so S2 opens as S13 and never as the normal screen for a moment. That answer is held (R2-U1): the Hub's
+  // company list may still answer, and nothing asks it again on its own; the person pulls to refresh on S2 to ask. The Hub
+  // keeps "off" for its cache window, so a pull straight away still says off. The screen above this form sees the list change
+  // and hands over to S2 (once).
   const told = useRef(false);
   const stopped = check.isError && isApiError(check.error) && check.error.code === billsCodes.unavailable;
   useEffect(() => {
     if (stopped && !told.current) {
       told.current = true;
-      queryClient.setQueryData<ElectricityBillers>(billsKeys.electricity, { available: false, billers: [] });
-      void queryClient.invalidateQueries({ queryKey: billsKeys.electricity });
-      onUnavailable();
+      holdBillsOff();
     }
-  }, [stopped, onUnavailable]);
+  }, [stopped]);
 
   const kobo = amountKobo(amount);
   const problem = amountProblem(biller, kobo);
@@ -164,7 +164,8 @@ function MeterAmountForm({ biller, onBack, onChangeCategory, onChangeBiller, onU
           testID="amount"
           label="Amount"
           value={amountBoxText(amount)}
-          onChangeText={(typed) => setAmount((was) => takeAmount(typed, was))}
+          onChangeText={(typed) => setAmount((was) => takeAmountChange(amountBoxText(was), typed, was))}
+          keepCaret
           placeholder="Amount"
           keyboardType="decimal-pad"
           prefix={NAIRA_SIGN}

@@ -1,5 +1,8 @@
 import {
   amountBoxText,
+  caretAfter,
+  countSignificant,
+  insertedText,
   amountKobo,
   amountOk,
   amountProblem,
@@ -17,6 +20,7 @@ import {
   presetChosen,
   presetText,
   takeAmount,
+  takeAmountChange,
 } from '../model';
 
 const limits = { minimumKobo: 100000, maximumKobo: 50000000 };
@@ -224,5 +228,141 @@ describe('what is said under the meter box', () => {
       message: 'Try again in a moment.',
     });
     expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: { message: 'No connection.' } })).toEqual({ kind: 'problem', message: 'No connection.' });
+  });
+});
+
+describe('digits of other scripts are not digits (round 2 survivor T5)', () => {
+  it('reads Arabic-Indic and full-width digits as nothing, so a typed key of them is ignored', () => {
+    expect(takeAmount('\u0661\u0660\u0660\u0660', '')).toBe('');
+    expect(takeAmount('1\u0660\u0660\u0660', '')).toBe('1');
+    expect(takeAmount('\uff11\uff15\uff10\uff10', '')).toBe('');
+    // Typed after digits that are there: the box keeps them and takes nothing from the other script.
+    expect(takeAmount('15\u0663', '15')).toBe('15');
+  });
+});
+
+describe('what a change to the amount box added', () => {
+  it.each([
+    ['one key typed at the end', '1,234', '1,2345', '5'],
+    ['one key typed in the middle', '1,234', '1,2a34', 'a'],
+    ['one key typed at the start', '1,234', '91,234', '9'],
+    ['the same key as its neighbour', '1', '11', '1'],
+    ['a key that equals the ones round it', '1,111', '1,1111', '1'],
+    ['a deletion', '1,234', '1,23', ''],
+    ['a deletion in the middle', '1,234', '1,34', ''],
+    ['a paste into an empty box', '', '10,000.00', '10,000.00'],
+    ['a paste over everything', '5,000', '1e3', '1e3'],
+    ['a paste at the end', '5,000', '5,00012', '12'],
+    ['one key over a selection', '5,000', '7', '7'],
+    ['nothing', '1,234', '1,234', ''],
+  ])('%s', (_k, before, typed, added) => {
+    expect(insertedText(before, typed)).toBe(added);
+  });
+});
+
+describe('a paste of anything but ASCII digits, commas and one point is refused whole (R2-3)', () => {
+  /** The person changes the box from what it shows (the words of `previous`) to `typed`. */
+  const change = (typed: string, previous = '') => takeAmountChange(amountBoxText(previous), typed, previous);
+
+  it.each([
+    ['1e3 (a power of ten)', '1e3'],
+    ['10k', '10k'],
+    ['1.5m', '1.5m'],
+    ['a naira sign', '\u20a61,500'],
+    ['NGN and a space', 'NGN 1 500'],
+    ['a space inside the figure', '1 500'],
+    ['a no-break space', '1\u00a0500'],
+    ['Arabic-Indic digits', '\u0661\u0660\u0660\u0660'],
+    ['one Arabic-Indic digit among the digits', '1\u0660\u0660\u0660'],
+    ['full-width digits', '\uff11\uff0c\uff15\uff10\uff10\uff0e\uff15\uff10'],
+    ['a minus sign', '-1500'],
+    ['a plus sign', '+1500'],
+    ['a letter between digits', '15x00'],
+    ['a newline', '1500\n'],
+    ['a zero-width space', '15\u200b00'],
+  ])('refuses a paste with %s and the box keeps what it held', (_k, pasted) => {
+    expect(change(pasted)).toBe('');
+    expect(change(pasted, '75')).toBe('75');
+    expect(change(pasted, '1500.50')).toBe('1500.50');
+  });
+
+  it('refuses it when it is pasted over a selection too', () => {
+    // The box showed "5,000" and the person selected all of it and pasted "1e3": shorter than the box, still a paste.
+    expect(change('1e3', '5000')).toBe('5000');
+    expect(change('10k', '5000')).toBe('5000');
+  });
+
+  it('refuses it in the middle of what is there', () => {
+    expect(change('1,5a00', '1500')).toBe('1500');
+    expect(change('1,5NGN00', '1500')).toBe('1500');
+  });
+
+  it('takes a paste that holds only ASCII digits, commas and one point, as before', () => {
+    expect(change('1,500.50')).toBe('1500.50');
+    expect(change('10,000.00')).toBe('10000.00');
+    expect(change('1500')).toBe('1500');
+    expect(change('1,5,0,0')).toBe('1500');
+    expect(change(',1500')).toBe('1500');
+    expect(change('.5')).toBe('0.5');
+    // Pasted over everything in the box, it replaces it; pasted at the end, it is added.
+    expect(change('12', '5000')).toBe('12');
+    expect(change('5,00012', '5000')).toBe('500012');
+  });
+
+  it('still refuses a second point, pasted whole, as D1 does', () => {
+    expect(change('1.2.3')).toBe('');
+    expect(change('1.2.3', '75')).toBe('75');
+    expect(change('1.500,50')).toBe('');
+    expect(change('1,500.50.', '1500.50')).toBe('1500.50');
+  });
+
+  it('keeps today’s rule for one key typed: a letter or a naira sign typed is ignored, not refused', () => {
+    expect(change('1,500x', '1500')).toBe('1500');
+    expect(change('1,500\u20a6', '1500')).toBe('1500');
+    expect(change('1,5 00', '1500')).toBe('1500');
+    expect(change('1,5001', '1500')).toBe('15001');
+    expect(change('7', '5000')).toBe('7');
+    // One letter typed over a selected box replaces the selection with nothing, as it always did; it is not a paste.
+    expect(change('x', '5000')).toBe('');
+  });
+
+  it('keeps today’s rule for a deletion', () => {
+    expect(change('1,50', '1500')).toBe('150');
+    expect(change('', '1500')).toBe('');
+  });
+});
+
+describe('where the caret goes after the box redraws its commas (R2-2)', () => {
+  it('counts the digits and points, not the commas', () => {
+    expect(countSignificant('')).toBe(0);
+    expect(countSignificant('1,234.5')).toBe(6);
+    expect(countSignificant(',,,')).toBe(0);
+    expect(countSignificant('\u20a61,5x0')).toBe(3);
+  });
+
+  it.each([
+    ['before every digit', '1,234,567', 0, 0],
+    ['after the first digit', '1,234,567', 1, 1],
+    ['after the comma follows the second digit (no comma stands between them)', '17,234,568', 2, 2],
+    ['after the third digit, past a comma', '1,723,456', 3, 4],
+    ['after a digit that sits before a comma, the caret stays before the comma', '1,234', 1, 1],
+    ['after the last digit', '1,234', 4, 5],
+    ['past the end', '1,234', 9, 5],
+    ['after the point', '1,500.50', 5, 6],
+    ['after a kobo digit', '1,500.50', 6, 7],
+    ['in an empty box', '', 3, 0],
+  ])('%s', (_k, words, count, at) => {
+    expect(caretAfter(words, count)).toBe(at);
+  });
+
+  it('is the verifier’s case: 123456, Home, one key right, then 7 and 8 gives 17,823,456 with the caret after the 8', () => {
+    // 123,456 with a 7 typed after the 1: the browser shows 17,23,456 with the caret at 2.
+    const afterSeven = takeAmount('17,23,456', '123456');
+    expect(amountBoxText(afterSeven)).toBe('1,723,456');
+    expect(caretAfter(amountBoxText(afterSeven), countSignificant('17,23,456'.slice(0, 2)))).toBe(3);
+    // The box now shows 1,723,456 and the caret sits after the 7 (3); an 8 typed there shows 1,78,23,456 with the caret at 4.
+    const afterEight = takeAmount('1,78' + '23,456', afterSeven);
+    expect(amountBoxText(afterEight)).toBe('17,823,456');
+    expect(caretAfter(amountBoxText(afterEight), countSignificant('1,78'))).toBe(4);
   });
 });
