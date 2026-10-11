@@ -7,7 +7,7 @@ order: 247
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: building
 depends_on: [FIX-31]
 decisions: [R-49]
 passes: [V1, V5, V6]
@@ -61,5 +61,69 @@ Branch `wmt/FIX-32` from main `3b35731`, main `610cc57` merged (no conflict). Te
 **NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
 
 ## Verifier report
+
+Verifier session (Sonnet), independent of the builder. Mobile `origin/wmt/FIX-32` `0664baa`; main `5b9851b` merged in a worktree as `3291bba` (docs only, one generated-file conflict in `docs/PROGRESS.md`, rebuilt by `check_tasks.py --write`). Jest only, no server, nothing left the machine. **Verdict: the causes are real and the fixes hold, with one defect (finding 1): the new MeScreen D2 test passes without ever reaching the state it names, because it now reads the screen before React has drawn the failed refresh. A mutant the old test kills survives the new one. Status `building` for that one test.** Product code and the branch's tests were not changed. Scratch, logs, harness: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/vfix32/`.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 | passed for this task, apart from finding 1 | the diff is tests and docs only (below); two full checks EXIT 0 |
+| V5 Picture | NOT RUN | tests only, no screen changed |
+| V6 States | NOT RUN | tests only, no state drawn differently |
+
+### What was checked
+
+| Check | Result | Evidence |
+|---|---|---|
+| Diff scope (`git diff origin/main...origin/wmt/FIX-32 --stat`) | CONFIRMED | 10 files: six test files, `tasks/FIX-32.md`, `docs/LOG.md`, `docs/PROGRESS.md`, `tasks/INDEX.md`. No product file, gate, baseline, jest config or package file. Main has moved only in docs since the branch's merge (`610cc57` to `5b9851b`: LOG, PROGRESS, `tasks/BILLS-01.md`) |
+| Order 247, not 282 | CONFIRMED | with `order: 282` `npm run tasks` fails: "FIX-32.md is a launch task ordered after CHECK-3 (order 282 > 253)"; 247 passes |
+| Nothing weakened, by count | CONFIRMED | `it` counts equal in five files, 44 to 46 in CommunitiesView (the two new tests); `expect(` counts equal or higher (Explore 201 to 201, Legal 134 to 137, Room 179 to 179, CommunitiesView 129 to 139, Me 98 to 99, host 64 to 67). No `skip`, `only`, `todo`, retry or raised timeout in the diff; the only `setTimeout` added is a 250 ms real wait in a new test ("asked once", below) |
+| Nothing weakened, by mutant | **finding 1** | ten testID mutants (a state made unreachable): the old and the new Explore and Me files fail the same tests, all ten (PE1 to PE5 in Explore, PM1 to PM5 in Me). One semantic mutant (PM6, below) is killed by the old Me file and survives the new one |
+| Explore before and after (stall harness: the first call to a path blocks the whole thread 1.3 s, once per test) | CONFIRMED | old, stall at `/explore/creators`: 8 of 55 fail (the Categories group), at `/users/me`: 5 fail, at `/explore/featured-creators`: 55 pass; new: 55 of 55 at all three. Delay harness (0 to 249 ms, seeds 0, 1, 21, new): only "the refusal line stays up for 4 seconds" fails; the old file fails the same test at seeds 0 and 1 (a harness artifact: its own fake clock against the harness's timers, as FIX-31 found) |
+| LegalChat at delay seeds (old, then new) | CONFIRMED, seed 4 not reproduced | old: seed 0 fails 3 (the three named tests), 1 fails 2, 5 fails 2, 21 fails 3; **seed 4 passed in 3 of 3 runs** (the builder saw one failure). New: 43 of 43 at seeds 0 to 5 and 21 to 23. The builder's cause (the tests before them end while a send is in flight) holds: mutant E, "a user can Message Adaora" without `messageConfirmed()`, fails the victim test "a consultant's message arrives" at 8 of 9 seeds |
+| RoomScreen D38, clock pinned | CONFIRMED | old: 1 of 62 fails (the day-separator test) at 00:05 and 00:16:30, passes at 00:17:30 and 23:55; new: 62 of 62 at all four. Mutant D (the `pinDate()` call removed) fails at 00:05 |
+| Note 37, CommunitiesView | CONFIRMED | mutant Dc (`!isFetchNextPageError` dropped from `readingOn`): **2 failed, 55 passed**, exactly the two new tests; unmutated 57 of 57; file restored and `cmp`ed byte for byte |
+| MeScreen at a stall on `/users/u1/content` | CONFIRMED | old: 4 fail (D3, D1 veil, `me-grid-empty`, `me-grid-error`); new 30 of 30; new also 30 of 30 at a stall on `/users/me` and at delay seeds 0, 1, 21. Mutant B (the fake clock removed again): the same 4 fail |
+| hostScreens skeleton at a stall on `/events/options` | PARTLY, finding 2 | the old test is racy, but a stall does not fail it every time: one stall per test, whole file: old 24 of 24 (builder's harness and mine); that test alone: old failed 2 of 4 (builder's harness) and 1 of 4 (mine); a 30 ms stall on every request: 2 of 3; 200 ms: 1 of 3. New: 24 of 24 at stalls on `/events/options` and `/verification/me`, delay seeds 0, 1, 21, and 6 of 6 of that test alone under the 30 ms stall. Mutant C (the old test put back): fails 1 of 6 |
+| Repeat runs, each changed file alone, 10 times, branch tree, one worker, warm cache | CONFIRMED | **60 of 60**: RoomScreen 62 tests x10, CommunitiesView 57 x10, MeScreen 30 x10, hostScreens 24 x10, Explore screens 55 x10, LegalChatScreen 43 x10, every run all passed; load average 18 to 35 while my other jobs ran (`reps.log`) |
+| Full check, common-rules form (two workers), branch with main merged (`3291bba`) | CONFIRMED, twice | run 1: EXIT 0, typecheck 0, lint 0 errors (warnings only), **152 suites, 2756 tests, 639 s**, gates 10 run, 569 files, 0 fail, 5 warn (all `PROVISIONAL(...)` of other tasks), baseline 0, tasks 276; started at load 19.7, ended at 23.3, 7 GB available. Run 2: EXIT 0, the same 152 and 2756, 773 s, load 23.1 at the start and 28.5 at the end, 5 GB available, with my own repeat runs going beside it. Logs `check1.log`, `check2.log` |
+| Fake-clock note (a bare `await` of a fetch answer in Explore or Me) | RECORDED, below | mutant A |
+
+### Findings
+
+1. **`medium` MeScreen "a refresh that fails keeps the profile on screen; the page error is only for a profile never shown (D2)" no longer reaches the state it names.** The builder changed `await client.invalidateQueries(...)` to `void`, then waits for the stats call to be asked twice and for `client.isFetching()` to be 0, then asserts that `me-error` is absent. On the fake clock the cache has finished, but React has not drawn the failure yet: react-query hands its results to React on a timer of the test's clock, and a `waitFor` on cache state, which passes at its first look, does not move that clock (the experiment below shows it: move the clock and the failure is drawn). Mutant PM6 (`MeScreen.tsx` line 96: `(stats.isError && !stats.data)` to `stats.isError`, which makes a refresh that fails replace the profile with the page error, the defect D2 fixed): old file **fails** (1 of 30), new file **passes 30 of 30** (three runs). With one line added after the `isFetching` wait, `await act(async () => { jest.advanceTimersByTime(100); });`, the same new test **fails** under PM6 and passes unmutated, so that is the fix (tried in a scratch copy only). Searched for the same pattern: the Explore and Me files hold 58 absence assertions (`toBeNull`, `toHaveLength(0)`); read one by one, the other 57 follow a wait on the rendered tree (`findBy`, a `getBy` of a render already seen, `settle()`), which moves the clock. A scratch run with a 100 ms clock advance put before all 58 passes 85 of 85, so none of them hides a later state in the unmutated app. Only D2 waits on cache state alone.
+2. **`low` hostScreens "shows a skeleton": the stall is not a deterministic "before".** The new test is right (it holds both answers, looks at the skeleton, then releases them: stricter than the old one, which also did not assert that the form is absent while held), but the builder's table says a stall at `/events/options` fails the old test; it fails it between one run in three and one in two, and never in the two whole-file runs. Record it as racy, not as reproduced every time.
+3. **`info` LegalChat seed 4 on the old file did not fail** (3 of 3 passes); seeds 0, 1, 5 and 21 did.
+4. **`info` leftovers, not this task's:** `{ timeout: 8000 }` and `}, 15000)` remain on Explore "when Explore cannot load" although the file is on the fake clock now (harmless; the fake wait is 3 s of retries inside an 8 s window).
+
+### The fake-clock note
+
+A new test in Explore or Me that awaits a fetch answer directly: **in an ordinary run it works** (mutant A, the old `expect(await fetchCategories())` put back: passes alone), because the mock answers with promises only. **Under the delay harness it hangs** to the 20 s limit (mutant A at seed 0: fails), and so would any await that sits behind a timer of the app (a retry wait, a toast). It is a trap worth a two-line comment in both `beforeEach` blocks ("a bare await of anything behind a timer never returns here; use findBy, waitFor or settle, and after a cache wait that should show on screen, move the clock"), mostly for the next FIX-31 style delay run and for finding 1. Not added: the files are the branch's.
+
+### Meaning changes (no assertion lost except finding 1; named as asked)
+
+| Test | Old | New |
+|---|---|---|
+| Explore, all 52 tests | waits in real time | every wait on the fake clock (`queueMicrotask` real); `settle` is 50 real ms plus 50 fake ms plus a 0 ms real turn, so "nothing more was asked" is read after the same 50 real ms |
+| Explore "when Explore cannot load" | 3 s of the app's real 1 s and 2 s retry waits | the same three tries and the recovery, counted in fake time |
+| Explore "drops a category ... blank id or label" | `expect(await fetchCategories())` | the answer is read with `waitFor`; same expected value |
+| Me, all 30 tests | real clock | fake clock; D2 is finding 1; the "Profile saved" test keeps its own fake |
+| hostScreens "shows a skeleton while the Hub answers, then the form" | skeleton looked at after the answers could have landed | both answers held, skeleton asserted, form absent while held, answers released, form shown, skeleton gone: stricter |
+| Legal: "a user can Message Adaora", "writes to the consultant before any payment", and the two "leaving and coming back" tests | ended while a request was in flight | wait for the dimmed copy of the words to go (`legal-bubble-sending`), or for the reread to end, before the end: stricter |
+| Room "a member reads the messages oldest at the top" | real `Date` | `Date` frozen at 2026-10-07 12:00 local, every timer real; it no longer proves "Today" against the real now, which is the point |
+| CommunitiesView | 44 tests | 46: a refused next page is asked for once, then "Couldn't load more communities." and Try again asks again (screen), and the same through `useSuggestedCommunities` (hook) |
+
+### Mutants of my own
+
+| Mutant | Harness | Result |
+|---|---|---|
+| A: Explore "drops a category" put back to a bare `await` | ordinary run, then delay seed 0 | passes in the ordinary run (no catch there), **killed** at seed 0 |
+| B: MeScreen: the fake clock removed from `beforeEach` | stall at `/users/u1/content` | **killed**: the 4 tests |
+| C: hostScreens skeleton: the old test put back | 30 ms stall on every request, 6 runs | killed 1 of 6 (weak: the old test is racy, finding 2) |
+| D: RoomScreen: `pinDate()` removed | clock pinned at 00:05 | **killed** (the day-separator test) |
+| E: Legal "a user can Message Adaora": `messageConfirmed()` removed | delay seeds 0 to 5, 21 to 23 | **killed** at 8 of 9 (not seed 4), the victim test each time |
+| Dc: `!isFetchNextPageError` dropped | the two new CommunitiesView tests | **killed**, exactly 2 |
+| PE1 to PE5, PM1 to PM5 (testIDs renamed: `explore-loading`, `explore-error`, `categories-loading`, `follow-notice`, `categories-creator-*`, `me-loading`, `me-error`, `me-grid-error`, `me-grid-empty`, `me-services-error`) | old and new file each | all ten: the same tests fail in both |
+| PM6: a failed refresh drawn as the page error | old and new Me file | old fails, **new survives** (finding 1) |
+
 
 ## Owner sign-off
