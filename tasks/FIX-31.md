@@ -7,7 +7,7 @@ order: 246
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: done
+status: verifying
 depends_on: []
 decisions: [R-49]
 passes: [V1, V5, V6]
@@ -175,3 +175,35 @@ The Explore refusal test is a harness artifact, as the builder said: the test fa
 ## Owner sign-off
 
 Lead ruling, 11 Oct 2026 (Default (lead), owner may override): the verifier's one defect (H1 on HomeScreen reads before `GET /users/me` lands, at one delay seed) fails the same way on main, so merging this round makes nothing worse and removes most of the load timeouts that block every push. Under the owner's 10 Oct direction to merge on review and carry findings after, this counts as review. Merged by the lead, 11 Oct 2026: mobile main (merge of `1c2decc`; SHARED-CHANGES keeps both sides' rows). Round 2 on the same branch: H1 (the verifier's one-line wait), the two AUTH-07 auth-signup tests that race at every delay seed ("A15 ... mailed code", "asks again on a later visit when the first ask failed"), and the Explore fake-clock test's act warning. The product finding (Today's creator rail draws the viewer's own card until `/users/me` answers) is recorded for its owning task, not built here.
+
+## Builder report, round 2
+
+Branch `wmt/FIX-31`, continued from `1c2decc` (merged into main by the lead); mobile `origin/main` `a8d6383` merged in (it carries AUTH-07 round 4, merge `4f2549b`, and EVENTS-09). Tests only: four test files changed (`HomeScreen`, `auth-signup`, Explore `screens`, `LegalChatScreen`; no product file, gate, baseline, jest config or package file). No assertion removed or loosened, nothing skipped, retried or given a longer timeout. Delay runs below use the verifier's harness (every fetch answer delayed 0 to 249 ms by path, a different mapping per seed; scratch only, not committed), seeds 0 to 5 and 21 to 23.
+
+| Ruling | Before | Cause | Fix | After |
+|---|---|---|---|---|
+| 1. HomeScreen H1 "creators to discover, never themselves" | fails at seed 22 (verifier, 250 ms), same on main | the viewer's id comes from `GET /users/me`, a separate answer that can land after `GET /creators`; the null assertion read the rail before it | `waitFor` every client to stop fetching, then the same assertion (the verifier's line) | 34 of 34 at all 9 seeds; 10 of 10 alone |
+| 2a. auth-signup A15 "... mailed code ... fourth wrong 400" | fails at seed 21 (confirm calls 2, expected 3) | the confirm call is logged when the request starts, so the `waitFor` on the call count passed before the answer; the keys are not read while a check is on its way, so the next code was dropped | after the second and third wrong codes, `waitFor` "That code isn't right" (what `fourWrongCodes()` does) | 97 of 97 at all 9 seeds; 10 of 10 alone |
+| 2b. auth-signup "asks again on a later visit when the first ask failed" | stops at the 20 s limit at seed 21 | two reads: "no line drawn" was asserted while the first ask had not been answered; and `await signupChannel()` never returned, because `renderRouter` puts the clock on fake timers (expo-router's testing library calls `jest.useFakeTimers()`), where an answer that arrives a turn late lands only while `waitFor` moves the clock | `requestsAnswered()` waits for the first ask to have failed before the "no line" lines; `askChannel()` waits for the second on the test's clock; same expectations (resolves `email`, two asks) | passes at all 9 seeds |
+| 2c. auth-signup "asks WAWU ID each time ..." (AUTH-07 round 4, now on main) | stops at 20 s at seed 21 (found by the full-file harness run) | the same bare `await signupChannel()` | `askChannel()` | passes at all 9 seeds |
+| 3. Explore "when creators cannot load" act warning | one `console.error` "You called act(async () => ...) without await" per run of the file | jest's modern fake timers also fake `queueMicrotask`; React's `act` queues its "was it awaited?" check on it, and the faked check ran inside the next `advanceTimersByTime`, before the `await` had reached the act | `jest.useFakeTimers({ doNotFake: ['queueMicrotask'] })`; the loop and every assertion are the same | 0 warnings in 10 of 10 runs alone (55 of 55); the test takes about 1 s |
+| 3b. LegalChatScreen S17 "a failed refresh keeps the conversation" (this task's round 1 test, same code) | the same warning | the same | the same line | 0 warnings in 10 of 10 runs alone (43 of 43) |
+
+**Added at the lead's request** (the AUTH-07 round 4 verifier's two low test gaps), in `auth-signup.test.tsx`, each shown by a mutant of the product file in this worktree (run with the repo's jest config, the whole file, restored byte for byte after):
+- **D5** "a failed ask on a later visit clears the line the earlier visit drew, and the next good ask draws it again": mutant M3a (`signupChannel` keeps the last answer when the ask fails) KILLED, 1 of 97 failing, D5 by name; mutant M3b (`sign-up.tsx` ignores a null answer) KILLED, 1 of 97, D5 by name.
+- **N-1** "an answer to an earlier visit that lands after a later visit has drawn its own is not drawn over it" (the earlier visit's answer is held by a gate the test releases, so the order does not depend on timing): mutant M5 (the `if (current)` stale-answer guard removed) KILLED, 1 of 97, N-1 by name.
+- Unmutated, both pass, at all 9 seeds.
+
+**Delay runs, changed files, 250 ms, seeds 0 to 5 and 21 to 23** (one jest per file): HomeScreen 9 of 9 clean; auth-signup 9 of 9 clean (97 tests); Explore screens: only "the refusal line stays up for 4 seconds" fails, at 8 of 9 seeds (seed 3 clean), the harness artifact the round 1 report named (the harness delay is a timer on the same fake clock the test drives), unchanged by this round; LegalChatScreen: see Findings.
+
+**Findings (not built, for the lead)**
+1. **LegalChatScreen (LEGAL-02's tests, not on this task's list) has three tests that read before an answer lands**, found by running the changed LegalChatScreen file under the harness: "a consultant's message arrives without a refresh when the live connection says the conversation changed" (reads "no join line" before the thread has loaded), "a conversation whose matter has moved past 'awaiting a quote' is not reopened: a new one starts" (the OPEN call count), and "an unfinished conversation is picked up, an older form intake that answers 404 is passed over" (the OPEN call count). Failing seeds: 0 and 21 (all three), 1 (two), 4 (one); clean at 2, 3, 5, 22, 23. Alone and in full runs they pass. They need the same wait for the answers; left for a round 3 or LEGAL-02.
+2. **Explore "the refusal line ..." prints the same act warning, but only under the delay harness** (0 in the 10 ordinary runs). It is the test's own `jest.useFakeTimers()` (no `doNotFake`); the harness adds fake-clock timer jobs that make the faked `queueMicrotask` run early. Not changed: it prints nothing in ordinary runs and the test fails under the harness anyway.
+3. Not this round, as ruled: the creator rail's own card before `/users/me` answers (a product finding, recorded for its owning task) and SHARED-CHANGES `FIX-31 #1`.
+
+**Checks**
+- Each changed file alone, 10 times, warm cache, two jest runs at a time at most, load average 15 to 17: HomeScreen 10 of 10, Explore screens 10 of 10, LegalChatScreen 10 of 10, auth-signup 10 of 10; no `act ... without await` in any run.
+- Full check (the common-rules form, two workers): see the next line.
+
+**NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
+
