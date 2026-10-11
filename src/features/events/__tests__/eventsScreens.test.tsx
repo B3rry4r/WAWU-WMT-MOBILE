@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { Animated, Image, Modal, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { EventView, TicketType } from '../api';
@@ -23,6 +24,20 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (reply.offline) throw new TypeError('Network request failed');
   return new Response(JSON.stringify(reply.body), { status: reply.status ?? 200, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
+
+// The screens load here, once the fetch above is in place, and not inside a test: on a cold transform cache under load
+// the first load of their module tree takes longer than one test may (20 s), and a load at the top of the file is not timed.
+const { EventsScreen } = require('../EventsScreen') as typeof import('../EventsScreen');
+const { EventDetailScreen } = require('../EventDetailScreen') as typeof import('../EventDetailScreen');
+// React Native's components load on first use (babel-preset-expo's lazy imports), so the first render used to pay for
+// transforming them too. Touching them here moves that cost to file load, and the first render of anything (the
+// renderer's own start) is paid in a hook with a budget of its own, so no test times either.
+void [Animated, Image, Modal, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
 
 const fromPrices = (rows: (readonly [string, number | null])[]) =>
   ok({ prices: rows.map(([eventId, priceFromNaira]) => ({ eventId, priceFromNaira })) });
@@ -120,20 +135,29 @@ async function render(child: ReactElement) {
 }
 
 async function bootList() {
-  const { EventsScreen } = require('../EventsScreen') as typeof import('../EventsScreen');
   const props = { onBack: jest.fn(), onOpenEvent: jest.fn() };
   await render(<EventsScreen {...props} />);
   return props;
 }
 
 async function bootDetail(id = 'e-1') {
-  const { EventDetailScreen } = require('../EventDetailScreen') as typeof import('../EventDetailScreen');
   const props = { id, onBack: jest.fn() };
   await render(<EventDetailScreen {...props} />);
   return props;
 }
 
 const featuredOnly = (c: Call) => c.path === '/events' && c.query.get('featured') === 'true';
+
+/**
+ * E1 asks for the featured event, the list and the options at once, and for the prices only after the first two have
+ * answered, so each lands on its own turn. The featured card is the only part that holds the featured event's name
+ * once the list is known (a row of the same name is dropped when the card draws), so it is the thing to wait for.
+ */
+const featuredCard = () => rtl.screen.findByTestId('events-featured');
+
+/** A Going toggle flips the button at once and is finished only when the Hub has answered: the button is busy until then. */
+const goingSettled = (testID: string) =>
+  rtl.waitFor(() => expect(rtl.screen.getByTestId(testID).props.accessibilityState).toMatchObject({ busy: false }));
 
 beforeEach(() => {
   calls = [];
@@ -173,12 +197,13 @@ describe('E1 · Events', () => {
   it('shows the featured event, then this week\'s rows with their place, "from" price and Going state', async () => {
     serve();
     await bootList();
-    expect(await rtl.screen.findByText('Featured Summit')).toBeTruthy();
-    expect(rtl.screen.getByText('from ₦7,500', { exact: false })).toBeTruthy();
+    expect(rtl.within(await featuredCard()).getByText('Featured Summit')).toBeTruthy();
+    // The prices come after the list and the featured event, in a call of their own.
+    expect(await rtl.screen.findByText('from ₦7,500', { exact: false })).toBeTruthy();
     expect(rtl.screen.getByText('This week')).toBeTruthy();
     expect(rtl.screen.getByText('Gospel Night')).toBeTruthy();
     expect(rtl.screen.getByText('Abuja')).toBeTruthy();
-    expect(rtl.screen.getByText('From ₦5,000')).toBeTruthy();
+    expect(await rtl.screen.findByText('From ₦5,000')).toBeTruthy();
     expect(rtl.screen.getByText('Going')).toBeTruthy();
     // Beyond the week: not under "This week" until See all.
     expect(rtl.screen.queryByText('Online Talk')).toBeNull();
@@ -189,7 +214,7 @@ describe('E1 · Events', () => {
   it('draws the featured card kicker, name and place line on the canvas normal line heights (D13-E1)', async () => {
     serve();
     await bootList();
-    await rtl.screen.findByText('Featured Summit');
+    await featuredCard();
     const lineHeightOf = (node: ReturnType<typeof rtl.screen.getByText>) => {
       const style: unknown = node.props.style;
       const flat = ([] as unknown[]).concat(style).flat(3).reduce<Record<string, unknown>>((a, x) => ({ ...a, ...((x as object) || {}) }), {});
@@ -198,18 +223,18 @@ describe('E1 · Events', () => {
     const { canvasNormalLineHeight } = require('@/theme') as typeof import('@/theme');
     expect(lineHeightOf(rtl.screen.getByText('FEATURED'))).toBe(canvasNormalLineHeight(11));
     expect(lineHeightOf(rtl.screen.getByText('Featured Summit', { exact: true }))).toBe(canvasNormalLineHeight(20));
-    const place = rtl.screen.getByText('from ₦7,500', { exact: false });
+    const place = await rtl.screen.findByText('from ₦7,500', { exact: false });
     expect(lineHeightOf(place)).toBe(canvasNormalLineHeight(12.5));
   });
 
   it('draws the gap before the featured card name as 4 and before the place line as 3, as the canvas does (D13-E1b)', async () => {
     serve();
     await bootList();
-    await rtl.screen.findByText('Featured Summit');
+    await featuredCard();
     const flatOf = (node: ReturnType<typeof rtl.screen.getByText>) =>
       ([] as unknown[]).concat(node.props.style).flat(3).reduce<Record<string, unknown>>((a, x) => ({ ...a, ...((x as object) || {}) }), {});
     expect(flatOf(rtl.screen.getByText('Featured Summit', { exact: true })).marginTop).toBe(4);
-    expect(flatOf(rtl.screen.getByText('from ₦7,500', { exact: false })).marginTop).toBe(3);
+    expect(flatOf(await rtl.screen.findByText('from ₦7,500', { exact: false })).marginTop).toBe(3);
   });
 
   it('a user can see the rest with See all: every event, free ones marked Free, an online one marked Online', async () => {
@@ -218,7 +243,8 @@ describe('E1 · Events', () => {
     await rtl.fireEvent.press(await rtl.screen.findByTestId('events-see-all'));
     expect(rtl.screen.getByText('Upcoming')).toBeTruthy();
     expect(rtl.screen.getByText('Online Talk')).toBeTruthy();
-    expect(rtl.screen.getByText('Free')).toBeTruthy();
+    // "Free" is drawn from the prices call, which answers after the list.
+    expect(await rtl.screen.findByText('Free')).toBeTruthy();
     expect(rtl.screen.getByText('Online')).toBeTruthy();
     expect(rtl.screen.queryByTestId('events-see-all')).toBeNull();
   });
@@ -228,7 +254,7 @@ describe('E1 · Events', () => {
     const props = await bootList();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('event-row-e-2'));
     expect(props.onOpenEvent).toHaveBeenCalledWith('e-2');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('events-featured'));
+    await rtl.fireEvent.press(await featuredCard());
     expect(props.onOpenEvent).toHaveBeenCalledWith('e-feat');
   });
 
@@ -249,9 +275,12 @@ describe('E1 · Events', () => {
     await bootList();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('event-going-e-2'));
     expect(await rtl.screen.findByText('Going')).toBeTruthy();
+    // The button says Going at once; it is the Hub's answer that frees it for another press.
+    await goingSettled('event-going-e-2');
     expect(calls.filter((c) => c.path === '/events/e-2/going').map((c) => c.method)).toEqual(['POST']);
     await rtl.fireEvent.press(rtl.screen.getByTestId('event-going-e-2'));
     expect(await rtl.screen.findByText('Going?')).toBeTruthy();
+    await goingSettled('event-going-e-2');
     expect(calls.filter((c) => c.path === '/events/e-2/going').map((c) => c.method)).toEqual(['POST', 'DELETE']);
   });
 
@@ -262,6 +291,7 @@ describe('E1 · Events', () => {
     await bootList();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('event-going-e-2'));
     expect(await rtl.screen.findByTestId('events-going-error')).toBeTruthy();
+    await goingSettled('event-going-e-2');
     expect(rtl.screen.getByText('Going?')).toBeTruthy();
   });
 
@@ -273,7 +303,7 @@ describe('E1 · Events', () => {
     const button = await rtl.screen.findByTestId('event-going-e-2');
     await rtl.fireEvent.press(button);
     await rtl.fireEvent.press(button);
-    expect(calls.filter((c) => c.path === '/events/e-2/going')).toHaveLength(1);
+    await rtl.waitFor(() => expect(calls.filter((c) => c.path === '/events/e-2/going')).toHaveLength(1));
   });
 
   it('shows what the Hub says when it cannot load, and a Try again that asks again', async () => {
@@ -324,8 +354,9 @@ describe('E8 · Filters', () => {
     expect(await rtl.screen.findByText('Browse the calendar')).toBeTruthy();
     expect(await rtl.screen.findByText('Show 24 events')).toBeTruthy();
     // The kinds are the Hub's own words, after All.
+    // The kinds and the categories come from the options call, which answers on its own turn.
     for (const label of ['All', 'Conference', 'Workshop', 'Concert', 'Upcoming', 'Past', 'Every category'])
-      expect(rtl.screen.getByText(label)).toBeTruthy();
+      expect(await rtl.screen.findByText(label)).toBeTruthy();
   });
 
   it('a user can pick a kind, see the count change, apply it, and the list asks the Hub for that kind', async () => {
@@ -473,8 +504,10 @@ describe('E2 · Event, E9 · Sold out', () => {
     await bootDetail();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('event-going'));
     expect(await rtl.screen.findByText('Going')).toBeTruthy();
+    await goingSettled('event-going');
     await rtl.fireEvent.press(rtl.screen.getByTestId('event-going'));
     expect(await rtl.screen.findByText('Going?')).toBeTruthy();
+    await goingSettled('event-going');
     expect(calls.filter((c) => c.path === '/events/e-1/going').map((c) => c.method)).toEqual(['POST', 'DELETE']);
   });
 
@@ -597,6 +630,8 @@ describe('The list draws before the prices answer (P1)', () => {
     serveWith({ status: 500, body: { statusCode: 500, message: 'Prices are down' } });
     await bootList();
     expect(await rtl.screen.findByText('Gospel Night')).toBeTruthy();
+    // The prices are asked for once the list and the featured event are known, so the call may not have been made yet.
+    await rtl.waitFor(() => expect(calls.filter((c) => c.path === '/events/from-prices')).toHaveLength(1));
     await rtl.act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
@@ -762,7 +797,8 @@ describe('Every date is read in the event own zone, on every screen (D7, D8, V11
     await bootDetail();
     expect(await rtl.screen.findByText('Mon 14 Oct 2030 · 7:00 PM EDT')).toBeTruthy();
     expect(rtl.screen.getByLabelText('OCT 14')).toBeTruthy();
-    expect(rtl.screen.getByText('Ended 6 Oct')).toBeTruthy();
+    // The tiers are asked for once the event is known, so they land after it.
+    expect(await rtl.screen.findByText('Ended 6 Oct')).toBeTruthy();
     expect(rtl.screen.getByText('Opens 10 Oct')).toBeTruthy();
     expect(rtl.screen.queryByText('Ended 7 Oct')).toBeNull();
     expect(rtl.screen.queryByText('Opens 11 Oct')).toBeNull();
@@ -825,7 +861,6 @@ describe('The prices call is never retried, whatever the client allows (T3)', ()
     };
     const client = new QueryClient({ defaultOptions: { queries: { retry: 3, retryDelay: 1, gcTime: Infinity } } });
     clients.push(client);
-    const { EventsScreen } = require('../EventsScreen') as typeof import('../EventsScreen');
     await rtl.render(
       <QueryClientProvider client={client}>
         <SafeAreaProvider
@@ -836,6 +871,8 @@ describe('The prices call is never retried, whatever the client allows (T3)', ()
       </QueryClientProvider>,
     );
     expect(await rtl.screen.findByText('Gospel Night')).toBeTruthy();
+    // The prices are asked for once the list and the featured event are known, so the call may not have been made yet.
+    await rtl.waitFor(() => expect(calls.filter((c) => c.path === '/events/from-prices')).toHaveLength(1));
     await rtl.act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
     });

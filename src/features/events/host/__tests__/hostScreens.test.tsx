@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { ActivityIndicator, Animated, BackHandler, Image, Modal, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 type Reply = { status?: number; body?: unknown; offline?: true; hold?: true };
@@ -25,6 +26,21 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 }) as typeof fetch;
 
 const ok = (data: unknown) => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
+
+/*
+ * The first test in this file used to pay for loading the screens' modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 20.5 s on a cold transform cache,
+ * which is what a fresh checkout has, against a test's 20 s. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+const { HostScreen } = require('../HostScreen') as typeof import('../HostScreen');
+const { SentBackScreen } = require('../SentBackScreen') as typeof import('../SentBackScreen');
+void [ActivityIndicator, Animated, BackHandler, Image, Modal, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
 
 const NOW = new Date('2027-01-01T09:00:00Z').getTime();
 
@@ -86,7 +102,6 @@ const serve = (verified: boolean, extra?: (c: Call) => Reply | undefined) => {
 };
 
 async function bootHost() {
-  const { HostScreen } = require('../HostScreen') as typeof import('../HostScreen');
   const props = { onBack: jest.fn(), onDiscover: jest.fn(), onDone: jest.fn(), now: () => NOW };
   await render(<HostScreen {...props} />);
   return props;
@@ -399,7 +414,6 @@ describe('E22 · Sent back', () => {
   });
 
   async function bootSentBack() {
-    const { SentBackScreen } = require('../SentBackScreen') as typeof import('../SentBackScreen');
     const props = { id: 'e-9', onBack: jest.fn(), onDone: jest.fn() };
     await render(<SentBackScreen {...props} />);
     return props;

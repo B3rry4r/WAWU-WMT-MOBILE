@@ -2027,6 +2027,11 @@ export interface paths {
          * Scan at the door, as the host or their door staff. Let them in (E20)
          *     with the holder's name, already used (E23) with when and by whom, or
          *     not valid (E24), with the live counts.
+         *
+         *     `Idempotency-Key` (optional): the phone makes one per scan and sends it
+         *     again unchanged when it asks again after an answer was lost. A repeat is
+         *     answered with the first verdict (header `Idempotent-Replayed: true`),
+         *     never "already used" by the scanner's own door.
          */
         post: operations["EventRunningController_checkIn"];
         delete?: never;
@@ -5984,6 +5989,9 @@ export interface components {
             handle?: string;
             label?: string;
         };
+        DoorScanDto: {
+            code: string;
+        };
         MoneyErrorReason: {
             /** @enum {string} */
             code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
@@ -8412,6 +8420,8 @@ export interface components {
         DoorCheckInResult: {
             /** @enum {string} */
             outcome: "valid" | "already_used" | "invalid";
+            /** @enum {string|null} */
+            reason?: "cancelled" | null;
             ticket: {
                 code: string;
                 tierName: string;
@@ -14350,7 +14360,10 @@ export interface operations {
     EventRunningController_checkIn: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description One value per scan, made by the app when a ticket is first read and sent again unchanged when it asks again about that scan. A repeat is answered with the first verdict. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -14358,7 +14371,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScanTicketDto"];
+                "application/json": components["schemas"]["DoorScanDto"];
             };
         };
         responses: {

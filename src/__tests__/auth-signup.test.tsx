@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text as NativeText, TextInput, View } from 'react-native';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
 import RootLayout from '@/app/_layout';
@@ -103,9 +103,19 @@ const callsTo = (path: string) => calls.filter((c) => c.path === path);
 /** What the app has sent to start or finish a sign-up: A3 also reads which way the code will travel (a GET that sends nothing about the person). */
 const sentCalls = () => calls.filter((c) => c.path !== '/auth/signup/channel');
 
+/*
+ * The first test to draw each screen used to pay for React Native's components (loaded on first use, by
+ * babel-preset-expo's lazy imports, so touched here at file load) and for the screen's own first render: the sign-in
+ * tests (F12) ran out of the one second a `waitFor` allows on a cold transform cache. The hook draws the welcome,
+ * account type and sign-in screens once, with a budget of its own, so no test times that.
+ */
+void [ActivityIndicator, Animated, Image, KeyboardAvoidingView, Pressable, ScrollView, NativeText, TextInput, View];
+
 beforeAll(async () => {
-  const { unmount } = await renderRouter(routes);
-  await unmount();
+  for (const initialUrl of ['/', '/account-type', '/sign-in']) {
+    const { unmount } = await renderRouter(routes, { initialUrl });
+    await unmount();
+  }
 }, 60_000);
 
 beforeEach(async () => {
@@ -134,6 +144,17 @@ const press = (name: string, role: 'button' | 'link' = 'button') => fireEvent.pr
 const typeDigits = async (digits: string) => {
   for (const digit of digits) await fireEvent.press(screen.getByRole('button', { name: digit }));
 };
+/**
+ * Four wrong codes in a row. The keys are not read while a check is on its way, so each code waits until the screen has
+ * taken the Hub's answer (it says the code is wrong, or after the fourth that the sign-up has ended) before the next.
+ */
+async function fourWrongCodes() {
+  for (let round = 0; round < 4; round += 1) {
+    await typeDigits(round === 0 ? '481902' : '222222');
+    await waitFor(() => expect(callsTo('/auth/phone/verify/confirm').length).toBe(round + 1));
+    if (round < 3) await waitFor(() => expect(screen.getByText("That code isn't right")).toBeTruthy());
+  }
+}
 
 async function fillAndContinue(email = 'lennox@wawu.africa', phone = '0803 123 4412', password = 'hunter2hunter2') {
   await fireEvent.changeText(screen.getByTestId('sign-up-email'), email);
@@ -379,10 +400,7 @@ describe('A15: a wrong code', () => {
   it('the fourth wrong code in a row means the sign-up is gone: the user can only start again, and the secret is cleared', async () => {
     await toA4();
     answers['POST /auth/phone/verify/confirm'] = refuse(400, 'PHONE_CODE_INVALID');
-    for (let round = 0; round < 4; round += 1) {
-      await typeDigits(round === 0 ? '481902' : '222222');
-      await waitFor(() => expect(callsTo('/auth/phone/verify/confirm').length).toBe(round + 1));
-    }
+    await fourWrongCodes();
     await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
     await press('Start again');
     await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
@@ -596,7 +614,7 @@ describe('fix round 1', () => {
   it('F1: a sign-up that has ended offers Start again and no Resend, so nothing false is said about a text', async () => {
     await toA4();
     answers['POST /auth/phone/verify/confirm'] = refuse(400, 'PHONE_CODE_INVALID');
-    for (let round = 0; round < 4; round += 1) await typeDigits(round === 0 ? '481902' : '222222');
+    await fourWrongCodes();
     await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
     expect(screen.queryByRole('button', { name: 'Resend code' })).toBeNull();
     expect(screen.queryByText(/Resend in/)).toBeNull();
@@ -633,7 +651,7 @@ describe('fix round 1', () => {
     await waitFor(() => expect(screen.getByRole('link', { name: 'Enter the code we sent' })).toBeTruthy());
     await press('Enter the code we sent', 'link');
     await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
-    for (let round = 0; round < 4; round += 1) await typeDigits(round === 0 ? '481902' : '222222');
+    await fourWrongCodes();
     await waitFor(() => expect(screen.getByText('This sign-up has ended')).toBeTruthy());
     await press('Start again');
     await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
@@ -997,14 +1015,47 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     expect(screen.getByText('Verify your email')).toBeTruthy();
   });
 
-  it('asks WAWU ID once, sends nothing about the person, and needs no sign-in', async () => {
+  it('asks WAWU ID each time, sends nothing about the person, and needs no sign-in', async () => {
     await toA3();
     await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
-    await signupChannel();
+    expect(callsTo('/auth/signup/channel')).toHaveLength(1);
     await signupChannel();
     const asked = callsTo('/auth/signup/channel');
-    expect(asked).toHaveLength(1);
-    expect(asked[0]).toMatchObject({ method: 'GET', body: {}, auth: null });
+    expect(asked).toHaveLength(2);
+    for (const call of asked) expect(call).toMatchObject({ method: 'GET', body: {}, auth: null });
+  });
+
+  it('F-G: asks again each time A3 comes into focus, so A3 and A4 agree when the setting is switched between two visits', async () => {
+    // visit 1: the code is texted
+    await toA3();
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    expect(callsTo('/auth/signup/channel')).toHaveLength(1);
+    answers['POST /auth/signup'] = started();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText('Verify your phone')).toBeTruthy());
+
+    // WAWU ID's setting is switched to email while the app stays open; the person goes back to A3: visit 2
+    answers['GET /auth/signup/channel'] = ok({ channel: 'email' });
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(EMAIL_LINE)).toBeTruthy());
+    expect(screen.queryByText(TEXT_LINE)).toBeNull();
+    expect(callsTo('/auth/signup/channel')).toHaveLength(2);
+    // ... and A4 then names the channel A3 named
+    answers['POST /auth/signup'] = mailed();
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText(`Sent to ${MASKED}`)).toBeTruthy());
+    expect(screen.getByText('Verify your email')).toBeTruthy();
+
+    // switched back: visit 3 names the text again, and A4 follows
+    answers['GET /auth/signup/channel'] = ok({ channel: 'phone' });
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(TEXT_LINE)).toBeTruthy());
+    expect(screen.queryByText(EMAIL_LINE)).toBeNull();
+    expect(callsTo('/auth/signup/channel')).toHaveLength(3);
+    answers['POST /auth/signup'] = started();
+    await press('Continue');
+    await waitFor(() => expect(screen.getByText(/Sent by SMS to/)).toBeTruthy());
+    expect(screen.getByText('Verify your phone')).toBeTruthy();
   });
 
   it('asks again on a later visit when the first ask failed, and draws the line once it knows', async () => {
