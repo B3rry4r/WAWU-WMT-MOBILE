@@ -203,7 +203,7 @@ Branch `wmt/FIX-31`, continued from `1c2decc` (merged into main by the lead); mo
 
 **Checks**
 - Each changed file alone, 10 times, warm cache, two jest runs at a time at most, load average 15 to 17: HomeScreen 10 of 10, Explore screens 10 of 10, LegalChatScreen 10 of 10, auth-signup 10 of 10; no `act ... without await` in any run.
-- Full check (the common-rules form, two workers): see the next line.
+- **Full check, the common-rules form (`typecheck && lint && npm test -- --maxWorkers=2 && gates && tasks`), EXIT 0** on the tree with this report (main `a8d6383` merged; load average 16.6 at the start, 7 GB available): typecheck 0, lint 0 errors (5 warnings, none in a line this task wrote), 141 suites and 2559 tests passed in 430 s, gates 10 run, 544 files, 0 fail, 5 warn (all `PROVISIONAL(...)` of other tasks), baseline clean, tasks check clean. Log `fix31r2/check1.log`.
 
 **NOT RUN**: pictures and states (V5, V6): tests only, no screen changed.
 
