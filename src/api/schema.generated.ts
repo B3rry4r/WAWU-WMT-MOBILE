@@ -7370,7 +7370,7 @@ export interface components {
             status: "held" | "released" | "refunded";
             amountKobo: number;
             /** @enum {string} */
-            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered";
+            releaseCondition: "dm_answered" | "event_took_place" | "bill_delivered" | "plan_granted";
             payer: components["schemas"]["MoneyPartyView"];
             payee: components["schemas"]["MoneyPartyView"] | null;
             heldAt: string;
@@ -10638,7 +10638,7 @@ export interface components {
             currency: "NGN" | "USD";
             amountMinor: number;
             /** @enum {string} */
-            status: "pending" | "failed" | "reversed" | "paid";
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
             statusMessage: string | null;
             payment: components["schemas"]["PaymentView"];
             grant: components["schemas"]["PlanPurchaseGrantView"] | null;

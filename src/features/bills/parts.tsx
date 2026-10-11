@@ -213,7 +213,7 @@ type FieldProps = {
 export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, prefix, prefixTestID, invalid, maxLength, keepCaret, children, testID }: FieldProps) {
   const { colors } = useWawu();
   const inputRef = useRef<TextInput | null>(null);
-  const onTyped = useKeepCaret(inputRef, value, keepCaret === true);
+  const caret = useKeepCaret(inputRef, value, keepCaret === true);
   const [focused, setFocused] = useState(false);
   const border = invalid ? colors.danger : focused ? colors.accent : colors.borderHairline;
   return (
@@ -245,8 +245,9 @@ export function BillField({ label, value, onChangeText, placeholder, keyboardTyp
           testID={testID}
           accessibilityLabel={label}
           value={value}
+          onKeyPress={caret.onKeyPress}
           onChangeText={(typed) => {
-            onTyped(typed);
+            caret.onTyped(typed);
             onChangeText(typed);
           }}
           placeholder={placeholder}
