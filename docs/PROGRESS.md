@@ -3,15 +3,15 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 135 of 248.**
+**Launch tasks done: 136 of 248.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 135 | 0 | 0 | 0 |
+| todo | 134 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
-| done | 96 | 27 | 11 | 5 |
+| done | 97 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -104,6 +104,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy (Developer)
 - [MONEY-18](../tasks/MONEY-18.md) Hold, release and refund (You)
 - [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
+- [MONEY-19](../tasks/MONEY-19.md) Not enough money, and still confirming (You)
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
@@ -170,6 +171,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Oct 2026 · MONEY-19 · Merged by the lead: backend PR #114 (`f11d307`) and mobile main. Not enough money answers the exact shortfall; the payment poll is served. Lead notes added to WALLET-07 and WALLET-09 (G-481).
 - 11 Oct 2026 · JOIN-03 · Merged by the lead: WAWU ID PR #10, backend PR #113 (migrations renamed to sort after main) and mobile main. The app claims the event access code; a deleted person's number is not kept. D6, D7 and N16 follow in round 4.
 - 11 Oct 2026 · EVENTS-09 · Merged by the lead: backend PR #112 (`0d5836e`; migration renamed to sort after main) and mobile main. A ticket is let in once; a lost answer reads "We couldn't confirm". D5 (a verdict behind the typing sheet) follows in round 3.
 - 11 Oct 2026 · AUTH-07 · Round 4 merged by the lead: WAWU ID PR #9 (specs for D3 and D4) and mobile main (A3 asks the channel on every visit, F-G). D5 and N-1 (test gaps) carried.
@@ -182,6 +184,5 @@ From `docs/LOG.md`, newest first.
 - 10 Oct 2026 · JOIN-03 · Builder part 3 (WAWU ID): the access token now says which contact is proven. wawu-id `wmt/JOIN-03` `5b132f7` adds `emailVerified` and `phoneVerified` (additive claims, a spec of 7 that fails on main, a paragraph in its contract doc; the OpenAPI contract is unchanged). A trial merge of `wmt/AUTH-07` has 0 conflicts and a released phone gives `phoneVerified: false`. The claim's gap is renumbered G-629 to G-634 (SCHOOLS-03 holds G-629). Waits for the owner to merge and deploy WAWU ID; until then production refuses every claim with `contact_not_verified`.
 - 10 Oct 2026 · JOIN-03 · Built (status verifying): a signed-in person claims the plan an event registration paid for with its access code. Backend `POST /waitlist/claims` (the code alone is never enough: a phone or email the account has PROVEN, WAWU ID's flags or the Hub's BVN-checked phone, and a typed-only phone never counts; unknown, unpaid and someone else's codes answer the same; a refund row's code, a used code and a second claim are refused in plain words; once, even under two taps on two servers) through one grant path, `TierGrantService` (Verify's days from the claim, the pass, the bonus points lot); admin list and CSV show claimed and claimedAt and no longer count a refund as Paid. App: the Access code screen, reached from a new Settings row; the Hub's own list of what the code gave. Finding: WAWU ID's token carries no proven flags yet, so production refuses claims until its two-claim change merges (G-634, SHARED-CHANGES JOIN-03 #3, diff ready). Backend `wmt/JOIN-03`, mobile `wmt/JOIN-03`; protected suite 253/253, 23 backend mutants killed; walked live against a real wawu-id and Hub, pictured at 390 px light and dark.
 - 11 Oct 2026 · FIX-31 · Merged by the lead (cold start and answers-before-they-land fixed in 13 test files; the one remaining race, H1, fails on main too): round 2 takes H1 and AUTH-07's two racy sign-up tests.
-- 11 Oct 2026 · INBOX-05 · Merged by the lead: backend PR #111 (`6976aad`; migration renamed to sort after main) and mobile main. Defect 38 and note 37 (tests only) follow on the same branch.
-- 11 Oct 2026 · BILLS-01 · Hotfix merged by the lead: backend PR #110 (`39e9377`, deployed with BILLS-01, MONEY-18 and WALLET-06) and mobile main; electricity presets are `presets: [{ amountKobo }]`.
-- 11 Oct 2026 · AUTH-07 · Merged by the lead on round 3 (no behaviour defect; D3 and D4 are low test gaps, carried to round 4 with F-G): WAWU ID PR #8 and mobile main.
+- 11 Oct 2026 · MONEY-19 · Verifier report (independent session; backend `wmt/MONEY-19` `85d6b4f`, main `6976aad` inside, then main `0d5836e` trial-merged with 0 conflicts; mobile `55070ef`, main `21085a2` trial-merged, conflicts only in the generated PROGRESS.md and in BACKEND_GAPS.md where both sides append rows; status review, no defect, no blocker): the 402 is exact to the kobo on both providers (12 prices x up to 8 balances, quote and payment, `balanceKobo`, `totalKobo`, `shortfallKobo`, never zero, never a made-up balance, ten unreadable balance bodies are a 503); the poll is the payer's alone (stranger, payee and unknown id one byte-identical 404), `no-store`, asks the provider nothing and writes nothing; pending ends as paid, failed or reversed once, delivered once, item freed once across a webhook first, a sweep first, both at once and three real OS processes sweeping together; H18 reads finishing, a second tap is 409 with the id; the lead's G-480 ruling (D1 stands: silence never ends a payment, review at 72 h, only a webhook or a person) verified, including the ledger check; built Hubs (two processes, cron live) over the real WAWU ID login settled the pending payments within 69 s on the real clock. 26 mutants of mine, all killed (two only after a stale-row race probe). Notes: N1 a retried delivery runs twice with two Hubs (documented at-least-once), N2 a payment sent to review for silence is not logged or reported while MONEY-16 and G-448 are unbuilt, N3 the contract lists 423 on the poll, N4 no `no-store` on the guards' 401 and 409, N5 G-481 is not in the WALLET-07 and WALLET-09 task files, N6 `delivered` rides on `openKey`, N7 two settle-once guards in MONEY-17's `complete()` and `transition()` survive every branch spec. NOT RUN: a real selling kind (G-70), the real sandboxes, the app's screens. Evidence in the verifier scratch `vmoney19/`.
+- 10 Oct 2026 · MONEY-19 · Builder report (status verifying; backend `wmt/MONEY-19` `85d6b4f` on main `6976aad` (MONEY-18, WALLET-06, BILLS-01, INBOX-05 merged in), no migration; mobile `wmt/MONEY-19` on main `9426060`): `GET /money/payments/{id}` is served (the payer's own `PaymentView`, `no-store`, our record only, 404 for anyone else), `PaymentView.delivered` and the finishing sentence say "paid, still opening" (H18), and the "not enough" answer is one function (`insufficientFunds`: balance, total, shortfall; ₦500 wallet against a ₦1,000 purchase is ₦523.25 short on Fintava and on Nuvion stood in). A pending payment resolves to completed, failed or reversed at the next sweep once the provider answers (specs on both providers); one the provider never answers for stays pending under review by lead ruling D1 (G-480, the check as written needs a ruling). 41 new tests, 8 mutants killed, protected suite 253/253, gates 16 fail on both, contract byte-identical twice, the app's contract synced to main `6976aad`; stand-ins only, no screen.
