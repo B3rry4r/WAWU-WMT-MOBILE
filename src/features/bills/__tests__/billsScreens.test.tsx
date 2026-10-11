@@ -13,6 +13,19 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async () => undefined),
 }));
 
+// Every call the text boxes make to the caret keeper (R2-2): what the box showed and whether it asked to keep the caret.
+const mockKeepCaretCalls: unknown[][] = [];
+jest.mock('../useKeepCaret', () => {
+  const real = jest.requireActual('../useKeepCaret') as typeof import('../useKeepCaret');
+  return {
+    ...real,
+    useKeepCaret: (...args: Parameters<typeof real.useKeepCaret>) => {
+      mockKeepCaretCalls.push(args);
+      return real.useKeepCaret(...args);
+    },
+  };
+});
+
 type Answer = { status: number; body: unknown } | 'offline' | 'hold';
 let answers: Record<string, Answer[]> = {};
 let sent: { key: string; body: unknown }[] = [];
@@ -92,6 +105,7 @@ const LATER = { timeout: METER_CHECK_DELAY_MS + 2500 };
 beforeEach(() => {
   answers = {};
   sent = [];
+  mockKeepCaretCalls.length = 0;
   queryClient.clear();
 });
 
@@ -567,6 +581,17 @@ describe('S4 · Meter and amount (S10 when the meter is not found)', () => {
     expect(seen[0]).toEqual({ available: false, billers: [], held: true });
   });
 
+  it('the amount box keeps the caret when it redraws its commas, and the meter box does not (R2-2)', async () => {
+    await ready();
+    await type('amount', '12500');
+    await type('meter-number', '0412');
+    const words = (on: boolean) => mockKeepCaretCalls.filter((c) => c[2] === on).map((c) => c[1]);
+    expect(words(true)).toContain('12,500');
+    expect(words(true).every((w) => w === '' || w === '12,500')).toBe(true);
+    expect(words(false).length).toBeGreaterThan(0);
+    expect(words(false)).not.toContain('12,500');
+  });
+
   it('offers the Hub’s quick amounts for this company, in order, and a tap fills the amount box', async () => {
     await ready('Ibadan_Disco_Prepaid');
     const chips = rtl.within(rtl.screen.getByTestId('amount-presets')).getAllByRole('button').map((b) => b.props.accessibilityLabel);
@@ -865,6 +890,19 @@ describe('R2-U1: S13 reached from a meter check is held until the person pulls t
     await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />));
     expect(await rtl.screen.findByRole('button', { name: 'Electricity' })).toBeTruthy();
     expect(asked(BILLERS_PATH)).toBe(2);
+  });
+
+  it('a list the Hub just gave is fresh for the app’s usual time: the next screen to open does not ask again (round 2 survivor H11)', async () => {
+    answers[BILLERS_PATH] = [LIST];
+    const first = await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpenElectricity={jest.fn()} />));
+    await rtl.screen.findByRole('button', { name: 'Electricity' });
+    await first.unmount();
+    await rtl.render(
+      wrap(<ElectricityBillersScreen onBack={jest.fn()} onChangeCategory={jest.fn()} onPick={jest.fn()} onUnavailable={jest.fn()} />),
+    );
+    await rtl.screen.findByTestId('billers-list');
+    await settle(200);
+    expect(asked(BILLERS_PATH)).toBe(1);
   });
 
   it('S2 can be pulled to refresh, on S13 and on the normal screen', async () => {
