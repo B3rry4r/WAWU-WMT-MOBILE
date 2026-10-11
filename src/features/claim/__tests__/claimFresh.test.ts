@@ -86,6 +86,8 @@ const plan = {
   offerName: "Event registration",
   days: 30,
   extended: false,
+  /** The Hub's answer carries when the code was claimed (round 3, D4); the app reads no answer without it. */
+  claimedAt: "2026-10-17T10:00:00.000Z",
   pointsGranted: 0,
   pointsExpireAt: null,
   tier: {

@@ -1138,6 +1138,17 @@ here is redrawn.
   built and the publishing limit the app enforces is still the flat one, so
   listing them would promise what the app does not do (R-47). Their lines come
   back with TIER-02 to TIER-05, the points tools and Voice Intro.
+  Seen again (round 3, D4): a code that is sent a second time gets the first
+  answer back, and the words follow the day it was first claimed and the plan
+  as it stands. Claimed today, the plan in force: "Your plan is ready" and
+  "Verify for 30 days, starting today." An earlier day, the plan in force:
+  "Your plan is active" and "Verify started on 1 Oct." (a plan that was
+  extended: "30 days were added to your plan on 8 Oct."). The plan over:
+  "Your plan has ended" and "Verify ended on 1 Sep.", with "Ended" where "Runs
+  until" was, and a calendar glyph in the place of the check. The lines are
+  the same four.
+- **Signed out (round 3, N14):** a visit to the screen with no one signed in
+  opens sign-in, and the sign-in that follows comes back to it.
 - **Why:** R-48 and JOIN-03. Every line is the Hub's answer; the phone works
   out nothing.
 

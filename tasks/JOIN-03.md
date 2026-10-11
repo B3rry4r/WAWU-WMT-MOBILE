@@ -691,8 +691,8 @@ so an account the Hub has finalised as deleted keeps its number. If the lead rul
 ## Builder report, round 3
 
 Builder, 11 Oct 2026 (Sonnet agent, round 3 of JOIN-03; the lead's rulings of the same day, each Default (lead), owner may override). Heads: backend `wmt/JOIN-03`
-`6c30122` (backend main `6976aad`, INBOX-05 #111, merged in), wawu-id `wmt/JOIN-03` `5b3f498` (main `d5b264d`, AUTH-07, merged in), mobile `wmt/JOIN-03` (this
-commit; mobile main `0dd7ac8` merged in: AUTH-07, WALLET-06, BILLS-01 and MONEY-18 are inside it). Evidence: the lead's scratchpad `join03r3/` (`harness/` the live
+`6c30122` (backend main `6976aad`, INBOX-05 #111, merged in), wawu-id `wmt/JOIN-03` `a530aab` (main `d5b264d`, AUTH-07, merged in; one commit after `5b3f498`, the head the contract was copied from, and the same contract and sources), mobile `wmt/JOIN-03` (this
+commit; mobile main `15a5b6b` merged in: AUTH-07, WALLET-06, BILLS-01, MONEY-18, INBOX-05 and FIX-31 are inside it). Evidence: the lead's scratchpad `join03r3/` (`harness/` the live
 scripts and `erase.mjs`, `backfill_check.sh`, `live/r3.py` the browser walk, `ns/` the private-namespace runners, `mut/` and `logs/` the mutants and every check log,
 `shots/`). No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called; ports 6161 to 6164 only; Resend and the SMS provider were the stand-in on 6163.
 Phone numbers are masked everywhere below. The lead's correction of the migration stamps (20261021050000 and 20261021060000, after INBOX-05's
@@ -765,7 +765,7 @@ Phone numbers are masked everywhere below. The lead's correction of the migratio
    `contact_not_verified` (fails closed). **N12:** a person whose PHONE is proven and whose email was proven elsewhere within 15 minutes, claiming a registration made
    with that email, gets `code_not_found` until the token is renewed (the app renews only on `contact_not_verified`).
 
-**Numbers (backend, `6c30122`).** `npx tsc --noEmit` 0. `eslint --no-fix` on the five changed or new `.ts` files: 0 problems. The waitlist, plans and points specs on a
+**Numbers (backend, `6c30122`).** `npx tsc --noEmit` 0. `eslint --no-fix` on the 20 changed or new `.ts` files: 0 problems (`logs2/be-final.log`, run again on the tree as pushed). The waitlist, plans and points specs on a
 database created at main's folders, given this branch's two, and seeded (`bj03r3_ns_test`, a private network namespace, its own :4001): **20 suites, 340 of 340**
 (328 in round 2; new: `waitlist-claim-result.spec` 6, `waitlist-claim-answer.spec` 3, and the claim contract spec's new tests). `scripts/protected-routes/run.sh --fresh HEAD`
 in a private namespace: code `HEAD (6c30122)`, lock `origin/main (6976aad)`, **253 of 253**, "all 244 required tests passed". `python3 scripts/gates/run.py`: 16 fail, 95 warn, 76
@@ -773,14 +773,26 @@ accepted on the branch and on `git archive` of `origin/main` (files scanned 1138
 entries). `npm run contract:build` twice: sha256 `3d9ccf01...4f13` both times, equal to the committed file; against main it adds `POST /waitlist/claims`, its schemas and
 the admin list's `claimed`, and the claim answer's `claimedAt`. The same file is in mobile `contract/` (`SOURCE_COMMIT` `wmt/JOIN-03@6c30122`, types regenerated).
 
-**Numbers (wawu-id, `5b3f498`).** `tsc --noEmit` 0. `eslint --no-fix` on the seven changed or new `.ts` files: 0 problems. `jest src/auth src/contract` (two workers,
+**Numbers (wawu-id, `a530aab`; the numbers below were taken on `5b3f498`, whose sources and contract it keeps).** `tsc --noEmit` 0. `eslint --no-fix` on the ten changed or new `.ts` files: 8 errors, all in `tokens.service.ts` at 167 to 172, 189 and 378, lines this branch does not touch (prettier and one
+unnecessary assertion); `git archive` of `origin/main` has the same 8 at 150 to 155, 172 and 361 (`logs2/id-final.log`); no warning and no error in any line this branch wrote.
+`jest src/auth src/contract` (two workers,
 `--testTimeout=300000`): 22 suites, 21 pass, **334 of 335**; the one failure is the AUTH-08 timing test ("with 200 stored refresh tokens ... in under a second"): 2544 ms in
 the batch and 1411 ms run alone, at a load average near 30 on 4 CPUs; on `git archive` of wawu-id `origin/main` run the same way it also fails, 1193 ms. It is the machine
 (`logs/id-jest-*.log`), not this change, which does not touch refresh. `scripts/gates/run.py` 9 run, 117 files, 0 fail, 20 warn; `check_baseline.py` clean. `npm run contract:build`
 twice: sha256 `93309591...c47a` both times and unchanged from the committed file; copied to mobile `contract/identity/` (`wmt/JOIN-03@5b3f498`; no content change).
-A stray commit of the compiled gate scripts (`__pycache__`) was removed in the next commit.
+A stray commit of the compiled gate scripts (`__pycache__`) was removed in the next commit, and that commit also removed the eleven `cpython-312` ones that wawu-id main
+tracks; they are back in the head's last commit, so `git diff origin/main --stat` lists no `.pyc` (the head is one commit after `5b3f498`; its contract and sources are the same).
+The Prisma client in the worktree had been regenerated from main's schema by the baseline run (`tsc` then failed on `phoneVerifiedFor`); `prisma generate` from this branch's
+schema brought `tsc` back to 0 on the tree as pushed.
 
-**Numbers (mobile).** @@MOBILECHECK@@
+**Numbers (mobile).** On the merged tree (mobile main `15a5b6b` merged in; `contract/openapi.json` is the backend branch's file, sha256 `3d9ccf01...4f13`, and `npm run api`
+regenerates the two generated files byte for byte as the merge left them): `npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks`
+as one command, last line **EXIT 0**: typecheck 0, lint 0 errors (5 warnings, all in two other tasks' test files), **145 suites, 2542 of 2542 tests**, gates 10 run, 0 fail, 2 warn,
+0 accepted, tasks ok (`logs2/m-check6.log`). The first full run on the merged tree failed 11 tests, all in `claimFresh.test.ts` (`logs2/m-check5.log`): its stand-in answer had no
+`claimedAt`, which the app now refuses to read as an answer (D4), so the claim threw "answer could not be read". The stand-in answer gained the field (`claimFresh.test.ts`, the
+one added property and its comment, no assertion touched) and the claim folder then ran 79 of 79. The predecessor's own run of the same check was cut off by a restart and is not
+counted. After this report was written, `npm run gates && npm run tasks` ran again on the final tree (last line EXIT 0). The two mobile survivors of N13 were run again on the final
+tree: MV6 (the memory publish moved after the write) KILLED, 1 of 3 in `offerStepOrder.test.tsx`; MV9 (`onSessionEnd(resetOfferStep)` removed) KILLED, 1 of 3.
 
 **Mutants of my own** (applied alone, the specs that should catch it run, source restored from a copy, tree clean after; logs `mut-*.log`, `logs/mut-*.log`). All killed:
 wawu-id: the anonymise clear removed (2 fail), the release clear removed (1), the marker check removed (2). Backend: Y7b and Y7c (above, each by the unit spec and the
