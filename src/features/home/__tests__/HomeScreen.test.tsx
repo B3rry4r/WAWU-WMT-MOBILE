@@ -230,6 +230,9 @@ describe('H1 · Today', () => {
   it('a user sees creators to discover, never themselves, with the tick each has', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
+    // The viewer's own id comes from GET /users/me, a separate answer that can land after GET /creators: until it has,
+    // the rail cannot tell who "themselves" is, so the "never themselves" line is read once every read has answered.
+    await rtl.waitFor(() => expect(clients.every((c) => c.isFetching() === 0)).toBe(true));
     expect(screen.queryByTestId(`today-creator-${ME}`)).toBeNull();
     expect(screen.getByText('Funmi A.')).toBeTruthy();
     expect(screen.getByText('Accountant')).toBeTruthy();
