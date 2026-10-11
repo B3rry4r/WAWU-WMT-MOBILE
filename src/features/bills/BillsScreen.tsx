@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -7,9 +8,9 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
-import { space } from '@/theme';
+import { space, useWawu } from '@/theme';
 
-import { billsKeys, fetchElectricityBillers } from './api';
+import { electricityBillersQuery } from './api';
 import { CategoryTile, SectionLabel, billMetrics } from './parts';
 
 export const BILLS_TITLE = 'Pay a bill';
@@ -33,12 +34,25 @@ export type BillsScreenProps = {
  * the tile opens or is greyed is Fintava's answer, never a switch: no company listed as available, or a bills service
  * that cannot be used, draws S13. Fintava not answering is a failure with Try again, not S13.
  *
+ * S13 reached from a meter check (the service is off while the company list still answers) is held: nothing refreshes the
+ * list on its own, and the person pulls to refresh to ask again (R2-U1; the Hub keeps "off" for its cache window).
+ *
  * What the canvas draws and is added by the task that builds where it leads (R-47): the Bill reminders banner (BILLS-05),
  * the Airtime, Data and Cable TV tiles (BILLS-03), and the Recent list, which has no source until a bill can be paid
  * (BILLS-04 writes the bills a person has paid; BACKEND_GAPS G-bills recent).
  */
 export function BillsScreen({ onBack, onOpenElectricity }: BillsScreenProps) {
-  const billers = useQuery({ queryKey: billsKeys.electricity, queryFn: fetchElectricityBillers }, queryClient);
+  const { colors } = useWawu();
+  const billers = useQuery(electricityBillersQuery, queryClient);
+  const [pulled, setPulled] = useState(false);
+  const onRefresh = async () => {
+    setPulled(true);
+    try {
+      await billers.refetch();
+    } finally {
+      setPulled(false);
+    }
+  };
 
   let body;
   if (billers.isPending) {
@@ -101,7 +115,12 @@ export function BillsScreen({ onBack, onOpenElectricity }: BillsScreenProps) {
   }
 
   return (
-    <AuthFrame testID="bills-home" navTitle={BILLS_TITLE} onBack={onBack}>
+    <AuthFrame
+      testID="bills-home"
+      navTitle={BILLS_TITLE}
+      onBack={onBack}
+      refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
+    >
       <View style={styles.body}>{body}</View>
     </AuthFrame>
   );
