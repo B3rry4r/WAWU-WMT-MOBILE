@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { StyleSheet } from 'react-native';
+import { ActivityIndicator, Animated, Image, Linking, Pressable, ScrollView, StyleSheet, Text as NativeText, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { darkColors } from '@/theme/tokens.generated';
@@ -30,10 +30,25 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
+/*
+ * The first tests in this file used to pay for loading the reader's modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 12 to 14 s each of a test's 20 s
+ * on a cold transform cache, which is what a fresh checkout has. They load here, with the fetch in place, where no
+ * timeout applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+const { TgifReader } = require('../TgifReader') as typeof import('../TgifReader');
+void [ActivityIndicator, Animated, Image, Linking, Pressable, ScrollView, NativeText, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
+
 const clients: QueryClient[] = [];
 
 async function render(child: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+  // No garbage-collection timer on a mutation either: its default is five minutes, and a timer left running keeps jest from exiting.
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   await rtl.render(
     <QueryClientProvider client={client}>
@@ -70,7 +85,6 @@ const statsOf = (amen: Partial<Record<(typeof cardOrder)[number], number>>, mine
 });
 
 async function boot(props: { onClose?: () => void; onOpenInbox?: () => void; now?: Date } = {}) {
-  const { TgifReader } = require('../TgifReader') as typeof import('../TgifReader');
   const onClose = props.onClose ?? jest.fn();
   await render(<TgifReader onClose={onClose} onOpenInbox={props.onOpenInbox} now={props.now ?? opened} />);
   return { onClose };
