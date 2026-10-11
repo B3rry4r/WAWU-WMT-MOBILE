@@ -348,6 +348,39 @@ describe('W37 · Transaction PIN, reset', () => {
       expect(props.onDone).not.toHaveBeenCalled();
     });
 
+    it('T3: the very first send answered "still going through" (not offline) is not sent again on its own, in the reset’s words; Try again sends it under the same key', async () => {
+      routes['POST /money/pin/reset/confirm'] = [refusal(409, 'idempotency_in_progress', 'Your PIN reset is still going through. Check again in a moment.')];
+      const props = await atBoxes();
+      await type('481902');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText('Your PIN reset is still going through. Check again in a moment.')).toBeTruthy();
+      await rtl.act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
+      expect(asked('POST', '/money/pin/reset/confirm')).toHaveLength(1);
+      expect(props.onDone).not.toHaveBeenCalled();
+      expect(rtl.screen.getByRole('button', { name: '5' }).props.accessibilityState.disabled).toBe(true);
+      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+      await rtl.waitFor(() => expect(props.onDone).toHaveBeenCalledTimes(1));
+      const keys = asked('POST', '/money/pin/reset/confirm').map((c) => c.key);
+      expect(keys).toHaveLength(2);
+      expect(new Set(keys).size).toBe(1);
+    });
+
+    it('N4: the repeat is told the PIN was changed again since: nothing is claimed, the person is back at the boxes with the Hub’s words, and the Hub is read again', async () => {
+      routes['POST /money/pin/reset/confirm'] = ['offline', refusal(409, 'pin_changed_again', 'Your PIN was changed again since. Check it in Wallet settings.')];
+      fallback['POST /money/pin/reset'] = started({ resendInSeconds: 30 });
+      const props = await atBoxes();
+      await type('481902');
+      await type('4821');
+      await type('4821');
+      expect(await rtl.screen.findByText('Your PIN was changed again since. Check it in Wallet settings.')).toBeTruthy();
+      expect(props.onDone).not.toHaveBeenCalled();
+      expect(asked('POST', '/money/pin/reset/confirm')).toHaveLength(2);
+      expect(rtl.screen.getByTestId('reset-pin-code')).toBeTruthy();
+      expect(rtl.screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+      expect(rtl.screen.getByLabelText('Code, 0 of 6 digits entered')).toBeTruthy();
+    });
+
     it('a new attempt after a refusal is a new key', async () => {
       routes['POST /money/pin/reset/confirm'] = [refusal(400, 'pin_mismatch', 'The two PINs do not match. Enter the same PIN twice.')];
       const props = await atBoxes();
@@ -392,6 +425,33 @@ describe('W37 · Transaction PIN, reset', () => {
       fallback['POST /money/pin/reset'] = started({ resendAvailableAt: new Date(Date.now() + 10 * 60_000 + 45_000).toISOString(), resendInSeconds: 45 });
       await atBoxes();
       expect(rtl.screen.getByText(/^Resend in 0:4[3-5]$/)).toBeTruthy();
+    });
+
+    describe('a phone clock changed while the count runs moves nothing (WALLET-06 round 3, N2)', () => {
+      const realNow = Date.now.bind(Date);
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
+      const clockMoves = (ms: number) => jest.spyOn(Date, 'now').mockImplementation(() => realNow() + ms);
+
+      it('a clock jumping ten minutes ahead does not open Resend early', async () => {
+        fallback['POST /money/pin/reset'] = started({ resendInSeconds: 4 });
+        await atBoxes();
+        expect(rtl.screen.getByText(/^Resend in 0:0[34]$/)).toBeTruthy();
+        clockMoves(10 * 60_000);
+        await rtl.act(async () => new Promise((resolve) => setTimeout(resolve, 1_300)));
+        // The wall clock says the gap ended nine minutes ago. The Hub's seconds have not run: about three are left.
+        expect(rtl.screen.getByText(/^Resend in 0:0[1-3]$/)).toBeTruthy();
+        expect(rtl.screen.queryByRole('button', { name: 'Resend code' })).toBeNull();
+      });
+
+      it('a clock jumping ten minutes behind does not hold Resend shut once the Hub’s seconds have run', async () => {
+        fallback['POST /money/pin/reset'] = started({ resendInSeconds: 2 });
+        await atBoxes();
+        clockMoves(-10 * 60_000);
+        expect(await rtl.screen.findByRole('button', { name: 'Resend code' }, { timeout: 5_000 })).toBeTruthy();
+        expect(rtl.screen.queryByText(/^Resend in /)).toBeNull();
+      });
     });
 
     it('"We sent a new code." appears only after the resend route answers, and only for a different reset', async () => {
