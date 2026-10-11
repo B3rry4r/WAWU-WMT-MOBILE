@@ -10,8 +10,8 @@ export type ResultView = {
   icon: IconName;
   title: string;
   line: string;
-  /** "In the room 23" and "Still to arrive 41", the Hub's live counts. */
-  totals: [string, string];
+  /** "In the room 23" and "Still to arrive 41", the Hub's live counts. Null when the Hub was not asked (a reading the app answers itself), so no count is drawn. */
+  totals: [string, string] | null;
   /** What a screen reader says when the result appears. */
   announce: string;
 };
@@ -48,6 +48,17 @@ export const alreadyUsedLine = (iso: string, by: CheckedInBy | null | undefined,
   `Checked in ${checkedInWhen(iso, now)}${byLine(by)}`;
 
 export const NOT_VALID_LINE = "This code isn't for this event";
+/** A ticket of this event that was voided because the event was called off: the Hub says so (`reason: 'cancelled'`). */
+export const CANCELLED_LINE = 'This ticket was cancelled';
+
+/**
+ * E24 for a reading that cannot be a ticket (under 4 characters or over 500): the app answers it itself and
+ * never sends it. The Hub's counts are not drawn: nobody was asked, and a count from an earlier answer would
+ * pass for today's.
+ */
+export function localNotValidView(): ResultView {
+  return { tone: 'danger', icon: 'X', title: 'NOT A VALID TICKET', line: NOT_VALID_LINE, totals: null, announce: `NOT A VALID TICKET. ${NOT_VALID_LINE}.` };
+}
 
 /** The three drawn results, from the Hub's answer. */
 export function resultView(result: DoorResult, now: number = Date.now()): ResultView {
@@ -64,5 +75,5 @@ export function resultView(result: DoorResult, now: number = Date.now()): Result
   if (result.outcome === 'already_used' && ticket && ticket.checkedInAt) {
     return base({ tone: 'warning', icon: 'Clock', title: 'ALREADY USED', line: alreadyUsedLine(ticket.checkedInAt, ticket.checkedInBy, now) });
   }
-  return base({ tone: 'danger', icon: 'X', title: 'NOT A VALID TICKET', line: NOT_VALID_LINE });
+  return base({ tone: 'danger', icon: 'X', title: 'NOT A VALID TICKET', line: result.reason === 'cancelled' ? CANCELLED_LINE : NOT_VALID_LINE });
 }

@@ -74,17 +74,19 @@ export function ResultPanel({ view, onDismiss, bottomInset }: ResultPanelProps) 
       <Text testID="door-result-line" variant="body" tone="textOnAccent" style={styles.line}>
         {view.line}
       </Text>
-      <View style={styles.totals}>
-        <Text testID="door-result-in" variant="body" tone="textOnAccent" style={styles.totalsText}>
-          {view.totals[0]}
-        </Text>
-        <Text variant="body" tone="textOnAccent" style={styles.totalsText}>
-          {'·'}
-        </Text>
-        <Text testID="door-result-left" variant="body" tone="textOnAccent" style={styles.totalsText}>
-          {view.totals[1]}
-        </Text>
-      </View>
+      {view.totals ? (
+        <View style={styles.totals}>
+          <Text testID="door-result-in" variant="body" tone="textOnAccent" style={styles.totalsText}>
+            {view.totals[0]}
+          </Text>
+          <Text variant="body" tone="textOnAccent" style={styles.totalsText}>
+            {'·'}
+          </Text>
+          <Text testID="door-result-left" variant="body" tone="textOnAccent" style={styles.totalsText}>
+            {view.totals[1]}
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }

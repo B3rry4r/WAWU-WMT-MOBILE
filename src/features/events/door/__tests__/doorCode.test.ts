@@ -1,4 +1,5 @@
-import { canSend, createScanGate, formatTypedCode, MIN_SENT_CHARS, readingText } from '../doorCode';
+import { RESULT_HOLD_MS, SAME_CODE_QUIET_MS, ANSWER_WAIT_MS } from '../doorConfig';
+import { canSend, createScanGate, formatTypedCode, lengthOf, MAX_SENT_CHARS, MIN_SENT_CHARS, newScanKey, readingText } from '../doorCode';
 
 describe('a typed ticket code (E19, "Type the code instead")', () => {
   it('is written as the ticket prints it: capitals, groups of four, a hyphen between', () => {
@@ -36,9 +37,67 @@ describe('what a camera read is sent as', () => {
     expect(readingText('https://example.com/menu?x=1')).toBe('https://example.com/menu?x=1');
   });
 
-  it('can be sent when it is as long as the door route needs', () => {
-    expect(canSend('A'.repeat(MIN_SENT_CHARS - 1))).toBe(false);
-    expect(canSend('A'.repeat(MIN_SENT_CHARS))).toBe(true);
+  it('can be sent when it is as long as the door route needs: 4 to 500 characters, by value (the Hub refuses 3 and 501)', () => {
+    expect(MIN_SENT_CHARS).toBe(4);
+    expect(MAX_SENT_CHARS).toBe(500);
+    expect(canSend('A'.repeat(3))).toBe(false);
+    expect(canSend('A'.repeat(4))).toBe(true);
+    expect(canSend('A'.repeat(500))).toBe(true);
+    expect(canSend('A'.repeat(501))).toBe(false);
+    expect(canSend('')).toBe(false);
+    expect(canSend('A'.repeat(5000))).toBe(false);
+  });
+
+  it('counts characters the way the Hub does: an emoji is one, so 2 emoji are too few and 300 are enough', () => {
+    expect(lengthOf('😀')).toBe(1);
+    expect(lengthOf('😀😀')).toBe(2);
+    expect(canSend('😀😀')).toBe(false);
+    expect(canSend('😀'.repeat(4))).toBe(true);
+    expect(canSend('😀'.repeat(300))).toBe(true);
+    expect(canSend('😀'.repeat(500))).toBe(true);
+    expect(canSend('😀'.repeat(501))).toBe(false);
+  });
+});
+
+describe('the key one scan carries', () => {
+  it('is a UUID v4, which the Hub takes (8 to 128 letters, digits, - or _)', () => {
+    const key = newScanKey();
+    expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(key).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
+  });
+
+  it('is new each time', () => {
+    const keys = new Set(Array.from({ length: 500 }, () => newScanKey()));
+    expect(keys.size).toBe(500);
+  });
+
+  it('is made without the phone\'s generator too (Hermes has none)', () => {
+    const original = (globalThis as { crypto?: unknown }).crypto;
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
+    try {
+      const key = newScanKey();
+      expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      expect(newScanKey()).not.toBe(key);
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: original, configurable: true });
+    }
+  });
+});
+
+describe('the scanner\'s times, by value (all three PROVISIONAL until a walk at a real door)', () => {
+  it('holds a result 3 seconds, keeps a code quiet for 1.5 seconds, and stops waiting for an answer after 10', () => {
+    expect(RESULT_HOLD_MS).toBe(3000);
+    expect(SAME_CODE_QUIET_MS).toBe(1500);
+    expect(ANSWER_WAIT_MS).toBe(10_000);
+  });
+
+  it('reads a code again at 1500 ms out of view and not at 1499, with no number given to the gate', () => {
+    const early = createScanGate();
+    expect(early.accept('A', 0, false)).toBe(true);
+    expect(early.accept('A', 1499, false)).toBe(false);
+    const late = createScanGate();
+    expect(late.accept('A', 0, false)).toBe(true);
+    expect(late.accept('A', 1500, false)).toBe(true);
   });
 });
 

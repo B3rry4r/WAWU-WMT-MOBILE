@@ -1,5 +1,5 @@
 import type { DoorResult } from '../doorApi';
-import { alreadyUsedLine, byLine, checkedInWhen, NOT_VALID_LINE, resultView } from '../doorFormat';
+import { alreadyUsedLine, byLine, CANCELLED_LINE, checkedInWhen, localNotValidView, NOT_VALID_LINE, resultView } from '../doorFormat';
 
 /** A moment on this phone's own clock, so the expectations hold in any time zone. */
 const at = (y: number, mo: number, d: number, h: number, mi: number) => new Date(y, mo - 1, d, h, mi, 0).toISOString();
@@ -70,6 +70,24 @@ describe('the three results', () => {
     });
   });
 
+  it('E24 for a voided ticket of this event: "This ticket was cancelled", still red, still with the counts', () => {
+    expect(CANCELLED_LINE).toBe('This ticket was cancelled');
+    expect(resultView({ outcome: 'invalid', reason: 'cancelled', ticket: null, totals }, NOW)).toMatchObject({
+      tone: 'danger',
+      title: 'NOT A VALID TICKET',
+      line: 'This ticket was cancelled',
+      totals: ['In the room 23', 'Still to arrive 41'],
+    });
+    // A reason of null, or none, is the plain answer.
+    expect(resultView({ outcome: 'invalid', reason: null, ticket: null, totals }, NOW).line).toBe(NOT_VALID_LINE);
+  });
+
+  it('E24 answered by the app itself (a reading the Hub would not take): red, the plain line, and no count, since nobody was asked', () => {
+    const view = localNotValidView();
+    expect(view).toMatchObject({ tone: 'danger', icon: 'X', title: 'NOT A VALID TICKET', line: NOT_VALID_LINE, totals: null });
+    expect(view.announce).toBe("NOT A VALID TICKET. This code isn't for this event.");
+  });
+
   it('an answer that says valid with no ticket is never drawn as a let in', () => {
     const odd = { outcome: 'valid', ticket: null, totals } as unknown as DoorResult;
     expect(resultView(odd, NOW).title).toBe('NOT A VALID TICKET');
@@ -82,7 +100,7 @@ describe('the three results', () => {
       { outcome: 'invalid', ticket: null, totals },
     ] as DoorResult[]) {
       const view = resultView(result, NOW);
-      expect([view.title, view.line, ...view.totals, view.announce].join(' ')).not.toContain('—');
+      expect([view.title, view.line, ...(view.totals ?? []), view.announce].join(' ')).not.toContain('—');
     }
   });
 });

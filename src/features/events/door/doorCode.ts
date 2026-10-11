@@ -1,10 +1,16 @@
 import { SAME_CODE_QUIET_MS } from './doorConfig';
 
 /**
- * What the Hub's door route takes as a code: text of 4 to 500 characters (`DoorScanDto`). Anything shorter
- * cannot be sent; the screen answers it "not valid" itself and says so (`canSend`).
+ * What the Hub's door route takes as a code: text of 4 to 500 characters (`DoorScanDto`). Text outside that is
+ * never sent: the screen answers it "not a valid ticket" itself (`canSend`, EVENTS-09 round 2), so the Hub's
+ * validator never speaks to a person at a door. The Hub counts characters as `validator.isLength` does, a
+ * surrogate pair as one, so does `lengthOf`.
  */
 export const MIN_SENT_CHARS = 4;
+export const MAX_SENT_CHARS = 500;
+
+/** Characters as the Hub counts them: one for an emoji, not two. */
+export const lengthOf = (text: string): number => Array.from(text).length;
 
 /** A ticket code is printed in groups of four (`K7QX-4M2P-9WLA-3RTE`). */
 const GROUP = 4;
@@ -34,8 +40,26 @@ export function formatTypedCode(raw: string): string {
 /** What a camera read, as the Hub should see it: the text with the spaces around it taken off. Nothing else is touched. */
 export const readingText = (data: string): string => data.trim();
 
-/** True when the text is long enough for the Hub's door route to take. */
-export const canSend = (text: string): boolean => text.length >= MIN_SENT_CHARS;
+/** True when the text is one the Hub's door route takes: 4 to 500 characters. Anything else is not a ticket, and is not sent. */
+export const canSend = (text: string): boolean => {
+  const length = lengthOf(text);
+  return length >= MIN_SENT_CHARS && length <= MAX_SENT_CHARS;
+};
+
+/**
+ * The key one scan carries (`Idempotency-Key`): made once when a ticket is first read or its code is sent, and
+ * sent again unchanged by Try again for that scan, so a check the Hub made whose answer was lost is answered with
+ * its first verdict and not "already used". A new scan, even of the same ticket, gets a new key. A UUID v4; the
+ * phone's own generator when it has one, else random digits (the key only has to be unique, it protects nothing).
+ */
+export function newScanKey(): string {
+  const generator = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (generator?.randomUUID) return generator.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const n = Math.floor(Math.random() * 16);
+    return (c === 'x' ? n : (n & 0x3) | 0x8).toString(16);
+  });
+}
 
 /**
  * Decides which camera readings are sent. A phone reports a QR over and over while it is in view, so:

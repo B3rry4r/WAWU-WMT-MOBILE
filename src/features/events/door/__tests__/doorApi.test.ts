@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { isEventId, readDoorResult } from '../doorApi';
 
 const totals = { sold: 3, checkedIn: 1, stillToArrive: 2, remaining: 47 };
@@ -30,5 +31,69 @@ describe('an event id in a link', () => {
     expect(isEventId('door')).toBe(false);
     expect(isEventId('')).toBe(false);
     expect(isEventId('e5000000-0000-4000-8000-000000000001/../x')).toBe(false);
+  });
+});
+
+describe('the door call', () => {
+  const EVENT = 'e5000000-0000-4000-8000-000000000001';
+  type Api = typeof import('../doorApi');
+  type Errors = typeof import('@/api/errors');
+  /** The client takes `fetch` when it is made, so the stand-in is set before the modules are loaded. */
+  function load(fetchImpl: typeof fetch): { api: Api; errors: Errors } {
+    globalThis.fetch = fetchImpl;
+    jest.resetModules();
+    return { api: require('../doorApi') as Api, errors: require('@/api/errors') as Errors };
+  }
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    jest.useRealTimers();
+  });
+
+  it('sends the scan\'s key as Idempotency-Key and the text as the code', async () => {
+    const sent: Request[] = [];
+    const { api } = load((async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(String(input), init);
+      sent.push(request.clone());
+      return new Response(JSON.stringify(body({ outcome: 'valid', ticket, totals })), { status: 201, headers: { 'content-type': 'application/json' } });
+    }) as typeof fetch);
+    const result = await api.checkInAtDoor(EVENT, { code: 'K7QX-4M2P-9WVA-3RTE', key: 'scan-key-0001' });
+    expect(result.outcome).toBe('valid');
+    expect(sent).toHaveLength(1);
+    expect(sent[0].method).toBe('POST');
+    expect(new URL(sent[0].url).pathname).toBe(`/api/hub/events/${EVENT}/door/check-in`);
+    expect(sent[0].headers.get('idempotency-key')).toBe('scan-key-0001');
+    expect(await sent[0].json()).toEqual({ code: 'K7QX-4M2P-9WVA-3RTE' });
+  });
+
+  it('gives up on a request nobody answers after the time it is given, as a lost connection', async () => {
+    jest.useFakeTimers();
+    const { api, errors } = load((async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(String(input), init);
+      return new Promise<Response>((_resolve, reject) => {
+        request.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      });
+    }) as typeof fetch);
+    let settled: unknown = 'waiting';
+    void api.checkInAtDoor(EVENT, { code: 'K7QX-4M2P-9WVA-3RTE', key: 'scan-key-0001' }, 250).then(
+      () => {
+        settled = 'answered';
+      },
+      (error: unknown) => {
+        settled = error;
+      },
+    );
+    await jest.advanceTimersByTimeAsync(249);
+    expect(settled).toBe('waiting');
+    await jest.advanceTimersByTimeAsync(1);
+    expect(settled).toBeInstanceOf(errors.ApiError);
+    expect((settled as InstanceType<Errors['ApiError']>).kind).toBe('network');
+  });
+
+  it('does not give up on an answer that arrives in time', async () => {
+    jest.useFakeTimers();
+    const { api } = load((async () => new Response(JSON.stringify(body({ outcome: 'valid', ticket, totals })), { status: 201, headers: { 'content-type': 'application/json' } })) as typeof fetch);
+    await expect(api.checkInAtDoor(EVENT, { code: 'K7QX-4M2P-9WVA-3RTE', key: 'scan-key-0001' }, 250)).resolves.toMatchObject({ outcome: 'valid' });
+    await jest.advanceTimersByTimeAsync(1000);
   });
 });

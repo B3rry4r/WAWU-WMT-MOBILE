@@ -12,10 +12,10 @@ import { TextField } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, space } from '@/theme';
 
-import { checkInAtDoor, isEventId } from './doorApi';
-import { canSend, createScanGate, formatTypedCode, MIN_SENT_CHARS, readingText } from './doorCode';
+import { checkInAtDoor, isEventId, type DoorScan } from './doorApi';
+import { canSend, createScanGate, formatTypedCode, newScanKey, readingText } from './doorCode';
 import { RESULT_HOLD_MS } from './doorConfig';
-import { resultView, type ResultView } from './doorFormat';
+import { localNotValidView, resultView, type ResultView } from './doorFormat';
 import { AimWords, DOOR, ProblemPanel, ResultPanel, veilOpacity, type ProblemView } from './DoorParts';
 import { useDoorCamera, type DoorCamera } from './useDoorCamera';
 
@@ -25,9 +25,13 @@ import { useDoorCamera, type DoorCamera } from './useDoorCamera';
  * and 600), 60 up from the bottom, and the button row 20 in from the sides and 48 above the bottom edge. The
  * canvas draws four white corner marks round the aim area, but its own `border-width:0` cancels them, so the
  * render shows none and neither does this screen; the square is only the room they would have taken.
+ *
+ * With a result up the canvas draws no button row at all and lifts the aim area by 280 instead of 60
+ * (`padding-bottom:${res ? 280 : 60}px`), so the aim line rises to stay above the panel. A problem panel is the
+ * result panel's shape, so it does the same.
  */
 const NAV = { height: 56, button: 42, title: 17, tracking: -0.02 } as const;
-const AIM = { size: 230, between: 20, lift: 60, line: 15 } as const;
+const AIM = { size: 230, between: 20, lift: 60, liftWithPanel: 280, line: 15 } as const;
 const FOOT = { bottom: 48 } as const;
 
 const NAV_TITLE = 'At the door';
@@ -80,20 +84,22 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
 
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState('');
+  /** The codes typed while a check was on its way, in the order typed (each waits for the check before it), and how many the screen says are waiting. */
+  const queued = useRef<string[]>([]);
+  const [waiting, setWaiting] = useState(0);
 
-  /** What "Try again" calls: `check`, as it is now. */
-  const again = useRef<(text: string) => void>(() => undefined);
+  /** What "Try again" calls: `check`, as it is now. It is given the scan, so it sends the same key. */
+  const again = useRef<(scan: DoorScan) => void>(() => undefined);
   const check = useCallback(
-    async (text: string) => {
+    async (scan: DoorScan) => {
       if (inFlight.current || !known) return;
       inFlight.current = true;
       go({ kind: 'checking' });
       try {
-        // A reading shorter than the door route takes is padded with spaces, which the Hub trims off before it looks the code up: it is answered "not valid" with the live counts like any other.
-        const result = await checkInAtDoor(eventId, text.padEnd(MIN_SENT_CHARS, ' '));
+        const result = await checkInAtDoor(eventId, scan);
         if (live.current) go({ kind: 'result', view: resultView(result) });
       } catch (error) {
-        if (live.current) go({ kind: 'problem', problem: problemOf(error, () => again.current(text)) });
+        if (live.current) go({ kind: 'problem', problem: problemOf(error, () => again.current(scan)) });
       } finally {
         inFlight.current = false;
       }
@@ -102,8 +108,24 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
   );
 
   useEffect(() => {
-    again.current = (text) => void check(text);
+    again.current = (scan) => void check(scan);
   }, [check]);
+
+  /**
+   * One new scan. A reading that cannot be a ticket (under 4 characters, over 500) is answered here, red and
+   * at once, and never sent; anything else gets its own key, which Try again keeps for this scan.
+   */
+  const start = useCallback(
+    (text: string) => {
+      if (!known) return;
+      if (!canSend(text)) {
+        go({ kind: 'result', view: localNotValidView() });
+        return;
+      }
+      void check({ code: text, key: newScanKey() });
+    },
+    [check, go, known],
+  );
 
   // A result stays over the camera for a few seconds, then the scanner is ready for the next ticket.
   useEffect(() => {
@@ -112,26 +134,43 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
     return () => clearTimeout(timer);
   }, [phase, go]);
 
+  // A code typed while a check was on its way waits for it, and is checked the moment the scanner is ready. Several wait in the order typed, one at a time.
+  useEffect(() => {
+    if (phase.kind !== 'ready') return;
+    const text = queued.current.shift();
+    if (text === undefined) return;
+    setWaiting(queued.current.length);
+    start(text);
+  }, [phase, start]);
+
   const onScanned = useCallback(
     ({ data }: BarcodeScanningResult) => {
       const text = readingText(data);
       if (!text) return;
       const busy = inFlight.current || current.current.kind !== 'ready';
-      if (gate.accept(text, Date.now(), busy)) void check(text);
+      if (gate.accept(text, Date.now(), busy)) start(text);
     },
-    [check, gate],
+    [gate, start],
   );
 
   const checkTyped = () => {
-    if (!canSend(typed) || inFlight.current) return;
+    if (!canSend(typed)) return;
     const text = typed;
     setTyping(false);
     setTyped('');
-    void check(text);
+    if (inFlight.current) {
+      // The one before it has not been answered. This one is kept and sent when that one is done.
+      queued.current.push(text);
+      setWaiting(queued.current.length);
+      return;
+    }
+    start(text);
   };
 
   const scanning = camera.kind === 'ready' && focused && !typing && known;
   const sheetOpen = typing && known;
+  /** A result or a problem is up: the canvas draws no button row then, and lifts the aim line to clear the panel. */
+  const panelUp = phase.kind === 'result' || phase.kind === 'problem';
 
   return (
     <View testID="door-screen" style={[styles.page, { paddingTop: insets.top }]}>
@@ -158,15 +197,17 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
         <View style={styles.navSide} />
       </View>
 
-      <View style={styles.middle}>
+      <View testID="door-middle" style={[styles.middle, { paddingBottom: panelUp ? AIM.liftWithPanel : AIM.lift }]}>
         <View style={styles.aim} />
-        <Words camera={camera} phase={phase} />
+        <Words camera={camera} phase={phase} waiting={waiting} />
       </View>
 
-      <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, FOOT.bottom) }]}>
-        <CameraActions camera={camera} />
-        <Button label="Type the code instead" variant="glass" full onPress={() => setTyping(true)} disabled={!known} testID="door-type" />
-      </View>
+      {panelUp ? null : (
+        <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, FOOT.bottom) }]}>
+          <CameraActions camera={camera} />
+          <Button label="Type the code instead" variant="glass" full onPress={() => setTyping(true)} disabled={!known} testID="door-type" />
+        </View>
+      )}
 
       {phase.kind === 'result' ? <ResultPanel view={phase.view} onDismiss={() => go({ kind: 'ready' })} bottomInset={insets.bottom} /> : null}
       {phase.kind === 'problem' ? (
@@ -198,8 +239,8 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
 }
 
 /** The line in the middle of the page: E19's "Point at the ticket QR", or what stands in for the camera, or the check on its way. */
-function Words({ camera, phase }: { camera: DoorCamera; phase: Phase }) {
-  if (phase.kind === 'checking') return <AimWords testID="door-checking" busy title="Checking the ticket" />;
+function Words({ camera, phase, waiting }: { camera: DoorCamera; phase: Phase; waiting: number }) {
+  if (phase.kind === 'checking') return <AimWords testID="door-checking" busy title="Checking the ticket" line={waitingLine(waiting)} />;
   switch (camera.kind) {
     case 'starting':
       return <AimWords testID="door-camera-starting" busy title="Opening the camera" />;
@@ -224,6 +265,9 @@ function Words({ camera, phase }: { camera: DoorCamera; phase: Phase }) {
   }
 }
 
+/** What the screen says under "Checking the ticket" when codes typed meanwhile are waiting. */
+const waitingLine = (count: number): string | undefined => (count === 0 ? undefined : count === 1 ? 'Then the code you typed.' : `Then the ${count} codes you typed.`);
+
 /** The one thing a person can do about a camera that is not on: ask again, or open the phone's settings. */
 function CameraActions({ camera }: { camera: DoorCamera }) {
   if (camera.kind === 'askable') return <Button label="Allow camera" variant="white" full onPress={camera.allow} testID="door-camera-allow" />;
@@ -235,22 +279,39 @@ function gone(): ProblemView {
   return { icon: 'CircleAlert', title: "We can't find this event", line: 'It may have been removed, or the link is wrong.', retry: null, leave: true };
 }
 
-/** Where a refused or failed check leaves the door. Every sentence about the Hub is the Hub's own. */
+/**
+ * Where a refused or failed check leaves the door. A check whose request was sent and whose answer did not come
+ * back (a lost connection, a wait that ran out, a server error, an answer that could not be read) may have been
+ * made, so it never says "not checked in": it says it could not confirm, and Try again sends the same scan with
+ * the same key, which the Hub answers with its first verdict. Only a refusal the Hub makes before it does
+ * anything (not allowed, no such event, too many scans, a code it will not take) says the ticket was not checked in.
+ * Every sentence about the Hub that is shown is the Hub's own, and no validator sentence ever is.
+ */
 function problemOf(error: unknown, retry: () => void): ProblemView {
-  if (!isApiError(error)) return { icon: 'CircleAlert', title: "We couldn't check that ticket", line: 'Something went wrong. Try again.', retry, leave: false };
-  switch (error.kind) {
-    case 'network':
-      return { icon: 'WifiOff', title: 'No connection', line: `${error.message} The ticket was not checked in.`, retry, leave: false };
-    case 'rate_limited':
-      return { icon: 'CircleAlert', title: 'Too many scans at once', line: 'Wait a moment, then try again. The ticket was not checked in.', retry, leave: false };
-    case 'forbidden':
-      return { icon: 'Lock', title: "You can't check tickets in here", line: error.message, retry: null, leave: true };
-    case 'not_found':
-      return gone();
-    default:
-      return { icon: 'CircleAlert', title: "We couldn't check that ticket", line: `${error.message} The ticket was not checked in.`, retry, leave: false };
+  if (isApiError(error)) {
+    switch (error.kind) {
+      case 'rate_limited':
+        return { icon: 'CircleAlert', title: 'Too many scans at once', line: 'Wait a moment, then try again. The ticket was not checked in.', retry, leave: false };
+      case 'forbidden':
+        return { icon: 'Lock', title: "You can't check tickets in here", line: error.message, retry: null, leave: true };
+      case 'not_found':
+        return gone();
+      case 'validation':
+        return { icon: 'CircleAlert', title: "We couldn't check that ticket", line: 'This code could not be checked. The ticket was not checked in.', retry: null, leave: false };
+      case 'network':
+        return couldNotConfirm('WifiOff', retry);
+    }
   }
+  return couldNotConfirm('CircleAlert', retry);
 }
+
+const couldNotConfirm = (icon: ProblemView['icon'], retry: () => void): ProblemView => ({
+  icon,
+  title: "We couldn't confirm",
+  line: "We didn't hear back, so we can't say if this ticket went in. Try again to find out.",
+  retry,
+  leave: false,
+});
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: DOOR.page },
@@ -258,7 +319,7 @@ const styles = StyleSheet.create({
   nav: { height: NAV.height, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: layout.gutter },
   navSide: { width: NAV.button },
   navTitle: { ...font(700), flex: 1, textAlign: 'center', fontSize: NAV.title, letterSpacing: NAV.tracking * NAV.title },
-  middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: AIM.between, paddingBottom: AIM.lift },
+  middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: AIM.between },
   aim: { width: AIM.size, height: AIM.size },
   aimLine: { ...font(600), fontSize: AIM.line, lineHeight: canvasNormalLineHeight(AIM.line), textAlign: 'center' },
   foot: { paddingHorizontal: layout.gutter, gap: space.md },

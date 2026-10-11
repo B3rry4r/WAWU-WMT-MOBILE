@@ -1983,6 +1983,11 @@ export interface paths {
          * Scan at the door, as the host or their door staff. Let them in (E20)
          *     with the holder's name, already used (E23) with when and by whom, or
          *     not valid (E24), with the live counts.
+         *
+         *     `Idempotency-Key` (optional): the phone makes one per scan and sends it
+         *     again unchanged when it asks again after an answer was lost. A repeat is
+         *     answered with the first verdict (header `Idempotent-Replayed: true`),
+         *     never "already used" by the scanner's own door.
          */
         post: operations["EventRunningController_checkIn"];
         delete?: never;
@@ -8282,6 +8287,8 @@ export interface components {
         DoorCheckInResult: {
             /** @enum {string} */
             outcome: "valid" | "already_used" | "invalid";
+            /** @enum {string|null} */
+            reason?: "cancelled" | null;
             ticket: {
                 code: string;
                 tierName: string;
@@ -14121,7 +14128,10 @@ export interface operations {
     EventRunningController_checkIn: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description One value per scan, made by the app when a ticket is first read and sent again unchanged when it asks again about that scan. A repeat is answered with the first verdict. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };

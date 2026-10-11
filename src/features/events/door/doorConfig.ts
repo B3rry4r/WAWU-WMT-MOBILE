@@ -15,3 +15,11 @@ export const RESULT_HOLD_MS = 3000;
  * read again at once and answered "already used". PROVISIONAL(DOOR-QUIET, owner=EVENTS-09, why=no ruling or canvas sizes it; must stay above the camera's report gap, about 300 ms on the web build).
  */
 export const SAME_CODE_QUIET_MS = 1500;
+
+/**
+ * How long a check may go without any answer before the screen stops waiting and says it could not confirm,
+ * with Try again. A dead connection at a venue otherwise holds the one scanner for as long as the phone's own
+ * network gives up, which can be minutes. Try again sends the same scan with the same key, so a check the Hub
+ * did make is answered with its first verdict. PROVISIONAL(DOOR-WAIT, owner=EVENTS-09, why=the lead's round 2 ruling sets 10 s; no measurement at a real door sizes it).
+ */
+export const ANSWER_WAIT_MS = 10_000;
