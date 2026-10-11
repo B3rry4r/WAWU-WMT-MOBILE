@@ -7,7 +7,7 @@ order: 243
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: money-path
-status: building
+status: verifying
 depends_on: [JOIN-01, TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -687,5 +687,131 @@ so an account the Hub has finalised as deleted keeps its number. If the lead rul
 - A phone or a store build (V10): the web export at 390 px only. The mobile AUTH-07 merge was a git-level trial only (the merged tree was not type-checked or tested).
 - The whole backend suite and the whole wawu-id suite as one run (the touched modules, the protected suite, `src/auth` and `src/contract` ran). A real Flutterwave payment turning into a claim (the paid rows are SQL).
 - A rolling deploy with an old and a new wawu-id side by side (N9 is from the code and the migration, not from a run).
+
+## Builder report, round 3
+
+Builder, 11 Oct 2026 (Sonnet agent, round 3 of JOIN-03; the lead's rulings of the same day, each Default (lead), owner may override). Heads: backend `wmt/JOIN-03`
+`6c30122` (backend main `6976aad`, INBOX-05 #111, merged in), wawu-id `wmt/JOIN-03` `5b3f498` (main `d5b264d`, AUTH-07, merged in), mobile `wmt/JOIN-03` (this
+commit; mobile main `0dd7ac8` merged in: AUTH-07, WALLET-06, BILLS-01 and MONEY-18 are inside it). Evidence: the lead's scratchpad `join03r3/` (`harness/` the live
+scripts and `erase.mjs`, `backfill_check.sh`, `live/r3.py` the browser walk, `ns/` the private-namespace runners, `mut/` and `logs/` the mutants and every check log,
+`shots/`). No Flutterwave, Fintava, Nuvion, wawuafrica.com or AI host was called; ports 6161 to 6164 only; Resend and the SMS provider were the stand-in on 6163.
+Phone numbers are masked everywhere below. The lead's correction of the migration stamps (20261021050000 and 20261021060000, after INBOX-05's
+`20261021010000_community_message_key`) arrived mid-build and is the one built; the first stamps (20261020220000 and 20261020230000) never left the worktree.
+
+**The lead's rulings, as built (before, then after)**
+
+1. **D3 (blocker): a deleted person's number is gone from `wawu_users.phone_verified_for` (wawu-id).** *Before* (real wawu-id, `harness/erase.mjs`, `logs/erase-before.log`):
+   a texted sign-up proves `+234***741`; `DELETE /internal/users/<id>?mode=anonymize` answers 200 `banned`; the row reads `phone = deleted:<id>`, `phone_verified_at`
+   kept and `phone_verified_for = +234***741` (the full number): "FINDING: the anonymised row still holds the real phone number in phone_verified_for".
+   *After* (the same script on the rebuilt service, `logs/erase-after.log`): `deleted:<id> | phone_verified_at kept | phone_verified_for NULL | email NULL`: "scrubbed".
+   Every other path that blanks or marks a phone, found by grepping `deleted:`, `released:`, `phone: ''` and every `wawuUser.update`: **(a)** `AuthService.deleteUser(..,
+   'anonymize')` (the one above); **(b)** `takeProvenNumber` in `unproven-phone.ts` (a newer sign-up takes a number an account only typed; the row becomes
+   `released:<id>`), now clears it too; **(c)** the owner's G-16 script (`apply` makes `released:<id>`): `apply` clears the column and records the old value beside the
+   old phone in `g16_phone_releases.old_verified_for`, `revert` puts it back, so a revert still leaves every row byte for byte as it was (run on a populated database:
+   the released row read `NULL` after `apply`; `md5` of every row equal before `apply` and after `revert`). A hard delete removes the row and the phone-change routes
+   write a real number, so neither is a path. `spec`: `anonymise-phone-proof.spec.ts` (5 tests) calls `DELETE /internal/users/:id?mode=anonymize` through the real
+   controller and the real `AuthService` over HTTP and reads the column back (the number is nowhere in the row; the rest of the scrub is as it was; no service key,
+   401 and nothing changed; a hard delete). Mutant: the `phoneVerifiedFor: null` line removed, 2 of 5 fail; the release's clear removed, 1 fails.
+2. **D5: a marker or an empty phone is never "proven" (wawu-id).** `phoneIsProven` returns false for a `released:` or `deleted:` marker, an empty or blank phone
+   (and a recorded value that is one) before it compares anything (`isStoredPhone`, `released-phone.ts`). The migration `20261011120000_phone_verified_for` was not
+   deployed anywhere, so its backfill was changed in place: it copies the phone only where `phone_verified_at` is set and the phone is not blank, not `deleted:%` and not
+   `released:%`. *Before* (the round 2 statement on the same 8 rows, `logs/backfill-new.log`): the anonymised-before-the-migration row recorded `deleted:<id>`, the
+   released row `released:<id>`, the empty phone an empty string, the blank phone blanks: all four read as proven by the equal-strings shortcut. *After*: those four
+   record NULL; the proven `+234` and `0`-form accounts record their phones; the two typed-only accounts NULL; the `phone` column is unchanged (`md5` of the 8 phones
+   equal). **Rollback and re-apply** (the header's two statements, `harness/backfill_check.sh`): applied, rolled back (`migrate status` lists it pending), applied
+   again, rolled back, applied a third time: the `md5` of the recorded values is `834dc545...a22f` all three times. The verifier's two cases both give
+   `phoneVerified: false`: spec "a marker or an empty phone proves nothing, even when the recorded value is the same text" (`deleted:`, `released:`, empty, blank, equal
+   to the phone; a marker beside a real number either way) and the same through `phoneIsProven`. Mutant: the marker check removed, 2 of 17 fail.
+3. **Backend migration order.** Backend main holds `20261020160000_wallet_holds` and, since the lead's correction, `20261021010000_community_message_key`. Renamed
+   `20261019150000_waitlist_claim_paid` to **`20261021050000_waitlist_claim_paid`** and `20261020140000_waitlist_claim_result` to
+   **`20261021060000_waitlist_claim_result`**. The SQL that changes the schema is byte for byte the same; the only edits are the migration name in each folder's
+   `rollback.sql` (`DELETE FROM "_prisma_migrations" WHERE migration_name = ...`) and in the comment above it, because a rollback that names the old folder would leave
+   the history row behind. Neither was deployed, so no history row is renamed. *Applied on a database already at main's folders* (`6976aad`, 119 migrations,
+   `logs/be-migrate-onmain2.log`): `migrate deploy` applies exactly these two, in this order. Both `rollback.sql` files run (`psql -1`), `migrate status` lists the two as
+   not yet applied, `migrate deploy` applies them again, "Database schema is up to date". SHARED-CHANGES rows #1 and #5 name the new folders; #8 records the rename.
+4. **D4: the replay's words tell the truth.** The claim answer gains `claimedAt` (ISO 8601, required, additive): the registration's own `claimedAt` stamp, so a repeat
+   carries the FIRST claim's time and never its own (a spec backdates the stamp ten days and the replay says that day, every other field the first answer's). Nothing
+   new is stored. A row with an answer and no stamp cannot be written (the table's CHECK keeps them together); if one were read it answers `claimed_by_you` and invents no
+   time (a unit spec). In the app (`src/features/claim/model.ts`) the screen is told from `claimedAt` and the plan's state: **claimed today and the plan in force**:
+   "Your plan is ready", "Verify for 30 days, starting today." (as before); **an earlier day, plan in force**: "Your plan is active", "Verify started on 1 Oct."
+   (extended: "30 days were added to your plan on 8 Oct."), never "starting today"; **the plan over (state `ended` or `none`)**: "Your plan has ended", "Verify ended on
+   1 Sep." (with no plan and no end: "You claimed this code on 7 Sep."), an "Ended" row where "Runs until" was and "Points ended" for points whose end has passed, never "Your
+   plan is ready" beside a past "Runs until". "Today" is read in the zone the screen's dates are drawn in. The field list is N2's: Plan, the end, Points added, Points last
+   until. The ended state draws a calendar glyph in place of the check. An answer with no readable `claimedAt` is the existing "Your code was accepted" note. *Before*
+   (the round 2 `r2b` F3, pictures 07 and 08): ten days later "Verify for 30 days, starting today." beside "Runs until 30 Oct"; after the plan ended "Your plan is
+   ready", "starting today", "Runs until 31 Aug". *After*, in the real app (`logs/r3.log`): ten days later heading "Your plan is active", line "Verify started on 1 Oct.",
+   rows Plan / Runs until 31 Oct / Points added / Points last until; after the plan ended "Your plan has ended", "Verify ended on 1 Sep.", rows Plan / Ended 1 Sep /
+   Points added / Points last until; a plan extended and repeated three days later "Your plan is active", "30 days were added to your plan on 8 Oct." No em-dash in any
+   state (tested on every state and on the model).
+5. **N14: a signed-out visit to `/claim-code` goes to sign-in, then back to the claim.** `src/app/claim-code.tsx` (JOIN-03's own file): signed out it remembers the visit
+   (`signInReturn.ts`, in memory, ten minutes) and redirects to `/sign-in`; nothing is drawn while the session is read; a session that ends while the screen is open does
+   the same. `src/app/sign-in.tsx` takes the visit after a successful sign-in and does `router.replace('/claim-code')` (SHARED-CHANGES #10); a sign-in that nothing asked the
+   claim screen for is unchanged, and a visit older than ten minutes is forgotten. No layout or route-graph change. *Before* (round 2, N14): the claim screen was drawn
+   signed out and a claim said "Your session ended". *After*, in the real app: a signed-out `/claim-code` shows "Welcome back" (sign-in), and signing in lands on
+   `/claim-code` with "Your access code"; a plain sign-in lands where it did before. Router tests render the real root layout (`signInReturn.test.tsx`, 6).
+   Observation, not changed: an account that still has its email step comes back to the claim screen, not the email step first (the claim screen has never been behind
+   that step: a typed address shows it today); the claim itself needs only the proven phone.
+6. **N13: the four survivors, each killed by a test and shown.** Backend `Y7b` (the stored answer's reader accepts a fractional day count): the mutant
+   `Number.isSafeInteger(v.days)` to `typeof v.days === 'number'` now fails 1 of 6 in `waitlist-claim-result.spec.ts` and 1 of 36 in the claim contract spec ("refuses to
+   replay a damaged stored answer"); `Y7c` (a null points end refused): `typeof v.pointsExpireAt !== 'string'` fails 1 of 6 and 1 of 36 ("replays a claim that gave no
+   points"). Mobile `MV6` (no memory-first publish in `markOfferPending`): swapping the write before the publish fails `offerStepOrder.test.tsx` ("is shown the moment
+   the account is marked, even when the store does not answer"); `MV9` (no `onSessionEnd(resetOfferStep)`): removing it fails the same file ("is gone the moment another
+   account takes the session, with no layout to notice"). The two the verifier called equivalent (`Y7`, `Y9`) are left as they are.
+7. **N9, N10, N12: for the owner, no change.** **N9 (deploy window):** `start:prod` migrates, then starts the new code; an account that completes its sign-up code on the
+   OLD wawu-id instance after the migration has `phone_verified_at` and no `phone_verified_for`, reads `phoneVerified: false` for good (it fails closed; it can still claim by
+   a proven email or by the BVN route). Closed by stopping the old instance first, or by one statement after the deploy: `UPDATE wawu_users SET phone_verified_for = phone
+   WHERE phone_verified_for IS NULL AND phone_verified_at IS NOT NULL AND btrim(phone) <> '' AND phone NOT LIKE 'deleted:%' AND phone NOT LIKE 'released:%'`. **N10:** an
+   internal respelling `234` + `0` + the ten digits is the same number to WAWU ID and no number to the Hub's reader, so that account's claim by phone is
+   `contact_not_verified` (fails closed). **N12:** a person whose PHONE is proven and whose email was proven elsewhere within 15 minutes, claiming a registration made
+   with that email, gets `code_not_found` until the token is renewed (the app renews only on `contact_not_verified`).
+
+**Numbers (backend, `6c30122`).** `npx tsc --noEmit` 0. `eslint --no-fix` on the five changed or new `.ts` files: 0 problems. The waitlist, plans and points specs on a
+database created at main's folders, given this branch's two, and seeded (`bj03r3_ns_test`, a private network namespace, its own :4001): **20 suites, 340 of 340**
+(328 in round 2; new: `waitlist-claim-result.spec` 6, `waitlist-claim-answer.spec` 3, and the claim contract spec's new tests). `scripts/protected-routes/run.sh --fresh HEAD`
+in a private namespace: code `HEAD (6c30122)`, lock `origin/main (6976aad)`, **253 of 253**, "all 244 required tests passed". `python3 scripts/gates/run.py`: 16 fail, 95 warn, 76
+accepted on the branch and on `git archive` of `origin/main` (files scanned 1138 and 1127); the sorted FAIL lines are identical (`diff` empty); `check_baseline.py` clean (108
+entries). `npm run contract:build` twice: sha256 `3d9ccf01...4f13` both times, equal to the committed file; against main it adds `POST /waitlist/claims`, its schemas and
+the admin list's `claimed`, and the claim answer's `claimedAt`. The same file is in mobile `contract/` (`SOURCE_COMMIT` `wmt/JOIN-03@6c30122`, types regenerated).
+
+**Numbers (wawu-id, `5b3f498`).** `tsc --noEmit` 0. `eslint --no-fix` on the seven changed or new `.ts` files: 0 problems. `jest src/auth src/contract` (two workers,
+`--testTimeout=300000`): 22 suites, 21 pass, **334 of 335**; the one failure is the AUTH-08 timing test ("with 200 stored refresh tokens ... in under a second"): 2544 ms in
+the batch and 1411 ms run alone, at a load average near 30 on 4 CPUs; on `git archive` of wawu-id `origin/main` run the same way it also fails, 1193 ms. It is the machine
+(`logs/id-jest-*.log`), not this change, which does not touch refresh. `scripts/gates/run.py` 9 run, 117 files, 0 fail, 20 warn; `check_baseline.py` clean. `npm run contract:build`
+twice: sha256 `93309591...c47a` both times and unchanged from the committed file; copied to mobile `contract/identity/` (`wmt/JOIN-03@5b3f498`; no content change).
+A stray commit of the compiled gate scripts (`__pycache__`) was removed in the next commit.
+
+**Numbers (mobile).** @@MOBILECHECK@@
+
+**Mutants of my own** (applied alone, the specs that should catch it run, source restored from a copy, tree clean after; logs `mut-*.log`, `logs/mut-*.log`). All killed:
+wawu-id: the anonymise clear removed (2 fail), the release clear removed (1), the marker check removed (2). Backend: Y7b and Y7c (above, each by the unit spec and the
+contract spec). Mobile: MV6 and MV9 (above); the replay always "today" (4 fail across `model` and `claimScreen`), the "Ended" label kept as "Runs until" (2), the Hub's `ended`
+state ignored (4), `claimedAt` not checked in the answer (1); N14: the sign-in never returns (3 of 6 fail), the visit not remembered (3), no redirect (3), a visit that
+never expires (1). No survivor.
+
+**Pictures** (390 px, light and dark; the real app from a web export with its OWN Metro cache, `TMPDIR` in the scratchpad; the bundle was grepped: `localhost:6161` and
+`localhost:6162` only, no other host; every request outside 6161 to 6164 was aborted and none was made, `OUTSIDE []`): the real app against the real built Hub and the real built
+wawu-id, each state from its real cause (the registration row by SQL, the plan's and the claim's dates moved back by SQL to make the later days). There is no artboard for
+these screens, so none is "beside" and I do not say they match anything. `shots/` (in the scratchpad `join03r3/shots/`): `01-claim-today-*` ready, starting today; `02-replay-ten-days-later-*` active, started on
+1 Oct; `03-replay-plan-ended-*` has ended, ended on 1 Sep; `04-replay-extended-three-days-later-*` active, days added on 8 Oct; `05-signed-out-claim-goes-to-sign-in-*` a signed-out
+`/claim-code`; `06-sign-in-back-to-claim-*` the sign-in that follows; sheets `sheet-1-light.png`, `sheet-1-dark.png`, `sheet-2-*.png`. The walk's seven checks all passed
+(`logs/r3-results.json`; check 6, a plain sign-in, landed on the account's email step as that account has not proved its email, not on the claim screen).
+
+**Decisions (each Default (agent), owner may override)**
+- `claimedAt` is read from the row's own stamp, not stored in `claimResult`: the column is already there, the table's CHECK keeps it with `claimedByWawuId`, and no migration
+  changes.
+- "Today" for the words is the screen's own zone (Lagos), the one its dates are drawn in, so "starting today" is never beside another day's date.
+- The return to the claim is a memory-only note of ten minutes consumed by the sign-in route, not a change to the root layout: the layout is fenced and unmounts the whole
+  stack while the sign-up gate loads, so the claim route cannot wait through a sign-in by sitting under it.
+- The G-16 script records the proved number in its own table rather than losing it, so `revert` stays byte for byte; a table made before this change gets the column on the next
+  `apply` or `revert` and restores no proved number for its rows (they read as unproven, never as proven).
+
+**NOT RUN**
+- A claim against a DEPLOYED wawu-id that has the migration and the new token: until the owner merges and deploys `wmt/JOIN-03` of wawu-id, production refuses every claim with
+  `contact_not_verified` (G-634); the walk ran a local build of the same code.
+- The G-16 script against a real database of real accounts (the owner runs it); it ran on a populated test database only.
+- A phone or a store build (V10): the web export at 390 px only.
+- The whole backend suite and the whole wawu-id suite as one run (the waitlist, plans and points specs, the protected suite, `src/auth` and `src/contract` ran).
+- A rolling deploy with an old and a new wawu-id side by side (N9 is from the code and the migration, not from a run).
+- Mailed and texted codes were the stand-in's on 127.0.0.1: Resend and the SMS provider were not called.
 
 ## Owner sign-off

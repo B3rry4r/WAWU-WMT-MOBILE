@@ -733,3 +733,4 @@ Newest first. One line per thing that happened, written when it happens.
 - 10 Oct 2026 · FIX-30 · Rounds 2 and 3 merged by the lead (merge of `7abb978`): the Inbox read-on never stalls on a refresh, succeeded or refused.
 - 10 Oct 2026 · BILLS-01 · Merged by the lead: backend #106 (`e1d436f`), mobile main. Round 3 follow-ups on the branch.
 - 10 Oct 2026 · MONEY-18 · Merged by the lead: backend #107 (`40b1970`), mobile main. Round 2 follow-ups on the branch.
+- 11 Oct 2026 · JOIN-03 · Round 3 built (status verifying): a deleted account keeps no proved number (D3) and a marker proves nothing (D5, wawu-id `5b3f498`); the claim answer carries `claimedAt` and the replay says started or ended (D4, backend `6c30122`); a signed-out `/claim-code` signs in and comes back (N14); migrations restamped `20261021050000` and `20261021060000`; the four test survivors killed (N13).
