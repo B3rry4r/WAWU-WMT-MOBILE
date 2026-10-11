@@ -7,7 +7,7 @@ order: 245
 priority: launch
 repo: both
 type: flow
-status: done
+status: verifying
 depends_on: [AUTH-03, AUTH-04, AUTH-05]
 decisions: [R-6, R-36, R-39]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -444,3 +444,7 @@ Numbers for wawu-id are in the V1 row; my live scripts: `t1` (3 PASS, 8 FAIL tha
 - Production configuration (is `RESEND_API_KEY` set on the live WAWU ID): not read, by rule.
 
 Lead ruling, 11 Oct 2026 (Default (lead), owner may override): the round 3 verifier's `building` rests on two low test gaps, D3 and D4 (surviving mutants on code the verifier checked live and found right). Under the owner's 10 Oct direction to merge on a review verdict and carry low findings after the merge, this counts as review. Merged by the lead, 11 Oct 2026: WAWU ID PR #8 and mobile main (merge of `ac54387`). D3, D4, F-G and the doubled JSDoc follow in round 4 on the same branch. O-1 to O-3 are recorded for the owner on the progress page.
+
+## Builder report, round 4 (11 Oct 2026)
+
+DRAFT: filled in below once the full check has run.
