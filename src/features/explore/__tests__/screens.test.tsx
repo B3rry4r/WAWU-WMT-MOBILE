@@ -167,6 +167,8 @@ afterEach(async () => {
 });
 
 beforeEach(() => {
+  // Every wait goes through `findBy`, `waitFor` or `settle`; a bare `await` of a fetch answer hangs behind a timer.
+  // (A wait on the cache alone does not move this clock; after one that should show on screen, use `settle`.)
   // Every wait in this file runs on the test's clock, not the machine's. A screen here asks for its data in two steps (the categories,
   // then the creators in one), and a `findBy` has one second of wall time for both; on a loaded runner a stall of that second made the
   // second step "not there yet". On the fake clock a `findBy` takes a fixed number of turns whatever the machine does, and `settle`

@@ -114,6 +114,8 @@ async function boot() {
 }
 
 beforeEach(() => {
+  // Every wait goes through `findBy` or `waitFor`; a bare `await` of a fetch answer hangs behind a timer.
+  // After a wait on the cache that should show on screen, move the clock too: React draws the cache on a timer of this clock.
   answers = {};
   asked = [];
   clearProfileSaved();
@@ -413,6 +415,11 @@ describe('M1 · round 2', () => {
     await waitFor(() => expect(asked.filter((line) => line === `GET ${STATS}`)).toHaveLength(2));
     // The reads are on the test's clock, so the test waits for them to end the same way (an `await` on the invalidation would not move it).
     await waitFor(() => expect(client.isFetching()).toBe(0));
+    // The cache has the failure; React draws it on a timer of the test's clock, which a wait on the cache does not move. Move it, so the
+    // check below reads the screen after the failed refresh, not before it (a screen that swaps the profile for the page error fails here).
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
     expect(screen.queryByTestId('me-error')).toBeNull();
     expect(screen.getByTestId('me-name')).toHaveTextContent('Lennox Emmanuel');
     expect(screen.getByTestId('me-count-followers')).toHaveTextContent('12.5K followers');
