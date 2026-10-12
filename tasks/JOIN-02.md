@@ -824,3 +824,7 @@ Owner: the registration page is redesigned from the owner's own example (words k
 **Changed tests (backend).** `waitlist-admin.contract.spec.ts` (the exact header line now ends `,Craft,City,Updates opt-in`; two seeded rows carry the new fields) and `waitlist-export.spec.ts` (the full-row fixture carries them). New specs: the three fields stored, every list value accepted, eight refusals, plain-words errors, the list and CSV, the CSV column order.
 
 **NOT RUN.** A real Flutterwave window and card; iPhone Safari and in-app browsers; the middleware on Vercel's Edge runtime; the owner's hero picture (it had not arrived when this was pushed: the slot is `HERO_IMAGE` in `join-content.ts`, empty, drawn from the desktop width up as a soft frame with nothing in it, and a one-line change shows the picture at every width). Pictures: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/join-v2/pics/`.
+
+**Round 2 (owner, 12 Oct 2026).** Two more owner instructions, built on the same branches (website `wmt/JOIN-V2`, backend `wmt/JOIN-V2-year`):
+- The owner's conference poster is the hero picture: a 1200 by 1500 WebP copy at the root of `public/` (`who-made-this-conference.webp`, served in join-only mode by the root static-file rule), beside the headline on a desktop and below the headline and the button on a phone.
+- The offer is a year: `event_offers` `event-oct-2026` carries `tier_days: 365` (was 30), so JOIN-03's claim grants 365 days; the page's "Verified for a full year" and the offer card now agree with it (R-48, 12 Oct line).

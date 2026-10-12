@@ -399,6 +399,7 @@ registration link, like a wait list .... dont mess with the sign up page").*
   (no `open_until`; closing is a config change). The page shows no offer card, no plan length and no start date
   ("Don't write the plans time there"); the price appears only on the Pay button.
 - Owner, 12 Oct 2026: the landing page at wawuafrica.com shows too; its sign-up buttons go to /join and nothing on it leads into the closed parts of the site.
+- Owner, 12 Oct 2026: the ₦2,000 event offer gives a full year of verification (365 days); the page says so.
 
 **Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
 next).
