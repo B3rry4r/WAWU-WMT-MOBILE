@@ -318,6 +318,34 @@ Then GitHub enforces steps 3 and 7.
 
 No evidence pack, no merge. The owner's own tasks are verified the same way.
 
+### CI on every task branch (OPS-CI), 15 Oct 2026
+
+GitHub runs the full checks on every push to a `wmt/**` branch, so nobody runs
+a full suite on the shared machine.
+
+| Repo | Workflow | What runs on a push to `wmt/**` (and on every pull request) |
+|------|----------|-------------------------------------------------------------|
+| wawu-backend | `branch-checks.yml` | `deploy-test-in-sync`, then `suite` (the deploy's test steps, jest in 3 shards), `netns`, and `contract` (`contract:build` twice, the committed contract is current) |
+| wawu-backend | `gates.yml`, `protected-routes.yml` | the gates and baseline; the protected route suite against main's checker and lock |
+| wawu-id | `branch-checks.yml`, `gates.yml` | the deploy's build steps (migrate, typecheck, build) and `deploy-build-in-sync`; the gates |
+| website (`wawuafrica`) | `branch-checks.yml`, `gates.yml` | typecheck, lint, the `node:test` files, `check:copy`, `check:site-mode`, a production build (`VERCEL_ENV=production`); the gates |
+| mobile | `ci.yml` | the whole `npm run check` set, plus expo-doctor, API types and the web bundle |
+
+- Each run is one per branch: a newer push cancels the older run.
+- `suite` and `netns` are copies of `deploy.yml`'s `test` job, and wawu-id's
+  `build` is a copy of its deploy `build` job. `deploy-test-in-sync` and
+  `deploy-build-in-sync` fail when a copy and its `deploy.yml` differ. Change
+  both files in one commit; never edit the script to pass.
+- Every job's last log line is `RESULT <job>: <status>`. Read a run with
+  `gh api repos/<owner>/<repo>/commits/<sha>/check-runs --jq '.check_runs[] | "\(.name) | \(.status) | \(.conclusion)"'`.
+- **Builders and verifiers run only the specs for the files they touched, plus
+  typecheck and lint, then push and read the CI result.** They do not run the
+  full suite, `test:netns` or `contract:build` on their machine, and they do
+  not run the full backend suite twice.
+- **A red branch run means the task is not done.** A job that is already red on
+  `main` (the backend and website gates, the website baseline) is not the
+  branch's to fix: the report names it and shows it is red on `main` too.
+
 ---
 
 ## 10. When work stops and goes to the owner
