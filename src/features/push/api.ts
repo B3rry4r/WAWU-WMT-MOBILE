@@ -24,7 +24,15 @@ export async function registerPushToken(body: RegisterPushToken): Promise<boolea
   return flagOf(await unwrap(api.POST('/api/hub/push-tokens', { body })), 'registered');
 }
 
-/** Removes this phone. Removing it twice is not an error. */
-export async function removePushToken(expoPushToken: string): Promise<void> {
-  await unwrap(api.DELETE('/api/hub/push-tokens', { body: { expoPushToken } }));
+/**
+ * Removes this phone. Removing it twice is not an error. `bearer` is for a removal sent after the person signed
+ * out, with the access token they had: the client sends it as it is while nobody is signed in.
+ */
+export async function removePushToken(expoPushToken: string, bearer?: string): Promise<void> {
+  await unwrap(
+    api.DELETE('/api/hub/push-tokens', {
+      body: { expoPushToken },
+      ...(bearer ? { headers: { authorization: `Bearer ${bearer}` } } : {}),
+    }),
+  );
 }

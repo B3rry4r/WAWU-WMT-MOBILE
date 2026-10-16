@@ -13,11 +13,14 @@ import { logoutRequest } from './api/identity';
 export const SERVER_WAIT_MS = 3000;
 
 /**
- * Signs this phone out. The refresh token is ended on the server first (WAWU ID `POST /auth/logout`, G-6), so a copy
- * of it is worth nothing afterwards, and this phone is taken off the person's push list (INBOX-21, `DELETE /push-tokens`)
- * while the session still works, in the same wait; then the phone forgets its tokens, and the route graph returns the person to
- * sign-in. If the server cannot be reached, or has not answered within `SERVER_WAIT_MS`, the phone still signs out:
- * the old token simply runs out on its own if the request never lands (BACKEND_GAPS G-262).
+ * Signs this phone out, in this order, all inside one `SERVER_WAIT_MS` wait. First this phone is taken off the
+ * person's push list (INBOX-21, `DELETE /push-tokens`) while the session still works, refreshing an access token
+ * that has run out. Only then is the refresh token ended on the server (WAWU ID `POST /auth/logout`, G-6), so a copy
+ * of it is worth nothing afterwards: ended first, it would leave the removal with no session to refresh, and the
+ * phone would keep showing the person's pushes. Then the phone forgets its tokens, and the route graph returns the
+ * person to sign-in. If the server cannot be reached, or the removal has not finished within `SERVER_WAIT_MS`, the
+ * phone still signs out and the logout is still sent: the request carries on after the phone has signed out, and
+ * the old token simply runs out on its own if it never lands (BACKEND_GAPS G-262).
  *
  * If the secure store refuses to delete the saved tokens, the app is still signed out in memory and its cache is
  * already emptied (the session module changes both before it touches the store), so the person is signed out for as
@@ -33,13 +36,23 @@ export async function signOutOfThisPhone(): Promise<{ serverEnded: boolean; stor
     const slow = new Promise<boolean>((resolve) => {
       timer = setTimeout(() => resolve(false), SERVER_WAIT_MS);
     });
-    const ended = logoutRequest(stored.refreshToken).then(
-      () => true,
-      () => false,
-    );
-    const asked = Promise.all([ended, forgetPush()]).then(([done]) => done);
+    // The refresh token to end is the one the session holds now: a removal that refreshed an expired access
+    // token was handed a new one, and ending the old one would leave the new one alive.
+    let logout: Promise<boolean> | null = null;
+    const endOnServer = () =>
+      (logout ??= loadTokens().then((current) =>
+        logoutRequest((current ?? stored).refreshToken).then(
+          () => true,
+          () => false,
+        ),
+      ));
+    const asked = forgetPush(SERVER_WAIT_MS)
+      .catch(() => undefined)
+      .then(endOnServer);
     serverEnded = await Promise.race([asked, slow]);
     clearTimeout(timer);
+    // The removal did not finish in time: the logout goes now, and the sign-out carries on without an answer.
+    void endOnServer();
   }
   try {
     await signOut();

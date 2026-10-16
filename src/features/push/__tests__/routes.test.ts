@@ -6,13 +6,15 @@ import { routeForPush } from '../routes';
 const room = { kind: 'community', id: 'c0000000-0000-4000-8000-000000000001' };
 
 describe('where a tap on a notification goes (INBOX-21)', () => {
-  it('opens the room for a join answer, approved or declined', () => {
-    for (const kind of ['community_join_approved', 'community_join_declined']) {
-      expect(routeForPush({ notificationId: 'n1', kind, target: room })).toEqual({
-        pathname: '/community/[id]',
-        params: { id: room.id },
-      });
-    }
+  it('opens the room for an approved join', () => {
+    expect(routeForPush({ notificationId: 'n1', kind: 'community_join_approved', target: room })).toEqual({
+      pathname: '/community/[id]',
+      params: { id: room.id },
+    });
+  });
+
+  it('opens nothing for a declined join: the Hub names no room in that push (backend community.service.ts)', () => {
+    expect(routeForPush({ notificationId: 'n1', kind: 'community_join_declined' })).toBeNull();
   });
 
   it('opens the wallet for money in and a refund', () => {

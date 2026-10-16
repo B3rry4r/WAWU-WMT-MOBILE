@@ -5,7 +5,8 @@ import type { Href } from 'expo-router';
  * `data: { notificationId, kind, actionHref?, target?: { kind, id } }` (backend
  * `src/push/push-message.ts`). The route comes from `kind` and `target` only:
  * `actionHref` is a web path and is never followed, so a push cannot send the
- * app anywhere this map does not list.
+ * app anywhere this map does not list. A declined join request has no row: the Hub's push for it names no
+ * target (there is no room to open), so it opens the app where it is.
  *
  * The map holds the screens that exist today. A task that builds a screen a
  * notification is about adds its row here (docs/WORKFLOW.md section 7, "Links
@@ -31,8 +32,7 @@ export function routeForPush(raw: unknown): Href | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const data = raw as PushTap;
   switch (data.kind) {
-    case 'community_join_approved':
-    case 'community_join_declined': {
+    case 'community_join_approved': {
       const id = targetOf(data, 'community');
       return id ? { pathname: '/community/[id]', params: { id } } : null;
     }
