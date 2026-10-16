@@ -3,6 +3,8 @@
  * (iOS's has), so the pages are drawn by pdf.js. The page is loaded with the file's own address as its
  * base, so the file is fetched from the same origin and needs no CORS answer from the storage host.
  * Pages are drawn as they come near the screen and let go when they are far, so a long book stays light.
+ * At most `PDF_MAX_PAGES` page boxes are built, and the reader gives up after `PDF_LOAD_TIMEOUT_MS`, so a
+ * file that claims a huge page count (or never answers) ends in the phone's own viewer, not a spinner.
  */
 
 /** Pinned: the last classic (non-module) build, which the WebView's script tag can load. */
@@ -10,6 +12,14 @@ export const PDFJS_VERSION = '3.11.174';
 const CDN = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}`;
 export const PDFJS_SCRIPT = `${CDN}/pdf.min.js`;
 export const PDFJS_WORKER = `${CDN}/pdf.worker.min.js`;
+
+/**
+ * The most pages the page builds. A 300-page book is read whole, with room above it; a file that claims more (or
+ * a corrupt one that claims millions) shows its first pages and no more, instead of building them all before it is ready.
+ */
+export const PDF_MAX_PAGES = 400;
+/** How long the reader waits for the page to say it is ready or has failed before it opens the phone's own viewer instead. */
+export const PDF_LOAD_TIMEOUT_MS = 45000;
 
 /** What the page tells the app, through `ReactNativeWebView.postMessage`. */
 export const READY = 'pdf:ready';
@@ -89,6 +99,9 @@ export function pdfPageHtml(uri: string, colors: PdfPageColors): string {
   }
 
   pdfjsLib.getDocument({ url: url }).promise.then(function (doc) {
+    // A count that is not a whole number of pages is a broken file: the phone's own viewer takes it.
+    if (!(Number.isFinite(doc.numPages) && doc.numPages >= 1)) { window.__pdfFailed(); return; }
+    var total = Math.min(Math.floor(doc.numPages), ${PDF_MAX_PAGES});
     return doc.getPage(1).then(function (first) {
       var base = first.getViewport({ scale: 1 });
       ratio = base.height / base.width;
@@ -98,7 +111,7 @@ export function pdfPageHtml(uri: string, colors: PdfPageColors): string {
           else release(entry.target);
         });
       }, { rootMargin: '150% 0px' });
-      for (var n = 1; n <= doc.numPages; n += 1) {
+      for (var n = 1; n <= total; n += 1) {
         var el = document.createElement('div');
         el.className = 'page';
         el.dataset.n = String(n);

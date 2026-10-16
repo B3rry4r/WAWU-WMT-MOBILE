@@ -17,21 +17,23 @@ artboards: [H2, H4, H5, H6, H35, M35]
 
 ## Current state
 
-As of 16 Oct 2026 (builder, Sonnet).
+As of 16 Oct 2026 (builder, Sonnet, round 2).
 - **Status:** verifying. Mobile branch `wmt/SHARED-07` only. No backend, wawu-id, migration (`none (mobile only)`) or contract change.
 - **Built:**
   - H2, H5, H6: `src/features/feed/player/index.tsx` plays through `expo-video` (a texture view, so H5's frame can blur and grow) and `expo-audio`; `canPlay` is true, so the feed and M35 and M34 draw play, pause, scrub, back and on, and the ended preview.
   - H4: `src/features/feed/reader/index.tsx` reads the PDF in a `react-native-webview` under the title. iOS's web view shows a PDF itself. Android's does not, so `reader/pdfPage.ts` draws the pages with pdf.js 3.11.174 (pinned, from cdnjs), loaded with the file's own address as base so no CORS answer is needed. Any failure (a bad link, an HTTP error, pdf.js not reachable) opens the phone's own viewer and returns to the feed, as before.
   - H35: `ShareSheet.tsx` draws WhatsApp, Story, Chat and Save where the phone has a share sheet. The picture is written to the cache (`cardFile.ts`) and handed to the share sheet (WhatsApp, Story) or the photos (Save, write-only permission). The web build draws WhatsApp and Chat only (`cardFile.web.ts`).
   - Rows HOME-02 #2, ME-11 #5 and HOME-09 #2 are marked applied; BACKEND_GAPS G-242 is closed. `jest.setup.js` (package.json `setupFiles`) stands in for the five native modules, because `expo-audio` throws on import in jest and every suite that reaches the feed would fail.
-- **Checks:** see the builder report in tasks/history/SHARED-07.md.
+- **Round 2 (verifier's medium, fixed):** the Android PDF page builds at most 400 page boxes (`PDF_MAX_PAGES`; a 300-page book is read whole, a file that claims more shows its first 400) and fails to the phone's own viewer on a page count that is not a whole number of pages (0, negative, NaN, Infinity). The reader waits 45 seconds (`PDF_LOAD_TIMEOUT_MS`) for `pdf:ready` or `pdf:failed` and then opens the phone's viewer, as every other failure does; ready cancels the wait; a failure and the timeout never both open it. iOS is unchanged.
+- **Open findings:** none medium or worse. One low, in `tasks/SWEEP-APP.md` (Open lows, SHARED-07 #1): iOS has no short-circuit for a non-web address.
+- **Checks:** see the builder report, round 2, in tasks/history/SHARED-07.md.
 - **Not run:** V10 on a phone (the lead's preview build). Nothing here was run on a device: the Android PDF page was run in desktop Chromium against a 40-page PDF (pages drawn as they near the screen and let go when far; failure messages for a missing file and for pdf.js blocked).
 - **Limits a verifier should know (not defects):**
   - WhatsApp and Story both go through the phone's share sheet with the picture. `expo-sharing` cannot aim at one app, and Instagram's Story link needs modules that are not installed, so the person picks the app. The share is counted when the sheet opens and closes without an error.
   - H6's waveform stays level on a phone (no decoder; BACKEND_GAPS G-217 asks for peaks from the Hub).
   - H2, H5 and H6 draw no loading or error state for the media itself, so none was added (R-47).
   - H35's third tile says "Chat", as HOME-09 built it; the canvas says "WAWU chat".
-- **Next:** a verifier runs V10 on a phone build and reads the Android PDF page on a real device.
+- **Next:** a verifier confirms round 2, then V10 on a phone build and the Android PDF page on a real device.
 
 ## Read first
 

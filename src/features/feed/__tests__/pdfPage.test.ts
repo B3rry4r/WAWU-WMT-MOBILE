@@ -1,4 +1,4 @@
-import { FAILED, originOf, PDFJS_WORKER, pdfPageHtml, READY } from '../reader/pdfPage';
+import { FAILED, originOf, PDF_MAX_PAGES, PDFJS_WORKER, pdfPageHtml, READY } from '../reader/pdfPage';
 
 const colors = { ground: 'rgba(0, 0, 0, 1)', paper: 'rgb(255, 255, 255)' };
 
@@ -34,5 +34,58 @@ describe('H4 · the page Android draws a PDF with', () => {
     expect(originOf('http://localhost:7270/a.pdf')).toBe('http://localhost:7270');
     expect(originOf('file:///cache/a.pdf')).toBeNull();
     expect(originOf('/relative.pdf')).toBeNull();
+  });
+});
+
+/**
+ * Runs the page's own script against a small stand-in for the browser and pdf.js: a document that says it has
+ * `numPages` pages. Returns what the page told the app and how many page boxes it built.
+ */
+async function runPage(numPages: unknown) {
+  const html = pdfPageHtml('https://x.example/a.pdf', colors);
+  const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1])[0];
+  const posted: string[] = [];
+  let built = 0;
+  const root = {
+    clientWidth: 390,
+    appendChild: () => {
+      built += 1;
+      // A page that claims endless pages would build for ever; stop the stand-in so a mistake fails here, not hangs.
+      if (built > 2000000) throw new Error('built far more pages than any file has');
+    },
+  };
+  const document = { getElementById: () => root, createElement: () => ({ dataset: {}, style: {} }) };
+  class Watcher {
+    observe() {}
+  }
+  const first = { getViewport: () => ({ width: 100, height: 141 }) };
+  const pdfjsLib = {
+    GlobalWorkerOptions: {},
+    getDocument: () => ({ promise: Promise.resolve({ numPages, getPage: async () => first }) }),
+  };
+  const win = { pdfjsLib, ReactNativeWebView: { postMessage: (m: string) => posted.push(m) }, devicePixelRatio: 2 };
+  new Function('window', 'document', 'pdfjsLib', 'IntersectionObserver', script)(win, document, pdfjsLib, Watcher);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return { posted, built: () => built };
+}
+
+describe('H4 · a file that claims a huge or broken page count can not hang the page', () => {
+  it('builds no more than the cap for a file that claims a million pages, and still says it is ready', async () => {
+    const page = await runPage(1000000);
+    expect(page.posted).toEqual([READY]);
+    expect(page.built()).toBeLessThanOrEqual(PDF_MAX_PAGES);
+    expect(page.built()).toBe(PDF_MAX_PAGES);
+  });
+
+  it('keeps the cap above a 300-page book, which is read whole', async () => {
+    const page = await runPage(300);
+    expect(page.posted).toEqual([READY]);
+    expect(page.built()).toBe(300);
+  });
+
+  it.each([0, -3, NaN, Infinity, undefined, '12'])('fails, so the app opens the phone viewer, when the file claims %p pages', async (claimed) => {
+    const page = await runPage(claimed);
+    expect(page.posted).toEqual([FAILED]);
+    expect(page.built()).toBe(0);
   });
 });

@@ -3,7 +3,7 @@ import { Linking, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { PdfReader } from '../reader';
-import { FAILED, PDFJS_SCRIPT, PDFJS_VERSION, READY } from '../reader/pdfPage';
+import { FAILED, PDF_LOAD_TIMEOUT_MS, PDFJS_SCRIPT, PDFJS_VERSION, READY } from '../reader/pdfPage';
 
 const URI = 'https://files.example/books/free-pages.pdf';
 let open: jest.SpyInstance;
@@ -69,6 +69,19 @@ describe('H4 · the phone reads the free pages in place', () => {
       expect(open).toHaveBeenCalledWith(URI);
     });
 
+    it('does not cut a slow file off: the iOS web view reports its own load, so no timeout applies', async () => {
+      jest.useFakeTimers();
+      try {
+        const onClose = jest.fn();
+        await rtl.render(reader({ onClose }));
+        await rtl.act(async () => jest.advanceTimersByTime(PDF_LOAD_TIMEOUT_MS * 2));
+        expect(onClose).not.toHaveBeenCalled();
+        expect(open).not.toHaveBeenCalled();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
     it('does the same when the storage host answers with an error', async () => {
       const onClose = jest.fn();
       await rtl.render(reader({ onClose }));
@@ -106,6 +119,60 @@ describe('H4 · the phone reads the free pages in place', () => {
       await message(FAILED);
       await rtl.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
       expect(open).toHaveBeenCalledWith(URI);
+    });
+
+    describe('when the page never answers', () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+      const tick = (ms: number) => rtl.act(async () => jest.advanceTimersByTime(ms));
+
+      it('opens the phone own PDF viewer and goes back to the feed once the wait is over, and not before', async () => {
+        const onClose = jest.fn();
+        await rtl.render(reader({ onClose }));
+        await rtl.act(async () => web().props.onLoadEnd());
+        await tick(PDF_LOAD_TIMEOUT_MS - 1);
+        expect(open).not.toHaveBeenCalled();
+        expect(onClose).not.toHaveBeenCalled();
+        expect(rtl.screen.getByTestId('reader-loading')).toBeTruthy();
+        await tick(1);
+        await rtl.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+        expect(open).toHaveBeenCalledTimes(1);
+        expect(open).toHaveBeenCalledWith(URI);
+      });
+
+      it('stops waiting the moment the page says it is ready', async () => {
+        const onClose = jest.fn();
+        await rtl.render(reader({ onClose }));
+        await rtl.act(async () => web().props.onLoadEnd());
+        await tick(PDF_LOAD_TIMEOUT_MS - 1000);
+        await message(READY);
+        await tick(PDF_LOAD_TIMEOUT_MS * 2);
+        expect(open).not.toHaveBeenCalled();
+        expect(onClose).not.toHaveBeenCalled();
+        expect(rtl.screen.queryByTestId('reader-loading')).toBeNull();
+      });
+
+      it('opens the phone viewer once, not twice, when the page fails and the wait runs out as well', async () => {
+        const onClose = jest.fn();
+        await rtl.render(reader({ onClose }));
+        await message(FAILED);
+        await rtl.waitFor(() => expect(open).toHaveBeenCalledTimes(1));
+        await tick(PDF_LOAD_TIMEOUT_MS * 2);
+        expect(open).toHaveBeenCalledTimes(1);
+      });
+
+      it('does not wait for a reader that is closed', async () => {
+        const onClose = jest.fn();
+        const view = await rtl.render(reader({ onClose }));
+        await view.rerender(reader({ onClose, visible: false }));
+        await tick(PDF_LOAD_TIMEOUT_MS * 2);
+        expect(open).not.toHaveBeenCalled();
+        expect(onClose).not.toHaveBeenCalled();
+      });
     });
 
     it('sends an address that is not a web address straight to the phone viewer, without opening the reader', async () => {

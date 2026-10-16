@@ -9,7 +9,7 @@ import { space } from '@/theme';
 
 import { media, metrics, words } from '../look';
 
-import { FAILED, originOf, pdfPageHtml, READY } from './pdfPage';
+import { FAILED, originOf, PDF_LOAD_TIMEOUT_MS, pdfPageHtml, READY } from './pdfPage';
 import type { ReaderProps } from './types';
 
 export type { ReaderProps } from './types';
@@ -72,11 +72,29 @@ function Pages({ source, outside, testID }: PagesProps) {
   const [pagesShown, setPagesShown] = useState(false);
   // True once the first load is done: after it, a link inside the file does not take the reader anywhere else.
   const firstLoadDone = useRef(false);
+  // True once the file has been handed to the phone's own viewer, so a failure and the timeout below never both open it.
+  const handedOver = useRef(false);
+
+  // Android's page answers by message. If it answers neither way in time (the script did not load, the file never comes),
+  // the file opens in the phone's own viewer, as every other failure does. iOS's web view reports its own load.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || pagesShown) return undefined;
+    const timer = setTimeout(() => {
+      if (handedOver.current) return;
+      handedOver.current = true;
+      outside();
+    }, PDF_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [pagesShown, outside]);
 
   const onMessage = (event: WebViewMessageEvent) => {
     const message = event.nativeEvent.data;
-    if (message === READY) setPagesShown(true);
-    else if (message === FAILED) outside();
+    if (message === READY) {
+      setPagesShown(true);
+    } else if (message === FAILED) {
+      handedOver.current = true;
+      outside();
+    }
   };
 
   return (
