@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026, builder round 6 done (verifier round 5 said FIX: 1 high, 1 medium, 2 low; round 4 said FIX: 1 medium, 4 low; round 3 said FIX: 1 medium, 4 low; round 2 said FIX: 1 medium, 3 low; round 1 said FIX: 2 high, 1 medium, 3 low).
-- **Status:** verifying (round 6 verifier next). Backend branch `wmt/SETTINGS-06` @ 9a67054 (code; origin/main b32f9c0 merged in; CI: see the lead's check). Mobile branch `wmt/SETTINGS-06` (this file, history, SWEEP-MONEY, LOG). No mobile `src/` change: the delete-account screen is another task.
+- **Status:** verifying (round 6 verifier next). Backend branch `wmt/SETTINGS-06` @ 7243c6c (code; origin/main b32f9c0 merged in; CI: see the lead's check). Mobile branch `wmt/SETTINGS-06` (this file, history, SWEEP-MONEY, LOG). No mobile `src/` change: the delete-account screen is another task.
 - **Built (backend):**
   - `DELETE /account` refuses with `409 account_deletion_blocked` (`reason.blockers`, `balanceKobo` from the provider, `openHolds`, `waitingEarnings`) while the wallet holds money, a hold is open, earnings wait, a payment is unsettled, a cash-out holds points or the wallet is opening. `503 provider_unreachable` when the balance cannot be read, never a guess. Nothing is frozen before this check passes.
   - Then the deletion is recorded (`freezing`) before the wallet is frozen through the provider seam (optional `freezeWallet`/`unfreezeWallet`; Fintava adapter); on success the row is `scheduled`, content is hidden piece by piece, push stops, the date is 30 days out, WAWU ID is told. Asking again keeps the date. A `DELETE` on a `purged` row answers its due date and schedules nothing.
