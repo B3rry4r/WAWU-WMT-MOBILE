@@ -7,7 +7,7 @@ order: 205
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: review
 depends_on: [NUV-01, WALLET-14]
 decisions: [R-39, R-42, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,13 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:25, nothing newer) and the branch.
-- **Status:** review on its branch (round 2 verified: no blocker, no defect above low). This file on main still says todo.
-- **Branches:** mobile `wmt/NUV-06` c7edcd8. Backend `wmt/NUV-06` d6a303a (migration `20261021170000_*`). No PR is open (the lead, 16 Oct 2026).
+As of 16 Oct 2026.
+- **Status:** merging (lead). Round 2 verified, no blocker, no defect above low. Stacked on MONEY-16 (this branch contains `wmt/MONEY-16`); WALLET-07 stacks on this one.
+- **Branches:** mobile `wmt/NUV-06` (this branch; MONEY-16's mobile head merged (main `3117807` with it), API types regenerated from backend `wmt/NUV-06`). Backend `wmt/NUV-06` `4fc31b6` (MONEY-16 `c694505` merged; migration renamed to `20261021280000_payout_nuvion_ids`, contents unchanged). No PRs yet.
 - **Merged and live:** nothing of this task. NUV-05, which it builds on, is live (backend 51b02c5).
 - **Open findings:** blocker 0, high 0, medium 0. Lows F1 to F4 are in tasks/SWEEP-MONEY.md.
-- **Next:** round 2 is ready to merge when the lead resumes it (the lead, 16 Oct 2026). Its migration stamp ties MONEY-16's `20261021170000`: pick the stamp after main's last folder at merge. Then WALLET-09 can start.
-- **Records:** on the branch, `wmt/NUV-06`, in tasks/NUV-06.md there (79 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py NUV-06`; the history goes to tasks/history/NUV-06.md.
+- **Next:** the lead merges backend MONEY-16 first, then this one (its migration sorts after MONEY-16's), then WALLET-07. Then WALLET-09 can start.
+- **Records:** the round history is in tasks/history/NUV-06.md.
 
 ## Read first
 
@@ -64,8 +64,8 @@ holder's name; WAWU can pay out from its operational account. All of it as Nuvio
 - [ ] An account saved in the Fintava days is checked by name before its first Nuvion send.
 - [ ] (key) `POST /counterparty-lookups` works with an API key for a sandbox test account (SANDBOX-FINDINGS item 7); if it does not, the report says so and names what unblocks it.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/NUV-06.md](history/NUV-06.md).
 
 ## Owner sign-off

@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** built, waiting for an independent verifier. Nothing merged.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-19.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-09` (this branch contains it); API types regenerated from backend `wmt/FIX-19` (f69596e).
 - **Branches:** backend `wmt/FIX-19` 2dbf748 (on main 56f94d0). Mobile `wmt/FIX-19` carries only this file, `tasks/history/FIX-19.md`, `docs/LOG.md` and `docs/PROGRESS.md`. No migration, no fenced file, no contract change (`contract:emit` and `contract:enrich` leave `contract/openapi.json` byte-identical).
 - **Built:** a school's `name` and a course's `title` (create and edit) answer 400 `<field> must not contain control characters` and save nothing when they hold U+0001 to U+001F, U+007F or U+0080 to U+009F. `src/schools/school-admin.dto.ts`: `hasControlCharacter`, a `HasNoControlCharacters` decorator and a `trimmedName` transform on the four DTO fields. NUL keeps its own message. Accents, Arabic, Chinese, emoji and combining marks pass.
 - **Judgement calls to confirm:**
@@ -30,7 +30,8 @@ As of 16 Oct 2026.
 - **Evidence:** new spec `src/admin/schools/tests/admin-schools.control-chars.contract.spec.ts`, 12 tests (every code point of the three ranges as a unit; per field, 12 characters in 4 places on create and edit; messages; real names; trim; `about` unchanged). One mutant (C1 range one short) fails 5 of 12. Live Hub built from the branch: 328 requests (all 64 code points, 9 of them also at the start and end, on school and course, create and edit) all 400 naming the field, 0 rows stored; 6 real names accepted on all four routes; NUL still 400.
 - **Checks:** `tsc --noEmit` EXIT 0; eslint and prettier clean on the three files; `src/admin/schools` and `src/schools` 9 suites, 107 tests, EXIT 0.
 - **CI on 2dbf748:** suite (3 shards), netns, contract, baseline, deploy-test-in-sync and branch checks (run 38903140751) green; protected routes 253/253 (run 38903140624) green; gates (run 38903140703) red only on the 16 FAIL lines main already has, none in `src/schools` or `src/admin/schools`.
-- **Next:** an independent verifier.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: the count of existing control-character rows is a query someone with production access must run (open for the lead); the 121-character refusal assertion now covers the units name only. They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens the backend pull request from the batch 3 head, and has someone with production access run the existing-rows query in tasks/history/FIX-19.md.
 
 ## Read first
 
