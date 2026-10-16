@@ -7,7 +7,7 @@ order: 214
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [POINTS-01, TIER-01, MONEY-18]
 decisions: [R-43, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,12 +17,14 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:35) and the branch.
-- **Status:** verifying. Built; the verifier report is empty. This file on main still says todo.
-- **Branches:** mobile `wmt/POINTS-04` 0dd2f63. Backend `wmt/POINTS-04` 1bb872f (migration `20261021220000_points_cash_out`; G-740 to G-745).
-- **Merged and live:** nothing of this task. **Open findings:** none yet.
-- **Next:** a verifier session.
-- **Records:** on the branch, `wmt/POINTS-04`, in tasks/POINTS-04.md there (14 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py POINTS-04`; the history goes to tasks/history/POINTS-04.md.
+As of 16 Oct 2026.
+- **Status:** merging (lead). Verified once: stand-in attacks held (12 parallel requests on one key make one conversion, no way to convert twice or past the balance); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on WALLET-10 (this branch contains `wmt/WALLET-10`, which contains WALLET-07, NUV-06 and MONEY-16); backend main `18ac5f9` is in it.
+- **Branches:** mobile `wmt/POINTS-04` (this branch; WALLET-10's mobile head merged, API types regenerated from backend `wmt/POINTS-04`). Backend `wmt/POINTS-04` (WALLET-10 merged; migration renamed to `20261021310000_points_cash_out`, contents unchanged). No PRs yet.
+- **Merged and live:** nothing of this task.
+- **Conventions:** the backend section for this task is number 20 in `docs/contract/CONVENTIONS.md` (19 is WALLET-07, 21 is FIX-20, 22 is MONEY-16).
+- **Open findings:** blocker 0, high 0, medium 0. The lows (a 500 after the conversion exists, wording "payment" and "Your money is safe") are in tasks/SWEEP-MONEY.md. Operational edges on record: G-742 (no tool to clear a conversion in review), G-745 (an ended lot loses released points). No screen calls the routes yet (G-740).
+- **Next:** the lead opens one backend pull request from the FIX-20 head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
+- **Records:** the round history is in tasks/history/POINTS-04.md.
 
 ## Read first
 
@@ -60,8 +62,8 @@ From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the ver
 - [ ] A person without a wallet gets `no_wallet` and keeps their points.
 - [ ] The cash leaves WAWU's operational account, and the ledger shows it as WAWU's movement.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-04.md](history/POINTS-04.md).
 
 ## Owner sign-off
