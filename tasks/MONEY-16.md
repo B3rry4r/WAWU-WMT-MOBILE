@@ -5,9 +5,9 @@ owner: YOU
 area: MONEY
 order: 100
 priority: launch
-repo: wawu-backend
+repo: wawu-backend, wawu-id
 type: money-path
-status: todo
+status: review
 depends_on: [MONEY-10, MONEY-11, MONEY-17, MONEY-18]
 decisions: [R-10, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,13 +17,14 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:15, nothing newer) and the branches.
-- **Status:** review on its branches (round 2 verified: no blocker, no false clean). This file on main still says todo.
-- **Branches:** mobile `wmt/MONEY-16` 3c5b536. Backend `wmt/MONEY-16` 61e2b08 (migration `20261021170000_money_check_runs`). wawu-id `wmt/MONEY-16` 3a17b6a (the mail route). No PRs yet.
+As of 16 Oct 2026.
+- **Status:** merging (lead). Round 2 verified, no blocker, nothing medium or worse. Its backend branch is merged up to main; three backend branches are stacked in this order: MONEY-16, NUV-06, WALLET-07.
+- **Branches:** mobile `wmt/MONEY-16` (this branch, main `3117807` merged; API types regenerated from backend `wmt/MONEY-16`). Backend `wmt/MONEY-16` `c694505` (main `56f94d0` merged; migration renamed to `20261021270000_money_check_runs`, contents unchanged). wawu-id `wmt/MONEY-16` `e3d4825` (main `81e5e05` merged; the nightly report mail route and the EMAIL-02 relay share one mail service). No PRs yet.
 - **Merged and live:** nothing of this task.
+- **Conventions:** the backend section for this task is number 22 in `docs/contract/CONVENTIONS.md` (19, 20 and 21 are claimed by other open branches: WALLET-07, WALLET-16, TIER-02, POINTS-04, FIX-20).
 - **Open findings:** blocker 0, high 0, medium 0. Lows RF-1 to RF-7 are in tasks/SWEEP-MONEY.md.
-- **Next:** the lead merges: rename the migration off NUV-06's stamp (after main's last folder), backend PR, wawu-id PR, mobile sign-off. The reversed-send rule assumes Fintava reports FAILURE; it is loud if that is wrong.
-- **Records:** on the branch, `wmt/MONEY-16`, in tasks/MONEY-16.md there (75 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py MONEY-16`; the history goes to tasks/history/MONEY-16.md.
+- **Next:** the lead opens and merges backend PR (MONEY-16, then NUV-06, then WALLET-07), the wawu-id PR, then mobile sign-off. The reversed-send rule assumes Fintava reports FAILURE; it is loud if that is wrong.
+- **Records:** the round history is in tasks/history/MONEY-16.md.
 
 ## Read first
 
@@ -58,13 +59,9 @@ Compare against `GET /txn?customerId=` per customer, `GET /txn/merchant` for WAW
 - [ ] A hold that is not in the ledger is reported.
 - [ ] A transfer whose merchant charge didn't land in WAWU's wallet is reported.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/MONEY-16.md](history/MONEY-16.md).
 
 ## Owner sign-off
 
