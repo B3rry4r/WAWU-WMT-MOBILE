@@ -7,7 +7,7 @@ order: 150
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-07, MONEY-10, MONEY-12, INBOX-03, SETTINGS-07]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,12 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 16:05) and the branch.
-- **Status:** verifying. Built; the verifier report is still the empty template. This file on main still says todo.
-- **Branches:** mobile `wmt/WALLET-10` 95d1f93. Backend `wmt/WALLET-10` 5e57a09 (migration `20261021210000_money_in_notices`; G-730 to G-737).
-- **Merged and live:** nothing of this task. **Open findings:** none yet.
-- **Next:** a verifier session.
-- **Records:** on the branch, `wmt/WALLET-10`, in tasks/WALLET-10.md there (10 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-10`; the history goes to tasks/history/WALLET-10.md.
+As of 16 Oct 2026.
+- **Status:** merging (lead). Verified once: the money path held (49 live attacks, 0 failed); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on WALLET-07 (this branch contains `wmt/WALLET-07`, which contains NUV-06 and MONEY-16); backend main `18ac5f9` is merged in.
+- **Branches:** mobile `wmt/WALLET-10` (this branch; WALLET-07's mobile head merged, API types regenerated from backend `wmt/WALLET-10`). Backend `wmt/WALLET-10` (main `18ac5f9` merged; migration renamed to `20261021300000_money_in_notices`, contents unchanged). No PRs yet.
+- **Merged and live:** nothing of this task.
+- **Open findings:** blocker 0, high 0, medium 0. The lows (plain `CREATE INDEX` blocks writes while it builds; the ledger fold does not carry the mark, G-734; a re-signed delivery flips a completed row to pending, MONEY-10) are in tasks/SWEEP-MONEY.md. G-732 (transfers, earnings and refunds tell nobody) is a lead ruling on record, not a defect.
+- **Next:** the lead opens one backend pull request from the FIX-20 head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
+- **Records:** the round history is in tasks/history/WALLET-10.md.
 
 ## Read first
 
@@ -49,13 +50,9 @@ Money in comes from the ledger (MONEY-10): MONEY-10 marks `account_funded` deliv
 - [ ] A sandbox transfer into the account appears in history and as a notification once.
 - [ ] With "Money in" turned off in Z3, no notification is sent.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-10.md](history/WALLET-10.md).
 
 ## Owner sign-off
 

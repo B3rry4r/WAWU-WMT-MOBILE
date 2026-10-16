@@ -7,7 +7,7 @@ order: 224
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [NUV-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -17,12 +17,14 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:05) and the branch.
-- **Status:** verifying. Built; the verifier report says "Not started". This file on main still says todo.
-- **Branches:** mobile `wmt/FIX-20` 8c3a2f0. Backend `wmt/FIX-20` bb9bbd1 (migration `20261021230000_webhook_body_retention`; G-750 to G-752).
-- **Merged and live:** nothing of this task. **Open findings:** none yet.
-- **Next:** a verifier session. CONVENTIONS section 21 (this task) and section 19 (MONEY-16, WALLET-16) need their numbering settled at merge.
-- **Records:** on the branch, `wmt/FIX-20`, in tasks/FIX-20.md there (17 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py FIX-20`; the history goes to tasks/history/FIX-20.md.
+As of 16 Oct 2026.
+- **Status:** merging (lead). Verified once: nothing a refund, dispute or reconciliation reads is deleted (the readers were scanned over main and every open branch); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on POINTS-04 (this branch contains `wmt/POINTS-04`, which contains WALLET-10, WALLET-07, NUV-06 and MONEY-16); backend main `18ac5f9` is in it.
+- **Branches:** mobile `wmt/FIX-20` (this branch; POINTS-04's mobile head merged, API types regenerated from backend `wmt/FIX-20`; the task adds no route, so the contract is POINTS-04's). Backend `wmt/FIX-20` (POINTS-04 merged; migration renamed to `20261021320000_webhook_body_retention`, contents unchanged). No PRs yet.
+- **Merged and live:** nothing of this task.
+- **Conventions:** the backend section for this task stays number 21 in `docs/contract/CONVENTIONS.md` (19 WALLET-07, 20 POINTS-04, 22 MONEY-16); the "section 21" comments in `account-data-map.ts` and `data-export-sections.ts` and the README line are unchanged.
+- **Open findings:** blocker 0, high 0, medium 0. The lows (section 21's "disagreement" wording against the code marking those deliveries `processed`; `failed`, `unrecognised` and `pending` bodies kept for ever, G-750; DATA-INVENTORY rows I-092 and I-281 lack "cleared after 90 days") are in tasks/SWEEP-MONEY.md.
+- **Next:** the lead opens one backend pull request from this head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
+- **Records:** the round history is in tasks/history/FIX-20.md.
 
 ## Read first
 
@@ -48,14 +50,12 @@ As of 16 Oct 2026, from the lead's log (12 Oct 17:05) and the branch.
 - [ ] The job is safe to run twice, and safe to run while a delivery is arriving.
 - [ ] Protected routes 253/253.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-20.md](history/FIX-20.md).
 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+**Evidence** is in the lead's scratchpad `f20/`: `logs/` (each check's log with its EXIT line, the gates of the branch and of main, `protected.log`, `shard-*.log`), `hub/run/` (the sender's lines, the Hubs' log lines, `load-result.txt`) and `mut/results.txt`. Every server I started (two Hubs, the mock WAWU ID, the Fintava stand-in, the database bridge) was stopped by its PID; none is left running; databases `bf20_*` and my worktrees are removed.
