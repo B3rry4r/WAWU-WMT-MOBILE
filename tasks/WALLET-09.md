@@ -7,7 +7,7 @@ order: 143
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-17, MONEY-07, MONEY-08, WALLET-15]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,10 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:25).
-- **Status:** todo. No branch. It waits for the NUV-06 merge.
-- **Next:** a builder starts after NUV-06 merges. NUV-06's verifier left notes for it (F1: call `forBeneficiary` or `forPayoutAccount`, not the private `prepare`; N2, N3, N5, N6 from NUV-05); they are in the lead's log, 12 Oct 13:00 and 17:25.
-- **History:** none yet. Reports go to tasks/history/WALLET-09.md.
+As of 16 Oct 2026, after builder round 2 (Sonnet builder).
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-09.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`). Round 2 of the check; round 1's two mediums are closed.
+- **Branches:** backend `wmt/WALLET-09` `b113e63` (round 1 `6040fba`) on `origin/wmt/EXPLORE-05` `649187a` (the batch 4 head; main `b32f9c0` is inside); mobile `wmt/WALLET-09` on `origin/wmt/MERGE-4` `74b1edb` (this file, BACKEND_GAPS, SHARED-CHANGES, LOG). wawu-id and the web are not touched.
+- **Migration:** `20261023200000_bank_transfers` (five nullable columns on `WalletTransfer`: `bankCode`, `bankName`, `bankAccountNumber`, `bankAccountName`, `sentToBankAt`). Additive; rollback in the file's header.
+- **Round 2 (16 Oct, the lead's rulings on the verifier's report):** (1) a bank code or account number that is missing, the wrong type or the wrong shape is the route's own 400 from `BankSendTargetGuard`, before the bank is asked or the PIN looked at (17 forms specced: nothing sent, key given back, no PIN try used); (2) a bank send refused for not enough balance, a frozen wallet or payouts not available is failed at once, its pending ledger row voided, the key given back, and answers `402` with the figures, `423 wallet_frozen` or `503` (two sends, two keys, balance for one: the second ends failed with 402, nothing pending); every other refusal stays pending for the reconcile and is listed as an owner question (G-767); (3) `POST /money/banks/name-check` returns `nameToken` (signed, this person, 15 minutes) and the send to an unsaved account carries it: another holder or bank at send time is `409 account_name_changed`, nothing sent; (4) a failed or reversed send shows no `sent_to_bank` step; (5) `money-contract.spec.ts` asserts `toBe(0)`; (6) G-762 text corrected. Sweep: finding 8 is a row in SWEEP-MONEY (F8). Owner question, no build: G-764.
+- **Built (backend):** `GET /money/banks`, `POST /money/banks/name-check` (no wallet needed) and `POST /money/transfers/bank` (also a withdrawal, W17): same send as WALLET-07, one row per key, row and pending ledger row written first, WALLET-23's `assertMayMove` in the claim, the provider called once, unknown outcome pending and found by our reference, a failed send followed to `reversed` by the provider's reversal. `BankSendTargetGuard` decides the account BEFORE the PIN (bank asked again, send to the name it gives, `self_transfer`, the saved-account gate, `409 account_name_changed`). The seam's Nuvion `reconcileSend` now reaches `reconcileBankSend`. `confirmCurrentName` on `POST /money/beneficiaries` is the confirm path (G-652 d). `BankTransferDto` requires `quoteToken`; the declared controller and `daily_limit_exceeded` on this route are gone.
+- **Checked here:** 24 new tests pass (a contract spec over HTTP with the Fintava double, a unit spec of the gate with every `SavedAccountTargetService` answer, a Nuvion seam spec, 4); the four route-list specs were updated as their own header says a serving task must (a test edit: `money-contract.spec.ts` no longer demands one declared controller). CI on the push is in the hand-back.
+- **NOT RUN:** the capability checks against real Fintava and Nuvion payouts (sandbox payouts answer "Unable to find customers", `docs/fintava/sandbox/README.md`); the Fintava double stands in. Nothing was sent to a real provider.
+- **Open findings:** none known after round 2. Open for the owner: G-764 (a per-person limit on the name check) and G-767 (which bank send refusals leave no record; needs a sandbox run). Low, swept: finding 8 (SWEEP-MONEY F8).
+- **Next:** a fresh verifier re-runs V1 to V4, V6 to V9 and the verifier's red specs (`v09-attack`, `v09-live`); the lead renames the migration stamp at merge if needed and a mobile session re-syncs `contract/` and `src/api/schema.generated.ts` (SHARED-CHANGES, WALLET-09 #2; it now also carries `nameToken`).
+- **History:** `tasks/history/WALLET-09.md` (the lead notes of 11 Oct and the builder reports, rounds 1 and 2).
 
 ## Lead note (11 Oct 2026): from MONEY-19's verification
 
@@ -66,13 +73,9 @@ Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime
 - [ ] A failed transfer reverses once.
 - [ ] A ₦25,000 bank send shows ₦40 + ₦25 = ₦65 and debits ₦25,065; Fintava's record matches.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-09.md](history/WALLET-09.md).
 
 ## Owner sign-off
 

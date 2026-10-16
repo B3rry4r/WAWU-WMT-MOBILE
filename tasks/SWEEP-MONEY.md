@@ -19,8 +19,8 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 60, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 (batch 4, not merged yet).
+- **Open lows:** 63, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 and WALLET-09 (batch 4, not merged yet).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
@@ -69,6 +69,7 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | WALLET-07 | D2 | Spec gap: the sweep's backoff and the 72 hour lower bound are pinned by no spec (M20, M21). | branch `wmt/WALLET-07`, `tasks/WALLET-07.md`, Verifier report, line 99 |
 | WALLET-07 | D3 | Wording: a request that never left answers 503 `provider_unreachable` with "We are still confirming this payment". | branch `wmt/WALLET-07`, `tasks/WALLET-07.md`, Verifier report, line 100 |
 | WALLET-07 | D4 | Ungraded (the next sweep grades it): `PushStoppedAccount` is never cleared after a cancelled deletion. The send to a closed account (G-712) leans on it; a person who cancels a deletion stays stopped for push and counts as closed. | `tasks/history/WALLET-07.md`, Verifier report, line 48 |
+| WALLET-09 | F8 | Inherited from WALLET-07's ledger code, not WALLET-09: a SUCCESS webhook after the send was marked `failed` leaves the transfer and the ledger `failed` with a ledger discrepancy and no review flag (a late success after a failure is not put in front of a person); a reversal after it still ends `reversed` once. | verifier report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-09.md`, finding 8 (spec X8 in `scratchpad/wallet-09-v/v09-attack.contract.spec.ts`) |
 | WALLET-04 | D2 | Test gap: the debit total could be summed on the phone and no test would notice (M09). | branch `wmt/WALLET-04`, `tasks/WALLET-04.md`, Verifier report, line 142 |
 | WALLET-04 | D3 | Test gap: the search wait and the search key are pinned by no test (M13, M14). | branch `wmt/WALLET-04`, `tasks/WALLET-04.md`, Verifier report, line 143 |
 | WALLET-04 | D4 | W27's Account line loses the last four digits for a long bank name. | branch `wmt/WALLET-04`, `tasks/WALLET-04.md`, Verifier report, line 144 |
@@ -107,6 +108,8 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | WALLET-35 | R2-5 | Capacity, not new: 4 parallel 12 MiB mails to wawu-id peaked at 837 MB RSS (idle 204), about 160 MB each; the Hub's limit is per person, so many people can stack them. Only the key holder can do it. | verifier report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-35.md`, finding 5 (round 2) |
 | WALLET-35 | R3-1 | wawu-id: a keyless POST to a sub-path of /internal/mail/send (/send/x) now answers 401 where it was 404 (src/mail/mail-relay-body.ts:39). Match req.path === '/' if it matters. | verifier report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-35.md`, finding 1 (round 3) |
 | WALLET-35 | R3-2 | wawu-id: one src/mail spec failed once under load on a cold cache (44 of 44 on 4 reruns). Name it if it fails again. | verifier report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-35.md`, finding 2 (round 3) |
+| WALLET-09 | R2-2 | Hub: `payouts_blocked` keeps `recordMayExist` true in the Fintava client while `wallet-transfer.service.ts` `afterRefusal` fails the send at once (NO_TRANSFER_REFUSALS), so the flag is ignored for these kinds; safe only because of the sandbox evidence (G-767). The classifier also tests the words anywhere in a 400's messages, so any 400 whose text contains "insufficient balance" is failed at once. Tighten to the exact Fintava sentences when G-767 is answered. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-09.md`, finding 2 (round 2) |
+| WALLET-09 | R2-4 | App and Hub: the same Idempotency-Key with a new `nameToken` (a re-run name check) is a different body fingerprint, so if the first try was kept (pending or in progress) it answers `idempotency_key_reused`; a refused try gives the key back. The app must resend the SAME body on a retry of a kept send. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-09.md`, finding 4 (round 2) |
 
 ## Builder report
 
