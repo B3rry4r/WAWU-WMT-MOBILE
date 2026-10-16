@@ -71,6 +71,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 - **X5**: partial. Missing: recentSearches is always [] (no SearchHistory model, comment at :151-158); popularSearches is approximated from top content titles by views, not real queries; no clear-history route.
 - **X6**: partial. Missing: Content and creators served; communities always [] (search-response.service.ts:77-87 'Returns [] unconditionally' although src/community now exists); creator rows carry no verification tick (web search.ts SEAM note); schools not searchable (Schools flow expects it).
 - **X7**: served.
+- **EXPLORE-05 (built, 16 Oct 2026):** X5 now has `POST` and `DELETE /search/recent`, `recentSearches` on `GET /search/suggestions` for the caller, and `GET /search/popular` (real searches, empty until 3 people search the same thing: G-340); X6 `communities` is filled by name on `tab=all` and `tab=communities`; ticks are in `verification` on `creators` and `suggestedCreators`. The app reads popular from `GET /search/popular`, never from `popularSearches`.
 
 A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 

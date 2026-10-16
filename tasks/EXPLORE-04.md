@@ -72,6 +72,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 - **X10**: served.
 - **X11**: partial. Missing: Always this state today because history is not persisted.
 - **X12**: n/a.
+- **EXPLORE-05 (built, 16 Oct 2026):** X9 `communities` is filled by name on `GET /search` (`tab=communities`; rows have no viewer state, G-341); X11 recent searches are saved and cleared by `POST` and `DELETE /search/recent`, popular is `GET /search/popular` (G-340); creator rows carry `verification` (X8).
 
 A missing or partial row is yours to fix in the backend as part of this task (or the backend task listed in depends_on, check its owner in the task file). Never change the screen to fit the API.
 
