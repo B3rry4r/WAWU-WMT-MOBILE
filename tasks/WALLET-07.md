@@ -7,7 +7,7 @@ order: 137
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [MONEY-17, WALLET-15, SETTINGS-04]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,15 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (11 Oct 16:55) and the branch.
-- **Status:** building on its branches (round 1 verified: the money path held; no way to move money twice, lose it or send it to the wrong person). This file on main still says todo.
-- **Branches:** mobile `wmt/WALLET-07` 10ed011. Backend `wmt/WALLET-07` 4644a4c (migration `20261021190000_wallet_transfers`).
-- **Merged and live:** nothing of this task.
-- **Open findings:** blocker 0, high 0, medium 0. D1, D2 and D3 (all low) are in tasks/SWEEP-MONEY.md. By the 15 Oct rule the verdict is merge; the lead to confirm.
-  - Not filed anywhere yet (unknown, ask the lead): PushStoppedAccount is never cleared after a cancelled deletion (the log says own ticket).
-  - Known limits: the Nuvion book transfer has no field for WAWU's fee (N10), so a send completes at the quote unless the owner sets Nuvion's fee; a lost answer completes at the quote whatever the provider took (G-717).
-- **Next:** the lead merges. The backend trial merge has two spec route-list conflicts; keep both sides.
-- **Records:** on the branch, `wmt/WALLET-07`, in tasks/WALLET-07.md there (39 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-07`; the history goes to tasks/history/WALLET-07.md.
+live: send money to a WAWU user, backend PR #135 (43a923a), deploy run 38909832332.
 
 ## Lead note (11 Oct 2026): from MONEY-19's verification
 
@@ -55,13 +47,9 @@ Transfer between two Fintava accounts with a note, PIN and Idempotency-Key; a re
 - [ ] A user with ₦10,000 sends ₦2,000 to @amaka: their balance drops by ₦2,033.25 (₦2,000 + Fintava's ₦23.25 + WAWU's ₦10, the quoted total); Amaka's rises by exactly ₦2,000.
 - [ ] Sending to a blocked user is refused.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-07.md](history/WALLET-07.md).
 
 ## Owner sign-off
 

@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026, after the first build (builder, Sonnet).
-- **Status:** verifying. Built and pushed. CI on `a3b0f9f`: Branch checks 38933291303 and Protected routes 38933291332 green; Gates 38933291320 has main's same 16 FAIL lines.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SCHOOLS-10.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/INBOX-12` (this branch contains it); API types regenerated from backend `wmt/SCHOOLS-10` (a45a87a).
 - **Branches:** wawu-backend `wmt/SCHOOLS-10` (from main `3797fb2`). Mobile `wmt/SCHOOLS-10` holds only this file, SHARED-CHANGES rows and the log line. wawu-id and the web: untouched.
 - **Migration:** `20261022230000_school_link_clicks` (two new tables, additive; rollback line in the file).
 - **Built (backend, all new):**
@@ -31,9 +31,9 @@ As of 16 Oct 2026, after the first build (builder, Sonnet).
 - **Not built, on purpose:** the school's sign-ups, conversion reports and the commission (SCHOOLS-12, after launch). A real 302 GET: the tap needs the person, and a browser opened by the phone carries no token, so the app calls the POST and opens the answer.
 - **For SCHOOLS-08 (SC9):** call `apply-link` for the sheet and `apply-click` on Continue, then open `url`. Never open the raw `applyUrl` that `GET /schools/{id}` and `GET /schools/courses/{id}` still serve: it has no code and records nothing. Run `npm run api -- --backend ../wawu-backend` first (SHARED-CHANGES SCHOOLS-10 #2).
 - **For RELEASE-01:** DATA-SAFETY AA-10 and D13 can now say the click is collected (user, course, time) and the school sees only the per-school code.
-- **Open findings:** none yet.
-- **Next:** a verifier runs V1, V2, V3, V4 and V9 against a Hub built from `wmt/SCHOOLS-10`.
 - **Records:** tasks/history/SCHOOLS-10.md.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: 5 (the tracked link rewrites the school's whole query, a link with credentials or a private address is served, a ref inside a hash route, the purge has no caller, a school delete removes its click rows). They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 
