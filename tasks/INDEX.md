@@ -259,7 +259,10 @@ Builder and verifier are always different sessions.
 27. [FIX-28](FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break
 28. [SWEEP-WEB](SWEEP-WEB.md) Web sweep: the low findings of the website tasks
 29. [SWEEP-APP](SWEEP-APP.md) App sweep: test gaps and small differences across the app
-30. [FIX-36](FIX-36.md) The recipient leak check cannot match a random id by chance, so it stops failing at random
+30. [FIX-33](FIX-33.md) The Nuvion opening spec draws every client address once, so it stops failing at random
+31. [FIX-34](FIX-34.md) The admin identity-holds spec scans an audit row without its own ids, so it stops failing at random
+32. [FIX-35](FIX-35.md) The documents spec checks the temporary folder only for what could be a document, so it stops failing at random
+33. [FIX-36](FIX-36.md) The recipient leak check cannot match a random id by chance, so it stops failing at random
 
 ## Developer
 

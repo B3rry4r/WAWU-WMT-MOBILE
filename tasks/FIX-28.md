@@ -7,7 +7,7 @@ order: 281
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [FIX-27]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -18,9 +18,17 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-28.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-15` (this branch contains it); API types regenerated from backend `wmt/FIX-28` (48f710d).
+- **Built:** `schools-collation.contract.spec.ts` has four new names and one test that pins them, so `lower(` turned into `upper(` in `schools-order.ts` now fails 6 of its 8 tests. `GET /communities` orders by `name`, then `id`; a new spec (`community-list-order.contract.spec.ts`) makes 7 communities on 2 shared names and walks the list at 9 page sizes.
+- **Not changed:** any route, contract or migration (migration stamp: none; `20261022160000` unused).
+- **Checks (builder):** `lower(` to `upper(` in `schools-order.ts` fails 6 of 8 in `schools-collation`; with the `id` taken out of the communities order the new spec fails 3 of 3 (seven communities seen, five distinct); with both in, `src/community` and `src/schools` pass 204 of 205 locally, the one failure being `community-rooms` "a member sees the last message" (sender name empty, identity lookup, code this change does not touch). `tsc` 0, eslint 0 problems on the three files.
+- **CI on backend `72ebba9`:** full suite 3 shards, contract, netns, protected routes, baseline and deploy-in-sync green (runs 38902268343, 38902268194, 38902268311); gates red with the same 16 FAIL lines as main, none in a file this change touches (job 116977138153).
+- **Mobile check (file-only branch):** typecheck and lint clean; jest 153 of 155 suites on the full run, the 2 others killed for memory (SIGKILL) and green on rerun (61 of 61); gates 0 fail; tasks index ok.
+- **Open:** the verifier's pass.
+- **For SCHOOLS-03:** its Read first now carries the `nextCursor` note; the screen already does it.
 - **History:** none yet. Reports go to tasks/history/FIX-28.md.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: the builder's note says lower() to upper() in schools-order.ts fails 6 of 8 schools-collation tests; the verifier measured 4 of 8 (the check still holds). They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens one pull request per repo from the last batch 3 head, for the owner to merge after batch 2; then mobile sign-off.
 
 ## Read first
 
@@ -44,13 +52,9 @@ Two small follow-ups from FIX-27, merged by lead ruling because production deplo
 - [ ] Two communities with the same name never repeat or go missing across pages.
 - [ ] Protected suite 253/253; full suite green.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-28.md](history/FIX-28.md).
 
 ## Owner sign-off
 

@@ -18,10 +18,11 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Builder done; backend `wmt/FIX-36` `a3fd7ce` (one spec file, no product code).
-- **Next:** a verifier checks the branch against the Capability checks below.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-36.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/FIX-35` (this branch contains it); API types regenerated from backend `wmt/FIX-36` (d3c5550).
 - **Id and order:** filed after-launch at order 287, the way FIX-35 (order 286) is.
 - **History:** none yet.
+- **Open findings:** blocker 0, high 0, medium 0, low 0.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 
@@ -44,17 +45,8 @@ The identity row the case seeds now holds `qz4321xk` and `wj8765zq` (two constan
 - [ ] `git diff` is one file: two constants, the `keysOf` helper, the two seeded values, the secret list and the key check.
 - [ ] Backend `tsc --noEmit` and eslint on the file exit 0; CI gates show the same FAIL lines as main.
 
-## Builder report
+## History
 
-Sonnet builder. Backend `wmt/FIX-36` `a3fd7ce`, from main `3797fb2`. One file.
-- **Red (the fix still catches a leak):** on a scratch worktree, `views()` in `recipient.service.ts` read the identity row and put `bvnLast4` into `avatarUrl`; the case fails with `secret: "qz4321xk"`, `leaked: true` (1 failed, 40 skipped by the name filter).
-- **Red (the defect, before):** main's spec with `person()` forcing every id to start with `4321` fails the case on `secret: "4321"` (1 failed, 40 passed).
-- **Green:** the changed spec with the same forced ids passes (41 of 41), and 10 runs in a row are green (41 of 41 each) on the local stack `fix_36` (down, database dropped).
-- **Checks:** `tsc --noEmit` EXIT 0; eslint on the file EXIT 0; prettier check clean.
-- **CI on `a3fd7ce`:** all 3 suite shards, netns, contract, deploy-test-in-sync, the baseline check and the protected route suite green. Executable gates red with the same 16 FAIL lines as on main (`files scanned: 1249, findings: 16 fail`, the same as `3797fb2`; none in this spec).
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-36.md](history/FIX-36.md).
 
 ## Owner sign-off
