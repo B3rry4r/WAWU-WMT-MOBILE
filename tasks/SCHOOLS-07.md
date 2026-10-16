@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Built by a Sonnet builder. Backend `wmt/SCHOOLS-07` `79b24be`, started from `wmt/FIX-42` `73f4eb5` (batches 3 and 4, BILLS-04, FIX-40, FIX-42); mobile `wmt/SCHOOLS-07` from `wmt/FIX-42` `1ca79a3` (docs only). Migration `20261024020000_school_enrolments` (one new table `SchoolEnrolment`). No PR.
+- **Status:** verifying (round 2). Built by a Sonnet builder; round 2 fixes the verifier's medium (a revived payment for a released order after the student chose the course again is now refunded through the hold, once) and two lows (a per-student lock in the claim for the cap and for twin requests); see tasks/history/SCHOOLS-07.md, Builder report, round 2. Backend `wmt/SCHOOLS-07` `87fa39e` (round 1 was `79b24be`), started from `wmt/FIX-42` `73f4eb5` (batches 3 and 4, BILLS-04, FIX-40, FIX-42); mobile `wmt/SCHOOLS-07` from `wmt/FIX-42` `1ca79a3` (docs only). Migration `20261024020000_school_enrolments` (one new table `SchoolEnrolment`). No PR.
 - **What is built** (backend `src/schools/enrolment/`): `POST /schools/enrolments { intakeId }` holds a place and answers the order (SC4 Continue: course, school, class, fee, `reference`, `reservedUntil`); `GET /schools/enrolments/{id}` is SC7's receipt (the course, class, fee, Fintava's charge and the total actually debited); the fee is paid by the existing `GET /money/payments/quote` and `POST /money/payments` with `kind: school_fee` and the enrolment id as `targetId` (PIN, `Idempotency-Key` and the wallet gate are the money core's).
 - **Seat claim:** one conditional write (`seatsTaken < capacity`, the Product.stock pattern) in a short database-only transaction. Two students racing for the last seat: one `201`, one `409 reason.code class_full` with `reason.nextIntake` (the soonest other class of the course with a seat, or null; SC11). The same request twice is one order and one seat (a partial unique index: one live order per student and course). Another class of the same course moves the place.
 - **Money (R-19, R-12, R-10):** `school_fee` is a held kind: the fee moves into WAWU's merchant wallet and waits in a hold (`releaseCondition intake_started`) that carries the 85/15 split (school 12,750,000 of 15,000,000 kobo). The student pays the fee plus Fintava's charge (₦15.75 on ₦150,000), no WAWU fee on top. Nothing is paid to the school here: SCHOOLS-11 releases the hold at intake start or refunds it.
@@ -29,7 +29,7 @@ As of 16 Oct 2026.
 - **NOT RUN:** any call to Fintava or its sandbox (no key here; payments ran against the local double, whose wallet-to-wallet bodies are the sandbox's own); the app (backend task, no screens); the 20-parallel slow-provider measurement (enrolling makes no provider call; the refund is requested holding nothing).
 - **Next:** a verifier. Passes V1, V2, V3, V4, V6, V7, V8, V9.
 - **For the lead:** merge order note: this branch is built on `wmt/FIX-42`; EVENTS-07 and INBOX-16 also edit the shared lists (`money-enums.ts`, `hold-rules.ts`, `money-view.type.ts`, `WALLET.md`, `contract/openapi.json`), so expect small textual conflicts in those files at merge. SCHOOLS-11 must call `WalletHoldService.release` or `refund` on `SchoolEnrolment.holdId` (a release with no WAWU payee marks the hold released and moves nothing, so the school's 85% is still to be sent by bank transfer from WAWU's account).
-- **History:** the builder report is in tasks/history/SCHOOLS-07.md.
+- **History:** the builder reports (rounds 1 and 2) are in tasks/history/SCHOOLS-07.md.
 
 ## Read first
 
