@@ -20,9 +20,7 @@ artboards: []
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
 - **Open lows:** 68, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the other rows' source tasks are merged.
-- **Open lows:** 10, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** nothing (every source task is merged).
+- **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged.
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
