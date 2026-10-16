@@ -69,13 +69,13 @@ type PagesProps = { source: WebViewSource; outside: () => void; testID?: string 
 
 /** The web view and its spinner. It exists only while the reader is open, so each opening starts again with the spinner. */
 function Pages({ source, outside, testID }: PagesProps) {
-  const [ready, setReady] = useState(false);
+  const [pagesShown, setPagesShown] = useState(false);
   // True once the first load is done: after it, a link inside the file does not take the reader anywhere else.
-  const loaded = useRef(false);
+  const firstLoadDone = useRef(false);
 
   const onMessage = (event: WebViewMessageEvent) => {
     const message = event.nativeEvent.data;
-    if (message === READY) setReady(true);
+    if (message === READY) setPagesShown(true);
     else if (message === FAILED) outside();
   };
 
@@ -87,19 +87,18 @@ function Pages({ source, outside, testID }: PagesProps) {
         style={styles.web}
         originWhitelist={['*']}
         javaScriptEnabled
-        domStorageEnabled={false}
         allowFileAccess={false}
         setSupportMultipleWindows={false}
         onMessage={onMessage}
         onLoadEnd={() => {
-          loaded.current = true;
-          if (Platform.OS !== 'android') setReady(true);
+          firstLoadDone.current = true;
+          if (Platform.OS !== 'android') setPagesShown(true);
         }}
         onError={outside}
         onHttpError={outside}
-        onShouldStartLoadWithRequest={() => !loaded.current}
+        onShouldStartLoadWithRequest={() => !firstLoadDone.current}
       />
-      {ready ? null : (
+      {pagesShown ? null : (
         <View style={styles.loading} pointerEvents="none" testID={testID ? `${testID}-loading` : undefined}>
           <ActivityIndicator color={media.ink} />
         </View>
