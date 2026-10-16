@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 112 | 0 | 0 | 0 |
+| todo | 111 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 22 | 0 | 0 | 0 |
+| verifying | 23 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -24,6 +24,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off (You)
 - [SCHOOLS-10](../tasks/SCHOOLS-10.md) Link to a school's own site, with the click recorded (You)
 - [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
+- [EXPLORE-02](../tasks/EXPLORE-02.md) All creators and search (You)
 - [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
 - [FIX-09](../tasks/FIX-09.md) No em-dashes in any message a person can read from the backend or the web (You)
 - [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
@@ -210,6 +211,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 16 Oct 2026 · EXPLORE-02 · Builder: All creators (X4) and Search (X5 to X12) are built on EXPLORE-05's routes, with the entries on Explore and Home that lead to them; backend adds `GET /search/people` (names, field, ticks, follow state); pictures NOT RUN (no seeded data).
 - 16 Oct 2026 · EXPLORE-05 · Builder report, round 3 (Sonnet builder; backend `wmt/EXPLORE-05` `ba55a42` on main `b32f9c0`, mobile `wmt/EXPLORE-05`; no new migration, contract unchanged; status verifying): the round 2 medium on popular is closed by turning the rule round. `GET /search/popular` is now an allow-list: an entry is shown only when the searched text equals (after NFKC, lower case, Cyrillic and Greek lookalikes and circled or keycap digits folded, spaces collapsed) the name of a public thing a signed-out visitor can find (a live content title, a creator handle with a creator state, a community name, a category name), the text shown is that name's own spelling, and the name is only Latin letters, spaces and `' & -` with at most 4 digits. The deny-list of spellings is deleted. One query ranks the entries and counts only texts that pass the equality, so 45 junk texts of 4 people no longer push a real text of 3 off (they did); the answer is cached 60 seconds in the Hub process (two calls, one query). 3 people, 30 days and the deleted-account rule are as they were. 61 of the verifier's forms are refused by the character rule with a public room of that exact name and 4 searchers (they were listed); 11 forms made only of words cannot be, and depend on the owner question Q1 (anyone can name a community any text). The 39 website calls on main and the branch over one database: identical. Sweep row R3-1 (a deletion can show for up to 60 seconds). Record: `tasks/EXPLORE-05.md`, Builder report, round 3.
 - 16 Oct 2026 · EXPLORE-05 · Builder report, round 2 (Sonnet builder; backend `wmt/EXPLORE-05` `83df312` on main `3797fb2`, mobile `wmt/EXPLORE-05`; no new migration; status verifying): the verifier's three mediums fixed. `GET /search` fills `communities` and `GET /search/suggestions` fills `recentSearches` only with `include=communities` / `include=recent` (the app sends them), so the website's answers are main's: 39 real website calls on main and the branch over one database, 0 differences; `GET /search/popular` leaves out accounts with a scheduled deletion, refuses numbers, emails in any spelling, links and invisible text, and lists only a text that finds a public result; the wrong sentence for a non-text `q` fixed. SHARED-CHANGES EXPLORE-05 #1, #2 corrected (the protected registry's probe notes are under the lock, so editing them is a relock for the owner: left as main has them, replacement text in SHARED-CHANGES #1); the recent-cap race and blocked accounts in popular are rows in SWEEP-APP.
 - 16 Oct 2026 · EXPLORE-05 · Builder report, round 1 (Sonnet builder; backend `wmt/EXPLORE-05` `9e6b4bc` on main `18ac5f9`, mobile `wmt/EXPLORE-05`; migration `20261022190000_search_history`; status verifying): `GET /search` now finds communities by name; `POST` and `DELETE /search/recent` keep and clear a person's recent searches (the caller's own list is in `GET /search/suggestions`); `GET /search/popular` lists searches that at least 3 different people made in 30 days; creator rows already carried the ticks and a spec now pins them. G-340, G-341 filed; SHARED-CHANGES EXPLORE-05 #1 and #2.
@@ -224,4 +226,3 @@ From `docs/LOG.md`, newest first.
 - 16 Oct 2026 · FIX-28 · Builder report (Sonnet builder; backend `wmt/FIX-28`, mobile `wmt/FIX-28` file-only, migration `none`; status verifying): `lower(` to `upper(` in `schools-order.ts` now fails 6 of 8 in `schools-collation`; `GET /communities` orders by name then id, new spec fails 3 of 3 without the id.
 - 16 Oct 2026 · FIX-15 · Builder report, round 2 (Sonnet builder; backend `wmt/FIX-15` `1d757b5`, main `18ac5f9` merged, migration `none`; status verifying): the verifier's medium is fixed. A confirm sent before the PUT answers `pending` and frees nothing while the upload URL can still be used (6 minutes); a file that lands after it was given up on comes back only if it fits the limit, otherwise it is removed and the answer is 413; a key with a NUL character is a 404. The verifier's repro is a spec that fails on the old service. Two lows are in tasks/SWEEP-APP.md.
 - 16 Oct 2026 · FIX-15 · A refused upload no longer keeps counting against storage: backend branch `wmt/FIX-15` adds `POST /uploads/confirm` (the bucket decides: file there is confirmed, file missing is abandoned and the space goes back at once; bucket down is a 503) and makes the 15-minute sweep settle every stale reservation, not the first 50. `POST /uploads/presign` unchanged. Waiting for a verifier.
-- 16 Oct 2026 · FIX-19 · A school's name and a course's title now refuse control characters on the admin routes: U+0001 to U+001F, DEL and U+0080 to U+009F answer 400 naming the field on create and edit, nothing saved (a name is checked as typed, so a trailing line break is refused, not trimmed). Real names in any script and emoji still pass; contract unchanged. Existing rows holding one are not counted yet (the query is in the task history; production is not reachable from the builder). Backend `wmt/FIX-19` 2dbf748.

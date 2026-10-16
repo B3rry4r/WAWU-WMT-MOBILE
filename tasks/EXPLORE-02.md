@@ -7,7 +7,7 @@ order: 101
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [EXPLORE-03, EXPLORE-05, SETTINGS-04, UI-02, UI-03, INBOX-05]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -17,10 +17,19 @@ artboards: [X4, X5, X6, X7]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EXPLORE-05.
-- **History:** none yet. Reports go to tasks/history/EXPLORE-02.md.
+As of 16 Oct 2026, round 1 (builder, Sonnet).
+- **Status:** verifying. Built on batch 4 (mobile `wmt/MERGE-4` `74b1edb`, backend `wmt/EXPLORE-05` `649187a`). Not yet checked by a verifier. Nothing merged or live.
+- **Branches:** mobile `wmt/EXPLORE-02` (the commit that carries this file); backend `wmt/EXPLORE-02` `2d0d5d9`. No migration (no schema change). Contract copied from the backend branch (`contract/SOURCE_COMMIT`, SHARED-CHANGES EXPLORE-02 #1).
+- **Built (app):** `/search` (X5 landing and X11, X6 All, X7 Content, X8 Creators, X9 Communities, X10 nothing found with the closest content, X12 failed with Try again) and `/creators` (X4: the Categories list on All, titled Creators, with a search button). Both are signed-in routes. The entries this task adds (R-41): Explore's search pill and Featured creators' See all (X1), Home's search button and Creators' See all (H1), the feed's search button beside the tabs (H2 to H6, H12, H13).
+- **What the app calls:** `GET /search?q&tab=all&include=communities` (one call serves all four tabs; counts are the lists' lengths, each capped at 20 by the Hub), `GET /search/suggestions?include=recent`, `GET /search/popular` (never `popularSearches`), `POST` and `DELETE /search/recent` (a search is remembered when the person submits it or taps a chip, never per key), `GET /search/closest`, `POST` and `DELETE /creators/{id}/follow`, `POST /communities/{id}/join`.
+- **Backend (new, additive):** `GET /search/people?ids=` (1 to 50 account ids; answers name from WAWU ID or the handle, handle, picture, field, both ticks, whether the caller follows; leaves out accounts blocked either way, off member lists, or not creators). `GET /search` and `/search/suggestions` name creators by id and handle only and are the web's, so they are unchanged. Spec `src/search-response/tests/search-people.contract.spec.ts` (5 tests).
+- **Decisions:** the creator list on X6 and X5 shows only people the Hub names; a content row shows "Creator · Type" or just the type when the Hub did not name the maker. A creator already followed shows Following (tap to unfollow) where X6 draws Profile (M5 is ME-02's). Ask on a private room sends the request (`POST /communities/{id}/join`, answer `pending`) and the row reads Requested; Join on an open room opens it (I25). A room the person already belongs to still reads Join or Ask (BACKEND_GAPS G-341, after launch). The placeholder reads "Search Who Made This" (R-37).
+- **Not drawn (R-47, other tasks):** a content result opening its piece (H19, HOME-03); a creator opening their profile (M5, ME-02); Ask opening the private landing I30 (INBOX-14).
+- **Tests:** `src/features/search/__tests__/{search,entries,keyboard}.test.tsx` (20). No test of another task was edited: the entries are optional props the route wires, so the older tests that assert the entries' absence still hold.
+- **Checks:** mobile `npm run check` steps as one command, EXIT 0: typecheck 0, lint 0 errors, 175 suites / 3058 tests, gates 0 fail (631 files), tasks 289. Backend on `2d0d5d9` (GitHub): the 3 suite shards, netns, protected routes, baseline and contract passed; Executable gates failed on 5 FAIL lines in files this branch does not touch (`flutterwave-wallet.gateway.ts`, `notification-event.ts`, `content-piece.service.ts`, two admin notifications files).
+- **NOT RUN:** pictures at 390 px, light and dark, beside the renders (V5): no creators, content or rooms were seeded in the stack and the step budget ended first. Unblocked by a seeded stack (`--with mobile`). V9 against a real Hub: the stack's Hub answered the backend spec only.
+- **Open findings:** none known.
+- **Next:** verifier (V1, V4, V5, V6, V9); then the lead merges the backend branch before this one.
 
 ## Read first
 
@@ -89,17 +98,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/EXPLORE-02.md](history/EXPLORE-02.md).
 
 ## Owner sign-off
 

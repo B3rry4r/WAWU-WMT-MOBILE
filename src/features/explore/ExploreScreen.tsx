@@ -30,6 +30,7 @@ import {
   ExploreFeaturedEventEmpty,
   HeroDots,
   SectionHeading,
+  SeeAllCreators,
 } from './parts';
 
 /**
@@ -57,6 +58,10 @@ export type ExploreScreenProps = {
   onFindSchool: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
+  /** The search pill in the bar opens Search (X5, EXPLORE-02). Not drawn without it. */
+  onSearch?: () => void;
+  /** Featured creators' See all opens All creators (X4, EXPLORE-02). Not drawn without it. */
+  onSeeAllCreators?: () => void;
 };
 
 /**
@@ -72,7 +77,7 @@ export type ExploreScreenProps = {
  * bell (ME-14) and Create (ME-04). The task that builds each one adds it, as drawn. A section
  * with nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onSearch, onSeeAllCreators }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -150,7 +155,10 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
           onOpen={(tile) => onOpenCategory(tile.kind === 'category' ? (tile.id as CategoryChoice) : 'all')}
         />
         <View testID="explore-featured" style={styles.section}>
-          <SectionHeading title="Featured creators" />
+          <SectionHeading
+            title="Featured creators"
+            action={onSeeAllCreators ? <SeeAllCreators onPress={onSeeAllCreators} testID="explore-featured-see-all" /> : undefined}
+          />
           {creators.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
               {creators.map((creator) => (
@@ -178,7 +186,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
 
   return (
     <View testID="explore-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <ExploreBar />
+      <ExploreBar onSearch={onSearch} />
       <ScrollView
         testID="explore-scroll"
         style={styles.scroll}

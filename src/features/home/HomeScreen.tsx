@@ -13,7 +13,14 @@ import { TodayScreen } from './TodayScreen';
  * The screen's title is "Home" for a screen reader (the tab row is what the eye reads; the
  * canvas draws no title), as every other tab names its own screen.
  */
-export function HomeScreen() {
+export type HomeScreenProps = {
+  /** The search buttons (Today's head and the feed's tab row) open Search (X5, EXPLORE-02). Not drawn without it. */
+  onSearch?: () => void;
+  /** "See all" on Today's creators opens All creators (X4, EXPLORE-02). Not drawn without it. */
+  onSeeAllCreators?: () => void;
+};
+
+export function HomeScreen({ onSearch, onSeeAllCreators }: HomeScreenProps = {}) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -22,9 +29,9 @@ export function HomeScreen() {
     <View testID="home" style={styles.root}>
       <View accessible accessibilityRole="header" accessibilityLabel="Home" style={styles.title} />
       {view === 'today' ? (
-        <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} />
+        <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onSeeAllCreators={onSeeAllCreators} />
       ) : (
-        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} />
+        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} onSearch={onSearch} />
       )}
     </View>
   );

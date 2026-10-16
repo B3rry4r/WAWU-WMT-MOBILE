@@ -1,30 +1,73 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
-import { layout } from '@/theme';
+import { useFocusRing } from '@/components/focusRing';
+import { Icon } from '@/components/icon';
+import { font, layout, radius, useWawu } from '@/theme';
 
 /**
- * design/_gen/explore.js `topBar`: the bar pads 6 above, 20 at the sides and 14 below around a 44 high row, and the 34
- * wide mark leads it. The canvas also draws a search pill and a notifications bell in the row; each is drawn by the task
- * that builds where it leads (search, EXPLORE-02; notifications, ME-14), so until then the bar is the mark alone (R-47).
- * The row keeps its 44, so the body below sits where it will once they are added.
+ * design/_gen/explore.js `topBar`: the bar pads 6 above, 20 at the sides and 14 below around a 44 high row, 10 between
+ * its parts, and the 34 wide mark leads it. The search pill (`srch`: 44 high, a full pill on the card colour with a 1 hairline
+ * ring, an 18 glyph, 10 to the 15 words) follows the mark and takes the rest of the row; it opens Search (X5, EXPLORE-02) and is
+ * drawn only when the screen is given `onSearch`. The canvas's notifications bell is drawn by the task that builds where it leads
+ * (ME-14), so until then the pill runs to the edge (R-47). The row keeps its 44, so the body below sits where it will once the bell is added.
  */
 export const barMetrics = {
   top: 6,
   bottom: 14,
   mark: 34,
   row: layout.tapMin,
+  between: 10,
+  icon: 18,
+  iconGap: 10,
+  padH: 16,
+  text: 15,
 } as const;
 
+export type ExploreBarProps = {
+  /** The search pill was pressed (X5). The pill is not drawn without it. */
+  onSearch?: () => void;
+};
+
 /**
- * X1 and X14's bar: the mark. The mark is the tab's heading for a screen reader (X1 draws no title).
+ * X1 and X14's bar: the mark and the search pill. The mark is the tab's heading for a screen reader (X1 draws no title).
+ * The pill is a button that says what it opens, "Search Who Made This" (R-37); typing happens on Search itself.
  */
-export function ExploreBar() {
+export function ExploreBar({ onSearch }: ExploreBarProps = {}) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  const [pressed, setPressed] = useState(false);
   return (
     <View testID="explore-bar" style={styles.bar}>
       <View accessible accessibilityRole="header" accessibilityLabel="Explore">
         <BrandMark width={barMetrics.mark} decorative testID="explore-mark" />
       </View>
+      {onSearch ? (
+        <Pressable
+          testID="explore-search"
+          accessibilityRole="search"
+          accessibilityLabel="Search Who Made This"
+          onPress={onSearch}
+          onPressIn={() => setPressed(true)}
+          onPressOut={() => setPressed(false)}
+          {...ring.handlers}
+          style={[
+            styles.pill,
+            {
+              backgroundColor: colors.surfaceCard,
+              opacity: pressed ? 0.9 : 1,
+              boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }],
+            },
+            ring.style,
+          ]}
+        >
+          <Icon name="Search" size={barMetrics.icon} color={colors.textMuted} />
+          <NativeText numberOfLines={1} style={[font(400), styles.pillText, { color: colors.textMuted }]}>
+            Search Who Made This
+          </NativeText>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -37,5 +80,8 @@ const styles = StyleSheet.create({
     minHeight: barMetrics.top + barMetrics.row + barMetrics.bottom,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: barMetrics.between,
   },
+  pill: { flex: 1, height: barMetrics.row, borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: barMetrics.iconGap, paddingHorizontal: barMetrics.padH },
+  pillText: { flex: 1, fontSize: barMetrics.text },
 });

@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
 import { SeeAll } from '@/features/events/EventsScreen';
-import { canvasNormalLineHeight, font, layout, radius, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { creatorCardMetrics } from './CreatorCard';
 
@@ -47,6 +48,16 @@ export function SectionHeading({ title, action }: { title: string; action?: Reac
       </Text>
       {action}
     </View>
+  );
+}
+
+/** "See all" beside Featured creators (X1): opens All creators (X4, EXPLORE-02). */
+export function SeeAllCreators({ onPress, testID }: { onPress: () => void; testID?: string }) {
+  const ring = useFocusRing();
+  return (
+    <Pressable testID={testID} accessibilityRole="button" accessibilityLabel="See all creators" hitSlop={space.md} onPress={onPress} {...ring.handlers} style={ring.style}>
+      <Text variant="linkStrong">See all</Text>
+    </Pressable>
   );
 }
 

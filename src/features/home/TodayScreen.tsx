@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/api/session';
+import { IconButton } from '@/components/Button';
 import { ErrorState } from '@/components/StateViews';
 import { SponsoredSlot } from '@/features/ads/SponsoredSlot';
 import { useAd, useAdReports } from '@/features/ads/useAd';
@@ -34,6 +35,10 @@ export type TodayScreenProps = {
   onView: (view: HomeView) => void;
   masked: boolean;
   onToggleMask: () => void;
+  /** The search button at the end of the tab row opens Search (X5, EXPLORE-02). Not drawn without it. */
+  onSearch?: () => void;
+  /** "See all" on Creators to discover opens All creators (X4, EXPLORE-02). Not drawn without it. */
+  onSeeAllCreators?: () => void;
 };
 
 /**
@@ -45,13 +50,13 @@ export type TodayScreenProps = {
  * - creators to discover (`GET /creators`), without the viewer (`GET /users/me`).
  *
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
- * search (EXPLORE-02), the bell (ME-14), Send (WALLET-02), Add (WALLET-05), See all (EXPLORE-02),
+ * the bell (ME-14), Send (WALLET-02), Add (WALLET-05),
  * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The sponsored
  * card that takes TGIF's place when it is off (H36, ADS-01) reads `GET /ads?placement=today_slot`; with no
  * campaign, while it loads and when it cannot be read nothing shows, never an empty frame. The Events tile
  * (E1) is EVENTS-01's, in the services row (`Services`).
  */
-export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) {
+export function TodayScreen({ onView, masked, onToggleMask, onSearch, onSeeAllCreators }: TodayScreenProps) {
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
   const focused = useIsFocused();
@@ -64,16 +69,17 @@ export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) 
       {focused ? <StatusBar style={dark ? 'light' : 'dark'} /> : null}
       <View style={styles.head}>
         <HomeTabs views={homeViews} selected="today" tone="page" onChange={onView} />
+        {onSearch ? <IconButton icon="Search" label="Search" size={m.headRow} onPress={onSearch} testID="today-search" /> : null}
       </View>
       <ScrollView testID="today-scroll" contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} /> : <TodayLoading withTgif />}
+        {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} onSeeAllCreators={onSeeAllCreators} /> : <TodayLoading withTgif />}
       </ScrollView>
     </View>
   );
 }
 
 /** Today's parts, read for the signed-in person. */
-function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | 'onToggleMask'>) {
+function TodayBody({ masked, onToggleMask, onSeeAllCreators }: Pick<TodayScreenProps, 'masked' | 'onToggleMask' | 'onSeeAllCreators'>) {
   const router = useRouter();
   const client = useTodayClient();
   const date = localDay();
@@ -163,13 +169,13 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
         />
       ) : null}
       <Services onOpenBills={() => router.push('/bills')} onOpenEvents={() => router.push('/events')} onOpenLegal={() => router.push('/legal')} onOpenSchools={() => router.push('/schools')} />
-      <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} />
+      <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} onSeeAll={onSeeAllCreators} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  head: { height: m.headRow, marginBottom: m.headBottom, paddingHorizontal: gutter, flexDirection: 'row', alignItems: 'center' },
+  head: { height: m.headRow, marginBottom: m.headBottom, paddingHorizontal: gutter, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   body: { paddingTop: m.bodyTop, paddingHorizontal: gutter, paddingBottom: m.bodyBottom, gap: m.between },
 });

@@ -4457,6 +4457,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/search/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * EXPLORE-02. The names the app draws on result rows and "Creators to know":
+         *     for each account asked about, who they are (real name or handle, picture,
+         *     what they do, both ticks) and whether the caller follows them. A person
+         *     the caller may not see is left out of the answer. New route: nothing the
+         *     web calls changes.
+         */
+        get: operations["SearchResponseController_people"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/search/closest": {
         parameters: {
             query?: never;
@@ -10835,6 +10858,18 @@ export interface components {
             recentSearches: string[];
             popularSearches: string[];
             suggestedCreators: components["schemas"]["CreatorProfile"][];
+        };
+        SearchPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            field: string | null;
+            verification: components["schemas"]["VerificationState"];
+            following: boolean;
+        };
+        SearchPeople: {
+            items: components["schemas"]["SearchPerson"][];
         };
         ClosestSearchResult: {
             items: components["schemas"]["ContentPieceResponse"][];
@@ -21059,6 +21094,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSuggestions"];
+                };
+            };
+        };
+    };
+    SearchResponseController_people: {
+        parameters: {
+            query: {
+                /**
+                 * @description The accounts to describe, as a comma-separated list of ids (1 to 50), in
+                 *     the order the answer should keep.
+                 */
+                ids: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPeople"];
                 };
             };
         };
