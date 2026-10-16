@@ -7,7 +7,7 @@ order: 243
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: money-path
-status: verifying
+status: review
 depends_on: [JOIN-01, TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -1190,6 +1190,48 @@ Builder, 11 Oct 2026 (Sonnet agent, round 6 of JOIN-03; the lead's rulings of th
 - The OTP route with WhatsApp configured (no provider host may be called); a deployed wawu-id with the Hub's real deletion flow (mark-deletion, 48 hours, anonymise) and the app; a rolling deploy with an old and a new wawu-id side by side (the old removal order and the new can deadlock against each other for the length of a deploy, as before); `test:signup-local` (fixed ports 3492 and 3493 and a Hub database, outside the ports I may use); the whole wawu-id suite as one run (`src/auth` and `src/contract` ran) and the backend (unchanged).
 - The scans' cost was not re-measured (the fix does not change them); the Hub's own finalise loop (not in backend main); a twin closed at the exact millisecond the second one begins beyond the 14 and 40 pairs run; the anonymise against `confirmPhoneChange` or `requestPhoneChange` (not part of this task; the order was kept the way those routes already take it).
 - Pictures: no screen changed.
+
+## Verifier report, round 6
+
+Verifier, 16 Oct 2026 (Sonnet agent, an independent session that wrote none of this; it took over the first verifier's worktrees when the owner stopped that one). Heads: wawu-id `wmt/JOIN-03` `3f30eec`; wawu-id main has moved to `7869c95` (MONEY-16), so every check ran on a local merge of main into the branch (`5542fd1`, 0 conflicts, not pushed; the branch's diff against main is the same 20 files as the branch's). Mobile `wmt/JOIN-03` `f69a464` (mobile main is 45 commits ahead; not merged here), backend unchanged. The REAL built wawu-id ran as two processes on ONE database (6161 texting the sign-up code, 6162 mailing it) with a stand-in for Resend and the SMS provider on 6163, and a build of main `7869c95` on 6164 as the before-control; databases `vj03r6_*`. The round 5 drivers were not on disk, so I wrote my own (`stale`, `twin`, `n30`, `n31`, `d8`, `x16`, `misc`: held row locks from a second connection, `pg_sleep` triggers, SQL-made twins); each one fails on the main build, so each can see the bug. Evidence in the lead's scratchpad `vjoin03r6/` (`h/` drivers, `logs/`). No provider host was called. Numbers and addresses are masked.
+
+**Verdict: no blocker, high or medium. Status `review`.** Two lows, below.
+
+### CONFIRMED
+
+- **D12 (a) stale read.** A confirm that gives the pending account its number is held 1.2 s inside its transaction, the anonymise starts meanwhile (`stale.mjs`). Branch: **0 rows left in 8 of 8 rounds** (anonymise 200, confirm 200, the confirm's token refused at refresh 401: D10 holds). Main: 3 rows (2 counters, 1 OTP session) left in 5 of 5.
+- **D12 (b) twins** (`twin.mjs`; two accounts holding one number in two spellings, `0..`, `234..`, `+2340..`, plus an OTP row in a third spelling, closed 0 to 44 ms apart, both orders). Branch: **40 of 40 pairs clean**, and 30 of 30 with each anonymise's account update held 90 ms to widen the window. Main: 6 of 14 and 10 of 14 pairs leave rows. **D11 still holds:** with a live third holder, two twins closed together leave the counters, OTP session and wrong-code budget; they go when the last holder closes (4 of 4). A typed holder anonymised against the confirm that proves its number (`x16.mjs`): 14 of 14 rounds, 200 and 200, the confirming account holds the number, no deadlock line.
+- **N30** (`n30.mjs`; the anonymise held at its last statement by a lock on a refresh-token row). Phone and mailed, 3 rounds each: anonymise 200, the resend in flight **200 with the body a resend after the anonymise gets** (phone `{phone, expiresIn, resendIn}`, mailed plus `channel`), **0 rows** keyed on the number or address, no text or mail beyond the sign-up's own. Main: resend 500 and 2 counter rows in 2 of 2. Resend delivering when the anonymise commits (provider slow): 200 on both channels, 0 rows. **The 503 question:** a mailed resend whose mail the provider REFUSES while the anonymise commits answers 503 `EMAIL_SEND_FAILED`, a resend after the anonymise answers 200; so no, not the same answer, but it is the answer that resend gets whenever the provider refuses (a handled error, not a 500; 0 rows). Recorded as L2.
+- **N31** (`n31.mjs`, `d8.mjs`). Held-lock pairs, phone and mailed: the hard delete, SAF delete by address and SAF delete by number each hold the code row and wait on a token lock while a confirm queues: **deleter 200, confirm 409, 6 of 6** (main: the confirm 500 by deadlock, 6 of 6). The anonymise against a hard delete and against a SAF delete, both orders, both channels: **8 of 8** (200 and 200, or 404 and 200 when the delete came first; main: the anonymise 500 in 4 of 4). Expired-sign-up sweep in `POST /auth/register` against a confirm in flight, and sweep first with the confirm queued: **4 of 4** (409 for the register / 201 and 409 for the confirm; main: the mailed one 500). D8's pairs with a held ACCOUNT lock (anonymise against a confirm and against a newer sign-up, both orders, both channels, `d8.mjs`): **16 of 16**, 0 deadlock lines. Natural races on two processes (confirm on one, deleter on the other), 300 rounds in two offset windows, hard, SAF and anonymise, both channels: **0 deadlock lines in either log, 0 code rows left, 0 5xx from the anonymise or from any deleter**; the confirm's 500 is L1.
+- **FOR SHARE test.** `FOR SHARE` removed from `signupStillThere`: `signup-still-there.spec.ts` fails 1 of 2 tests, `npm run test:erase-local` fails 2 checks (`answered early=true, waiting backends=0`); unmutated 27 of 27, EXIT 0.
+- **Other routes as before** (`misc.mjs`, 12 of 12): unknown id 404 (anonymise and hard), SAF delete of nobody and of an empty body `{deleted:0}`, SAF delete matching two accounts `{deleted:2}`, anonymise twice 200 and 200 with 0 rows, hard delete of a confirmed account with a session 200 (its token refused), the register sweep by number (expired: 201 and the old account gone; live: 409 and it stays).
+- **Regressions.** `test:refresh-local` 29 of 29, `test:session-local` 33 of 33, `test:g16-local` 28 of 28 (all EXIT 0); sign-up and confirm on both channels worked in every driver (hundreds of rounds).
+
+### Defects
+
+- **L1 · low · pre-existing, not changed by this round.** A confirm that meets a hard or SAF delete of its own account after its transaction commits answers 500: the session is stored after the commit and the account is gone (`ForeignKeyConstraintViolation` on `refresh_tokens`, `phone-signup.service.ts:523`, `email-signup.service.ts:501`, `sessionFor(proven)`). Natural race, deleter 150 to 900 ms after the confirm began: 10 and 11 of 25 (phone, hard and SAF), 12 and 14 of 25 (mailed); main phone, same window: 14 and 14 of 25. The deleter answers 200 every time; ops routes only; nothing is lost. Row for SWEEP-AUTH (the file is on mobile main, not on this branch).
+- **L2 · low · the N30 answer in one corner.** The mailed resend in flight, with the provider refusing at that moment, answers 503 where a resend after the anonymise answers 200 (`email-signup.service.ts:375` to `388`). It needs the refusal and the anonymise within the same 2 s; nothing is sent, nothing is left. Row for SWEEP-AUTH, or "no".
+
+### Notes (not defects)
+
+- N37 · Mutant M1 (the account read BEFORE the code row) survives `stale.mjs`: the `FOR NO KEY UPDATE` read waits for the confirm's account update by itself, so D12 (a) does not depend on the order. The order is what keeps D8: M1 is killed by 3 unit specs and by `d8.mjs` (10 failures).
+- N38 · AUTH-08 timing test: in the whole `src/auth src/contract` run (575 s, load 15 to 20) it failed at 1,680 ms; alone, one worker, 3 alternating pairs: branch 798, 950, 742 ms, main 669, 492, 717 ms, all pass. The change does not touch the refresh route.
+- N39 · The anonymise's advisory-lock wait counts toward Prisma's 5 s transaction limit: a twin waits for the first one's scans (N34: 0.4 to 1.2 s at 300,000 to 500,000 rows), so twins only fail at about five times the sizes N34 measured.
+
+### Rulings
+- None asked.
+
+### Mutants of my own (one at a time on a throwaway worktree, the repo's specs run, then the real build run against the live driver where there is one, file restored from a copy, `git status` clean after each; logs `logs/mut-*.log`, `logs/mut-summary.log`)
+
+**17 mutants and the `FOR SHARE` one: all 18 killed by the repo's own tests; 13 were also run live against the real build and killed.** The under-lock read: `M1` read before the code row (3 specs; live `d8`: 10 failures, not `stale`: N37), `M2` no row lock (27 specs, unit only), `M3` no number lock (4; live `twin`: 2 failures), `M4` holders asked before the lock (1; live), `M5` lock key the raw text (3; live). The lock order in each path: `M6` hard delete plain (4; live `n31`: 5 failures), `M7` SAF delete plain (1; 7), `M8` sweep plain (2; 5), `M11` removal takes the account before the code row (4; 11), unit only: `M17` condition not applied again (1), `M12` sweep guard dropped (1), `M13` lock ids unsorted (1). The N30 answer: `M9` phone `update` for `updateMany` (4; live: 5 failures), `M10` phone no `dropIfEmpty` (1; 2), `M14` mailed restore with `update` (1; live: 2), `M15` mailed no `dropIfEmpty` (1; 3), `M16` mailed no give-back (1 spec; its live run of 2 rounds survived because the resend did not queue behind the anonymise in those rounds, a miss of my driver, not rerun). Plus `FOR SHARE` dropped (above: 1 spec and 2 local checks).
+
+### Checks
+
+- wawu-id (`5542fd1` = branch + main): `npx tsc --noEmit` 0. `eslint --no-fix` on the 18 changed `.ts` files: 19 errors, the same 19 as main's untouched files print (14 unsafe-`any` in `pending-signup-no-session.spec.ts`, 5 prettier in `provisioning.service.ts` at lines 152 to 335, none in a hunk this round wrote: 7 and 352 to 362). `jest src/auth src/contract` (two workers, `--testTimeout=300000`): 30 suites, 29 pass, **510 of 511 tests; the one failure is the AUTH-08 timing test (N38)**. `python3 scripts/gates/run.py` 9 run, 136 files, 0 fail, 21 warn; `check_baseline.py` 0 entries. `npm run contract:build` twice: `contract/openapi.json` sha256 `93309591...` both times, equal to main's committed file, tree clean. `git diff 7869c95`: 20 files, all this task's (`src/auth`, `src/provisioning/provisioning.service.ts`, `src/testing`, `test/erase-locks.local.mjs`, one `package.json` script line); no migration, no lock change, `contract/` untouched, the 11 tracked `.pyc` files under `scripts/gates` have main's blobs, no em-dash in a line a user reads.
+- Mobile (`f69a464` plus this report): `npm run gates` 10 run, 569 files, 0 fail, 5 warn, `check_baseline.py` 0 entries; `npm run tasks` ok (275 tasks); both EXIT 0.
+
+### NOT RUN
+- `test:signup-local` (fixed ports 3492 and 3493 and a Hub database), `test:phone-local` (3392 and 3393), `test:signup-email-local` and `test:phone-hold-local` (ports outside 6161 to 6164 by default; not re-ported for lack of steps); the OTP route with WhatsApp configured; a deployed wawu-id with the Hub's real deletion flow and a rolling deploy (old and new removal order side by side can deadlock for the length of a deploy); the whole wawu-id suite as one run (`src/auth` and `src/contract` ran); backend (unchanged); the AUTH-08 timing test in the reverse pair order. Pictures: no screen changed.
 
 ## Owner sign-off
 
