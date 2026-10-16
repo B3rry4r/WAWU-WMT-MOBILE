@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 8, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 9, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** nothing (every source task is merged).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -55,6 +55,7 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SCHOOLS-03 | V2-2 | The Kiritimati date-test label is wrong (UTC+14 is never behind UTC). Note. | `tasks/SCHOOLS-03.md`, Verifier report, round 2, line 255 |
 | CHECK-1 | F-1 | A production web export shows Expo's default "Unmatched Route" page for any unknown route and `/_sitemap` lists every route file. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 49 |
 | CHECK-1 | F-7 | M8's `wawu/<handle>` preview is hidden for a handle with a hyphen, which the Hub would also refuse. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 55 |
+| FIX-18 | L1 | Test robustness, not this branch: `src/nuvion/tests/nuvion-opening.contract.spec.ts:2754` draws `addr = () => 203.0.113.${randomInt(1,250)}` while the file allows 4 tries per address per hour (`BvnCheckAttempt`); the block's 5 draws share 249 values, so any two equal and the later test gets 429 ("expected 200 got 429", CI shard 1, line 2850, 'the view says so too'). | verifier report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-18.md`, finding 1 |
 
 ## Builder report
 
